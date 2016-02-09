@@ -1,0 +1,334 @@
+Summary: A file distribution and fetching system
+Name: afd
+Version: @AFD_VERSION@
+Release: @AFD_RELEASE@%{?dist}
+License: GPLv2
+Group: Applications/Communications
+BuildRoot: %{_builddir}/%{name}-root
+Prefix: @prefix@
+Source0: %{name}-%{version}-@AFD_RELEASE@.tar.bz2
+Requires: @REQUIRES@
+%if 0%{?rhl}%{?fedora}
+BuildRequires: @BUILD_REQUIRES_REDHAT@
+%else
+BuildRequires: @BUILD_REQUIRES@
+%endif
+URL: http://www.dwd.de/AFD/
+
+%define distro_style_rpms      @DISTRO_STYLE_RPMS@
+%define INITDIR                @INITDIR@
+%define BINARY_OWNER           @BINARY_OWNER@
+%define BINARY_GROUP           @BINARY_GROUP@
+%define cleaned_configure_args @cleaned_configure_args@
+
+%if %{distro_style_rpms}
+   %define prefix     %{_prefix}
+   %define bindir     %{_bindir}
+   %define sbindir    %{_sbindir}
+   %define mandir     %{_mandir}
+   %define docdir     %{_docdir}
+   %define share      %{_datadir}
+   %define sysconfdir %{_sysconfdir}/sysconfig
+%else
+   %define prefix     @prefix@
+   %define bindir     @bindir@
+   %define sbindir    @sbindir@
+   %define mandir     @mandir@
+   %define docdir     @docdir@
+   %define share      @datadir@
+   %define sysconfdir @SYSCONFIGDIR@
+%endif
+
+%description
+The Automatic File Distributor provides a framework for very flexible,
+non-stop, log and debug-able delivery of an arbitrary amount of files to
+multiple recipients as expressed in URLs (currently mailing, ftp, ftps,
+sftp and http supported with the mailto://user@domain and
+ftp://user:password@host URL conventions).
+
+%prep
+%setup -n %{name}-%{version}-@AFD_RELEASE@
+
+%build
+if [ -x /usr/bin/getconf ]; then
+  CPUS=`getconf _NPROCESSORS_ONLN`
+fi
+if test "x$CPUS" = "x" -o "x$CPUS" = "x0"; then
+  CPUS=1
+fi
+%if %{distro_style_rpms}
+%configure
+%else
+./configure '--libdir=%{prefix}/%{_lib}' %{?cleaned_configure_args}
+%endif
+make -j$CPUS
+
+%install
+if [ ! "$RPM_BUILD_ROOT" = "/" ]
+then
+   rm -rf $RPM_BUILD_ROOT
+   mkdir -p $RPM_BUILD_ROOT
+   mkdir -p $RPM_BUILD_ROOT/%{prefix} $RPM_BUILD_ROOT/%{prefix}/bin $RPM_BUILD_ROOT/%{prefix}/sbin $RPM_BUILD_ROOT/%{prefix}/etc
+   mkdir -p $RPM_BUILD_ROOT/%{INITDIR}
+   mkdir -p $RPM_BUILD_ROOT/%{sysconfdir}
+else
+   if [ ! -d $RPM_BUILD_ROOT/%{prefix} ]
+   then
+      mkdir -p $RPM_BUILD_ROOT/%{prefix} $RPM_BUILD_ROOT/%{prefix}/bin $RPM_BUILD_ROOT/%{prefix}/sbin $RPM_BUILD_ROOT/%{prefix}/etc
+   else
+      if [ ! -d $RPM_BUILD_ROOT/%{prefix}/bin ]
+      then
+         mkdir $RPM_BUILD_ROOT/%{prefix}/bin
+      fi
+      if [ ! -d $RPM_BUILD_ROOT/%{prefix}/sbin ]
+      then
+         mkdir $RPM_BUILD_ROOT/%{prefix}/sbin
+      fi
+      if [ ! -d $RPM_BUILD_ROOT/%{prefix}/etc ]
+      then
+         mkdir $RPM_BUILD_ROOT/%{prefix}/etc
+      fi
+   fi
+   if [ ! -d $RPM_BUILD_ROOT/%{INITDIR} ]
+   then
+      mkdir -p $RPM_BUILD_ROOT/%{INITDIR}
+   fi
+   if [ ! -d $RPM_BUILD_ROOT/%{sysconfdir} ]
+   then
+      mkdir -p $RPM_BUILD_ROOT/%{sysconfdir}
+   fi
+fi
+make DESTDIR=$RPM_BUILD_ROOT install
+install -p -m755 scripts/afd $RPM_BUILD_ROOT/%{INITDIR}
+install -p -m755 scripts/afdmon $RPM_BUILD_ROOT/%{INITDIR}
+install -p -m644 scripts/afd.sysconfig $RPM_BUILD_ROOT/%{sysconfdir}/afd
+install -p -m644 scripts/afdmon.sysconfig $RPM_BUILD_ROOT/%{sysconfdir}/afdmon
+
+
+%clean
+if [ ! "$RPM_BUILD_ROOT" = "/" ]
+then
+   rm -rf $RPM_BUILD_ROOT
+fi
+rm -rf $RPM_BUILD_ROOT/%{name}-%{version}-@AFD_RELEASE@
+
+
+%post
+if [ "$1" = 1 ]
+then
+   if [ -x sbin/chkconfig ]
+   then
+      sbin/chkconfig --add %{name}
+      sbin/chkconfig --add afdmon
+   fi
+else
+   /etc/init.d/afd condrestart > /dev/null 2>&1 || :
+   /etc/init.d/afdmon condrestart > /dev/null 2>&1 || :
+fi
+
+%pre
+if [ "$1" != 1 ]
+then
+   if [ -r %{sysconfdir}/afd ]
+   then
+      AFD_USERS="`grep \^AFD_USER_ %{sysconfdir}/afd | cut -d '=' -f2` `grep \^AFD_HA_USER_ %{sysconfdir}/afd | cut -d '=' -f2`"
+   else
+      AFD_USERS=""
+   fi
+   if [ -d /var/lock/subsys ]
+   then
+      SYS_LOCKDIR="/var/lock/subsys"
+   else
+      SYS_LOCKDIR="/var/lock"
+   fi
+   if [ ! "$AFD_USERS" = "" ]
+   then
+      for afduser in $AFD_USERS
+      do
+         USER_HOME_DIR="`grep \^${afduser}: /etc/passwd | cut -d ':' -f 6`"
+         if [ -d $USER_HOME_DIR ]
+         then
+            AFD_WORK_DIR_LIST=`su - $afduser -c 'echo MULTIAFDDIRS:\$MULTI_AFD_DIRS' | grep "^MULTIAFDDIRS:" | cut -d: -f2`
+            if [ "$AFD_WORK_DIR_LIST" = "" ]
+            then
+               su - $afduser -c "afd -c" > /dev/null 2>&1
+               if [ "$?" = 5 ]
+               then
+                  touch $SYS_LOCKDIR/restart_afd.$afduser
+               fi
+               su - $afduser -c "afd -S"
+               if [ $? -eq 0 ]
+               then
+                  rm -f $SYS_LOCKDIR/afd.$afduser
+               fi
+            else
+               counter=0
+               for afddir in $AFD_WORK_DIR_LIST
+               do
+                  su - $afduser -c "afd -w $afddir -c" > /dev/null 2>&1
+                  if [ "$?" = 5 ]
+                  then
+                     touch $SYS_LOCKDIR/restart_afd.$afduser-$counter
+                  fi
+                  su - $afduser -c "afd -w $afddir -S"
+                  if [ $? -eq 0 ]
+                  then
+                     rm -f $SYS_LOCKDIR/afd.$afduser-$counter
+                  fi
+                  counter=`expr "$counter" + 1`
+               done
+            fi
+         else
+            echo "Unable to determine status of AFD for user $afduser, since home directory is missing."
+         fi
+      done
+   fi
+   if [ -r %{sysconfdir}/afdmon ]
+   then
+      AFDMON_USERS="`grep \^AFDMON_USER_ %{sysconfdir}/afdmon | cut -d '=' -f2` `grep \^AFDMON_HA_USER_ %{sysconfdir}/afdmon | cut -d '=' -f2`"
+   else
+      AFDMON_USERS=""
+   fi
+   if [ ! "$AFDMON_USERS" = "" ]
+   then
+      for afduser in $AFDMON_USERS
+      do
+         USER_HOME_DIR="`grep \^${afduser}: /etc/passwd | cut -d ':' -f 6`"
+         if [ -d $USER_HOME_DIR ]
+         then
+            su - $afduser -c "mafd -c" > /dev/null 2>&1
+            if [ "$?" = 5 ]
+            then
+               touch $SYS_LOCKDIR/restart_afdmon.$afduser
+            fi
+            su - $afduser -c "mafd -S"
+            if [ $? -eq 0 ]
+            then
+               rm -f $SYS_LOCKDIR/afdmon.$afduser
+            fi
+         else
+            echo "Unable to determine status of AFDMON for user $afduser, since home directory is missing."
+         fi
+      done
+   fi
+fi
+
+%preun
+if [ "$1" = 0 ]
+then
+   %{INITDIR}/afd stop > /dev/null 2>&1 || :
+   if [ -r %{sysconfdir}/afd ]
+   then
+      AFD_HA_USERS="`grep \^AFD_HA_USER_ %{sysconfdir}/afd | cut -d '=' -f2`"
+   else
+      AFD_HA_USERS=""
+   fi
+   if [ ! "$AFD_HA_USERS" = "" ]
+   then
+      for afduser in $AFD_HA_USERS
+      do
+         USER_HOME_DIR="`grep \^${afduser}: /etc/passwd | cut -d ':' -f 6`"
+         if [ -d $USER_HOME_DIR ]
+         then
+            AFD_WORK_DIR_LIST=`su - $afduser -c 'echo MULTIAFDDIRS:\$MULTI_AFD_DIRS' | grep "^MULTIAFDDIRS:" | cut -d: -f2`
+            if [ "$AFD_WORK_DIR_LIST" = "" ]
+            then
+               su - $afduser -c "afd -S"
+            else
+               for afddir in $AFD_WORK_DIR_LIST
+               do
+                  su - $afduser -c "afd -w $afddir -S"
+               done
+            fi
+         else
+            echo "Unable to determine shutdown AFD for user $afduser, since home directory is missing."
+         fi
+      done
+   fi
+   if [ -x sbin/chkconfig ]
+   then
+      sbin/chkconfig --del %{name}
+   fi
+   %{INITDIR}/afdmon stop > /dev/null 2>&1 || :
+   if [ -r %{sysconfdir}/afdmon ]
+   then
+      AFDMON_HA_USERS="`grep \^AFDMON_HA_USER_ %{sysconfdir}/afdmon | cut -d '=' -f2`"
+   else
+      AFDMON_HA_USERS=""
+   fi
+   if [ ! "$AFDMON_HA_USERS" = "" ]
+   then
+      for afduser in $AFDMON_HA_USERS
+      do
+         su - $afduser -c "mafd -S"
+      done
+   fi
+   if [ -x sbin/chkconfig ]
+   then
+      sbin/chkconfig --del afdmon
+   fi
+fi
+exit 0
+
+%files
+%defattr(-,root,root)
+%config(noreplace) %{sysconfdir}/afd
+%config(noreplace) %{sysconfdir}/afdmon
+%doc %{docdir}/*
+%doc %{mandir}/man1/*
+%doc %{mandir}/man5/*
+%{prefix}/bin/*
+%{prefix}/sbin/*
+%{prefix}/%{_lib}/*
+%{INITDIR}/afd
+%{INITDIR}/afdmon
+
+
+%changelog
+*Mon Feb 07 2011 Holger Kiehl <Holger.Kiehl@dwd.de>
+- Handle case when users write some data to stdout or stderr.
+
+*Wed Nov 05 2008 Holger Kiehl <Holger.Kiehl@dwd.de>
+- Let autotools handle doc and man directories.
+
+*Wed Aug 08 2007 Holger Kiehl <Holger.Kiehl@dwd.de>
+- Added AFD Monitor boot scripts.
+
+*Thu Nov 16 2006 Holger Kiehl <Holger.Kiehl@dwd.de>
+- Don't rely on the lock file in /var/lock/subsys, do a real check if AFD is up.
+- Added support for AFD HA users.
+
+*Tue Apr 11 2006 Holger Kiehl <Holger.Kiehl@dwd.de>
+- When updating, stop AFD before new binaries are installed.
+
+*Thu Sep  8 2005 Holger Kiehl <Holger.Kiehl@dwd.de>
+- When installing use use strip by default.
+
+*Thu Jul 21 2005 Holger Kiehl <Holger.Kiehl@dwd.de>
+- Do not overwrite @SYSCONFIGDIR@/afd.
+
+*Sun Jun 26 2005 Holger Kiehl <Holger.Kiehl@dwd.de>
+- Include etc directory
+- Setup init/rc script.
+
+*Sat Jun 25 2005 Holger Kiehl <Holger.Kiehl@dwd.de>
+- Check for user and group.
+- Include doc directory.
+
+*Wed Jun 22 2005 Holger Kiehl <Holger.Kiehl@dwd.de>
+- Adapt to build from make.
+
+*Mon May 17 2004 Holger Kiehl <Holger.Kiehl@dwd.de>
+- Adapt for version 1.3.x.
+
+*Sat Dec 14 2002 Holger Kiehl <Holger.Kiehl@dwd.de>
+- AFD requires openmotif.
+
+*Sat Mar 2 2002 Holger Kiehl <Holger.Kiehl@dwd.de>
+- Use build root so the build version is not installed on the build system.
+
+*Sun Feb 10 2002 Holger Kiehl <Holger.Kiehl@dwd.de>
+- Default install in /opt
+
+*Fri Feb 1 2002 Doug Henry <doug_henry@xontech.com>
+- Initial release

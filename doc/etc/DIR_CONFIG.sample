@@ -1,0 +1,18 @@
+#
+# Sample DIR_CONFIG for AFD
+#
+
+[directory] Test
+~/test
+
+   [files]
+   *
+
+      [destination]
+
+         [recipient]
+         file://afd:secret@LOOP/test
+
+         [options]
+         priority 9
+         rename disneyland

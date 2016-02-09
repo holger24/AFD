@@ -1,0 +1,328 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (alda_examples.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="alda_examples">Examples for Alda</a></h1>
+<hr size=3 noshade>
+<p>
+Here follow some examples on how one can use Alda.
+</p>
+<h3><u><a name="simple_examples">Simple examples</a></u></h3>
+<center>
+<table border>
+<tr>
+   <th>Description</th>
+   <th>Command</th>
+   <th>Example Output</th>
+</tr>
+<tr>
+   <td>Show all file names from input log</td>
+   <td><pre>alda -f -L I -o "%IF"</pre></td>
+   <td><pre>
+       fx401-ana_bwk_we_P_000_000-9611290900-zv---tiff
+       fx401-ana_bwk_we_P_000_000-9611290600-zv---tiff
+       RADI_I128053027
+       RADI_I128105910
+       DMI_PADL43_EDZW_I268150425.RADAR
+       DMI_PADL42_EDZW_I271130425.RADAR
+       DMI_PADL43_EDZW_I268131923.RADAR
+       DMI_PADL43_EDZW_I271130423.RADAR
+       DMI_PADL42_EDZW_I268131925.RADAR
+       ekxr.01.wrk.241926.buf
+       ekxr.01.wrk.271206.buf
+       ekxr.01.wrk.271246.buf
+       ekxr.01.wrk.271216.buf
+       ekxr.01.wrk.241406.buf
+       B106.T00114
+       S106.T12003</pre></td>
+</tr>
+<tr>
+   <td>Show all file names from input log starting with the name DMI</td>
+   <td><pre>alda -f -L I -o "%IF" DMI*</pre></td>
+   <td><pre>
+       DMI_PADL43_EDZW_I268150425.RADAR
+       DMI_PADL42_EDZW_I271130425.RADAR
+       DMI_PADL43_EDZW_I268131923.RADAR
+       DMI_PADL43_EDZW_I271130423.RADAR
+       DMI_PADL42_EDZW_I268131925.RADAR</pre></td>
+</tr>
+<tr>
+   <td>Show all file names from input log and the size in bytes describing
+       each element in more details.</td>
+   <td><pre>alda -f -L I -o "Filename: %IF   Size: %ISB"</pre></td>
+   <td><pre>
+       Filename: fx401-ana_bwk_we_P_000_000-9611290900-zv---tiff   Size: 117132
+       Filename: fx401-ana_bwk_we_P_000_000-9611290600-zv---tiff   Size: 117376
+       Filename: RADI_I128053027   Size: 7290
+       Filename: RADI_I128105910   Size: 127
+       Filename: DMI_PADL43_EDZW_I268150425.RADAR   Size: 4280
+       Filename: DMI_PADL42_EDZW_I271130425.RADAR   Size: 16413
+       Filename: DMI_PADL43_EDZW_I268131923.RADAR   Size: 3412
+       Filename: DMI_PADL43_EDZW_I271130423.RADAR   Size: 14115
+       Filename: DMI_PADL42_EDZW_I268131925.RADAR   Size: 3595
+       Filename: ekxr.01.wrk.241926.buf   Size: 2073
+       Filename: ekxr.01.wrk.271206.buf   Size: 23193
+       Filename: ekxr.01.wrk.271246.buf   Size: 22808
+       Filename: ekxr.01.wrk.271216.buf   Size: 23845
+       Filename: ekxr.01.wrk.241406.buf   Size: 2108
+       Filename: B106.T00114   Size: 1026648
+       Filename: S106.T12003   Size: 1806736</pre></td>
+</tr>
+</table>
+</center>
+<h3><u><a name="file_size_examples">File size</a></u></h3>
+<center>
+<table border>
+<tr>
+   <th>Description</th>
+   <th>Command</th>
+   <th>Example Output</th>
+</tr>
+<tr>
+   <td>Show all file names from input log and the size in bytes separated by
+       a pipe (|) sign.</td>
+   <td><pre>alda -f -L I -o "%IF|%ISB"</pre></td>
+   <td><pre>
+       fx401-ana_bwk_we_P_000_000-9611290900-zv---tiff|117132
+       fx401-ana_bwk_we_P_000_000-9611290600-zv---tiff|117376
+       RADI_I128053027|7290
+       RADI_I128105910|127
+       DMI_PADL43_EDZW_I268150425.RADAR|4280
+       DMI_PADL42_EDZW_I271130425.RADAR|16413
+       DMI_PADL43_EDZW_I268131923.RADAR|3412
+       DMI_PADL43_EDZW_I271130423.RADAR|14115
+       DMI_PADL42_EDZW_I268131925.RADAR|3595
+       ekxr.01.wrk.241926.buf|2073
+       ekxr.01.wrk.271206.buf|23193
+       ekxr.01.wrk.271246.buf|22808
+       ekxr.01.wrk.271216.buf|23845
+       ekxr.01.wrk.241406.buf|2108
+       B106.T00114|1026648
+       S106.T12003|1806736</pre></td>
+</tr>
+<tr>
+   <td>Show all file names from input log and the size in kilobytes and
+       whole numbers separated by a pipe (|) sign.</td>
+   <td><pre>alda -f -L I -o "%IF|%ISK"</pre></td>
+   <td><pre>
+       fx401-ana_bwk_we_P_000_000-9611290900-zv---tiff|114
+       fx401-ana_bwk_we_P_000_000-9611290600-zv---tiff|114
+       RADI_I128053027|7
+       RADI_I128105910|0
+       DMI_PADL43_EDZW_I268150425.RADAR|4
+       DMI_PADL42_EDZW_I271130425.RADAR|16
+       DMI_PADL43_EDZW_I268131923.RADAR|3
+       DMI_PADL43_EDZW_I271130423.RADAR|13
+       DMI_PADL42_EDZW_I268131925.RADAR|3
+       ekxr.01.wrk.241926.buf|2
+       ekxr.01.wrk.271206.buf|22
+       ekxr.01.wrk.271246.buf|22
+       ekxr.01.wrk.271216.buf|23
+       ekxr.01.wrk.241406.buf|2
+       B106.T00114|1002
+       S106.T12003|1764</pre></td>
+</tr>
+<tr>
+   <td>Show all file names from input log and the size in kilobytes and
+       fractional numbers with two digits behind the decimal dot
+       separated by a pipe (|) sign.</td>
+   <td><pre>alda -f -L I -o "%IF|%.2dISK"</pre></td>
+   <td><pre>
+       fx401-ana_bwk_we_P_000_000-9611290900-zv---tiff|114.39
+       fx401-ana_bwk_we_P_000_000-9611290600-zv---tiff|114.62
+       RADI_I128053027|7.12
+       RADI_I128105910|0.12
+       DMI_PADL43_EDZW_I268150425.RADAR|4.18
+       DMI_PADL42_EDZW_I271130425.RADAR|16.03
+       DMI_PADL43_EDZW_I268131923.RADAR|3.33
+       DMI_PADL43_EDZW_I271130423.RADAR|13.78
+       DMI_PADL42_EDZW_I268131925.RADAR|3.51
+       ekxr.01.wrk.241926.buf|2.02
+       ekxr.01.wrk.271206.buf|22.65
+       ekxr.01.wrk.271246.buf|22.27
+       ekxr.01.wrk.271216.buf|23.29
+       ekxr.01.wrk.241406.buf|2.06
+       B106.T00114|1002.59
+       S106.T12003|1764.39</pre></td>
+</tr>
+<tr>
+   <td>Show all file names from input log and the size in best human
+       readable form in fractional numbers with two digits behind the
+       decimal dot separated by a pipe (|) sign.</td>
+   <td><pre>alda -f -L I -o "%IF|%.2dISA"</pre></td>
+   <td><pre>
+       fx401-ana_bwk_we_P_000_000-9611290900-zv---tiff|114.39 KiB
+       fx401-ana_bwk_we_P_000_000-9611290600-zv---tiff|114.62 KiB
+       RADI_I128053027|7.12 KiB
+       RADI_I128105910|127.00 B
+       DMI_PADL43_EDZW_I268150425.RADAR|4.18 KiB
+       DMI_PADL42_EDZW_I271130425.RADAR|16.03 KiB
+       DMI_PADL43_EDZW_I268131923.RADAR|3.33 KiB
+       DMI_PADL43_EDZW_I271130423.RADAR|13.78 KiB
+       DMI_PADL42_EDZW_I268131925.RADAR|3.51 KiB
+       ekxr.01.wrk.241926.buf|2.02 KiB
+       ekxr.01.wrk.271206.buf|22.65 KiB
+       ekxr.01.wrk.271246.buf|22.27 KiB
+       ekxr.01.wrk.271216.buf|23.29 KiB
+       ekxr.01.wrk.241406.buf|2.06 KiB
+       B106.T00114|1002.59 KiB
+       S106.T12003|1.72 MiB</pre></td>
+</tr>
+</table>
+</center>
+<h3><u><a name="date_examples">Date</a></u></h3>
+<center>
+<table border>
+<tr>
+   <th>Description</th>
+   <th>Command</th>
+   <th>Example Output</th>
+</tr>
+<tr>
+   <td>Show all file names from input log, the date expressed in unix time
+       in decimal numbers and the size in bytes separated by a pipe (|)
+       sign.</td>
+   <td><pre>alda -f -L I -o "%ITu|%IF|%ISB"</pre></td>
+   <td><pre>
+       1216637123|fx401-ana_bwk_we_P_000_000-9611290900-zv---tiff|117132
+       1216637123|fx401-ana_bwk_we_P_000_000-9611290600-zv---tiff|117376
+       1216637124|RADI_I128053027|7290
+       1216637124|RADI_I128105910|127
+       1216637124|DMI_PADL43_EDZW_I268150425.RADAR|4280
+       1216637124|DMI_PADL42_EDZW_I271130425.RADAR|16413
+       1216637124|DMI_PADL43_EDZW_I268131923.RADAR|3412
+       1216637124|DMI_PADL43_EDZW_I271130423.RADAR|14115
+       1216637124|DMI_PADL42_EDZW_I268131925.RADAR|3595
+       1216637124|ekxr.01.wrk.241926.buf|2073
+       1216637124|ekxr.01.wrk.271206.buf|23193
+       1216637124|ekxr.01.wrk.271246.buf|22808
+       1216637124|ekxr.01.wrk.271216.buf|23845
+       1216637124|ekxr.01.wrk.241406.buf|2108
+       1216637124|B106.T00114|1026648
+       1216637124|S106.T12003|1806736</pre></td>
+</tr>
+<tr>
+   <td>Show all file names from input log, the date expressed in unix time
+       hexadecimal numbers and the size in bytes separated by a pipe (|)
+       sign.</td>
+   <td><pre>alda -f -L I -o "%xITu|%IF|%ISB"</pre></td>
+   <td><pre>
+       488468c3|fx401-ana_bwk_we_P_000_000-9611290900-zv---tiff|117132
+       488468c3|fx401-ana_bwk_we_P_000_000-9611290600-zv---tiff|117376
+       488468c4|RADI_I128053027|7290
+       488468c4|RADI_I128105910|127
+       488468c4|DMI_PADL43_EDZW_I268150425.RADAR|4280
+       488468c4|DMI_PADL42_EDZW_I271130425.RADAR|16413
+       488468c4|DMI_PADL43_EDZW_I268131923.RADAR|3412
+       488468c4|DMI_PADL43_EDZW_I271130423.RADAR|14115
+       488468c4|DMI_PADL42_EDZW_I268131925.RADAR|3595
+       488468c4|ekxr.01.wrk.241926.buf|2073
+       488468c4|ekxr.01.wrk.271206.buf|23193
+       488468c4|ekxr.01.wrk.271246.buf|22808
+       488468c4|ekxr.01.wrk.271216.buf|23845
+       488468c4|ekxr.01.wrk.241406.buf|2108
+       488468c4|B106.T00114|1026648
+       488468c4|S106.T12003|1806736</pre></td>
+</tr>
+<tr>
+   <td>Show all file names from input log, the date expressed in a
+       human readable form (HH:MM:SS DD.MM.YYYY) and the size in bytes
+       separated by a pipe (|) sign.</td>
+   <td><pre>alda -f -L I -o "%ITX %ITd.%ITm.%ITY|%IF|%ISB"</pre></td>
+   <td><pre>
+       12:45:23 21.07.2008|fx401-ana_bwk_we_P_000_000-9611290900-zv---tiff|117132
+       12:45:23 21.07.2008|fx401-ana_bwk_we_P_000_000-9611290600-zv---tiff|117376
+       12:45:24 21.07.2008|RADI_I128053027|7290
+       12:45:24 21.07.2008|RADI_I128105910|127
+       12:45:24 21.07.2008|DMI_PADL43_EDZW_I268150425.RADAR|4280
+       12:45:24 21.07.2008|DMI_PADL42_EDZW_I271130425.RADAR|16413
+       12:45:24 21.07.2008|DMI_PADL43_EDZW_I268131923.RADAR|3412
+       12:45:24 21.07.2008|DMI_PADL43_EDZW_I271130423.RADAR|14115
+       12:45:24 21.07.2008|DMI_PADL42_EDZW_I268131925.RADAR|3595
+       12:45:24 21.07.2008|ekxr.01.wrk.241926.buf|2073
+       12:45:24 21.07.2008|ekxr.01.wrk.271206.buf|23193
+       12:45:24 21.07.2008|ekxr.01.wrk.271246.buf|22808
+       12:45:24 21.07.2008|ekxr.01.wrk.271216.buf|23845
+       12:45:24 21.07.2008|ekxr.01.wrk.241406.buf|2108
+       12:45:24 21.07.2008|B106.T00114|1026648
+       12:45:24 21.07.2008|S106.T12003|1806736</pre></td>
+</tr>
+</table>
+</center>
+<h3><u><a name="html_example">HTML output</a></u></h3>
+<p>
+With the help of the header option (-H) and the footer option it is also
+possible to let alda generate HTML logs.
+</p>
+<center>
+<table border>
+<tr>
+   <td>Alda command</td>
+   <td><pre>alda -f -L I -H header.file -F footer.file -o "&lt;tr&gt;&lt;td&gt;%ITX %ITd.%ITm.%ITY&lt;/td&gt;&lt;td&gt;%IF&lt;/td&gt;&lt;td&gt;%ISB&lt;/td&gt;&lt;/tr&gt;"</pre></td>
+</tr>
+<tr>
+   <td>Content of header file (header.file)</td>
+   <td><pre>
+       &lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"&gt;
+       &lt;html&gt;
+       &lt;body bgcolor="#F0ECD6"&gt;
+       &lt;table border&gt;</pre></td>
+</tr>
+<tr>
+   <td>Content of footer file (footer.file)</td>
+   <td><pre>
+       &lt;/table&gt;
+       &lt;/body&gt;
+       &lt;/html&gt;</pre></td>
+</tr>
+<tr>
+   <td>Resulting HTML Output</td>
+   <td><pre>
+       &lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"&gt;
+       &lt;html&gt;
+       &lt;body bgcolor="#F0ECD6"&gt;
+       &lt;table border&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:23 21.07.2008&lt;/td&gt;&lt;td&gt;fx401-ana_bwk_we_P_000_000-9611290900-zv---tiff&lt;/td&gt;&lt;td&gt;117132&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:23 21.07.2008&lt;/td&gt;&lt;td&gt;fx401-ana_bwk_we_P_000_000-9611290600-zv---tiff&lt;/td&gt;&lt;td&gt;117376&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:24 21.07.2008&lt;/td&gt;&lt;td&gt;RADI_I128053027&lt;/td&gt;&lt;td&gt;7290&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:24 21.07.2008&lt;/td&gt;&lt;td&gt;RADI_I128105910&lt;/td&gt;&lt;td&gt;127&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:24 21.07.2008&lt;/td&gt;&lt;td&gt;DMI_PADL43_EDZW_I268150425.RADAR&lt;/td&gt;&lt;td&gt;4280&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:24 21.07.2008&lt;/td&gt;&lt;td&gt;DMI_PADL42_EDZW_I271130425.RADAR&lt;/td&gt;&lt;td&gt;16413&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:24 21.07.2008&lt;/td&gt;&lt;td&gt;DMI_PADL43_EDZW_I268131923.RADAR&lt;/td&gt;&lt;td&gt;3412&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:24 21.07.2008&lt;/td&gt;&lt;td&gt;DMI_PADL43_EDZW_I271130423.RADAR&lt;/td&gt;&lt;td&gt;14115&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:24 21.07.2008&lt;/td&gt;&lt;td&gt;DMI_PADL42_EDZW_I268131925.RADAR&lt;/td&gt;&lt;td&gt;3595&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:24 21.07.2008&lt;/td&gt;&lt;td&gt;ekxr.01.wrk.241926.buf&lt;/td&gt;&lt;td&gt;2073&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:24 21.07.2008&lt;/td&gt;&lt;td&gt;ekxr.01.wrk.271206.buf&lt;/td&gt;&lt;td&gt;23193&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:24 21.07.2008&lt;/td&gt;&lt;td&gt;ekxr.01.wrk.271246.buf&lt;/td&gt;&lt;td&gt;22808&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:24 21.07.2008&lt;/td&gt;&lt;td&gt;ekxr.01.wrk.271216.buf&lt;/td&gt;&lt;td&gt;23845&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:24 21.07.2008&lt;/td&gt;&lt;td&gt;ekxr.01.wrk.241406.buf&lt;/td&gt;&lt;td&gt;2108&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:24 21.07.2008&lt;/td&gt;&lt;td&gt;B106.T00114&lt;/td&gt;&lt;td&gt;1026648&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td&gt;12:45:24 21.07.2008&lt;/td&gt;&lt;td&gt;S106.T12003&lt;/td&gt;&lt;td&gt;1806736&lt;/td&gt;&lt;/tr&gt;
+       &lt;/table&gt;
+       &lt;/html&gt;
+       &lt;/body&gt;</pre></td>
+</tr>
+<tr>
+   <td>What it looks like in a browser.</td>
+   <td align=center><img src="../images/alda_html_example.gif" alt="[Dialog to handle event]"></td>
+</tr>
+</table>
+</center>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 2010 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 19.02.2010
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</center
+</body>
+</html>

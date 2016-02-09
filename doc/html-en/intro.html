@@ -1,0 +1,70 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (intro.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="intro">INTRODUCTION</a></h1>
+<hr size=3 noshade>
+<p>
+Today, file transfer is becoming more and more important because of the
+increasing demand of sending data from one computer to another. File
+transfer is a very efficient and portable way to send data across a WAN
+(Wide Area Network). Efficient because only the data that needs to be
+transported is sent across the network and no extra information (as
+database programs do). And portable because today most computers are
+able to receive files from another computer without the need of special
+hardware and software. One of the most popular software package is FTP
+(File Transfer Protocol) which is supported across all platforms.
+</p>
+<h3 align=center><a name="aim">AIM</a></h3>
+<p>
+The aim of an automatic file distributor is as follows in no particular
+order of importance:
+</p>
+<ul>
+   <li>It must be able to handle any form of files. The sole duty
+       of the AFD is to send a file from one computer to another
+       (or locally from one directory to another).
+       The contents of the file and the file name must be left
+       unchanged.</li>
+
+   <li>The management of the AFD can be done by a single person.</li>
+
+   <li>Existing applications do not have to be changed. By this it
+       is meant that it is not necessary for them to have a special
+       interface to the AFD.</li>
+
+   <li>It must be able to send files parallel. If currently a very large
+       file is being transferred, other files do not have to wait and can
+       be transferred too.</li>
+
+   <li>Net capacity is always limited. To overcome this limit files must
+       be send with a priority.</li>
+
+   <li>The AFD must be able to send files to other end points where no
+       AFD is installed.</li>
+
+   <li>No time should be wasted when collecting files to be distributed.
+       The AFD should start transmission as early as possible and use
+       the whole bandwidth of the network by making full use of local
+       CPU power (<a href="glossary.html#SMP">SMP</a>).</li>
+
+   <li>When you have many active file transfers it must be easy to monitor
+       and to control every single transfer.</li>
+</ul>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 1997 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 14.03.1997
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

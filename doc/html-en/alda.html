@@ -1,0 +1,448 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (alda.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="alda">Alda (AFD log data analyzer)</a></h1>
+<hr size=3 noshade>
+<p>
+AFD has many different <a href="log.html">log files</a> where data is
+stored in different formats. Alda has been created to help admins
+monitoring these logs and giving them the ability to write logs in
+what ever format they want. It is even possible to just log certain
+types of date depending on destination, source, file name, job identifier,
+size and protocol. There is also an alda daemon that allows to have
+continuous logging (similar to INPUT_LOG, OUTPUT_LOG, etc) allowing
+the administrator to determine what is logged and the format of the
+log.
+</p>
+<p>
+Alda is a command line tool that has the following options:
+<pre>
+Usage: alda [options] &lt;file name pattern&gt;
+
+    Mode options
+           -c                           continuous
+           -C                           continuous daemon
+           -l                           local log data (default)
+           -r                           remote log data
+           -b                           back trace data
+           -f                           forward trace data
+    Range parameters
+           -s &lt;AFD host name/alias/ID&gt;  Starting AFD hostname/alias/ID.
+           -e &lt;AFD host name/alias/ID&gt;  Ending AFD hostname/alias/ID.
+           -t &lt;start&gt;[-&lt;end&gt;]           Time frame at starting point.
+              Time is specified as follows:
+                 Absolute: MMDDhhmm, DDhhmm or hhmm
+                 Relative: -DDhhmm, -hhmm or -mm
+              Where MMDDhhmm have the following meaning:
+                 MM - The month as a decimal number (range 01 to 12).
+                 DD - The day of the month as a decimal number (range 01 to 31).
+                 hh - The hour as a decimal number using a 24-hour clock (range
+                      00 to 23).
+                 mm - The minute as a decimal number (range 00 to 59).
+           -T &lt;start&gt;[-&lt;end&gt;]           Time frame at end point.
+           -L &lt;log type&gt;                Search only in given log type.
+                                        Log type can be:
+                                          I - Input Log
+                                          U - Distribution Log
+                                          P - Production Log
+                                          O - Output Log
+                                          D - Delete Log
+                                        Default: IUPOD
+           -g &lt;time in seconds&gt;         Maximum time to search for
+                                        a single file before giving up.
+           -G &lt;time in minutes&gt;         Maximum time we may search
+                                        for all files.
+    Format parameters
+           -o &lt;format&gt;                  Specifies the output format.
+                                        Possible format parameters
+                                        are as listed:
+              -- Input log data --
+              %[Z]IT&lt;time char&gt;      - input time
+              %[Y]IF                 - input file name
+              %[X]IS&lt;size char&gt;      - input file size
+              %[Z]II                 - input source ID
+              %[Y]IN                 - full source name
+              %[Z]IU                 - unique number
+              -- Distribution log data --
+              %[Z]Ut&lt;time char&gt;      - distribution time
+              %[Z]UT&lt;time char&gt;      - input time
+              %[Y]UF                 - input file name
+              %[X]US&lt;size char&gt;      - input file size
+              %[Z]UI                 - input source ID
+              %[Z]UU                 - unique number
+              %[Z]Un                 - number of jobs distributed
+              %[Z]Uj&lt;separator char&gt; - list of job ID's
+              %[Z]Uc&lt;separator char&gt; - list of number of pre-processing
+              %[Z]UY                 - distribution type
+              -- Production log data --
+              %[Z]Pt&lt;time char&gt;      - time when production starts
+              %[Z]PT&lt;time char&gt;      - time when production finished
+              %[X]PD&lt;duration char&gt;  - production time (duration)
+              %[Z]Pb                 - ratio relationship 1
+              %[Z]PB                 - ratio relationship 2
+              %[Z]PJ                 - job ID
+              %[Z]PZ&lt;time char&gt;      - job creation time
+              %[Z]PU                 - unique number
+              %[Z]PL                 - split job number
+              %[Y]Pf                 - input file name
+              %[Y]PF                 - produced file name
+              %[X]PS&lt;size char&gt;      - produced file size
+              %[Y]PC                 - command executed
+              %[Z]PR                 - return code of command executed
+              -- Output log data --
+              %[Z]Ot&lt;time char&gt;      - time when sending starts
+              %[Z]OT&lt;time char&gt;      - time when file is transmitted
+              %[X]OD&lt;duration char&gt;  - time taken to transmit file
+              %[Y]Of                 - local output file name
+              %[Y]OF                 - remote output file name/directory
+              %[Y]OE                 - final output file name/directory
+              %[Z]Op                 - protocol ID used for transmission
+              %[Y]OP                 - protocol used for transmission
+              %[X]OS&lt;size char&gt;      - output file size
+              %[Z]OJ                 - job ID
+              %[Z]Oe                 - number of retries
+              %[Y]OA                 - archive directory
+              %[Z]OZ&lt;time char&gt;      - job creation time
+              %[Z]OU                 - unique number
+              %[Z]OL                 - split job number
+              %[Y]OM                 - mail queue ID
+              %[Y]Oh                 - target real hostname/IP
+              %[Y]OH                 - target alias name
+              %[Y]OR                 - Recipient of job
+              %[Z]Oo                 - output type ID
+              %[Y]OO                 - output type string
+              -- Delete log data --
+              %[Z]Dt&lt;time char&gt;      - time when job was created
+              %[Z]DT&lt;time char&gt;      - time when file was deleted
+              %[Z]Dr                 - delete reason ID
+              %[Y]DR                 - delete reason string
+              %[Y]DW                 - user/program causing deletion
+              %[Y]DA                 - additional reason
+              %[Z]DZ&lt;time char&gt;      - job creation time
+              %[Z]DU                 - unique number
+              %[Z]DL                 - split job number
+              %[Y]DF                 - file name of deleted file
+              %[X]DS&lt;size char&gt;      - file size of deleted file
+              %[Z]DJ                 - job ID of deleted file
+              %[Z]DI                 - input source ID
+              %[Y]DH                 - target alias name
+
+               [X] -&gt; [-][0]#[.#]] or [-][0]#[d|o|x]
+               [Y] -&gt; [-]#
+               [Z] -&gt; [-][0]#[d|o|x]
+
+            Time character (t,T):
+                 a - Abbreviated weekday name: Tue
+                 A - Full weekday name: Tuesday
+                 b - Abbreviated month name: Jan
+                 B - Full month name: January
+                 c - Date and time: Tue Jan 19 16:24:50 1999
+                 d - Day of the month [01 - 31]: 19
+                 H - Hour of the 24-hour day [00 - 23]: 16
+                 I - Hour of the 24-hour day [00 - 12]: 04
+                 j - Day of the year [001 - 366]: 19
+                 m - Month [01 - 12]: 01
+                 M - Minute [00 - 59]: 24
+                 p - AM/PM: PM
+                 S - Second [00 - 61]: 50
+             (*) u - Unix time: 916759490
+                 U - Sunday week number [00 - 53]: 02
+                 w - Weekday [0 - 6] (0=Sunday): 2
+                 W - Monday week number [00 - 53]: 02
+                 X - Time: 16:24:50
+                 y - Year without century [00 - 99]: 99
+                 Y - Year with century: 1999
+                 Z - Time zone name: CET
+            Duration character (D):
+                 A - Automatic shortest format: 4d
+                             d - days
+                             h - hours
+                             m - minutes
+                             s - seconds
+             (*) D - Days only : 4
+             (*) H - Hours only : 102
+             (*) M - Minutes only: 6144
+             (*) S - Seconds only: 368652
+                 X - Time (h:mm:ss): 102:24:12
+                 Y - Time (d:hh:mm): 4:06:24
+            Size character (S):
+             (#) a - Automatic shortest format: 1 GB
+                             B  - byte
+                             KB - kilobyte (10^3)
+                             MB - megabyte (10^6)
+                             GB - gigabyte (10^9)
+                             TB - terabyte (10^12)
+                             PB - petabyte (10^15)
+                             EB - exabyte  (10^18)
+             (#) A - Automatic shortest format: 1 GiB
+                             B   - byte
+                             KiB - kibibyte (2^10)
+                             MiB - mebibyte (2^20)
+                             GiB - gibibyte (2^30)
+                             TiB - tebibyte (2^40)
+                             PiB - pebibyte (2^50)
+                             EiB - exbibyte (2^60)
+             (#) B - Bytes only: 1884907510
+             (#) e - Exabyte only : 0
+             (#) E - Exbibyte only: 0
+             (#) g - Gigabyte only: 1
+             (#) G - Gibibyte only: 1
+             (#) k - Kilobyte only: 1884907
+             (#) K - Kibibyte only: 1840729
+             (#) m - Megabyte only: 1884
+             (#) M - Mebibyte only: 1797
+             (#) p - Petabyte only: 0
+             (#) P - Pebibyte only: 0
+             (#) t - Terabyte only: 0
+             (#) T - Tebibyte only: 0
+
+            (*) Can be printed as decimal (d), octal (o) or hexadecimal (x)
+            (#) Can be printed as numeric string with decimal point
+                                      OR
+                Can be printed as decimal (d), octal (o) or hexadecimal (x)
+    Search parameters
+            -d &lt;directory name/alias/ID&gt; Directory name, alias or ID.
+                                            dir name no prefix
+                                            dir alias use prefix %
+                                            dir ID use prefix #
+            -h &lt;host name/alias/ID&gt;      Host name, alias or ID.
+                                            host name no prefix
+                                            host alias use prefix %
+                                            host ID use prefix #
+            -j &lt;job ID&gt;                  Job identifier.
+            -S[I|U|P|O|D] &lt;size&gt;         File size in byte.
+            -p &lt;protocol&gt;                Protocol used for transport:
+                                          ftp
+                                          file
+                                          mailto
+                                          sftp
+                                          scp
+                                          http
+                                          https
+                                          ftps
+                                          wmo
+                                          map
+    Other parameters
+            -F &lt;file name&gt;               Footer to add to output.
+            -R &lt;x&gt;                       Rotate log x times.
+            -H &lt;file name&gt;               Header to add to output.
+            -O &lt;file name&gt;               File where to write output.
+            -v[v[v]]                     Verbose mode.
+            -w &lt;work dir&gt;                Working directory of the AFD.
+    To be able to differentiate between name, alias and ID:
+        alias - must always begin with %
+        ID    - must always begin with #
+        name  - just the name without extra identifier
+</pre>
+</p>
+<p>
+As can be seen there are many options one can specify which are explained
+in more details below. Note that some of the options have not yet been
+implemented.
+</p>
+<h3 align=center><u><a name="formating_the_output">Formatting the output</a></u></h3>
+<p>
+With the help of the -o parameter one can format the output as required.
+The format string is a character string, beginning and ending in its
+initial shift state, if any. The format string is composed of zero or
+more directives: ordinary characters (not %), which are copied unchanged
+to the output stream; and conversion specifications , each of which
+results in fetching zero or more subsequent arguments. Each conversion
+specification is introduced by the character %, and ends with a conversion
+specifier. In between there may be (in this order) zero or more flags,
+an optional minimum field width, an optional precision and an optional
+length modifier (see [XYZ]). For each of the different log files there
+is a conversion specifier: I (Input), U (Distribution), P (Production), O
+(Output) and D (Delete). The second conversion specifier always specifies
+the type of information we want from the given log type. Some of them
+(t, T, S, j, c, D and Z) need a third conversion specifier, see syntax
+above for more information.
+</p>
+<p>
+Here follow some examples to illustrate how to use those flags:
+</p>
+<table border>
+<tr>
+   <th>Flags</th>
+   <th>Description</th>
+   <th>Example output</th>
+</tr>
+<tr>
+   <td>%IF</td>
+   <td>Print the full input file name.</td>
+   <td><pre>wst02-EDDF_10sec-091124000000-XASDUV---asc</pre></td>
+</tr>
+<tr>
+   <td>%10IF</td>
+   <td>Print only the first 10 characters of the input file name. Note
+       that if the string (file name) is longer then the last character
+       will be a &gt; sign, to indicate that the name will be longer.</td>
+   <td><pre>wst02-EDD&gt;</pre></td>
+</tr>
+<tr>
+   <td>|%50IF|</td>
+   <td>Print only the first 50 characters of the input file name. If the
+       file name is shorter the leading characters will be filled up by
+       white space characters.</td>
+   <td><pre>|        wst02-EDDF_10sec-091124000000-XASDUV---asc|</pre></td>
+</tr>
+<tr>
+   <td>|%-50IF|</td>
+   <td>Print only the first 50 characters of the input file name. If the
+       file name is shorter subsequent characters will be filled up by
+       white space characters.</td>
+   <td><pre>|wst02-EDDF_10sec-091124000000-XASDUV---asc        |</pre></td>
+</tr>
+<tr>
+   <td>%ISB</td>
+   <td>Print the size of the input file in decimal bytes.</td>
+   <td>737176</td>
+</tr>
+<tr>
+   <td>%xISB</td>
+   <td>Print the size of the input file in hexadecimal bytes.</td>
+   <td>b3f98</td>
+</tr>
+<tr>
+   <td>%ISk</td>
+   <td>Print the size of the input file in decimal kilobytes.</td>
+   <td>737</td>
+</tr>
+<tr>
+   <td>%ISK</td>
+   <td>Print the size of the input file in decimal kibibytes.</td>
+   <td>719</td>
+</tr>
+<tr>
+   <td>%.3ISk</td>
+   <td>Print the size of the input file in decimal kilobytes with three
+       values behind the comma.</td>
+   <td>737.176</td>
+</tr>
+<tr>
+   <td>%.3ISK</td>
+   <td>Print the size of the input file in decimal kibibytes with three
+       values behind the comma.</td>
+   <td>719.898</td>
+</tr>
+</table>
+<h3 align=center><u><a name="search_parameters">Search parameters</a></u></h3>
+<p>
+To facilitate searching in logs there are several optional parameters:
+-d, -h, -j, -S, -p and a file name / pattern list. These are explained
+in more details below.
+</p>
+<p>
+To search for files that enter a certain source directory and/or directory
+list one can use the <b>-d</b> parameter. This needs an additional
+parameter (or parameter list) which can be either the full directory name,
+directory alias name or the numeric directory identifier. To differentiate
+between between those three types one must always add a character to the
+front of the name/number. The character to use can be taken from the
+following table:
+</p>
+<center>
+<table border>
+<tr>
+   <th>Type</th>
+   <th>Character</th>
+   <th>Example</th>
+</tr>
+<tr>
+   <td>alias</td>
+   <td>%</td>
+   <td>from_mrz</td>
+</tr>
+<tr>
+   <td>Numeric Identifier (ID)</td>
+   <td>#</td>
+   <td>8fd0dca7</td>
+</tr>
+<tr>
+   <td>Directory name</td>
+   <td>None</td>
+   <td>/home/afd/daten/intern/from_mrz</td>
+</tr>
+</table>
+</center>
+<p>
+A list of directories can be entered by listing all names, alias and/or
+ID's with a comma separator between each element. It is also possible
+to specify those values as patterns with the usual patterns ?, * and [].
+</p>
+<p>
+To search for files that are distributed to a certain destination and/or
+destination list one can use the <b>-h</b> parameter. This needs
+an additional parameter (or parameter list) which can be either the full
+destination name, destination alias name or the numeric destination
+identifier. To differentiate between between those three types one must
+always add a character to the front of the name/number. The character to
+use can be taken from the following table:
+</p>
+<center>
+<table border>
+<tr>
+   <th>Type</th>
+   <th>Character</th>
+   <th>Example</th>
+</tr>
+<tr>
+   <td>alias</td>
+   <td>%</td>
+   <td>esoc</td>
+</tr>
+<tr>
+   <td>Numeric Identifier (ID)</td>
+   <td>#</td>
+   <td>1cde4bd4</td>
+</tr>
+<tr>
+   <td>Destination name</td>
+   <td>None</td>
+   <td>localhost</td>
+</tr>
+</table>
+</center>
+<p>
+To search for a certain job one can use the <b>-j</b> parameter
+together with the job number. Currently it is only possible to search
+for one job number.
+</p>
+<p>
+The <b>-S</b> parameter can be used to search for files that have
+a certain size. The size specified must be in bytes. If the search
+involves different search log types (eg. input, production, output)
+the size will be checked in all log files. If this is not wanted one can
+optionally specify for which log file one wants to check the size
+by specifying this directly behind the -S parameter. The character
+should be one of the following I (input), U (distribution), P
+(production), O (output) or D (delete). If a &lt; or a &gt; sign is
+put in front of the actual size value, it will search for files less
+then or greater then the given size. If a = or no sign is specified
+it will search for the exact given size.
+</p>
+<p>
+It is possible to search by which protocol the data was send with the
+<b>-p</b> parameter and the protocol name after a space. Multiple
+protocols can be specified by separating the protocol names with a
+comma.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 2009 - 2013 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 22.11.2013
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</center
+</body>
+</html>

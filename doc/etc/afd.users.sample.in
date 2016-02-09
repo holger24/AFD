@@ -1,0 +1,69 @@
+#
+# In this file all users are listed that may use and control the AFD.
+# The permission on controlling can be restricted on a per user basis.
+# Below is a list of items of what a user may do:
+#
+#   all                               : This user may do everything.
+#   afd_ctrl                          : AFD Control dialog.
+#   view_jobs                         : View more detailed information about
+#                                       each current transfer in afd_ctrl
+#                                       dialog.
+#   dir_ctrl                          : Directory Control dialog.
+#   mon_ctrl                          : MON Control dialog.
+#   edit_hc                           : Edit the host configuration.
+#   info [host1 .. hostn]             : Allow afd_info.
+#   dir_info                          : Allow dir_info.
+#   afd_load                          : View afd_load dialog.
+#   view_dir_config                   : Allow to view DIR_CONFIG.
+#   startup                           : Start the AFD.
+#   shutdown                          : Do a shutdown of the AFD.
+#   mon_startup                       : Start afd_mon.
+#   mon_shutdown                      : Do a shutdown of afd_mon.
+#   afdcmd                            : Use of the command line program
+#                                       afdcmd.
+#   afdcfg                            : Use of the command line program
+#                                       afdcfg.
+#   mafdcmd                           : Use of the command line program
+#                                       mafdcmd.
+#   show_exec_stat                    : Allows usage of program to show and
+#                                       reset CPU clock times for exec/fork
+#                                       statistics.
+#   AMG_control                       : Start/Stop the AMG.
+#   FD_control                        : Start/Stop the FD.
+#   control_queue [host1 .. hostn]    : Start/Stop queue.
+#   control_transfer [host1 .. hostn] : Start/Stop transfer.
+#   switch_host [host1 .. hostn]      : Do a host switch.
+#   disable [host1 .. hostn]          : Disable a host.
+#   disable_afd                       : Disable a AFD in afd_mon.
+#   debug [host1 .. hostn]            : Enable/Disable debugging.
+#   trace [host1 .. hostn]            : Enable/Disable tracing.
+#   full_trace [host1 .. hostn]       : Enable/Disable full tracing.
+#   simulate_mode [host1 .. hostn]    : Enable/Disable simulate mode.
+#   retry [host1 .. hostn]            : Retry sending a file after an
+#                                       error.
+#   reread_dir_config                 : Reread DIR_CONFIG.
+#   reread_host_config                : Reread HOST_CONFIG.
+#   show_slog [host1 .. hostn]        : View system log.
+#   show_mlog [host1 .. hostn]        : View maintainer log.
+#   show_tlog [host1 .. hostn]        : View transfer log.
+#   show_dlog [host1 .. hostn]        : View debug log.
+#   show_rlog [host1 .. hostn]        : View receive log.
+#   show_ilog [host1 .. hostn]        : View input log.
+#   show_olog [host1 .. hostn]        : View output log.
+#   show_elog [host1 .. hostn]        : View delete log.
+#   list_limit <number>               : Limit the number of files shown in
+#                                       show_xlog dialog.
+#   view_data                         : View data from archive in show_olog
+#                                       dialog.
+#   show_queue                        : View input and output queue.
+#   delete_queue                      : Enable deleting files from queue.
+#   resend [host1 .. hostn]           : Resend files.
+#   view_passwd                       : Enable viewing of passwords.
+#   disable_dir                       : Allow to disable certain directories.
+#   rescan                            : Allow to rescan certain directories.
+#
+#
+
+afd      all
+operator startup, shutdown, AMG_control, FD_control, resend, switch_host,
+         control_queue, control_transfer, info, debug, retry, show_olog

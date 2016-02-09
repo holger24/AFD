@@ -1,0 +1,449 @@
+
+Ongoing things.
+
+---------------------------->>>>> ALPHA 01 <<<<<--------------------------
+o       Process AFD                                    [DONE]
+o       Process AMG                                    [DONE]
+o       Process WSA                                    [DONE]
+o       Process FD                                     [DONE]
+o       Process SF_TCP                                 [DONE]
+o       Status display for AFD                         [DONE]
+---------------------------> Rel: 4th Feb 1996 <---------------------------
+
+
+---------------------------->>>>> ALPHA 02 <<<<<---------------------------
+o       Error handling by FD + SF_TCP.                 [DONE]
+o       Process that cleans archive dir.               [DONE]
+o       User must be able to stop transfer to
+        all or certain hosts.                          [DONE]
+o       Stop AMG for certain hosts.                    [DONE]
+o       Log transfer information.                      [DONE]
+o       Log system information.                        [DONE]
+o       Log debug transfer information.                [DONE]
+o       Port to Sun.                                   [DONE]
+o       Port to Irix.                                  [DONE]
+o       Manual retries for for host with errors        [DONE]
+o       When starting, clean transmitting dir
+        and count no. of files for each host.          [DONE]
+o       Implement compress/uncompress command.         [DONE]
+o       Implement gzip/gunzip command.                 [DONE]
+o       Implement prefix option.                       [DONE]
+o       Option to send (copy) files locally (sf_loc).  [DONE]
+---------------------------> Rel: 14th Mar 1996 <--------------------------
+
+
+---------------------------->>>>> ALPHA 03 <<<<<---------------------------
+o       When archiving, create an extra level
+        of directories (1000 dirs not enough).         [DONE]
+o       Add fool proof startup of AFD.                 [DONE]
+o       Turn AMG and FD ON/OFF via afd_ctrl.           [DONE]
+o       Cut log file when it reaches a certain
+        size.                                          [DONE]
+o       Add button/status bar to bottom of
+        afd_ctrl.                                      [DONE]
+o       Dialog that displays the log files.            [DONE]
+o       Remove hang-ups in sf_tcp (accept).            [DONE]
+o       When starting AFD with 'afd' command
+        ensure it cannot be started twice.             [DONE]
+o       Show which user has turned AFD, AMG or
+        FD ON/OFF.                                     [DONE]
+o       Tool to edit FSA.                              [DONE]
+o       Add option to switch host address.             [DONE]
+o       Add pull-right menu CONTROL.                   [DONE]
+o       Add slow transfer mode :-(                     [DONE]
+o       Add option for AMG to wait for a certain
+        number of files to arrive before
+        creating a job.                                [DONE]
+o       When sf_xxx is done report back to FD.         [DONE]
+o       Add support for proxy servers.                 [DONE]
+---------------------------> Rel: 21th May 1996 <--------------------------
+
+
+---------------------------->>>>> ALPHA 04 <<<<<---------------------------
+o       Add job counter in button/status bar.          [DONE]
+o       Add TIFF to GTS converter (tiff2gts).          [DONE]
+o       Support FTP block mode.                        [DONE]
+        Note: This is useless, since no server I
+              know supports this >:-(
+o       Add ageing option.                             [DONE]
+o       Stabilize afd_ctrl over very slow
+        connections.                                   [DONE]
+o       Enable sending files by priority.              [DONE]
+o       Added linger option which solved problem
+        with missing data in last block. Thus
+        removing slow transfer mode :-)                [DONE]
+o       When AFD starts up, initialize it with
+        previous status.                               [DONE]
+o       Port to HP-UX.                                 [DONE]
+o       When number of jobs for a certain host
+        reaches a critical stage it automatically
+        stops the queue.                               [DONE]
+o       Add option to extract bulletins from
+        file to send each bulletin in a separate
+        file.                                          [DONE]
+o       Implement sending files via email.             [DONE]
+-------------------------> Rel: 16th October 1996 <------------------------
+
+
+---------------------------->>>>> ALPHA 05 <<<<<---------------------------
+o       Added the option to lock the file on the
+        remote side with a prefix that can be
+        specified on a per user basis.                 [DONE]
+o       Add GTS to TIFF converter (gts2tiff)           [DONE]
+o       Create information window for each
+        host.                                          [DONE]
+o       Implement ASCII-mode to transfer files
+        via FTP.                                       [DONE]
+o       Remove process WSA. During very heavy
+        system load it can happen that it takes
+        to long for the fifos to be flushed.
+        To implement atomic writes in the FSA
+        we now use advisory record locking. [On
+        systems with good fifo performance this is
+        a performance LOST :-(]                        [DONE]
+o       In AMG_DATABASE allow definitions of equal
+        file masks/filters for separate file
+        sections but belonging to the same file
+        group.                                         [DONE]
+o       Write SMTP client, so we do not need
+        to take care of any special features
+        of the mail program.                           [DONE]
+o       Change address format in message and
+        AMG_DATABASE to URL.                           [DONE]
+------------------------> Rel: 18th December 1996 <------------------------
+
+
+---------------------------->>>>> ALPHA 06 <<<<<---------------------------
+o       Added function ftp_quick_quit() which does
+        not wait for a reply from the remote side.     [DONE]
+o       Revise function get_afd_path() so it does
+        not mess up *argv[].                           [DONE]
+o       To run the AFD more then once on one
+        machine, use only one set of binaries.         [DONE]
+o       Improve log output of transfer log file.
+        (parallel connect number, reason why a
+        command has not completed successfully).       [DONE]
+o       Burst mode for SF_FTP (to avoid to
+        constantly connect and disconnect).            [DONE]
+o       Increase speed in show_log when selecting
+        certain hosts or debug level is wanted.        [DONE]
+o       Remove 'not a typewriter' bug from
+        fsa_edit and add more editable fields.         [DONE]
+o       Limit number of log files.                     [DONE]
+o       When restarting the AFD let process
+        'afd_ctrl' notice this change so it
+        does not have to be restarted as well.         [DONE]
+o       Add support for auto switching when
+        an error has occurred.                         [DONE]
+------------------------> Rel: 14th January 1997 <-------------------------
+
+
+
+---------------------------->>>>> ALPHA 07 <<<<<---------------------------
+o       Write one central configuration header
+        file in which all important options can
+        be set.                                        [DONE]
+o       Implement bursting for FD.                     [DONE]
+o       Append file when only part of the file
+        was transmitted.                               [DONE]
+o       Transfer timeout can now be specified in
+        the HOST_CONFIG file.                          [DONE]
+o       Add LED's to show if queue/transfer is
+        stopped.                                       [DONE]
+o       Remove memory leak in AMG.                     [DONE]
+o       Implement renaming.                            [DONE]
+o       Log all file names that are grabbed
+        by the AFD.                                    [DONE]
+o       Log all names on output.                       [DONE]
+o       Show information even though we do not
+        find any IP number.                            [DONE]
+o       Create history file for AMG_DATABASE.          [DONE]
+o       Execute any type of command on every
+        file to be distributed (AMG).                  [DONE]
+o       Port to SCO.                                   [DONE]
+------------------------> Rel: 17th February 1997 <------------------------
+
+
+
+------------------------->>>>> Version 0.8.x <<<<<-------------------------
+o       Handle error condition with files of
+        zero length.                                   [DONE]
+o       Before bursting check if the file does
+        not already exist in the transmitting
+        directory. If so, cancel the burst.            [DONE]
+o       Port to IRIX 6.x (64 bit)                      [DONE]
+o       Write mmap emulator to support systems
+        that do not have mmap().                       [DONE]
+o       For performance improvement let sf_loc
+        try to hard link files first before
+        copying.                                       [DONE]
+o       All executables show what version they
+        are and when they where compiled.              [DONE]
+o       Process + Dialog that reactivates        
+        files from archive.                            [DONE]
+o       Dialog that shows I/O log.                     [DONE]
+o       Font in show_log is set by parameter
+        and debug toggle added.                        [DONE]
+o       Create a menu bar for the afd_ctrl.            [DONE]
+o       Save setup from afd_ctrl.                      [DONE]
+o       For AMG, make the number of file groups
+        dynamic.                                       [DONE]
+o       Make init_afd a daemon process.                [DONE]
+o       Report when files in source directory
+        are older then 24h.                            [DONE]
+o       Remove any limits for rename.rule file.        [DONE]
+o       Allow the system administrator to block
+        certain functions, ie not allow a user
+        to control everything.                         [DONE]
+o       Create process sf_map that sends files
+        to the MAP system.                             [DONE]
+--------------------------> Rel: 1st July 1997 <---------------------------
+
+
+
+------------------------->>>>> Version 0.9.x <<<<<-------------------------
+o       Allow for the AFD system administrator to
+        supply a name for the AFD.                     [DONE]
+o       Add support for quick multi selection
+        in afd_ctrl.                                   [DONE]
+o       Allow administrator to supply host alias
+        names. So it is no longer necessary to
+        change the /etc/hosts.                         [DONE]
+o       Dialog to edit HOST_CONFIG file.               [DONE]
+o       A TCP daemon that supplies information
+        off a running AFD.                             [DONE]
+o       Integrate TCP daemon into the AFD.             [DONE]
+o       Create function that allows a process
+        to be active once only while it is
+        running.                                       [DONE]
+o       Support for FSS ready files.                   [DONE]
+o       AMG option to extract WMO bulletins.           [DONE]
+o       Write program aftp for external users
+        of the AFD.                                    [DONE]
+o       Show fonts in menu bar (afd_ctrl).             [DONE]
+----------------------> Rel: 24th September 1997 <-------------------------
+
+
+
+------------------------>>>>> Version 1.0.x <<<<<--------------------------
+o       Allow user to limit the number of
+        parallel bursts.                         **    [DONE]
+o       AMG should ignore files that do not
+        have read permission.                    **    [DONE]
+o       Return of the HOST_CONFIG file.        ****    [DONE]
+o       Rename AMG_DATABASE -> DIR_CONFIG.        *    [DONE]
+o       Allow user to disable a host.            **    [DONE]
+o       Dialog that shows the distribution
+        of files by file name in more detail.     *    [DONE]
+o       Remove the limit for the number of
+        hosts that afd_ctrl can handle.           *    [DONE]
+o       Popup a message dialog when an error
+        occurs for any X application.            **    [DONE]
+o       When afd_ctrl exits, close all its
+        open windows.                             *    [DONE]
+o       Support to send files via WMO TCP
+        sockets.                                ***    [DONE]
+o       Send message names via fifo to the FD
+        and create messages only ones. So the
+        FD does not need to read each message
+        every time a new job arrives.          ****    [DONE]
+o       Process that logs all deleted files.      *    [DONE]
+o       Search input queue for old files.        **    [DONE]
+o       Clear pool directory at start.            *    [DONE]
+o       Dialog to show deleted files.             *    [DONE]
+o       Dialog that shows load of AFD.            *    [DONE]
+o       Add option to use file name as subject
+        when sending mail.                        *    [DONE]
+o       Allow for user name in recipient for
+        show_olog and show_ilog.                  *    [DONE]
+o       Reread HOST_CONFIG/DIR_CONFIG only
+        when the user wants to.                  **    [DONE]
+o       Show line number if there is an error
+        in the DIR_CONFIG.                      ***    [DONE]
+o       Let AMG use threads to handle
+        the directories.                          *    [DONE]
+o       Detect files without a corresponding
+        message.                               ****    [DONE]
+o       Correct FSA entries when incorrect.      **    [DONE]
+-------------------------> Rel: 22th June 1998 <---------------------------
+
+
+
+------------------------>>>>> Version 1.1.x <<<<<--------------------------
+o       Process that monitors other AFD's.      ***    [DONE]
+o       Dialog to monitor and control other
+        AFD's on remote sites.                  ***    [DONE]
+o       Dialog that shows information on a
+        remote AFD.                               *    [DONE]
+o       Configuration file AFD_CONFIG wherein
+        the user can configure values that would
+        normally need a recompile.                *    [DONE]
+o       Dialog to show DIR_CONFIG data on a
+        per host basis.                           *    [DONE]
+o       Reduce system load for archive_watch.    **    [DONE]
+o       Option to tell AMG to wait for a certain
+        character at the end of a file before
+        it will be picked up.                    **    [DONE]
+o       afd_mon should collect all host names
+        that are being served by the AFD's       **    [DONE]
+o       Add option for sf_loc to change owner
+        and group of a copied or moved file.      *    [DONE]
+o       Add option for sf_loc to change
+        permission of a copied or moved file.     *    [DONE]
+o       Allow only certain hosts to connect to
+        AFDD.                                     *    [DONE]
+o       Add new log type CONFIG.                  *    [DONE]
+o       Time job for AMG.                      ****    [DONE]
+-------------------------> Rel: 8 September 1999 <--------------------------
+
+
+
+------------------------>>>>> Version 1.2.x <<<<<--------------------------
+o       X dialog that shows the output of a
+        running process, such as ping and
+        traceroute.                             ***    [DONE]
+o       Limit the number of process that
+        dir_check may generate on a per
+        directory basis.                       ****    [DONE]
+o       Log everything received by AFD (as
+        transfer log).                          ***    [DONE]
+o       Retrieve files from a remote host.     ****    [DONE]
+o       Dialog that shows and controls the
+        directories monitored by AFD
+        (as afd_ctrl).                           **    [DONE]
+o       Dialog that shows some information
+        on a directory from dir_ctrl.             *    [DONE]
+o       Time option for each directory.           *    [DONE]
+o       Dialog to send files from archive to
+        hosts that are not in the FSA.          ***    [DONE]
+o       Process that counts the number of files
+        and their size send per min/hour/day/
+        week/month/year                         ***    [DONE]
+o       Implement FTP passive mode.               *    [DONE]
+o       Print button for show_cmd dialog.         *    [DONE]
+o       Possibility to disable monitoring an
+        AFD in mon_ctrl dialog.                   *    [DONE]
+o       Generic FTP proxy procedure.             **    [DONE]
+o       In mon_ctrl show history of receive,
+        system and transfer log.                  *    [DONE]
+o       New time option that does NOT collect
+        data outside the specified time range.    *    [DONE]
+-------------------------> Rel: 24 September 2000 <-------------------------
+
+
+
+------------------------>>>>> Version 1.3.x <<<<<--------------------------
+o       Option chmod for FTP.                     *    [DONE]
+o       Option to execute command on the
+        remote host.                              *    [DONE]
+o       Ageing priorities for process FD.       ***    [DONE]
+o       Reduce disk load of process
+        archive_watch.                           **    [DONE]
+o       Option to attach all files in one mail.   *    [DONE]
+o       Before any sf_xxx process terminate
+        they should check with FD if there is
+        anoter job for them to do.              ***    [DONE]
+o       Dialog to view and delete any files in
+        the AFD queue.                          ***    [DONE]
+o       Store active/passive mode in HOST_CONFIG. *    [DONE]
+o       Store host status in HOST_CONFIG.         *    [DONE]
+o       Port to AIX.                              *    [DONE]
+o       Multiple DIR_CONFIG´s.                   **    [DONE]
+o       Support for the SCP protocol (SSH1+2).   **    [DONE]
+o       Use GNU autoconfig and automake to build
+        AFD.                                      *    [DONE]
+o       The programm name to call other programms
+        on the remote node should be made
+        configurable in AFD_MON_CONFIG.          **    [DONE]
+o       Configuration option for afd_mon to
+        always disconnect.                        *    [DONE]
+o       Port to MacOS/Darwin.                     *    [DONE]
+o       Production log, so it is possible to
+        trace files within AFD.                  **    [DONE]
+o       A SSL FTP client.                        **    [DONE]
+o       Support for the HTTP and HTTPS protocol. **    [DONE]
+o       Input statistics.                         *    [DONE]
+o       Option to make show_olog and show_ilog
+        show the information continuesly.         *    [DONE]
+o       Timeout for exec option.                  *    [DONE]
+o       Create target directory remote and local
+        (both optionally).                       **    [DONE]
+o       Transfer rate control for each host.     **    [DONE]
+o       Implement sending files from AFD queue. ***    [DONE]
+o       Optional central info file.               *    [DONE]
+o       Allow user to specify some actions if a
+        host is not working.                     **    [DONE]
+o       Option to initialize AFD.                 *    [DONE]
+o       Switching AFD's in afd_mon, mon_ctrl.     *    [DONE]
+--------------------------> Rel: 18 August 2005 <-------------------------
+
+
+
+------------------------>>>>> Version 1.4.x <<<<<--------------------------
+o       SFTP support.                           ***    [DONE]
+o       Group transfer rate limit.               **    [DONE]
+o       Centralize log files via afd_mon.       ***    [DONE]
+o       Enable 'store remote list' also for
+        local directories.                       **    [DONE]
+o       Program to reconstruct DIR_CONFIG from
+        internal database.                        *    [DONE]
+o       Implement an error queue for process FD
+        that stores job ID's of broken jobs.   ****    [DONE]
+o       Program to allow user to view data in
+        archive from show_olog/show_queue dialog. *    [DONE]
+o       Add an event log.                        **    [DONE]
+o       Implemented persistend connection for
+        transmitting files.                     ***    [DONE]
+o       Allow to set warn and/or error actions
+        for source and/or destination.            *    [DONE]
+o       Interface to allow user to handle events. *    [DONE]
+o       Support for sending files via HTTP
+        protocol.                                 *    [DONE]
+o       Editing function for afd_info and mon_info
+        dialogs.                                  *    [DONE]
+o       Add search function for dialogs showing
+        configuration data.                       *    [DONE]
+o       Be able to handle DOS-style configuration
+        files                                     *    [DONE]
+o       Implement unique locking.                **    [DONE]
+o       Support for multiple time options       ***    [DONE]
+o       Make use of off-screen pixmap in afd_ctrl,
+        dir_ctrl and mon_ctrl dialog to speed up
+        redraws over slow connections.           **    [DONE]
+-------------------------> Rel: 26 November 2009 <------------------------
+
+
+
+------------------------>>>>> Version 1.5.x <<<<<--------------------------
+o       Add support for groups in afd_ctrl
+        dialog.                                ****    [TODO]
+o       Use alda to get the data for show_xlog
+        dialogs.                                  *    [TODO]
+o       Extra process that stores data into archive
+        in case archive directory lies on a
+        different file system.                  ***    [TODO]
+o       Implement support for one time jobs.      *    [UNDER CONSTRUCTION]
+o       HTTP proxy support.                       *    [DONE]
+o       Use inotify to detect new files.        ***    [DONE]
+o       Dialog to view statistics.                *    [UNDER CONSTRUCTION]
+o       Create WMO server.                        *    [UNDER CONSTRUCTION]
+o       Command line tool that allows to follow
+        files within several AFD's.            ****    [UNDER CONSTRUCTION]
+o       Convert all dialogs to gtk+.            ***    [UNDER CONSTRUCTION]
+o       Internationalization.                     *    [UNDER CONSTRUCTION]
+o       Follow directories. Add a dir option that
+        tells AFD to search all subsequent
+        directories.                             **    [TODO]
+o       Rename option for send in show_olog.      *    [TODO]
+o       Dialog to edit DIR_CONFIG.             ****    [TODO]
+o       Support for IP6.                        ***    [DONE]
+o       Write process sf_sql to send files to
+        a database and gf_sql to retrieve data
+        from a database.                         **    [TODO]
+o       Implement context sensitive help for
+        the 'afd_ctrl' dialog.                    *    [TODO]
+o       Create process that can do multi-casting.**    [TODO]
+o       Create interface to add, remove and or
+        change individual jobs within AFD.      ***    [TODO]
+o       Make MAX_HOSTNAME_LENGTH changeable at
+        runtime.                                  *    [TODO]

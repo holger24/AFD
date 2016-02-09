@@ -1,0 +1,289 @@
+--enable-maintainer_log              - This allows the maintainer to write
+                                       additional large amount of debug
+                                       log data to a log file. So this
+                                       is only useful for the maintainer.
+                                       [Default: disabled]
+--disable-input_log                  - If you want to log all files names
+                                       on input you have to enable these
+                                       features. But note that enabling this
+                                       will pose a performance penalty,
+                                       especially if the log files are
+                                       very large.
+                                       [Default: enabled]
+--disable-distribution_log           - If you want to log all files
+                                       distributed you have to enable
+                                       these features. Note without this
+                                       alda (AFD Log Data Analyzer) will
+                                       not function properly.
+                                       [Default: enabled]
+--disable-production_log             - When enabled, this will make AFD log
+                                       all files it renamed or where it
+                                       changed its content.
+                                       [Default: enabled]
+--disable-output_log                 - If you want to log all files names on
+                                       output you have to enable these
+                                       features. But note that enabling this
+                                       will pose a performance penalty,
+                                       especially if the log files are
+                                       very large.
+                                       [Default: enabled]
+--disable-delete_log                 - If enabled, all files names that are
+                                       deleted by the AFD get logged. They
+                                       can then be viewed with show_dlog. But
+                                       note that enabling this will pose a
+                                       performance penalty, especially if
+                                       lots of files get
+                                       deleted.
+                                       [Default: enabled]
+--disable-ncurses_ui                 - Disables ncurses interface to AFD.
+                                       [Default: enabled]
+--disable-error_queue                - If enabled, AFD will queue error jobs
+                                       so that this will not block jobs that
+                                       work fine to another host.
+                                       [Default: enabled]
+--disable-loc_support                - Support for sending files locally.
+                                       [Default: enabled]
+--disable-ftp_support                - Support for the FTP protocol.
+                                       [Default: enabled]
+--disable-sftp_support               - Support for the SFTP protocol.
+                                       [Default: enabled]
+--disable-smtp_support               - Support for the SMTP protocol.
+                                       [Default: enabled]
+--disable-http_support               - Support for the HTTP protocol.
+                                       [Default: enabled]
+--disable-wmo_support                - Support for the special protocol used
+                                       by the WMO to transport data via TCP.
+                                       [Default: enabled]
+--disable-fd_exec_support            - Support for using an external program
+                                       to transmit the data.
+                                       [Default: enabled]
+--disable-dupcheck_support           - When enabled AFD will be able to check
+                                       the input and output for duplicates.
+                                       [Default: enabled]
+--disable-largefile                  - Large file support does not work
+                                       properly on some older systems (linux
+                                       2.2.x and earlier) and cause severe
+                                       problems. So disable this when AFD
+                                       does not start or you have very
+                                       strange problems.
+                                       [Default: enabled]
+--disable-verify_fsa                 - When enabled, every time something is
+                                       written to the FSA, it is checked
+                                       whether it is correct. If not enabled
+                                       you might see some incorrect numbers
+                                       in the 'afd_ctrl' dialog. Though this
+                                       is very seldom and if it does happen
+                                       can be corrected with fsa_edit.
+                                       [Default: enabled]
+--disable-ignore_duplicate_jobs      - Duplicate jobs are ignored by AFD when
+                                       this job is set. I cannot think of a
+                                       good reason why one wants to disable
+                                       this.
+                                       [Default: enabled]
+--disable-auto_create_config         - When during start AFD does not find a
+                                       configuration it creates some default,
+                                       so AFD does start.
+                                       [Default: enabled]
+--disable-afd_ctrl_proc_check        - By default the afd_ctrl dialog
+                                       periodically checks if the process amg,
+                                       fd, archive_watch and afdd are running.
+                                       This check should be disabled on
+                                       systems with shared filesystems
+                                       and afd_ctrl being called from a node
+                                       where AFD is not active.
+                                       [Default: enabled]
+--disable-fifo_rw_support            - Some systems do not support opening a
+                                       FIFO for reading and writting. With
+                                       this option set AFD will use two file
+                                       descriptors one for reading and one
+                                       for writting.
+--disable-sse42                      - Disables SSE4.2 optimizations ie.
+                                       support for hardware CRC-32 checksum
+                                       calculation.
+--disable-inotify                    - Disables inotify support.
+--disable-new_motif_name             - Openmotif has been renamed to motif.
+                                       To solve problems on distributions
+                                       that still use openmotif provide
+                                       this option to use the old name.
+--enable-ip_database                 - Enable AFD's own internal IP database.
+                                       This is only used when it fails lookup
+                                       the IP from DNS.
+--enable-map_support                 - Enable support for DWD's MAP weather
+                                       visualisation tool. With the option
+                                       --with-map-libraries=DIR one can
+                                       specify the path and libraries.
+--enable-report_empty_dir_scan       - Enables reporting of empty directory
+                                       scans.
+                                       [Default: disabled]
+--enable-with_afdbench_settings      - Enables settings for running afdbench.
+                                       [Default: disabled]
+--enable-expand_path_in_message      - Enables expanding local relative path
+                                       in message. Advantage of this option is
+                                       that it will make AFD faster when it
+                                       distributes files locally. Disadvantage
+                                       is if a users home directory is changed
+                                       it is not noticed by AFD, you then need
+                                       to restart it.
+                                       [Default: disabled]
+--enable-statistics_in_fifodir       - Statistics are stored in fifodir.
+                                       [Default: log directory]
+--enable-setuid_progs                - Enables setting setuid flag for the
+                                       programms afdcmd, afd, init_afd, mafd,
+                                       afd_ctrl, dir_ctrl, mon_ctrl and
+                                       show_olog.  The setuid flag is required
+                                       if other users want to monitor or
+                                       control the AFD, other then the user
+                                       starting it. See also
+                                       --enable-group_can_write.
+                                       [Default: disabled]
+--enable-with_unlink_delay           - Enable delay when unlinking a file and
+                                       we get the error that the file is still
+                                       busy. With this enabled it will make a
+                                       short delay and then retry. This can be
+                                       set when AFD is running on an NFS file-
+                                       system.
+                                       [Default: disabled]
+--enable-multi_dir_scans             - Enable scanning of directories multiple
+                                       times. This is needed on some systems
+                                       where the modification time of
+                                       directories scanned by AFD is not
+                                       updated correctly. Normally it is not
+                                       needed to set this.
+                                       [Default: disabled]
+--enable-ftp_reuse_data_port         - Reuse the FTP data port when sending
+                                       multiple files. This reduces the
+                                       number of sockets in TIME_WAIT
+                                       considerably. However it is dangerous
+                                       to enable this since it can lead
+                                       to data being lost on systems with
+                                       brocken TCP-stack. Note on some
+                                       systems (darwin) it can slowdown the
+                                       system considerably.
+                                       [Default: disabled]
+--enable-ms_error_workaround         - Enables workaround for a bug in M$
+                                       Internet Information Server (IIS) FTP
+                                       server when renaming files.
+                                       [Default: disabled]
+--enable-group_can_write             - The permissions of the fifos will have
+                                       write access to the fifos. This can be
+                                       used to allow users of the same group
+                                       have access to the AFD of another user.
+                                       See also --enable-setuid_progs.
+                                       [Default: disabled]
+--enable-lockdebug                   - All locks are logged to SYSTEM_LOG.
+                                       This is only for debugging, so do not
+                                       enable this.
+                                       [Default: disabled]
+--enable-show_exec_times             - Show exec times after rereading
+                                       DIR_CONFIG.
+                                       [Default: disabled]
+--enable-sendfile_support            - Enables sendfile() support. This is
+                                       more efficient then the usual
+                                       combination of read() and write(),
+                                       since copying is done within the
+                                       kernel and no data needs to be
+                                       copied from/to user space (zero copy).
+                                       It has currently only been tested for
+                                       linux.
+                                       [Default: disabled]
+--enable-splice_support              - Enables splice() support. When copying
+                                       files the splice() system call is being
+                                       used. splice() moves data between two
+                                       file descriptors without copying
+                                       between kernel address space and user
+                                       address space.  splice() is only
+                                       available for linux as of kernel 2.6.17
+                                       (tested it only as of 2.6.23).
+                                       [Default: disabled]
+--enable-readyfile                   - Enables support for FSS ready files.
+                                       Only used within the German Weather
+                                       Service (DWD).
+                                       [Default: disabled]
+--enable-passwd_in_msg               - Write password in message file. This
+                                       makes it a bit faster when you have
+                                       to make lots of connections, since it
+                                       does not need to always look into the
+                                       password database.
+                                       [Default: disabled]
+--enable-eumetsat                    - Support to write EUMETSAT headers into
+                                       each file send via FTP.
+                                       [Default: disabled]
+--enable-ssl                         - Enable TLS/SSL support for the FTP and
+                                       HTTP protocol.
+                                       [Default: disabled]
+--enable-editres                     - This enables the dynamic resource editor
+                                       for X Toolkit applications. This can be
+                                       used to edit X resources if you do not
+                                       like the defaults.
+                                       [Default: disabled]
+--enable-efence                      - Enables the electric fence debugger to
+                                       debug AFD. Do not enable, it will make
+                                       AFD very slow and eat lots of memory.
+                                       [Default: disabled]
+--enable-compile_afd_mon_only        - This will compile the AFD monitor only.
+--enable-onetime_support             - Enables support for onetime jobs.
+--enable-afd_mon                     - If set this will also compile all
+                                       programms to monitor other AFD´s too.
+                                       [Default: disabled]
+--enable-compiler-debug              - Turns on debugging to debug AFD.
+                                       [Default: disabled]
+--enable-compiler-warn               - Turns on lots of warning when compiling.
+                                       [Default: disabled]
+--enable-compiler-optimizations      - Enables some compiler optimizations.
+                                       [Default: disabled]
+--enable-compiler-profiling          - Turns on compiler profiling support.
+                                       [Default: disabled]
+--enable-use_fortify                 - Turns on fortify option of glibc/gcc.
+                                       Note this does not work with
+                                       --enable-compiler-debug
+                                       [Default: disabled]
+--enable-compiler-security           - On gcc this will turn on the compiler
+                                       option -pie (position independent
+                                       executables) and -fstack-protector
+                                       (check for buffer overflows).
+                                       [Default: disabled]
+--enable-compile-64-bit              - This forces AFD be compiled as 64 bit
+                                       application on system that support both
+                                       32 and 64 bit applications. On most 64
+                                       bit systems it is not necessary to set
+                                       this. This should only be used on
+                                       systems that have both 32 and 64 bit
+                                       and defaults to 32 bit.
+                                       [Default: disabled]
+--enable-with_ctrl_accelerator       - Use Ctrl key as accelerator key for X
+                                       application.
+--with-gui=motif|none                - Compile AFD with a certain graphical
+                                       user interface.
+                                       [Default: motif]
+--enable-ditro-rpm                   - Enables distribution style RPMS.
+                                       [Default: disabled]
+--with-initdir=INITDIR               - Directory where to put init/rc script
+                                       to start/stop AFD. It is strongly
+                                       recommended to NOT change this when
+                                       using RPMS, since here we use
+                                       chkconfig.
+--with-sysconfigdir=SYSCONFIGDIR     - Directory where to put sysconfig files
+                                       for AFD and AFDMON.
+--with-rpm-binary-owner=OWNER        - Owner name of binaries in RPM.
+                                       [Default: root]
+--with-rpm-binary-group=GROUP        - Group name of binaries in RPM.
+                                       [Default: OWNER]
+--with-max-no-of-parallel-jobs=N     - Maximum number of parallel transfer per
+                                       host alias. [Default: 5]
+--with-default-no-of-parallel-jobs=N - Default number of parallel transfers
+                                       per host alias. [Default: 2]
+--with-default-archive-unit=N        - The default archive unit in seconds.
+                                       [Default: 86400]
+--with-max-hostname-length=N         - The maximum length that the host
+                                       alias name may have in afd_ctrl
+                                       dialog. [Default: 8]
+--with-max-dir-alias-length=N        - The maximum length that the directory
+                                       alias name may have. [Default: 10]
+--with-max-afdname-length=N          - The maximum length that the AFD
+                                       alias name may have in mon_ctrl
+                                       dialog. [Default: 12]
+--with-xor-key=KEY                   - With compiled in xor key KEY. Where
+                                       KEY can be any ASCII string. If this
+                                       is not set one needs to set the key
+                                       in $AFD_WORK_DIR/etc/.xor.key.
+                                       [Default: not set]

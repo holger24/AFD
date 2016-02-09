@@ -1,0 +1,319 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD users (afd_users.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="afd_users">The afd.users file</a></h1>
+<hr size=3 noshade>
+<p>
+If this file does not exist (or AFD fails to read it) every user may do
+everything, if he as permission to write to the internal fifo's and
+database. To restrict access you can enter the users name together
+with the options he is allowed to use. Here follow some sample entries:
+</p>
+<pre>
+    operator  startup, afd_ctrl, control_transfer, show_slog
+    afd       all
+</pre>
+<p>
+The user operator may startup the AFD, he may call afd_ctrl, start/stop
+a transfer and view the system log, nothing else. Whereas the user afd
+may do everything. The following table list and describes what permissions
+are available.
+</p>
+<table border>
+<tr>
+   <th>Permission</th>
+   <th>Description</th>
+</tr>
+<tr>
+   <td>startup</td>
+   <td>Start AFD</td>
+</tr>
+<tr>
+   <td>shutdown</td>
+   <td>Shutdown AFD</td>
+</tr>
+<tr>
+   <td>initialize</td>
+   <td>Initialize AFD</td>
+</tr>
+<tr>
+   <td>resend</td>
+   <td>Resend files.</td>
+</tr>
+<tr>
+   <td>send</td>
+   <td>Send files to host not in DIR_CONFIG from <a href="show_olog.html">
+       show_olog</a> and/or <a href="show_queue.html">show_queue</a>
+       dialog.</td>
+</tr>
+<tr>
+   <td>view_passwd</td>
+   <td>View the password in the recipient string. If not set you will
+       only see xxxx in place of the password.</td>
+</tr>
+<tr>
+   <td>set_passwd</td>
+   <td>Set the password for a certain host and user.</td>
+</tr>
+<tr>
+   <td>list_limit x</td>
+   <td>Limit the number of files in the show_xlog dialog to x. Otherwise
+       these process might consume to much memory since they use the
+       list widget.</td>
+</tr>
+<tr>
+   <td>show_slog</td>
+   <td>View the <a href="show_log.html">system log</a> dialog.</td>
+</tr>
+<tr>
+   <td>show_mlog</td>
+   <td>View the <a href="show_log.html">maintainer log</a> dialog.</td>
+</tr>
+<tr>
+   <td>show_elog</td>
+   <td>View the <a href="show_elog.html">event log</a> dialog.</td>
+</tr>
+<tr>
+   <td>show_tlog</td>
+   <td>View the <a href="show_log.html">transfer log</a> dialog.</td>
+</tr>
+<tr>
+   <td>show_tdlog</td>
+   <td>View the <a href="show_log.html">transfer debug log</a>
+       dialog.</td>
+</tr>
+<tr>
+   <td>show_rlog</td>
+   <td>View the <a href="show_log.html">receive log</a> dialog.</td>
+</tr>
+<tr>
+   <td>show_ilog</td>
+   <td>View the <a href="show_ilog.html">input log</a> dialog.</td>
+</tr>
+<tr>
+   <td>show_olog</td>
+   <td>View the <a href="show_olog.html">output log</a> dialog.</td>
+</tr>
+<tr>
+   <td>view_data</td>
+   <td>View the data from archive in <a href="show_olog.html">output log</a>
+       dialog.</td>
+</tr>
+<tr>
+   <td>show_dlog</td>
+   <td>View the <a href="show_dlog.html">delete log</a> dialog.</td>
+</tr>
+<tr>
+   <td>show_queue</td>
+   <td>See what files are currently being queued on input, time and
+       or output.</td>
+</tr>
+<tr>
+   <td>delete_queue</td>
+   <td>Allows user to delete file from the queue. If you set this option
+       then you must also set the above option show_queue.</td>
+</tr>
+<tr>
+   <td>edit_afd_info</td>
+   <td>Allow to edit the information in the <a href="afd_info.html">
+       afd_info</a> dialog.</td>
+</tr>
+<tr>
+   <td>edit_mon_info</td>
+   <td>Allow to edit the information in the <a href="mon_info.html">
+       mon_info</a> dialog.</td>
+</tr>
+<tr>
+   <td>edit_hc</td>
+   <td>Use the <a href="edit_hc.html">edit_hc</a> dialog.</td>
+</tr>
+<tr>
+   <td>afd_ctrl</td>
+   <td>View the <a href="afd_ctrl.html">afd_ctrl</a> dialog.</td>
+</tr>
+<tr>
+   <td>rafd_ctrl</td>
+   <td>View the <a href="afd_ctrl.html">afd_ctrl</a> dialog via
+       <a href="mon_ctrl.html">mon_ctrl</a> dialog.</td>
+</tr>
+<tr>
+   <td>dir_ctrl</td>
+   <td>View the <a href="dir_ctrl.html">dir_ctrl</a> dialog.</td>
+</tr>
+<tr>
+   <td>disable_dir</td>
+   <td>Enable/disable a certain directory monitored by AFD.</td>
+</tr>
+<tr>
+   <td>stop_dir</td>
+   <td>Start/stop a certain directory monitored by AFD.</td>
+</tr>
+<tr>
+   <td>rescan</td>
+   <td>Rescan a certain directory. Only useful for directories where time
+       option is set in [dir options].</td>
+</tr>
+<tr>
+   <td>dir_info</td>
+   <td>View the <a href="dir_info.html">dir_info</a> dialog.</td>
+</tr>
+<tr>
+   <td>AMG_control</td>
+   <td>Start or stop process AMG, which is responsible for scanning local
+       directories.</td>
+</tr>
+<tr>
+   <td>FD_control</td>
+   <tdStart or stop process FD, which is responsible for distributing the
+      data.</td>
+</tr>
+<tr>
+   <td>handle_events</td>
+   <td>Allows user to handle events via afd_ctrl and/or dir_ctrl
+       dialog.</td>
+</tr>
+<tr>
+   <td>control_queue</td>
+   <td><a href="afd_ctrl.html#start_stop_input_queue">Start/Stop input
+       queue.</a> Stopping the queue means that AFD internally will not
+       generate any messages, but no data is lost either. All current jobs
+       that have a message will still be transmitted.</td>
+</tr>
+<tr>
+   <td>control_transfer</td>
+   <td><a href="afd_ctrl.html#start_stop_transfer">Start/Stop transfer</a></td>
+</tr>
+<tr>
+   <td>control_host</td>
+   <td><a href="afd_ctrl.html#start_stop_host">Start/Stop host</a>. Stopping
+       a host has the same effect as stopping transfer and queue.</td>
+</tr>
+<tr>
+   <td>switch_host</td>
+   <td><a href="afd_ctrl.html#Switch_host">Switch host</a> if there is a
+       secondary host.</td>
+</tr>
+<tr>
+   <td>disable</td>
+   <td><a href="afd_ctrl.html#Disable_host">Enable/Disable host</a></td>
+</tr>
+<tr>
+   <td>info</td>
+   <td>Information about each host or AFD.</td>
+</tr>
+<tr>
+   <td>view_dir_config</td>
+   <td>View how this host is configured in the DIR_CONFIG.</td>
+</tr>
+<tr>
+   <td>debug</td>
+   <td>Enable/Disable debug</td>
+</tr>
+<tr>
+   <td>trace</td>
+   <td>Enable/Disable trace</td>
+</tr>
+<tr>
+   <td>full_trace</td>
+   <td>Enable/Disable full trace</td>
+</tr>
+<tr>
+   <td>simulate_mode</td>
+   <td>Enable/Disable simulation mode for a destination</td>
+</tr>
+<tr>
+   <td>ctrl_delete_data</td>
+   <td>Enable/disable control of deleting data when option
+       <a href="dir_config.html#age-limit">age-limit</a> and/or
+       <a href="dir_config.html#delete_queued_files">delete queued files</a>
+       is set.</td>
+</tr>
+<tr>
+   <td>file_dir_check</td>
+   <td>Force a a check of stale jobs in the file directory.</td>
+</tr>
+<tr>
+   <td>force_archive_check</td>
+   <td>Force process archive_check to remove files in archive directory.
+       archive_check does this at a fixed interval and afdcmd can be used
+       to force a scan outside this interval.</td>
+</tr>
+<tr>
+   <td>show_exec_stat</td>
+   <td>Allows usage of program to show and reset CPU clock times for
+       exec/fork statistics.</td>
+</tr>
+<tr>
+   <td>retry</td>
+   <td>Send retry command for a host.</td>
+</tr>
+<tr>
+   <td>view_jobs</td>
+   <td>View more detailed information about each current transfer.</td>
+</tr>
+<tr>
+   <td>afd_load</td>
+   <td>View afd_load dialog.</td>
+</tr>
+<tr>
+   <td>reread_dir_config</td>
+   <td>Reread DIR_CONFIG to activate any changes.</td>
+</tr>
+<tr>
+   <td>reread_host_config</td>
+   <td>Reread HOST_CONFIG to activate any changes.</td>
+</tr>
+<tr>
+   <td>reread_interface_file</td>
+   <td>Reread local_interface.list to activate any changes.</td>
+</tr>
+<tr>
+   <td>afdcmd</td>
+   <td>Use of the command line program <a href="tools.html#afdcmd">
+       afdcmd</a> to control most of the above.</td>
+</tr>
+<tr>
+   <td>afdcfg</td>
+   <td>Use of the command line program <a href="tools.html#afdcfg">
+       afdcfg</a> to enable/disable certain features in the AFD.</td>
+</tr>
+<tr>
+   <td>mon_ctrl</td>
+   <td>View the <a href="mon_ctrl.html">mon_ctrl</a> dialog.</td>
+</tr>
+<tr>
+   <td>mon_startup</td>
+   <td>Start AFD monitor (afd_mon).</td>
+</tr>
+<tr>
+   <td>mon_shutdown</td>
+   <td>Shutdown AFD monitor.</td>
+</tr>
+<tr>
+   <td>disable_afd</td>
+   <td>Disable monitoring of an AFD.</td>
+</tr>
+<tr>
+   <td>mafdcmd</td>
+   <td>Use of the command line program <a href="tools.html#mafdcmd">
+       mafdcmd</a> to control the AFD monitor.</td>
+</tr>
+</table>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 1999 - 2014 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 03.11.2014
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,293 @@
+.\" Process this file with
+.\" groff -man -Tascii afd.users.5
+.\"
+.\"  This program is free software; you can redistribute it and/or modify
+.\"  it under the terms of the GNU General Public License as published by
+.\"  the Free Software Foundation; either version 2 of the License, or
+.\"  (at your option) any later version.
+.\"
+.\"  This program is distributed in the hope that it will be useful,
+.\"  but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\"  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\"  GNU General Public License for more details.
+.\"
+.\"  You should have received a copy of the GNU General Public License
+.\"  along with this program; if not, write to the Free Software
+.\"  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+.\"
+.TH AFD.USERS 5 "OCTOBER 2008" AFD "AFD"
+.SH NAME
+afd.users \- permissions for individual users using AFD
+.SH FULL PATH
+.B $AFD_WORK_DIR/etc/afd.users
+.SH DESCRIPTION
+If
+.B "afd.users"
+file does not exist (or AFD fails to read it) every user may do
+everything, if he as permission to write to the internal fifo's and
+database. To restrict access you can enter the users name together
+with the options he is allowed to use.
+.LP
+The file contains entries of the form:
+.RS
+.nf
+.ft B
+.sp
+operator  startup, afd_ctrl, control_transfer, show_slog
+.ft B
+afd       all
+.ft R
+.fi
+.RE
+.LP
+The user operator may startup the AFD, he may call afd_ctrl,
+start/stop a transfer and view the system log, nothing else. Whereas
+the user afd may do everything. The following table list and describes
+what permissions are available.
+
+
+.TP 22
+.B startup
+The user may start AFD.
+
+.TP 22
+.B shutdown
+The user may shutdown AFD.
+
+.TP 22
+.B initialize
+The user may initialize AFD.
+
+.TP 22
+.B resend
+Resend files from show_olog dialog.
+
+.TP 22
+.B send
+Send files to host not in DIR_CONFIG from show_olog and/or show_queue dialog.
+
+.TP 22
+.B view_passwd
+View the password in the recipient string. If not set you will only see xxxx
+in place of the password.
+
+.TP 22
+.B set_passwd
+Set the password for a certain host and user.
+
+.TP 22
+.B view_data
+Allows user to view the actual data distributed by AFD if it has been archived.
+
+.TP 22
+.B list_limit x
+Limit the number of files in the show_xlog dialog to x. Otherwise these process might
+consume to much memory since they use the list widget.
+
+.TP 22
+.B show_slog
+View the system log dialog.
+
+.TP 22
+.B show_elog
+View the event log dialog.
+
+.TP 22
+.B show_tlog
+View the transfer log dialog.
+
+.TP 22
+.B show_tdlog
+View the transfer debug log dialog.
+
+.TP 22
+.B show_rlog
+View the receive log dialog.
+
+.TP 22
+.B show_ilog
+View the input log dialog.
+
+.TP 22
+.B show_olog
+View the output log dialog.
+
+.TP 22
+.B show_dlog
+View the delete log dialog.
+
+.TP 22
+.B show_queue
+See what files are currently being queued on input, time and or output.
+
+.TP 22
+.B delete_queue
+Allows user to delete file from the queue. If you set this option then you must
+also set the above option show_queue.
+
+.TP 22
+.B edit_hc
+Use the edit_hc dialog.
+
+.TP 22
+.B afd_ctrl
+View the afd_ctrl dialog.
+
+.TP 22
+.B rafd_ctrl
+View the afd_ctrl dialog via mon_ctrl dialog.
+
+.TP 22
+.B dir_ctrl
+View the dir_ctrl dialog.
+
+.TP 22
+.B disable_dir
+Disable a certain directory monitored by AFD.
+
+.TP 22
+.B rescan
+Rescan a certain directory. Only useful for directories where time option is
+set in [dir options].
+
+.TP 22
+.B dir_info
+View the dir_info dialog.
+
+.TP 22
+.B AMG_control
+Start or stop process AMG, which is responsible for scanning local directories.
+
+.TP 22
+.B FD_control
+Start or stop process FD, which is responsible for distributing the data.
+
+.TP 22
+.B handle_events
+Allows user to handle events via afd_ctrl and/or dir_ctrl dialog.
+
+.TP 22
+.B control_queue
+Start/Stop input queue. Stopping the queue means that AFD internally will
+not generate any messages, but no data is lost either. All current jobs that
+have a message will still be transmitted.
+
+.TP 22
+.B control_transfer
+Start/Stop transfer. Stopping the transfer means that messages are still being
+generated, but the FD will not distribute the files.
+
+.TP 22
+.B control_host
+Start/Stop host. Stopping a host has the same effect as stopping transfer and
+queue.
+
+.TP 22
+.B switch_host
+Switch host if there is a secondary host.
+
+.TP 22
+.B disable
+Enable or disable a host.
+
+.TP 22
+.B info
+Information about each host or AFD.
+
+.TP 22
+.B view_dir_config
+View how this host is configured in the DIR_CONFIG.
+
+.TP 22
+.B debug
+Enable or disable debug.
+
+.TP 22
+.B trace
+Enable or disable trace.
+
+.TP 22
+.B full_trace
+Enable or disable full trace. Difference to trace is that this also traces
+the data that is transmitted.
+
+.TP 22
+.B ctrl_delete_data
+Enable/disable control of deleting data when option age-limit and/or
+'delete queued files' is set.
+
+.TP 22
+.B file_dir_check
+Force a a check of stale jobs in the file directory.
+
+.TP 22
+.B force_archive_check
+Force process archive_check to remove files in archive directory. archive_check
+does this at a fixed interval and afdcmd can be used to force a scan outside
+this interval.
+
+.TP 22
+.B show_exec_stat
+Allows usage of program to show and reset CPU clock times for exec/fork
+statistics.
+
+.TP 22
+.B retry
+Send retry command for a host.
+
+.TP 22
+.B view_jobs
+View more detailed information about each current transfer.
+
+.TP 22
+.B afd_load
+View afd_load dialog.
+
+.TP 22
+.B reread_dir_config
+Reread DIR_CONFIG to activate any changes.
+
+.TP 22
+.B reread_host_config
+Reread HOST_CONFIG to activate any changes.
+
+.TP 22
+.B reread_interface_file
+Reread local_interface.list to activate any changes.
+
+.TP 22
+.B afdcmd
+Use of the command line program  afdcmd to control most of the above.
+
+.TP 22
+.B afdcfg
+Use of the command line program  afdcfg to enable/disable certain features in
+the AFD.
+
+.TP 22
+.B mon_ctrl
+View the mon_ctrl dialog.
+
+.TP 22
+.B mon_startup
+Start AFD monitor (afd_mon).
+
+.TP 22
+.B mon_shutdown
+Shutdown AFD monitor.
+
+.TP 22
+.B disable_afd
+Disable monitoring of an AFD.
+
+.TP 22
+.B mafdcmd
+Use of the command line program  mafdcmd to control the AFD monitor.
+
+
+.SH AUTHOR
+Holger Kiehl <Holger.Kiehl@dwd.de>
+.SH "SEE ALSO"
+.I "afd(1)"
+.I "afdcmd(1)"
+.I "afdcfg(1)"

@@ -1,0 +1,135 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>DIR_CONFIG complex examples (dc_complex_examples.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="complex_examples">Complex Examples</a></h1>
+<hr size=3 noshade>
+<p>
+</p>
+<h3><u><a name="source_dir_with_date">Source directory with date</a></u></h3>
+<p>
+In the following example we fetch files via HTTP with a date in the
+source directory.
+</p>
+<pre>
+      [directory]
+      http://noaa/nccf/com/verf/prod/precip.%T-1d%tY%tm%td
+
+         [dir options]
+         do not remove
+         store retrieve list
+         time 20 8,9,14 * * *
+         time 50 8 * * *
+
+         [files]
+         gfs_*
+
+             [destination]
+
+                  [recipient]
+                  ftp://donald:secret@hollywood//home/user
+
+                  [options]
+                  archive 1
+                  priority 5
+</pre>
+<p>
+If the current time is 08:20 on 1st March 2013, then AFD will go and
+try to download the files gfs_* from the remote directory
+com/verf/prod/precip.20130228 at the host noaa. The %T-1d has the
+effect to subtract 1 day from the current time.
+</p>
+<p>
+Note the two time [dir options], that allow more possibilities in
+setting the time when to fetch files.
+</p>
+<h3><u><a name="target_dir_external">Target directory determined by external program</a></u></h3>
+<pre>
+      [directory]
+      /home/data
+
+         [files]
+         *.png
+         *.jpg
+         *.gif
+
+             [destination]
+
+                  [recipient]
+                  ftp://donald:secret@hollywood//home/data/%e`date "+%Y-%m-%d"`/pics
+
+                  [options]
+                  archive 1
+                  priority 5
+</pre>
+<p>
+By catching the output of a command being executed, one can determine the
+target directory. In this case this will insert the current date. Note
+that this is much more expansive since a external program always needs
+to be called. A much cheaper way would be as follows:
+</p>
+<pre>
+      [directory]
+      /home/data
+
+         [files]
+         *.png
+         *.jpg
+         *.gif
+
+             [destination]
+
+                  [recipient]
+                  ftp://donald:secret@hollywood//home/data/%tY-%tm-%td/pics
+
+                  [options]
+                  archive 1
+                  priority 5
+</pre>
+<h3><u><a name="decrypt_data">File decrypted with the extension stripped</a></u></h3>
+<p>
+Here an example on how one can decrypt a file and send it to a
+commercial SFTP running on Windows, hence the domain\id username
+style and the 'lock ~'. Thanks to Bill Welch for this example!
+</p>
+<pre>
+      [directory]
+      /home/data
+
+         [files]
+         *.pgp
+
+             [destination]
+
+                  [recipient]
+                  sftp://msft\\\bill@RETIRED//works/with/ntfs/bypass
+
+                  [options]
+                  lock ~
+                  rename decrypt
+                  exec gpg -a -o %s.dec -d %s; mv %s.dec %s
+</pre>
+<p>
+And int the $AFD_WORK_DIR/etc/rename.rule file you would need the following:
+</p>
+<pre>
+      [decrypt]
+      *.pgp *
+</pre>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><address><small>
+   Copyright &copy; 2013 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 22.11.2013
+   </small></address></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

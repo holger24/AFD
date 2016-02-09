@@ -1,0 +1,222 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD Monitor (afd_mon.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="AFD Monitor">AFD Monitor</a></h1>
+<hr size=3 noshade>
+<center><img src="../images/mon_ctrl_half_size.png"></center>
+<p>
+If there is more then one AFD operational, it might be very helpful to
+use afd_mon. This is a program that monitors the status of other AFD's
+and the opportunity to control everything from one interface:
+<a href="mon_ctrl.html">mon_ctrl</a>. The process afd_mon starts for each
+AFD that it needs to monitor a separate process called mon. This process
+communicates via TCP/IP with the remote AFD to receive status information
+from it.
+</p>
+<h3 align=center><u><a NAME="AFD_MON_CONFIG">The AFD_MON_CONFIG file</a></u></h3>
+<p>
+For configuring afd_mon you need to create a configuration file
+$AFD_WORK_DIR/etc/AFD_MON_CONFIG. The AFD_MON_CONFIG file is divided into
+two sections, the first section is for configuring values for the
+afd_mon process itself, while the second part is only for configuring
+the different AFD's that afd_mon needs to connect to.
+</p>
+<p>
+The syntax to specify the information for an AFD to be monitored is as
+follows:
+</p>
+<center><table border>
+<tr>
+   <th>Parameter name</th>
+   <th>Description</th>
+   <th>Example</th>
+</tr>
+<tr>
+   <td>Alias name</td>
+   <td>An alias name not longer then 12 (MAX_AFDNAME_LENGTH) characters,
+       describing the AFD that is to be monitored.</td>
+   <td>Central-AFD</td>
+</tr>
+<tr>
+   <td>Hostname</td>
+   <td>This will be the hostname or IP number of the AFD that is to be
+       monitored.</td>
+   <td>ducktown</td>
+</tr>
+<tr>
+   <td>Port</td>
+   <td>The port number where this AFD can be reached. This allows you
+       to monitor more then one AFD on one host.</td>
+   <td>4444</td>
+</tr>
+<tr>
+   <td>Interval</td>
+   <td>The interval at which afd_mon will poll the remote AFD for
+       status information. On slow connections a large value should
+       be taken here so that it does generate big overhead. However,
+       the larger this value is the longer it might take for afd_mon
+       to see any status changes.</td>
+   <td>5</td>
+</tr>
+<tr>
+   <td>Connect time</td>
+   <td>With this value it is possible to specify how long we should
+       remain connected to the remote AFD. This value will only be
+       used if the next value is also non zero. If one is zero both
+       will default to zero. Setting this value is only useful
+       connection time is the main cost factor, otherwise it is
+       best to set this and the next value to zero. This value must
+       be set to zero when you want to receive log data from the
+       remote AFD.</td>
+   <td>30</td>
+</tr>
+<tr>
+   <td>Disconnect time</td>
+   <td>Determines how long it should remain disconnected before it
+       tries to connect again. This value too must be set to zero
+       when remote log data is to be collected.</td>
+   <td>600</td>
+</tr>
+<tr>
+   <td>Options</td>
+   <td>Here it is possible to set some additional options. This option
+       is a 32 bitmask where the following bits are used:
+       <table border>
+       <tr>
+          <th>Bit</th>
+          <th>Decimal</th>
+          <th>Meaning</th>
+       </tr>
+       <tr>
+          <td>1</td>
+          <td>1</rd>
+          <td>Compression. For ssh compression is being used for the
+              communication with the remote system. Compression is
+              desirable on modem lines and other slow connections,
+              but will only slow down things on fast networks.</td>
+       <tr>
+          <td>2</td>
+          <td>2</rd>
+          <td>Instead of just enabling X11 forwarding (-X), enable
+              trusted X11 forwarding (-Y).</td>
+       </tr>
+       <tr>
+          <td>3</td>
+          <td>4</rd>
+          <td>Do not specify full path to rafdd_cmd and rafd_cmd_ssh
+              script.</td>
+       </tr>
+       <tr>
+          <td>5</td>
+          <td>16</td>
+          <td>System Log Data.</td>
+       </tr>
+       <tr>
+          <td>6</td>
+          <td>32</td>
+          <td>Receive Log Data.</td>
+       </tr>
+       <tr>
+          <td>7</td>
+          <td>64</td>
+          <td>Transfer Log Data.</td>
+       </tr>
+       <tr>
+          <td>8</td>
+          <td>128</td>
+          <td>Transfer Debug Log Data.</td>
+       </tr>
+       <tr>
+          <td>9</td>
+          <td>256</td>
+          <td>Input Log Data.</td>
+       </tr>
+       <tr>
+          <td>10</td>
+          <td>512</td>
+          <td>Production Log Data.</td>
+       </tr>
+       <tr>
+          <td>11</td>
+          <td>1024</td>
+          <td>Output Log Data.</td>
+       </tr>
+       <tr>
+          <td>12</td>
+          <td>2048</td>
+          <td>Delete Log Data.</td>
+       </tr>
+       </table>
+       The options can be combined by adding the decimal values.
+       To set, for example, both compression and trusted X11 forwarding
+       3 must be specified.</td>
+   <td>0</td>
+</tr>
+<tr>
+   <td>Remote cmd</td>
+   <td>The program used to execute commands on the remote system.
+       Only rsh and ssh are supported.</td>
+   <td>rsh</td>
+</tr>
+<tr>
+   <td>Convert user name</td>
+   <td>This parameter is optional and can be used to fake another user
+       on the remote host. This is useful when you have one central
+       login on the machine which runs afd_mon, say donald. But the
+       remote host does not have this account, but it has the account
+       daisy, then this option can be used to enable donald to call,
+       say afd_ctrl, under the account of daisy. You may specify up
+       to 5 (MAX_CONVERT_USERNAME) users to be converted each pair
+       must be separated by a space.</td>
+   <td>donald-&gt;daisy</td>
+</tr>
+</table></center>
+<p>
+So a sample entry in the AFD_MON_CONFIG file might look as follows:
+</p>
+<pre>
+   #
+   # Configuration file to monitor remote AFD's
+   # ==========================================
+   #
+   # +--------------------------------------------------> Alias
+   # |            +-------------------------------------> Hostname
+   # |            |       +-----------------------------> Port
+   # |            |       |  +--------------------------> Interval
+   # |            |       |  |  +-----------------------> Connect time
+   # |            |       |  |  |  +--------------------> Disconnect time
+   # |            |       |  |  |  |    +---------------> Options
+   # |            |       |  |  |  |    |   +-----------> Remote cmd
+   # |            |       |  |  |  |    |   |    +------> Convert user name
+   # |            |       |  |  |  |    |   |    |
+   Central-AFD ducktown 4444 5 30 600 1024 rsh donald-&gt;daisy
+</pre>
+<p>
+NOTE: The syntax of AFD_MON_CONFIG must be correct! The process evaluating
+this file is still very primitive and easily falls over any syntax errors.
+</p>
+<h3 align=center><u><a name="running afd_mon">Starting and stopping afd_mon</a></u></h3>
+<p>
+For afd_mon to function properly you need to either set the environment
+MON_WORK_DIR or AFD_WORK_DIR. Or you can specify the working directory
+by starting afd_mon with the -w &gt;path&lt; option. To start afd_mon, use
+mafd -a and mafd -s to shut it down again.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><address><small>
+   Copyright &copy; 2000 - 2007 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 17.03.2007
+   </small></address></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

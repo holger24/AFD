@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (start-stop.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="start-stop">Starting and Stopping AFD</a></h1>
+<hr size=3 noshade>
+<p>
+To start or stop the AFD there is a small program afd that can be
+used for this task. The program can take the following parameters:
+</p>
+<pre>
+   Usage: afd [-w &lt;AFD working dir&gt;] [-u[ &lt;user&gt;]] [option]
+
+      Other possible options:
+       -a                        only start AFD
+       -b                        blocks starting of AFD
+       -c[ &lt;timeout in seconds&gt;] only check if AFD is active
+       -C[ &lt;timeout in seconds&gt;] check if AFD is active, if not start it
+       -d                        only start afd_ctrl dialog
+       -h[ &lt;timeout in seconds&gt;] only check for heartbeat
+       -H[ &lt;timeout in seconds&gt;] check if heartbeat is active, if not start AFD
+       -i[1-9]                   initialize AFD, the optional number is the
+                                 level of initialization. The higher the number
+                                 the more data will be deleted. If no number is
+                                 specified the level will be 5. 9 is the same
+                                 as -I below.
+       -I                        initialize AFD, by deleting everything
+                                 except for etc directory
+       -n                        in combination with -i or -I just print
+                                 and do not execute.
+       -r                        removes blocking startup of AFD
+       -s                        shutdown AFD
+       -S                        silent AFD shutdown
+       -T                        check if data types match current binary
+       -z                        set shutdown bit
+       --help                    prints out this syntax
+       -v                        just print version number
+       --version                 show current version
+</pre>
+<p>
+Before starting make sure that you have done the following:
+</p>
+<ul>
+   <li>Your PATH environment must point to the directory where the
+       AFD binaries are located.</li>
+   <li>Have set the AFD_WORK_DIR to the directory where the AFD is suppose
+       to be running. Alternatively you can set the directory with the
+       -w option.</li>
+   <li>$AFD_WORK_DIR/etc directory must exist and must contain a
+       a valid DIR_CONFIG with a valid entry.</li>
+</ul>
+<p>
+To start call afd with the option -a. The following process should be
+running after issuing the command (check with ps command):
+</p>
+<pre>
+    7604 ?        S      0:00 init_afd -w /home/afd
+    7605 ?        S      0:00 system_log -w /home/afd
+    7606 ?        S      0:00 receive_log -w /home/afd
+    7607 ?        S      0:00 transfer_log -w /home/afd
+    7608 ?        S      0:00 trans_db_log -w /home/afd
+    7609 ?        S      0:00 archive_watch -w /home/afd
+    7610 ?        S      0:00 input_log -w /home/afd
+    7611 ?        S      0:00 output_log -w /home/afd
+    7612 ?        S      0:00 delete_log -w /home/afd
+    7613 ?        S      0:00 production_log -w /home/afd
+    7614 ?        S      0:00 distribution_log -w /home/afd/oper
+    7615 ?        S      0:00 amg -w /home/afd
+    7616 ?        S      0:00 afd_stat -w /home/afd
+    7617 ?        S      0:00 fd -w /home/afd
+    7618 ?        S      0:00 dir_check /home/afd 5 20 40
+    7619 ?        S      0:00 aldad -w /home/afd/oper
+</pre>
+<p>
+The first process init_afd is the most important one, since it starts
+and controls all other processes. Next amg, dir_check and fd should
+be up. If not look in $AFD_WORK_DIR/log/SYSTEM_LOG or
+$AFD_WORK_DIR/log/DAEMON_LOG.init_afd for any clues why it does not
+start.
+</p>
+<p>
+Stopping AFD is done by calling afd with the -s option. With -S it will
+silently do the shutdown.
+</p>
+<p>
+To initialize AFD use the -i option, this will delete everything
+in $AFD_WORK_DIR/fifodir. It will not delete any jobs queued by
+AFD or are currently being transmitted. This can only be done if AFD
+is not active. With -I everything will be reset as if AFD is started
+for the first time. This will also remove any current jobs being
+transmitted or queued by AFD. 
+</p>
+<p>
+If AFD is running on a system with shared disk and filesystem, use the -h
+or -H option to check if AFD is active. AFD has an internal heartbeat
+counter and with this option it checks if this counter is still updated
+by init_afd.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 2005 - 2012 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 29.11.2012
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

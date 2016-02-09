@@ -1,0 +1,74 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (performance.html)</title>
+</head>
+<body bgcolor=#F0ECD6>
+<h1 align=center><a name="afd_performance">AFD Performance</a></h1>
+<hr size=3 noshade>
+<p>
+</p>
+<h3 align=center><a name="afd_compilation"><u>AFD Compilation</u></a></h3>
+<p>
+There are several ways to influence performance when compiling AFD. The
+simplest form is using the values supplied by the configure option, see
+README.configure in the AFD source tree for more details.
+</p>
+<p>
+The second and more tricky way is to change values in the header files.
+Note that if you do change these values you need in most cases to
+initialize AFD before you use such binaries. Below is a list of values
+you can change:
+</p>
+<p>
+<center>
+<table border>
+<tr>
+   <th>Variable</th>
+   <th>Header file name</th>
+   <th>Description</th>
+   <th>Initialize AFD</th>
+</tr>
+<tr>
+   <td>MAX_NO_PARALLEL_JOBS</td>
+   <td><pre>src/init_afd/afddefs.h</pre></td>
+   <td>Per default only five parallel sessions are allowed per alias.
+       On long distance connections or connections that have a high
+       latency it might be useful to increase this value. Downside
+       of this option is that you need sligthly more memory.</td>
+   <td>Yes</td>
+</tr>
+</table>
+</center>
+</p>
+<h3 align=center><a name="afd_configuration"><u>AFD Configuration</u></a></h3>
+<p>
+<center>
+<table border>
+<tr>
+   <td><a href="afd_config.html#max_copied_files">MAX_COPIED_FILES</a></td>
+   <td>If your system receives huge number of small files, set this value
+       accordingly to a high value only if the system is fast enough to
+       handle this load. If not, set this to a low value, so AFD will start
+       as early as possible with the distribution. This setting will effect
+       all DIR_CONFIG values, unless <a href="dir_config.html#max_files">
+       max files</a> is set under <a href="dir_config.html#directory_options">
+       [dir options]</a>. 
+</tr>
+</table>
+</center>
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><address><small>
+   Copyright &copy 1997 - 2010 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 26.05.2010
+   </small></address></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

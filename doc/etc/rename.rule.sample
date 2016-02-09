@@ -1,0 +1,96 @@
+#
+# AFD rules file
+# ==============
+# syntax:
+# [rename-group]                                   
+# filter1   rename-rule1
+# filter2   rename-rule2
+#
+# [rename-group2]
+# filter ...
+#
+#
+#-----------------------------------------------------------------------------
+# [rename-group]: to identify the rename-group
+#                 (note: to find the group identifier the program need two \n\n)
+#
+# filter: can contain up to 10 '*' and 50 '?' 
+#         (note: the filter must be clear definend - '**' or '*?*' can't
+#                be handeled)
+#
+# rename rule: the rename-rule can contain the previous definend wildcards in
+#              any combination
+#  * and ?               - Use of these wildcards.
+#  %*n                   - address the n-ten asterix
+#  %?n                   - address the n-ten questioner
+#  %on                   - means the n-ten character from the original filename
+#  %On-m                 - means the range n to m of characters from original
+#                          file name. n='^' - from the beginning
+#                                     m='$' - to the end
+#  %n                    - generate a 4 character unique number
+#  %ab                   - Insert an alternating number toggling between 0 and
+#                          1.
+#  %h                    - Insert the hostname of the current node.
+#  %tx                   - insert the actual time (x = like strftime)
+#                          (a - short day "Tue",       A - long day "Tuesday",
+#                           b - short month "Jan",     B - long month "January",
+#                           d - day of month [01,31],  m - month [01,12],
+#                           j - day of year [001,366], Y - year 1997,
+#                           y - year [01,99],          M - minute [00,59],
+#                           H - hour [00,23],          S - second [00,60])
+#                           U - Unix time, number of seconds since
+#                               00:00:00 01/01/1970 UTC
+#  %T[+|-|*|/|%]xS|M|H|d - Time modifier for the above %tx option. It adds (+),
+#                          subtracts (-), multiplies (*), divides (/) or
+#                          computes the modulo (%) with the value x to the
+#                          current unix time. The default unit for the time
+#                          modifier is seconds this can be changed to
+#                          minute (M), hour (H) or day (d). Once set the
+#                          modifier is used for all subsequent %t until it
+#                          changed by the next modifier.
+#  %%                    - the '%' sign
+#  \                     - ignore (this is needed to signal the end of an
+#                          number)
+#
+
+[disneyland]
+alice        bambi
+bambi        cinderella
+cinderella   donald_duck
+donald_duck  flubber
+flubber      goofy
+goofy        herbie
+herbie       iago
+iago         jumbo
+jumbo        kaa
+kaa          lumiere
+lumiere      micky_maus
+micky_maus   pluto
+pluto        quasimodo
+quasimodo    roger_rabbit
+roger_rabbit snow_white
+snow_white   thumper
+thumper      woody
+woody        zazu
+zazu         tigger
+tigger       alice
+a*           alice
+b*           bambi
+c*           cinderella
+d*           donald_duck
+f*           flubber
+g*           goofy
+h*           herbie
+i*           iago
+j*           jumbo
+k*           kaa
+l*           lumiere
+m*           micky_maus
+p*           pluto
+q*           quasimodo
+r*           roger_rabbit
+s*           snow_white
+t*           thumper
+w*           woody
+z*           zazu
+t*           tigger

@@ -1,0 +1,65 @@
+#!/bin/sh
+#
+# Description   : This script checks if there are any hosts with errors.
+#                 You might need to edit AFD_BIN_DIR to successfully use this.
+# Synopsis      : afdalarm [<AFD working directory>]
+# Author        : H.Kiehl
+# Date          : 03.02.2003
+# Modifications : 28.06.2004 H.Kiehl Check for AFD_WORK_DIR environment
+#                                    variable.
+#
+#
+
+DEBUG=no
+AFD_BIN_DIR=@prefix@/bin
+ERRORS_BEFORE_ALARM=300
+
+if [ $# -eq 1 ]
+then
+   AFD_WORK_DIR="$1"
+   export AFD_WORK_DIR
+else
+   if [ "$AFD_WORK_DIR" == "" ]
+   then
+      echo "Environment variable AFD_WORK_DIR not set."
+      echo "Usage: $0 <work dir>"
+      exit 1
+   fi
+fi
+
+if [ ! -x $AFD_BIN_DIR/fsa_view ]
+then
+   echo "Could not locate the executable fsa_view."
+   exit 1
+fi
+NO_OF_HOSTS=`$AFD_BIN_DIR/fsa_view 0|grep "Number of hosts:"|cut -d":" -f2|cut -d" " -f2`
+
+if [ $DEBUG = "yes" ]
+then
+   echo "Number of hosts: $NO_OF_HOSTS"
+fi
+
+if [ $NO_OF_HOSTS -gt 0 ]
+then
+   counter=0
+   ERROR_LIST=""
+   while [ $counter -lt $NO_OF_HOSTS ]
+   do
+      errors=`$AFD_BIN_DIR/fsa_view $counter|grep "Error counter"|cut -d":" -f2|cut -d" " -f2`
+      if [ $errors -gt $ERRORS_BEFORE_ALARM ]
+      then
+         error_host=`$AFD_BIN_DIR/fsa_view $counter|grep "Hostname (display)"|cut -d":" -f2|cut -d" " -f2`
+         ERROR_LIST="$ERROR_LIST  $error_host ($errors)"
+      fi
+      counter=`expr "$counter" + 1`
+   done
+
+   if [ "$ERROR_LIST" != "" ]
+   then
+      echo $ERROR_LIST
+   fi
+else
+   echo "No hosts found in AFD."
+   exit 1
+fi
+exit 0

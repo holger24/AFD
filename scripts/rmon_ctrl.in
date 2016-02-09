@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# Description   : This script allows you to login from a remote host.
+#                 Your hostname must be entered in the local .rhost
+#                 file.
+#                 NOTE: You must adapt AFD_WORK_DIR to your environment.
+#
+# Synopsis      : rmon_ctrl <local hostname>
+#
+# Author        : H.Kiehl
+# Date          : 02.01.1999
+# Modifications : 17.05.2004 H.Kiehl Allow to parse parameters.
+#
+
+AFD_WORK_DIR="/home/afd"
+PATH=$PATH:@prefix@/bin
+echo $1 | /bin/grep ':'
+if [ $? -eq 0 ]
+then
+   DISPLAY=$1
+else
+   DISPLAY=$1:0.0
+fi
+export DISPLAY AFD_WORK_DIR
+
+shift
+
+mon_ctrl $*

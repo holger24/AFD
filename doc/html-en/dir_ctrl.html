@@ -1,0 +1,442 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (dir_ctrl.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="dir_control">DIR Control</a></h1>
+<hr size=3 noshade>
+<p>
+To control and monitor the AFD source directories there is an X11 interface,
+with the following appearance:
+</p>
+<center><img src="../images/dir_ctrl_labeled.gif" alt="[labeled picture of dir_ctrl dialog]"></center>
+<p>
+As shown this dialog is divided into three main areas: menu, heading and
+source.
+</p>
+<h3 align=center><a name="menu"><u>Menu</u></a></h3>
+<p>
+The menu area has three pull down buttons: Dir, View and Setup. If your
+dir_ctrl window does not have all buttons shown and described here,
+then the system administrator did not allow you to use this function,
+see <a href="afd_users.html">afd.users</a> for more details.
+</p>
+<br clear=left>
+<br>
+<img align=left src="../images/dir_popup.gif" alt="[popup of Dir button]">
+<table border>
+   <tr>
+      <td><a name="handle_event">Handle event</a></td>
+      <td>This allows one to acknowledge an error situation, put an
+          error situation offline or unset the acknowledge and/or offline
+          setting. You must select one or more directories to get the
+          handle_event popup. In the reason text field one can enter
+          a reason which will then show up in the event log via the
+          <a href="show_elog.html">show_elog</a> dialog. Acknowledging
+          pink (<img src="../images/acknowledge_source.gif">). If the
+          host is put offline it will turn Steelblue
+          (<img src="../images/offline_source.gif">) and errors and
+          warnings will be marked as offline in the logs.</td>
+      <td align=center><img src="../images/handle_event_popup.gif" alt="[Dialog to handle event]"></td>
+   </tr>
+   <tr>
+      <td>Start/Stop</td>
+      <td>Allows you to start or stop the selected source. AFD will no
+          longer scan this source for files to be distributed. It
+          will however delete any files when the directory option
+	  <a href="dir_config#delete_unknown_files">delete unknown files</a>
+	  or <a href="dir_config#delete_queued_files">delete queued
+	  files</a> is set for this source.</td>
+      <td>&nbsp;</td>
+   </tr>
+   <tr>
+      <td>Enable/disable</td>
+      <td>Allows you to enable or disable the selected source. This source
+          will no longer be monitored/scanned by AFD. When the directory
+          is disabled the field containing the directory alias will turn
+          white.</td>
+      <td>&nbsp;</td>
+   </tr>
+   <tr>
+      <td><a name="Rescan">Rescan</a></td>
+      <td>When pressed this will force a rescan of the selected directories.
+          This can be useful when the <a href="dir_config.html#dir_options_time">
+          time option</a> is set and you do not want to wait for the next scan
+          time.</td>
+      <td>&nbsp;</td>
+   </tr>
+   <tr>
+      <td>Search + (De)Select</td>
+      <td>This allows to search for a given directory (alias and real) name,
+          with wild cards. The found directory will then be selected.</td>
+      <td align=center><img src="../images/dir_search_select.png" alt="[Search and select dialog]"></td>
+   </tr>
+   <tr>
+      <td>Load</td>
+      <td>Load shows the current load of either: Files send per second,
+          KBytes send per second, Connections done per second and the number
+          of Active-Transfers.</td>
+      <td align=center><img src="../images/load.png" alt="[Choice of different loads]"></td>
+   </tr>
+   <tr>
+      <td>Exit</td>
+      <td>Exit will close the dir_ctrl window and all other windows that
+          have been started from this dialog.</td>
+      <td>&nbsp;</td>
+   </tr>
+</table>
+<br clear=left>
+<br>
+<img align=left src="../images/dir_view_popup.gif" alt="[popup of View button]">
+<table border>
+   <tr>
+      <td>System Log</td>
+      <td>System Log opens the <a href="show_log.html">system
+          dialog</a>. See <a href="log.html#system_log">Log Files</a> for
+          a more detailed description of the output.</td>
+   </tr>
+   <tr>
+      <td>Event Log</td>
+      <td>Event Log opens the <a href="show_elog.html">event
+          dialog</a>. See <a href="log.html#event_log">Log Files</a> for
+          a more detailed description of the output.</td>
+   </tr>
+   <tr>
+      <td>Receive Log</td>
+      <td>Receive Log opens the <a href="show_log.html">receive dialog</a>
+          See <a href="log.html#receive_log">Log Files</a> for a more
+          detailed description of the output.</td>
+   </tr>
+   <tr>
+      <td>Transfer Log</td>
+      <td>Transfer Log opens the <a href="show_log.html">transfer dialog</a>.
+          See <a href="log.html#transfer_log">Log Files</a> for a more
+          detailed description of the output. When one or more hosts
+          where selected the output shown will only show data of these
+          hosts.</td>
+   </tr>
+   <tr>
+      <td>Input Log</td>
+      <td>Input Log opens the <a href="show_ilog.html">input dialog</a>.
+          See <a href="log.html#input_log">Log Files</a> for a more
+          detailed description of the output.</td>
+   </tr>
+   <tr>
+      <td>Output Log</td>
+      <td>Output Log opens the <a href="show_olog.html">output dialog</a>.
+          See <a href="log.html#output_log">Log Files</a> for a more
+          detailed description of the output. If one or more hosts are
+          selected, these will be entered in Recipient field of the
+          dialog.</td>
+   </tr>
+   <tr>
+      <td>Delete Log</td>
+      <td>This opens the <a href="show_dlog.html">delete dialog</a>. See
+          <a href="log.html#delete_log">Log Files</a> for a more detailed
+          description of the output. If one or more hosts are selected,
+          these will be entered in Recipient field of the dialog.</td>
+   </tr>
+   <tr>
+      <td>Queue</td>
+      <td>Queue opens the <a href="show_queue.html">queue dialog</a>. Here
+          you can see all files being queued by AFD.</td>
+   </tr>
+   <tr>
+      <td>Info</td>
+      <td>The Info button opens the <a href="afd_info.html">afd_info
+          dialog</a> for this host.</td>
+   </tr>
+   <tr>
+      <td>Configuration</td>
+      <td>Shows the DIR_CONFIG configuration of the selected host.</td>
+   </tr>
+</table>
+<br clear=left>
+<br>
+<img align=left src="../images/setup_popup.png" alt="[popup of Setup button]">
+<table border>
+   <tr>
+      <td><b>Font size</b></td>
+      <td>Pressing <b>Font size</b> will give you a list of fonts which,
+          when selected, will be used for the dir_ctrl window and all other
+          windows called from it. It might be that your X server does
+          not support all fonts shown on the right hand, then you will
+          be shown less fonts.</td>
+      <td><img src="../images/font_size.png" alt="[Fonts that can be selected]"></td>
+   </tr>
+   <tr>
+      <td><b>Number of rows</b></td>
+      <td><b>Number of rows</b> allows to change the maximum number of rows
+          to be displayed for one column.</td>
+      <td><img src="../images/number_of_rows.png" alt="[list of row numbers that may be selected]"></td>
+   </tr>
+   <tr>
+      <td><b>Line Style</b></td>
+      <td><b>Line Style</b> allows to change the appearance of a single line.
+          You can currently choose three different items: 'Bars only',
+          'Characters only' and 'Characters and Bars'. Default will be that
+          all three items will be visible. If you do have a very large number
+          of directories you can deselect some items to reduce the window
+          size of the dir_ctrl dialog.</td>
+      <td><img src="../images/dir_line_styles.png" alt="[Possible line styles that can be selected]"></td>
+   </tr>
+   <tr>
+      <td><b>Other options</b></td>
+      <td><b>Other options</b> just has one option 'Force shift select'.
+          Normally one can select a line by just pressing that line with
+          the left mouse button. This can however lead to accidantly
+          pressing a line and one can force the user to use the shift
+          button together with the left mouse button to select a line.</td>
+      <td><img src="../images/force_shift_select.png" alt="[Force shift select]"></td>
+   </tr>
+   <tr>
+      <td><b>Save Setup</b></td>
+      <td><b>Save Setup</b> will save the above settings in the file
+          .dir_ctrl.setup.<user>@<hostname>.<AFD name> in the users home
+          directory. So when you start dir_ctrl again it will start with
+          these settings.</td>
+      <td>&nbsp;</td>
+   </tr>
+</table>
+<br clear=left>
+<br>
+<h3 align=center><a name="heading"><u>Heading</u></a></h3>
+<center><img src="../images/dir_heading.gif" alt="[closeup of the heading]"></center>
+<p>
+The heading is just a quick reminder of what the fields in the
+connection area mean:
+</p>
+<table border>
+<tr>
+   <th>DIR</th>
+   <td>The source alias where the the files are to be fetched from.</td>
+</tr>
+<tr>
+   <th>F</th>
+   <td>Full dir flag, is set when a * is shown.</td>
+</tr>
+<tr>
+   <th>fd</th>
+   <td>The total number of files in the directory.</td>
+</tr>
+<tr>
+   <th>bd</th>
+   <td>The total number of bytes in the directory.</td>
+</tr>
+<tr>
+   <th>fq</th>
+   <td>The number of files queued in the directory.</td>
+</tr>
+<tr>
+   <th>bq</th>
+   <td>The number of bytes queued in the directory.</td>
+</tr>
+<tr>
+   <th>pr</th>
+   <td>The number of active process this directory.</td>
+</tr>
+<tr>
+   <th>tr</th>
+   <td>Transfer rate.</td>
+</tr>
+<tr>
+   <th>fr</th>
+   <td>File rate.</td>
+</tr>
+<tr>
+   <th>ec</th>
+   <td>The number of errors that have occurred for this directory.</td>
+</tr>
+</table>
+<h3 align=center><a name="source"><u>Source</u></a></h3>
+<p>
+The source area is the actual area which monitors and controls the source
+directories of the AFD. The meaning of each field is shown below:
+</p>
+<center><img src="../images/dir_one_line.gif" alt="[closeup of one line of dir_ctrl dialog]"></center>
+<table border>
+<tr>
+   <td><b>1</b></td>
+   <td>Source alias</td>
+   <td>This field holds the name of the source alias. The background
+       color indicates the current status of the source:
+       <table>
+       <tr>
+          <td><center><img src="../images/normal_source.gif"></center></td>
+	  <td>Normal status. Waiting for files to come.</td>
+       </tr>
+       <tr>
+          <td><center><img src="../images/active_source.gif"></center></td>
+	  <td>Source active. Files are currently being handled.</td>
+       </tr>
+       <tr>
+          <td><center><img src="../images/warn_time_source.gif"></center></td>
+	  <td>Warn time has been reached. This only happens when in
+	      AFD_CONFIG the parameter <a href="afd_config.html#default_dir_warn_time">
+	      DEFAULT_DIR_WARN_TIME</a> is set or in DIR_CONFIG
+	      <a href="dir_config.html#warn_time">warn time</a> has
+	      been set for this source.</td>
+       </tr>
+       <tr>
+          <td><center><img src="../images/acknowledge_source.gif"></center></td>
+	  <td>Errors acknowledged. Files cannot be retrieved from the
+	      source.</td>
+       </tr>
+       <tr>
+          <td><center><img src="../images/offline_source.gif"></center></td>
+	  <td>Errors offline. Files cannot be retrieved from the
+	      source. Error and warnings have been put offline.</td>
+       </tr>
+       <tr>
+          <td><center><img src="../images/error_source.gif"></center></td>
+	  <td>Error. Files cannot be retrieved from the source.</td>
+       </tr>
+       <tr>
+          <td><center><img src="../images/disabled_source.gif"></center></td>
+	  <td>This source is disabled. AFD will no longer monitor this
+	      directory.</td>
+       </tr>
+       <tr>
+          <td><center><img src="../images/stopped_source.gif"></center></td>
+	  <td>This source is stopped. AFD will no longer scan this directory
+	      for files to be distributed. It will however delete any
+	      files when the directory option
+	      <a href="dir_config#delete_unknown_files">delete unknown files</a>
+	      or <a href="dir_config#delete_queued_files">delete queued
+	      files</a> is set for this source.</td>
+       </tr>
+       </table>
+   </td>
+</tr>
+<tr>
+   <td><b>2</b></td>
+   <td>Full Dir Flag</td>
+   <td>Full dir flag, is set when a * is shown. This means that there
+       are still files in the directory to be fetched. Remember AFD will
+       only fetch a specific number of files before it continues with the
+       next directory. This can be controlled with
+       <a href="afd_config.html#max_copied_files">MAX_COPIED_FILES</a>
+       option in AFD_CONFIG file, or the <a href="dir_config#max_files">
+       max files</a> option in DIR_CONFIG.</td>
+</tr>
+<tr>
+   <td><b>3</b></td>
+   <td>Protocol</td>
+   <td>The protocol used to retrieve data for this source. Currently the
+       following have been implemented:
+       <table border>
+       <tr>
+          <td>LOC</td>
+	  <td>Local directory.</td>
+       </tr>
+       <tr>
+          <td>FTP</td>
+	  <td>Remote FTP directory. Files are retrieved via FTP protocol,
+	      either via SSL sockets or normal sockets.</td>
+       </tr>
+       <tr>
+          <td>SFTP</td>
+	  <td>Remote SFTP directory. Files are retrieved via SFTP protocol.</td>
+       </tr>
+       <tr>
+          <td>HTTP</td>
+	  <td>Remote HTTP source. Files are retrieved via HTTP protocol,
+	      either via SSL sockets or normal sockets.</td>
+       </tr>
+       </table>
+   </td>
+</tr>
+<tr>
+   <td><b>4</b></td>
+   <td>Total number of files in the directory</td>
+   <td>Total number of files that still have are in the directory. The
+       numbers will be shown up to 9999 files, after this a character will
+       be added: m for Mega Files (1000 * 1000 files), g for Giga Files
+       (1000 * 1000 * 1000 files), t for Tera Files (1000 * 1000 * 1000 *
+       1000 files), p for Peta Files (1000 * 1000 * 1000 * 1000 * 1000 files)
+       and e for Exa Files (1000 * 1000 * 1000 * 1000 * 1000 * 1000 files).</td>
+</tr>
+<tr>
+   <td><b>5</b></td>
+   <td>Total number of bytes in the directory</td>
+   <td>Total number of bytes that are in the directory. The last character
+       always shows the current unit: B for Bytes, K for Kilo Bytes (1024
+       Bytes), M for Mega Bytes (1024 * 1024 Bytes), G for Giga Bytes (1024 *
+       1024 * 1024 Bytes), T for Tera Bytes (1024 * 1024 * 1024 * 1024 Bytes),
+       P for Peta Bytes (1024 * 1024 * 1024 * 1024 * 1024 Bytes) and E for
+       Exa Bytes (1024 * 1024 * 1024 * 1024 * 1024 * 1024 Bytes).</td>
+</tr>
+<tr>
+   <td><b>6</b></td>
+   <td>Number of files queued</td>
+   <td>The number of files queued for this source. This can happen either
+       by user interaction when the user stops the queue (eg.
+       <a href="afd_ctrl.html#start_stop_input_queue">afd_ctrl</a>) or
+       automatically because the destination is unreachable.</td>
+</tr>
+<tr>
+   <td><b>7</b></td>
+   <td>Number of bytes queued</td>
+   <td>The number of bytes queued for this source.</td>
+</tr>
+<tr>
+   <td><b>8</b></td>
+   <td>Number of active process</td>
+   <td>The number of process active doing something for this directory,
+       eg. <a href="dir_config.html#exec">exec</a> option.</td>
+</tr>
+<tr>
+   <td><b>9</b></td>
+   <td>Transfer Rate</td>
+   <td>The number of bytes transferred per second. Unit is the same as in 5
+       above.</td>
+</tr>
+<tr>
+   <td><b>10</b></td>
+   <td>File Rate</td>
+   <td>The number of files transferred per second.</td>
+</tr>
+<tr>
+   <td><b>11</b></td>
+   <td>Errors</td>
+   <td>The number of errors that have occurred.</td>
+</tr>
+<tr>
+   <td><b>12</b></td>
+   <td>File Rate Bar</td>
+   <td>Displays a green bar to display the file rate from this source.</td>
+</tr>
+<tr>
+   <td><b>13</b></td>
+   <td>Byte Rate Bar</td>
+   <td>Displays a yellow bar to display the transfer rate from this source.</td>
+</tr>
+<tr>
+   <td><b>14</b></td>
+   <td>Warn Time Bar</td>
+   <td>Displays an orange bar to display how much of the specified warn time
+       have been used up.</td>
+</tr>
+</table>
+<p>
+Selecting can be done by either holding down the shift key and pressing the
+left mouse button (temporary selection) or by holding the ctrl key and the
+left mouse button (permanent selection). The background of the line will
+change to black or grey respectively.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><address><small>
+   Copyright &copy; 2006 - 2014 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 03.12.2014
+   </small></address></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

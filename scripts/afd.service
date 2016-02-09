@@ -1,0 +1,13 @@
+[Unit]
+Description=Automatic File Distributor
+After=syslog.target
+
+[Service]
+RemainAfterExit=yes
+Type=oneshot
+ExecStart=/etc/init.d/afd start
+ExecStop=/etc/init.d/afd stop
+ExecReload=/etc/init.d/afd restart
+
+[Install]
+WantedBy=multi-user.target

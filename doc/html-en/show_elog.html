@@ -1,0 +1,199 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (show_elog.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="show_elog">Event Log Window</a></h1>
+<hr size=3 noshade>
+<p>
+<center><img src="../images/show_elog.gif" alt="[picture of show_elog dialog]"></center>
+</p>
+<p>
+All events that occur within AFD, can be viewed with the help of this
+dialog (see <a href="log.html#event_log">Event Log</a>).
+Since the event log can be very extensive, there are lots of possibility
+to reduce the search time by filling in some of the following values:
+</p>
+<center><img src="../images/show_elog_selection.gif" alt="[closeup of selection part]"></center>
+<p>
+<center>
+<table border>
+<tr>
+   <td>&nbsp;<b>1</b>&nbsp;</td>
+   <td>Enter the start and end time of the search. If no value is entered
+       it will always take the earliest or latest entries it finds. There
+       are two time forms. One is the absolute and the other is the
+       relative time format. The following absolute forms are possible:
+       MMDDhhmm, DDhhmm and hhmm (MM = month [01-12], DD = day [01-31],
+       hh = hour [00 - 23], mm = minute [00 - 59]). The relative form
+       always starts with a hyphen '-' and has the following format:
+       -DDhhmm, -hhmm or -mm.</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>2</b>&nbsp;</td>
+   <td>When set the event log will be shown continuously, ie. if new entries
+       come they will be shown live as they come in.</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>3</b>&nbsp;</td>
+   <td>Shows the current date and time in the following format:
+       DD.MM.YYYY hh:mm</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>4</b>&nbsp;</td>
+   <td>Enter a host alias name. The name may contain wildcards (*,?,[]).
+       Multiple names can be entered by separating them with a comma (,).
+       If no host alias name or wild card is entered it will always search
+       for all host alias names.</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>5</b>&nbsp;</tD>
+   <td>Enter a dir alias name. The name may contain wildcards (*,?,[]).
+       Multiple names can be entered by separating them with a comma (,).
+       If no dir alias name or wild card is entered it will always search
+       for all dir alias names.</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>6</b>&nbsp;</td>
+   <td>Enter a search pattern for the Additional Information part. Again
+       one may enter wildcards (*,?,[]).</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>7</b>&nbsp;</td>
+   <td>Here you can narrow down the search by just searching for certain
+       event class.</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>8</b>&nbsp;</td>
+   <td>Here you can narrow down the search by just searching for certain
+       event types.</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>9</b>&nbsp;</td>
+   <td>The dialog on the right will show up when this button is pressed.
+       It allows to narrow down the search for the different event
+       actions. Any changes made here will take immediate effect, so
+       it is not necessary to close the window.</td>
+   <td><img src="../images/event_action_dialog.gif"></td>
+</tr>
+</table>
+</center>
+</p>
+<p>
+It is not necessary to fill in any values, however then the search might
+take a very long time for it to finish, depending on how long and how many
+log files there are. While the dialog is searching for data, the function
+of the search button changes into a stop button, enabling the user to
+interrupt the search. This button and the slider of the list widget are the
+only buttons that are active during a search. Thus, the user can search in
+the list widget by using the slider, while the dialog is still searching.
+Once a search is interrupted, the search will always start from the beginning.
+</p>
+<p>
+Here follows a short description of the text widgets and the meaning of
+each item:
+</p>
+<p>
+<center><img src="../images/show_elog_text.gif" alt="[closeup of the text field]"></center>
+<p>
+<center>
+<table border>
+<tr>
+   <td>Date</td>
+   <td>The date in the following format: MM.DD. where MM is the month
+       (01-12) and DD is the day of the month (01-31).</td>
+</tr>
+<tr>
+   <td>Time</td>
+   <td>The time in the following format: hh:mm:ss where hh is the hour
+       (00-23), mm is the minute (00-59) and ss is the second (00-59).</td>
+</tr>
+<tr>
+   <td>C</td>
+   <td>The event class.</td>
+</tr>
+<tr>
+   <td>T</td>
+   <td>The event type.</td>
+</tr>
+<tr>
+   <td>Alias</td>
+   <td>Either host or directory alias. This can also be empty.</td>
+</tr>
+<tr>
+   <td>Action</td>
+   <td>The event action.</td>
+</tr>
+<tr>
+   <td>Additional Information</td>
+   <td>Here information such as the user responsible for the event and/or
+       the reason for this event might be shown here.</td>
+</tr>
+</table>
+</center>
+</p>
+<p>
+Under the text box follows a status line showing the number of events
+found and the size in bytes. At the end will be the time taken for the
+search in seconds.
+</p>
+<p>
+<center><img src="../images/show_elog_status.gif" alt="[closeup of the status line]"></center>
+</p>
+<p>
+At the bottom is a line with three buttons which have the following meaning:
+</p>
+<p>
+<center><img src="../images/show_elog_button_line.gif" alt="[closeup of the button line]"></center>
+</p>
+<p>
+<center>
+<table border>
+<tr>
+   <td>&nbsp;<b>Search</b>&nbsp;</td>
+   <td>Pressing this button will start the search. During the search the
+       name of the button will change to Stop. Pressing this will interrupt
+       the search and the button will be renamed to Search again. Pressing
+       search again will start the search from the beginning and not where
+       it was when it was interrupted.</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>Print</b>&nbsp;</td>
+   <td>This will popup another dialog which can be used to print what is shown
+       to a separate file, send it in a mail to someone or print it to a
+       printer.</td>
+   <td align=center><img src="../images/show_elog_print.gif"></td>
+</tr>
+<tr>
+   <td>&nbsp;<b>Close</b>&nbsp;</td>
+   <td>Closes this dialog.</td>
+   <td>&nbsp;</td>
+</tr>
+</table>
+</center>
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 2007 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 23.07.2007
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

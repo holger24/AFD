@@ -1,0 +1,170 @@
+#!/bin/sh
+#
+# Description   : This script copies all necessary configuration files,
+#                 needed to start AFD, into the users etc directory.
+# Synopsis      : afd_auto_config [<AFD working directory>]
+# Author        : H.Kiehl
+# Date          : 01.07.2005
+# Modifications : 28.11.2013 H.Kiehl Check AFD_CONFIG for DIR_CONFIG_NAME.
+#                 04.03.2014 H.Kiehl Do not overwrite $AFD_WORK_DIR/etc/DIR_CONFIG!
+#                 21.04.2014 H.Kiehl Fix DIR_CONFIG_NAME check and add
+#                                    same check for rename.rule.
+#
+#
+
+if [ $# -eq 1 ]
+then
+   AFD_WORK_DIR="$1"
+   export AFD_WORK_DIR
+else
+   if [ "$AFD_WORK_DIR" == "" ]
+   then
+      echo "Environment variable AFD_WORK_DIR not set."
+      echo "Usage: $0 <work dir>"
+      exit 1
+   fi
+fi
+
+GOTCHA="NO"
+if [ -f $AFD_WORK_DIR/etc/AFD_CONFIG ]
+then
+   grep ^DIR_CONFIG_NAME $AFD_WORK_DIR/etc/AFD_CONFIG > /dev/null
+   if [ $? -eq 0 ]
+   then
+      for i in `grep ^DIR_CONFIG_NAME $AFD_WORK_DIR/etc/AFD_CONFIG | tr -s ' ' | cut -d ' ' -f 2`
+      do
+         if [ -f "$i" ]
+         then
+            GOTCHA="YES"
+            break
+         fi
+         if [ -f "$AFD_WORK_DIR/$i" ]
+         then
+            GOTCHA="YES"
+            break
+         fi
+         if [ -f "$AFD_WORK_DIR/etc/$i" ]
+         then
+            GOTCHA="YES"
+            break
+         fi
+      done
+   else
+      if [ -f "$AFD_WORK_DIR/etc/DIR_CONFIG" ]
+      then
+         GOTCHA="YES"
+      fi
+   fi
+else
+   if [ -f @docdir@/etc/AFD_CONFIG.sample ]
+   then
+      cp @docdir@/etc/AFD_CONFIG.sample $AFD_WORK_DIR/etc/AFD_CONFIG
+      chmod 640 $AFD_WORK_DIR/etc/AFD_CONFIG
+   fi
+
+   if [ ! -f "$AFD_WORK_DIR/etc/INFO-LOOP" ]
+   then
+      if [ -f @docdir@/etc/INFO-LOOP.sample ]
+      then
+         cp @docdir@/etc/INFO-LOOP.sample $AFD_WORK_DIR/etc/INFO-LOOP
+      fi
+   fi
+
+   if [ ! -f "$AFD_WORK_DIR/etc/afd.name" ]
+   then
+      if [ -f @docdir@/etc/afd.name.sample ]
+      then
+         if [ ! -f "$AFD_WORK_DIR/etc/afd.name.sample" ]
+         then
+            cp @docdir@/etc/afd.name.sample $AFD_WORK_DIR/etc
+         fi
+      fi
+   fi
+
+   if [ ! -f "$AFD_WORK_DIR/etc/afd.users" ]
+   then
+      if [ -f @docdir@/etc/afd.users.sample ]
+      then
+         if [ ! -f $AFD_WORK_DIR/etc/afd.users.sample ]
+         then
+            cp @docdir@/etc/afd.users.sample $AFD_WORK_DIR/etc
+         fi
+      fi
+   fi
+
+   if [ ! -f "$AFD_WORK_DIR/etc/host.info" ]
+   then
+      if [ -f @docdir@/etc/host.info.sample ]
+      then
+         cp @docdir@/etc/host.info.sample $AFD_WORK_DIR/etc/host.info
+      fi
+   fi
+
+   if [ -f "$AFD_WORK_DIR/etc/DIR_CONFIG" ]
+   then
+      GOTCHA="YES"
+   fi
+fi
+
+if [ $GOTCHA == "NO" ]
+then
+   if [ ! -f "$AFD_WORK_DIR/etc/DIR_CONFIG" ]
+   then
+      echo "#" > $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "# Sample DIR_CONFIG for AFD" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "#" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "[directory]" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "~/test" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "   [files]" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "   *" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "      [destination]" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "         [recipient]" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "         file://`whoami`:secret@LOOP/test" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "         [options]" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "         priority 9" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      echo "         rename disneyland" >> $AFD_WORK_DIR/etc/DIR_CONFIG
+      chmod 600 $AFD_WORK_DIR/etc/DIR_CONFIG
+   fi
+fi
+
+GOTCHA="NO"
+grep ^RENAME_RULE_NAME $AFD_WORK_DIR/etc/AFD_CONFIG > /dev/null
+if [ $? -eq 0 ]
+then
+   for i in `grep ^RENAME_RULE_NAME $AFD_WORK_DIR/etc/AFD_CONFIG | tr -s ' ' | cut -d ' ' -f 2`
+   do
+      if [ -f "$i" ]
+      then
+         GOTCHA="YES"
+         break
+      fi
+      if [ -f "$AFD_WORK_DIR/$i" ]
+      then
+         GOTCHA="YES"
+         break
+      fi
+      if [ -f "$AFD_WORK_DIR/etc/$i" ]
+      then
+         GOTCHA="YES"
+         break
+      fi
+   done
+else
+   if [ -f "$AFD_WORK_DIR/etc/rename.rule" ]
+   then
+      GOTCHA="YES"
+   fi
+fi
+
+if [ $GOTCHA == "NO" ]
+then
+   if [ -f @docdir@/etc/rename.rule.sample ]
+   then
+      cp @docdir@/etc/rename.rule.sample $AFD_WORK_DIR/etc/rename.rule
+   fi
+fi

@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (what-is-afd.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="what-is-afd">What is AFD?</a></h1>
+<hr size=3 noshade>
+<p>
+The Automatic File Distributor provides a framework for very flexible,
+non-stop, log and debug-able delivery of an arbitrary amount of files to
+multiple recipients as expressed in URLs (mailto://user@domain,
+ftp://user:password@host, etc). AFD stands for Automatic File Distributor.
+</p>
+<p>
+The most common technique used to distribute data is for each individual
+to fetch the data from one common place. This place can be a database,
+FTP-server or even the WWW (World Wide Web). However, this is not always
+the most user or customer friendly way for a company or organization to
+distribute its products. For this reason AFD (Automatic File Distributor)
+was developed, to provide a better service to users or customers in
+transporting the required data directly to the location where it is required.
+</p>
+<p>
+When distributing files to a remote host it does so via the FTP, FTPS,
+SFTP or SMTP protocol. Local distribution is done by simply copying or if
+possible move files from one directory to another. To distribute files, the
+AFD has one (or more) central configuration file (<a href="dir_config.html">
+DIR_CONFIG</a>), where the system administrator can specify which files are
+to be distributed and where they are to be sent.
+</p>
+<p>
+Here follows a list of features of the AFD:
+</p>
+<ul>
+   <li>The AFD can send/retrieve any type of file, regardless of contents
+       and the name of the file.</li>
+   <li>It supports the following protocols: FTP, SMTP, HTTP, SFTP, SCP
+       and WMO socket protocol. TLS/SSL connections for FTP and HTTP
+       are also possible.</li>
+   <li>Only the files are being distributed, no other additional
+       information is send with the file.</li>
+   <li>The AFD has a very sophisticated and compact X11 interface to
+       monitor and control the distribution of files <a href="afd_ctrl.html">
+       (afd_ctrl)</a>. It has the ability to do extensive logging of all
+       activities, even down to tracing each individual
+       FTP/FTPS/SMTP/SFTP/SCP/HTTP command.</li>
+   <li>It is possible to run AFD without the X11 interface, command line tools
+       allow you to do everything without the GUI.</li>
+   <li>Files can be send to places where no AFD is installed.</li>
+   <li>There can be more than one process distributing files to
+       a single host. This has the advantage that when a large
+       file is currently being distributed, other files don't
+       have to wait until the large file is done.</li>
+   <li>Where net capacity is limited, it is possible to distribute
+       files with priority and by limiting the bandwidth.</li>
+   <li>If the transfer gets interrupted, AFD can append files. So data
+       that has already been transmitted will not be send again.</li>
+   <li>It is possible to setup a whole network of AFD's that can be monitored
+       and controlled through a single interface <a href="mon_ctrl.html">
+       (mon_ctrl)</a>.
+</ul>
+<p>
+The AFD requires X11R5 and Motif 1.2.x (or higher) for the GUI. Currently it
+has been ported to the following systems:
+</p>
+<ul>
+   <li>Linux (x86, x86_64)  1.3.x&nbsp; - &nbsp;3.x</li>
+   <li>Solaris 2.x</li>
+   <li>HP-UX   10.x&nbsp; - &nbsp;11.x</li>
+   <li>IRIX    5.3&nbsp;&nbsp;6.x</li>
+   <li>AIX     4.3&nbsp; - &nbsp;5.3</li>
+   <li>MacOS   10.3</li>
+   <li>FTX     3.0.x&nbsp;&nbsp;3.2.x</li>
+   <li>SCO     OpenServer Release 5</li>
+</ul>
+<p>
+I expected it to run on any kind of unix system, but due to the fact that
+I do not have access to all kinds of unixes, unable to test this other than
+the above mentioned systems.
+</p>
+<p>
+The AFD is now for more than ten years in operational use at the DWD at
+over 260 installations distributing 28 million files (20 Tbytes) daily
+and is administrated by a single person.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 1997 - 2013 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 24.11.2013
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

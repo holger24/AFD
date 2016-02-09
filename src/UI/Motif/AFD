@@ -1,0 +1,153 @@
+!!                  Resource file for the AFD
+!!                  =========================
+!!
+!!
+!!
+!! Value    Hints                  Functions             Decorations
+!!    1   MWM_HINTS_FUNCTIONS     MWM_FUNC_ALL          MWM_DECOR_ALL
+!!    2   MWM_HINTS_DECORATIONS   MWM_FUNC_RESIZE       MWM_DECOR_BORDER
+!!    4   MWM_HINTS_INPUT_MODE    MWM_FUNC_MOVE         MWM_DECOR_RESIZEH
+!!    8   MWM_HINTS_STATUS        MWM_FUNC_MINIMIZE     MWM_DECOR_TITLE
+!!   16                           MWM_FUNC_MAXIMIZE     MWM_DECOR_MENU
+!!   32                           MWM_FUNC_CLOSE        MWM_DECOR_MINIMIZE
+!!   64                                                 MWM_DECOR_MAXIMIZE
+!!
+!!
+*mwmDecorations                                     : 42
+*mwmFunctions                                       : 12
+
+!! Modul afd_ctrl
+.afd_ctrl*background                                : NavajoWhite2
+.mafd_ctrl*background                               : NavajoWhite2
+
+!! Modul dir_ctrl
+.dir_ctrl*background                                : NavajoWhite2
+
+!! Modul afd_info
+.afd_info.form*background                           : NavajoWhite2
+.afd_info.form.fsa_box.?.?.?.text_wl.background     : NavajoWhite1
+.afd_info.form.fsa_box.?.?.?.text_wr.background     : NavajoWhite1
+.afd_info.form.host_infoSW.host_info.background     : NavajoWhite1
+.afd_info.form.buttonbox*background                 : PaleVioletRed2
+.afd_info.form.buttonbox*foreground                 : Black
+.afd_info.form.buttonbox*highlightColor             : Black
+
+!! Modul dir_info
+.dir_info.form*background                           : NavajoWhite2
+.dir_info.form.dir_box.?.?.?.text_wl.background     : NavajoWhite1
+.dir_info.form.dir_box.?.?.?.text_wr.background     : NavajoWhite1
+.dir_info.form.dir_box.?.?.dirname_text_w.background : NavajoWhite1
+.dir_info.form.dir_box.?.?.url_text_w.background    : NavajoWhite1
+.dir_info.form.buttonbox*background                 : PaleVioletRed2
+.dir_info.form.buttonbox*foreground                 : Black
+.dir_info.form.buttonbox*highlightColor             : Black
+
+!! Modul edit_hc
+.edit_hc.form_w*background                          : NavajoWhite2
+.edit_hc.form_w*XmText.background                   : NavajoWhite1
+.edit_hc.form_w.host_list_box_w.host_list_wSW*background : NavajoWhite1
+.edit_hc.form_w.button_box*background               : PaleVioletRed2
+.edit_hc.form_w.button_box*foreground               : Black
+.edit_hc.form_w.button_box*highlightColor           : Black
+.edit_hc.form_w.button_box.Remove.XmDialogShell*background : NavajoWhite2
+.edit_hc*mwmDecorations                             : 10
+.edit_hc*mwmFunctions                               : 4
+
+!! Modul show_log
+.show_log.form.log_outputSW*XmText.fontList         : fixed
+.show_log.form*background                           : NavajoWhite2
+.show_log.form.log_outputSW.log_output.background   : NavajoWhite1
+.show_log.form.counterbox*background                : NavajoWhite1
+.show_log.form.buttonbox*background                 : PaleVioletRed2
+.show_log.form.buttonbox*foreground                 : Black
+.show_log.form.buttonbox*highlightColor             : Black
+.show_log*mwmDecorations                            : 110
+.show_log*mwmFunctions                              : 30
+
+!! Modul show_olog
+.show_olog.mainform*background                      : NavajoWhite2
+.show_olog.mainform*XmText.background               : NavajoWhite1
+.show_olog.mainform*listbox.background              : NavajoWhite1
+.show_olog.mainform.buttonbox*background            : PaleVioletRed2
+.show_olog.mainform.buttonbox*foreground            : Black
+.show_olog.mainform.buttonbox*highlightColor        : Black
+.show_olog*mwmDecorations                           : 42
+.show_olog*mwmFunctions                             : 12
+.show_olog.show_info*background                     : NavajoWhite2
+.show_olog.show_info*XmText.background              : NavajoWhite1
+.show_olog.show_info.infoform.buttonbox*background  : PaleVioletRed2
+.show_olog.show_info.infoform.buttonbox*foreground  : Black
+.show_olog.show_info.infoform.buttonbox*highlightColor : Black
+.show_olog.show_info*mwmDecorations                 : 10
+.show_olog.show_info*mwmFunctions                   : 4
+.show_olog.Print Data*background                    : NavajoWhite2
+.show_olog.Print Data*XmText.background             : NavajoWhite1
+.show_olog.Print Data.main_form.buttonbox*background : PaleVioletRed2
+.show_olog.Print Data.main_form.buttonbox*foreground : Black
+.show_olog.Print Data.main_form.buttonbox*highlightColor : Black
+.show_olog.Send Files*background                    : NavajoWhite2
+.show_olog.Send Files*XmText.background             : NavajoWhite1
+.show_olog.Send Files.main_form.buttonbox*background : PaleVioletRed2
+.show_olog.Send Files.main_form.buttonbox*foreground : Black
+.show_olog.Send Files.main_form.buttonbox*highlightColor : Black
+
+!! Modul show_ilog
+.show_ilog.mainform*background                      : NavajoWhite2
+.show_ilog.mainform*XmText.background               : NavajoWhite1
+.show_ilog.mainform*listbox.background              : NavajoWhite1
+.show_ilog.mainform.buttonbox*background            : PaleVioletRed2
+.show_ilog.mainform.buttonbox*foreground            : Black
+.show_ilog.mainform.buttonbox*highlightColor        : Black
+.show_ilog*mwmDecorations                           : 42
+.show_ilog*mwmFunctions                             : 12
+.show_ilog.show_info*background                     : NavajoWhite2
+.show_ilog.show_info*XmText.background              : NavajoWhite1
+.show_ilog.show_info.infoform.buttonbox*background  : PaleVioletRed2
+.show_ilog.show_info.infoform.buttonbox*foreground  : Black
+.show_ilog.show_info.infoform.buttonbox*highlightColor : Black
+.show_ilog.show_info*mwmDecorations                 : 10
+.show_ilog.show_info*mwmFunctions                   : 4
+.show_ilog.Print Data*background                    : NavajoWhite2
+.show_ilog.Print Data*XmText.background             : NavajoWhite1
+.show_ilog.Print Data.main_form.buttonbox*background  : PaleVioletRed2
+.show_ilog.Print Data.main_form.buttonbox*foreground  : Black
+.show_ilog.Print Data.main_form.buttonbox*highlightColor : Black
+
+!! Modul show_dlog
+.show_dlog.mainform*background                      : NavajoWhite2
+.show_dlog.mainform*XmText.background               : NavajoWhite1
+.show_dlog.mainform*listbox.background              : NavajoWhite1
+.show_dlog.mainform.buttonbox*background            : PaleVioletRed2
+.show_dlog.mainform.buttonbox*foreground            : Black
+.show_dlog.mainform.buttonbox*highlightColor        : Black
+.show_dlog*mwmDecorations                           : 42
+.show_dlog*mwmFunctions                             : 12
+.show_dlog.show_info*background                     : NavajoWhite2
+.show_dlog.show_info*XmText.background              : NavajoWhite1
+.show_dlog.show_info.infoform.buttonbox*background  : PaleVioletRed2
+.show_dlog.show_info.infoform.buttonbox*foreground  : Black
+.show_dlog.show_info.infoform.buttonbox*highlightColor : Black
+.show_dlog.show_info*mwmDecorations                 : 10
+.show_dlog.show_info*mwmFunctions                   : 4
+.show_dlog.Print Data*background                    : NavajoWhite2
+.show_dlog.Print Data*XmText.background             : NavajoWhite1
+.show_dlog.Print Data.main_form.buttonbox*background  : PaleVioletRed2
+.show_dlog.Print Data.main_form.buttonbox*foreground  : Black
+.show_dlog.Print Data.main_form.buttonbox*highlightColor : Black
+
+!! Modul edit_hc
+.edit_hc*mwmDecorations                             : 10
+.edit_hc*mwmFunctions                               : 4
+.edit_hc.form_w*background                          : NavajoWhite2
+.edit_hc.form_w.host_list_box_w.host_list_wSW*background : NavajoWhite1
+.edit_hc.form_w*XmText.background                   : NavajoWhite1
+.edit_hc.form_w.button_box*background               : PaleVioletRed2
+.edit_hc.form_w.button_box*foreground               : Black
+.edit_hc.form_w.button_box*highlightColor           : Black
+
+!! Module view_dc
+.view_dc.form*background                            : NavajoWhite2
+.view_dc.form.dc_textSW.dc_text.background          : NavajoWhite1
+.view_dc.form.buttonbox*background                  : PaleVioletRed2
+.view_dc.form.buttonbox*foreground                  : Black
+.view_dc.form.buttonbox*highlightColor              : Black

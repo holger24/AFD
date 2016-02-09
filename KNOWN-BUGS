@@ -1,0 +1,15 @@
+
+
+Problem : If the LOCKFILE option is set and two or more process have finished
+          transfering their files, which process will remove the LOCKFILE?
+
+Problem : When starting AFD via mon_ctrl dialog the process do not get the
+          environment variables set in .profile (.bashrc, .kshrc, etc) when
+          using SSH.
+
+Problem : After a system crash and the system comes back and AFD is started
+          via /etc/init.d/afd, it can happen that it AFD does not start.
+Reason  : Since the command 'afd -a' starts init_afd and this puts itself
+          in the background it can happen that the process afd is terminated
+          before init_afd has put itself as daemon in the background.
+Solution: Process afd must wait for init_afd to initialize.

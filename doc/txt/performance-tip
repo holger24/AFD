@@ -1,0 +1,12 @@
+
+LINUX
+=====
+
+ - Tell the system NOT to bother modifying the last access times on files.
+   This can be done with the chattr call as root as shown below:
+
+      chattr -R +A archive messages files
+
+   NOTE: Also set all input directories of AFD with this flag! Only
+         files created in such directories will have the A flag set.
+         NOT if one is hard-linked!

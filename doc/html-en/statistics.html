@@ -1,0 +1,295 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (statistics.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="statistics">AFD Statistics</a></h1>
+<hr size=3 noshade>
+<p>
+The process afd_stat is started by init_afd at startup and continues running
+and collects statistics as long as AFD is up and running. Should afd_stat
+be killed or crashes, it will always be restarted by init_afd. afd_stat
+stores input and output statistics in binary form in the files
+$AFD_WORK_DIR/log/afd_istatistic_file.2006 and AFD_WORK_DIR/log/afd_statistic_file.2006
+respectively. Where the number 2006 is the current year of the system. For
+each new year afd_stat will create new input and output statistics files.
+So the old ones will not be deleted.
+</p>
+<p>
+For the input statistic the database will hold the values: number of files
+received and the number of bytes received. The output statistic database
+holds the the number of files send, number of bytes send, the number of
+network connections and the number of errors that have occurred. All those
+values are stored on a hourly, daily and year basis. Where the hour holds
+values in 5 second interval (that is 720 values per hour), the day holds
+24 hours and the year 365 (or 366) days.
+</p>
+<p>
+To view the binary statistic files there are two command line tools:
+show_istat (input) and show_stat (output). These tools will round the
+number of bytes send or received according the following table:
+</p>
+<center><table border>
+   <tr>
+      <th>Value in bytes</th>
+      <th>Symbol used</th>
+      <th>Description</th>
+   </tr>
+   <tr>
+      <td>&lt; 1024</td>
+      <td>B</td>
+      <td>Bytes</td>
+   </tr>
+   <tr>
+      <td>&lt; 1048576</td>
+      <td>KB</td>
+      <td>Kiloytes</td>
+   </tr>
+   <tr>
+      <td>&lt; 1073741824</td>
+      <td>MB</td>
+      <td>Megaytes</td>
+   </tr>
+   <tr>
+      <td>&lt; 1099511627776</td>
+      <td>GB</td>
+      <td>Gigabytes</td>
+   </tr>
+   <tr>
+      <td>&lt; 1125899906842624</td>
+      <td>TB</td>
+      <td>Teraytes</td>
+   </tr>
+   <tr>
+      <td>&lt; 1152921504606846976</td>
+      <td>PB</td>
+      <td>Petabytes</td>
+   </tr>
+   <tr>
+      <td>&lt; 1180591620717411303424</td>
+      <td>EB</td>
+      <td>Exabytes</td>
+   </tr>
+</table></center>
+<h3 align=center><a name="show_istat"><u>show_istat for input</u></a></h3>
+<p>
+The command line program show_istat can take the following parameters:
+</p>
+<pre>
+     SYNTAX  : show_istat [options] [dir 1 ....]
+                -w &lt;work dir&gt; Working directory of the AFD.
+                -f &lt;name&gt;     Path and name of the statistics file.
+                -d [&lt;x&gt;]      Show information of all days [or day minus x].
+                -D            Show total summary on a per day basis.
+                -h [&lt;x&gt;]      Show information of all hours [or hour minus x].
+                -H            Show total summary of last 24 hours.
+                -mr &lt;x&gt;       Show summary of last x minutes.
+                -m [&lt;x&gt;]      Show information of all minutes [or minute minus x].
+                -M [&lt;x&gt;]      Show total summary of last hour.
+                -t[u]         Put in a timestamp for when this output is valid.
+                -T            Show numeric total only.
+                -y [&lt;x&gt;]      Show information of all years [or year minus x].
+                --version     Show current version.
+</pre>
+<p>
+To view the statistics for the last 24 hours use show_istat -H. This will
+produce the following output:
+</p>
+<pre>
+                             =================================
+      =====================&gt; AFD INPUT STATISTICS HOUR SUMMARY &lt;======================
+                             =================================
+                       0:       38683    7.122 GB
+                       1:       38010    5.971 GB
+                       2:       39846   15.265 GB
+                       3:       51699   16.554 GB
+                       4:       50167   11.076 GB
+                       5:       44145   11.729 GB
+                       6:       49497    8.119 GB
+                       7:       43490    7.714 GB
+                       8:       43597    9.109 GB
+                       9:       40149    8.006 GB
+                      10:       40917    7.727 GB
+                    * 11:       13506    2.694 GB
+                      12:       42762    7.406 GB
+                      13:       40858    7.475 GB
+                      14:       42690   13.625 GB
+                      15:       49791   17.974 GB
+                      16:       48372   11.256 GB
+                      17:       42495    9.069 GB
+                      18:       42030    7.530 GB
+                      19:       39005    6.339 GB
+                      20:       39292    8.846 GB
+                      21:       38308    7.345 GB
+                      22:       35963    5.936 GB
+                      23:       36549    6.964 GB
+      ================================================================================
+      Total                    991821  220.852 GB
+</pre>
+<p>
+The * is for the current hour. The meaning of this line is first the hour, then
+the number of files received and last the number of bytes received. Similar
+input statistics can be shown for the last 60 minutes (-M) and the last 365
+days (-D).
+</p>
+<p>
+To view for example the last 5 minutes use the parameter -mr 5:
+</p>
+<pre>
+                          ========================================
+      ===================&gt; AFD INPUT STATISTICS LAST  5 MINUTE(S) &lt;===================
+                          ========================================
+      udokarte                      5  154.341 KB
+      htmlget                       5   64.204 KB
+      convert                       0        0 B
+      afsv/bsh                      5      392 B
+      fiau                          4  116.468 KB
+      from_mrz                      4  821.982 KB
+      from_ezmw                    24   11.708 MB
+      to_ezmw                       4  265.736 KB
+      intern/pcm                    5    2.191 KB
+      intern/btx                    5   58.844 KB
+      radar_out                     6   50.877 KB
+      radar_in                      7   29.133 KB
+      intern/fss                    3   99.533 KB
+      to_mrz                        5  107.076 KB
+      faxe                          8   48.798 KB
+      faxe_scann                    6  793.331 KB
+      faxe_gts                      4  347.163 KB
+      fax_from_m                   59    5.619 MB
+      to_radi                       2    7.243 KB
+      dmi_out                       5   40.835 KB
+      dmi_in                        5   72.292 KB
+      to_awg                        2    2.702 MB
+      meteocon                     24   21.590 KB
+      oracle                        1   50.403 KB
+      flora                         0        0 B
+      ezmw-koeln                    2    1.983 MB
+      mrz_test                     12   41.553 KB
+      ftpsrv_dbu                    2  159.646 KB
+      satbild                      17   13.636 MB
+      mtso/bsh                      0        0 B
+      --------------------------------------------------------------------------------
+      Total                       231   38.923 MB
+      ================================================================================
+</pre>
+<p>
+There are numerous other options like -T, which will only show numeric totals
+or -y to view statistics of a specific year. Best is to just try out the
+different options.
+</p>
+<h3 align=center><a name="show_stat"><u>show_stat for output</u></a></h3>
+<p>
+There is a similar command line program show_stat for viewing output
+statistics that can take the following parameters:
+</p>
+<pre>
+     SYNTAX  : show_stat [options] [hostname 1 ....]
+                -w &lt;work dir&gt; Working directory of the AFD.
+                -f &lt;name&gt;     Path and name of the statistics file.
+                -d [&lt;x&gt;]      Show information of all days [or day minus x].
+                -D            Show total summary on a per day basis.
+                -h [&lt;x&gt;]      Show information of all hours [or hour minus x].
+                -H            Show total summary of last 24 hours.
+                -mr &lt;x&gt;       Show summary of last x minutes.
+                -m [&lt;x&gt;]      Show information of all minutes [or minute minus x].
+                -M [&lt;x&gt;]      Show total summary of last hour.
+                -t[u]         Put in a timestamp for when this output is valid.
+                -T            Show numeric total only.
+                -y [&lt;x&gt;]      Show information of all years [or year minus x].
+                --version     Show current version.
+</pre>
+<p>
+To view the statistics for the last 24 hours use show_stat -H. This will
+produce the following output:
+</p>
+<pre>
+                           ===========================
+      ===================&gt; AFD STATISTICS HOUR SUMMARY &lt;=====================
+                           ===========================
+                 0:        113287         11.544 GB         33540           4
+                 1:        105755         10.745 GB         32251           1
+                 2:        109139         38.407 GB         34606           0
+                 3:        133681         47.903 GB         40739           9
+                 4:        132335         25.909 GB         37306           4
+                 5:        116371         25.616 GB         33842           0
+                 6:        142094         17.311 GB         40874           9
+                 7:        143611         15.484 GB         36655          19
+                 8:        127261         21.114 GB         35567          11
+                 9:        115035         16.239 GB         35219          15
+                10:        108398         14.121 GB         32512          11
+              * 11:         62083         12.538 GB         19518           6
+                12:        129446         13.452 GB         39382           1
+                13:        124388         13.669 GB         35814           4
+                14:        120095         35.223 GB         35837           1
+                15:        133685         51.705 GB         41959           6
+                16:        128182         20.000 GB         36180          61
+                17:        117654         22.180 GB         33008          61
+                18:        122634         14.526 GB         38133          63
+                19:        118937         12.928 GB         33448          61
+                20:        107540         20.819 GB         31831          59
+                21:        106720         15.741 GB         33294          61
+                22:         98391         10.583 GB         29095          64
+                23:        103690         16.029 GB         28719          30
+      =======================================================================
+      Total               2820412        503.786 GB        829329         561
+</pre>
+<p>
+Again the first number is the hour, followed by the number of files send,
+the number of bytes send, the number of connections and last the number
+of errors encountered. Similar output statistics can be shown for the last 60
+minutes (-M) and the last 365 days (-D).
+</p>
+<p>
+To view for example the last 5 minutes use the parameter -mr 5:
+</p>
+<pre>
+                        ==================================
+      =================&gt; AFD STATISTICS LAST  5 MINUTE(S) &lt;=================
+                        ==================================
+      local                   97          7.838 MB             0           0
+      fss_                    11          1.274 MB             4           0
+      fiau                    15        967.436 KB             4           0
+      fu_berli                 7          9.218 MB             1           0
+      miraculi                 0              0 B              0           0
+      mrz_mf                  12        573.523 KB             3           1
+      uni-koel                 2          1.983 MB             1           0
+      mfd                    213        496.871 KB             1           0
+      ezmw                     4        265.736 KB             1           0
+      esoc                     3        392.484 KB             1           0
+      pcmet_                   5          2.191 KB             1           0
+      btx                      5         58.844 KB             1           0
+      radar-1                  6         50.877 KB             1           0
+      faxe10                   1         74.512 KB             1           0
+      radar-2                  6         50.877 KB             1           0
+      faxe_                   90         20.077 MB             4           0
+      ftp-serv                53         14.391 MB             2           0
+      mfc                      2          7.243 KB             1           0
+      dmi_                     5         40.835 KB             1           0
+      awgeo_                   3        272.848 KB             1           0
+      awgmrz                   2          2.702 MB             1           0
+      oracle                   1         50.403 KB             1           0
+      SMA                      0              0 B              0           0
+      spse0                    5        154.341 KB             5           0
+      informat                 5         64.204 KB             5           0
+      SFTP                     0              0 B              0           0
+      ----------------------------------------------------------------------
+      Total                  553         60.924 MB            42           1
+      ======================================================================
+</pre>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><address><small>
+   Copyright &copy; 2006 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 06.08.2006
+   </small></address></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

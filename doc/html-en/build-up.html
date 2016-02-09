@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (build-up.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="build-up">BUILD-UP</a></h1>
+<hr size=3 noshade>
+<p>
+To send files the AFD always looks in certain user defined directories
+for files which will then be send via FTP, e-mail, or some other service.
+These can be specified by using wildcards in a special configuration
+file.
+</p>
+<center><img src="../images/build-up.gif"></center>
+<p>
+The AFD consists mainly of two programs: <a href="amg.html">AMG</a>
+(Automatic Message Generator) and the <a href="fd.html">FD</a>
+(File Distributor). These two programs communicate over a fifo and
+a directory as shown below:
+</p>
+<center><img src="../images/amg-fd.gif"></center>
+<p>
+Every time the AMG finds files to be send, it copies (or if possible links)
+the files into the files directory and then generates a message which is
+then send via the fifo to the FD. The FD just needs to watch the fifo
+to see if it has to send any files. The message together with the file(s)
+is called a job. Such a job can consist of one or more files. For each
+job the AMG must create a directory in the files directory. Since some
+Unix implementations limit the number of directories (links) in one
+directory to 1000 (System V), it is necessary to monitor this number
+carefully.
+</p>
+<p>
+This setup has the advantage that when a system crash occurs, no
+data is lost. After a crash we can start off from where we left before
+the crash. No data is lost and the worst thing that can happen is that
+a file gets send twice.
+</p>
+<p>
+A step by step description what happens as a file is send via AFD
+can be viewed in <a href="file_going_through_afd.html">What happens when
+a file goes through AFD</a>.
+</p>
+<p>
+The <a href="afd_ctrl.html">afd_ctrl</a> is the user interface, which can
+be used to monitor and control the AFD. With this interface it is possible
+to start/stop the AMG or the FD on a per host basis or turn on/off the
+AMG or FD.
+</p>
+<p>
+There are currently seven types of <a href="log.html">log files</a>: system,
+receive, transfer, transfer debug, input, output and delete. In the system
+log file only information regarding the AFD system is being logged. The
+transfer log shows how many files and bytes have been transferred on a per
+host basis. Errors that might occur during or be for the transfer are also
+logged here in a very short form. If more information is wanted, the debug
+mode must be turned on and this information is then logged in the transfer
+debug log file.
+</p>
+<p>
+When the FD has send a file successfully this file gets archived (if this
+was specified in the options field) in the archive directory. The process
+<a href="archive_watch.html">archive_watch</a> checks this directory for old
+archives and removes them when it finds one. With the <a href="show_olog.html">
+show_olog</a> dialog it is then possible to resend files again.
+</p>
+<p>
+All the above process are controlled by a single process called init_afd.
+This process keeps track of all running jobs of the AFD and restarts them
+if any of the critical process terminate abnormally. It also checks
+that all shared memory regions are released and the files directory does
+not have to many entries.
+</p>
+<p>
+The directories that the AFD needs are listed as follows:
+</p>
+<center><img src="../images/dir-struct.gif"></center>
+<p>
+In the etc directory you will find all files to configure the AFD system:
+<a href="afd_config.html">AFD_CONFIG</a>, <a href="dir_config.html">
+DIR_CONFIG</a>, <a href="host_config.html">HOST_CONFIG</a>,
+<a href="afd_name.html">afd.name</a>, <a href="afd_users.html">
+afd.users</a>, <a href="rename_rules.html">rename.rule</a>, <a href=
+"host_info.html">host.info</a> and the <a href="group_transfer_limit.html">
+group.transfer_rate_limit</a> file.
+</p>
+<p>
+The sbin directory will contain tools for the system administrator. See
+the <a href="tools.html">tools</a> section for more details.
+</p>
+<p>
+It is not necessary to have the bin and sbin directory here. They can be
+located at any place but should be in the PATH environment variable. So
+it is possible to run several AFD's using the same set of binaries. In fact
+it is more common to have these in /us/bin and /usr/sbin, then there is
+no need to change the PATH variable.
+</p>
+<p>
+The message directory will contain all the messages that are required
+to distribute the files by the FD. Only FD and show_olog will use them.
+These files will be in normal ASCII format so that the administrator
+has the chance to make quick changes without editing the DIR_CONFIG
+file. These changes will be effective immediately. This can be very useful
+when a remote user has changed his password and AFD has a lot of jobs
+queued up with this message type.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 1997 - 2013 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 24.11.2013
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,36 @@
+General
+=======
+
+Have a configuration file $AFD_WORK_DIR/etc/group_load_balancing, in which
+we can specify a group of host alias that share the load. Things that one
+should be able to specify, is which load values are of interest, those
+could be:
+
+        - the load of the remote AFD
+             - number of files
+             - size
+             - the number of process executing
+        - the load of the remote system
+             - cpu usage
+             - wait IO
+        - how many files + size we currently transmit to this AFD
+
+AFDD
+====
+
+Additional command that when issued sends load data of the AFD and optionally
+of the system. It should just return one integer value a so called load
+factor.
+
+
+FD
+==
+
+Should connect to all remote afdd's and always get the load factor.
+
+
+DIR_CONFIG
+==========
+
+   [recipient]
+   ftp://user@$groupname/remote_dir

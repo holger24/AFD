@@ -1,0 +1,47 @@
+This is the credit-file of people that have contributed to the AFD project.
+It is sorted by name and formating is done as the CREDIT file for the linux
+kernel: N - name
+        E - email
+        W - web-address
+        P - PGP key ID and fingerprint
+        D - description
+        S - snail-mail address
+
+N: Tobias Freyberg 
+E:
+D: Helped designing AFD and author of the renaming stuff.
+S:
+S: Germany
+
+N: Holger Kiehl
+E: Holger.Kiehl@dwd.de
+D: Author and current maintainer of the AFD.
+S: Sossenheimer Weg 17
+S: 65843 Sulzbach
+S: Germany
+
+N: Herbert Lepper
+E: Herbert.Lepper@dwd.de
+D: Numerous bug fixes.
+S: Germany
+
+N: Jose Mauro/Leonardo Marra
+E: jmauro.rezende@inmet.gov.br/leonardo.marra@inmet.gov.br
+D: Designed and made AFD logo.
+S: Brazil
+
+N: Sven Knudsen
+D: Bug fix and other improvements.
+S: Germany
+
+N: Bill Welch
+D: Improvement to SSH code and documentation.
+
+N: Alexander Maul
+D: Bug fix and other improvements.
+S: Germany
+
+
+Many thanks also to the Deutscher Wetterdienst (German Weather Service) at
+Offenbach, who have permitted me to make this work available under the
+GPL.

@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+# Description   : This script allows you to login from a remote host
+#                 via ssh.
+#                 NOTE: You must adapt AFD_WORK_DIR to your environment.
+#
+# Synopsis      : rmon_ctrl
+#
+# Author        : H.Kiehl
+# Date          : 02.01.1999
+# Modifications : 17.05.2004 H.Kiehl Allow to parse parameters.
+#
+
+AFD_WORK_DIR="/home/afd"
+PATH=$PATH:@prefix@/bin
+export AFD_WORK_DIR
+
+mon_ctrl $*

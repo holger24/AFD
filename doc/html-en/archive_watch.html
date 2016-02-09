@@ -1,0 +1,76 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (archive_watch.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="archive_watch">Archive Watch</a></h1>
+<hr size=3 noshade>
+<p>
+This process traverses through the archive directories and checks if
+the archive is old enough to be deleted. The process init_afd will
+automatically restart it when it terminates for whatever reason. When
+files are archived by the process sf_xxx, they are stored in the
+following directory structure (beginning at $AFD_WORK_DIR):
+</p>
+<pre>
+archive/hollywood/donald/n/archive_name/
+            |       |    |       |
+            |       |    |       +-------&gt; This unique directory name
+            |       |    |                 is created when files are
+            |       |    |                 being archived.
+            |       |    +---------------&gt; Due to the restriction that
+            |       |                      some unix system allow for
+            |       |                      only 1000 directories, sub-
+            |       |                      directories starting with
+            |       |                      zero are being created.
+            |       +--------------------&gt; Remote user name.
+            +----------------------------&gt; Remote host name.
+</pre>
+<p>
+The time when the archive should be deleted is in the archive name,
+which has the following format:
+</p>
+<pre>
+       nnnnnnnnnn_jjjj
+           |       |
+           |       +-------&gt; Job Identifier
+           +---------------&gt; time when archive should be
+                             deleted. The format is unix
+                             time in seconds.
+</pre>
+<p>
+Files stored in here have the following file name:
+</p>
+<pre>
+       ttttttttt_uuuu_ssss_&lt;original file name&gt;
+           |      |    |          |
+           |      |    |          +---&gt; This is the original file name
+           |      |    |                part as send to the destination.
+           |      |    +--------------&gt; Split job counter.
+           |      +-------------------&gt; A unique number.
+           +--------------------------&gt; Time when this file was picked
+                                        up by the AMG.
+</pre>
+<p>
+Archive watch will walk through this directory structure every 10 minutes
+(ARCHIVE_STEP_TIME) and see if any archive has reached its deletion time.
+If you lower this value more archives ie. directories will be created.
+This has the disadvantage that there will be a high number of directories
+created and deleted again later.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 1997 - 2005 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 08.07.2005
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

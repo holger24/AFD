@@ -1,0 +1,35 @@
+
+
+DIR_CONFIG    : mailto://donald.duck@home.de
+AFD alias name: home
+Connect to    : localhost
+Mail user     : donald.duck@home.de
+
+AFD_CONFIG    : DEFAULT_SMTP_SERVER=mail.ducktown.de
+DIR_CONFIG    : mailto://donald.duck@home.de
+AFD alias name: home
+Connect to    : mail.ducktown.de 
+Mail user     : donald.duck@home.de
+
+DIR_CONFIG    : mailto://donald.duck@home.de;server=mail.ducktown.de
+AFD alias name: mail
+Connect to    : mail.ducktown.de
+Mail user     : donald.duck@home.de
+
+AFD_CONFIG    : DEFAULT_SMTP_SERVER=mail1.dogtown.de
+DIR_CONFIG    : mailto://donald.duck@home.de;server=mail.ducktown.de
+AFD alias name: mail
+Connect to    : mail.ducktown.de
+Mail user     : donald.duck@home.de
+
+AFD_CONFIG    : DEFAULT_SMTP_SERVER=mail.ducktown.de
+DIR_CONFIG    : mailto://$ducks
+AFD alias name: ducks
+group.list    : [ducks]
+                donald.duck@home.de
+                daisy.duck@home.de
+Connect to    : mail.ducktown.de
+Mail user     : donald.duck@home.de
+                daisy.duck@home.de
+
+

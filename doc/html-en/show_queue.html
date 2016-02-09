@@ -1,0 +1,295 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (show_queue.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="show_queue">View AFD Queue</a></h1>
+<hr size=3 noshade>
+<p>
+<center><img src="../images/show_queue_small.gif" alt="[small picture of show_queue dialog]"></center>
+</p>
+<p>
+All files unsent and queued files of AFD, can be viewed with this
+dialog.
+</p>
+<center><img src="../images/show_queue_selection.gif" alt="[closeup of selection part]"></center>
+<p>
+<center>
+<table border>
+<tr>
+   <td>&nbsp;<b>1</b>&nbsp;</td>
+   <td>Enter the start and end time of the search. If no value is entered
+       it will always take the earliest or latest entries it finds. There
+       are two time forms. One is the absolute and the other is the
+       relative time format. The following absolute forms are possible:
+       MMDDhhmm, DDhhmm and hhmm (MM = month [01-12], DD = day [01-31],
+       hh = hour [00 - 23], mm = minute [00 - 59]). The relative form
+       always starts with a hyphen '-' and has the following format:
+       -DDhhmm, -hhmm or -mm.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>2</b>&nbsp;</td>
+   <td>Shows the current date and time in the following format:
+       DD.MM.YYYY hh:mm</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>3</b>&nbsp;</td>
+   <td>Enter a file name. The name may have any number of the two following
+       wild cards: * and ?. If no file name or wild card is entered it will
+       always search for all file names.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>4</b>&nbsp;</tD>
+   <td>Here it is possible to enter the length/size of a file. If a &lt; or
+       a &gt; sign it will search for files less then or greater then the
+       given size.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>5</b>&nbsp;</td>
+   <td>The source directory where the AFD has picked up the file. Even here
+       it is possible to enter wild cards.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>6</b>&nbsp;</td>
+   <td>Here you can enter a remote host name and only files that where
+       send to this host will be shown. It is also possible to enter more
+       then one host, by separating the hosts with a comma. Wild cards
+       can also be used.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>7</b>&nbsp;</td>
+   <td>This selection box is for the output part ie files considered by FD.
+       You may select those that are queued, for example if the transfer
+       is stopped and/or there is no process slot free for this job and
+       the files have to wait. When the button Unsent is set all files
+       that are currently being transmitted or those in a job that is
+       scheduled to be transmitted are shown as well. NOTE: It is no
+       possible to remove unsent files.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>8</b>&nbsp;</td>
+   <td>In this selection box the incoming part (AMG) of files queued
+       (when the queue has been stopped) or files that are in the
+       source directory are shown. Here it is possible to delete all
+       files even those marked as Unsent.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>9</b>&nbsp;</td>
+   <td>Here retrieve jobs can be selected. There can be two types of
+       retrieve jobs, one where the process is currently retrieving
+       files (Retrieve) and the second when a retrieve job is pending
+       (Pending). These can be deleted by selecting them and pressing
+       the delete button.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>10</b>&nbsp;</td>
+   <td>If selected, time jobs within AFD will be shown.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>11</b>&nbsp;</td>
+   <td>These toggle buttons allow the user to toggle between different length
+       of the file name in the list box. The short one is useful when
+       printing on A4 paper.</td>
+</tr>
+</table>
+</center>
+</p>
+<p>
+It is not necessary to fill in any values, however it might be, depending
+on the number of files in the queue, that the numbers found is very large.
+While the dialog is searching for data, the function of the search button
+changes into a stop button, enabling the user to interrupt the search (this
+does not yet work very well, it depends very much on the speed of the machine).
+This button and the slider of the list widget are the only buttons that are
+active during a search. Thus, the user can search in the list widget by
+using the slider, while the dialog is still searching. Once a search is
+interrupted, the search will always start from the beginning.
+</p>
+<p>
+Here follows a short description of the list widgets and the meaning of
+each item:
+</p>
+<p>
+<center><img src="../images/show_queue_list.png" alt="[closeup of the list field]"></center>
+<p>
+<center>
+<table border>
+<tr>
+   <td>Date</td>
+   <td>The date in the following format: MM.DD. where MM is the month
+       (01-12) and DD is the day of the month (01-31).</td>
+</tr>
+<tr>
+   <td>Time</td>
+   <td>The time in the following format: hh:mm:ss where hh is the hour
+       (00-23), mm is the minute (00-59) and ss is the second (00-59).</td>
+</tr>
+<tr>
+   <td>File name</td>
+   <td>The file name as it was found.</td>
+</tr>
+<tr>
+   <td>Type</td>
+   <td>
+      <table border>
+         <tr>
+            <td align=center>I</td>
+            <td>Input queue</td>
+         </tr>
+         <tr>
+            <td align=center>O</td>
+            <td>Output queue</td>
+         </tr>
+         <tr>
+            <td align=center>U</td>
+            <td>Unsent</td>
+         </tr>
+         <tr>
+            <td align=center>E</td>
+            <td>In error directory. This is only used for files in the
+                output queue.</td>
+         </tr>
+         <tr>
+            <td align=center>R</td>
+            <td>Active retrieve job.</td>
+         </tr>
+         <tr>
+            <td align=center>RP</td>
+            <td>Pending retrieve job.</td>
+         </tr>
+         <tr>
+            <td align=center>T</td>
+            <td>Time job.</td>
+         </tr>
+         <tr>
+            <td align=center>0 - 9</td>
+            <td>The priority of this file. This can only by shown for the
+                output queue since in the input queue this is not known.</td>
+         </tr>
+      </table>
+   </td>
+</tr>
+<tr>
+   <td>Hostname</td>
+   <td>The host name of the remote host.</td>
+</tr>
+<tr>
+   <td>File size</td>
+   <td>The size of the file in bytes.</td>
+</tr>
+</table>
+</center>
+</p>
+<p>
+When the file name is longer then it is shown in the list widget it is
+still possible to view it by using the 'AFD info click'. This is done
+by pressing the right mouse button while the cursor is over the wanted
+item in the list widget. The following window will pop up for a file
+in the output queue:
+</p>
+<p>
+<center><img src="../images/show_queue_info1.png" alt="[picture of info dialog output]"></center>
+</p>
+<p>
+And for the input queue it will look as follows:
+</p>
+<p>
+<center><img src="../images/show_queue_info2.png" alt="[picture of info dialog input]"></center>
+</p>
+<p>
+And for the retrieve queue it will look as follows:
+</p>
+<p>
+<center><img src="../images/show_queue_info3.png" alt="[picture of info dialog retrieve]"></center>
+</p>
+<p>
+As shown, this window also shows what is configured in the DIR_CONFIG for
+this file.
+</p>
+<p>
+Directly under the list file listing of the queue is the summary line
+showing, if no item is selected, the sum of all files and the total size.
+If files are selected it will show the sum of all selected files.
+</p>
+<p>
+Under the summary line follows a status line showing what it is currently
+doing and what it has done. At the end of a search it will print how
+long the search took.
+</p>
+<p>
+At the bottom is a line with up to six (depending on user permissions) buttons
+which have the following meaning:
+</p>
+<p>
+<center><img src="../images/show_queue_button_line.gif" alt="[closeup of the button line]"></center>
+</p>
+<p>
+<center>
+<table border>
+<tr>
+   <td>&nbsp;<b>Search</b>&nbsp;</td>
+   <td>Pressing this button will start the search. During the search the
+       name of the button will change to Stop. Pressing this will interrupt
+       the search and the button will be renamed to Search again. Pressing
+       search again will start the search from the beginning and not where
+       it was when it was interrupted.</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>View</b>&nbsp;</td>
+   <td>Depending on what is configured in <a href="afd_config.html">
+       AFD_CONFIG</a>, this will show the image or the content of
+       the dialog. By default when nothing is configured it will
+       show the content of the file as shown on the right side. See
+       <a href="afd_config.html#view_data_prog">VIEW_DATA_PROG</a>
+       for more details on how to set this to use other programs
+       to view the data. Only data that is in the queue can be
+       viewed.</td>
+   <td align=center><img src="../images/hex_print_dialog.gif"></td>
+</tr>
+<tr>
+   <td>&nbsp;<b>Delete</b>&nbsp;</td>
+   <td>The selected files will be deleted if they are in the queue.
+       This means you cannot delete delete unsent files in the output
+       queue and the active retrieve jobs (those marked (OU, OEU and R).</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>Send</b>&nbsp;</td>
+   <td>This will popup the <a href="xsend_file.html">xsend_file</a> dialog
+       which will allow you to send the selected files to some other
+       destination if the selected files are in the queue.</td>
+   <td align=center><img src="../images/xsend_file.png"></td>
+</tr>
+<tr>
+   <td>&nbsp;<b>Print</b>&nbsp;</td>
+   <td>This will popup another dialog which can be used to print what is shown
+       to a separate file, send it in a mail to someone or print it to a
+       printer. The Range field allows to specify what will be printed,
+       either what has been selected or everything.</td>
+   <td align=center><img src="../images/print_data.png"></td>
+</tr>
+<tr>
+   <td>&nbsp;<b>Close</b>&nbsp;</td>
+   <td>Closes this dialog.</td>
+   <td>&nbsp;</td>
+</tr>
+</table>
+</center>
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 2001 - 2007 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 01.05.2007
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

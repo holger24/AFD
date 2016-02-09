@@ -1,0 +1,58 @@
+For the distribution of data the most commonly used format is the file.
+The tools to work with files exist on any operating system and are
+integrated in most applications.  There are two ways to transport a file
+from one computer to another. One is to use removable media (floppy,
+tape, CD-ROM, etc) and the other is via a network (FTP, NFS, email, etc).
+The TCP/IP protocol suite has become the most popular protocol to connect
+computers via a network. Many applications have been build on top of
+TCP/IP, the most common one for transporting files is FTP.
+
+In the DWD there is a great demand for distributing its products from
+the headquarter to all its regional centres and customers. In the beginning
+scripts where used to distribute files via FTP. However, this concept
+proved to be not very efficient and flexible. Thus the DWD decided to
+develop its own file distributing system AFD (Automatic File Distributor)
+which has the following features:
+
+ - The AFD can handle the protocols FTP and SMTP directly which effectively
+   means that it has its own FTP and SMTP-client. This proved to be
+   a very important feature since it made the control and monitoring
+   of file distributing much more flexible. Portability was also
+   increased with this feature since there is no need to take care of any
+   implementation dependent features of the client that comes with the
+   implementation.
+
+ - A single configuration file with which the administrator can control
+   the distribution of files. The configuration file holds the information
+   about which directories the AFD has to monitor and how files are to be
+   distributed when files appear in this directory. These files can then
+   be distributed to more then one recipient with different options.
+
+ - Files can be retrieved from a remote host via FTP and FTPS.
+
+ - It can handle parallel transfers. If a big file is currently being
+   transfered it is still possible to send a smaller more important file
+   in parallel.
+
+ - Net capacity is always limited. To overcome this limit files can be
+   send with a priority.
+
+ - The AFD is not necessary to receive files. The receiver only needs an
+   FTP-daemon.
+
+ - When errors occur the AFD will retry until the file has been
+   successfully transmitted or (if configured) deleted if the file has
+   reached a certain age.
+
+ - Extensive log files are kept so that each file that has entered the AFD
+   can be traced. It is also possible to monitor the files that each
+   recipient receives.
+
+ - There is a very compact and efficient graphical user interface (X11)
+   with which the administrator can monitor and control each recipient.
+
+ - The code has been written entirely in C and ported to Linux, FreeBSD,
+   SGI, FTX, SunOS, HPUX, AIX, MacOS and SCO.
+
+There are now more then 100 installations of the AFD in the DWD which
+distribute three million files with 750 GBytes of data daily.

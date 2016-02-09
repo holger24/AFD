@@ -1,0 +1,196 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (show_log.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="show_log">System, Receive, Transfer and
+                                    Transfer Debug Window</a></h1>
+<hr size=3 noshade>
+<center><img src="../images/system_log.gif" alt="[image of show_log dialog]"></center>
+<p>
+The show_log dialog was designed to continuously show all activities
+in the given (system, receive, transfer or transfer debug) log file. Even when
+a log file is full and a new one is opened show_log will notice this
+and continue to show the newest information. It is also possible to view
+just a certain log level for example only errors and warnings.
+</p>
+<h3 align=center>System and Receive Log</h3>
+<p>
+System log and Receive log do look similar only that the receive log will
+have one less toggle button as shown below (top is receive log bottom
+system log:
+</p>
+<center><img src="../images/receive_log_top.gif" alt="[closeup of the top part from receive log]"></center>
+<center><img src="../images/system_log_labeled.gif" alt="[closeup of the labeled top part from system log]"></center>
+<center>
+<table border>
+<tr>
+   <td><b>&nbsp; 1&nbsp;</b></td>
+   <td>Toggle area to select the information that should be displayed. It
+       is not necessary to press the update button for the selection to
+       become active.
+       <table border>
+       <tr>
+          <td>Info</td>
+          <td>Show information. Everything that is not dangerous.</td>
+       </tr>
+       <tr>
+          <td>Config</td>
+          <td>Show configuration information. Any configuration such as
+              starting or stopping the transfer or queue. This button
+              will only be shown for the system log.</td>
+       </tr>
+       <tr>
+          <td>Warn</td>
+          <td>Show warnings.</td>
+       </tr>
+       <tr>
+          <td>Error</td>
+          <td>Show errors. Important messages for the AFD system
+              administrator.</td>
+       </tr>
+       <tr>
+          <td>Offline</td>
+          <td>Show messages marked as offline, ie. where warnings and
+              errors are to be ignored.</td>
+       </tr>
+       <tr>
+          <td>Debug</td>
+          <td>Show debug information. This information is only for the
+              developer and sometimes for the system administrator.</td>
+       </tr>
+       </table>
+       NOTE: Fatal messages and the so called "no information" messages
+             (eg. to indicate a new month) are always shown.
+   </td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td><b>&nbsp; 2&nbsp;</b></td>
+   <td>Enter a word to search for in the shown text. If you press return
+       it will automatically jump to the position in the text and show it.
+       If you press return again it will search for the next occurrence. It
+       always starts at the top and when it hits the bottom wrap around
+       and starts from the beginning.
+   </td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td><b>&nbsp; 3&nbsp;</b></td>
+   <td>Here it is possible to select an older log file for viewing. After
+       selecting the log number the update button must be pressed for the
+       selection to become active. Note with the choice &lt;all&gt; it
+       will display all log files. The number of logs to choose from
+       depends of what has been configured in AFD_CONFIG for
+       <a href="afd_config.html#max_receive_log_files">MAX_RECEIVE_LOG_FILES</a>
+       or <a href="afd_config.html#max_system_log_files">MAX_SYSTEM_LOG_FILES</a>.
+   </td>
+   <td align=center><img src="../images/log_file.png" alt="[choice of which log file to view]"></td>
+</tr>
+<tr>
+   <td><b>&nbsp; 4&nbsp;</b></td>
+   <td>The number log entries found.</td>
+   <td>&nbsp;</td>
+</tr>
+</table>
+</center>
+<h3 align=center>Transfer and Transfer Debug Log</h3>
+<p>
+Transfer log and Transfer Debug log do look similar only that the transfer
+log will have one less toggle button as shown below (top is transfer log
+bottom transfer debug log:
+</p>
+<center><img src="../images/transfer_log_top.gif" alt="[closeup of the top part from transfer log]"></center>
+<center><img src="../images/transfer_debug_log_labeled.gif" alt="[closeup of the labeled top part from transfer debug log]"></center>
+<center>
+<table border>
+<tr>
+   <td><b>&nbsp; 1&nbsp;</b></td>
+   <td>Toggle area to select the information that should be displayed. It
+       is not necessary to press the update button for the selection to
+       become active.
+       <table border>
+       <tr>
+          <td>Info</td>
+          <td>Show information. Everything that is not dangerous.</td>
+       </tr>
+       <tr>
+          <td>Warn</td>
+          <td>Show warnings.</td>
+       </tr>
+       <tr>
+          <td>Error</td>
+          <td>Show errors. Important messages for the AFD system
+              administrator.</td>
+       </tr>
+       <tr>
+          <td>Offline</td>
+          <td>Show messages marked as offline, ie. where warnings and
+              errors are to be ignored.</td>
+       </tr>
+       <tr>
+          <td>Debug</td>
+          <td>Show debug information. This information is only for the
+              developer and sometimes for the system administrator.</td>
+       </tr>
+       <tr>
+          <td>Trace</td>
+          <td>Show trace information.</td>
+       </tr>
+       </table>
+       NOTE: Fatal messages and the so called "no information" messages
+             (eg. to indicate a new month) are always shown.
+   </td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td><b>&nbsp; 2&nbsp;</b></td>
+   <td>Since files can be transmitted in parallel, it can be confusing
+       if more then one process is shown at the same time.</td>
+   <td align=center><img src="../images/proc.png" alt="[choice of which process to view]"></td>
+</tr>
+<tr>
+   <td><b>&nbsp; 3&nbsp;</b></td>
+   <td>Enter a word to search for in the shown text. If you press return
+       it will automatically jump to the position in the text and show it.
+       If you press return again it will search for the next occurrence. It
+       always starts at the top and when it hits the bottom wrap around
+       and starts from the beginning.
+   </td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td><b>&nbsp; 4&nbsp;</b></td>
+   <td>Here it is possible to select an older log file for viewing. After
+       selecting the log number the update button must be pressed for the
+       selection to become active. Note with the choice &lt;all&gt; it
+       will display all log files. The number of logs to choose from
+       depends of what has been configured in AFD_CONFIG for
+       <a href="afd_config.html#max_transfer_log_files">MAX_TRANSFER_LOG_FILES</a>
+       or <a href="afd_config.html#max_trans_db_log_files">MAX_TRANS_DB_LOG_FILES</a>.
+   </td>
+   <td align=center><img src="../images/log_file.png" alt="[choice of which log file to view]"></td>
+</tr>
+<tr>
+   <td><b>&nbsp; 5&nbsp;</b></td>
+   <td>The number log entries found.</td>
+   <td>&nbsp;</td>
+</tr>
+</table>
+</center>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><address><small>
+   Copyright &copy; 1997 - 2007 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 22.07.2007
+   </small></address></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

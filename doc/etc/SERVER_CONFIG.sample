@@ -1,0 +1,26 @@
+#
+# AFD Server Configuration File
+#
+# Each section starts with a name in [], the name in those
+# brackets will be the one made visible in afd_ctrl
+# dialog. Right below the section identifier will be
+# the options. Each option must be on its own line and
+# there may be no empty lines between the options.
+# Each section must at least have the option Type:
+# to tell which type of server to run.
+#
+# Here some of the options for type wmo:
+#
+#   CSN - Check sequence number
+#         This checks the sequence number and reports any missing messages
+#         or request for the missing messages to be resend.
+#   ACK - Acknowledge
+#         Send an acknowledge for each message received.
+#
+
+[mss]
+Type: wmo
+Port: 3445
+Trusted Hosts: www.wmo.ch, 192.138.44.23
+Disconnect: -1
+Options: CSN, ACK

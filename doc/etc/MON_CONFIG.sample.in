@@ -1,0 +1,43 @@
+#
+# Configuration file for parameters that AFD_MON reads when it is started.
+# The default values are, when the option is not set.
+# Note: The parameters must always start as the first character of
+#       a new line.
+#                                                                    
+ 
+##########################################################################
+# The number of old logfiles that AFD_MON keeps before they are deleted. #
+# Default MON_SYS_LOG       : 4                                          #
+# Default MON_LOG           : 14                                         #
+##########################################################################
+#MAX_MON_SYS_LOG_FILES            4
+#MAX_MON_LOG_FILES                14
+
+##########################################################################
+# Default printer command to print.                                      #
+##########################################################################
+DEFAULT_PRINTER_CMD              "lpr -P"
+
+##########################################################################
+# Default printer name.                                                  #
+##########################################################################
+#DEFAULT_PRINTER_NAME             a4_text
+
+##########################################################################
+# Default ping command.                                                  #
+##########################################################################
+PING_CMD                         "@PING_CMD@ -c 10"
+
+##########################################################################
+# Default traceroute command.                                            #
+##########################################################################
+TRACEROUTE_CMD                   @TRACEROUTE_CMD@
+
+##########################################################################
+# The FAKE_USER option allows the administrator to allow certain users   #
+# to take up another identity, even if they do not exist on the system.  #
+# This user will then be used to look up the permissions in the afd.users#
+# file. See documentation for more details.                              #
+# Default: None                                                          #
+##########################################################################
+#FAKE_USER                        afd->operator

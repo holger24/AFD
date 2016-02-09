@@ -1,0 +1,201 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD rename rules (rename_rules.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h3 align=center><a name="Rename Rule">Rename Rules</a></h3>
+<hr size=3 noshade>
+<p>
+If not specified otherwise in "$AFD_WORK_DIR/etc/AFD_CONFIG, then in the file
+"$AFD_WORK_DIR/etc/rename.rule" all rules on how to rename a
+file are listed. This file is automatically read again when the date of
+the file has been changed. There are three different options in the
+DIR_CONFIG file which can use the rename.rule: <a href="dir_config.html#rename">
+rename</a>, <a href="dir_config.html#trans_rename">trans_rename</a>,
+<a href="dir_config.html#file_name_is_user">file name is user</a>,
+<a href="dir_config.html#file_name_is_target">file name is target</a>,
+<a href="dir_config.html#mail_header">mail header</a>,
+<a href="dir_config.html#attach_file">attach file</a>,
+<a href="dir_config.html#attach_all_files">attach all files</a> and
+<a href="dir_config.html#subject_file">subject</a>.
+The first one is explained as an example below:
+</p>
+<pre>
+[directory]
+/the/directory/where/the/files/come/in
+
+   [files]
+   *
+
+      [destination]
+
+         [recipient]
+         ftp://recipient_1:password@hostname/destination/directory
+
+         [options]
+         lock OFF
+         rename rule_1
+         priority 5
+
+         [recipient]
+         ftp://recipient_2:password@hostname/destination/directory
+
+         [options]
+         lock DOT
+         rename rule_2
+         priority 2
+</pre>
+<p>
+In file "$AFD_WORK_DIR/etc/rename.rule" these two rules must be defined:
+</p>
+<pre>
+[rule_1]
+abc*.*     new_filename*.new.*.test
+*123*      *new_filename*
+
+[rule_2]
+*          file.dat
+</pre>
+<p>
+<bold>NOTE:</bold> The rules must always start on the beginning of
+a new line ie. there may not be any spaces in front. The rule header
+(in the example above rule_1), may be up to 80 characters
+(MAX_RULE_HEADER_LENGTH) long.
+</p>
+<p>
+The result of these entries would be that all files for recipient_2 would
+be renamed to file.dat. For recipient_1 the file abcdef.txt would renamed
+to new_filenamedef.new.txt.test and file AB123CD.txt would be renamed to
+ABnew_filenameCD.txt.
+</p>
+<br><br>
+<center><h1><u>Features of the rename rule</u></h1></center>
+<ul>
+   <li>Define as many rename groups as needed.</li>
+   <li>Unlimited number of filters.</li>
+   <li>In one filter you can use up to 10 '*' and 50 '?'.</li>
+</ul>
+<table border>
+<tr>
+   <th>Feature</th>
+   <th>Description</th>
+   <th>Example Rule</th>
+   <th>Result for file abcde</th>
+</tr>
+<tr>
+   <td><b>* and ?</b></td>
+   <td>You can use the same '*' and '?' in the rename rule.</td>
+   <td><pre>??*   ?-?-*                </pre></td>
+   <td>a-b-cde</td>
+</tr>
+<tr>
+   <td><b>%*n and %?n</b></td>
+   <td>To address a specific * or ?.</td>
+   <td><pre>??*   %?2-*-%?1            </pre></td>
+   <td>b-cde-a</td>
+</tr>
+<tr>
+   <td><b>%on and %On-m</b></td>
+   <td>To address a specific character or character range. There are two
+       special characters: ^ for the first character and $ for the last
+       character.</td>
+   <td><pre>*     %o1-%o2-%O3-$        </pre></td>
+   <td>a-b-cde</td>
+</tr>
+<tr>
+   <td><b>%tx</b></td>
+   <td>Insert the actual time in any form. The character x determines the
+       time format which can be one of the following:<br>
+       <pre>
+            a - short day "Tue",           A - long day "Tuesday",
+            b - short month "Jan",         B - long month "January",
+            d - day of month [01,31],      m - month [01,12],
+            j - day of the year [001,366], y - year [01,99],
+            Y - year 1997,                 R - Sunday week number [00,53],
+            w - weekday [0=Sunday,6],      W - Monday week number [00,53],
+            H - hour [00,23],              M - minute [00,59],
+            S - second [00,60]
+            U - Unix time, number of seconds since 00:00:00 01/01/1970 UTC
+       </pre></td>
+   <td><pre>*     %ta-*-%tA            </pre></td>
+   <td>Mon-abcde-Monday</td>
+</tr>
+<tr>
+   <td><b>%T[+|-|*|/|%]xS|M|H|d</b></td>
+   <td>Time modifier for the above %tx option. It adds (+), subtracts (-),
+       multiplies (*), divides (/) or computes the modulo (%) with the
+       value x to the current unix time. The default unit for the time
+       modifier is seconds this can be changed to minute (M), hour (H)
+       or day (d). Once set the modifier is used for all subsequent
+       %t until it changed by the next modifier as shown in the example.</td>
+   <td><pre>*     *.%td_%T+1d%td_%T0%td</pre></td>
+   <td>abcde.28_29_28</td>
+</tr>
+<tr>
+   <td><b>%n</b></td>
+   <td>Insert a unique number four characters long.</td>
+   <td><pre>*     *.%n                 </pre></td>
+   <td>abcde.286f</td>
+</tr>
+<tr>
+   <td><b>%ab</b></td>
+   <td>Insert an alternating number toggling between 0 and 1. With
+       this you can do load balancing by always sending files with
+       a 0 to one host and the ones with the 1 to another host.</td>
+   <td><pre>*     *_%ab                </pre></td>
+   <td>abcde_1</td>
+</tr>
+<tr>
+   <td><b>%adx</b></td>
+   <td>Insert an alternating decimal number toggling between 0 and x.
+       x must be a decimal number and may not be larger then 9. This
+       enables load balancing between up to 10 hosts.</td>
+   <td><pre>*     *_%ad4               </pre></td>
+   <td>abcde_3</td>
+</tr>
+<tr>
+   <td><b>%ahx</b></td>
+   <td>Insert an alternating hexadecimal number toggling between 0 and x.
+       x must be a hexadecimal number and may not be larger then f.
+       This enables load balancing between up to 16 hosts.</td>
+   <td><pre>*     *_%ahd               </pre></td>
+   <td>abcde_a</td>
+</tr>
+<tr>
+   <td><b>%h</b></td>
+   <td>Insert the hostname of the current node. Depending on how the
+       system is configured, this might return full network node
+       hostname.</td>
+   <td><pre>*     *.%h                 </pre></td>
+   <td>abcde.ducktown</td>
+</tr>
+<tr>
+   <td><b>%%</b></td>
+   <td>Insert a %.</td>
+   <td><pre>*     *%                   </pre></td>
+   <td>abcde%</td>
+</tr>
+<tr>
+   <td><b>\</b></td>
+   <td>End of a number.</td>
+   <td><PRE>*     %o1\234              </pre></td>
+   <td>a234</td>
+</tr>
+</table>
+<br>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><address><small>
+   Copyright &copy; 1997 - 2012 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 03.06.2012
+   </small></address></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

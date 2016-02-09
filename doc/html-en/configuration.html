@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (configuration.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="configuration">Configuration Files</a></h1>
+<hr size=3 noshade>
+<p>
+There are several configuration files in the $AFD_WORK_DIR/etc which
+can be used to configure the AFD which are listed int the table below:
+</p>
+<center>
+<table border>
+<tr>
+   <th>Configuration file</th>
+   <th>Description</th>
+</tr>
+<tr>
+   <td><a href="dir_config.html">DIR_CONFIG</a></td>
+   <td>This is the main configuration file used to tell AFD which
+       directories are to be monitored and what it has to do with
+       files which appearing in these directories.</td>
+</tr>
+<tr>
+   <td><a href="host_config.html">HOST_CONFIG</a></td>
+   <td>Holds specific configuration for each host to which AFD
+       either sends or retrieves files.</td>
+</tr>
+<tr>
+   <td><a href="rename_rules.html">rename.rule</a></td>
+   <td>Here can be defined the rules to rename files by using the
+       <a href="dir_config.html#rename">rename</a> or
+       <a href="dir_config.html#trans_rename">trans_rename</a> options
+       of the DIR_CONFIG.</td>
+</tr>
+<tr>
+   <td><a href="afd_config.html">AFD_CONFIG</a></td>
+   <td>Configuration file to change some of the default compiled in
+       values of the main process of the AFD.</td>
+</tr>
+<tr>
+   <td><a href="afd_name.html">afd.name</a></td>
+   <td>Contains the name of this AFD.</td>
+</tr>
+<tr>
+   <td><a href="afd_users.html">afd.users</a></td>
+   <td>Permission file that specifies what a user may do.</td>
+</tr>
+<tr>
+   <td><a href="host_info.html">host.info</a></td>
+   <td>Contains information for all hosts configured.</td>
+</tr>
+<tr>
+   <td>INFO-&lt;hostname&gt;</td>
+   <td>Contains information for this particular host which will be
+       displayed by the <a href="afd_info.html">afd_info</a> dialog.</td>
+</tr>
+</table>
+</center>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 1999 - 2005 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 08.07.2005
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,1303 @@
+
+                             Version 1.0.x
+                             =============
+
+---------------------------> Version 1.0.1 <-------------------------------
+                            ---------------
+23.06.1998 - After a restart the number of files are not shown
+             correctly when a burst was active before the restart.
+           - Minor spelling corrections.
+24.06.1998 - AFD_LOAD KBytes sometimes shows ridiculous negative
+             values.  Build in check for values less then 0.01.
+           - Added option "secure ftp". This logs in with user
+             anonymous and password user@hostname before it does the
+             real login.
+           - show_stat prints out a total even if all values are zero.
+25.06.1998 - Sometimes the INST_JOB is started without a valid shared
+             memory ID. If this happens AMG terminates to be restarted
+             by INIT_AFD.
+26.06.1998 - bin_file_chopper() loses data when fill Bytes are being
+             used. Fixed.
+27.06.1998 - rm_job can handle job names with directory information.
+29.06.1998 - log_append() appended the hole message! Fixed.
+30.06.1998 - When messages cache is updated (ie. some messages removed),
+             the position indicator in the message queue was not
+             updated! Fixed.
+------------------------> Released: 30.06.1998 <---------------------------
+
+
+---------------------------> Version 1.0.2 <-------------------------------
+                            ---------------
+05.07.1998 - When stopping FD it kills all sf_xxx process with the SIGKILL
+             signal.
+09.07.1998 - If a host is disabled all current jobs will be deleted.
+13.07.1998 - When messages in the message directory are deleted by hand,
+             FD did not remove this job from its cache or the job ID list,
+	     when it is no longer used (ie. it would remain there forever!).
+	   - If a host is removed from the FSA, jobs in the queue of the
+	     FD would remain there.
+25.07.1998 - Position of directory name in structure job_id_data was not
+             updated when a directory is removed.
+           - Included number of active transfers in afd_load window.
+27.07.1998 - When messages are deleted from the system, a compactor
+             output is written to the system log.
+           - When a host is removed and there are messages queued in the
+             FD, these messages would remain forever. Fixed.
+28.07.1998 - Changed mode of HOST_CONFIG file from 600 to 660, so when
+             two users use the same subset of binaries both can edit
+             the HOST_CONFIG file.
+30.07.1998 - All log files had the permission 666!!!! Changed to 644.
+02.08.1998 - Optimized removing jobs from the JID structure. AFD´s with
+             large DIR_CONFIG files took about 20-30 seconds to clean
+             up there internal database. Lets hope this speeds up
+             thinks a bit.
+03.08.1998 - Removed minor bug in bin_file_chopper().
+06.08.1998 - Comparison in function lookup_job_id() failed to detect
+             any difference in jobs with same recipient and options but
+             different file filters. Fixed.
+09.08.1998 - New function to recreate messages when they are corrupt or
+             have been deleted.
+           - Added rotating dash to View Transfer dialog.
+14.08.1998 - Appending files did not work. Fixed.
+           - When using edit_hc dialog to turn off host switching,
+             some parameters where not reset correctly.
+17.08.1998 - show_ilog would crash with a seg-fault when some data is not
+             available. Fixed.
+------------------------> Released: 17.08.1998 <---------------------------
+
+
+---------------------------> Version 1.0.3 <-------------------------------
+                            ---------------
+20.08.1998 - Due to some dump unnecessary optimization bin_file_chopper()
+             would miss some data under certain conditions. Fixed.
+21.08.1998 - Included sequence numbering to sf_wmo.
+22.08.1998 - Defined _FLUSH_FTP_WRITE as default.
+           - Setting last transfer time even when failing to send a file
+             in FD. Otherwise when no file has been send successfully
+             and the database is changed for this job all files will
+             be removed since FD will remove the message for this JID.
+           - Added new command SSTAT for AFDD to show summary status of
+             AFD.
+23.08.1998 - Added JID number to error message when FD failed to
+             distribute a file.
+24.08.1998 - Removed optimization from bin_file_chopper(). Was causing
+             to much trouble :-(((
+25.08.1998 - New program to notify AMG to reread DIR_CONFIG or
+             HOST_CONFIG.
+26.08.1998 - show_ilog dialog did not show all information. Will now
+             show all information of current jobs only.
+27.08.1998 - When ALL files are being removed due to age by the FD and
+             the queue is automatically stopped, FD would only retry
+             after a file_dir_check is done. Setting error counter to
+             zero when there are no more files.
+01.09.1998 - Reduced process time of afd_ctrl to 1/10th of the usual
+             time.
+02.09.1998 - The message cache of FD was not flushed correctly, causing
+             messages to be flushed that where not to be flushed. Under
+             certain conditions it could cause the FD to crash due to
+             trying to flush memory areas that do not belong to the
+             cache. Before the messages get flushed they now get sorted
+             and are being checked to ensure the correct ones get
+             flushed.
+03.09.1998 - When sending mails the mail server can be specified for
+             each recipient separately, with the ;server=<host name>
+             option.
+           - In afd_ctrl dialog the sizes are shown with a decimal point.
+05.09.1998 - It is now possible to configure the AFD over the AFD_CONFIG
+             file. The values in this file are always read when the AFD
+             is started, if the file does not exist the default values
+             in config.h will take effect.
+06.09.1998 - Default to just one connect() try in ftp_connect() and
+             smtp_connect().
+07.09.1998 - Gotcha array in create_db() was NOT initialized, causing
+             some unnecessary and dangerous deletion of jobs. Fixed.
+08.09.1998 - Put in check to disallow bursting when current FSA has the
+             status STALE.
+           - Handle case correctly when a remote FTP server replies
+             230, ie. no password is required to log in.
+09.09.1998 - Added new tool to do all commands from the host menu from
+             the afd_ctrl dialog (Start/stop queue, Start/stop transfer,
+             Enable/disable host, Switch host, Retry and Debug).
+------------------------> Released: 14.09.1998 <---------------------------
+
+
+---------------------------> Version 1.0.4 <-------------------------------
+                            ---------------
+17.09.1998 - In update_db() when checking for program name, we just check
+             everything after the /, so it works correctly when calling
+             the program with a path.
+           - check_files() no longer reports that the file has vanished
+             (ENOENT).
+18.09.1998 - When ftpcmd() receives an EPIPE sf_ftp() does not send a
+             QUIT to the remote site.
+20.09.1998 - SSTAT command of afdd now shows the entry counter of the
+             system log.
+           - When more then one file is used with option restart, sf_ftp
+             would go into an endless loop.
+21.09.1998 - If renaming was not successful and the restart option is set
+             sf_ftp would append the file to the end of the already
+             transmitted file.
+           - If files are being removed due to age or are from disabling
+             a host, it could happen that one of the file was marked
+             for appending. For this reason sf_ftp now always checks
+             if the append list is still up to date.
+25.09.1998 - Definitely remove any messages in the queue even when it
+             currently is transmitting data. Otherwise if a host has
+             been removed it tries to locate a host in the FSA that is
+             no longer available.
+03.10.1998 - When FD is started the first time, it waits for the
+             inst_job to finish writing the JID structure.
+           - exec_cmd() tries to read any replies from the program
+             it started, to avoid any possible deadlocks.
+14.10.1998 - Fixed memory leak in get_file_names() of sf_xxx.
+------------------------> Released: 15.10.1998 <---------------------------
+
+
+---------------------------> Version 1.0.5 <-------------------------------
+                            ---------------
+16.10.1998 - Closing stdout, stderr and stdin in daemon_init(). Otherwise
+             starting AFD via the rsh command would hang.
+18.10.1998 - New program to show status of remote AFD's.
+10.11.1998 - New option "check reply" to wait for a reply from the remote
+             side when something was send via WMO sockets.
+11.11.1998 - Make sequence numbering for WMO sockets optional and do NOT
+             set this as default.
+           - Fixed bug in get_rename_rules() that causes inst_job to
+             crash when there is a blank behind any rule.
+           - Allow to comment out a rule.
+           - Added AFD name (from file afd.name) to setup file of the
+             afd_ctrl dialog. So different setups can be stored regardless
+             of the user and remote display.
+12.11.1998 - Display host toggle information in transfer and transfer
+             debug log.
+           - Solved some minor problems with automatic host switching.
+13.11.1998 - If for whatever reason FD thinks one of its process is not
+             its own child, it is now taken from the queue and restarted.
+           - When the FD claims there is no free display position it
+             checks if all process that claim a slot are still alive.
+           - Reorganize output of afd_mon process so it shows the number
+             of files and their size still to be send.
+           - Eventually found cause of the two outputs of "Stopped afd_mon".
+           - Some stupid dump systems like NT sometimes do not return
+             any data to the LIST command. Handle this case so DEBUG
+             can be enabled for this host.
+------------------------> Released: 16.11.1998 <---------------------------
+
+
+---------------------------> Version 1.0.6 <-------------------------------
+                            ---------------
+17.11.1998 - Handle case when sf_xxx cannot determine the JID number.
+18.11.1998 - In wmocmd() setup socket with the O_NONBLOCK flag.
+           - When FD exits, it will wait for all its children to return.
+           - In AFDD do not count errors when host is an error host.
+21.11.1998 - The length of the filename shown in the View Transfer dialog
+             is now configurable in the afd_ctrl.setup file.
+24.11.1998 - Printing selected items in show_xlog would file if last
+             item was selected. Fixed.
+25.11.1998 - Did not check return value of function qb_pos_pid() in FD
+             causing it to crash under rare circumstances.
+27.11.1998 - New option "attach file" to encode a file in base64 and
+             then attach it to a mail (MIME Version 1.0).
+           - New option "mail header" to put some common mail context
+             into the mail.
+01.12.1998 - AFD does not start when the log directory does not exist.
+             Fixed.
+02.12.1998 - When pressing the retry button the FD sometimes did NOT
+             select the next message with the highest priority. Fixed.
+           - FD will not reset the error counter when files are deleted
+             due to age.
+09.12.1998 - Remove O_NONBLOCK flag from wmocmd(). read() in
+             wmo_check_reply() was trying to read to many characters
+             from the socket. This was the reason for read() hanging
+             indefinitely. Fixed.
+10.12.1998 - Printer command and default printer can now be configured
+             in the file AFD_CONFIG.
+           - Printing to a file where we do not have permissions would
+             terminate show_xlog silently. Fixed.
+------------------------> Released: 11.12.1998 <---------------------------
+
+
+---------------------------> Version 1.0.7 <-------------------------------
+                            ---------------
+16.12.1998 - Added extra check in check_burst() to see if unique
+             directory name is in FSA.
+18.12.1998 - Bug in filter()!!! Would not find the following case:
+             TRI*DM -> TRIDM398121700033CLDM; problem is the first
+             DM. Fixed.
+10.01.1999 - Inform user how many directories are not in the same
+             file system as that of the AFD.
+15.01.1999 - Found bug that sometimes caused the show_xlog dialog to
+             show the wrong source directory. The same bug caused
+             inst_job to crash on start under certain conditions.
+16.01.1999 - Added scrollbars to the show_info dialog.
+           - Reorganized all X program's to have one common header
+             (x_common_defs.h).
+17.01.1999 - Process afdd reports back any important changes to
+             afd_mon.
+           - When AFD is shutdown, afdd now reports this to afd_mon.
+21.01.1999 - Option "file name is header" does now work for sf_ftp
+             as well.
+------------------------> Released: 21.01.1999 <---------------------------
+
+
+---------------------------> Version 1.0.8 <-------------------------------
+                            ---------------
+24.01.1999 - make_xprocess() now checks if the command returns anything
+             on stdout or stderr and displays it in a warn dialog.
+           - Finished afd_mon and mon_ctrl programs.
+01.02.1999 - Change sign to debug in afdd when connection is reset by
+             peer.
+04.02.1999 - Oops! Bug in makefile for FD. Forgot to change mode for
+             sf_wmo.
+05.02.1999 - Big bug in eval_dir_config()! Forgot to allocate memory
+             for the number of destination, but due to the fact that
+             this memory is shared memory and shared memory is allocated
+             in blocks and the memory exceeded was only 2-3 Bytes, this
+             error never showed (after three operational years and
+             millions of different DIR_CONFIGS!!!!) up until today.
+13.02.1999 - Multiple recipients for show_olog.
+15.02.1999 - Multiple recipients for show_ilog.
+17.02.1999 - Multiple recipients for show_dlog.
+------------------------> Released: 17.02.1999 <---------------------------
+
+
+---------------------------> Version 1.0.9 <-------------------------------
+                            ---------------
+18.02.1999 - The value "Filesize in use done" was not correct in fsa_view.
+           - Function check_burst() did not check the job ID when counting
+             the jobs that are already bursting. Thus a burst would fail
+             because it was trying to burst files that are not of the
+             same ID.
+21.02.1999 - show_stat showed two lines with total values. Fixed.
+           - Added mon_info dialog for mon_ctrl.
+           - Did not initialize a variable correctly for multiple
+             recipients for show_xlog (13-17.02.1999). Fixed.
+24.02.1999 - Burst counter in transfer log was wrong for sf_ftp and
+             sf_wmo.
+25.02.1999 - Added option eumetsat to add EUMETSAT headers to files
+             being send via FTP.
+26.02.1999 - The AFD monitor only shows file rate, connect rate is
+             dropped.
+28.02.1999 - Dialog to view data from the DIR_CONFIG for a specific
+             host.
+------------------------> Released: 01.03.1999 <---------------------------
+
+
+
+                             Version 1.1.x
+                             =============
+
+---------------------------> Version 1.1.0 <-------------------------------
+                            ---------------
+04.03.1999 - Calculating the offset for initializing a newly reallocated
+             piece of memory was done wrong when the number of hosts
+             is getting larger then HOST_BUF_SIZE. Fixed.
+           - Two new parameters for the AFD_CONFIG_FILE: MAX_COPIED_FILES
+             and MAX_COPIED_FILE_SIZE.
+           - Introduce a size limit (MAX_COPIED_FILE_SIZE) of the files
+             copied before giving the job to FD.
+10.03.1999 - If domain name is given it was always stored without it
+             in real_hostname. Fixed.
+12.03.1999 - send_message() sends messages more then once when the
+             inst_job() forked/split the job. Fixed.
+19.03.1999 - init_sf() opened sys_log_fifo twice!
+           - Failed to set FD_CLOEXE flag after open() system call,
+             that left many unnecessary open file descriptors after
+             forking and calling one of the exec functions.
+           - FD checks if there are jobs in the queue with a higher
+             priority then the current job that is being checked
+             for burst. If there are no other jobs with a higher
+             priority check_burst() will ignore the burst limit.
+20.03.1999 - Removed unique number from archive name and introduced
+             ARCHIVE_STEP_TIME to reduce the number of archive
+             directories. Lets hope this will minimize the problem
+             that IRIX has when there are lots of directories.
+25.03.1999 - Automatic host switching did not work correctly. Fixed.
+27.03.1999 - Don't send files of zero length with sf_wmo.
+01.04.1999 - Directories with paused hosts are now checked at certain
+             intervals.
+           - Added more aggressive checking for bursting.
+05.04.1999 - Added WMO to option extract.
+08.04.1999 - Made ONE_DIR_COPY_TIMEOUT as default and configurable in
+             AFD_CONFIG file.
+12.04.1999 - Certain dialogs of mon_ctrl and afd_ctrl can only be
+             started once.
+13.04.1999 - If the statistic file is of length zero the afd_stat
+             program does not start. Fixed.
+           - sf_loc wrote to system_log when it failed to copy files
+             to the target directory. Fixed.
+26.04.1999 - Added option "no login" for sf_ftp.
+11.05.1999 - Nasty bug in process mon that made it go in an infinite
+             loop grabbing more and more memory, when stopping the
+             process and it currently had no connection to the remote
+             AFD it was suppose to monitor. Fixed.
+13.05.1999 - Doing a 'Reread DIR_CONFIG' and there was only a change
+             in the HOST_CONFIG, could under certain conditions result
+             in all hosts being marked as not in DIR_CONFIG. Fixed.
+15.05.1999 - Finished basics of time job for AMG.
+22.05.1999 - Got daemon logs working.
+05.06.1999 - AMG gets the hostname wrong when at end of recipient string
+             there is a ; and there is no dot in the hostname and no
+             no directory was set. Fixed.
+           - New directory option EC=<integer char value> to tell AMG to
+             wait until the files end character is the integer value.
+06.06.1999 - afd_mon collects all host alias names and real host names
+             that are being served by the AFD's being monitored.
+12.06.1999 - Option to change owner of copied/moved file.
+29.06.1999 - Forgot to close a file descriptor in create_fsa() and
+             afd_stat!
+12.07.1999 - Mask file names when they contain a ";" or a space,
+             otherwise they are evaluated by the shell.
+16.07.1999 - Log all connections to AFDD.
+18.07.1999 - Allow only certain hosts to connect to AFDD.
+21.08.1999 - Added new log type CONFIG (dark green).
+           - show_dlog() was checking wrong permissions.
+22.08.1999 - Use type-of-service field to minimize delay for control
+             connection and maximize throughput for data connection for
+             FTP.
+           - Transfer- and Transfer-debug log dialog can show individual
+             jobs.
+24.08.1999 - Enhanced option "attach file" to support trans_renaming.
+06.09.1999 - Option to change permission of copied/moved file.
+------------------------> Released: 08.09.1999 <---------------------------
+
+
+---------------------------> Version 1.1.1 <-------------------------------
+                            ---------------
+10.09.1999 - When checking for last character in a file and the character
+             does not match, that file would only be checked again when
+             another file would arrive.
+           - When stopping AMG or FD open another dialog to ask user
+             if he really wants to do so.
+12.09.1999 - Added new option subject, to specify the subject for mails.
+20.09.1999 - show_log showed host names that where one or more characters
+             longer then the one it should show. Fixed.
+21.09.1999 - It's now possible to specify ~username as the first part of
+             the directory (username can also be omitted).
+22.09.1999 - Function filter() under rare condition changed the filter
+             itself!! Thanks to Herbert Lepper for finding this one.
+04.10.1999 - format_info() of show_ilog would SEGV when file names get
+             very long. Fixed.
+           - With scheme 'file' its no longer necessary to specify the
+             full path.
+07.10.1999 - Additional memory checks in delete_log and output_log.
+           - New option "force copy" for scheme file to force files to
+             be copied and not linked nor memory mapped (good for copying
+             to /dev/null).
+09.10.1999 - Implemented DIR_CHECK_TIMEOUT, so when there are many
+             directories and/or the disks are very slow the administrator
+             has the possibility to mark some directories as important.
+24.10.1999 - sf_ftp could corrupt the fc and fs fields of afd_ctrl
+             when files that are detected to be duplicate and thus not
+             send and at the same time it is bursting. Fixed.
+31.10.1999 - Fixed some bugs in append functions.
+------------------------> Released: 03.11.1999 <---------------------------
+
+
+---------------------------> Version 1.1.2 <-------------------------------
+                            ---------------
+26.11.1999 - If file is deleted due to age but is marked for appending
+             in the message. This mark will always be left in the
+             message. Even more dangerous if now another file comes
+             with the same name it will append it to the old file on
+             the remote site!
+           - When renaming files and the new name is the same as the
+             old name, the counters in the afd_ctrl dialog will be
+             incorrect. Even worth, when there is only one file in
+             the job, this would be lost! Fixed.
+04.12.1999 - Needed to change version.h so it works correctly when
+             debugging.
+05.12.1999 - Fixed a silly bug in exec_cmd, which made it loose some
+             of the data written to stdout and stderr.
+           - Created new dialog show_cmd.
+07.12.1999 - Fixed error in extract() when extracting WMO files.
+08.12.1999 - Fixed a bug in filter().
+           - Printing the recipients from one of the show_xlog showed
+             some funny characters. Fixed.
+------------------------> Released: 13.12.1999 <---------------------------
+
+
+---------------------------> Version 1.1.3 <-------------------------------
+                            ---------------
+18.12.1999 - New month will now be written in SYSTEM_LOG.
+           - The chown option accepts a "." as well as ":" when
+             specifying both user and group.
+           - Its now possible to send RETRY to archive_watch so
+             it rescans the directories.
+25.12.1999 - Limit the number of process that dir_check may generate
+             on a per directory basis.
+28.12.1999 - Lots of code cleanups for show_xlog.
+30.12.1999 - Test option for afd_ctrl dialog (ping, traceroute).
+01.01.2000 - Test option for mon_ctrl dialog (ping, traceroute).
+08.01.2000 - Minor bug fixes in AMG and FD.
+09.01.2000 - Limit number of process per directory for dir_check().
+           - FD now catches any funny zombies hanging around.
+           - The order of options to sf_xxx was wrong. Fixed.
+25.01.2000 - When resending files from show_olog, they would
+             sometimes not be deleted by sf_xxx when archived. Fixed.
+------------------------> Released: 25.01.2000 <---------------------------
+
+
+---------------------------> Version 1.1.4 <-------------------------------
+                            ---------------
+27.01.2000 - Fixed deadlock in dir_check, when collecting files from
+             the queue.
+29.01.2000 - Fixed some bugs in _LIMIT_PROCESS_PER_DIR.
+           - ftp_close_data() waits for an answer when we received
+             a timeout. Fixed.
+01.02.2000 - Dialog edit_hc failed to reset 'File size offset' parameter.
+------------------------> Released: 02.02.2000 <---------------------------
+
+
+---------------------------> Version 1.1.5 <-------------------------------
+                            ---------------
+24.02.2000 - Specifying only the "mail header <some file>" option caused
+             sf_smtp to SEGV. Fixed.
+02.03.2000 - Killing job details window via window manager and then
+             restart it caused afd_ctrl to crash. Fixed.
+           - Double the timeout when closing the FTP data connection.
+03.03.2000 - Switching back automatically does not work correctly when
+             the secondary host is gone. Fixed.
+05.03.2000 - When appending files where no data is send, ie the
+             whole file is send but we get a timeout closing the data
+             connection, we use the structure stat stat_buf uninitialized!
+             This can cause havoc in afd_stat!
+           - The ftp_list() function failed to close its data connection!
+------------------------> Released: 08.03.2000 <---------------------------
+
+
+---------------------------> Version 1.1.6 <-------------------------------
+                            ---------------
+11.03.2000 - Switching back automatically did still not work correctly!
+             Hopefully this is fixed now.
+03.04.2000 - dir_check terminates normally when it no longer can access
+             one of the directories that have to be monitored. Fixed.
+04.04.2000 - Specifying "priority1" would result in AMG ignoring this
+             entry without any comment. Fixed by accepting this.
+           - Automatic host switching under heavy load did sometimes
+             not work. Fixed.
+24.04.2000 - Fixed minor error in afd_stat where it could loose data
+             of one hour.
+27.04.2000 - Blush, blush, failed to close() the file when using
+             assemble()! Fixed.
+------------------------> Released: 27.04.2000 <---------------------------
+
+
+---------------------------> Version 1.1.7 <-------------------------------
+                            ---------------
+07.05.2000 - Using buffered read() for afd_mon process.
+08.05.2000 - If the number of messages queued is very large and most
+             messages belong to a host that has a very slow network
+             connection, FD becomes very slow.
+09.05.2000 - Reading from AFD_CONFIG file the value for MAX_CONNECTIONS
+             always failed silently. Fixed.
+12.05.2000 - AMG does not evaluate the DIR_CONFIG when the first line
+             starts with the [directory] identifier. Thanks to
+             Tasos Tsiolakidis for finding this bug.
+13.05.2000 - Speedup initialization of AFD when it is started the first
+             time.
+16.05.2000 - smtp_write() would always insert a \r in front of a \n
+             even if there was already \r. Fixed.
+24.05.2000 - Solved BadDrawable bug for show_log.
+------------------------> Released: 25.05.2000 <---------------------------
+
+
+---------------------------> Version 1.1.8 <-------------------------------
+                            ---------------
+24.06.2000 - When storing data in the job ID database the function
+             lookup_job_id() failed to store the last terminating NULL
+             for AMG options.
+           - Added more signal handlers to afd_ctrl.
+25.06.2000 - Priorities where ignored. Fixed.
+28.06.2000 - In sf_ftp now stopping time after closing the data
+             connection and starting when opening remote file.
+------------------------> Released: 12.07.2000 <---------------------------
+
+
+
+                             Version 1.2.x
+                             =============
+
+---------------------------> Version 1.2.0 <-------------------------------
+                            ---------------
+09.01.2000 - Created new process receive_log.
+16.01.2000 - Addition of directory alias.
+           - DIR_CONFIG is checked for duplicate directory entries.
+22.01.2000 - Minor bug fixes for sf_smtp().
+           - All X application should now work with the -display option.
+           - All X applications are called with the -w path option when
+             started from afd_ctrl.
+           - When sf_ftp failed to close the remote file it failed to
+             append the file next time (when append option is set). Fixed.
+           - Changed all makefiles so 'make install' work when there
+             is an active AFD.
+23.01.2000 - New option -no_input for afd_ctrl and mon_ctrl.
+26.01.2000 - Added a closing phase. Hopefully this will make bursting
+             saver!
+29.01.2000 - Added new function ftp_size().
+           - When dir_check checks for paused hosts, these are now being
+             rescanned more efficient and saver.
+30.01.2000 - Stopping transfer of a host will terminate the connections.
+01.02.2000 - Process init_afd releases any queue locks. This should fix
+             the deadlock when all files are being deleted due to age
+             and files are still being queued.
+03.02.2000 - Fixed bug in filter() where it would solve the following
+             case incorrectly: "*xxx*??" sdsfxxxbb
+             Thanks to Herbert Lepper, for finding this one.
+16.02.2000 - sf_ftp always tries to get a reply when pipe is broken, ie
+             there is no reader. Fixed.
+20.02.2000 - Implemented PASSIVE mode for FTP.
+02.03.2000 - Using setvbuf() in ftpcmd.c instead of always flushing.
+03.03.2000 - Reorganized process afd_stat a bit.
+12.03.2000 - AMG, FD and archive_watch now checks if they already been
+             started.
+18.03.2000 - Added print button to show_cmd dialog and made printer
+             interface more generic.
+30.04.2000 - Only open() debug file when debug is enabled.
+01.05.2000 - Using a buffered read() when reading from the FTP control
+             connection, to reduce the number of system calls.
+13.05.2000 - On some window mangers/X servers afd_ctrl and mon_ctrl
+             either cut of some part of the bottom line or had a small
+             narrow line of garbage after changing the font size. Fixed.
+14.05.2000 - Added option to disable monitoring an AFD in mon_ctrl.
+24.06.2000 - Rewrite of job_list_spy.
+08.07.2000 - Cleaned up log output of sf_xxx() to reduce code size.
+14.07.2000 - exec_cmd() now returns the return code of the program
+             it started.
+           - New procedure to handle proxies. This will not be backward
+             compatible with the old one. This requires a change in
+             the FSA, DIR_CONFIG and HOST_CONFIG.
+18.07.2000 - Added two new options -c <config file> and -f <file name file>
+             to aftp.
+21.07.2000 - Garbage in title bar of dialog show_cmd when command did
+             not start with a /. Fixed.
+29.07.2000 - Doing a buffered read for the ftp_list() function.
+           - Cleaned up log output of aftp, added the SIZE command and
+             enabled appending of files.
+30.07.2000 - Added option to enable passive mode for aftp.
+05.08.2000 - When FD terminated, it could happen that not all its
+             sf_xxx process where killed. Fixed.
+           - Doing buffered read() in sf_smtp as well.
+07.08.2000 - Fixed bug where sf_smtp would write the MIME Version
+             directly behind the subject without a newline.
+05.09.2000 - In the mon_ctrl dialog the process LED's would not blink
+             when a process terminated abnormally. Fixed.
+08.09.2000 - New AMG option "time no collect". This option is similar
+             to the "time" option, only that it does NOT collect data
+             outside the specified times.
+09.09.2000 - archive_watch is now able to read data from the command
+             fifo.
+           - System log radar did not continue when a duplicate
+             message appeared after more then 10 seconds. Fixed.
+10.09.2000 - Found memory bug in afd_ctrl and mon_ctrl when adding a new
+             host or AFD.
+14.09.2000 - Counting line numbers in DIR_CONFIG is now hopefully
+             correct.
+16.09.2000 - Transfer time and file size are not calculated correctly
+             in the show_xlog dialog when they exceeded the given
+             display length. Fixed.
+           - If the transfer time and file size are to long this is
+             now shown with a greater sign.
+24.09.2000 - Using rmdir() instead of unlink() in rec_rmdir() as suggested
+             in man page of solaris.
+------------------------> Released: 24.09.2000 <---------------------------
+
+
+---------------------------> Version 1.2.1 <-------------------------------
+                            ---------------
+29.09.2000 - In mon_ctrl and afd_ctrl, doing a Alt+Mouse button 1 caused
+             it to SEGV. Fixed.
+07.10.2000 - When transfers are active and they are being stopped, these
+             process will not be displayed in red.
+15.10.2000 - The message "switching host for" although no host switch took
+             place, is now removed.
+           - The hostname displayed by AFD, would not change when no
+             afd_ctrl dialog is open and automatic host switching is active
+             for this host! Fixed.
+16.10.2000 - show_ilog crashes with SIGBUS when there is garbage in the
+             logfile. Fixed.
+20.10.2000 - When remote port hangs up, still trying to read from the
+             port when doing the ftp_quit(). This removes the second
+             remote hangup message in the logfile.
+           - Specifying more then one file group for retrieving files from
+             a remote host did not work. Fixed.
+31.10.2000 - Rereading DIR_CONFIG or HOST_CONFIG is now shown as config
+             in the system log.
+           - It is now possible to disable retrieving and archiving when
+             AFD is up and running.
+03.11.2000 - Chmod now also possible for FTP.
+10.11.2000 - sf_loc is now able to handle user and group names for the
+             chown option.
+12.11.2000 - sf_ftp now able to execute commands on remote host after
+             a file is send via the SITE command.
+13.11.2000 - Solved some bugs in function calc_next_time().
+           - Directory options where evaluated incorrectly when the
+             line before the next identifier was filled with blank
+             lines. Thanks to Dirk Melzer for reporting this one.
+           - Bug in create_msa() prevented a proper reread of the
+             AFD_MON_CONFIG file. Fixed.
+15.11.2000 - When changing the alias order with edit_hc it sometimes
+             happens that FD picks the wrong host entry in the FSA.
+             This is hopefully fixed now.
+16.11.2000 - Hopefully retrieving of files does now work when we
+             already have retrieved part of the file in a previous
+             FTP session.
+------------------------> Released: 16.11.2000 <---------------------------
+
+
+---------------------------> Version 1.2.2 <-------------------------------
+                            ---------------
+22.11.2000 - Implemented FTP passive mode for the ftp_list() function.
+           - When switching back to the original host, forgot to update
+             the host_dsp_name variable in the FSA. Fixed.
+23.11.2000 - When creating a new FSA forgot to copy some configuration
+             data from the old FSA.
+27.11.2000 - Optimized rereading the HOST_CONFIG data.
+29.11.2000 - Optimized deleting of archives. Hope that this will reduce
+             the load on systems that have large archives.
+04.12.2000 - Report the exact time when the scanning of directories
+             took so long.
+           - Calculating the average of scanning directories was done
+             wrong. Fixed.
+           - Removed Pixmap stuff from afd_info. Caused to much trouble
+             when compiling on certain platforms.
+05.12.2000 - afd_info will no longer try to get the IP number for
+             empty host names or when they are only for the LOC
+             group.
+08.12.2000 - Bug in eval_message() that caused sf_loc to fail read
+             the group. Fixed.
+15.12.2000 - Found silly bug in mon_ctrl that sometimes disabled the
+             wrong AFD. Fixed.
+           - FD reduces the priority of sf_ftp jobs when they fail for
+             certain type of errors (renaming and opening remote file).
+             This will give other jobs of the same priority a chance.
+16.12.2000 - Some optimization to reduce the number of system calls
+             generated by AFD.
+18.12.2000 - If sf_xxx failed to archive the file it just send it would
+             remain in the internal directory forever, thus filling
+             up the files directory until AMG would just stop.
+------------------------> Released: 19.12.2000 <---------------------------
+
+
+---------------------------> Version 1.2.3 <-------------------------------
+                            ---------------
+24.12.2000 - New process asmtp to send mails automatically.
+26.12.2000 - When creating archives we will now always check the maximum
+             number of links a directory may have with pathconf() instead
+             of relying on LINK_MAX.
+           - Hopefully found bug in afd_stat that mysteriously moves the
+             hour counter backward and then forward again.
+27.12.2000 - More optimization for process archive_watch.
+04.01.2001 - Check for duplicate paused directories.
+06.01.2001 - More optimization to reduce the number of system calls
+             generated FD and AMG.
+           - More checks for reading garbage in process output_log.
+07.01.2001 - Process output_log, input_log and delete_log now handle
+             the case when the FIFO overflows.
+11.01.2001 - Failed to initialize process list properly in afd_mon for
+             disabled AFD's.
+12.01.2001 - Change the value of DEFAULT_TRANSFER_BLOCKSIZE from 1024
+             to 4096.
+21.01.2001 - Compiling without logfiles works again.
+23.01.2001 - When there is no recipient identifier, amg would SEGV.
+             Fixed.
+24.01.2001 - In sf_smtp if we fail to read from the local file we first
+             do a smtp_close() before we quit.
+------------------------> Released: 31.01.2001 <---------------------------
+
+
+---------------------------> Version 1.2.4 <-------------------------------
+                            ---------------
+03.02.2001 - sf_xxx now sorts the files by date (oldest date first) before
+             it starts sending files.
+15.02.2001 - view_hosts showed garbage just behind the first real hostname.
+             Fixed.
+01.03.2001 - Bug in evaluating DIR_CONFIG file. If there are more then
+             one recipients in one RECIPIENT group and the first
+             recipient is longer then the second one it can happen that
+             the second one had garbage in it. Fixed.
+           - Deleting more than one host with the dialog edit_hc now
+             works.
+07.03.2001 - Put in some more syntax checks for function that does the
+             renaming.
+13.03.2001 - All fonts in the menu or popup of the afd_ctrl and mon_ctrl
+             dialog are now set correctly.
+01.04.2001 - New function to search and select or deselect hosts in the
+             afd_ctrl dialog.
+03.04.2001 - Fix memory leak in generic_print.c.
+05.04.2001 - Before mapping to a new file we write the complete file in AMG.
+             Hope that this will eliminate the problem causing it to SIGBUS
+             when mapping to a file and the disk is full.
+           - Show the hostname and full date where AFD was started or
+             stopped in the SYSTEM_LOG.
+------------------------> Released: 05.04.2001 <---------------------------
+
+
+---------------------------> Version 1.2.5 <-------------------------------
+                            ---------------
+11.04.2001 - show_olog failed to resend files from archive. Fixed.
+12.04.2001 - Process dir_check checks the pool directory at start
+             for unfinished jobs.
+16.04.2001 - Process dir_check scans the files in a job only once.
+18.04.2001 - Put a version number into FSA and FRA.
+21.04.2001 - New option "pexec" which is the same as the "exec" option
+             except that this is executed after a file has been send.
+24.04.2001 - Failed to check that MAX_PROCESS_PER_DIR may not be higher
+             than MAX_NO_OF_DIR_CHECKS in AFD_CONFIG. Fixed.
+           - Process dir_check failed to decrease its own process counter
+             for creating children when one of them terminates abnormally.
+25.04.2001 - If there is only one job per directory, rename files from
+             the pool directory into the files directory.
+26.04.2001 - When a sf_xxx process reaches a timeout it will now return
+             this status when it exits.
+09.05.2001 - When sending files via mail, the message header was not
+             separated by a second CRLF from the message body. Fixed.
+           - Sending files from the show_olog dialog would always create
+             files where the length is always a multiple of the given
+             blocksize. Fixed.
+12.05.2001 - Option "time no collect" does now see the weekday Sunday.
+14.05.2001 - In sf_ftp do the checking for duplicate files only when
+             the file size is larger then the transfer block size.
+16.05.2001 - During append sf_ftp now puts some of the numbers for the
+             file size correctly into the FSA.
+17.05.2001 - In function create_fsa() some values where incorrectly
+             initialized to zero instead of taking them from the old
+             FSA. This effected only detailed selection in afd_ctrl.
+           - Replaced gmtime() with localtime() in all log functions.
+           - Port to FreeBSD. Thanks to Ying-Chieh Liao!
+18.05.2001 - Found another silly bug when evaluating the DIR_CONFIG. It
+             didn't like a space in the empty line just before the
+             option entry when the last recipient is commented out.
+21.05.2001 - Forgot to close socket in ftp_quit() and smtp_quit() under
+             error conditions. This is harmless since we always do an exit()
+             after the quit, but who knows.
+           - The dialog show_log would scroll the SYSTEM_LOG in an endless
+             loop when this is larger than 2MB.
+23.05.2001 - New option "attach all files" to attach all files to a
+             single mail. The option "attach file" will attach each
+             file to a separate mail.
+26.05.2001 - Put in a counter for the number of jobs queued for each
+             host.
+27.05.2001 - sf_loc now checks with FD if there is a new job. This should
+             reduce the number of forks by FD.
+29.05.2001 - When disabling a host and the queue was stopped by hand,
+             files in the queue where never deleted. Fixed.
+------------------------> Released: 30.05.2001 <---------------------------
+
+
+---------------------------> Version 1.2.6 <-------------------------------
+                            ---------------
+31.05.2001 - For mail attachment, write a Content-Disposition header.
+             Some mail readers or MTA's don't like this if it is not there.
+01.06.2001 - Fixed nasty bug in dir_check. Process dir_check did always
+             wait for all its children to return before scanning the
+             directories. This could lead to very long delays, depending
+             on the options in DIR_CONFIG.
+02.06.2001 - Another bad bug in dir_check. When one directory receives files
+             at a very high rate, it can happen that dir_check ends up
+             in an endless loop serving only this one directory!
+03.06.2001 - In sf_loc removed empty directory to late during a burst. FD
+             under rare conditions thought there is a job without a message
+             and created one for an empty directory.
+------------------------> Released: 06.06.2001 <---------------------------
+
+
+---------------------------> Version 1.2.7 <-------------------------------
+                            ---------------
+14.06.2001 - Failed to initialize file_name_length for output log. This
+             caused some entries to be lost by process output_log. Fixed.
+15.06.2001 - Process dir_check now receives the correct message when
+             HOST_CONFIG is updated with edit_hc.
+           - Build in additional checks when evaluating messages.
+           - Implemented burst2 for FTP.
+17.06.2001 - Process output_log can now handle the situation when the
+             fifo overflows.
+30.06.2001 - Process afdd is now only started if port number is specified
+             in AFD_CONFIG file with the AFD_TCP_PORT identifier.
+           - In show_olog mark archive as deleted when its time is up.
+01.07.2001 - Info clock of show_xlog dialog now show the directory options.
+           - Fixed bug where send dialog of show_olog showed garbage.
+03.07.2001 - Forgot to reset connection field in afd_ctrl dialog when
+             jobs are being removed.
+           - Function copy_file() no longer maps to the whole file but
+             does so in chunks.
+05.07.2001 - In function get_rename_rules() forgot to terminate buffer
+             with a '\0'. Fixed.
+07.07.2001 - Function eval_recipient() did not initialize target_dir when
+             none was specified in recipient string.
+08.07.2001 - Most function in common now use system_log() instead of rec().
+           - All sf_xxx process now use function trans_db_log() instead
+             of rec().
+09.07.2001 - show_olog did not show correct total time when size and
+             recipient are specified. Fixed.
+10.07.2001 - Reduce priority of a "not working" job by 600 seconds instead
+             of 6 seconds.
+11.07.2001 - Evaluating the afd.users file could end up in an endless loop
+             when there are empty spaces behind the last entry. Fixed.
+------------------------> Released: 12.07.2001 <---------------------------
+
+
+---------------------------> Version 1.2.8 <-------------------------------
+                            ---------------
+15.07.2001 - Removed unnecessary fstat() system call in sf_ftp and sf_scp1.
+16.07.2001 - Function handle_options() and trans_exec() put the quotes for
+             file names with spaces or ";" at the wrong place. Fixed.
+           - copy_file() did not copy files of zero length. Fixed.
+17.07.2001 - sf_ftp failed to reset the ascii buffer. This could sometimes
+             lead to files being send in ASCII mode and not in binary.
+18.07.2001 - Implemented "do not remove" option for local directories.
+20.07.2001 - The directory option "delete unknown files" WRONGLY deleted
+             files in the queue as well. For this reason a new option has
+             been added "delete queued files", which will delete old
+             queued files. The old option works now as documented.
+22.07.2001 - Reduce the timeout to a maximum of 20 second for function
+             ftp_get_reply().
+25.07.2001 - Did not have enough memory in append functions to store
+             the binary zero. Fixed.
+           - Under some circumstances function check_burst_2() could
+             lead to a SIGSEGV. Hope this has been fixed.
+           - Function eval_dir_config() SIGSEGV when identifier groups
+             are not separated with an empty line. Thanks to Bellucci
+             Massimo for reporting this one.
+26.07.2001 - Added function ftp_account() required by some FTP proxies.
+29.07.2001 - New dialog show_queue to view and delete files from the
+             AFD queue.
+30.07.2001 - Function init_sf_burst2() failed to remove empty file
+             directories. Fixed.
+31.07.2001 - In function check_burst_2() forgot to set protocol.
+04.08.2001 - Added to new fields to HOST_CONFIG file to store the status
+             and some protocol specific options for this host.
+           - Updated dialog edit_hc to reflect the above changes.
+05.08.2001 - New function ftp_idle() to set idle time of remote FTP-server.
+           - Function check_burst() cooperates better with the new burst2
+             code.
+07.08.2001 - Fixed some display bugs in job details window of the
+             afd_ctrl dialog.
+           - Port to AIX.
+------------------------> Released: 08.08.2001 <---------------------------
+
+
+---------------------------> Version 1.2.9 <-------------------------------
+                            ---------------
+14.08.2001 - Fixed a memory leak in afd_ctrl dialog.
+           - afdcmd forgot to rewrite the HOST_CONFIG file. Fixed.
+20.08.2001 - Forgot to reset no_selected in mon_ctrl dialog.
+21.08.2001 - Don't write any debug information during a burst when all
+             files have been deleted due to age.
+22.08.2001 - Removed some unnecessary locking from all sf_xxx process.
+           - sf_wmo took the wrong variable to reduce the number of bytes
+             still to be send when the file size was zero. Fixed.
+           - sf_ftp will now write the mode type (active/passive) used
+             when connecting to the log files.
+23.08.2001 - Made appending of files safer by checking the date of file
+             as well and not only the file name.
+24.08.2001 - Process dir_check splitted extract jobs wrongly. Fixed.
+           - The view_dc dialog now shows the directory options.
+27.08.2001 - Counted files on input twice when queue was stopped and
+             then started again. Fixed.
+           - Function remove_files() now removes any files from restart
+             option in the message file when a file is deleted due to age.
+------------------------> Released: 29.08.2001 <---------------------------
+
+
+---------------------------> Version 1.2.10 <------------------------------
+                            ----------------
+02.09.2001 - Added function ftp_keepalive(). This is used to keep the
+             control connection open on very slow connections that
+             transmit large files. Some firewalls close the control
+             connection if there is no activity for a longer time.
+10.09.2001 - Function get_remote_file_names() sorted the structure
+             retrieve_list wrongly. This could cause gf_ftp to crash. Fixed.
+11.09.2001 - Hostname was not a compound string in afd_info dialog.
+           - Before resending files via the output_log dialog we update
+             the date of the files so that when the age-limit option
+             is set files will not be deleted by sf_xxx.
+17.09.2001 - New parameter (CREATE_SOURCE_DIR_MODE) in AFD_CONFIG file to
+             set the mode of the input directories created by AFD.
+22.09.2001 - Catch fifo buffer overflows in transfer_log and receive_log.
+29.09.2001 - Added one more row to choose from in afd_ctrl and mon_ctrl
+             dialog (from Setup menu).
+	   - Before resending a file via the show_olog dialog check that
+	     we do have the correct permission to update the file. If
+	     not copy the file.
+           - Fixed long standing bug in show_olog where files renamed
+             with the trans_rename option would not be resend. Wonder
+             why no one has noticed this!
+30.09.2001 - Updated SCP1 functions so renaming works.
+01.10.2001 - Dialog view_dc and show_olog did not show the time option
+             if specified for that directory. Fixed.
+09.10.2001 - Added option to add hostname for rename and trans_rename
+             option.
+12.10.2001 - Did not reduce priority of a job if the remote directory
+             is no longer available. Fixed.
+15.10.2001 - Fixed some minor bugs in mon_ctrl dialog.
+18.10.2001 - Process FD failed to reset FSA values when a job is removed
+             because it is no longer in the DIR_CONFIG.
+19.10.2001 - Compiles under HP 10.20 again.
+23.10.2001 - Fixed a rename bug in function change_name().
+26.10.2001 - Remove rotating dash in job_details dialog, when file has
+             been completely transmitted.
+28.10.2001 - Compatibility with lesstif has been improved. However there
+             are still some issues remaining: drag+drop in edit_hc
+             does not work and displaying logs with show_log is still
+             problematic.
+------------------------> Released: 29.10.2001 <---------------------------
+
+
+---------------------------> Version 1.2.11 <------------------------------
+                            ----------------
+07.11.2001 - Fixed another rename bug in function change_name().
+12.11.2001 - Process fd uses less system calls when DIR_CONFIG is reread.
+13.11.2001 - Failed to set rows correctly in dir_ctrl dialog. Fixed.
+           - With the help of a \ one can enter directories with spaces.
+16.11.2001 - In function init_msg_buffer() when we remove a connection
+             queued, check if it is in connection structure and only then
+             remove it from the structure.
+08.12.2001 - When jobs are removed with the show_queue dialog it did not
+             remove the entries in the queue of FD. Fixed.
+11.12.2001 - FD initilizes all connection variables every time it starts
+             to ensure a sane state when it starts.
+------------------------> Released: 12.12.2001 <---------------------------
+
+
+---------------------------> Version 1.2.12 <------------------------------
+                            ----------------
+15.12.2001 - For scheme mailto the hostname supplied with the server=
+             option will be the hostname that is stored in the FSA.
+             This will give the administrator the ability to hide all
+             mails behind one entry in the afd_ctrl dialog.
+16.12.2001 - In show_olog dialog allow users to search full mail addresses.
+22.12.2001 - Using variable column length in afd_ctrl dialog to save
+             screen space if you do not always set the maximum number
+             of jobs per host.
+25.12.2001 - The filename used to store configuration of some dialogs
+             no longer contains the display and screen number
+             (ie. :0.0 part).
+26.12.2001 - For afd_ctrl dialog allow for more changes in line style.
+29.12.2001 - Due to confusion about Start/Stop queue in the afd_ctrl
+             dialog renamed this Start/Stop input queue.
+03.01.2002 - Unable to look at logfiles from December in January with
+             show_xlog dialogs. Fixed.
+10.01.2002 - Set toggle button for input by default in show_queue dialog.
+23.01.2002 - Added function eaccess() to test access permission based
+             on the effective user ID. This will allow other users to
+             resend files or start the AFD.
+           - During shutdown AMG could still send jobs to FD while
+             this has already terminated. Fixed.
+27.01.2002 - Added option reply-to.
+30.01.2002 - The number of logfiles that are kept for history can now
+             be configured in AFD_CONFIG.
+31.01.2002 - During startup remove old host entries that are no longer
+             in the FSA from the error directory.
+10.02.2002 - Included afd.spec file to generate rpm's, thanks to Doug
+             Henry.
+19.02.2002 - Send one mail to multiple recipient with the help of a
+             group identifier and group file.
+23.02.2002 - Fixed some errors when rereading the DIR_CONFIG or HOST_CONFIG
+             under high load.
+03.03.2002 - Set effective user ID to the user ID of AFD_WORK_DIR.
+------------------------> Released: 04.03.2002 <---------------------------
+
+
+---------------------------> Version 1.2.13 <------------------------------
+                            ----------------
+06.03.2002 - Include all fixes from pmatch() to sfilter().
+31.03.2002 - Button line in afd_ctrl dialog was not correctly redrawn
+             when number of rows changed due to a host being added or
+             deleted. Fixed.
+02.04.2002 - Central makefile creates install directory bin and sbin
+             if they do not exist.
+04.04.2002 - Failed to reset host_toggle in FSA when toggling the
+             hostname is removed.
+06.04.2002 - Added saving of old core files.
+07.04.2002 - Process AMG started dir_check with the wrong number of
+             local directories causing it crash or behave strangly
+             when a directory was added or removed and only reread
+             HOST_CONFIG was pressed. Reread DIR_CONFIG was fine, but
+             another reread HOST_CONFIG could trigger the bug. Fixed.
+09.04.2002 - Fixed yet another bug in function change_name().
+16.04.2002 - Backward insertion (introduced in 1.2.12) does not work
+             correctly, resulting in a completly unsorted queue and
+             thus priorities did not work. Using a new algorithm
+             which hopefully is faster and does work.
+17.04.2002 - Added counter to store maximum FD queue length on a daily
+             basis.
+19.04.2002 - FD did not remove old jobs from the joblist when it is
+             not in the cache. Fixed.
+           - The active fields for getting detailed information about
+             a process was to far to the right in the afd_ctrl dialog.
+           - Remove any trailing / from the users home path.
+20.04.2002 - Use a new sorting algorithm for sorting.
+22.04.2002 - FD failed to reset correct jobs_queued element in FSA, when
+             retrieving files. Fixed.
+25.04.2002 - FD tried to burst retrieve jobs which is not possible.
+------------------------> Released: 25.04.2002 <---------------------------
+
+
+---------------------------> Version 1.2.14 <------------------------------
+                            ----------------
+03.05.2002 - Added option execd, which works just like exec only
+             that it removes the original file after executing the
+             command.
+05.05.2002 - Dialog dir_ctrl now shows the number of files and bytes
+             in the directories and queue that are to be monitored.
+           - Automatically convert FRA when the release number (ie.
+             the structure) changes.
+13.05.2002 - Specifying a group name together with a hostname was not
+             handled correctly. Fixed.
+14.05.2002 - Reduce priority when password is wrong.
+16.05.2002 - Removed all shared memory stuff from AFD.
+           - Port to cygwin, not yet completed since fifos don´t work.
+           - Added option execD which removes ALL files if the exec
+             command failes. This only works without the %s parameter.
+22.05.2002 - Separate old file times for unknown and queued files in
+             dir_options.
+27.05.2002 - Combine FTP rename to one command, not two separate ones.
+10.06.2002 - Not specifying a filename for the assemble now gives a
+             warning in the receive log.
+11.06.2002 - The field dir_alias was not set by FD, after a DIR_CONFIG
+             update this could lead to data being written to the end
+             of the FRA. Fixed.
+14.06.2002 - Assemble MSS did not work. Fixed.
+           - Function remove_dir() called closedir() twice in case of
+             an error.
+16.06.2002 - Added option unix time to rename rule.
+           - Included option to test for AFD heartbeat.
+29.06.2002 - New options toupper and tolower to convert all letters of
+             the file name to upper or lower case.
+02.07.2002 - Added from option for mail.
+03.07.2002 - When reordering the hostnames in afd_ctrl dialog with
+             edit_hc it could happen, due to a bug in function
+             create_db(), that the files of some directories are just
+             deleted. Since there was no reliable way to reproduce this,
+             if this fix corrected it. Only time will tell.
+           - Added charset option for mail.
+04.07.2002 - For mail add To header by default.
+           - Supplying the mailserver via the server= option now works
+             correctly.
+05.07.2002 - FD sometimes crashes when some hosts are being removed
+             from the FSA. Fixed.
+08.07.2002 - Removed combination of FTP rename to one command, it caused
+             to many problems with window systems.
+------------------------> Released: 08.07.2002 <---------------------------
+
+
+---------------------------> Version 1.2.15 <------------------------------
+                            ----------------
+10.07.2002 - When pexec command creates subdirectories in the files
+             directory, FD was unable to delete them and AFD would
+             constantly try to generate a new job. Fixed.
+           - Function exec_cmd() now initializes the return buffer.
+12.07.2002 - Files that have no distribution rule and where the option
+             "delete old files" is set are now deleted immediatly while
+             we are scanning for files. So setting "old file time 0"
+             will delete unknown files immediatly.
+           - Old files are now logged in the receive log.
+14.07.2002 - Fix crash of dir_ctrl dialog.
+16.07.2002 - New option wmo2ascii, to remove SOH, ETX and the two carriage
+             returns from the text.
+19.07.2002 - Code cleanups, removed some unnecessary casts.
+           - When a the queue is dequeued after an error, the queue counter
+             was not reduced. Fixed.
+22.07.2002 - Old time jobs where not removed as long as they where
+             still in job ID structure. Fixed.
+           - If the directory alias is changed for a retrieve job, FD
+             was always removing the internal retrieve directory.
+30.07.2002 - Make it possible to insert current date into the subject
+             of a mail.
+31.07.2002 - Dialog dir_ctrl segfaults when pressing ALT+mouse button 1.
+             Fixed.
+08.08.2002 - For remote directory names it is possible to have AFD insert
+             the current date, so that it will always look at different
+             directories at different times.
+           - New option to assemble DWD files.
+           - Masking the @ with a \ did not work for a remote recipient.
+             Fixed.
+31.08.2002 - Fix multiple local root exploits in get_afd_path() and
+             get_mon_path(). Thanks to Ilja of Netric (www.netric.be)
+             for finding this.
+02.09.2002 - Function handle_option() did not notice that the filename
+             is changed by gts2tiff(). Fixed.
+------------------------> Released: 04.09.2002 <---------------------------
+
+
+---------------------------> Version 1.2.16 <------------------------------
+                            ----------------
+24.10.2002 - The time directory option did not work correctly with a
+             7 (Sunday) for day of week. Fixed.
+29.10.2002 - Delete the remote file if the FTP command RNTO fails.
+30.10.2002 - Take the $AFD_WORK_DIR/files to determine if we can just
+             do a move from the user directory and not just $AFD_WORK_DIR.
+04.11.2002 - If AMG is restarted FD did not notice that FSA has changed.
+             Fixed.
+06.11.2002 - If we fail to open a remote file because the remote FTP
+             server does not allow to open an existing file, we now try
+             to delete the file and try again.
+11.11.2002 - Function delete_log_ptrs() now creates the fifo if it does
+             not exist.
+12.11.2002 - The default age-limit can be configured in the AFD_CONFIG
+             file.
+14.11.2002 - Using the option "extract MRZ" together with other options
+             did not work correctly. Fixed.
+17.11.2002 - Command line tool mafdcmd to enable/disable monitoring an
+             AFD.
+           - Dialog afd_ctrl with optional short lines.
+23.11.2002 - New extract option GRIB, that extracts multiple gribs from
+             one file and store them in separate files with the WMO
+             header as file name.
+01.12.2002 - dir_ctrl dialog showed the wrong number of files queued.
+             Fixed.
+           - It is no longer required to have two newlines before each
+             rule header in the rename.rule file.
+04.12.2002 - Set fonts correctly for popups from main menu in dir_ctrl
+             dialog.
+10.12.2002 - New option overwrite that allows overwriting of files
+             during renaming, so no file names with a ; are created.
+           - Save setup in afd_ctrl, dir_ctrl or mon_ctrl dialog did
+             not work when the information to be stored was shorter
+             then the original length. Fixed.
+------------------------> Released: 11.12.2002 <---------------------------
+
+
+---------------------------> Version 1.2.17 <------------------------------
+                            ----------------
+12.12.2002 - Specifying the time behind the "delete unknown files"
+             directory option did not work correctly. Fixed.
+14.12.2002 - Hope to have made files queued counter more robust.
+           - If the host order has changed this was not reflected in
+             a running afd_ctrl dialog. Fixed.
+27.01.2003 - The new overwrite option did not subtract the size of
+             the file being removed. Fixed.
+15.02.2003 - Fixed some errors in function wmoheader_from_grib().
+16.02.2003 - Added new options -m and -mr to show_stat.
+           - Fixed some bugs in show_stat.
+17.02.2003 - Increase the number of digits shown for line counting
+             in show_log dialog.
+27.02.2003 - Set error counter to zero when queue has been stopped
+             automatically and we want to start it by hand.
+           - When no AFD_TCP_PORT is defined in AFD_CONFIG the afd_ctrl
+             dialog always short a fourth LED on schutdown. Fixed.
+01.03.2003 - Added new option grib2wmo to convert grib files to WMO
+             container files.
+04.03.2003 - The receive log did not show duplicated messages correctly.
+             Fixed.
+05.03.2003 - Fixed a bug in transfer log that sometimes did not show
+             the number of files and bytes when an error occured.
+------------------------> Released: 04.03.2003 <---------------------------
+
+
+---------------------------> Version 1.2.18 <------------------------------
+                            ----------------
+13.03.2003 - If a host was removed it was not shown correctly in the
+             afd_ctrl dialog. Fixed.
+19.03.2003 - Removed some unnecessary locking from send_message().
+21.03.2003 - If the recipient contained a space, it was ignored.
+28.03.2003 - If no username was given and archive was set, the archive
+             was never deleted.
+02.04.2003 - When a file is attached it tries to automatically detect
+             what type it is by looking at the extension.
+03.04.2003 - Made the scp code work with both SSH1 and SSH2, thanks to
+             Frederic Olivie.
+04.04.2003 - sf_ftp now again shows appends and burst in log file.
+30.04.2003 - Added function to check if files in fifodir have the
+             correct permissions.
+05.05.2003 - In edit_hc dialog it was not possible to change the retry
+             interval if the scheme was file only. Fixed.
+03.06.2003 - Source and target directories may now also contain spaces.
+17.06.2003 - In afd_ctrl dialog, when a host is deleted and it was marked
+             as a short line, it did not recognise that this host no
+             longer exist.
+28.06.2003 - Added time modifier for renaming.
+06.07.2003 - When the directory option "do not remove" is set, the
+             directory is local and the maximum number of files or size
+             is reached, process dir_check could end up in an endless
+             loop.
+10.07.2003 - Minor bug in edit_hc that did not allow to update a host
+             when host switching is turned off and the second hostname
+             is removed. Fixed.
+           - Fix memory leak in mon_ctrl dialog.
+13.07.2003 - The option age-limit is now also evaluated on input (AMG).
+14.07.2003 - Added delete option.
+15.07.2003 - Added option "file busy rename" to rename the initial file
+             when we file to open the remote file due to some process
+             locking it.
+19.07.2003 - Handle case when in the recipient there is no port number
+             specified behind the ':'.
+11.08.2003 - Option to send log output to a mail address.
+17.08.2003 - New option lockp to do postfix type of locking.
+19.08.2003 - Function get_user() now does a length check.
+           - afd_mon and afdd can no longer be started twice.
+24.08.2003 - Failed to check if number of options or the option length
+             exceeded the maximum possible. Fixed.
+28.08.2003 - Put in check for directory length in DIR_CONFIG.
+18.09.2003 - Dir_check now checks if time goes backwards.
+22.09.2003 - If old_file_time is 0, do not delete incoming dot files.
+           - Specifying the recipient in show_ilog should now also work
+             when there are more then one job per directory.
+           - Do not install binaries with SUID flag when the files
+             belong to root.
+01.10.2003 - New option convert to convert ASCII bulletins starting
+             with SOH and ending with ETX to WMO standart 8 byte length
+             and 2 byte type indicator.
+------------------------> Released: 07.10.2003 <---------------------------
+
+
+---------------------------> Version 1.2.19 <------------------------------
+                            ----------------
+20.10.2003 - If DISPLAY is localhost (ssh) get real hostname with
+             'who am i'.
+24.10.2003 - Fix a bug where show_dlog crashes when user id of the person
+             who deleted a file was longer then 14 bytes. Fixed.
+31.10.2003 - When showing DIR_CONFIG information in dialogs we failed to
+             show the number of hours for the "delete queued files"
+             option.
+05.11.2003 - When we check for permission ensure that we check the full
+             user name and not only part of it.
+22.11.2003 - If there is lot of data to be shown by show_log dialog, it
+             buffers them and then shows the buffer. It is now possible
+             to view lot of data over a slow connection.
+23.11.2003 - Allow user to change window height of show_olog, show_ilog,
+             show_dlog and show_queue dialog, but disallow to change the
+             width.
+25.11.2003 - Fix a bug that wrote garbage into the internal job database.
+             This bug was introduced in 1.2.18.
+26.11.2003 - Disallow user to change window width and height via any
+             window manager for the dialogs afd_ctrl, dir_ctrl and
+             mon_ctrl.
+01.12.2003 - The AFD monitor log did not show selected entries that had
+             the full possible name length. Fixed.
+10.12.2003 - When FD fails to fork new process it failed to reset the
+             variables for this process. Thus FD always thought this
+             process was in use.
+           - Remove control connection from sf_scp since it did not
+             work reliable. This makes it imposible to rename a file
+             on the remote side. SCP protocol was not designed for this.
+------------------------> Released: 15.12.2003 <---------------------------
+
+
+---------------------------> Version 1.2.20 <------------------------------
+                            ----------------
+01.01.2004 - get_dc_data did not show all FD options. Fixed.
+11.01.2004 - The show_log dialog sometimes stopped showing data, due
+             to a string not being terminated correctly. Fixed.
+28.01.2004 - Allow scheme file to have no user name.
+           - Accept 500 as error return for changing user on an active
+             connection.
+           - Store information that a host is not in DIR_CONFIG in
+             the HOST_CONFIG.
+29.01.2004 - Failed to remember last time value when retrieving files
+             and time option is used.
+02.02.2004 - AFD compiles again under SCO.
+03.02.2004 - In HOST_CONFIG do not allow switching information with
+             no content, ie. only the brackets.
+           - Fix a bug in the function evaluating the afd.users file.
+             When there is only one character between the user name and
+             the permissions, it ends up in an endless loop.
+04.02.2004 - Function search_old_file() may not delete files that are to
+             be distributed.
+05.02.2004 - Stopping the queue for a host fetching files is now
+             implemented.
+24.03.2004 - Port to MacOS 10.3.
+           - msync() now called with MS_SYNC instead of MS_ASYNC.
+           - If fifo buffer is to small set it to what we need.
+------------------------> Released: ??.??.2004 <---------------------------

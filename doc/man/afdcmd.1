@@ -1,0 +1,112 @@
+.\" Process this file with
+.\" groff -man -Tascii afdcmd.1
+.\"
+.\"  This program is free software; you can redistribute it and/or modify
+.\"  it under the terms of the GNU General Public License as published by
+.\"  the Free Software Foundation; either version 2 of the License, or
+.\"  (at your option) any later version.
+.\"
+.\"  This program is distributed in the hope that it will be useful,
+.\"  but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\"  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\"  GNU General Public License for more details.
+.\"
+.\"  You should have received a copy of the GNU General Public License
+.\"  along with this program; if not, write to the Free Software
+.\"  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+.\"
+.TH AFDCMD 1 "OCTOBER 2008" AFD "AFD"
+.SH NAME
+afdcmd \- send commands to the AFD
+.SH SYNOPSIS
+.B afdcmd [-w
+.I working directory
+.B ] [-p[
+.I role
+.B ]] [-u[
+.I user
+.B ]] [-aAbBdeEgGfFikopqQrRstTvWXYZ]
+.I hostname|directory|position
+.SH DESCRIPTION
+With the command
+.B afdcmd
+it is possible to issue most commands that can be issued with
+the afd_ctrl and dir_ctrl dialog on a per host or directory basis.
+.SH FSA OPTIONS
+.IP -q
+start the input queue
+.IP -Q
+stop the input queue
+.IP -t
+start transfer
+.IP -T
+stop transfer
+.IP -g
+enable delete data for host
+.IP -G
+disable delete data for host
+.IP -e
+enable host
+.IP -E
+disable host
+.IP -s
+switch host
+.IP -r
+retry
+.IP -d
+enable/disable debug
+.IP -c
+enable/disable trace
+.IP -C
+enable/disable full trace
+.IP -X
+toggle enable/disable host
+.SH FRA options
+.IP -b
+enable directory
+.IP -B
+disable directory
+.IP -R
+rescan directory
+.IP -W
+toggle enable/disable directory
+.SH General options
+.IP -f
+start FD
+.IP -F
+stop FD
+.IP -a
+start AMG
+.IP -A
+stop AMG
+.IP -Y
+start/stop AMG
+.IP -Z
+start/stop FD
+.IP -k
+force file dir check
+.IP -i
+reread local interface file
+.IP -o
+show exec statistics
+.IP -p
+force archive check
+.IP -v
+Just print the version number.
+.SH FILES
+.IP $AFD_WORK_DIR/etc/afd.users
+The AFD user configuration file giving each user certain permission. See
+.BR afd.users (5)
+for further details.
+.RE
+.SH ENVIRONMENT
+.IP AFD_WORK_DIR
+The work directory of the AFD to be configured by
+.BR afdcmd .
+Overridden by the
+.B -w
+option.
+.SH AUTHOR
+Holger Kiehl <Holger.Kiehl@dwd.de>
+.SH "SEE ALSO"
+.BR afdcfg (1)

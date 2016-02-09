@@ -1,0 +1,342 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (log.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="log_files">Log Files</a></h1>
+<hr size=3 noshade>
+<p>
+There are eight different types of log files used by the AFD: system,
+receive, transfer, transfer debug, input, production, output and delete
+log. All these files are written in ASCII notation, so they can be
+evaluated with standard Unix tools.
+</p>
+
+<h3 align=center><a name="system_log"><u>System Log</u></a></h3>
+<center><img src="../images/system_log_small.png"></center>
+<p>
+This is the most important log file for the AFD system administrator.
+Here all errors encountered by the AFD are logged. It also gives
+the following information:
+</p>
+<ul>
+   <li>When archives are being removed.</li>
+   <li>The start/stop of any main process of the AFD.</li>
+   <li>Any manipulation of the remote host, such as enabling
+       debugging, start/stop transfer, start/stop queue,
+       switching hosts either by hand or automatically, etc.</li>
+   <li>If any process terminates abnormally.</li>
+   <li>Debug information for the programmer.</li>
+</ul>
+
+<h3 align=center><a name="event_log"><u>Event Log</u></a></h3>
+<center><img src="../images/show_elog_small.gif"></center>
+<p>
+All events that occur are held in this log file. A more detailed
+description of what events and the format is shown in
+<a href="../txt/event_log.txt">this</a> text file.
+</p>
+
+<h3 align=center><a name="transfer_log"><u>Transfer Log</u></a></h3>
+<center><img src="../images/transfer_log_small.png"
+alt="[image of transfer_log dialog]"></center>
+<p>
+The transfer log tells how many files and bytes are being send to a
+particular host and the time when they where send. The general form
+of such an entry is as follows:
+</p>
+<a name="general_form"></a>
+<pre>
+26 12:17:11 &lt;I&gt; ducktown[0]: 1568 Bytes send in 3 file(s).
+|     |      |    |      |     |           |
+|     |      |    |      |     |           +----&gt; General message saying how
+|     |      |    |      |     |                  many files have been send.
+|     |      |    |      |     +----------------&gt; Sum of the size send.
+|     |      |    |      +----------------------&gt; The job number.
+|     |      |    +-----------------------------&gt; Remote Host Name
+|     |      +----------------------------------&gt; Log level.
+|     +-----------------------------------------&gt; hh:mm:ss
++-----------------------------------------------&gt; Day of the month.
+</pre>
+<p>
+Currently there are nine different log levels: Fatal &lt;F&gt;, Error
+&lt;E&gt;, Warning &lt;W&gt;, Information &lt;I&gt;, Configuration
+&lt;C&gt;, Offline &lt;O&gt;, Debug &lt;D&gt;, Trace &lt;T&gt; and
+"other information" &lt;#&gt;.
+</p>
+<p>
+More important are the warnings/errors that get logged here that may
+have occurred during the distribution. Below is an example of an error
+that occurred while distributing files via FTP:
+</p>
+<pre>
+26 07:51:09 &lt;E&gt; ducktown[0]: Failed to open remote file .PAXX82_EDZW_J0570749 (-1). #124 (sf_ftp.c 783)
+26 07:51:09 &lt;E&gt; ducktown[0]: 150-Opening BINARY mode data connection for '.PAXX82_EDZW_J0570749'.
+</pre>
+<p>
+The second line is the reply that was received from the remote FTP
+server. This makes the finding of errors very easy, since the user
+immediately sees what type of error it was and what the reason was
+for this error. The number behind the # sign is the message number
+that was used by the AFD for this transmission.
+</p>
+
+<h3 align=center><a name="transfer_debug_log"><u>Transfer Debug Log</u></a></h3>
+<center><img src="../images/transfer_debug_log_small.png"
+alt="[image of transfer debug dialog]"></center>
+<p>
+If the information in the transfer log is not enough, to evaluate
+an error the user has the possibility to enable debugging and/or tracing.
+Here all activities of the sending/receiving process are being logged. The
+form of the output is the same as <a href="#general_form">above</a>. Below
+is an example of a debug log output:
+</p>
+<pre>
+13 07:29:51 &lt;I&gt; ducktown[0]: Connected. (sf_ftp.c 204)
+13 07:29:51 &lt;I&gt; ducktown[0]: 220-hollywood FTP proxy (Version V1.3) ready.
+13 07:29:52 &lt;I&gt; ducktown[0]: Entered user name daisy@hollywood. (sf_ftp.c 253)
+13 07:29:52 &lt;I&gt; ducktown[0]: 331-Password required for daisy.
+13 07:29:53 &lt;I&gt; ducktown[0]: Logged in as daisy@hollywood. (sf_ftp.c 302)
+13 07:29:53 &lt;I&gt; ducktown[0]: 230-User daisy logged in.
+13 07:29:53 &lt;I&gt; ducktown[0]: Changed transfer mode to I. (sf_ftp.c 351)
+13 07:29:53 &lt;I&gt; ducktown[0]: 200-Type set to I.
+13 07:29:53 &lt;E&gt; ducktown[0]: Failed to change directory to /duck_tales (550). (sf_ftp.c 367)
+13 07:29:53 &lt;I&gt; ducktown[0]: 550-/duck_tales: Not a directory.
+</pre>
+<p>
+The lines containing the numbers 220, 331, 230, 200 and 550 are always
+the reply from the remote FTP server. If you want to know the exact meaning
+of these numbers see <a href="ftp-reply-code.html">FTP reply codes</a>
+or for a more detailed description see <a href="../txt/rfc959.txt">RFC 959</a>.
+In the above example we see that we have failed to change the remote
+directory to /duck_tales and that the remote server says that it is not a
+directory, but a file or link.
+</p>
+<h3 align=center><a name="receive_log"><u>Receive Log</u></a></h3>
+<center><img src="../images/receive_log_small.png"
+alt="[image of transfer debug dialog]"></center>
+<p>
+The receive log shows the number of files received and if exec option is
+set what is done by the exec option in the directories monitored by AFD.
+The output is very similar to the transfer log. In this log all errors
+will be shown that the AMG encounters while it processes these files
+(eg. the exec option).
+</p>
+<p>
+<pre>
+04 12:37:15 &lt;I&gt; inetkonrad: Received 6 files with 769995 Bytes.
+04 12:37:15 &lt;I&gt; wwweamdar : Received 4 files with 1958858 Bytes.
+04 12:37:15 &lt;I&gt; kon_vxc   : Received 1 files with 1485 Bytes.
+04 12:37:40 &lt;I&gt; swismeldwm: Received 1 files with 6328 Bytes.
+04 12:37:45 &lt;I&gt; f80422d7  : [14328] tr -s "[\015\015]" &lt; gts01-SMDL92_EDZW_041200-0507041200-afsv--72- &gt; gts01-SMDL92_EDZW_041200-0507041200-afsv--72-.tmp; rm gts01-SMDL92_EDZW_041200-0507041200-afsv--72-
+04 12:37:45 &lt;I&gt; f80422d7  : [14328] Exec time: 0.010s
+04 12:37:50 &lt;I&gt; rad-stat  : Received 2 files with 37888 Bytes.
+04 12:37:50 &lt;I&gt; 3a310ad5  : Received 1 files with 1024 Bytes.
+04 12:37:50 &lt;I&gt; 3a310ad5  : [25349] bzip raa00-dv_10440-0507041239-fld---bin
+04 12:37:50 &lt;I&gt; 3a310ad5  : [25349] Exec time: 0.010s
+04 12:37:55 &lt;I&gt; jm-swis   : Received 17 files with 72033 Bytes.
+04 12:37:55 &lt;I&gt; jm-swistxt: Received 64 files with 37007 Bytes.
+</pre>
+</p>
+<p>
+The System, Receive, Transfer and Transfer Debug Log can all be viewed
+with the X program <a href="show_log.html">show_log</a>.
+</p>
+
+<h3 align=center><a name="input_log"><u>Input Log</u></a></h3>
+<center><img src="../images/show_ilog_small.png" alt="[image of show_ilog dialog]"></center>
+<p>
+Here all file names of files that are picked up by the AFD get logged in
+the INPUT_LOG.x file. Data for this file is collected for one day
+(SWITCH_FILE_TIME). This file is then kept for 7 (MAX_INPUT_LOG_FILES)
+days. Every time a new log file is created, the x for all old log files
+is incremented by one. Thus the newest log file is always INPUT_LOG.0.
+</p>
+<p>
+An entry might look as follows:
+</p>
+<pre>
+4167b8f8   RADAR_PASW42_LSSW_J0570001|23fe|b72afd25|10f
+   |                   |               |      |      |
+   |                   |               |      |      +-&gt; Unique number in hex
+   |                   |               |      +--------&gt; Directory Identifier
+   |                   |               +---------------&gt; File Size in hex
+   |                   +-------------------------------&gt; File Name
+   +---------------------------------------------------&gt; Unix Time in hex
+</pre>
+<p>
+The time is not entered in a human readable form, so that we do not need
+to convert back to the UNIX time when we show the time in the
+<a href="show_ilog.html">Input Log Window</a>. Unique number, Directory
+Identifier, File Size and Unix Time are hexa decimal values.
+</p>
+
+<h3 align=center><a name="production_log"><u>Production Log</u></a></h3>
+<p>
+If something is being done via one of the options it will be logged to
+PRODUCTION_LOG.x. This log is rotated the same way as the INPUT_LOG.x
+above.
+</p>
+<p>
+A log entry of this type looks as follows:
+</p>
+<pre>
+4167b8f3  1:1|4167b8f3_10f_0|682d6409|d1fe5d48|fiau_9605060847-814|fiau_9605060847-814.bz2|14ac1|0|bzip2 %s
+   |       |         |          |        |               |                 |                 |   |  |
+   |       |         |          |        |               |                 |                 |   |  +-&gt; Command executed.
+   |       |         |          |        |               |                 |                 |   +----&gt; Return code of command.
+   |       |         |          |        |               |                 |                 +--------&gt; Size of changed file.
+   |       |         |          |        |               |                 +--------------------------&gt; New file name. If this
+   |       |         |          |        |               |                                              is empty, then the file
+   |       |         |          |        |               |                                              has been removed.
+   |       |         |          |        |               +--------------------------------------------&gt; Original file name.
+   |       |         |          |        +------------------------------------------------------------&gt; Job Identifier.
+   |       |         |          +---------------------------------------------------------------------&gt; Directory ID.
+   |       |         +--------------------------------------------------------------------------------&gt; Unique Identifier. The
+   |       |                                                                                            first number is the date
+   |       |                                                                                            when this file was picked
+   |       |                                                                                            up by AFD, the second is
+   |       |                                                                                            a unique number and third
+   |       |                                                                                            is the split job counter.
+   |       +------------------------------------------------------------------------------------------&gt; Ratio relationship.
+   +--------------------------------------------------------------------------------------------------&gt; Unix time for this
+                                                                                                        entry.
+</pre>
+<p>
+There is currently no log file viewer for this log type.
+</p>
+
+<h3 align=center><a name="output_log"><u>Output Log</u></a></h3>
+<center><img src="../images/show_olog_small.png" alt="[image of show_olog dialog]"></center>
+<p>
+All file names that have been distributed successfully are shown in
+this file. The log files are stored as described for the Input Log Files
+except that they are called OUTPUT_LOG.x. In the DIR_CONFIG the system
+administrator can specify with the option <a href="dir_config.html#no_log_output">
+no log output</a> that these files are not to be logged. This is useful
+when sending lots of small unimportant files, it helps to reduce the CPU
+and disk usage.
+</p>
+<p>
+It has a different form then the <a href="#input_log">
+input log file</a> as shown below:
+</p>
+<pre>
+4167b8f9   ducktown 0 0 1|PASW42_LSSW_J0570001|/data/PASW42|23fe|0.27|0|9e78fc94|4167b8f9_38_0[|archive directory]
+   |           |    | | |           |               |        |    |   |   |          |                   |
+   |           |    | | |           |               |        |    |   |   |          |           Directory where file
+   |           |    | | |           |               |        |    |   |   |          |           is being archived.
+   |           |    | | |           |               |        |    |   |   |          +---------&gt; Unique ID.
+   |           |    | | |           |               |        |    |   |   +--------------------&gt; Job Identifier
+   |           |    | | |           |               |        |    |   +------------------------&gt; Number of retries.
+   |           |    | | |           |               |        |    +----------------------------&gt; Transmission time in
+   |           |    | | |           |               |        |                                   seconds.
+   |           |    | | |           |               |        +---------------------------------&gt; File Size
+   |           |    | | |           |               +------------------------------------------&gt; When trans_rename was
+   |           |    | | |           |                                                            specified this is the
+   |           |    | | |           |                                                            remote name. NOTE:
+   |           |    | | |           |                                                            This is optional.
+   |           |    | | |           +----------------------------------------------------------&gt; File Name.
+   |           |    | | +----------------------------------------------------------------------&gt; Transfer Type
+   |           |    | |                                                                               0 - FTP
+   |           |    | |                                                                               1 - LOC
+   |           |    | |                                                                               2 - SMTP
+   |           |    | |                                                                               3 - MAP
+   |           |    | |                                                                               4 - SCP
+   |           |    | |                                                                               5 - WMO
+   |           |    | |                                                                               6 - HTTP
+   |           |    | |                                                                               7 - FTPS
+   |           |    | |                                                                               8 - HTTPS
+   |           |    | |                                                                               a - SFTP
+   |           |    | +------------------------------------------------------------------------&gt; Alternate Host Number.
+   |           |    +--------------------------------------------------------------------------&gt; Output Typ
+   |           |                                                                                      0 - Normal (delivered)
+   |           |                                                                                      1 - Age limit (del)
+   |           |                                                                                      2 - Duplicate (stored)
+   |           |                                                                                      3 - Duplicate (del)
+   |           |                                                                                      4 - Other process (del)
+   |           |                                                                                      5 - Address rejected (del)
+   |           +-----------------------------------------------------------------------------&gt; Remote Host Name.
+   +-----------------------------------------------------------------------------------------&gt; Unix Time.
+</pre>
+<p>
+To view these log files, use <a href="show_olog.html">show_olog</a>.
+</p>
+
+<h3 align=center><a name="delete_log"><u>Delete Log</u></a></h3>
+<center><img src="../images/show_dlog_small.png" alt="[image of show_dlog dialog]"></center>
+<p>
+All file names that have been deleted are shown in this file. The log files
+are stored as described for the Input Log Files except that they are called
+DELETE_LOG.x. There are lots of ways how files can be deleted by the AFD.
+The most common way is when the administrator specifies this in the
+DIR_CONFIG file, by either setting the aging option for the <a href=
+"dir_config.html#directory_entry">directory entry</a> or by setting the <a href=
+"dir_config.html#age-limit">age-limit</a> option in the option part. Other
+possibilities are that the administrator removes them from the system,
+or the AFD deletes them because the message for this job ID is no longer
+available.
+</p>
+<p>
+An entry in the DELETE_LOG.x file is described below:
+</p>
+<pre>
+4167b8fa   ducktown 001|PASW42_LSSW_J0570001|5eb7|9e78fc94|3ab56ea2|4167c70a_a230_0|sf_ftp|>13445
+   |           |     |            |            |     |        |            |          |      |
+   |           |     |            |            |     |        |            |          |      +-&gt; Optional additional
+   |           |     |            |            |     |        |            |          |          reason.
+   |           |     |            |            |     |        |            |          +--------&gt; User/process that
+   |           |     |            |            |     |        |            |                     deleted the file.
+   |           |     |            |            |     |        |            +-------------------&gt; Unique ID consisting
+   |           |     |            |            |     |        |                                  of creation time,
+   |           |     |            |            |     |        |                                  a unique number and the
+   |           |     |            |            |     |        |                                  split job counter.
+   |           |     |            |            |     |        +--------------------------------&gt; Directory ID.
+   |           |     |            |            |     +-----------------------------------------&gt; Job ID.
+   |           |     |            |            +-----------------------------------------------&gt; File Size.
+   |           |     |            +------------------------------------------------------------&gt; File Name deleted.
+   |           |     +-------------------------------------------------------------------------&gt; Deletion Type.
+   |           |                                                                                       0 - AGE_OUTPUT
+   |           |                                                                                       1 - AGE_INPUT
+   |           |                                                                                       2 - USER_DEL
+   |           |                                                                                       3 - EXEC_FAILED_DEL
+   |           |                                                                                       4 - NO_MESSAGE_FILE_DEL
+   |           |                                                                                       5 - DUP_INPUT
+   |           |                                                                                       6 - DUP_OUTPUT
+   |           |                                                                                       7 - DEL_UNKNOWN_FILE
+   |           |                                                                                       8 - JID_LOOKUP_FAILURE_DEL
+   |           |                                                                                       9 - DEL_OLD_LOCKED_FILE
+   |           |                                                                                       a - DEL_QUEUED_FILE
+   |           |                                                                                       b - DELETE_OPTION
+   |           |                                                                                       c - DELETE_STALE_ERROR_JOBS
+   |           |                                                                                       d - CLEAR_STALE_MESSAGES
+   |           |                                                                                       e - FILE_CURRENTLY_TRANSMITTED
+   |           |                                                                                       f - DELETE_UNKNOWN_POOL_DIR
+   |           |                                                                                      10 - EXEC_FAILED_STORED
+   |           |                                                                                      11 - DELETE_HOST_DISABLED
+   |           |                                                                                      12 - CONVERSION_FAILED
+   |           |                                                                                      13 - RENAME_OVERWRITE
+   |           |                                                                                      14 - RECIPIENT_REJECTED
+   |           |                                                                                      15 - MIRROR_REMOVE
+   |           +-------------------------------------------------------------------------------&gt; Destination Host Name.
+   +-------------------------------------------------------------------------------------------&gt; Unix Time when deleted.
+</pre>
+<p>
+To view these log files, use <a href="show_dlog.html">show_dlog</a>.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 1997 - 2012 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 15.03.2012
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (show_ilog.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="show_ilog">Input Log Window</a></h1>
+<hr size=3 noshade>
+<p>
+<center><img src="../images/show_ilog_small.png" alt="[image of show_ilog dialog]"></center>
+</p>
+<p>
+All files that enter the AFD, before the AMG does anything with them,
+get logged in the input log files ($AFD_WORK_DIR/log/INPUT_LOG.?). These
+log files can be viewed with the help of show_ilog. Since the input log
+can be very extensive, there are lots of possibility to reduce the search
+time by filling in some of the following values:
+</p>
+<p>
+<center><img src="../images/show_ilog_selection.gif" alt="[closeup of the selection part]"></center>
+</p>
+<p>
+<center>
+<table border>
+<tr>
+   <td>&nbsp;<b>1</b>&nbsp;</td>
+   <td>Enter the start and end time of the search. If no value is entered
+       it will always take the earliest or latest entries it finds. There
+       are two time forms. One is the absolute and the other is the
+       relative time format. The following absolute forms are possible:
+       MMDDhhmm, DDhhmm and hhmm (MM = month [01-12], DD = day [01-31],
+       hh = hour [00 - 23], mm = minute [00 - 59]). The relative form
+       always starts with a hyphen '-' and has the following format:
+       -DDhhmm, -hhmm or -mm.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>2</b>&nbsp;</td>
+   <td>When set the input log will be shown continuously, ie. if new entries
+       come they will be shown live as they come in.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>3</b>&nbsp;</td>
+   <td>Shows the current date and time in the following format:
+       DD.MM.YYYY hh:mm</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>4</b>&nbsp;</td>
+   <td>Enter a file name. The name may have any number of the two following
+       wild cards: * and ?. If no file name or wild card is entered it will
+       always search for all file names.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>5</b>&nbsp;</td>
+   <td>Here it is possible to enter the length/size of a file. If a &lt; or
+       a &gt; sign is put before the size value, it will search for files
+       less then or greater then the given size.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>6</b>&nbsp;</td>
+   <td>The source directory where the AFD has picked up the file. Even here
+       it is possible to enter wild cards.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>7</b>&nbsp;</td>
+   <td>Here you can enter a host name and only files that where retrieved
+       or are to be send to this host will be shown. It is also possible
+       to enter more then one host, by separating the hosts with a comma.
+       Wild cards can also be used. You may also add the user name to the
+       host, but this must be put first and separated with a @, eg
+       user@hostname.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>8</b>&nbsp;</td>
+   <td>These toggle buttons allow the user to toggle between different length
+       of the file name in the list box. The short one is useful when
+       printing on A4 paper.</td>
+</tr>
+</table>
+</center>
+</p>
+<p>
+It is not necessary to fill in any values, however then the search might
+take a very long time for it to finish, depending on how long and how many
+log files there are. While the dialog is searching for data, the function
+of the search button changes into a stop button, enabling the user to
+interrupt the search. This button and the slider of the list widget are the
+only buttons that are active during a search. Thus, the user can search in
+the list widget by using the slider, while the dialog is still searching.
+Once a search is interrupted, the search will always start from the beginning.
+</p>
+<p>
+Here follows a short description of the list widgets and the meaning of
+each item:
+</p>
+<p>
+<center><img src="../images/input_log_list.gif" alt="[closeup of the list]"></center>
+</p>
+<p>
+<center>
+<table border>
+<tr>
+   <td>Date</td>
+   <td>The date in the following format: MM.DD. where MM is the month
+       (01-12) and DD is the day of the month (01-31).</td>
+</tr>
+<tr>
+   <td>Time</td>
+   <td>The time in the following format: hh:mm:ss where hh is the hour
+       (00-23), mm is the minute (00-59) and ss is the second (00-59).</td>
+</tr>
+<tr>
+   <td>File name</td>
+   <td>The file name as it was distributed.</td>
+</tr>
+<tr>
+   <td>File size</td>
+   <td>The size of the distributed file in bytes.</td>
+</tr>
+</table>
+</center>
+</p>
+<p>
+When the file name is longer then it is shown in the list widget it is
+still possible to view it by using the 'AFD info click'. This is done
+by pressing the right mouse button while the cursor is over the wanted
+item in the list widget. The following window will pop up:
+</p>
+<p>
+<center><img src="../images/show_ilog_info.png" alt="[info dialog]"></center>
+</p>
+<p>
+As shown, this window also shows what the entry in the DIR_CONFIG looked
+like when this file was send. Thus it is always possible for the AFD
+system administrator to see with what options the files are distributed,
+regardless how many changes there where in the DIR_CONFIG file.
+</p>
+<p>
+Right under the list widget is a summary line which looks as follows:
+</p>
+<p>
+<center><img src="../images/show_ilog_summary.gif" alt="[closeup of the summary line]"></center>
+</p>
+<p>
+<center>
+<table border>
+<tr>
+   <td>&nbsp;<b>1</b>&nbsp;</td>
+   <td>The time in days from the first entry found to the last entry in
+       the list.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>2</b>&nbsp;</td>
+   <td>The rest time in hours, minutes and seconds.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>3</b>&nbsp;</td>
+   <td>The total number of files found.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>4</b>&nbsp;</td>
+   <td>The average number of files transmitted. This is calculated from
+       the values found in 1, 2 and 3.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>5</b>&nbsp;</td>
+   <td>Total number of bytes transferred.</td>
+</tr>
+</table>
+</center>
+</p>
+<p>
+Under the summary line follows a status line showing the current status,
+here how long it took for the search:
+</p>
+<p>
+<center><img src="../images/show_xlog_status.png" alt="[closeup of the status line]"></center>
+</p>
+<p>
+At the bottom is a line with three buttons which have the following meaning:
+</p>
+<p>
+<center><img src="../images/show_ilog_button_line.png" alt="[closeup of the button line]"></center>
+</p>
+<p>
+<center>
+<table border>
+<tr>
+   <td>&nbsp;<b>Search</b>&nbsp;</td>
+   <td>Pressing this button will start the search. During the search the
+       name of the button will change to Stop. Pressing this will interrupt
+       the search and the button will be renamed to Search again. Pressing
+       search again will start the search from the beginning and not where
+       it was when it was interrupted.</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>Print</b>&nbsp;</td>
+   <td>This will popup another dialog which can be used to print what is shown
+       to a separate file, send it in a mail to someone or print it to a
+       printer. The Range field allows to specify what will be printed,
+       either what has been selected or everything.</td>
+   <td align=center><img src="../images/print_data.png"></td>
+</tr>
+<tr>
+   <td>&nbsp;<b>Close</b>&nbsp;</td>
+   <td>Closes this dialog.</td>
+   <td>&nbsp;</td>
+</tr>
+</table>
+</center>
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 1997 - 2009 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 25.11.2009
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

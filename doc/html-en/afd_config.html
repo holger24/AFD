@@ -1,0 +1,695 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD_CONFIG (afd_config.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="afd_config">The AFD_CONFIG file</a></h1>
+<hr size=3 noshade>
+<p>
+This file contains some parameter settings that are always read when
+the AFD is started. The following table shows and describes what
+parameters can be set and which programs must be restarted to activate
+the new value:
+</p>
+<table border>
+<tr>
+   <th>Parameter</th>
+   <th>Description</th>
+   <th>Default</th>
+   <th>Restart</th>
+</tr>
+<tr>
+   <td valign=top><a name="afd_tcp_port">AFD_TCP_PORT</a></td>
+   <td>The TCP port number at which the process afdd will listen and
+       wait for remote requests. If that port is currently in use
+       by another program it will add one and see if that works
+       so long until it finds a free port. Note you will only be able
+       to pick a port that is not in the dynamic port range. IANA
+       suggests this port range to be 49152 to 65535. On linux systems
+       this usually is 32768 to 61000.  On linux AFD will determine this
+       value by reading /proc/sys/net/ipv4/ip_local_port_range.
+       NOTE: If this option is not set the afdd process will NOT start.</td>
+   <td valign=top>4444</td>
+   <td valign=top>afdd</td>
+</tr>
+<tr>
+   <td valign=top><a name="afd_tcp_logs">AFD_TCP_LOGS</a></td>
+   <td>The logs that may be requested from the given AFD_TCP_PORT. If
+       this is defined, then it means for all hosts that connect to this
+       port. With the TRUSTED_REMOTE_IP it can be restricted to specific
+       host(s). The value given is an integer bit mask, with the
+       following meaning:
+       <pre>
+           5 (16)    - System Log
+           6 (32)    - Receive Log
+           7 (64)    - Transfer Log
+           8 (128)   - Transfer Debug Log
+           9 (256)   - Input Log
+          10 (512)   - Production Log
+          11 (1024)  - Output Log
+          12 (2048)  - Delete Log
+          15 (16384) - Event Log
+          16 (32768) - Distribution Log
+       </pre>
+       Just add the values in brackets to set the wanted logs.</td>
+   <td valign=top>0</td>
+   <td valign=top>afdd</td>
+</tr>
+<tr>
+   <td valign=top><a name="afdd_priority">AFDD_PRIORITY</a></td>
+   <td>Scheduling priority that the process afdd, used to monitor the
+       AFD with afd_mon, should run. Since it is just used for
+       monitoring it does not need a high priority. See man nice
+       for the meaning of the values, mostly it goes from 19 (least
+       favorable) to -20 (most favorable scheduling). You can only set
+       negative values here if AFD runs under root, which is not
+       recommended.</td>
+   <td valign=top>Not set</td>
+   <td valign=top>afdd</td>
+</tr>
+<tr>
+   <td valign=top><a name="afd_stat_priority">AFD_STAT_PRIORITY</a></td>
+   <td>Scheduling priority that the process afd_stat, used to collect
+       statistics like number of files and bytes send and/or retrieved,
+       number of connections and number of errors. This also does not
+       need a high priority.</td>
+   <td valign=top>Not set</td>
+   <td valign=top>afd_stat</td>
+</tr>
+<tr>
+   <td valign=top><a name="amg_priority">AMG_PRIORITY</a></td>
+   <td>Scheduling priority that the process <a href="amg.html">amg</a>.
+       Since this process scans the local directories it is important.</td>
+   <td valign=top>Not set</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="archive_watch_priority">ARCHIVE_WATCH_PRIORITY</a></td>
+   <td>Scheduling priority that the process <a href="archive_watch.html">
+       archive_watch</a>. If the archive is big (has lots of small files),
+       this process can strain the disk subsystem considerably, for this
+       reason it is a good idea to have this process run at a low as
+       possible priority.</td>
+   <td valign=top>Not set</td>
+   <td valign=top>archive_watch</td>
+</tr>
+<tr>
+   <td valign=top><a name="exec_base_priority">EXEC_BASE_PRIORITY</a></td>
+   <td>Scheduling priority that the process gets when AMG forks via the
+       <a href="dir_config.html#exec">exec</a> option or FD via the
+       <a href="dir_config.html#pexec">pexec</a> option. Note that on
+       most implementation it is required that the executable file dir_check
+       and fd need to belong to root and need to have the sticky bit set.
+       In most cases it is not needed to set this value.</td>
+   <td valign=top>Not set</td>
+   <td valign=top>amg, fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="fd_priority">FD_PRIORITY</a></td>
+   <td>Scheduling priority that the process <a href="fd.html">fd</a>.
+       Since this process distributes the data and scans remote directories
+       it is important.</td>
+   <td valign=top>Not set</td>
+   <td valign=top>fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="init_afd_priority">INIT_AFD_PRIORITY</a></td>
+   <td>Scheduling priority that the process init_afd. This process starts
+       all other process of AFD and they will inherit the priority given
+       to init_afd.</td>
+   <td valign=top>Not set</td>
+   <td valign=top>init_afd</td>
+</tr>
+<tr>
+   <td valign=top><a name="show_log_priority">SHOW_LOG_PRIORITY</a></td>
+   <td>Scheduling priority that the grapical dialogs showing log data:
+       <a href="show_log.html">show_log</a>, <a href="show_elog.html">
+       show_elog</a>, <a href="show_ilog.html">show_ilog</a>,
+       <a href="show_olog.html">show_olog</a> and <a href="show_dlog.html">
+       show_dlog</a>. Since these process are non critical and they can
+       produce a lot of IO and CPU load they should get a low priority.</td>
+   <td valign=top>Not set</td>
+   <td valign=top>show_log, show_elog, show_ilog, show_olog, show_dlog</td>
+</tr>
+<tr>
+   <td valign=top><a name="max_nice_value">MAX_NICE_VALUE</a></td>
+   <td>Usually it is not needed to set this value, but it can be used to
+       increase or decrease the maximum nice value to what your system
+       does support.</td>
+   <td valign=top>0</td>
+   <td valign=top>amg, fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="min_nice_value">MIN_NICE_VALUE</a></td>
+   <td>Usually it is not needed to set this value, but it can be used to
+       increase or decrease the minimum nice value to what your system
+       does support.</td>
+   <td valign=top>19</td>
+   <td valign=top>amg, fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="trusted_remote_ip">TRUSTED_REMOTE_IP</a></td>
+   <td>Trusted IP-number that may connect to AFD_TCP_PORT. To
+       enter more then one IP-number you must have the
+       identifier TRUSTED_REMOTE_IP on a new line for each number.
+       Wildcards may also be used when specifying the IP-number.
+       Optionally you can set the AFD_TCP_LOGS flag behind the
+       IP number. If TRUSTED_REMOTE_IP is not set, all hosts may
+       connect.</td>
+   <td valign=top>None</td>
+   <td valign=top>afdd</td>
+</tr>
+<tr>
+   <td valign=top><a name="max_afdd_connections">MAX_AFDD_CONNECTIONS</a></td>
+   <td>The number of hosts that may connect to the afdd process.</td>
+   <td valign=top>5</td>
+   <td valign=top>afdd</td>
+</tr>
+<tr>
+   <td valign=top><a name="alda_daemon">ALDA_DAEMON</a></td>
+   <td>Start a process that monitors the given log data and log them
+       in the given format. For the parameters that need to set, see
+       the documentation of alda.</td>
+   <td valign=top>None</td>
+   <td valign=top>None</td>
+</tr>
+<tr>
+   <td valign=top><a name="in_global_filesystem">IN_GLOBAL_FILESYSTEM</a></td>
+   <td>If AFD is running in a global filesystem (NFS, GFS, etc) set this
+       option to YES. Then data from memory mapped files will be synced
+       to disk more frequently. This is only necessary when you try to
+       monitor or use AFD from another host that has this filesystem
+       mounted.</td>
+   <td valign=top>NO</td>
+   <td valign=top>init_afd</td>
+</tr>
+<tr>
+   <td valign=top><a name="dir_config_name">DIR_CONFIG_NAME</a></td>
+   <td>The file from where AFD will read it's configuration. This
+       option may be used more then once, thus making it possible
+       to read from multiple configuration files. If the name specified
+       does not contain the absolute path, it will try to locate the
+       given file in $AFD_WORK_DIR/etc.</td>
+   <td valign=top>$AFD_WORK_DIR/etc/DIR_CONFIG</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="rename_rule_name">RENAME_RULE_NAME</a></td>
+   <td>Via this options it is possible to specify the file name from where
+       the AFD reads all the rules on how to rename files. This option may
+       be used more then once, thus making it possible to read from
+       multiple rename rule files. If the name specified does not contain
+       the absolute path, it will try to locate the given file in
+       $AFD_WORK_DIR/etc.</td>
+   <td valign=top>$AFD_WORK_DIR/etc/rename.rule</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="max_no_of_dir_checks">MAX_NO_OF_DIR_CHECKS</a></td>
+   <td>This is the number of times dir_check my fork itself to
+       copy or exec some command.</td>
+   <td valign=top>20</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="max_process_per_dir">MAX_PROCESS_PER_DIR</a></td>
+   <td>The maximum number of process that may be forked for one
+       directory.</td>
+   <td valign=top>10</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="ignore_first_errors">IGNORE_FIRST_ERRORS</a></td>
+   <td>On big systems with many connections it can be disturbing if errors
+       are always shown. Some error situation is only of short duration.
+       This parameter when set, marks the first number of errors/warnings
+       as oofline. So they will not be by default visible in logs and
+       will not show up in the error history.</td>
+   <td valign=top>0</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="amg_dir_rescan_time">AMG_DIR_RESCAN_TIME</a></td>
+   <td>The rescan time of the local user directories in the DIR_CONFIG
+       file. This does not effect the rescan time of remote directories,
+       which is set with REMOTE_FILE_CHECK_INTERVAL. Don't pick a small
+       value here if your system shows high system load when working
+       with files or directories (eg. fault tolerant systems). This is
+       also the interval time that the AMG checks if the DIR_CONFIG or
+       HOST_CONFIG file have been changed. The unit is second.</td>
+   <td valign=top>5</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="default_dir_warn_time">DEFAULT_DIR_WARN_TIME</a></td>
+   <td>The time when AMG will warn in receive log that no data has been
+       received in the specified directory. This value will be overridden
+       by <a href="dir_config.html#warn_time">warn time</a> value from
+       DIR_CONFIG if set.  The unit is second.</td>
+   <td valign=top>0</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="default_delete_files_flag">DEFAULT_DELETE_FILES_FLAG</a></td>
+   <td>What to do with files that have reached a certain age but cannot
+       be transmitted because either there is no rule (Unknown), they are
+       being queued by AFD (Queued) or they are old locked files (Locked).
+       By specifying one of the above those files will be automatically
+       removed by AFD when DEFAULT_OLD_FILE_TIME value has been reached.
+       To specify more then one type, just add the next with a space or
+       comma as a separator sign and the whole string must be placed
+       in ".</td>
+   <td valign=top>Not set</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="default_old_file_time">DEFAULT_OLD_FILE_TIME</a></td>
+   <td>When to delete Unknown, Queued or Locked files from one of AFD's
+       input directories. The value is in hours.</td>
+   <td valign=top>24</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="remove_unused_hosts">REMOVE_UNUSED_HOSTS</a></td>
+   <td>By default AFD will never delete a host from HOST_CONFIG if the
+       host is not found in DIR_CONFIG. With this option set, those hosts
+       will be deleted.</td>
+   <td valign=top>Not set</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="delete_stale_error_jobs">DELETE_STALE_ERROR_JOBS</a></td>
+   <td>When a job is removed from DIR_CONFIG but FD has still files
+       queued and these jobs produce errors (ie. they cannot be send,
+       due to whatever reason), AFD will by default not delete these
+       files. By setting this to YES, such jobs will be removed.</td>
+   <td valign=top>NO</td>
+   <td valign=top>fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="max_connections">MAX_CONNECTIONS</a></td>
+   <td>The maximum number of simultaneous connections/transfers that the
+       AFD allows. Don't set this value to high since some environments
+       allow only a limited number of process per user.</td>
+   <td valign=top>50</td>
+   <td valign=top>fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="remote_file_check_interval">REMOTE_FILE_CHECK_INTERVAL</a></td>
+   <td>The interval in second that the FD rescans remote directories for
+       files. Do not set this value to low.</td>
+   <td valign=top>60</td>
+   <td valign=top>fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="create_source_dir">CREATE_SOURCE_DIR</a></td>
+   <td>If this is set to NO, the source directories will not be created if
+       they do not exist. When set to YES, these will be created if AFD does
+       have the permission to do so. Only local directories will be
+       created.</td>
+    <td valign=top>YES</td>
+    <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="create_remote_source_dir">CREATE_REMOTE_SOURCE_DIR</a></td>
+   <td>If this is set to NO, the remote source directories will not be
+       created if they do not exist. When set to YES or you specify the
+       mode, these will be created if AFD does have the permission to do
+       so. Only remote directories will be created.</td>
+    <td valign=top>NO</td>
+    <td valign=top>fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="create_source_dir_mode">CREATE_SOURCE_DIR_MODE</a></td>
+   <td>The permission of the source directories that found in the DIR_CONFIG
+       and created by AMG/FD if they are not there.</td>
+   <td valign=top>775</td>
+   <td valign=top>amg/fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="create_target_dir">CREATE_TARGET_DIR</a></td>
+   <td>If this is set to YES and the target directory does not exist it
+       will be created automatically, unless the option
+       <a href="dir_config.html#do_not_create_target_dir">do not create
+       target dir</a> is set. If it is set to NO (default)
+       it will not create the target directory. With the option
+       <a href="dir_config.html#create_target_dir">create target dir</a>
+       this can be overridden.</td>
+    <td valign=top>NO</td>
+    <td valign=top>fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="default_age_limit">DEFAULT_AGE_LIMIT</a></td>
+   <td>Files older then the given seconds will be deleted by default,
+       unless the age-limit is specified under options, then this
+       value will be taken. A value of 0 will disable this, it is
+       however still possible to set this value with the
+       <a href="dir_config.html#age-limit">age-limit</a> option in
+       DIR_CONFIG.</td>
+   <td valign=top>0</td>
+   <td valign=top>fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="exec_timeout">EXEC_TIMEOUT</a></td>
+   <td>When setting one of the exec options (<a href="dir_config.html#exec">
+       exec</a> or <a href="dir_config.html#pexec">pexec</a>), the default
+       is to let those process run as long as those process want to run,
+       ie. there is no restriction in time. This default can be changed
+       to the value specified here in seconds. If the time is up the
+       process is killed.</td>
+   <td valign=top>0</td>
+   <td valign=top>amg/fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="default_http_proxy">DEFAULT_HTTP_PROXY</a></td>
+   <td>The default HTTP proxy where HTTP requests are send to. This can
+       be an IP number or a hostname. Optionally one can specify the
+       default port using the following syntax: &lt;server name&gt;:&lt;port&gt;</td>
+   <td valign=top>Not set</td>
+   <td valign=top>fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="default_smtp_server">DEFAULT_SMTP_SERVER</a></td>
+   <td>The default SMTP server where mails are to be send to. This can
+       be an IP number or a hostname. Optionally one can specify the
+       default port using the following syntax: &lt;server name&gt;:&lt;port&gt;</td>
+   <td valign=top>localhost:25</td>
+   <td valign=top>fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="default_smtp_from">DEFAULT_SMTP_FROM</a></td>
+   <td>The default what will be put into the from line, if the from option
+       is not set under [options]. If not set it will take the user- and
+       hostname from the current system where AFD is running.</td>
+   <td valign=top>&lt;current user&gt;@&lt;hostname&gt;</td>
+   <td valign=top>fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="default_smtp_reply_to">DEFAULT_SMTP_REPLY_TO</a></td>
+   <td>The default what will be put into the reply-to line, if the reply-to
+       option is not set under [options]. If not set it will not send
+       the reply-to line.</td>
+   <td valign=top>Not set</td>
+   <td valign=top>fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="max_copied_files">MAX_COPIED_FILES</a></td>
+   <td>The maximum number of files that are copied before they are
+       send to the FD. This value is set so that the AFD starts sending
+       files as soon as possible even when there are thousands of files
+       waiting in the source directory to be send. Otherwise it might
+       take to long to process all the files at once and time is lost
+       that could be used to transmit data.</td>
+   <td valign=top>100</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="max_copied_file_size">MAX_COPIED_FILE_SIZE</td>
+   <td>The maximum size in Kilobytes that are copied before they are
+       send to the FD.</td>
+   <td valign=top>100 MB</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="force_reread_interval">FORCE_REREAD_INTERVAL</a></td>
+   <td>Here one can set the minimal interval in seconds at which all source
+       directories must be scaned. This can be useful on systems that do not
+       update the directory modification time reliably (for example NFS when
+       time of client and server is out of sync). Setting this will generate a
+       higher system load, since directories will be scanned more often.</td>
+   <td valign=top>0 (Disabled)</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="one_dir_copy_timeout">ONE_DIR_COPY_TIMEOUT</a></td>
+   <td>When AMG has collected MAX_COPIED_FILES, it will try to continue to
+       copy from this directory until it reaches the timeout set by this
+       option in seconds.</td>
+   <td valign=top>10</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="full_scan_timeout">FULL_SCAN_TIMEOUT</a></td>
+   <td>The timeout for scanning all directories. If set to 0 this is
+       disabled. When this is set it will only take effect if during a
+       scan there are directories which still have files to be
+       distributed but could not because of MAX_COPIED_FILES or some
+       other limits. If FULL_SCAN_TIMEOUT has not been reached, it
+       will try to continue with the full directories until
+       FULL_SCAN_TIMEOUT is reached.</td>
+   <td valign=top>0</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="dir_check_timeout">DIR_CHECK_TIMEOUT</a></td>
+   <td>When the administrator has marked one or more directories as
+       important (with '*'), this is the minimum time in second that these
+       directories have to wait during one scan of all directories.</td>
+   <td valign=top>30</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="additional_locked_files">ADDITIONAL_LOCKED_FILES</a></td>
+   <td>Allows the administrator to set a default list of locked files
+       that gets added to each [files] section in DIR_CONFIG. Each element
+       must be separated with a | (pipe) and may start with a !. If the !
+       (not sign) is not set it will automatically insert it. If
+       one sets the following in AFD_CONFIG:
+       <pre>
+     ADDITIONAL_LOCKED_FILES  *.tmp|*.temp|*.lock
+       </pre>
+       Then each [files] section in DIR_CONFIG will always start as follows:
+       <pre>
+     [files]
+     !*.tmp
+     !*.temp
+     !*.lock
+       </pre>
+       Note that this is not efficient! Rather try to get the other
+       applications to lock with a leading dot.</td>
+   <td valign=top>Not set</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="max_system_log_files">MAX_SYSTEM_LOG_FILES</a></td>
+   <td>The number of old system logfiles that AFD keeps before they are
+       deleted.</td>
+   <td valign=top>4</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_sys_logfile_size">MAX_SYS_LOGFILE_SIZE</a></td>
+   <td>The size in bytes before the system logfile is rotated.</td>
+   <td valign=top>2097152</td>
+   <td valign=top>system_log</td>
+</tr>
+<tr>
+   <td valign=top><a name="max_receive_log_files">MAX_RECEIVE_LOG_FILES</a></td>
+   <td>The number of old receive logfiles that AFD keeps before they are
+       deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_transfer_log_files">MAX_TRANSFER_LOG_FILES</a></td>
+   <td>The number of old transfer logfiles that AFD keeps before they are
+       deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_trans_db_log_files">MAX_TRANS_DB_LOG_FILES</a></td>
+   <td>The number of old transfer debug logfiles that AFD keeps before
+       they are deleted.</td>
+   <td valign=top>3</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_trans_db_logfile_size">MAX_TRANS_DB_LOGFILE_SIZE</a></td>
+   <td>The size in bytes before the transfer debug logfile is rotated.</td>
+   <td valign=top>8388608</td>
+   <td valign=top>trans_db_log</td>
+</tr>
+<tr>
+   <td valign=top><a name="max_event_log_files">MAX_EVENT_LOG_FILES</a></td>
+   <td>The number of old event logfiles that AFD keeps before they are
+       deleted.</td>
+   <td valign=top>5</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_eve_logfile_size">MAX_EVE_LOGFILE_SIZE</a></td>
+   <td>The size in bytes before the event logfile is rotated.</td>
+   <td valign=top>10485760</td>
+   <td valign=top>event_log</td>
+</tr>
+<tr>
+   <td valign=top><a name="max_mon_sys_log_files">MAX_MON_SYS_LOG_FILES</a></td>
+   <td>The number of old monitor system logfiles that AFD keeps before
+       they are deleted.</td>
+   <td valign=top>4</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_mon_sys_logfile_size">MAX_MON_SYS_LOGFILE_SIZE</a></td>
+   <td>The size in bytes before the monitor system logfile is rotated.</td>
+   <td valign=top>2097152</td>
+   <td valign=top>mon_sys_log</td>
+</tr>
+<tr>
+   <td valign=top><a name="max_mon_log_files">MAX_MON_LOG_FILES</a></td>
+   <td>The number of old monitor logfiles that AFD keeps before they are
+       deleted.</td>
+   <td valign=top>14</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_input_log_files">MAX_INPUT_LOG_FILES</a></td>
+   <td>The number of old input logfiles that AFD keeps before they are
+       deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_distribution_log_files">MAX_DISTRIBUTION_LOG_FILES</a></td>
+   <td>The number of old distribution logfiles that AFD keeps before they are
+       deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_production_log_files">MAX_PRODUCTION_LOG_FILES</a></td>
+   <td>The number of old production logfiles that AFD keeps before they are
+       deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_output_log_files">MAX_OUTPUT_LOG_FILES</a></td>
+   <td>The number of old output logfiles that AFD keeps before they are
+       deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="max_delete_log_files">MAX_DELETE_LOG_FILES</a></td>
+   <td>The number of old delete logfiles that AFD keeps before they are
+       deleted.</td>
+   <td valign=top>7</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="default_printer_cmd">DEFAULT_PRINTER_CMD</a></td>
+   <td>With this option it is possible to set the printer command
+       for your specific environment.</td>
+   <td valign=top>&#34lpr -P&#34</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="default_printer_name">DEFAULT_PRINTER_NAME</a></td>
+   <td>This option specifies the default printer for your system.</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td valign=top><a name="ping_cmd">PING_CMD</a></td>
+   <td>Full path of the ping command plus any options. If there are options
+       you must put the full command in ". The hostname will be added to the
+       end of the command.</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+   <td valign=top>afd_ctrl</td>
+</tr>
+<tr>
+   <td valign=top><a name="traceroute_cmd">TRACEROUTE_CMD</a></td>
+   <td>Full path of the traceroute command plus any options. The hostname
+       will be added to the end of the command.</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+   <td valign=top>afd_ctrl</td>
+</tr>
+<tr>
+   <td valign=top><a name="view_data_prog">VIEW_DATA_PROG</a></td>
+   <td>Program to view data of show_olog and show_queue dialog. This may
+       be used multiple times in AFD_CONFIG to configure different
+       programs for different file types (patterns). The optional
+       parameter --with-show_cmd can be used for programs that just
+       write to STDOUT and/or STDERR. The syntax is as follows:
+       <pre>
+VIEW_DATA_PROG [--with-show_cmd] &lt;progname&gt; &lt;pattern&gt;
+
+   &lt;progname&gt; - Is the program name of the program to be
+                called. If parameters need to be added,
+                they must be put in ". The filename to be
+                shown, can be added with %s.
+   &lt;pattern&gt;  - The filename pattern that applies for the
+                above program name. Multiple patterns must
+                be separated with a pipe sign (|).
+       </pre>
+       </td>
+   <td valign=top><pre>&nbsp;</pre></td>
+   <td valign=top>show_olog, show_queue</td>
+</tr>
+<tr>
+   <td valign=top><a name="view_data_no_filter_prog">VIEW_DATA_NO_FILTER_PROG</a></td>
+   <td>In dialog show_olog it is possible to set the view mode. The default
+       is set to an internal program showing the content of the file in hex
+       view. With VIEW_DATA_NO_FILTER_PROG one can specify another program.
+       It is possible to specify multiple VIEW_DATA_NO_FILTER_PROG programs.
+       Note the first value is always the alias name of the program name that
+       is shown in show_olog. This may only be 8 characters long. With the
+       option --with-show_cmd one can show the output of programs that just
+       write to STDOUT and/or STDERR. here some example entries:
+       <pre>
+VIEW_DATA_NO_FILTER_PROG    XV   /usr/bin/xv
+VIEW_DATA_NO_FILTER_PROG    Xpdf xpdf
+VIEW_DATA_NO_FILTER_PROG    od --with-show_cmd "od -A x -t x1z -v"
+VIEW_DATA_NO_FILTER_PROG    bufr --with-show_cmd "bufrtool -d -t ~/afd/usr/tables_v2 -i %s -o - "
+       </pre>
+       </td>
+   <td valign=top><pre>&nbsp;</pre></td>
+   <td valign=top>show_olog</td>
+</tr>
+<tr>
+   <td valign=top><a name="fake_user">FAKE_USER &lt;fake user name&gt;</a></td>
+   <td>This option allows the administrator to allow certain users
+       to take up another identity, even if they do not exist on the
+       system. This user will then be used to look up the permissions
+       in the <a href="afd_users.html">afd.users</a> file. So if you for
+       example give operators limited permission and do not want to
+       create a new user, you can do the following:
+       <pre>
+             FAKE_USER     afd->operator
+       </pre>
+       If the user afd enters the following command:
+       <pre>
+             afd_ctrl -u operator
+       </pre>
+       the afd_ctrl dialog will come up with the permissions of
+       operator. More fake users can be added with a comma as separator:
+       <pre>
+             FAKE_USER     afd->operator,afd->donald
+       </pre>
+       The list may not be longer then 1023 bytes.</td>
+   <td valign=top><pre>&nbsp;</pre></td>
+   <td valign=top><pre>&nbsp;</pre></td>
+</tr>
+</table>
+<p>
+When one of the above values is changed the appropriate process must be
+restarted.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 1999 - 2014 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 23.11.2014
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

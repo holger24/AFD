@@ -1,0 +1,800 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (tools.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="tools">AFD Tools</a></h1>
+<hr size=3 noshade>
+<p>
+AFD has many small programs that can be used to view, control or
+configure it via command line. These files are located in the directory
+$AFD_WORK_DIR/sbin. Here follows a description of some of the tools:
+</p>
+<h3 align=center><a name="afdcmd"><u>AFD commands (afdcmd)</u></a></h3>
+<p>
+With this program you can send most commands that you can also
+issue with the <a href="afd_ctrl.html">afd_ctrl</a> and dir_ctrl
+dialog on a per host or directory basis. When you call afdcmd without
+any parameters it will show all commands it knows:
+</p>
+<pre>
+   SYNTAX  : afdcmd[ -w working directory][ -p &lt;role&gt;][ -u[ &lt;user&gt;]] options hostname|directory|position
+       FSA options:
+                  -q      start queue
+                  -Q      stop queue
+                  -t      start transfer
+                  -T      stop transfer
+                  -g      enable delete data for host
+                  -G      disable delete data for host
+                  -e      enable host
+                  -E      disable host
+                  -s      switch host
+                  -r      retry
+                  -d      enable/disable debug
+                  -c      enable/disable trace
+                  -C      enable/disable full trace
+                  -I      enable/disable simulate send mode
+                  -X      toggle enable/disable host
+       FRA options:
+                  -b      enable directory
+                  -B      disable directory
+                  -j      start directory
+                  -J      stop directory
+                  -R      rescan directory
+                  -W      toggle enable/disable directory
+   General options:
+                  -f      start FD
+                  -F      stop FD
+                  -a      start AMG
+                  -A      stop AMG
+                  -Y      start/stop AMG
+                  -Z      start/stop FD
+                  -k      force file dir check
+                  -i      reread local interface file
+                  -o      show exec statistics
+                  -P      force archive check
+                  -v      just print Version
+</pre>
+<p>
+In conjunction with cron you can enable/disable certain hosts and control
+when they should receive their data. You may specify more than one hostname
+or position.
+</p>
+<h3 align=center><a name="afdcfg"><u>AFD configuration (afdcfg)</u></a></h3>
+<p>
+The program afdcfg allows you to enable/disable archiving and/or
+retrieving of files from remote hosts. The disabling of archiving
+can be useful when you notice that your disk space gets to low or
+you want to reduce the load on the node. The other option to enable/
+disable retrieving of files is good when you have two nodes with
+identical configured AFD's and one node is configured as hot standby.
+This will make sure that only the AFD on the active node will retrieve
+data. Otherwise both AFD's will retrieve the data and that can be quit
+annoying. The syntax of afdcfg is as follows:
+</p>
+<pre>
+   SYNTAX  : afdcfg [-w working directory] [-u [<user>]] options
+             -a      enable archive
+             -A      disable archive
+             -b      enable create source dir
+             -B      disable create source dir
+             -c      enable create target dir
+             -C      disable create target dir
+             -d      enable dir warn time
+             -du     enable + update directory warn time
+             -D      disable dir warn time
+             -h      enable host warn time
+             -H      disable host warn time
+             -i      enable simulate send mode
+             -I      disable simulate send mode
+             -r      enable retrieving of files
+             -R      disable retrieving of files
+             -s      status of the above flags
+</pre>
+<h3 align=center><a name="fsa_view"><u>View FSA (fsa_view)</u></a></h3>
+<p>
+To view the content of the FSA (Filetransfer Status Area) there is a
+program called fsa_view. An example output might look as follows:
+</p>
+<pre>
+afd@r2d2:~$ fsa_view fiau_
+    Number of hosts: 34   FSA ID: 1  Struct Version: 3  Pagesize: 4096
+
+=============================&gt; fiau_ &lt;=============================
+Host alias CRC       : e831dc61
+Real hostname 1      : 127.0.0.1
+Real hostname 2      :
+Hostname (display)   : &gt;fiau_&lt;
+Host toggle          : HOST_ONE
+Auto toggle          : OFF
+Original toggle      : NONE
+Toggle position      : 5
+Protocol(   40000001): FTP active fast_move fast_cd
+Direction            : SEND
+Socket send buffer   : Not set
+Socket rcv buffer    : Not set
+Keep connected       : Not set
+Proxy name           : &gt;$Udwd@ifu;$Pgtswetter&lt;
+Debug mode           : OFF
+Dupcheck timeout     : Disabled
+Host status (   0)   : NORMAL_STATUS
+Transfer timeout     : 120
+File size offset     : -2
+Successful retries   : 0
+MaxSuccessful ret.   : 10
+Special flag ( 64)   : HOST_IN_DIR_CONFIG
+Error counter        : 0
+Total errors         : 7
+Max. errors          : 10
+Error history        : 000 -&gt; Transfer success
+                       000 -&gt; Transfer success
+                       000 -&gt; Transfer success
+                       000 -&gt; Transfer success
+                       000 -&gt; Transfer success
+Retry interval       : 600
+Transfer block size  : 4096
+TTL                  : 0
+Time of last retry   : Sat Apr  8 23:36:41 2006
+Last connection      : Sat Apr  8 23:36:41 2006
+First error time     : Not set.
+Start event handle   : Not set.
+End event handle     : Not set.
+Warn time            : Not set.
+Total file counter   : 0
+Total file size      : 0
+File counter done    : 104
+Bytes send           : 3100838
+Connections          : 26
+MC NACK counter      : 0
+Jobs queued          : 0
+Active transfers     : 0
+Allowed transfers    : 2
+Rate limit           : 0
+Rate limit per proc  : 0
+MC Rate limit        : 0
+MC Rate limit/proc   : 0
+                    |   Job 0   |   Job 1   
+--------------------+-----------+-----------
+PID                 |        -1 |        -1 
+Connect status      |DISCONNECT |DISCONNECT 
+Number of files     |         0 |         0 
+No. of files done   |         0 |         0 
+File size           |         0 |         0 
+File size done      |         0 |         0 
+Bytes send          |   3100838 |         0 
+File name in use    |           |           
+File size in use    |         0 |         0 
+Filesize in use done|         0 |         0 
+Unique name         |           |           
+Job ID              |         0 |         0 
+</pre>
+<p>
+Under 'File name in use' will be shown the current file being transmitted.
+To view the full name use the '-l' option to show the long view:
+</p>
+<pre>
+-------- Job  0 -----+------------------------------------------------------
+PID                  : -1
+Connect status       : DISCONNECT
+Number of files      : 0
+No. of files done    : 0
+File size            : 0
+File size done       : 0
+Bytes send           : 3100838
+File name in use     : 
+File size in use     : 0
+File size in use done: 0
+Unique name          : 
+Job ID               : 0
+-------- Job  1 -----+------------------------------------------------------
+PID                  : -1
+Connect status       : DISCONNECT
+Number of files      : 0
+No. of files done    : 0
+File size            : 0
+File size done       : 0
+Bytes send           : 0
+File name in use     : 
+File size in use     : 0
+File size in use done: 0
+Unique name          : 
+Job ID               : 0
+</pre>
+<h3 align=center><a name="fra_view"><u>View FRA (fra_view)</u></a></h3>
+<p>
+To view the content of the FRA (Fileretrieve Status Area), the directories
+monitored by AFD, there is a program called fra_view. The output looks as
+follows:
+</p>
+<pre>
+afd@r2d2:~$ fra_view 3
+     Number of directories: 42   FRA ID: 32  Struct Version: 5
+
+============================&gt; testmaus (4) &lt;============================
+Directory alias      : testmaus
+Directory ID         : 99ca01ad
+URL                  : ftp://funk:bla@testmaus
+Host alias           : testmaus
+Wait for             : 
+FSA position         : 25
+Priority             : 9
+Number of process    : 0
+Max number of process: 10
+Bytes received       : 0
+Files received       : 0
+Files in directory   : 0
+Bytes in directory   : 0
+Files in queue(s)    : 0
+Bytes in queue(s)    : 0
+Accumulate size      : 0
+Accumulate           : 0
+gt_lt_sign           : 0
+Max errors           : 10
+Error counter        : 0
+Warn time            : 0
+Keep connected       : 0
+Ignore size          : 0
+Ignore file time     : 0
+Max files            : 100
+Max size             : 104857600
+Directory status( 12): NORMAL_STATUS
+Directory flag(  8)  : LINK_NO_EXEC
+In DIR_CONFIG flag   : DIR_ALIAS
+Dupcheck timeout     : Disabled
+Force reread         : NO
+Queued               : NO
+Remove files         : NO
+Stupid mode          : NO
+Protocol (   0)      : FTP
+Delete input files   : NO
+Report unknown files : YES
+Important directory  : NO
+End character        : NONE
+Time option          : 1
+Next check time      : Sun Jun 19 11:32:00 2005
+Minute (long long)   : 01000000 00001000 00100001 10000100 00010000 01000010 00001000 00100001
+Continues (long long): 01000000 00001000 00100001 10000100 00010000 01000010 00001000 00100001
+Hour (uint)          : 00000000 11111111 11111111 11111111
+Day of month (uint)  : 01111111 11111111 11111111 11111111
+Month (short)        : 00001111 11111111
+Day of week (uchar)  : 01111111
+Minute (long long)   : 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+Continues (long long): 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+Hour (uint)          : 00000000 00000000 00000000 00000000
+Day of month (uint)  : 00000000 00000000 00000000 00000000
+Month (short)        : 00000000 00000000
+Day of week (uchar)  : 00000000
+Last retrieval       : Sun Jun 19 10:39:10 2005
+</pre>
+<p>
+This program can take two parameters -s and -d. -s will only print out the
+dir_alias and if the directory has been stopped or not. -d has the same
+meaning for disabled directories.
+</p>
+<h3 align=center><a name="afd_status"><u>AFD Status (afd_status)</u></a></h3>
+<p>
+The program afd_status prints the current status of the AFD that is displayed
+at the bottom row of the afd_ctrl dialog.
+</p>
+<pre>
+Hostname             : ducktown
+Working directory    : /home/afd
+User name + ID       : afd (9999)
+AMG                  : 1
+AMG jobs status flag : 0
+FD                   : 1
+System log           : 1
+Event log            : 1
+Transfer log         : 1
+Trans debug log      : 1
+Archive watch        : 1
+afd_stat             : 1
+afdd                 : 1
+input_log            : 1
+output_log           : 1
+delete_log           : 1
+production_log       : 1
+distribution_log     : 1
+ALDA daemon          : 1
+Receivelog indicator : 155 &lt; I I W I I &gt;
+Receive log history  : ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? I E ? ? ? ? ? I I ? I I I I W W W W I
+Syslog indicator     : 787 &lt; I I I I I &gt;
+System log history   : ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? W W C I W C C W I W W W I I W W I W W
+Translog indicator   : 2317 &lt; I I I I I &gt;
+Transfer log history : ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? I I I I I I I I I I I I I I E E I E I
+Number of transfers  : 0
+Number of retrieves  : 0
+Jobs in queue        : 0
+AMG fork() counter   : 6
+FD fork() counter    : 1213
+Burst2 counter       : 4
+AMG child user time  : 0.26994
+AMG child system time: 0.20995
+FD child user time   : 0.28980
+FD child system time : 0.179952
+Max. FD queue length : 17
+Directories scanned  : 2418
+AFD start time       : Thu Jan 19 20:29:37 2006
+</pre>
+<p>
+The process status of each can have the following numbers:
+</p>
+<center><table border>
+<tr>
+   <td align=center>-3</td>
+   <td>The process has stopped normally.</td>
+</tr>
+<tr>
+   <td align=center>0</td>
+   <td>Process is not running.</td>
+</tr>
+<tr>
+   <td align=center>1</td>
+   <td>Process is up and running.</td>
+</tr>
+<tr>
+   <td align=center>19</td>
+   <td>Process is currently shutting down.</td>
+</tr>
+</table></center>
+<h3 align=center><a name="fsa_edit"><u>Edit FSA (fsa_edit)</u></a></h3>
+<p>
+The program fsa_edit can be used to edit the FSA (Filetransfer Status
+Area). When you use this program it will always show the current value
+that you might wish to manipulate as shown below:
+</p>
+<center>
+<pre>
+
+
+
+
+                     FSA Editor (fiau)
+
+        +-----+------------------+----------------+
+        | Key | Description      | current value  |
+        +-----+------------------+----------------+
+        |  1  |total_file_counter|              0 |
+        |  2  |total_file_size   |              0 |
+        |  3  |error counter     |              1 |
+        |  4  |No. of connections|             26 |
+        |  5  |host status       |              0 |
+        |  6  |Max. errors       |             10 |
+        |  7  |Block size        |           1024 |
+        |  8  |Allowed transfers |              2 |
+        |  9  |Transfer timeout  |            120 |
+        |  a  |Real hostname     |      127.0.0.1 |
+        |  b  |Host display name |           fiau |
+        |  c  |Error offline stat|            YES |
+        |  d  |Active transfers  |              0 |
+        |  e  |File name         |                |
+        |  f  |Jobs queued       |              0 |
+        |  g  |Transferrate limit|              0 |
+        +-----+------------------+----------------+
+
+
+</pre>
+</center>
+<p>
+If you wish to change for example the 'error counter' just press '3'
+and you will be asked to enter a value:
+</p>
+<center>
+<pre>
+
+
+
+
+                     FSA Editor (fiau)
+
+        +-----+------------------+----------------+
+        | Key | Description      | current value  |
+        +-----+------------------+----------------+
+        |  1  |total_file_counter|              0 |
+        |  2  |total_file_size   |              0 |
+        |  3  |error counter     |              1 |
+        |  4  |No. of connections|             26 |
+        |  5  |host status       |              0 |
+        |  6  |Max. errors       |             10 |
+        |  7  |Block size        |           1024 |
+        |  8  |Allowed transfers |              2 |
+        |  9  |Transfer timeout  |            120 |
+        |  a  |Real hostname     |      127.0.0.1 |
+        |  b  |Host display name |           fiau |
+        |  c  |Error offline stat|            YES |
+        |  d  |Active transfers  |              0 |
+        |  e  |File name         |                |
+        |  f  |Jobs queued       |              0 |
+        |  g  |Transferrate limit|              0 |
+        +-----+------------------+----------------+
+
+
+     Enter value [3] :  _
+
+
+</pre>
+</center>
+<p>
+Now enter the new value and send the new value to the FSA with the
+return key. If you wish to terminate the program just press the q key.
+</p>
+<p>
+Please use this program with caution! Only use it when you know what you
+are doing.
+</p>
+<h3 align=center><a name="udc"><u>Update DIR_CONFIG (udc)</u></a></h3>
+<p>
+When there is a change in the DIR_CONFIG and you do not want to use the
+<a href="afd_ctrl.html">afd_ctrl</a> dialog to activate this DIR_CONFIG
+just use udc.
+</p>
+<h3 align=center><a name="uhc"><u>Update HOST_CONFIG (uhc)</u></a></h3>
+<p>
+When there is a change in the HOST_CONFIG and you do not want to use the
+<a href="afd_ctrl.html">afd_ctrl</a> dialog to activate this HOST_CONFIG
+just use uhc.
+</p>
+<p>
+Both udc and uhc return 0 when the update was performed successfully. On
+error either 3 or -1 is returned. If it returns 2 the update was done but
+there are warnings, meaning that you have to check the SYSTEM_LOG for
+possible errors in DIR_CONFIG or HOST_CONFIG.
+</p>
+<h3 align=center><a name="get_dc_data"><u>Get DIR_CONFIG data (get_dc_data)</u></a></h3>
+<p>
+The program get_dc_data shows what AFD has stored internally for the
+given host alias. The output looks as follows when a host alias is given
+as the first argument:
+</p>
+<pre>
+    DIR_CONFIG    : /home/afd/etc/DIR_CONFIG
+    Directory     : /home/afd/data/mfa
+    Dir-alias     : MRZ
+    DIR-options   : time */5 * * * *
+    Filter        : G1*
+                    G2*
+                    G3*
+                    G4*
+    Recipient     : ftp://user:passwd@host//data/mfa
+    Real hostname : 127.0.0.1
+    AMG-options   : extract MRZ
+    FD-options    : archive 1
+    Priority      : 6
+    Job-ID        : 1c7eafb9
+</pre>
+<p>
+If no argument is given, the whole DIR_CONFIG as stored within AFD
+will be printed to stdout. So with this command you can reconstruct
+the DIR_CONFIG if you lost it or it is damaged and AFD is still active.
+</p>
+<h3 align=center><a name="jid_view"><u>Get job data (jid_view)</u></a></h3>
+<p>
+The program jid_view shows all parameters of an internal AFD job.
+The output looks as follows when a job ID is given as the first argument:
+</p>
+<pre>
+    Job-ID          : 66cd75e8
+    DIR_CONFIG      : /home/afd/oper/etc/DIR_CONFIG
+    DIR_CONFIG-ID   : f4f6d93c
+    Source-Directory: ~afdftp/outgoing/filepool/volc1/R6/SN/
+    Local-Source-Dir: /home/afdftp/outgoing/filepool/volc1/R6/SN/
+    Dir-ID          : c3046a9d
+    Dir position    : 46
+    File filters    : *.bin
+                      *.txt
+    File-Mask-ID    : f7b343cc
+    Destination     : ftp://foo@mss_//tmp
+    Destination-ID  : 91edd4f0
+    Host alias      : mss_
+    Host-Alias-ID   : 3db112ef
+    Real hostname   : idefix [localhost]
+    Priority        : 9
+</pre>
+<p>
+If no argument is given, all jobs in AFD will be printed to stdout.
+</p>
+<h3 align=center><a name="show_exec_stat"><u>Show exec statistics
+(show_exec_stat)</u></a></h3>
+<p>
+If called will cause dir_check to print out some exec statistics about
+CPU usage in SYSTEM_LOG. This is very useful to find the jobs that cause
+most of the load. Below is an example output:
+</p>
+<pre>
+   10 14:40:06 &lt;D&gt; CPU clock times for exec option:
+   10 14:40:06 &lt;D&gt; Job ID     Forks      User       System     Total
+   10 14:40:06 &lt;D&gt; 4b5313cf   3          78         14         92
+</pre>
+<p>
+This statistic will always be printed when dir_check terminates.
+</p>
+<h3 align=center><a name="rm_job"><u>Remove a job (rm_job)</u></a></h3>
+<p>
+To remove a job from the AFD system there is the program rm_job
+&lt;full job name&gt;. To get the full job name just look into the files
+directory. To delete for example all jobs with the job ID 999
+the following command will do this for you: rm_job `find $AFD_WORK_DIR/files -name "*_999" -print`
+Currently rm_job can only delete outgoing jobs, not those that
+are fetching files from a remote host.
+</p>
+<h3 align=center><a name="set_pw"><u>Set password (set_pw)</u></a></h3>
+<p>
+If you do not want to store passwords in the DIR_CONFIG you can set them
+with this program. The syntax is as follows:
+</p>
+<pre>
+   Usage: set_pw [-w &lt;AFD work dir&gt;] [--version] [-e 0|1|2] [-s] -i &lt;job id&gt;|-c &lt;user@hostname&gt;
+</pre>
+<p>
+All passwords are stored at one location within AFD regardless if you
+have the password in DIR_CONFIG or you use set_pw. If you have the password
+in DIR_CONFIG and you set it with set_pw, always the last set password will
+be used by AFD. In the case of DIR_CONFIG the password will ALWAYS be set
+when you do a reread DIR_CONFIG. Also note that when you have in DIR_CONFIG
+multiple entries of the same username and hostalias and you remove all the
+passwords except for one. AFD will still always take the password from
+DIR_CONFIG each time you reread DIR_CONFIG. The identifier for a password
+within AFD is always the username and hostalias ie.  username@hostalias. And
+this will be stored only once.
+</p>
+<p>
+To explain it better, lets use an example. Say in DIR_CONFIG you have the
+following recipient:
+</p>
+<pre>
+     ftp://donald:secret@hollywood//home/user
+</pre>
+<p>
+If you reread DIR_CONFIG then AFD will have in its password database a entry
+donald@hollywood with its password. If you now set the password with set_pw
+(set_pw -c donald@hollywood) to secret2, AFD will from this time onwards always
+use secret2 for donald@hollywood. If you now reread DIR_CONFIG it will
+now use secret as password, ie. it will overwrite the password from set_pw.
+</p>
+<p>
+So if you always have put all passwords in DIR_CONFIG you can remove all
+passwords from it and everything should work as expected. To remove the
+password use the following syntax:
+</p>
+<pre>
+     ftp://donald@hollywood//home/user
+</pre>
+<p>
+Do <b>NOT</b> use this syntax:
+<pre>
+     ftp://donald:secret@hollywood//home/user
+</pre>
+<p>
+The above will always remove any password when rereading DIR_CONFIG.
+</p>
+<p>
+You can also set the password by putting it once in DIR_CONFIG, reread
+the DIR_CONFIG, remove the password from DIR_CONFIG and then reread DIR_CONFIG
+again. The password is now always set within AFD.
+</p>
+<p>
+By default AFD uses its own internal 'encryption' when storing the password
+in the internal database. You can choose a diferent encryption type with the
+-e parameter. There are currently 3 different types supported: 0, 1 and 2.
+0 is in clear plain text. 1 is the AFD internal version. And 2 is a simple
+XOR encryption with a key that you need to specify in
+$AFD_WORK_DIR/etc/.xor.key or by compiling it in with the configure option
+--with-xor-key=KEY.
+</p>
+<h3 align=center><a name="mafdcmd"><u>AFD monitor commands (mafdcmd)</u></a></h3>
+<p>
+With this program you can send many commands that you can also
+issue with the <a href="mon_ctrl.html">mon_ctrl</a> dialog on a per
+AFD basis. When you call mafdcmd without any parameters it will show
+all commands it knows:
+</p>
+<pre>
+   SYNTAX  : ./mafdcmd [-w working directory] options AFD|position
+                                              -e          enable AFD
+                                              -E          disable AFD
+                                              -r          retry
+                                              -s          switch AFD
+                                              -X          toggle enable/disable AFD
+                                              -u[ <user>] fake user
+                                              -v          just print Version
+</pre>
+<p>
+You may specify more than one AFD or position.
+</p>
+<h3 align=center><a name="aftp"><u>Automatic FTP (aftp)</u></a></h3>
+<p>
+aftp is a tool small tool that sends or retrieve file(s) via FTP without any
+user interaction, so it can be used from any shell scripts or programs such as
+<a href="xsend_file.html">xsend_file</a>. The syntax of aftp is as follows:
+</p>
+<pre>
+   SYNTAX: [t|r]aftp [options] [file 1 ... file n]
+
+      When calling it with raftp files will be retrieved from the
+      given host, otherwise (when using aftp) files will be send to that host.
+
+     OPTIONS                              DESCRIPTION
+     --version                          - Show current version
+     -a &lt;file size offset&gt;              - Offset of file name when doing a LIST
+                                          command on the remote side. If you
+                                          specify -2 it will try to determine
+                                          the size with the SIZE command.
+     -b &lt;block size&gt;                    - FTP block size in bytes. Default 4096
+                                          Bytes.
+     -c &lt;config file&gt;                   - Configuration file holding user name,
+                                          password and target directory in URL
+                                          format.
+     -C[ &lt;mode&gt;]                        - If target directory does not exist create
+                                          it. The optional mode can be used to
+                                          set the permission of this directory.
+     -d &lt;remote directory&gt;              - Directory where file(s) are to be stored.
+     -f &lt;filename&gt;                      - File containing a list of filenames
+                                          that are to be send.
+     -h &lt;host name | IP number&gt;         - Hostname or IP number to which to
+                                          send the file(s).
+     -k                                 - Keep FTP control connection with STAT
+                                          calls alive/fresh.
+     -l &lt;DOT | DOT_VMS | OFF | xyz.&gt;    - How to lock the file on the remote site.
+     -m &lt;A | I | D&gt;                     - FTP transfer mode, ASCII, binary or DOS.
+                                          Default is binary.
+     -o &lt;mode&gt;                          - Changes the permission of each file
+                                                distributed.
+     -p &lt;port number&gt;                   - Remote port number of FTP-server.
+     -P &lt;proxy procedure&gt;               - Use the given proxy procedure to
+                                          login. See documentation for more
+                                          details on syntax.
+     -u &lt;user&gt; &lt;password&gt;               - Remote user name and password. If not
+                                          supplied, it will login as anonymous.
+     -r                                 - Remove transmitted file.
+     -S &lt;buffer size&gt;                   - Socket send buffer size
+                                          (in bytes).
+     -t &lt;timout&gt;                        - FTP timeout in seconds. Default 120s.
+     -v                                 - Verbose. Shows all FTP commands and
+                                          the reply from the remote server.
+     -x                                 - Use passive mode instead of active
+                                          mode when doing the data connection.
+     -X                                 - Use extended mode active or passive
+                                          (-x) mode.
+     -z                                 - Use SSL/TLS for control connection.
+     -Z                                 - Use SSL/TLS for control and data
+                                          connection.
+     -?                                 - Display this help and exit.
+     The following values are returned on exit:
+          0 - File transmitted successfully.
+          1 - Failed to connect.
+          9 - SSL/TLS authentification error.
+          2 - User name wrong.
+          3 - Wrong password.
+          4 - Failed to set ascii/binary mode.
+          5 - Failed to send NLST command.
+         10 - Failed to open remote file.
+         11 - Error when writing into remote file.
+         12 - Failed to close remote file.
+         13 - Failed to rename remote file.
+         14 - Remote directory could not be set.
+         20 - Operation received timeout.
+         28 - Connection reset by peer.
+         29 - Connection refused.
+         30 - Could not open source file.
+         31 - Failed to read source file.
+         17 - System error stat().
+         34 - System error malloc().
+         40 - Failed to read file name file.
+         60 - Syntax wrong.
+</pre>
+<h3 align=center><a name="asmtp"><u>Automatic SMTP (asmtp)</u></a></h3>
+<p>
+asmtp is a tool small tool that sends file(s) via SMTP without any
+user interaction, so it can be used from any shell scripts or programs such as
+<a href="xsend_file.html">xsend_file</a>. The syntax of asmtp is as follows:
+</p>
+<pre>
+   SYNTAX: asmtp [options] file(s)
+
+     OPTIONS                      DESCRIPTION
+     --version                  - Show current version
+     -a &lt;user@host&gt;             - The address where the mail is sent to.
+     -b &lt;block size&gt;            - Transfer block size in bytes. Default 4096
+                                  Bytes.
+     -c &lt;config file&gt;           - Configuration file holding user name,
+                                  domain and SMTP server in URL format.
+     -e                         - Encode files in BASE64.
+     -f &lt;filename&gt;              - File containing a list of filenames
+                                  that are to be send.
+     -h &lt;hostname | IP number&gt;  - Recipient hostname of this mail.
+     -m &lt;mailserver-address&gt;    - Mailserver that will send this mail.
+                                  Default is localhost.
+     -n                         - File name is subject.
+     -o &lt;mail address&gt;          - Where the receiver should send is reply.
+     -p &lt;port number&gt;           - Remote port number of SMTP-server.
+                                  Default 25.
+     -r                         - Remove transmitted file.
+     -s &lt;subject&gt;               - Subject of this mail.
+     -t &lt;timout&gt;                - SMTP timeout in seconds. Default 120s.
+     -u &lt;user&gt;                  - The user who should get the mail.
+     -v                         - Verbose. Shows all SMTP commands and
+                                  the reply from the SMTP server.
+     -y                         - File name is user.
+     -?                         - Display this help and exit.
+     The following values are returned on exit:
+          0 - File transmitted successfully.
+          1 - Failed to connect.
+          2 - User name wrong.
+          4 - Failed to set ascii/binary mode.
+          5 - Failed to send NLST command.
+         10 - Failed to open remote file.
+         11 - Error when writing into remote file.
+         12 - Failed to close remote file.
+         13 - Failed to rename remote file.
+         14 - Remote directory could not be set.
+         20 - Operation received timeout.
+         28 - Connection reset by peer.
+         29 - Connection refused.
+         30 - Could not open source file.
+         31 - Failed to read source file.
+         17 - System error stat().
+         34 - System error malloc().
+         40 - Failed to read file name file.
+         60 - Syntax wrong.
+</pre>
+<h3 align=center><a name="awmo"><u>Automatic WMO (awmo)</u></a></h3>
+<p>
+asmtp is a tool small tool that sends file(s) via WMO protocol without any
+user interaction, so it can be used from any shell scripts or programs such as
+<a href="xsend_file.html">xsend_file</a>. The syntax of awmo is as follows:
+</p>
+<pre>
+   SYNTAX: [t]awmo [options] [file 1 ... file n]
+
+     OPTIONS                              DESCRIPTION
+     --version                          - Show current version
+     -a                                 - Wait for an acknowledge from server.
+     -b &lt;block size&gt;                    - Transfer block size in bytes. Default 4096
+                                          bytes.
+     -f &lt;filename&gt;                      - File containing a list of filenames
+                                          that are to be send.
+     -h &lt;host name | IP number&gt;         - Hostname or IP number to which to
+                                          send the file(s).
+     -H                                 - File name is header
+     -m &lt;A | I | F&gt;                     - WMO transfer type, ASCII, binary or Fax.
+                                          Default is binary.
+     -p &lt;port number&gt;                   - Remote port number of WMO-server.
+     -r                                 - Remove transmitted file.
+     -S &lt;buffer size&gt;                   - Socket send buffer size
+                                          (in bytes).
+     -t &lt;timout&gt;                        - WMO timeout in seconds. Default 120s.
+     -v                                 - Verbose. Shows all WMO commands and
+                                          the reply from the remote server.
+     -?                                 - Display this help and exit.
+     The following values are returned on exit:
+          0 - File transmitted successfully.
+          1 - Failed to connect.
+         10 - Failed to open remote file.
+         11 - Error when writing into remote file.
+         12 - Failed to close remote file.
+         20 - Operation received timeout.
+         28 - Connection reset by peer.
+         29 - Connection refused.
+         30 - Could not open source file.
+         31 - Failed to read source file.
+         17 - System error stat().
+         34 - System error malloc().
+         40 - Failed to read file name file.
+         60 - Syntax wrong.
+</pre>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><address><small>
+   Copyright &copy; 2001 - 2014 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 07.11.2014
+   </small></address></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (amg.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="amg">AMG (Automatic Message Generator)</a></h1>
+<hr size=3 noshade>
+<p>
+To send files with the AFD, it must know from which directory and what
+file(s) it has to transmit. This information and that about the remote
+site is found in the file <a href="dir_config.html">DIR_CONFIG</a>. There
+may be more then one DIR_CONFIG, this can be done by using multiple
+<a href="afd_config.html#dir_config_name">DIR_CONFIG_NAME</a> entries in
+the AFD_CONFIG file. So all the AMG does is that when files show up it
+generates a message for the <a href="fd.html">fd</a>. The message is
+written in ASCII and stored in the directory 'messages'. Below is an
+example of what might be the contents of a message:
+</p>
+<p>
+<pre>
+   [recipient]
+   ftp://donald:secret@hollywood//home/user
+
+   [options]
+   archive 3
+   lock DOT
+</pre>
+</p>
+<p>
+The password will only be visible when it is configured with
+--enable-passwd_in_msg.
+</p>
+<p>
+These messages are generated only ones in the message directory with
+the job ID as there name. At start the FD reads all these messages into
+a cache. When the AMG has created a new job it sends the job ID over
+the fifo to the FD which now knows which message it needs to apply.
+</p>
+<h3><a name="dir_check"><u>Dir Check</u></a></h3>
+<p>
+This process constantly looks into the directories specified in the
+DIR_CONFIG to see if any files arrive. It scans all directories in
+that order that they have been specified in the DIR_CONFIG every
+5 seconds (DEFAULT_RESCAN_TIME). If the directory is not in the same
+file system as the AFD it forks to copy the files to the file
+directory of the AFD. This is done, to reduce the time when copying
+files, especially when the files are mounted via NFS. When the option
+'extract', 'exec',  or 'gts2tiff' is set, the inst_job will fork, since the
+conversion time can be very long (at least on some systems). If there
+are lots of files in a directory it will only take the first 100
+(MAX_COPIED_FILES). So it does not take too long to create a job.
+Distribution of files should start as early as possible.
+</p>
+<p>
+If files are found, a directory of the following format is created in
+the AFD file directory:
+</p>
+<pre>
+     files/outgoing/&lt;JID&gt;/&lt;counter&gt;/&lt;creation time&gt;_&lt;unique number&gt;_&lt;SJC&gt;
+
+               JID - Job ID
+               SJC - Split Job Counter
+</pre>
+<p>
+The <counter> field is incremented when there are more then 1000 directories,
+ie. jobs queued.
+</p>
+<p>
+All files that are found are hard linked into this directory. This
+procedure is continued for each recipient that wants the same files.
+Every time a new directory has been created and all files are linked
+into this directory, a message is send to the message fifo MSG_FIFO.
+The message in the fifo has the following format:
+</p>
+<pre>
+     &lt;creation time&gt;&lt;JID&gt;&lt;SJC&gt;&lt;dir no&gt;&lt;unique number&gt;&lt;Priority&gt;&lt;Originator&gt;
+            |         |    |      |         |           |       |
+            |         |    |      |         |           | +-----+
+            |         |    |      |         |           | |
+            |         |    |      |         |           | |
+            |         |    |      |         |           | |
+            |         |    |      |         |           | +-&gt; char
+            |         |    |      |         |           +---&gt; char
+            |         |    |      |         +---------------&gt; unsigned short
+            |         |    |      +-------------------------&gt; unsigned short
+            |         |    +--------------------------------&gt; unsigned int
+            |         +-------------------------------------&gt; unsigned int
+            +-----------------------------------------------&gt; time_t
+
+               JID - Job ID
+               SJC - Split Job Counter
+</pre>
+<p>
+These messages are read by the FD which will distribute the files immediately
+if it still has a process slot free, or will store them into an internal
+queue.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 1997 - 2005 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 08.07.2005
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

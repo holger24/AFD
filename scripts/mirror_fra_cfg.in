@@ -1,0 +1,62 @@
+#!/bin/sh
+#
+# Description   : This script mirrors the FRA configuration of another AFD
+#
+# Synopsis      : mirror_fra_cfg <AFD workdir> <hostname of to be mirrored AFD>
+#
+# Author        : H.Kiehl
+# Date          : 05.10.2009
+#
+# Modifications : 
+#
+
+if [ $# -lt 2 ]
+then
+   echo "Usage: $0 <AFD workdir> <hostname of to be mirrored AFD>"
+   exit 1
+fi
+
+AFD_WORK_DIR=$1
+PATH=$PATH:@prefix@/bin
+export AFD_WORK_DIR PATH
+if [ -f $AFD_WORK_DIR/etc/afd-remote.env ]
+then
+   . $AFD_WORK_DIR/etc/afd-remote.env
+fi
+
+ssh $2 ". .profile ; fra_view -s -d" > .fra_view.$2
+
+if [ -f .fra_view.$2.previous ]
+then
+   diff .fra_view.$2.previous .fra_view.$2 > /dev/null
+   if [ $? -eq 0 ]
+   then
+      rm -f .fra_view.$2
+      exit 0
+   fi
+fi
+
+for i in `cat .fra_view.$2`
+do
+   alias_name=`echo $i | cut -d "|" -f 1`
+   result_string=`echo $i | cut -d "|" -f 2`
+   if [ "$result_string" = "Enabled" ]
+   then
+      stop_para="-j"
+   else
+      stop_para="-J"
+   fi
+   result_string=`echo $i | cut -d "|" -f 3`
+   if [ "$result_string" = "Enabled" ]
+   then
+      disable_para="-b"
+   else
+      disable_para="-B"
+   fi
+   afdcmd $stop_para $disable_para $alias_name > /dev/null
+done
+
+rm -f .fra_view.$2.previous
+mv .fra_view.$2 .fra_view.$2.previous
+
+exit 0

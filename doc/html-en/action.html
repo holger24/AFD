@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD actions (action.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="AFD actions">AFD actions</a></h1>
+<hr size=3 noshade>
+<p>
+In $AFD_WORK_DIR/etc/action it is possible to define what AFD should do
+when for example some remote host is not reachable. It is possible to
+then execute some script or binary program. There are five possible actions,
+each have their own subdiretory in $AFD_WORK_DIR/etc/action, defined as
+follows:
+</p>
+<center><table border>
+<tr>
+   <th>Directory</th>
+   <th>Description</th>
+</tr>
+<tr>
+   <td>$AFD_WORK_DIR/etc/action/source/warn</td>
+   <td>When <a href="dir_config.html#warn_time">warn time</a> for the given
+       directory alias has been reached, the script/program with the
+       directory alias as filename will be executed with the parameter
+       'start'. When the warn situation is no longer valid the script/program
+       is called again with the parameter 'stop'.</td>
+</tr>
+<tr>
+   <td>$AFD_WORK_DIR/etc/action/source/error</td>
+   <td>If the source directory is not accessible a script/program with the
+       directory alias as filename will be executed with the parameter
+       'start'. As soon as the directory is accessible again, the
+       script/program is called again with the parameter 'stop'.</td>
+</tr>
+<tr>
+   <td>$AFD_WORK_DIR/etc/action/target/success</td>
+   <td>If a script/program with the host alias as filename exists and is
+       executable, this will be executed each time a file is send to
+       this target.</td>
+</tr>
+<tr>
+   <td>$AFD_WORK_DIR/etc/action/target/warn</td>
+   <td>When <a href="host_config.html#warn_time">warn time</a> seconds
+       have elapsed with no data being send to this host, the script/program
+       in $AFD_WORK_DIR/etc/action/target/warn/ with the host alias as
+       filename will be executed with the parameter 'start'. As soon as
+       data has been send successful the script/program is called again
+       with the parameter 'stop'.</td>
+</tr>
+<tr>
+   <td>$AFD_WORK_DIR/etc/action/target/error</td>
+   <td>If the error counter for a given host has reached
+       <a href="host_config.html#max_errors">max errors</a>
+       <a href="edit_hc.html#max_errors">(edit_hc)</a>, then the script/program
+       with the host alias as filename will be executed with the parameter
+       As soon as the error counter is below max errors the script/program
+       is called again with the parameter 'stop'.</td>
+</tr>
+</table></center>
+</p>
+<p>
+Instead of having a action file for each source/target it is also possible
+to put into the directory a script/program with the name 'all.default'. Then
+the action will be done for all source/target entities. It is also possible
+to use both method, then if a separate script/program s found, this will be
+taken and not 'all.default'. If the 'all.default' script/program is called,
+it is always called with the alias name (of the host or directory ) as a
+second parameter.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 2008 - 2012 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 03.06.2012
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

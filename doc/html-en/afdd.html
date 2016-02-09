@@ -1,0 +1,495 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD Daemon (afdd.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="AFD Daemon">AFD Daemon</a></h1>
+<hr size=3 noshade>
+<p>
+The process afdd is a daemon that runs in the background and listens
+on port <a href="afd_config.html#afd_tcp_port">AFD_TCP_PORT</a> and waits
+for requests. This daemon will only run when AFD_TCP_PORT is set in
+<a href="afd_config.html">AFD_CONFIG</a>. The following lists of commands
+are supported by afdd:
+</p>
+<center><table border width="80%">
+<tr>
+   <th>Command</th>
+   <th>Description</th>
+   <th>Example return code</th>
+</tr>
+<tr>
+   <td>LRF</td>
+   <td>Print content of <a href="rename_rules.html">rename rule</a> file.</td>
+   <td><pre>211- Command successful
+
+[fiau]
+fiau_*   *
+
+[gisc]
+*-*-*-*-*   %*1/%*2/%*3/%*4/%*5
+200 End of data
+       </pre></td>
+</tr>
+<tr>
+   <td>QUIT</td>
+   <td>Terminate session.</td>
+   <td><pre>221 Goodbye.</pre></td>
+</tr>
+<tr>
+   <td>SSTAT</td>
+   <td>This command should be issued at the start of a session. It
+       will return a summary status report of all hosts when this
+       command is invoked. For the duration of the connection it will
+       actively report any changes that might occur.</td>
+   <td><pre>211- AFD status summary:
+IS 0 0 187109699 1558 0 0 0 0
+211- AFD host list:
+NH 3
+HL 0 intern localhost
+EL 0 0 0 0 0 0
+HL 1 fss_ 127.0.0.1 127.0.0.1
+EL 1 0 0 0 0 0
+HL 2 fiau localhost
+EL 2 0 0 0 0 0
+WD /home/afd/afd2
+AV 1.3.0-pre14
+MC 120
+SR 397 ,,,,,
+RH !!!!!!!!!!!!!!!!!!!!!0,!
+SH !!!!!!!!!!!!!!!!!!!!!000
+TH !!!!!!!!!!!!!!!!!!!!!,,,
+AM 1
+FD 1
+AW 1
+       </pre></td>
+</tr>
+<tr>
+   <td>STAT</td>
+   <td>Prints statistic of what has been done since last command.
+       A more detailed description of the return code follows below.</td>
+   <td><pre>211- AFD status summary:
+IS 0 0 278358 2 0 0 0 0
+       </pre></td>
+</tr>
+<tr>
+   <td>HSTAT</td>
+   <td>Prints host statistic of all hosts served by this AFD.
+       A more detailed description of the return code follows below:</td>
+   <td><pre>211- AFD host status:
+NH 2
+HL 0 ducktown 10.0.0.1 10.0.0.2
+HS 0 0 0 0 11076342 2806595406387 0 0 1 1375344421
+EL 0 0 0 0 0 0
+HL 1 mail 10.0.0.4
+HS 1 276 46 0 840 3226798 28 1089649 1 1375344401
+EL 1 0 0 0 0 0
+       </pre></td>
+</tr>
+</table></center>
+
+<p>
+The meaning of the return code of the STAT and SSTAT commands is described
+in more details in the following table:
+</p>
+
+<center><table border width="80%">
+<tr>
+   <th>Parameter name</th>
+   <th>Description</th>
+   <th>Example</th>
+</tr>
+<tr>
+   <td>AM</td>
+   <td>Status of AMG process. Possible values:
+       <center><table border>
+       <tr>
+          <td>-3</td>
+          <td>Process has been stopped.</td>
+       </tr>
+       <tr>
+          <td>0</td>
+          <td>Not working.</td>
+       </tr>
+       <tr>
+          <td>1</td>
+          <td>Process is up and running.</td>
+       </tr>
+       <tr>
+          <td>19</td>
+          <td>Process is shutting down.</td>
+       </tr>
+       </table></center>
+   </td>
+   <td><pre>AM 1</pre></td>
+</tr>
+<tr>
+   <td>AV</td>
+   <td>Current AFD version.</td>
+   <td><pre>AV 1.2.22</pre></td>
+</tr>
+<tr>
+   <td>AW</td>
+   <td>Status of archive_watch process. Possible values:
+       <center><table border>
+       <tr>
+          <td>-3</td>
+          <td>Process has been stopped.</td>
+       </tr>
+       <tr>
+          <td>0</td>
+          <td>Not working.</td>
+       </tr>
+       <tr>
+          <td>1</td>
+          <td>Process is up and running.</td>
+       </tr>
+       <tr>
+          <td>19</td>
+          <td>Process is shutting down.</td>
+       </tr>
+       </table></center>
+   </td>
+   <td><pre>AW 1</pre></td>
+</tr>
+<tr>
+   <td>DJ</td>
+   <td>Danger number of jobs. As of this number, host will be automatically
+       paused so that not to many jobs get queued.</td>
+   <td><pre>DJ 4096</pre></td>
+</tr>
+<tr>
+   <td>DL</td>
+   <td>Directory list of the following form:
+       <pre>DL &lt;dir_number&gt; &lt;dir ID&gt; &lt;dir alias&gt; &lt;dir name&gt; [&lt;original dir name&gt;]</pre>
+       </td>
+   <td><pre>DL 0 f8cbd598 test /data0/afdftp/test ~afdftp/test afdftp</pre></td>
+</tr>
+<tr>
+   <td>EL</td>
+   <td>A list of host that are in error status. Syntax is as follows:
+       <pre>EL &lt;host_number&gt; &lt;error code 1&gt; ... &lt;error code n&gt;</pre>
+       The last 6 errors are shown. &lt;error code 1&gt; being the newes.
+       <p>The meaning of the error numbers is as follows:</p>
+       <pre>
+             0      Transfer success
+             1      Connect error
+             2      User error
+             3      Password error
+             4      Type error
+             5      List error
+             6      Mail error
+             7      JID number not found
+             8      Process was killed
+             9      TLS/SSL authentification failed
+            10      Failed to open remote file
+            11      Failed to write to remote file
+            12      Failed to close remote file
+            13      Failed to move remote file
+            14      Failed to change remote directory
+            15      Failed to create remote lock file
+            16      Failed to remove remote lock_file
+            17      Failed to stat local file
+            18      Failed to move local file
+            19      Failed to rename local file
+            20      Operation received timeout
+            21      Received negative aknowledge
+            22      Failed to read from remote file
+            23      Failed to get size of remote file
+            24      Failed to get date of remote file
+            25      Failed to quit
+            26      Failed to create directory
+            27      Failed to change owner of file
+            28      Connection reset by peer
+            29      Connection refused
+            30      Failed to open local file
+            31      Failed to read from local file
+            32      Failed to lock region in FSA
+            33      Failed to unlock region in FSA
+            34      Failed to allocate memory
+            35      select error
+            36      Failed to write to local file
+            37      Failed to access target file/dir
+            38      Local+remote size do not match
+            40      Local file directory does not exist
+            41      The message file does not exist
+            50      Failed to send mail address
+            51      Failed to send SMTP DATA command
+            52      sigpipe error
+            55      Error in MAP function
+            56      External transmit failed
+            60      Syntax error
+            61      No files to send
+            62      More files to send</pre>
+   </td>
+   <td><pre>EL 14 1 3 3 3 3</pre></td>
+</tr>
+<tr>
+   <td>FD</td>
+   <td>Status of FD process. Possible values:
+       <center><table border>
+       <tr>
+          <td>-3</td>
+          <td>Process has been stopped.</td>
+       </tr>
+       <tr>
+          <td>0</td>
+          <td>Not working.</td>
+       </tr>
+       <tr>
+          <td>1</td>
+          <td>Process is up and running.</td>
+       </tr>
+       <tr>
+          <td>19</td>
+          <td>Process is shutting down.</td>
+       </tr>
+       </table></center>
+   </td>
+   <td><pre>FD 1</pre></td>
+</tr>
+<tr>
+   <td>HL</td>
+   <td>Contains information about a certain host. If the AFD serves more
+       then one host, SSTAT will return all host each being separated by
+       a linefeed newline combination. Syntax is as follows:
+       <pre>HL &lt;host_number&gt; &lt;host alias&gt; &lt;real hostname 1&gt; [&lt;real hostname 2&gt;]</pre>
+   </td>
+   <td><pre>HL 24 ducktown 10.0.0.1 10.0.0.2</pre></td>
+</tr>
+<tr>
+   <td>HS</td>
+   <td>Contains statistics about a certain host. Syntax is as follows:
+       <pre>HS &lt;host_number&gt; &lt;host status&gt; &lt;error counter&gt; &lt;active transfers&gt; &lt;files send&gt; &lt;bytes send&gt; &lt;files queued&gt; &lt;bytes queued&gt; &lt;host toggle&gt; &lt;last successful transfer&gt;</pre>
+   </td>
+   <td><pre>HS 24 0 0 1 102 24679822 1 1066 1 1375344401</pre></td>
+</tr>
+<tr>
+   <td>IS</td>
+   <td>Interval summary, showing what has happened since the last call
+       of STAT or SSTAT. It contains the following information in the
+       given order:
+       <ul>
+          <li>Files to be send</li>
+          <li>Bytes to be send</li>
+          <li>Bytes send per second</li>
+          <li>Files send per second</li>
+          <li>Total number of current errors</li>
+          <li>Number of error hosts</li>
+          <li>Number of active transfers</li>
+          <li>Jobs in queue</li>
+          <li>Files send</li>
+          <li>Bytes send</li>
+          <li>Total number of connections since last initialization</li>
+          <li>Total errors since last initialization</li>
+          <li>Files received</li>
+          <li>Bytes received</li>
+       </ul>
+   </td>
+   <td><pre>IS 48 973692840 1539134802 2388913707 0 0 263 14 2388913707 1638230914848082 61111817 337111 761012356 384606795190536</pre></td>
+</tr>
+<tr>
+   <td>JL</td>
+   <td>Job list of the following form:
+       <pre>JL &lt;job_number&gt; &lt;job ID&gt; &lt;dir ID&gt; &lt;recipient string&gt; &lt;AMG options&gt;</pre>
+       </td>
+   <td><pre>JL 0 b02cf7a6 f2cbd49a 1 file://localhost/tmp</pre></td>
+</tr>
+<tr>
+   <td>Jl</td>
+   <td>Same as above, only that this time some data is encoded.</td>
+   <td><pre>Jl 0 b02cf9a6 f8cbd598 1 6jHej-#,Zn2p[i`=]rb\jr|X5TnmA~1Zm</pre></td>
+</tr>
+<tr>
+   <td>LC</td>
+   <td>Log configuration. Bitmask telling which logs can be retrieved.
+       For more details on the bitmask see description on
+       <a href="afd_config.html#afd_tcp_logs">AFD_TCP_LOGS</a></td>
+   <td><pre>LC 53232</pre></td>
+</tr>
+<tr>
+   <td>MC</td>
+   <td>Maximum number of connections.</td>
+   <td><pre>MC 200</pre></td>
+</tr>
+<tr>
+   <td>ND</td>
+   <td>Number of directories.</td>
+   <td><pre>ND 861</pre></td>
+</tr>
+<tr>
+   <td>NH</td>
+   <td>Number of hosts.</td>
+   <td><pre>NH 207</pre></td>
+</tr>
+<tr>
+   <td>NJ</td>
+   <td>Number of jobs configured.</td>
+   <td><pre>NJ 1568</pre></td>
+</tr>
+<tr>
+   <td>RH</td>
+   <td>Receive log history. The values returned here will be binary with
+       the following meaning:
+       <center><table border>
+          <tr>
+             <th>Sign in log</th>
+             <th>Binary value</th>
+             <th>Meaning</th>
+          </tr>
+          <tr>
+             <td>&lt;I&gt;</td>
+             <td>32 + 12 = 44 => ','</td>
+             <td>Information</td>
+          </tr>
+          <tr>
+             <td>&lt;W&gt;</td>
+             <td>32 + 14 = 46 => '.'</td>
+             <td>Warning</td>
+          </tr>
+          <tr>
+             <td>&lt;E&gt;</td>
+             <td>32 + 16 = 48 => '0'</td>
+             <td>Error</td>
+          </tr>
+       </table></center>
+   </td>
+   <td><pre>RH ,,,,,,,,,,,,,,,,,,,,,,,,</pre></td>
+</tr>
+<tr>
+   <td>SH</td>
+   <td>System log history. The values returned here will be binary with
+       the following meaning:
+       <center><table border>
+          <tr>
+             <th>Sign in log</th>
+             <th>Binary value</th>
+             <th>Meaning</th>
+          </tr>
+          <tr>
+             <td>&nbsp;</td>
+             <td>32 + 1 = 33 => '!'</td>
+             <td>No information</td>
+          </tr>
+          <tr>
+             <td>&lt;I&gt;</td>
+             <td>32 + 12 = 44 => ','</td>
+             <td>Information</td>
+          </tr>
+          <tr>
+             <td>&lt;C&gt;</td>
+             <td>32 + 13 = 45 => '-'</td>
+             <td>Configuration</td>
+          </tr>
+          <tr>
+             <td>&lt;W&gt;</td>
+             <td>32 + 14 = 46 => '.'</td>
+             <td>Warning</td>
+          </tr>
+          <tr>
+             <td>&lt;E&gt;</td>
+             <td>32 + 16 = 48 => '0'</td>
+             <td>Error</td>
+          </tr>
+          <tr>
+             <td>&lt;F&gt;</td>
+             <td>32 + 17 = 49 => '1'</td>
+             <td>Fatal Error</td>
+          </tr>
+       </table></center>
+   </td>
+   <td><pre>SH ,,,,,,,,,,,,,,,,,,,,,,,!</pre></td>
+</tr>
+<tr>
+   <td>SR</td>
+   <td>System log radar. The first value is the number of SYSTEM_LOG
+       entries. The values thereafter returned here will be binary with
+       the following meaning:
+       <center><table border>
+          <tr>
+             <th>Sign in log</th>
+             <th>Binary value</th>
+             <th>Meaning</th>
+          </tr>
+          <tr>
+             <td>&lt;I&gt;</td>
+             <td>32 + 12 = 44 => ','</td>
+             <td>Information</td>
+          </tr>
+          <tr>
+             <td>&lt;C&gt;</td>
+             <td>32 + 13 = 45 => '-'</td>
+             <td>Configuration</td>
+          </tr>
+          <tr>
+             <td>&lt;W&gt;</td>
+             <td>32 + 14 = 46 => '.'</td>
+             <td>Warning</td>
+          </tr>
+          <tr>
+             <td>&lt;E&gt;</td>
+             <td>32 + 16 = 48 => '0'</td>
+             <td>Error</td>
+          </tr>
+          <tr>
+             <td>&lt;F&gt;</td>
+             <td>32 + 17 = 49 => '1'</td>
+             <td>Fatal Error</td>
+          </tr>
+       </table></center>
+   </td>
+   <td><pre>SR 50248 ,,,,,</pre></td>
+</tr>
+<tr>
+   <td>TH</td>
+   <td>Transfer log history. The values returned here will be binary with
+       the following meaning:
+       <center><table border>
+          <tr>
+             <th>Sign in log</th>
+             <th>Binary value</th>
+             <th>Meaning</th>
+          </tr>
+          <tr>
+             <td>&lt;I&gt;</td>
+             <td>32 + 12 = 44 => ','</td>
+             <td>Information</td>
+          </tr>
+          <tr>
+             <td>&lt;W&gt;</td>
+             <td>32 + 14 = 46 => '.'</td>
+             <td>Warning</td>
+          </tr>
+          <tr>
+             <td>&lt;E&gt;</td>
+             <td>32 + 16 = 48 => '0'</td>
+             <td>Error</td>
+          </tr>
+       </table></center>
+   </td>
+   <td><pre>TH ,,,,,,,,,,,,,,,,,,,,,,,,</pre></td>
+</tr>
+<tr>
+   <td>WD</td>
+   <td>AFD working directory.</td>
+   <td><pre>WD /home/donald/afd</pre></td>
+</tr>
+</table></center>
+
+
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 2005 - 2013 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 01.08.2013
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

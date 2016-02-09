@@ -1,0 +1,111 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (xsend_file.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="xsend_file">Send File Window</a></h1>
+<hr size=3 noshade>
+<center><img src="../images/xsend_file_small.png" alt="[image of xsend_file dialog]"></center>
+<p>
+The dialog xsend_file is the graphical interface to the command line tools
+<a href="tools.html#aftp">aftp</a> and <a href="tools.html#asmtp">asmtp</a> and
+is used by the <a href="show_olog.html">show_olog</a> and
+<a href="show_queue.html">show_queue</a> dialog. It sends a given list
+of files to some other destination.
+</p>
+<p>
+To use this program directly the syntax is as follows:
+</p>
+<pre>
+    Usage: xsend_file [options] &lt;file name file&gt;
+                  --version
+                  -f &lt;font name&gt;
+</pre>
+<p>
+For the scheme FTP the dialog has the following appearance:
+</p>
+<center><img src="../images/xsend_file_ftp_selection.gif" alt="[closeup of the FTP selection part]"></center>
+<center>
+<table border>
+<tr>
+   <td>&nbsp;<b>1</b>&nbsp;</td>
+   <td>Choose the scheme ie. the protocol to use. Currently only ftp and
+       mailto (SMTP) are implemented.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>2</b>&nbsp;</td>
+   <td>Enter the user name here.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>3</b>&nbsp;</td>
+   <td>Password field.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>4</b>&nbsp;</td>
+   <td>Enter a a hostname or IP number where the files are to be send.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>5</b>&nbsp;</td>
+   <td>Directory on remote host where data is to be stored.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>6</b>&nbsp;</td>
+   <td>If this is set, the remote directory will be created recursively if
+       it does not exist.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>7</b>&nbsp;</td>
+   <td>When to timeout the network connection. The value here is in
+       seconds.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>8</b>&nbsp;</td>
+   <td>The port where you want to connect.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>9</b>&nbsp;</td>
+   <td>The FTP transfer mode to use, possible values are ASCII,
+       BIN and DOS.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>10</b>&nbsp;</td>
+   <td>What locking procedure to use when we are still writing to the
+       remote file.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>11</b>&nbsp;</td>
+   <td>When set the window will show in more details what it is currently
+       doing.</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>12</b>&nbsp;</td>
+   <td>By default the files are send in active mode, to use passive mode
+       press this button.</td>
+</tr>
+</table>
+</center>
+<p>
+For scheme mailto (SMTP) the dialog looks slightly different:
+</p>
+<center><img src="../images/xsend_file_smtp_selection.png" alt="[closeup of the SMTP selection part]"></center>
+<p>
+The directory field is now used to insert the subject of the mail and at
+the bottom there is an additional option "Attach file" to attach files
+using base64 encoding.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><address><small>
+   Copyright &copy; 2005 - 2014 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 05.11.2014
+   </small></address></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

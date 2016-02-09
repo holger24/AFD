@@ -1,0 +1,480 @@
+   Description : AFD FAQ
+   Author      : Holger Kiehl
+   email       : Holger.Kiehl@dwd.de
+   Version     : 0.2
+   Last Updated: 06 August 2005
+   Copyright   : GPL
+
+   ======================================================================
+
+   Table of Contents
+
+   1. General Information
+
+      1.1 What is AFD?
+      1.2 Where can I get AFD?
+      1.3 Will AFD run with Windows XXX?
+      1.4 What is the history of AFD.
+
+   2. Compiling
+
+      2.1 How do I compile AFD under XXX?
+
+      2.2 Security considerations
+
+         2.2.1 Single user
+         2.2.2 Group access
+         2.2.3 Any users
+
+      2.3 I get the following error when compiling:
+
+         2.3.1 Can't open include file 'X11/Xaw/StripChart.h'
+         2.3.2 Can't find library for -lXpm (only versions < 1.2.2)
+         2.3.3 /usr/bin/ld: cannot find -lXm
+
+   3. Installing
+
+      3.1 How do I install AFD?
+
+         3.1.1 Installing from source
+         3.1.2 RPM
+
+   4. Configuration
+
+      4.1 When starting AFD or one of its process I get the following
+          error:
+
+         4.1.1 ERROR   : Failed to determine AFD working directory!
+         4.1.2 You are not permitted to use this program. [<username>]
+         4.1.3 ERROR   : Cannot read DIR_CONFIG file : No such file or
+                         directory
+
+   5. General usage
+
+      5.1 DIR_CONFIG/HOST_CONFIG
+
+         5.1.1 How do I activate the changes in the DIR_CONFIG or
+               HOST_CONFIG file?
+         5.1.2 The password has changed but it is still seems to use
+               the old one. What's wrong?
+         5.1.3 Do I always have to press the 'Reread HOST_CONFIG' and
+               'Reread DIR_CONFIG' button?
+         5.1.4 I have lost some or all the content of the DIR_CONFIG,
+               what can I do?
+
+      5.2 Operational questions
+
+         5.2.1 The network connection to ALL hosts is down. What should
+               be done?
+         5.2.2 The connection to one host is down and the job queue counter
+               is constantly increasing. What action is necessary?
+         5.2.3 When a connection to one host is down should I stop transfer
+               or stop the queue?
+         5.2.4 An error has occurred for connection XYZ. How do you know
+               what type of error has occurred?
+         5.2.5 The problem to a host has been solved, but it always takes
+               such a long time before it tries to send the files again.
+               How can one test immediately whether the problem is solved
+               or not?
+         5.2.6 There is no response or action at all. Even starting or
+               stopping the AMG or FD does nothing. What's wrong?
+         5.2.7 There are files in the directory, but AFD does not send
+               them.
+
+   6. Error Messages
+
+      6.1 FTP Error Messages
+
+         6.1.1 Disc quota exceeded.
+         6.1.2 Disc full.
+         6.1.3 The process cannot access the file because it is being used
+               by another process.
+         6.1.4 Failed to send password for user XXXXX.
+         6.1.5 Failed to send password for user XXXXX due to timeout.
+         6.1.6 Failed to send password for user XXXXX.
+               530-User XXXXX: can't change directory to YYYY
+         6.1.7 Failed to connect() to XXXXX : Connection timed out.
+         6.1.8 Failed to connect() to XXXXX : Connection refused.
+         6.1.9 421-Service not available, closing control connection.
+         6.1.10 Remote hang up.
+
+
+   ======================================================================
+
+   1. General Information
+
+
+
+   1.1 What is AFD?
+
+   The Automatic File Distributor provides a framework for very flexible,
+   non-stop, log and debug-able delivery of an arbitrary amount of files to
+   multiple recipients as expressed in URLs (currently mailing and ftp
+   supported with the mailto://user@domain and ftp://user:password@host URL
+   conventions). AFD stands for Automatic File Distributor.
+
+
+   1.2 Where can I get AFD?
+
+   You can get information from the following locations:
+      http://www.dwd.de/AFD                - Homepage
+      ftp://ftp.dwd.de/pub/afd             - directory containing the stable
+                                             releasese of AFD
+      ftp://ftp.dwd.de/pub/afd/development - directory with unstable
+                                             releases of AFD
+      ftp://ftp.dwd.de/pub/afd/bin         - here you will find precompiled
+                                             binaries
+
+
+   1.3 Will AFD run with Windows XXX?
+
+   No. Currently there is some work to get AFD running under Cygwin.
+
+
+   1.4 What is the history of AFD?
+
+   In 1995 the German Weater Service (Deutscher Wetterdienst (DWD)) was
+   doing its international file exchange via scripts. It was soon realized
+   that this did cause a very high cpu load and was not very flexible.
+   For this reason it was decided to develop a file distribution system
+   that was to be very portable and easy to handle by a single person.
+   Here follow some important millestones of the AFD:
+
+      - 04.02.1996 First release and first operational use at DWD
+                   (only for distributing files to international partners).
+      - 22.06.1998 Release of version 1.0.0 with a complete rewrite
+                   of the process FD to handle the internal
+                   communication between FD and AMG via FIFO's.
+      - 08.08.1999 Released 1.1.0. Included time job and process to
+                   monitor other AFD's.
+      - 03.02.2000 AFD released under the GENERAL PUBLIC LICENSE (GNU).
+      - 24.09.2000 Released 1.2.0. AFD is now able to retrieve files
+                   via FTP from a remote host.
+
+
+   ----------------------------------------------------------------------
+
+   2. Compiling
+
+   2.1 How do I compile AFD under XXX?
+
+   Run ./configure to generate config.h and the various Makefiles.
+   ./configure --help gives a list of possible options with slightly
+   longer descriptions in README.configure. See also 2.2 Security
+   considerations.
+
+   Some systems require unusual options for compilation or linking that
+   the `configure' script does not know about. You can give `configure'
+   initial values for variables by setting them in the environment.
+
+   You can do that on the command line like this:
+
+      ./configure CC=c89 CFLAGS=-O2 LIBS=-lposix
+
+   Before compiling you might want set some other preferences in
+   src/afdsetup.h and/or src/init_afd/afddefs.h. But note, changing some
+   values here might make this incompatible with a previous AFD version
+   and AFD will no longer work when it is started. So best to leave these
+   values as they are. If you do change them it's best to run the following
+   command before starting AFD again:
+
+            afd -i
+
+   This will initialize the internal database of AFD. After this it will
+   be possible to run AFD with the new values. 
+
+
+   2.2 Security considerations
+
+   Before compiling AFD you need to decide where you want to install
+   AFD and if you want other users to have access to your AFD. There
+   are currently three possibilities:
+
+      2.2.1 Single user
+
+      This is the default and you need to set no addititional flags
+      with configure. Here only the user that has started the AFD
+      may have access and may control it.
+
+
+      2.2.2 Group access
+
+      Via this method all users of the same group have access and may
+      control the AFD. This access can be further restricted in the
+      $AFD_WORK_DIR/etc/afd.users file. To use this you need to start
+      configure with the option --enable-group_can_write.
+
+      2.2.3 Any users
+
+      To allow any user to have access you must set the flag
+      --enable-setuid_progs in configure. This will set the setuid flag
+      for some binaries. The access can be further restricted in the
+      $AFD_WORK_DIR/etc/afd.users file. It is not recommendet to set
+      this if you install the binaries as root.
+      
+   2.3 I get the following error when compiling:
+
+      2.3.1 Can't open include file 'X11/Xaw/StripChart.h'
+
+      HPUX for example does not include the Xaw libraries and headers.
+      You can either install these on your system or in
+      src/UI/Motif/Makefile.am comment out all occurance of afd_load. Then
+      AFD will compile without the dialog afd_load, which is not required
+      for running AFD.
+
+
+      2.3.2 Can't find library for -lXpm (only versions < 1.2.2)
+
+      Most commercial unix vendors do not include the Xpm libraries.
+      so either install these on your system or comment out the line:
+
+            #define _WITH_XPM
+
+      You can savely do this and you will hardly know any difference.
+
+
+      2.3.3 /usr/bin/ld: cannot find -lXm (only versions < 1.3.0)
+
+      Either you do not have the Motif library or you need to supply
+      the correct path to it in Include.mk with the variable XLIBPATH.
+      On a Linux system this is for example set as follows:
+
+            XLIBPATH = -L/usr/X11R6/lib
+
+      If you do not have Motif install either OpenMotif or LessTiff.
+
+
+   ----------------------------------------------------------------------
+
+   3. Installing
+
+   3.1 How do I install AFD?
+
+      3.1.1 Installing from source
+
+      In the source directory just issue the command 'make install' to
+      install the binaries in the ../bin and ../sbin directories.
+
+      3.1.2 RPM
+
+      This is the easies method, just issue the following command:
+
+           rpm -Uvh <RPM filename>
+
+      To create an RPM, the simples way is to issue the following
+      commands as root:
+
+           rpm -Uvh <SRPM filename>
+           cd /usr/src/redhat/SPECS     # This is distribution dependent
+           rpmbuild -ba afd.spec
+
+
+   ----------------------------------------------------------------------
+
+   4. Configuration
+
+   4.1 When starting AFD or one of its process I get the following error:
+
+      4.1.1 ERROR   : Failed to determine AFD working directory!
+
+      Either the environment variable AFD_WORK_DIR is not set or you did
+      not supply the working directory of the AFD with the '-w' option.
+      Without it AFD will not run.
+
+      4.1.2 You are not permitted to use this program. [<username>]
+
+      The user <username> is not permitted to start the program. If you
+      want to give the user the permission to start this program add
+      the users name to $AFD_WORK_DIR/etc/afd.users and the programs he
+      may use.
+
+      4.1.3 ERROR   : Cannot read DIR_CONFIG file : No such file or
+                      directory
+
+      There is no DIR_CONFIG file in the $AFD_WORK_DIR/etc directory.
+      To run AFD you must have a valid DIR_CONFIG file!
+
+
+   ----------------------------------------------------------------------
+
+   5. General usage
+
+   5.1 DIR_CONFIG/HOST_CONFIG
+
+      5.1.1 How do I activate the changes in the DIR_CONFIG or
+            HOST_CONFIG file?
+
+      You need to press 'Reread DIR_CONFIG' or 'Reread HOST_CONFIG' in
+      the afd_ctrl dialog under 'Control'. Or if you do not want to use
+      the graphical interface use udc to update the DIR_CONFIG or uhc
+      to update the HOST_CONFIG from the sbin directory.
+
+      5.1.2 The password has changed but it is still seems to use
+            the old one. What's wrong?
+
+      The message that is causing this error still has the old password.
+      You must manually change this yourself (this will hopefully be
+      fixed in Version 2.x.x). To get the message number look into the
+      TRANSFER_LOG, you will see the number right after the '#' sign
+      at the end of the error message. Now edit ths message with this
+      number in the message directory and then press the 'Retry'
+      button.
+
+      5.1.3 Do I always have to press the 'Reread HOST_CONFIG' and
+            'Reread DIR_CONFIG' button?
+
+      No, if you have made changes to both the DIR_CONFIG and HOST_CONFIG
+      file you just need to press the 'Reread DIR_CONFIG' button (or call
+      udc from the sbin directory).
+
+      5.1.4 I have lost some or all the content of the DIR_CONFIG,
+            what can I do?
+
+      There is a tool get_dc_data which when called without arguments
+      will print the whole DIR_CONFIG, as stored within AFD, to standard
+      out.
+
+   5.2 Operational questions
+
+      5.2.1 The network connection to ALL hosts is down. What should
+            be done?
+
+      No action is necessary. AFD will stop the queue those hosts where
+      a lot of jobs queue up and it will start them again as soon as the
+      network comes back. If unsure you can stop AMG so no more jobs will
+      be generated for FD. FD will still continue to try and distribute
+      files at regular intervalls.
+
+      5.2.2 The connection to one host is down and the job queue counter
+            is constantly increasing. What action is necessary?
+
+      Actually no action is necessary. Since the AFD will itself stop
+      the queue for this host if it reaches any critical value (and it
+      will automatically reactivate the queue when everything is okay
+      again). But it also does not hurt when you stop the queue for
+      this host. But don't forget to turn it on again!
+
+      5.2.3 When a connection to one host is down should I stop transfer
+            or stop the queue?
+
+      It depends on how long the connection to host is down and on the
+      number of files that are to be generated. Stop the transfer if you
+      wish to interrupt the current transfers and/or you know this is
+      only a short interrupt. But be careful that not to many jobs queue
+      up (AFD will automatically stop the queue if this is the case and
+      start it again). Best thing is to just stop the queue. Or leave it
+      to AFD, it will automatically stop the queue and start it again.
+
+      5.2.4 An error has occurred for connection XYZ. How do you know
+            what type of error has occurred?
+
+      Look in the Transfer Log file and see what type of error it is. If
+      it says "Failed to connect." then it is a network error or the
+      remote host is down. Check the network to the remote host. With
+      other errors it is best to turn on the debug mode for this host
+      and evaluate the output in the Transfer Debug Log. (see also 6.1)
+
+      5.2.5 The problem to a host has been solved, but it always takes
+            such a long time before it tries to send the files again.
+            How can one test immediately whether the problem is solved
+            or not?
+
+      Press the retry button.
+
+      5.2.6 There is no response or action at all. Even starting or
+            stopping the AMG or FD does nothing. What's wrong?
+
+      Most properly the AFD was not shutdown correctly. Log out of the
+      afd_ctrl and log in again. Be patience this can take a while
+      (up to 30s) because every time you call the program afd it will
+      check whether there is an AFD already running. If not it will
+      restart the AFD. All other programs and shared memory areas
+      will be removed.
+
+      5.2.7 There are files in the directory, but AFD does not send
+            them.
+
+      There could be many reasons why the files are not being send:
+
+         - Make sure that there is a rule in the DIR_CONFIG to
+           transmit those files.
+         - The files in the source directory must have the correct
+           permission, ie. AFD must have read permission for those
+           files.
+         - Ensure that the input queue or transfer is NOT stopped
+           in the afd_ctrl dialog. The two leds next to the hostname
+           and debug led must be green.
+
+
+   ----------------------------------------------------------------------
+
+
+   6. Error Messages
+
+   6.1 FTP Error Messages
+
+      6.1.1 Disc quota exceeded.
+
+      The user may not write any more data into this directory since since
+      the quota is exceeded.
+
+      6.1.2 Disc full.
+
+      The disk on the remote host is full.
+
+      6.1.3 The process cannot access the file because it is being used by
+            another process.
+
+      Another process on the remote machine has the file we wish to send
+      open and the operating system does not allow the ftp daemon to open
+      the same file again.
+
+      6.1.4 Failed to send password for user XXXXX.
+
+      The password for user XXXXX is wrong. To correct this correct the
+      password in the DIR_CONFIG and read 5.1.2.
+
+      6.1.5 Failed to send password for user XXXXX due to timeout.
+
+      If this error message appears frequently then its very likely that
+      the remote machine is overloaded and not able to handle your
+      request. This is a common error on computers with NT.
+      If this message appears only once then the network connection is
+      broken.
+
+      6.1.6 Failed to send password for user XXXXX.
+            530-User XXXXX: can't change directory to YYYY
+
+      The directory YYYY for user XXXXX on the remote host, does not
+      exist or does not have the correct permissions.
+
+      6.1.7 Failed to connect() to XXXXX : Connection timed out.
+
+      The remote host is not reachable. Either the network to this host
+      is not functioning properly or the host is down. This seems to be
+      a very common error.
+
+      6.1.8 Failed to connect() to XXXXX : Connection refused.
+
+      Here we do reach the remote host via the network but there is no
+      FTP daemon running or listining at the expected port.
+
+      6.1.9 421-Service not available, closing control connection.
+
+      This error message can appear after we connected to the remote
+      host. It means that it is currently being shuttown and not able
+      to handle any further requests.
+
+      6.1.10 Remote hang up.
+
+      If you only receive this error it means that the remote host
+      refuses any connections to this port. It could be an indication
+      that the remote host is overloaded or is in big trouble.
+
+      If this error appears in conjunction with another error message,
+      for example: Failed to change directory to YYYY. Then the remote
+      host has just cut the connection, either because it is being
+      shuttdown or has a very high load.
+
+
+

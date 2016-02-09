@@ -1,0 +1,79 @@
+.\" Process this file with
+.\" groff -man -Tascii afd.1
+.\"
+.\"  This program is free software; you can redistribute it and/or modify
+.\"  it under the terms of the GNU General Public License as published by
+.\"  the Free Software Foundation; either version 2 of the License, or
+.\"  (at your option) any later version.
+.\"
+.\"  This program is distributed in the hope that it will be useful,
+.\"  but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\"  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\"  GNU General Public License for more details.
+.\"
+.\"  You should have received a copy of the GNU General Public License
+.\"  along with this program; if not, write to the Free Software
+.\"  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+.\"
+.TH AFD 1 "AUGUST 2007" AFD "AFD"
+.SH NAME
+afd \- start, stop and initialize the AFD
+.SH SYNOPSIS
+.B afd [-w
+.I working directory
+.B ] [-p[
+.I role
+.B ] [-u[
+.I user
+.B ]] [-abcCdhHsSvz]
+.SH DESCRIPTION
+With the command
+.B afd
+it is possible to start, stop or initialize AFD. It can also be used to
+just check if AFD is active or still alive. Starting of AFD can also be
+blocked with -b option.
+
+If no parameters are supplied it will check if AFD is already running,
+if not it will be started and it will start the afd_ctrl dialog.
+.SH OPTIONS
+.IP -a
+only start AFD
+.IP -b
+blocks starting of AFD
+.IP -c
+only check if AFD is active
+.IP -C
+check if AFD is active, if not start it
+.IP -d
+only start afd_ctrl dialog
+.IP -h
+only check for heartbeat, ie. is AFD still alive
+.IP -H
+check if heartbeat is active, if not start AFD
+.IP -i
+initialize AFD by deleting the relevant files in fifodir and messages
+directory
+.IP -I
+initialize AFD by deleting the relevant files in fifodir, messages,
+files, archive and log directory
+.IP -r
+remove blocking startup of AFD
+.IP -s
+shutdown AFD
+.IP -S
+silent shutdown AFD
+.IP -v
+Just print the version number.
+.IP -z
+set shutdown bit, can be used to shutdown AFD from another system where
+AFD is not running but has mounted $AFD_WORK_DIR/fifodir
+.RE
+.SH ENVIRONMENT
+.IP AFD_WORK_DIR
+The work directory of the AFD to be configured by
+.BR afd .
+Overridden by the
+.B -w
+option.
+.SH AUTHOR
+Holger Kiehl <Holger.Kiehl@dwd.de>

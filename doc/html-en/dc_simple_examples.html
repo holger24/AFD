@@ -1,0 +1,264 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>DIR_CONFIG simple examples (dc_simple_examples.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="simple_examples">Simple Examples</a></h1>
+<hr size=3 noshade>
+<p>
+</p>
+<h3 align=center><u><a name="example1">Example 1</a></u></h3>
+<p>
+An example entry in the DIR_CONFIG file might look as follows:
+</p>
+<pre>
+      [directory]
+      /usr/data/tmp
+
+           [files]
+           abc*
+
+                [destination]
+
+                     [recipient]
+                     ftp://donald:secret@hollywood//home/user
+                     mailto://daisy@hollywood
+
+                     [options]
+                     archive 3
+                     priority 1
+</pre>
+<p>
+The result of this entry would be that all files starting with abc in
+the directory /usr/data/tmp would be send to the user donald via FTP
+with the password secret at hollywood and there stored in the directory
+/home/user. They will also be send to daisy via SMTP. All files will be
+send with the priority 1 and will be archived for three days. The ftp
+files will be send with a dot first and only when a file is completely
+transmitted will it be renamed to its original name.
+</p>
+<h3 align=center><u><a name="example2">Example 2</a></u></h3>
+<p>
+In the following example we want different options when we send mails to
+daisy. For this we need to split the two recipients so that each have
+their own options as follows:
+</p>
+<pre>
+      [directory]
+      /usr/data/tmp
+
+           [files]
+           abc*
+
+                [destination]
+
+                     [recipient]
+                     ftp://donald:secret@hollywood//home/user
+
+                     [options]
+                     archive 3
+                     priority 1
+
+                [destination]
+
+                     [recipient]
+                     mailto://daisy@hollywood
+
+                     [options]
+                     archive 3
+                     attach file
+                     priority 1
+</pre>
+<p>
+Now daisy gets the same files as in example 1 only this time the files
+are attached.
+</p>
+<h3 align=center><u><a name="example3">Example 3</a></u></h3>
+<p>
+If daisy should get more files we need to split up the above example
+another time:
+</p>
+<pre>
+      [directory]
+      /usr/data/tmp
+
+           [files]
+           abc*
+
+                [destination]
+
+                     [recipient]
+                     ftp://donald:secret@hollywood//home/user
+
+                     [options]
+                     archive 3
+                     priority 1
+
+           [files]
+           abc*
+           def*
+           ghi*
+           jkl*
+
+                [destination]
+
+                     [recipient]
+                     mailto://daisy@hollywood
+
+                     [options]
+                     archive 3
+                     attach file
+                     priority 1
+</pre>
+<p>
+Daisy will now also get the additional files def*, ghi* and jkl*.
+</p>
+<h3 align=center><u><a name="example4">Example 4</a></u></h3>
+<p>
+The source directory for files can also be on another host. For this
+we just need to change the directory entry as follows:
+</p>
+<pre>
+      [directory]
+      ftp://micky:mouse@ducktown//usr/data/tmp
+
+           [files]
+           abc*
+
+                [destination]
+
+                     [recipient]
+                     ftp://donald:secret@hollywood//home/user
+                     mailto://daisy@hollywood
+
+                     [options]
+                     archive 3
+                     priority 1
+</pre>
+<p>
+The result of this entry will be similar to the one in
+<a href="#example1">example 1</a>, only that in this example AFD will
+look every minute on the host ducktown in the directory /usr/data/tmp
+for the files.
+</p>
+<p>
+If we do not like AFD to delete the files on the remote we can tell
+it via the <a href="#directory_options">[dir options]</a> to not remove
+the files on the remote host:
+</p>
+<pre>
+      [directory]
+      ftp://micky:mouse@ducktown//usr/data/tmp
+
+           [dir options]
+	   do not remove
+
+           [files]
+           abc*
+
+                [destination]
+
+                     [recipient]
+                     ftp://donald:secret@hollywood//home/user
+                     mailto://daisy@hollywood
+
+                     [options]
+                     archive 3
+                     priority 1
+</pre>
+<p>
+Now AFD will collect the same files every minute and send them to donald
+and daisy. If one does not wish to send the same files again one can
+add the following option:
+</p>
+<pre>
+      [directory]
+      ftp://micky:mouse@ducktown//usr/data/tmp
+
+           [dir options]
+	   do not remove
+	   store retrieve list
+
+           [files]
+           abc*
+
+                [destination]
+
+                     [recipient]
+                     ftp://donald:secret@hollywood//home/user
+                     mailto://daisy@hollywood
+
+                     [options]
+                     archive 3
+                     priority 1
+</pre>
+<p>
+With the option <a href="#store_retrieve_list">store retrieve list</a> only
+new files or those where the date and/or size has changed will be
+collected. If one wants to increase the poll interval from 1 minute
+to 30 minutes, it needs to be done as follows:
+</p>
+<pre>
+      [directory]
+      ftp://micky:mouse@ducktown//usr/data/tmp
+
+           [dir options]
+	   do not remove
+	   store retrieve list
+	   time */30 * * * *
+
+           [files]
+           abc*
+
+                [destination]
+
+                     [recipient]
+                     ftp://donald:secret@hollywood//home/user
+                     mailto://daisy@hollywood
+
+                     [options]
+                     archive 3
+                     priority 1
+</pre>
+<p>
+There are several ways to specify a source directory. The following
+examples all result to the same directory:
+</p>
+<pre>
+      [directory] don_in
+      /home/donald/data/in
+</pre>
+<pre>
+      [directory] don_in
+      ~donald/data/in
+</pre>
+<pre>
+      [directory] don_in
+      file://home/donald/data/in
+</pre>
+<pre>
+      [directory]
+      file://donald@don_in/data/in
+</pre>
+<p>
+don_in is the directory alias name. If this is not set AFD will assign
+one for it that will be CRC32 checksum of the directory string. This is
+not human readable, so if you want to see readable directory alias names
+in dialog dir_ctrl, set them.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><address><small>
+   Copyright &copy; 1997 - 2013 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 23.12.2013
+   </small></address></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

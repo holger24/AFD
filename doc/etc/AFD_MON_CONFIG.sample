@@ -1,0 +1,33 @@
+#
+# Configuration file to monitor remote AFD's
+# ==========================================
+#
+# For remote command, only rsh and ssh are possible.
+# The options flag have the following meaning:
+#   1 (1)     - For ssh use compression.
+#   2 (2)     - instead of just enabling X11 forwarding (-X),
+#               enable trusted X11 forwarding (-Y).
+#   3 (4)     - Do not specify full path to rafdd_cmd and
+#               rafd_cmd_ssh script.
+#   5 (16)    - System Log
+#   6 (32)    - Receive Log
+#   7 (64)    - Transfer Log
+#   8 (128)   - Transfer Debug Log
+#   9 (256)   - Input Log
+#  10 (512)   - Production Log
+#  11 (1024)  - Output Log
+#  12 (2048)  - Delete Log
+#  15 (16384) - Event Log
+#  16 (32768) - Distribution Log
+#
+# +--------------------------------------------------> Alias
+# |            +-------------------------------------> Hostname
+# |            |       +-----------------------------> Port
+# |            |       |  +--------------------------> Interval
+# |            |       |  |  +-----------------------> Connect time
+# |            |       |  |  |  +--------------------> Disconnect time
+# |            |       |  |  |  |    +---------------> Options
+# |            |       |  |  |  |    |   +-----------> Remote cmd
+# |            |       |  |  |  |    |   |    +------> Convert user name
+# |            |       |  |  |  |    |   |    |
+Central-AFD ducktown 4444 5 30 600 1024 ssh donald->daisy

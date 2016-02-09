@@ -1,0 +1,350 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (todo.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center>TODO</h1>
+<hr size=3 noshade>
+<ul>
+   <li><a href="#ALPHA01">ALPHA 01</a>&nbsp;&nbsp;Released: 04.02.1996</li>
+   <li><a href="#ALPHA02">ALPHA 02</a>&nbsp;&nbsp;Released: 14.03.1996</li>
+   <li><a href="#ALPHA03">ALPHA 03</a>&nbsp;&nbsp;Released: 21.05.1996</li>
+   <li><a href="#ALPHA04">ALPHA 04</a>&nbsp;&nbsp;Released: 16.10.1996</li>
+   <li><a href="#ALPHA05">ALPHA 05</a>&nbsp;&nbsp;Released: 18.12.1996</li>
+   <li><a href="#ALPHA06">ALPHA 06</a>&nbsp;&nbsp;Released: 14.01.1997</li>
+   <li><a href="#ALPHA07">ALPHA 07</a>&nbsp;&nbsp;Released: 17.02.1997</li>
+   <li><a href="#V0.8.0">Version 0.8.0</a>&nbsp;&nbsp;Released: 01.07.1997</li>
+   <li><a href="#V0.9.0">Version 0.9.0</a>&nbsp;&nbsp;Released: 24.09.1997</li>
+   <li><a href="#V1.0.0">Version 1.0.0</a>&nbsp;&nbsp;Released: 22.06.1998</li>
+   <li><a href="#V1.1.0">Version 1.1.0</a>&nbsp;&nbsp;Released: 08.09.1999</li>
+   <li><a href="#V1.2.0">Version 1.2.0</a>&nbsp;&nbsp;Released: 24.09.2000</li>
+   <li><a href="#V1.3.0">Version 1.3.0</a>&nbsp;&nbsp;Released: 18.08.2005</li>
+   <li><a href="#V2.0.0">Version 2.0.0</a>&nbsp;&nbsp;<img src="../images/mad_hacker.gif" align=middle></li>
+</ul>
+<p>
+<hr size=2 noshade>
+</p>
+<center><table border>
+<caption valign=top align=center><a name="ALPHA01">ALPHA 01</a></caption>
+<tr><th width="400">Description</th><th>Status</th></tr>
+<tr><td width="400">Process AFD</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Process AMG</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Process WSA</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Process FD</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+</table></center>
+<p align=center> Released: 4th February 1996</p>
+<p>
+<hr size=2 noshade>
+</p>
+<center><table border>
+<caption valign=top align=center><a name="ALPHA02">ALPHA 02</a></caption>
+<tr><th width="400">Description</th><th>Status</th></tr>
+<tr><td width="400">Error handling by FD + SF_TCP</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Process that cleans archive directory.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">User must be able to stop transfer to all or certain hosts.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Stop AMG for certain hosts.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Log transfer information.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Log system information.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Log debug transfer information.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Port to Sun.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Port to Irix.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Manual retries for for host with errors.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">When starting, clean transmitting directory and count no. of files for each host.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Implement compress/uncompress command.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Implement gzip/gunzip command.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Implement prefix option.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Option to send (copy) files locally (sf_loc).</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+</table></center>
+<p align=center> Released: 14th March 1996</p>
+<p>
+<hr size=2 noshade>
+</p>
+<center><table border>
+<caption valign=top align=center><a name="ALPHA03">ALPHA 03</a></caption>
+<tr><th width="400">Description</th><th>Status</th></tr>
+<tr><td width="400">When archiving, create an extra level of directories (1000 dirs not enough).</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add fool proof startup of AFD.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Turn AMG and FD ON/OFF via afd_ctrl.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Cut log file when it reaches a certain size.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add button/status bar to bottom of afd_ctrl.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Dialog that displays the log files.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Remove hang-ups in sf_tcp (accept).</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">When starting AFD with 'afd' command ensure it cannot be started twice.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Show which user has turned AFD, AMG or FD ON/OFF.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Tool to edit FSA.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add option to switch host address.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add pull-right menu CONTROL.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add slow transfer mode.&nbsp;&nbsp;<img src="../images/moticon4.gif" align=middle></td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add option for AMG to wait for a certain number of files to arrive before creating a job.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">When sf_xxx is done report back to FD.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add support for proxy servers.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+</table></center>
+<p align=center> Released: 21th May 1996</p>
+<p>
+<hr size=2 noshade>
+</p>
+<center><table border>
+<caption valign=top align=center><a name="ALPHA04">ALPHA 04</a></caption>
+<tr><th width="400">Description</th><th>Status</th></tr>
+<tr><td width="400">Add job counter in button/status bar.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add TIFF to GTS converter (tiff2gts).</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Support FTP block mode.  Note: This is useless, since no server I  know supports this.&nbsp;&nbsp;<img src="../images/moticon5.gif" align=middle></td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add aging option.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Stabilize afd_ctrl over very slow connections.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Enable sending files by priority.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Added linger option which solved problem with missing data in last block. Thus removing slow transfer mode. <img src="../images/moticon2.gif" align=middle></td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">When AFD starts up, initialize it with previous status.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Port to HP-UX.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">When number of jobs for a certain host reaches a critical stage it automatically stops the queue.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add option to extract bulletins from file to send each bulletin in a separate file.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Implement sending files via email.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+</table></center>
+<p align=center> Released: 16th October 1996</p>
+<p>
+<hr size=2 noshade>
+</p>
+<center><table border>
+<caption valign=top align=center><a name="ALPHA05">ALPHA 05</a></caption>
+<tr><th width="400">Description</th><th>Status</th></tr>
+<tr><td width="400">Added the option to lock the file on the remote side with a prefix that can be specified on a per user basis.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add GTS to TIFF converter (gts2tiff).</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Create information window for each host.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Implement ASCII-mode to transfer files via FTP.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Remove process WSA. During very heavy system load it can happen that
+        it takes to long for the fifos to be flushed. To implement atomic
+        writes in the FSA we now use advisory record locking. [On systems
+        with good fifo performance this is a performance LOST!]&nbsp;&nbsp;<img src="../images/moticon4.gif" align=middle></td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">In AMG_DATABASE allow definitions of equal file masks/filters for separate file
+        sections but belonging to the same file group.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Write SMTP client, so we do not need to take care of any special features of the mail program.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Change address format in message and AMG_DATABASE to URL.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+</table></center>
+<p align=center> Released: 18th December 1996</p>
+<p>
+<hr size=2 noshade>
+</p>
+<center><table border>
+<caption valign=top align=center><a name="ALPHA06">ALPHA 06</a></caption>
+<tr><th width="400">Description</th><th>Status</th></tr>
+<tr><td width="400">Added function ftp_quick_quit() which does not wait for a reply from the remote side.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Revise function get_afd_path() so it does not mess up *argv[].</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">To run the AFD more then once on one machine, use only one set of binaries.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Improve log output of transfer log file. (parallel connect number, reason why a command has not completed successfully)</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Burst mode for SF_FTP (to avoid to constantly connect and disconnect).</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Increase speed in show_log when selecting certain hosts or debug level is wanted.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Remove 'not a typewriter' bug from fsa_edit and add more editable fields.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Limit number of log files.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">When restarting the AFD let process 'afd_ctrl' notice this change so it does not have to be restarted as well.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add support for auto switching when an error has occurred.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+</table></center>
+<p align=center> Released: 14th January 1997</p>
+<p>
+<hr size=2 noshade>
+</p>
+<center><table border>
+<caption valign=top align=center><a name="ALPHA07">ALPHA 07</a></caption>
+<tr><th width="400">Description</th><th>Status</th></tr>
+<tr><td width="400">Write one central configuration header file in which all important options can be set.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Implement bursting for FD.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Append file when only part of the file was transmitted.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Transfer timeout can now be specified in the HOST_CONFIG file.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add LED's to show if queue/transfer is stopped.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Remove memory leak in AMG.&nbsp;&nbsp;<img src="../images/moticon5.gif" align=middle></td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Implement renaming.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Log all file names that are grabbed by the AFD.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Show information even though we do not find any IP number.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Create history file for AMG_DATABASE.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Execute any type of command on every file to be distributed (AMG).</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Port to SCO.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+</table></center>
+<p align=center> Released: 17th February 1997</p>
+<p>
+<hr size=2 noshade>
+</p>
+<center><table border>
+<caption valign=top align=center><a name="V0.8.0"><h3>Version 0.8.0</h3></a></caption>
+<tr><th width="400">Description</th><th>Status</th></tr>
+<tr><td width="400">Handle error condition with files of zero length.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Before bursting check if the file does not already exist in the transmitting directory. If so, cancel the burst.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Port to IRIX 6.x (64 bit)</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Write mmap emulator to support systems that do not have mmap().</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">For performance improvement let sf_loc try to hard link files first before copying.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">All executables show what version they are and when they where compiled.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Process + Dialog that reactivates files from archive.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Dialog that shows I/O log.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Font in show_log is set by parameter and debug toggle added.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Create a menu bar for the afd_ctrl.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Save setup from afd_ctrl.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">For AMG, make the number of file groups dynamic.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Make init_afd a daemon process.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Report when files in source directory are older then 24h.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Remove any limits for rename.rule file.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Allow the system administrator to block certain functions, ie not allow a user to control everything.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Create process sf_map that sends files to the MAP system.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+</table></center>
+<p align=center> Released: 1st July 1997</p>
+<p>
+<hr size=2 noshade>
+</p>
+<center><table border>
+<caption valign=top align=center><a name="V0.9.0"><h3>Version 0.9.0</h3></a></caption>
+<tr><th width="400">Description</th><th>Status</th></tr>
+<tr><td width="400">Allow for the AFD system administrator to supply a name for the AFD.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add support for quick multi selection in afd_ctrl.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Allow administrator to supply host alias names. So it is no longer necessary to change the /etc/hosts.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Dialog to edit HOST_CONFIG file.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">A TCP daemon that supplies information off a running AFD.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Integrate TCP daemon into the AFD.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Create function that allows a process to be active once only while it is running.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Support for FSS ready files.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">AMG option to extract WMO bulletins.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Write program aftp for external users of the AFD.</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+</table></center>
+<p align=center> Released: 24th September 1997</p>
+<p>
+<hr size=2 noshade>
+</p>
+<center><table border>
+<caption valign=top align=center><a name="V1.0.0"><h3>Version 1.0.0</h3></a></caption>
+<tr><th width="400">Description</th><th>Importance</th><th>Status</th></tr>
+<tr><td width="400">Allow user to limit the number of parallel bursts.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">AMG should ignore files that do not have read permission.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Return of the HOST_CONFIG file.&nbsp;&nbsp;<img src="../images/moticon5.gif" align=middle></td><td>****</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Rename AMG_DATABASE -&gt; DIR_CONFIG.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Allow user to disable a host.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Dialog that shows the distribution of files by file name in more detail.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Remove the limit for the number of hosts that afd_ctrl can handle.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Popup a message dialog when an error occurs for any X application.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">When afd_ctrl exits, close all its open windows.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Support to send files via WMO TCP sockets.</td><td>***</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Send message names via fifo to the FD and create messages only ones. So the FD does not need to read each message every time a new job arrives..</td><td>****</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Process that logs all deleted files.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Search input queue for old files.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Clear pool directory at start.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Dialog to show deleted files.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Dialog that shows load of AFD.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add option to use file name as subject when sending mail.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Allow for user name in recipient for show_olog and show_ilog.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Reread HOST_CONFIG/DIR_CONFIG only when the user wants to.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Show line number if there is an error in the DIR_CONFIG.</td><td>***</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Let AMG use threads to handle the directories.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Detect files without a corresponding message.</td><td>****</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Correct FSA entries when incorrect.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+</table></center>
+<p align=center> Released: 22th June 1998</p>
+<p>
+<hr size=2 noshade>
+</p>
+<center><table border>
+<caption valign=top align=center><a name="V1.1.0"><h3>Version 1.1.0</h3></a></caption>
+<tr><th width="400">Description</th><th>Importance</th><th>Status</th></tr>
+<tr><td width="400">Process that monitors other AFD's.</td><td>***</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Dialog to monitor and control other AFD's on remote sites.</td><td>***</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Dialog that shows information on a remote AFD.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Configuration file AFD_CONFIG wherein the user can configure values that would normally need a recompile.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Dialog to show DIR_CONFIG data on a per host basis.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Reduce system load for archive_watch.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Option to tell AMG to wait for a certain character at the end of a file before it will be picked up.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">afd_mon should collect all host names that are being served by the AFD's.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add option for sf_loc to change owner and group of a copied or moved file.</td><td>*</td><td aligN=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add option for sf_loc to change permission of a copied or moved file.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Allow only certain hosts to connect to AFDD.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Add new log type CONFIG.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Time job for AMG.</td><td>****</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+</table></center>
+<p align=center> Released: 8th September 1999</p>
+<p>
+<hr size=2 noshade>
+</p>
+<center><table border>
+<caption valign=top align=center><a name="V1.2.0"><h3>Version 1.2.0</h3></a></caption>
+<tr><th width="400">Description</th><th>Importance</th><th>Status</th></tr>
+<tr><td width="400">X dialog that shows the output of a running process, such as ping and traceroute.</td><td>***</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Limit the number of process that dir_check may generate on a per directory basis.</td><td>****</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Log everything received by AFD (as transfer log).</td><td>***</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Retrieve files from a remote host.</td><td>***</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Dialog that shows and controls the directories monitored by AFD (as afd_ctrl).</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Dialog that shows some information on a directory from dir_ctrl.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Time option for each directory.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Dialog to send files from archive to  hosts that are not in the FSA.</td><td>***</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Process that counts the number of files and their files send per min/hour/day/ week/month/year</td><td>***</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Implement FTP passive mode.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Print button for show_cmd dialog.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Possibility to disable monitoring an AFD in mon_ctrl dialog.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Generic FTP proxy procedure.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">In mon_ctrl show history of receive, system and transfer log.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">New time option that does NOT collect data outside the specified time range.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+</table></center>
+<p align=center> Released: 24th September 2000</p>
+<p>
+<hr size=2 noshade>
+</p>
+<center><table border>
+<caption valign=top align=center><a name="V1.3.0"><h3>Version 1.3.0</h3></a></caption>
+<tr><th width="400">Description</th><th>Importance</th><th>Status</th></tr>
+<tr><td width="400">Option chmod for FTP.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Option to execute command on the remote host.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Aging priorities for process FD.</td><td>***</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Reduce disk load of process archive_watch.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Option to attach all files in one mail.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Before any sf_xxx process terminate they should check with FD if there is they should check with FD if there is another job for them to do.</td><td>***</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Dialog to view and delete any files in the AFD queue.</td><td>***</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Store active/passive mode in HOST_CONFIG.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Store host status in HOST_CONFIG.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Port to AIX.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Multiple DIR_CONFIG´s.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Support for the SCP protocol (SSH1+2).</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Use GNU autoconfig and automake to build AFD.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">The program name to call other programs on the remote node should be made configurable in AFD_MON_CONFIG.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Configuration option for afd_mon to always disconnect.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Port to MacOS/Darwin.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Production log, so it is possible to trace files within AFD.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">A SSL FTP client.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Support for the HTTP and HTTPS protocol.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Input statistics.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Option to make show_olog and show_ilog show the information continuously.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Timeout for exec option.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Create target directory remote and local (both optionally).</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Transfer rate control for each host.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Implement sending files from AFD queue.</td><td>***</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Optional central info file.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Allow user to specify some actions if a host is not working.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Option to initialize AFD.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Switching AFD's in afd_mon, mon_ctrl.</td><td>*</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+</table></center>
+<p align=center> Released: 18th August 2005</p>
+<p>
+<hr size=2 noshade>
+</p>
+<center><table border>
+<caption valign=top align=center><a name="V2.0.0"><h3>Version 2.0.0</h3></a></caption>
+<tr><th width="400">Description</th><th>Importance</th><th>Status</th></tr>
+<tr><td width="400">SFTP support.</td><td>***</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Group transfer rate limit.</td><td>**</td><td align=center><img src="../images/tick_small.gif"></td></tr>
+<tr><td width="400">Dialog to view statistics.</td><td>*</td><td align=center><img src="../images/woi.gif"></td></tr>
+<tr><td width="400">Create WMO server.</td><td>*</td><td align=center><img src="../images/woi.gif"></td></tr>
+<tr><td width="400">Follow directories. Add a dir option that tells AFD to search all subsequent directories.</td><td>**</td><td align=center>TODO</td></tr>
+<tr><td width="400">Rename option for send in show_olog.</td><td>*</td><td align=center>TODO</td></tr>
+<tr><td width="400">Dialog to edit DIR_CONFIG.</td><td>****</td><td align=center>TODO</td></tr>
+<tr><td width="400">Support for IP6.</td><td>***</td><td align=center>TODO</td></tr>
+<tr><td width="400">Convert all dialogs to GTK+.</td><td>**</td><td align=center>TODO</td></tr>
+<tr><td width="400">Write process sf_sql to send files to a database.</td><td>**</td><td align=center>TODO</td></tr>
+<tr><td width="400">Implement context sensitive help for the 'afd_ctrl' dialog.</td><td>*</td><td align=center>TODO</td></tr>
+<tr><td width="400">Create process that can do multi-casting.</td><td>**</td><td align=center>TODO</td></tr>
+<tr><td width="400">Support for sending files via HTTP protocol.</td><td>*</td><td align=center>TODO</td></tr>
+</table></center>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 1997 - 2006 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 14.04.2006
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

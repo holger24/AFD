@@ -1,0 +1,180 @@
+#!/bin/sh
+#
+# afdmon:    Starts the AFD monitor
+#
+# chkconfig: 235 70 10
+# description: AFD Monitor is a program to monitor and control other \
+#              AFD's.
+### BEGIN INIT INFO
+# Provides: afdmon
+# Required-Start: $local_fs $network
+# Required-Stop: $local_fs $network
+# Default-Start: 2 3 5
+# Default-Stop: 0 1 6
+# Short-Description: Starts the AFD monitor
+# Description: AFD Monitor is a program to monitor and control other
+#              AFD's.
+### END INIT INFO
+
+
+CURRENT_SCRIPT_NAME="`basename $0`"
+if [ -d /var/lock/subsys ]
+then
+   SYS_LOCKDIR="/var/lock/subsys"
+else
+   SYS_LOCKDIR="/var/lock"
+fi
+if [ -r @SYSCONFIGDIR@/afdmon ]
+then
+   if [ "$CURRENT_SCRIPT_NAME" = "afdmonha" ]
+   then
+      AFDMON_USERS="`grep \^AFDMON_HA_USER_ @SYSCONFIGDIR@/afdmon | cut -d '=' -f2`"
+   else
+      AFDMON_USERS="`grep \^AFDMON_USER_ @SYSCONFIGDIR@/afdmon | cut -d '=' -f2`"
+   fi
+else
+   AFDMON_USERS=""
+fi
+
+
+# See how we were called.
+case "$1" in
+  start)
+	RETVAL=1
+	for afduser in $AFDMON_USERS
+	do
+	   echo -n "Starting AFD Monitor for $afduser : "
+	   su - $afduser -c "mafd -a"
+	   if [ $? -eq 0 ]
+	   then
+	      RETVAL=0
+	      touch $SYS_LOCKDIR/afdmon.$afduser
+	      echo "Done"
+	   else
+	      echo "Failed"
+	   fi
+	done
+	[ $RETVAL -eq 0 ] && touch $SYS_LOCKDIR/afdmon
+	;;
+  stop)
+	RETVAL=1
+	for afduser in $AFDMON_USERS
+	do
+	   echo -n "Stopping AFD Monitor for $afduser : "
+	   su - $afduser -c "mafd -S"
+	   case $? in
+	      0)
+	         RETVAL=0
+	         rm -f $SYS_LOCKDIR/afdmon.$afduser
+	         echo "Done"
+	         ;;
+	      10)
+	         RETVAL=0
+	         rm -f $SYS_LOCKDIR/afdmon.$afduser
+	         echo "Is already stopped"
+	         ;;
+	      *)
+	         echo "Failed"
+	         ;;
+	   esac
+	done
+	[ $RETVAL -eq 0 ] && rm -f $SYS_LOCKDIR/afdmon
+	;;
+  restart)
+	$0 stop
+	sleep 2
+	$0 start
+	RETVAL=$?
+	;;
+  condrestart)
+	RETVAL=1
+	for afduser in $AFDMON_USERS
+	do
+	   if [ -f $SYS_LOCKDIR/restart_afdmon.$afduser ]
+	   then
+	      echo -n "Starting AFD Monitor for $afduser : "
+	      su - $afduser -c "mafd -a"
+	      if [ $? -eq 0 ]
+	      then
+	         RETVAL=0
+	         touch $SYS_LOCKDIR/afdmon.$afduser
+	         echo "Done"
+	      else
+	         echo "Failed"
+	      fi
+	      rm -f $SYS_LOCKDIR/restart_afdmon.$afduser
+	   else
+	      su - $afduser -c "mafd -S"
+	      if [ $? -eq 0 ]
+	      then
+	         sleep 2
+	         su - $afduser -c "mafd -a"
+	         if [ $? -eq 0 ]
+	         then
+	            RETVAL=0
+	            touch $SYS_LOCKDIR/afdmon.$afduser
+	            echo "Done"
+	         else
+	            echo "Failed"
+	         fi
+	      fi
+	   fi
+	done
+
+	if [ ! "$CURRENT_SCRIPT_NAME" = "afdmonha" ]
+	then
+	   # HA users may only be started if we find a restart_afdmon.user file!
+	   if [ -r @SYSCONFIGDIR@/afdmon ]
+	   then
+	      AFDMON_HA_USERS="`grep \^AFDMON_HA_USER_ @SYSCONFIGDIR@/afdmon | cut -d '=' -f2`"
+	   fi
+	   for afduser in $AFDMON_HA_USERS
+	   do
+	      if [ -f $SYS_LOCKDIR/restart_afdmon.$afduser ]
+	      then
+	         echo -n "Starting AFD Monitor for $afduser : "
+	         su - $afduser -c "mafd -a"
+	         if [ $? -eq 0 ]
+	         then
+	            RETVAL=0
+	            touch $SYS_LOCKDIR/afdmon.$afduser
+	            echo "Done"
+	         else
+	            echo "Failed"
+	         fi
+	         rm -f $SYS_LOCKDIR/restart_afdmon.$afduser
+	      fi
+	   done
+	fi
+	rm -f $SYS_LOCKDIR/afdmon.restart
+	;;
+  status)
+	NOT_RUNNING=""
+	IS_RUNNING=""
+	for afduser in $AFDMON_USERS
+	do
+	   su - $afduser -c "mafd -c"
+	   RETVAL=$?
+	   if [ $RETVAL -ne 5 ]
+	   then
+	      NOT_RUNNING="`echo $NOT_RUNNING` $afduser"
+	   else
+	      IS_RUNNING="`echo $IS_RUNNING` $afduser"
+	   fi
+	done
+	if [ "$NOT_RUNNING" = "" ]
+	then
+	   echo "AFD Monitor for $IS_RUNNING is running."
+	   RETVAL=0
+	else
+	   echo "AFD Monitor for $NOT_RUNNING is NOT active."
+	   RETVAL=1
+	fi
+	;;
+  *)
+	echo "*** Usage: afdmon {start|stop|restart|condrestart|status}"
+	RETVAL=1
+	;;
+esac
+
+exit $RETVAL

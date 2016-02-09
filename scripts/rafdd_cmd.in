@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+# Description   : This script allows you to execute commands from a
+#                 remote host.
+#                 Your hostname must be entered in the local .rhost
+#                 file.
+#
+# Synopsis      : rafdd_cmd <display name> <AFD workdir> <remote command>
+#
+# Author        : H.Kiehl
+# Date          : 21.01.1999
+#
+# Modifications : 24.01.1999 H.Kiehl   Supplying <AFD workdir> simplifies
+#                                      the calling process mon_ctrl.
+#                 04.08.2000 H.Kiehl   Do not fix the number of arguments
+#                                      to three.
+#                 22.03.2004 H.Kiehl   Read afd-remote.env to allow
+#                                      to set special environment.
+#
+
+if [ $# -lt 3 ]
+then
+   echo "Usage: $0 <display name> <AFD workdir> <remote command>"
+   exit 1
+fi
+
+AFD_WORK_DIR=$2
+PATH=$PATH:@prefix@/bin:@prefix@/sbin
+DISPLAY=$1
+export DISPLAY AFD_WORK_DIR PATH
+if [ -f $AFD_WORK_DIR/etc/afd-remote.env ]
+then
+   . $AFD_WORK_DIR/etc/afd-remote.env
+fi
+shift
+shift
+
+$*

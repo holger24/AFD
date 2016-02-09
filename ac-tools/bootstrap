@@ -1,0 +1,14 @@
+#! /bin/sh
+
+set -x
+aclocal -I ac-tools
+if [ $? -eq 0 ]
+then
+#   gettextize --force --no-changelog
+   autoheader --include=ac-tools
+   if [ $? -eq 0 ]
+   then
+      automake --foreign --add-missing --copy
+      autoconf --include=ac-tools
+   fi
+fi

@@ -1,0 +1,41 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>Group Transfer Rate Limit (group_transfer_limit.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="group_transfer_rate_limit">The group.transfer_rate_limit file</a></h1>
+<hr size=3 noshade>
+<p>
+In this file you can limit the transfer rate limit for a group of hosts.
+Each host (alias) may only be in one group. The syntax of this file is as
+follows:
+</p>
+<pre>
+    [&lt;group identifier&gt;]
+    members=&lt;member 1&gt;,&lt;member 2&gt;, ... &lt;member n&gt;
+    limit=&lt;limit in kilobytes per second&gt;
+</pre>
+<p>
+There is no limit in the number of groups that can be specified, only
+make sure that a host is not in more then one group. A second limit
+for a host can still be specified in the <a href="host_config.html#transfer_rate_limit">
+HOST_CONFIG</a> file or via the <a href="edit_hc.html#transfer_rate_limit">
+edit_hc</a> dialog. If a host has two limits, always the lower value
+will take effect.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 2006 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 09.04.2006
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

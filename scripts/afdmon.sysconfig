@@ -1,0 +1,10 @@
+#
+# File containing all users that want an AFD started or stopped when
+# system is booted.
+#
+
+#AFDMON_USER_0=afd
+#AFDMON_USER_1=afdrz
+#AFDMON_USER_2=trivis
+#AFDMON_USER_3=david
+#AFDMON_HA_USER_0=afdha

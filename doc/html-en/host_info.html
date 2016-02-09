@@ -1,0 +1,47 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>Host Information File (host_info.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="host_info">The host.info file</a></h1>
+<hr size=3 noshade>
+<p>
+There are two possibilities to hold information of a certain host. The first
+is in INFO-&lt;host alias name&gt; in directory $AFD_WORK_DIR/etc.
+Everything stored in this file will be shown in <a href="afd_info.html">
+afd_info</a> dialog. If you have many hosts configured it might be
+better to store these in the central $AFD_WORK_DIR/etc/host.info file.
+The format of this file is as follows:
+</p>
+<pre>
+          &lt;alias name 1&gt;
+          Text to show.
+          &lt;/alias name 1&gt;
+          .
+          .
+          .
+          &lt;alias name n&gt;
+          Text to show.
+          &lt;/alias name n&gt;
+</pre>
+<p>
+Its also possible to specify both types, it will then first look into
+$AFD_WORK_DIR/etc/host.info and if the host alias name is not found in there
+try to get the information from $AFD_WORK_DIR/etc/INFO-&lt;host alias name&gt;.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 2005 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 26.06.2005
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

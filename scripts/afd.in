@@ -1,0 +1,630 @@
+#!/bin/sh
+#
+# afd:       Starts the AFD
+#
+# chkconfig: 235 70 10
+# description: AFD is an automatic file distributor and collector. It is \
+#              used to distribute data files via FTP, FTPS, SFTP, SMTP \
+#              and/or SCP. It collects files via FTP, FTPS, SFTP, HTTP \
+#              and/or HTTPS.
+### BEGIN INIT INFO
+# Provides: afd
+# Required-Start: $local_fs
+# Required-Stop: $local_fs
+# Should-Start: $local_fs $network $time $remote_fs
+# Should-Stop: $local_fs $network $time $remote_fs
+# Default-Start: 2 3 5
+# Default-Stop: 0 1 6
+# Short-Description: Starts the AFD
+# Description: AFD is an automatic file distributor and collector. It is
+#              used to distribute data files via FTP, FTPS, SFTP, SMTP
+#              and/or SCP. It collects files via FTP, FTPS, SFTP, HTTP
+#              and/or HTTPS.
+### END INIT INFO
+
+
+CURRENT_SCRIPT_NAME="`basename $0`"
+if [ -d /var/lock/subsys ]
+then
+   SYS_LOCKDIR="/var/lock/subsys"
+else
+   SYS_LOCKDIR="/var/lock"
+fi
+if [ -r @SYSCONFIGDIR@/afd ]
+then
+   if [ "$CURRENT_SCRIPT_NAME" = "afdha" ]
+   then
+      AFD_USERS="`grep \^AFD_HA_USER_ @SYSCONFIGDIR@/afd | cut -d '=' -f2`"
+   else
+      AFD_USERS="`grep \^AFD_USER_ @SYSCONFIGDIR@/afd | cut -d '=' -f2`"
+   fi
+else
+   AFD_USERS=""
+fi
+
+
+meta_data()
+{
+cat <<END
+<?xml version="1.0"?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="afd" version="0.1">
+   <version>0.1</version>
+   <longdesc lang="en">
+AFD is an automatic file distributor and collector. It is
+used to distribute data files via FTP, FTPS, SFTP, SMTP
+and/or SCP. It collects files via FTP, FTPS, SFTP, HTTP
+and/or HTTPS.
+   </longdesc>
+   <shortdesc lang="en">
+AFD is an automatic file distributor and collector.
+   </shortdesc>
+   <actions>
+      <action name="start"        timeout="20"/>
+      <action name="stop"         timeout="40"/>
+      <action name="monitor"      timeout="20"
+                                  interval="10" depth="0"/>
+      <action name="reload"       timeout="20"/>
+      <action name="meta-data"    timeout="5"/>
+      <action name="validate-all" timeout="20"/>
+   </actions>
+</resource-agent>
+END
+}
+
+
+# See how we were called.
+case "$1" in
+  start)
+        RETVAL=1
+        PID_LIST=""
+        for afduser in $AFD_USERS
+        do
+           USER_HOME_DIR="`grep \^${afduser}: /etc/passwd | cut -d ':' -f 6`"
+           if [ -d $USER_HOME_DIR ]
+           then
+              RETVAL=1
+              AFD_WORK_DIR_LIST=`su - $afduser -c 'echo MULTIAFDDIRS:$MULTI_AFD_DIRS' | grep "^MULTIAFDDIRS:" | cut -d: -f2`
+              if [ "$AFD_WORK_DIR_LIST" = "" ]
+              then
+                 (
+                 su - $afduser -c "$AFD_WORK_DIR/etc/afd.init start > /dev/null 2>&1 ; afd -a"
+                 case $? in
+                    0) # Success
+                       RETVAL=0
+                       touch $SYS_LOCKDIR/afd.$afduser
+                       echo "Starting AFD for $afduser : Done"
+                       ;;
+                    6) # AFD is disabled by system admin
+                       RETVAL=0
+                       touch $SYS_LOCKDIR/afd.$afduser
+                       echo "Starting AFD for $afduser : Done"
+                       ;;
+                    *) # Failed
+                       echo "Starting AFD for $afduser : Failed ($?)"
+                       ;;
+                 esac
+                 exit $RETVAL
+                 )&
+                 trap "kill -TERM $!" 1 2 15
+                 PID_LIST="$PID_LIST $!"
+              else
+                 counter=0
+                 for afddir in $AFD_WORK_DIR_LIST
+                 do
+                    (
+                    su - $afduser -c "$afddir/etc/afd.init $afddir start > /dev/null 2>&1 ; afd -w $afddir -a"
+                    case $? in
+                       0) # Success
+                          RETVAL=0
+                          touch $SYS_LOCKDIR/afd.$afduser-$counter
+                          echo "Starting AFD for $afduser in $afddir : Done"
+                          ;;
+                       6) # AFD is disabled by system admin
+	                  RETVAL=0
+                          touch $SYS_LOCKDIR/afd.$afduser-$counter
+                          echo "Starting AFD for $afduser in $afddir : Done"
+                          ;;
+                       *) # Failed
+                          echo "Starting AFD for $afduser in $afddir : Failed ($?)"
+                          ;;
+                    esac
+                    exit $RETVAL
+                    )&
+                    trap "kill -TERM $!" 1 2 15
+                    PID_LIST="$PID_LIST $!"
+                    counter=`expr "$counter" + 1`
+                 done
+              fi
+           else
+              echo "Could not start AFD for $afduser since home directory is missing."
+           fi
+        done
+
+        # Catch zombies and determine result code.
+        for childpid in $PID_LIST
+        do
+           wait $childpid
+           if [ $? -eq 0 ]
+           then
+              RETVAL=0
+           fi
+        done
+
+        [ $RETVAL -eq 0 ] && touch $SYS_LOCKDIR/afd
+        ;;
+  stop)
+        RETVAL=1
+        PID_LIST=""
+        for afduser in $AFD_USERS
+        do
+           # Test if the users home directory does exist. If not
+           # assume everything is okay.
+           USER_HOME_DIR="`grep \^${afduser}: /etc/passwd | cut -d ':' -f 6`"
+           if [ -d $USER_HOME_DIR ]
+           then
+              if [ "$CURRENT_SCRIPT_NAME" = "afdha" ]
+              then
+                 USER_AFD_WORK_DIR=`su - $afduser -c 'echo $AFD_WORK_DIR'`
+                 if [ "$USER_AFD_WORK_DIR" = "" ]
+                 then
+                    AFD_WORK_DIR_LIST=`su - $afduser -c 'echo MULTIAFDDIRS:$MULTI_AFD_DIRS' | grep "^MULTIAFDDIRS:" | cut -d: -f2`
+                    if [ "$AFD_WORK_DIR_LIST" = "" ]
+                    then
+                       # No AFD_WORK_DIR and MULTI_AFD_DIRS is set. Assume that the
+                       # home directory is not mounted and everything is okay.
+                       rm -f $SYS_LOCKDIR/afd.$afduser
+                       echo "Stopping AFD for $afduser : Done"
+                       exit 0
+                    fi
+                 fi
+              fi
+              RETVAL=1
+              AFD_WORK_DIR_LIST=`su - $afduser -c 'echo MULTIAFDDIRS:$MULTI_AFD_DIRS' | grep "^MULTIAFDDIRS:" | cut -d: -f2`
+              if [ "$AFD_WORK_DIR_LIST" = "" ]
+              then
+                 (
+                 su - $afduser -c "afd -S"
+                 case $? in
+                    0)  # Normal stop
+                        RETVAL=0
+                        rm -f $SYS_LOCKDIR/afd.$afduser
+                        echo "Stopping AFD for $afduser : Done"
+                        ;;
+                    10) # AFD is not active
+                        RETVAL=0
+                        rm -f $SYS_LOCKDIR/afd.$afduser
+                        echo "Stopping AFD for $afduser : Is already stopped"
+                        ;;
+                    11) # Not on correct host
+                        RETVAL=0
+                        rm -f $SYS_LOCKDIR/afd.$afduser
+                        echo "Stopping AFD for $afduser : Incorrect host"
+                        ;;
+                    *)  # Failed
+                        echo "Stopping AFD for $afduser : Failed ($?)"
+                        ;;
+                 esac
+                 exit $RETVAL
+                 )&
+                 trap "kill -TERM $!" 1 2 15
+                 PID_LIST="$PID_LIST $!"
+              else
+                 counter=0
+                 for afddir in $AFD_WORK_DIR_LIST
+                 do
+                    (
+                    su - $afduser -c "afd -w $afddir -S"
+                    case $? in
+                       0)  # Normal stop
+                           RETVAL=0
+                           rm -f $SYS_LOCKDIR/afd.$afduser-$counter
+                           echo "Stopping AFD for $afduser in $afddir : Done"
+                           ;;
+                       10) # AFD is not active
+                           RETVAL=0
+                           rm -f $SYS_LOCKDIR/afd.$afduser-$counter
+                           echo "Stopping AFD for $afduser in $afddir : Is already stopped"
+                           ;;
+                       11) # Not on correct host
+                           RETVAL=0
+                           rm -f $SYS_LOCKDIR/afd.$afduser-$counter
+                           echo "Stopping AFD for $afduser in $afddir : Incorrect host"
+                           ;;
+                       *)  # Failed
+                           echo "Stopping AFD for $afduser in $afddir : Failed ($?)"
+                           ;;
+                    esac
+                    exit $RETVAL
+                    )&
+                    trap "kill -TERM $!" 1 2 15
+                    PID_LIST="$PID_LIST $!"
+                    counter=`expr "$counter" + 1`
+                 done
+              fi
+           else
+              rm -f $SYS_LOCKDIR/afd.$afduser
+              echo "Stopping AFD for $afduser : Done (Home directory does not exist!)"
+           fi
+        done
+
+        # Catch zombies and determine result code.
+        for childpid in $PID_LIST
+        do
+           wait $childpid
+           if [ $? -eq 0 ]
+           then
+              RETVAL=0
+           fi
+        done
+
+        [ $RETVAL -eq 0 ] && rm -f $SYS_LOCKDIR/afd
+        ;;
+  reload)
+        RETVAL=0
+        PID_LIST=""
+        for afduser in $AFD_USERS
+        do
+           AFD_WORK_DIR_LIST=`su - $afduser -c 'echo MULTIAFDDIRS:$MULTI_AFD_DIRS' | grep "^MULTIAFDDIRS:" | cut -d: -f2`
+           if [ "$AFD_WORK_DIR_LIST" = "" ]
+           then
+              echo -n "Reloading configuration of AFD for $afduser : "
+              su - $afduser -c "udc"
+              case $? in
+                 0)
+                    echo "Done"
+                    ;;
+                 *)
+                    RETVAL=$?
+                    echo "Failed"
+                    ;;
+              esac
+           else
+              counter=0
+              for afddir in $AFD_WORK_DIR_LIST
+              do
+                 echo -n "Reloading configuration of AFD ($afddir) for $afduser : "
+                 su - $afduser -c "udc -w $afddir"
+                 case $? in
+                    0)
+                       echo "Done"
+                       ;;
+                    *)
+                       RETVAL=$?
+                       echo "Failed"
+                       ;;
+                 esac
+              done
+           fi
+        done
+        ;;
+  restart)
+        $0 stop
+        sleep 2
+        $0 start
+        RETVAL=$?
+        ;;
+  condrestart)
+        RETVAL=1
+        PID_LIST=""
+        for afduser in $AFD_USERS
+        do
+           USER_HOME_DIR="`grep \^${afduser}: /etc/passwd | cut -d ':' -f 6`"
+           if [ -d $USER_HOME_DIR ]
+           then
+              AFD_WORK_DIR_LIST=`su - $afduser -c 'echo MULTIAFDDIRS:$MULTI_AFD_DIRS' | grep "^MULTIAFDDIRS:" | cut -d: -f2`
+              if [ "$AFD_WORK_DIR_LIST" = "" ]
+              then
+                 (
+                 RETVAL=1
+                 if [ -f $SYS_LOCKDIR/restart_afd.$afduser ]
+                 then
+                    su - $afduser -c "$AFD_WORK_DIR/etc/afd.init start > /dev/null 2>&1 ; afd -a"
+                    case $? in
+                       0) # Success
+                          RETVAL=0
+                          touch $SYS_LOCKDIR/afd.$afduser
+                          echo "Starting AFD for $afduser : Done"
+                          ;;
+                       6) # AFD is disabled by system admin
+                          RETVAL=0
+                          touch $SYS_LOCKDIR/afd.$afduser
+                          echo "Starting AFD for $afduser : Done"
+                          ;;
+                       *) # Failed
+                          echo "Starting AFD for $afduser : Failed ($?)"
+                          ;;
+                    esac
+                    rm -f $SYS_LOCKDIR/restart_afd.$afduser
+                 else
+                    su - $afduser -c "afd -S"
+                    if [ $? -eq 0 ]
+                    then
+                       sleep 2
+                       su - $afduser -c "$AFD_WORK_DIR/etc/afd.init start > /dev/null 2>&1 ; afd -a"
+                       case $? in
+                          0) # Success
+                             RETVAL=0
+                             touch $SYS_LOCKDIR/afd.$afduser
+                             echo "Restarting AFD for $afduser : Done"
+                             ;;
+                          6) # AFD is disabled by system admin
+                             RETVAL=0
+                             touch $SYS_LOCKDIR/afd.$afduser
+                             echo "Restarting AFD for $afduser : Done"
+                             ;;
+                          *) # Failed
+                             echo "Restarting AFD for $afduser : Failed ($?)"
+                             ;;
+                       esac
+                    fi
+                 fi
+                 exit $RETVAL
+                 )&
+                 trap "kill -TERM $!" 1 2 15
+                 PID_LIST="$PID_LIST $!"
+              else
+                 counter=0
+                 for afddir in $AFD_WORK_DIR_LIST
+                 do
+                    (
+                    RETVAL=1
+                    if [ -f $SYS_LOCKDIR/restart_afd.$afduser-$counter ]
+                    then
+                       su - $afduser -c "$afddir/etc/afd.init $afddir start > /dev/null 2>&1 ; afd -w $afddir -a"
+                       case $? in
+                          0) # Success
+                             RETVAL=0
+                             touch $SYS_LOCKDIR/afd.$afduser-$counter
+                             echo "Starting AFD for $afduser in $afddir : Done"
+                             ;;
+                          6) # AFD is disabled by system admin
+                             RETVAL=0
+                             touch $SYS_LOCKDIR/afd.$afduser-$counter
+                             echo "Starting AFD for $afduser in $afddir : Done"
+                             ;;
+                          *) # Failed
+                             echo "Starting AFD for $afduser in $afddir : Failed ($?)"
+                             ;;
+                       esac
+                       rm -f $SYS_LOCKDIR/restart_afd.$afduser-$counter
+                    else
+                       su - $afduser -c "afd -w $afddir -S"
+                       if [ $? -eq 0 ]
+                       then
+                          sleep 2
+                          su - $afduser -c "$afddir/etc/afd.init $afddir start > /dev/null 2>&1 ; afd -w $afddir -a"
+                          case $? in
+                             0) # Success
+                                RETVAL=0
+                                touch $SYS_LOCKDIR/afd.$afduser-$counter
+                                echo "Restarting AFD for $afduser in $afddir : Done"
+                                ;;
+                             6) # AFD is disabled by system admin
+                                RETVAL=0
+                                touch $SYS_LOCKDIR/afd.$afduser-$counter
+                                echo "Restarting AFD for $afduser in $afddir : Done"
+                                ;;
+                             *) # Failed
+                                echo "Restarting AFD for $afduser in $afddir : Failed ($?)"
+                                ;;
+                          esac
+                       fi
+                    fi
+                    exit $RETVAL
+                    )&
+                    trap "kill -TERM $!" 1 2 15
+                    PID_LIST="$PID_LIST $!"
+                    counter=`expr "$counter" + 1`
+                 done
+              fi
+           else
+              echo "Nothing to do for AFD for $afduser since home dir is missing!"
+           fi
+        done
+
+        if [ ! "$CURRENT_SCRIPT_NAME" = "afdha" ]
+        then
+           # HA users may only be started if we find a restart_afd.user file!
+           if [ -r @SYSCONFIGDIR@/afd ]
+           then
+              AFD_HA_USERS="`grep \^AFD_HA_USER_ @SYSCONFIGDIR@/afd | cut -d '=' -f2`"
+           fi
+           for afduser in $AFD_HA_USERS
+           do
+              USER_HOME_DIR="`grep \^${afduser}: /etc/passwd | cut -d ':' -f 6`"
+              if [ -d $USER_HOME_DIR ]
+              then
+                 AFD_WORK_DIR_LIST=`su - $afduser -c 'echo MULTIAFDDIRS:$MULTI_AFD_DIRS' | grep "^MULTIAFDDIRS:" | cut -d: -f2`
+                 if [ "$AFD_WORK_DIR_LIST" = "" ]
+                 then
+                    if [ -f $SYS_LOCKDIR/restart_afd.$afduser ]
+                    then
+                       (
+                       RETVAL=1
+                       su - $afduser -c "$AFD_WORK_DIR/etc/afd.init start > /dev/null 2>&1 ; afd -a"
+                       if [ $? -eq 0 ]
+                       then
+                          RETVAL=0
+                          touch $SYS_LOCKDIR/afd.$afduser
+                          echo "Starting AFD for $afduser : Done"
+                       else
+                          echo "Starting AFD for $afduser : Failed ($?)"
+                       fi
+                       rm -f $SYS_LOCKDIR/restart_afd.$afduser
+                       exit $RETVAL
+                       )&
+                       trap "kill -TERM $!" 1 2 15
+                       PID_LIST="$PID_LIST $!"
+                    fi
+                 else
+                    counter=0
+                    for afddir in $AFD_WORK_DIR_LIST
+                    do
+                       if [ -f $SYS_LOCKDIR/restart_afd.$afduser-$counter ]
+                       then
+                          (
+                          RETVAL=1
+                          su - $afduser -c "$afddir/etc/afd.init $afddir start > /dev/null 2>&1 ; afd -w $afddir -a"
+                          if [ $? -eq 0 ]
+                          then
+                             RETVAL=0
+                             touch $SYS_LOCKDIR/afd.$afduser-$counter
+                             echo "Starting AFD for $afduser in $afddir : Done"
+                          else
+                             echo "Starting AFD for $afduser in $afddir : Failed ($?)"
+                          fi
+                          rm -f $SYS_LOCKDIR/restart_afd.$afduser-$counter
+                          exit $RETVAL
+                          )&
+                          trap "kill -TERM $!" 1 2 15
+                          PID_LIST="$PID_LIST $!"
+                       fi
+                       counter=`expr "$counter" + 1`
+                    done
+                 fi
+              else
+                 echo "Nothing to do for AFD for $afduser since home dir is missing!"
+              fi
+           done
+        fi
+
+        # Catch zombies and determine result code.
+        for childpid in $PID_LIST
+        do
+           wait $childpid
+           if [ $? -eq 0 ]
+           then
+              RETVAL=0
+           fi
+        done
+
+        rm -f $SYS_LOCKDIR/afd.restart
+        ;;
+  status|monitor)
+        NOT_RUNNING=""
+        IS_RUNNING=""
+        IS_DISABLED=""
+        IS_STOPPED=""
+        for afduser in $AFD_USERS
+        do
+           USER_HOME_DIR="`grep \^${afduser}: /etc/passwd | cut -d ':' -f 6`"
+           if [ -d $USER_HOME_DIR ]
+           then
+              AFD_WORK_DIR_LIST=`su - $afduser -c 'echo MULTIAFDDIRS:$MULTI_AFD_DIRS' | grep "^MULTIAFDDIRS:" | cut -d: -f2`
+              if [ "$AFD_WORK_DIR_LIST" = "" ]
+              then
+                 su - $afduser -c "ls \$AFD_WORK_DIR/fifodir/AFD_ACTIVE > /dev/null 2>&1"
+                 if [ $? -eq 0 ]
+                 then
+                    su - $afduser -c "afd -c"
+                    RETVAL=$?
+                    if [ $RETVAL -ne 5 ]
+                    then
+                       su - $afduser -c "ls \$AFD_WORK_DIR/etc/NO_AUTO_RESTART > /dev/null 2>&1"
+                       if [ $? = 0 ]
+                       then
+                          IS_DISABLED="`echo $IS_DISABLED` $afduser"
+                       else
+                          NOT_RUNNING="`echo $NOT_RUNNING` $afduser"
+                       fi
+                    else
+                       IS_RUNNING="`echo $IS_RUNNING` $afduser"
+                    fi
+                 else
+                    IS_STOPPED="`echo $IS_STOPPED` $afduser"
+                    RETVAL=3
+                 fi
+              else
+                 counter=0
+                 for afddir in $AFD_WORK_DIR_LIST
+                 do
+                    su - $afduser -c "ls $afddir/fifodir/AFD_ACTIVE > /dev/null 2>&1"
+                    if [ $? -eq 0 ]
+                    then
+                       su - $afduser -c "afd -w $afddir -c"
+                       RETVAL=$?
+                       if [ $RETVAL -ne 5 ]
+                       then
+                          if [ -f $afddir/etc/NO_AUTO_RESTART ]
+                          then
+                             IS_DISABLED="`echo $IS_DISABLED` $afduser[$afddir]"
+                          else
+                             NOT_RUNNING="`echo $NOT_RUNNING` $afduser[$afddir]"
+                          fi
+                       else
+                          IS_RUNNING="`echo $IS_RUNNING` $afduser[$afddir]"
+                       fi
+                    else
+                       IS_STOPPED="`echo $IS_STOPPED` $afduser[$afddir]"
+                       RETVAL=3
+                    fi
+                    counter=`expr "$counter" + 1`
+                 done
+              fi
+           else
+              echo "Not able to determine status of AFD for $afduser since home dir is missing!"
+           fi
+        done
+        if [ "$NOT_RUNNING" = "" ]
+        then
+           if [ "$IS_DISABLED" = "" ]
+           then
+              if [ "$IS_STOPPED" = "" ]
+              then
+                 if [ "$IS_RUNNING" = "" ]
+                 then
+                    echo "Unable to determine status of AFD."
+                    RETVAL=4
+                 else
+                    echo "AFD for ${IS_RUNNING} is running."
+                    RETVAL=0
+                 fi
+              else
+                 if [ "$IS_RUNNING" = "" ]
+                 then
+                    echo "AFD for ${IS_STOPPED} is stopped."
+                 else
+                    echo "AFD for ${IS_RUNNING} is running and for ${IS_STOPPED} it is stopped."
+                 fi
+                 RETVAL=3
+              fi
+           else
+              if [ "$IS_STOPPED" = "" ]
+              then
+                 if [ "$IS_RUNNING" = "" ]
+                 then
+                    echo "AFD for ${IS_DISABLED} is disabled."
+                 else
+                    echo "AFD for ${IS_RUNNING} is running and for ${IS_DISABLED} it is disabled."
+                 fi
+                 RETVAL=0
+              else
+                 if [ "$IS_RUNNING" = "" ]
+                 then
+                    echo "AFD for ${IS_DISABLED} is disabled and for ${IS_STOPPED} it is stopped."
+                 else
+                    echo "AFD for ${IS_RUNNING} is running, for ${IS_DISABLED} it is disabled and for ${IS_STOPPED} it is stopped."
+                 fi
+                 RETVAL=3
+              fi
+           fi
+        else
+           echo "AFD for ${NOT_RUNNING} is NOT active."
+           RETVAL=1
+        fi
+        ;;
+  meta-data)
+        meta_data
+        RETVAL=0
+        ;;
+  validate-all)
+        RETVAL=0
+        ;;
+  *)
+        echo "*** Usage: afd {start|stop|restart|condrestart|reload|status|monitor|meta-data|validate-all}"
+        RETVAL=1
+        ;;
+esac
+
+exit $RETVAL

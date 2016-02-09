@@ -1,0 +1,54 @@
+#!/bin/sh
+#
+# Description: Inserts a logo to all AFD html files.
+# Author     : Holger Kiehl
+# Date       : 28.07.2003
+#
+
+DWD_LOGO="<td><a href=\\\"http:\/\/www.dwd.de\\\"><img src=\\\"..\/images\/dwd_mini.gif\\\" border=0 alt=\\\"DWD Logo\\\" \/><\/a><\/td>"
+SF_LOGO="<td><a href=\\\"http:\/\/sourceforge.net\\\"><img src=\\\"http:\/\/sourceforge.net\/sflogo.php?group_id=77785\&amp\;type=1\\\" width=\\\"88\\\" height=\\\"31\\\" border=\\\"0\\\" alt=\\\"SourceForge.net Logo\\\" \/><\/a><\/td>"
+EMPTY_LOGO="<!-- Insert site specific logo -->"
+
+if [ $# -ne 2 ]
+then
+   echo "Usage: $0 <logo to replace> <new logo>"
+   echo "       Logos can be : empty dwd sf"
+   exit 1
+fi
+
+# Check for correct logo.
+case "$1" in
+   "empty") SEARCH_LOGO=$EMPTY_LOGO
+            break;;
+   "dwd")   SEARCH_LOGO=$DWD_LOGO
+            break;;
+   "sf")    SEARCH_LOGO=$SF_LOGO
+            break;;
+      *)    echo "Unknown logo $1, possble are: empty dwd sf"
+            exit 1
+esac
+case "$2" in
+   "empty") REPLACE_LOGO=$EMPTY_LOGO
+            break;;
+   "dwd")   REPLACE_LOGO=$DWD_LOGO
+            break;;
+   "sf")    REPLACE_LOGO=$SF_LOGO
+            break;;
+      *)    echo "Unknown logo $2, possble are: empty dwd sf"
+            exit 1
+esac
+
+# Get all HTML files.
+FILE_LIST=`find . -name '*.html' -print`
+
+for file_name in $FILE_LIST
+do
+   echo "Changing $file_name ..."
+   sed_cmd="-e 's/${SEARCH_LOGO}/${REPLACE_LOGO}/'"
+   echo "sed $sed_cmd $file_name > .tmp_file && mv .tmp_file $file_name" > sed_cmd_file
+   chmod 755 sed_cmd_file
+   ./sed_cmd_file
+done
+rm -f sed_cmd_file .tmp_file
+
+exit 0

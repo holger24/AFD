@@ -1,0 +1,484 @@
+#
+# Configuration file for parameters that AFD reads when it is started.
+# The default values are, when the option is not set.
+# Note: The parameters must always start as the first character of
+#       a new line.
+#                                                                    
+ 
+##########################################################################
+# The port at which the TCP daemon of the AFD will listen. Note you will #
+# only be able to pick a port that is not in the dynamic port range.     #
+# IANA suggests this port range to be 49152 to 65535. On linux systems   #
+# this usually is 32768 to 61000. On linux AFD will determine this value #
+# by reading /proc/sys/net/ipv4/ip_local_port_range.                     #
+# Default: Disabled                                                      #
+##########################################################################
+#AFD_TCP_PORT                     4444
+ 
+##########################################################################
+# The logs that may be requested from the given AFD_TCP_PORT. If this is #
+# defined, then it means for all hosts that connect to this port. With   #
+# the TRUSTED_REMOTE_IP it can be resticted to specific host(s). The     #
+# value given is an integer bit mask, with the following meaning:        #
+#                                                                        #
+#   5 (16)    - System Log                                               #
+#   6 (32)    - Receive Log                                              #
+#   7 (64)    - Transfer Log                                             #
+#   8 (128)   - Transfer Debug Log                                       #
+#   9 (256)   - Input Log                                                #
+#  10 (512)   - Production Log                                           #
+#  11 (1024)  - Output Log                                               #
+#  12 (2048)  - Delete Log                                               #
+#  15 (16384) - Event Log                                                #
+#  16 (32768) - Distribution Log                                         #
+#                                                                        #
+# Default:  0 (Disabled)                                                 #
+##########################################################################
+#AFD_TCP_LOGS                     53104
+
+##########################################################################
+# With the following entry it is possible to specify who may connect to  #
+# the above port. Multiple TRUSTED_REMOTE_IP entries are also possible.  #
+# A second optional parameter may be set to specify which log the remote #
+# host may request. This will override AFD_TCP_LOGS if set. Also note    #
+# the order of multiple TRUSTED_REMOTE_IP is important. The log          #
+# permissions of the first IP or hostname that matches will be taken.    #
+# Default: None                                                          #
+##########################################################################
+#TRUSTED_REMOTE_IP                192.168.22.*
+
+##########################################################################
+# Here scheduling priorities can be defined for the different AFD        #
+# process. Only  use these if you know what you are doing. See man nice  #
+# for the meaning of the values, mostly it goes from 19 (least favorable)#
+# to -20 (most favorable scheduling). You can only set negative values   #
+# here if AFD runs under root, which is not recommended. Since these     #
+# priorities are inherited by child process one can just set             #
+# INIT_AFD_PRIORITY to change the priority of all AFD process.           #
+# SHOW_LOG_PRIORITY will change the process of the dialogs  mshow_log,   #
+# show_olog, show_ilog, show_dlog and show_elog. EXEC_BASE_PRIORITY is   #
+# the base priority for all process started by the exec and pexec        #
+# option in DIR_CONFIG regardless of the set AMG_PRIORITY,  FD_PRIORITY  #
+# and INIT_AFD_PRIORITY.                                                 #
+# Default: None (Disabled)                                               #
+##########################################################################
+#AFDD_PRIORITY                    7
+#AFD_STAT_PRIORITY                6
+#AMG_PRIORITY                     0
+#ARCHIVE_WATCH_PRIORITY           12
+#EXEC_BASE_PRIORITY               5
+#FD_PRIORITY                      5
+#INIT_AFD_PRIORITY                0
+#SHOW_LOG_PRIORITY                15
+
+##########################################################################
+# If set to YES the AFD priority from DIR_CONFIG is added to the         #
+# scheduling priority. Process effected by this are all those started    #
+# via the exec and pexec option and all sf_xxx and gf_xxx process. This  #
+# value is added to any of the above value. For example if FD_PRIORITY   #
+# set to 5 and an AFD priority of 9 is set for a job the resulting       #
+# sf_xxx and/or gf_xxx process will have a priority of 14. If there is a #
+# pexec option set and EXEC_BASE_PRIORITY is 2 then the resulting        #
+# priority of the executing process would be 11.                         #
+# Default: NO                                                            #
+##########################################################################
+#ADD_AFD_PRIORITY                 YES
+
+##########################################################################
+# From the above two blocks it is clear that we need some minimum and    #
+# maximum values for the scheduling priority. Since I do not know how to #
+# determine this at compile time I led the user set this value here.     #
+# Note that it is not recommended to run AFD under root and since only   #
+# root can set nice values below 0, you should not set MAX_NICE_VALUE    #
+# below 0.                                                               #
+# Default: MAX_NICE_VALUE 0                                              #
+#          MIN_NICE_VALUE 19                                             #
+##########################################################################
+MAX_NICE_VALUE                   0
+MIN_NICE_VALUE                   19
+
+##########################################################################
+# Set this to YES if AFD is running in a global filesystem. This will    #
+# make AFD to sync it's memory mapped files more often to the file-      #
+# system.                                                                #
+# Default: NO                                                            #
+##########################################################################
+#IN_GLOBAL_FILESYSTEM            NO
+
+##########################################################################
+# The configuration file from where AFD will read it's configuration.    #
+# This option may be used more then once, making it possible to have     #
+# multiple DIR_CONFIGS. If the name specified does not contain the       #
+# absolute path, it will try to locate the given file in                 #
+# $AFD_WORK_DIR/etc.                                                     #
+# Default: $AFD_WORK_DIR/etc/DIR_CONFIG  	                         #
+##########################################################################
+#DIR_CONFIG_NAME                  /home/afd/AFD_DIR_CONFIG
+
+##########################################################################
+# Via this options it is possible to specify the file name from where    #
+# the AFD reads all the rules on how to rename files. This option may    #
+# be used more then once, thus making it possible to read from multiple  #
+# rename rule files. If the name specified does not contain the absolute #
+# path, it will try to locate the given file in $AFD_WORK_DIR/etc.       #
+# Default: $AFD_WORK_DIR/etc/rename.rule                                 #
+##########################################################################
+#RENAME_RULE_NAME                /home/afd/AFD_RENAME_RULES
+
+##########################################################################
+# Bulletin specification file name, where AFD reads all data needed to   #
+# extract reports from a bulletin. This is always needed together with   #
+# the report specification file name. Currently these files must be      #
+# located in $AFD_WORK_DIR/etc.                                          #
+# Default: None                                                          #
+##########################################################################
+#BUL_RULE_FILE_NAME               msp.csv
+#REP_RULE_FILE_NAME               rep.csv
+
+##########################################################################
+# Maximum number of times that the process inst_job may fork itself.     #
+# Default: 20                                                            #
+##########################################################################
+MAX_NO_OF_DIR_CHECKS             12
+
+##########################################################################
+# The following flag determines the default inotify flag for all         #
+# directories. This flag can be overruled with the directory option      #
+# inotify in the DIR_CONFIG. The value given is an integer bit mask,     #
+# with the following meaning:                                            #
+#                                                                        #
+#    1 (1)      - File moved into or renamed in directory                #
+#    2 (2)      - File that is closed after being written to.            #
+#                                                                        #
+# Default:  0 (Disabled)                                                 #
+##########################################################################
+#DEFAULT_INOTIFY_FLAG             1
+
+##########################################################################
+# The maximum number of process that may be forked for one directory.    #
+# Default: 10                                                            #
+##########################################################################
+#MAX_PROCESS_PER_DIR              10
+
+##########################################################################
+# On big systems with many connections it can be disturbing if errors    #
+# are always shown. Some error situation is only of short duration. This #
+# parameter when set, marks the first number of errors/warnings as       #
+# offline.                                                               #
+# Default: 0                                                             #
+##########################################################################
+#IGNORE_FIRST_ERRORS              0
+
+##########################################################################
+# The rescan time of the user directories in the DIR_CONFIG file. Don't  #
+# pick a small value here if your system shows high system load when     #
+# working with files or directories (eg. fault tolerant systems).        #
+# This is also the interval time that the AMG checks if the DIR_CONFIG   #
+# or HOST_CONFIG file have been changed. The unit is second.             #
+# Default: 5                                                             #
+##########################################################################
+AMG_DIR_RESCAN_TIME              5
+
+##########################################################################
+# The minimum interval in seconds that all source directories must be    #
+# scanned. This can be usefull on systems that do not update the         #
+# directory modification time reliably (for example NFS when time of     #
+# client and server is out of sync). Setting this will generate a higher #
+# system load, since directories will be scanned more often.             #
+# Default: 0 (disabled)                                                  #
+##########################################################################
+#FORCE_REREAD_INTERVAL           0
+
+##########################################################################
+# The time when AMG will warn in receive log that no data has been       #
+# received in the specified directory. directory. This value will be     #
+# overridden by 'warn time' value from DIR_CONFIG if set. The unit is    #
+# second.                                                                #
+# Default: 0 (disabled)                                                  #
+##########################################################################
+#DEFAULT_DIR_WARN_TIME            0
+
+##########################################################################
+# What to do with files that a certain age but cannot be transmited      #
+# because either there is no rule (Unknown), they are being queued by    #
+# AFD (Queued) or they are old locked files (Locked). By specifying      #
+# one of the above those files will be automatically removed by AFD      #
+# when DEFAULT_OLD_FILE_TIME value has been reached.                     #
+# Default: None                                                          #
+##########################################################################
+#DEFAULT_DELETE_FILES_FLAG        "Unknown Queued Locked"
+
+##########################################################################
+# When to delete Unknown, Queued or Locked files from one of AFD's input #
+# directories. The value is in hours.                                    #
+# Default: 24                                                            #
+##########################################################################
+#DEFAULT_OLD_FILE_TIME            24
+
+##########################################################################
+# By default AFD will never delete a host from HOST_CONFIG if the host   #
+# is not found in DIR_CONFIG. With this option set, those hosts will be  #
+# deleted.                                                               #
+# Default: Not set                                                       #
+##########################################################################
+#REMOVE_UNUSED_HOSTS
+
+##########################################################################
+# When a job is removed from DIR_CONFIG but FD has still files queued    #
+# and these jobs produce errors (ie. they cannot be send, due to whatever#
+# reason), AFD will by default not delete these files. By setting this to#
+# YES, such jobs will be removed.                                        #
+# Default: NO                                                            #
+##########################################################################
+#DELETE_STALE_ERROR_JOBS          NO
+
+##########################################################################
+# The maximum number of simultaneous connections/transfers that the AFD  #
+# allows.                                                                #
+# Default: 50                                                            #
+##########################################################################
+MAX_CONNECTIONS                  80
+
+##########################################################################
+# The interval in second that the FD rescans remote directories for      #
+# files. Do not set this value to low.                                   #
+# Default: 60                                                            #
+##########################################################################
+#REMOTE_FILE_CHECK_INTERVAL       60
+
+##########################################################################
+# If this is set to NO, the local source directories will not be created #
+# if they do not exist. When set to YES, these will be created if AFD    #
+# does have the permission to do so.                                     #
+# Default: YES                                                           #
+##########################################################################
+#CREATE_SOURCE_DIR                YES
+
+##########################################################################
+# If this is set to NO, the remote source directories will not be created#
+# if they do not exist. When set to YES or you specify the mode, these   #
+# will be created if AFD has the permission to do so.                    #
+# Default: NO                                                            #
+##########################################################################
+#CREATE_REMOTE_SOURCE_DIR                770
+
+##########################################################################
+# The permission of the source directories that found in the DIR_CONFIG  #
+# and created by AMG if they are not there.                              #
+# Default: 775                                                           #
+##########################################################################
+#CREATE_SOURCE_DIR_MODE           775
+
+##########################################################################
+# If this is set to YES and the target directory does not exist it will  #
+# be created automatically, unless the option do not create target dir   #
+# is set If it is set to NO it will not create the target directory.     #
+# With the option create target dir  this can be overriden.              #
+# Default: NO                                                            #
+##########################################################################
+#CREATE_TARGET_DIR                NO
+
+##########################################################################
+# Files older then the given seconds will be deleted by default, unless  #
+# the age-limit is specified under options, then this value will be      #
+# taken. A value of 0 will disable this, it is however still possible to #
+# set this value with the age-limit option in DIR_CONFIG.                #
+# Default: 0 (disabled)                                                  #
+##########################################################################
+#DEFAULT_AGE_LIMIT                0
+
+##########################################################################
+# When setting one of the exec options exec or pexec, the default is to  #
+# let those process run as long as those process want to run, ie. there  #
+# is no restriction in time. This default can be changed to the value    #
+# specified here in seconds. If the time is up the process is killed.    #
+# Default: 0 (disabled)                                                  #
+##########################################################################
+#EXEC_TIMEOUT                     0
+
+##########################################################################
+# The default HTTP proxy where HTTP requests are send to. This can be an #
+# IP number or a hostname. Optionally one can specify the default port   #
+# using the following syntax: <server name>:<port>                       #
+# Default: localhost:25                                                  #
+##########################################################################
+#DEFAULT_HTTP_PROXY               http_proxy.ducktown.de:8080
+
+##########################################################################
+# The default SMTP server where mails are to be send to. This can be an  #
+# IP number or a hostname. Optionally one can specify the default port   #
+# using the following syntax: <server name>:<port>                       #
+# Default: localhost:25                                                  #
+##########################################################################
+#DEFAULT_SMTP_SERVER              localhost
+
+##########################################################################
+# The default what will be put into the from line, if the from option is #
+# not set under [options]. If not set it will take the user- and hostname#
+# from the current system where AFD is running.                          #
+# Default: not set (ie. will take current user and hostname)             #
+##########################################################################
+#DEFAULT_SMTP_FROM                donald@ducktown
+
+##########################################################################
+# The default what will be put into the reply-to line, if the reply-to   #
+# option is not set under [options]. If not set it will not send a       #
+# reply-to line.                                                         #
+# Default: not set                                                       #
+##########################################################################
+#DEFAULT_SMTP_REPLY_TO            donald@work
+
+##########################################################################
+# The maximum number of files that are copied before they are send to    #
+# the FD.                                                                #
+# Default: 100                                                           #
+##########################################################################
+#MAX_COPIED_FILES                 100
+
+##########################################################################
+# The maximum size in Kilobytes that are copied before they are send     #
+# to the FD.                                                             #
+# Default: 102400                                                        #
+##########################################################################
+#MAX_COPIED_FILE_SIZE             102400
+
+##########################################################################
+# When AMG has collected MAX_COPIED_FILES, it will try to continue to    #
+# copy from this directory until it reaches ONE_DIR_COPY_TIMEOUT timeout.#
+# The unit is seconds.                                                   #
+# Default: 10                                                            #
+##########################################################################
+ONE_DIR_COPY_TIMEOUT             10
+
+##########################################################################
+# The timeout for scanning all directories. If set to 0 this is diasbled.#
+# When this is set it will only take effect if during a scan there are   #
+# directories which still have files to be distributed but could not     #
+# because of MAX_COPIED_FILES or some other limits. If FULL_SCAN_TIMEOUT #
+# has not been reached, it will try to continue with the full directories#
+# until FULL_SCAN_TIMEOUT is reached.                                    #
+# Default: 0                                                             #
+##########################################################################
+#FULL_SCAN_TIMEOUT                0
+
+##########################################################################
+# Allows the administrator to set a default list of locked files that    #
+# gets added to each [files] section in DIR_CONFIG. Each element must be #
+# separated with a | (pipe) and may start with a !. If the ! (not sign)  #
+# is not set it will automatically insert it.                            #
+# Default: None                                                          #
+##########################################################################
+#ADDITIONAL_LOCKED_FILES          *.tmp|*.temp|*.lock
+
+##########################################################################
+# The number of old logfiles that AFD keeps before they are deleted.     #
+# Default SYSTEM_LOG        : 4                                          #
+# Default RECEIVE_LOG       : 7                                          #
+# Default TRANSFER_LOG      : 7                                          #
+# Default TRANS_DB_LOG      : 3                                          #
+# Default EVENT_LOG         : 5                                          #
+# Default MON_SYS_LOG       : 4                                          #
+# Default MON_LOG           : 14                                         #
+# Default INPUT_LOG         : 7                                          #
+# Default DISTRIBUTION_LOG  : 7                                          #
+# Default PRODUCTION_LOG_LOG: 7                                          #
+# Default OUTPUT_LOG        : 7                                          #
+# Default DELETE_LOG        : 7                                          #
+##########################################################################
+#MAX_SYSTEM_LOG_FILES             4
+#MAX_RECEIVE_LOG_FILES            7
+#MAX_TRANSFER_LOG_FILES           7
+#MAX_TRANS_DB_LOG_FILES           3
+#MAX_EVENT_LOG_FILES              5
+#MAX_MON_SYS_LOG_FILES            4
+#MAX_MON_LOG_FILES                14
+#MAX_INPUT_LOG_FILES              7
+#MAX_DISTRIBUTION_LOG_FILES       7
+#MAX_PRODUCTION_LOG_FILES         7
+#MAX_OUTPUT_LOG_FILES             7
+#MAX_DELETE_LOG_FILES             7
+
+##########################################################################
+# The maximum size in bytes before a log file is rotated.                #
+# Default SYSTEM_LOG        : 2097152                                    #
+# Default TRANS_DB_LOG      : 8388608                                    #
+# Default EVENT_LOG         : 10485760                                   #
+# Default MON_SYS_LOG       : 2097152                                    #
+##########################################################################
+#MAX_SYS_LOGFILE_SIZE           2097152
+#MAX_TRANS_DB_LOGFILE_SIZE      8388608
+#MAX_EVE_LOGFILE_SIZE           10485760
+#MAX_MON_SYS_LOGFILE_SIZE       2097152
+
+##########################################################################
+# Log specific data in a given format. It is possible to have multiple   #
+# ALDA_DAEMON entries. Here follow some example entries:                 #
+#   ALDA_DAEMON -f -l -L O -o '%OTd.%OTm.%OTY %OTX %-10OH %OE %.3OSA' -O output.txt #
+#    logs all output data to the file output.txt int the format:         #
+#       31.10.2009 06:49:07 mfc        RADI_I128105910 127.000 B         #
+# Default: None                                                          #
+##########################################################################
+# ALDA_DAEMON -f -l -L O -o '%OTd.%OTm.%OTY %OTX %-10OH %OE %.3OSA' -O /tmp/output.txt
+
+##########################################################################
+# Default printer command to print.                                      #
+##########################################################################
+DEFAULT_PRINTER_CMD              "lpr -P"
+
+##########################################################################
+# Default printer name.                                                  #
+##########################################################################
+#DEFAULT_PRINTER_NAME             a4_text
+
+##########################################################################
+# Default ping command.                                                  #
+##########################################################################
+PING_CMD                         "@PING_CMD@ -c 10"
+
+##########################################################################
+# Default traceroute command.                                            #
+##########################################################################
+TRACEROUTE_CMD                   @TRACEROUTE_CMD@
+
+##########################################################################
+# Program to view data of show_olog and show_queue dialog. May be        #
+# used multiple times. Note that the order matters, it goes from top to  #
+# bottom and the first pattern that matches will be taken. The optional  #
+# parameter --with-show_cmd can be used for programs that just write to  #
+# STDOUT and/or STDERR. Command syntax is as follows:                    #
+#                                                                        #
+#   VIEW_DATA_PROG [--with-show_cmd] <progname> <pattern>                #
+#                                                                        #
+# <progname> is the program name of the program to be called. If         #
+#            parameters are to be added, put this in ". The filename to  #
+#            be shown can be added with %s.                              #
+# <pattern>  The filename pattern that applies for the above program     #
+#            name. Multiple patterns must be seperated with a pipe sign  #
+#            (|).                                                        #
+##########################################################################
+#VIEW_DATA_PROG display *.jpg|*.png
+#VIEW_DATA_PROG xv *.tif
+
+##########################################################################
+# In dialog show_olog it is possible to set the view mode. The default   #
+# is set to an internal program showing the content of the file in hex   #
+# view. With VIEW_DATA_NO_FILTER_PROG one can specify another program.   #
+# It is possible to specify multiple VIEW_DATA_NO_FILTER_PROG programs.  #
+# Note the first value is always the alias name of the program name that #
+# is shown in show_olog. This may only be 8 characters long. With the    #
+# option --with-show_cmd one can show the output of programs that just   #
+# write to STDOUT and/or STDERR.                                         #
+##########################################################################
+#VIEW_DATA_NO_FILTER_PROG    XV   /usr/bin/xv
+#VIEW_DATA_NO_FILTER_PROG    Xpdf xpdf
+#VIEW_DATA_NO_FILTER_PROG    od --with-show_cmd "od -A x -t x1z -v"
+#VIEW_DATA_NO_FILTER_PROG    bufr --with-show_cmd "bufrtool -d -t ~/afd/usr/tables_v2 -i %s -o - "
+
+##########################################################################
+# The FAKE_USER option allows the administrator to allow certain users   #
+# to take up another identity, even if they do not exist on the system.  #
+# This user will then be used to look up the permissions in the afd.users#
+# file. See documentation for more details.                              #
+# Default: None                                                          #
+##########################################################################
+#FAKE_USER                        afd->operator

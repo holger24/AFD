@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (installation.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center>Installing AFD</h1>
+<hr size=3 noshade>
+<p>
+If you install want to install from source, please read
+<a href="compiling.html">Compiling AFD</a>. But it is easier to just
+download the RPM from <a href="ftp://ftp.dwd.de/pub/afd/RPMS/">here</a>.
+To install the RPM you must ensure that you have the following packets
+installed:
+<ul>
+   <li>RedHat/CentOS/Scientific Linux up to 6.x</li>
+   <ul>
+      <pre>
+      su -
+      yum install openmotif libXaw libXpm xorg-x11-fonts-misc
+      </pre>
+   </ul>
+   <li>Fedora up to Version 17</li>
+   <ul>
+      <pre>
+      su -
+      yum install openmotif libXaw libXpm xorg-x11-fonts-misc
+      </pre>
+   </ul>
+   <li>Fedora as of Version 18</li>
+   <ul>
+      <pre>
+      su -
+      yum install motif libXaw libXpm xorg-x11-fonts-misc
+      </pre>
+   </ul>
+   <li>Ubuntu</li>
+   <ul>
+      <pre>
+      sudo apt-get install libmotif
+      </pre>
+   </ul>
+   <li>SuSE</li>
+   <ul>
+      <pre>
+      su -
+      zypper install openmotif
+      </pre>
+   </ul>
+</ul>
+</p>
+<p>
+To install the RPM, just enter the following command:
+</p>
+<pre>
+           rpm -Uvh afd-1.4.5-4.el6.x86_64.rpm
+</pre>
+<p>
+If AFD is already installed and you just want to update AFD the command
+is as follows:
+</p>
+<pre>
+           rpm -Fvh afd-1.4.5-4.el6.x86_64.rpm
+</pre>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 2013 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 23.11.2013
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

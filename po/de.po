@@ -1,0 +1,4252 @@
+# German translations for afd package.
+# Copyright (C) 2009 Free Software Foundation, Inc.
+# This file is distributed under the same license as the afd package.
+#  <Holger.Kiehl@dwd.de>, 2009.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: afd 1.4.0-0.12.beta\n"
+"Report-Msgid-Bugs-To: Holger.Kiehl@dwd.de\n"
+"POT-Creation-Date: 2009-04-30 08:59+0200\n"
+"PO-Revision-Date: 2009-03-16 22:16+0100\n"
+"Last-Translator:  <Holger.Kiehl@dwd.de>\n"
+"Language-Team: German\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ASCII\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/common/attach_afd_mon_status.c:90 src/common/attach_afd_status.c:99
+#: src/common/change_alias_order.c:190 src/common/change_name.c:815
+#: src/common/change_name.c:837 src/common/create_message.c:206
+#: src/common/fra_attach.c:166 src/common/fra_attach.c:174
+#: src/common/fra_attach.c:234 src/common/fra_attach.c:241
+#: src/common/fra_attach.c:250 src/common/fra_attach.c:339
+#: src/common/fra_attach.c:370 src/common/fsa_attach.c:184
+#: src/common/fsa_attach.c:192 src/common/fsa_attach.c:252
+#: src/common/fsa_attach.c:259 src/common/fsa_attach.c:268
+#: src/common/fsa_attach.c:395 src/common/fsa_attach.c:440
+#: src/common/fsa_attach.c:447 src/common/fsa_attach.c:456
+#: src/common/get_pw.c:93 src/common/get_rename_rules.c:176
+#: src/common/isdup.c:169 src/common/isdup.c:208 src/common/msa_attach.c:221
+#: src/common/msa_attach.c:228 src/common/msa_attach.c:237
+#: src/common/msa_attach.c:364 src/common/msa_attach.c:409
+#: src/common/msa_attach.c:416 src/common/msa_attach.c:425
+#: src/common/msync_emu.c:73 src/common/munmap_emu.c:76
+#, c-format
+msgid "Failed to open() `%s' : %s"
+msgstr "Konnte `%s' nicht mit open() oeffnen : %s"
+
+#: src/common/attach_afd_mon_status.c:98 src/common/attach_afd_status.c:107
+#: src/common/attach_buf.c:128 src/common/get_pw.c:110
+#: src/protocols/ssh_common.c:1086
+#, c-format
+msgid "Failed to fstat() `%s' : %s"
+msgstr "Konnte kein fstat() auf die Datei `%s' machen : %s"
+
+#: src/common/attach_afd_mon_status.c:112 src/common/attach_afd_status.c:134
+#: src/common/change_alias_order.c:218 src/common/fra_attach.c:275
+#: src/common/fra_attach.c:402 src/common/fsa_attach.c:293
+#: src/common/fsa_attach.c:488 src/common/handle_counter.c:135
+#: src/common/handle_counter.c:170 src/common/handle_error_queue.c:681
+#: src/common/msa_attach.c:262 src/common/msa_attach.c:458
+#: src/protocols/ssh_common.c:1106
+#, c-format
+msgid "mmap() error : %s"
+msgstr "mmap() Fehler : %s"
+
+#: src/common/attach_afd_mon_status.c:119 src/common/attach_afd_status.c:143
+#: src/common/change_alias_order.c:410 src/common/check_lock.c:128
+#: src/common/create_message.c:200 src/common/exec_cmd.c:510
+#: src/common/fra_attach.c:223 src/common/fra_attach.c:363
+#: src/common/fra_detach.c:75 src/common/fsa_attach.c:241
+#: src/common/fsa_attach.c:429 src/common/fsa_detach.c:75
+#: src/common/get_permissions.c:208 src/common/get_pw.c:191
+#: src/common/get_rename_rules.c:196 src/common/handle_error_queue.c:135
+#: src/common/inform_fd_about_fsa_change.c:110
+#: src/common/inform_fd_about_fsa_change.c:116 src/common/lock_proc.c:137
+#: src/common/lock_proc.c:151 src/common/lock_proc.c:192
+#: src/common/msa_attach.c:210 src/common/msa_attach.c:398
+#: src/common/read_file.c:144 src/common/unmap_data.c:116
+#: src/common/write_host_config.c:512 src/protocols/ftpcmd.c:1692
+#: src/protocols/ftpcmd.c:1745 src/protocols/ftpcmd.c:2368
+#: src/protocols/ftpcmd.c:2423 src/protocols/ftpcmd.c:2632
+#: src/protocols/ftpcmd.c:3067 src/protocols/ftpcmd.c:3110
+#: src/protocols/httpcmd.c:1412 src/protocols/pop3cmd.c:230
+#: src/protocols/pop3cmd.c:668 src/protocols/wmocmd.c:210
+#: src/protocols/wmocmd.c:449
+#, c-format
+msgid "close() error : %s"
+msgstr "close() Fehler : %s"
+
+#: src/common/attach_afd_status.c:116
+#, c-format
+msgid "Incorrect size, `%s' is %ld bytes and not %u bytes."
+msgstr ""
+"Nicht die richtige Groesse. `%s' ist %ld Bytes gross, sollte aber %u Bytes "
+"gross sein."
+
+#: src/common/attach_afd_status.c:118
+#, c-format
+msgid "Incorrect size, `%s' is %lld bytes and not %u bytes."
+msgstr ""
+"Nicht die richtige Groesse. `%s' ist %lld Bytes gross, sollte aber %u Bytes "
+"gross sein."
+
+#: src/common/attach_buf.c:91
+#, c-format
+msgid "Failed to open() and create `%s' : %s"
+msgstr "Konnte Datei `%s' nicht mit open() erstellen : %s"
+
+#: src/common/attach_buf.c:118
+#, c-format
+msgid "Another `%s' is already running. Terminating."
+msgstr "Ein anderer `%s' laeuft schon. Beende Prozess."
+
+#: src/common/attach_buf.c:147 src/common/attach_buf.c:167
+#: src/common/attach_buf.c:177 src/common/change_name.c:880
+#: src/common/copy_file.c:212 src/common/handle_counter.c:110
+#, c-format
+msgid "Failed to write() to `%s' : %s"
+msgstr "Konnte nicht in die Datei `%s' schreiben : %s"
+
+#: src/common/attach_buf.c:155 src/common/change_alias_order.c:199
+#: src/common/change_name.c:861
+#, c-format
+msgid "Failed to lseek() in `%s' : %s"
+msgstr "Konnte kein lseek() in der Datei `%s' machen : %s"
+
+#: src/common/calc_next_time.c:156 src/common/calc_next_time.c:186
+msgid "Failed to locate any valid minute!?"
+msgstr "Konnte kein gueltigen Minuteneintrag finden!?"
+
+#: src/common/calc_next_time.c:228
+msgid "Failed to locate any valid hour!?"
+msgstr "Konnte kein gueltigen Stundeneintrag finden!?"
+
+#: src/common/calc_next_time.c:304
+msgid "Failed to locate any valid month!?"
+msgstr "Konnte kein gueltigen Monatseintrag finden!?"
+
+#: src/common/calc_next_time.c:379 src/common/calc_next_time.c:505
+msgid "Failed to locate any valid day of month!?"
+msgstr "Konnte keinen gultigen Monatstag finden!?"
+
+#: src/common/calc_next_time.c:466
+msgid "Failed to locate any valid day of week!?"
+msgstr "Konnte keinen gultigen Wochentag finden!?"
+
+#: src/common/calc_next_time.c:575
+msgid "Get a new operating system!"
+msgstr "Holle dir ein neues Betriebssystem!"
+
+#: src/common/change_alias_order.c:133 src/common/change_alias_order.c:139
+#, c-format
+msgid "Could not set write lock for FSA_STAT_FILE : %s"
+msgstr "Konnte kein Schreiblock auf FSA_STAT_FILE machen : %s"
+
+#: src/common/change_alias_order.c:152
+#, c-format
+msgid "Failed to lock `%s' [%d]"
+msgstr "Konnte nicht die Datei `%s' locken [%d]"
+
+#: src/common/change_alias_order.c:160 src/common/fsa_attach.c:212
+#: src/common/fsa_attach.c:411
+#, c-format
+msgid "Could not read the value of the fsa_id : %s"
+msgstr "Konnte nicht den Wert der fsa_id einlesen : %s"
+
+#: src/common/change_alias_order.c:169
+msgid ""
+"AAAaaaarrrrghhhh!!! DON'T CHANGE THE DIR_CONFIG FILE WHILE USING edit_hc!!!!"
+msgstr ""
+"AAAaaaarrrrghhhh!!! NICHT die DIR_CONFIG aendern waerend der Dialog edit_hc "
+"genutzt wird!!!!"
+
+#: src/common/change_alias_order.c:206 src/common/event_log.c:166
+#: src/common/exec_cmd.c:243 src/common/lock_proc.c:209
+#: src/common/mmap_resize.c:115 src/common/mmap_resize.c:124
+#: src/common/msync_emu.c:101 src/common/production_log.c:167
+#: src/common/remove_job_files.c:186 src/common/write_host_config.c:425
+#: src/common/write_host_config.c:432 src/common/write_host_config.c:439
+#: src/common/write_host_config.c:493 src/protocols/common.c:93
+#: src/protocols/ftpcmd.c:2881 src/protocols/ssh_common.c:361
+#, c-format
+msgid "write() error : %s"
+msgstr "Fehler beim Systemaufruf write() : %s"
+
+#: src/common/change_alias_order.c:241 src/common/check_fra.c:116
+#: src/common/get_dir_options.c:78
+msgid "Failed to attach to FRA."
+msgstr "Konnte nicht auf die FRA aufsetzen."
+
+#: src/common/change_alias_order.c:335
+#, c-format
+msgid "AAAaaaarrrrghhhh!!! Could not find hostname `%s'"
+msgstr "AAAaaaarrrrghhhh!!! Konnte den hostnamen `%s' nicht finden."
+
+#: src/common/change_alias_order.c:372
+msgid "Failed to detach from FRA."
+msgstr "Konnte nicht von der FRA absetzen."
+
+#: src/common/change_alias_order.c:378
+msgid "Failed to detach from old FSA."
+msgstr "Konnte nicht von der alten FRA absetzen."
+
+#: src/common/change_alias_order.c:393
+#, c-format
+msgid "Could not seek() to beginning of `%s' : %s"
+msgstr "Konnte nicht an den Anfang der Datei `%s' mit seek() gehen : %s"
+
+#: src/common/change_alias_order.c:401
+#, c-format
+msgid "Could not write value to FSA ID file : %s"
+msgstr "Konnte nicht in die FSA ID Datei schreiben : %s"
+
+#: src/common/change_alias_order.c:419
+#, c-format
+msgid "unlink() error : %s"
+msgstr "unlink() Fehler : %s"
+
+#: src/common/change_name.c:253
+#, c-format
+msgid "found %d *"
+msgstr "%d * gefunden"
+
+#: src/common/change_name.c:258
+#, c-format
+msgid "found %d ?"
+msgstr "%d ? gefunden"
+
+#: src/common/change_name.c:295
+#, c-format
+msgid "illegal '*' addressed: %d"
+msgstr "Ungueltigen '*' addressiert: %d"
+
+#: src/common/change_name.c:321
+#, c-format
+msgid "illegal '?' addressed: %d (%s %s)"
+msgstr "Ungueltigen '?' addressiert: %d (%s %s)"
+
+#: src/common/change_name.c:417
+#, c-format
+msgid ""
+"The start (%d) and end (%d) range do not make sense in rule %s. Start must "
+"be larger then end!"
+msgstr ""
+"Der Anfangs- (%d) und End- (%d) Bereich machen fuer die Regel %s keinen "
+"Sinn. Der Anfang muss immer groesser als das Ende sein!"
+
+#: src/common/change_name.c:431
+#, c-format
+msgid "There is no end range specified for rule %s"
+msgstr "Es wurde kein Endbereich fuer die Regel %s angegeben."
+
+#: src/common/change_name.c:443
+#, c-format
+msgid "Failed to open counter file, ignoring %n."
+msgstr "Konnte nicht die Zaehlerdatei oeffnen. Ignoriere %n."
+
+#: src/common/change_name.c:510
+#, c-format
+msgid "The time modifier specified for rule %s is to large."
+msgstr "Der Zeitmodifizierer fuer die Regel %s ist zu gross."
+
+#: src/common/change_name.c:516
+#, c-format
+msgid "There is no time modifier specified for rule %s"
+msgstr "Es ist kein Zeitmodifizierer fuer die Regel %s spezifiziert."
+
+#: src/common/change_name.c:635
+#, c-format
+msgid "Illegal time option (%c) in rule %s"
+msgstr "Ungueltige Zeitoption (%c) in der Regel %s."
+
+#: src/common/change_name.c:682
+#, c-format
+msgid "Illegal character (%c - not a decimal digit) found in rule %s"
+msgstr "Ungueltiges Zeichen (%c - ist kein Dezimalwert) in der Regel %s."
+
+#: src/common/change_name.c:709
+#, c-format
+msgid "Illegal character (%c - not a hexadecimal digit) found in rule %s"
+msgstr "Ungueltiges Zeichen (%c - ist kein Hexadezimalwert) in der Regel %s."
+
+#: src/common/change_name.c:733
+#, c-format
+msgid "Illegal character (%c) found in rule %s"
+msgstr "Ungueltiges Zeichen (%c) in der Regel %s."
+
+#: src/common/change_name.c:742
+#, c-format
+msgid "Illegal option (%d) in rule %s"
+msgstr "Ungueltige Option (%d) in der Regel %s."
+
+#: src/common/change_name.c:753
+msgid "can not pass more '*' as found before -> ignored"
+msgstr "Kann nicht mehr '*' finden als vorher -> ignoriere"
+
+#: src/common/change_name.c:771
+msgid "can not pass more '?' as found before -> ignored"
+msgstr "Kann nicht mehr '?' finden als vorher -> ignoriere"
+
+#: src/common/change_name.c:826
+#, c-format
+msgid "Failed to lock `%s' : %s"
+msgstr "Konnte `%s' nicht locken : %s"
+
+#: src/common/change_name.c:852 src/common/copy_file.c:202
+#, c-format
+msgid "Failed to read() from `%s' : %s"
+msgstr "Konnte nicht von der Datei `%s' lesen : %s"
+
+#: src/common/change_name.c:889 src/common/copy_file.c:226
+#: src/common/copy_file.c:234 src/common/isdup.c:185 src/common/isdup.c:226
+#: src/common/msync_emu.c:107 src/common/munmap_emu.c:119
+#: src/common/write_host_config.c:532 src/protocols/ssh_common.c:1200
+#, c-format
+msgid "Failed to close() `%s' : %s"
+msgstr "Konnte `%s' nicht mit close() schliessen : %s"
+
+#: src/common/check_dir.c:70
+#, c-format
+msgid "Failed to create directory `%s' : %s"
+msgstr "Konnte nicht Verzeichnis `%s' erstellen : %s"
+
+#: src/common/check_dir.c:78
+#, c-format
+msgid "There already exists a file `%s', thus unable to create the directory."
+msgstr ""
+"Verzeichnis `%s' kann nicht erstellt werden, da es schon eine Datei mit "
+"diesen Namen gibt."
+
+#: src/common/check_dir.c:87
+#, c-format
+msgid "Incorrect permission for directory `%s'"
+msgstr "Falsche Rechte fuer das Verzeichnis `%s'"
+
+#: src/common/check_fake_user.c:82
+#, c-format
+msgid "Buffer for storing fake user to short. (%s %d)\n"
+msgstr "Speicher fuer gefaelschten Nutzername zu klein. (%s %d)\n"
+
+#: src/common/check_fra.c:90
+#, c-format
+msgid "Failed to munmap() from FRA [fra_id = %d fra_size = %d] : %s"
+msgstr ""
+"Konnte nicht mit munmap() von der FRA loesen [fra_id = %d fra_size = %d] : %s"
+
+#: src/common/check_fra.c:97
+#, c-format
+msgid "Failed to munmap_emu() from FRA (%d) : %s"
+msgstr "Konnte nicht mit munmap_emu() von der FRA loesen (%d) : %s"
+
+#: src/common/check_fra.c:107
+msgid "Passive attach to FRA failed."
+msgstr "Passives aufsetzen aud die FRA fehlgeschlagen."
+
+#: src/common/check_fsa.c:90
+#, c-format
+msgid "Failed to munmap() from FSA [fsa_id = %d fsa_size = %d] : %s"
+msgstr ""
+"Konnte nicht mit munmap() von der FSA loesen [fsa_id = %d fsa_size = %d] : %s"
+
+#: src/common/check_fsa.c:97
+#, c-format
+msgid "Failed to munmap_emu() from FSA (%d) : %s"
+msgstr "Konnte nicht mit munmap_emu() von der FSA loesen (%d) : %s"
+
+#: src/common/check_fsa.c:107
+msgid "Passive attach to FSA failed."
+msgstr "Passives aufsetzen aud die FSA fehlgeschlagen."
+
+#: src/common/check_fsa.c:116
+msgid "Failed to attach to FSA."
+msgstr "Konnte nicht auf die FSA aufsetzen."
+
+#: src/common/check_lock.c:72 src/common/handle_counter.c:102
+#: src/common/lock_file.c:81 src/common/read_file.c:75
+#: src/common/read_file_no_cr.c:82
+#, c-format
+msgid "Could not open() `%s' : %s"
+msgstr "Konnte nicht die Datei `%s' oeffnen : %s"
+
+#: src/common/check_lock.c:85 src/common/check_lock.c:110
+#: src/common/handle_counter.c:195 src/common/lock_proc.c:200
+#, c-format
+msgid "Could not set write lock : %s"
+msgstr "Konnte kein schreib lock setzen : %s"
+
+#: src/common/check_lock.c:98 src/common/fsa_attach.c:222
+#: src/common/msa_attach.c:191
+#, c-format
+msgid "Could not unlock `%s' : %s"
+msgstr "Konnte nicht die Datei `%s' unlocken : %s"
+
+#: src/common/check_msa.c:87
+#, c-format
+msgid "Failed to munmap() from MSA [msa_id = %d msa_size = %d] : %s"
+msgstr ""
+"Konnte nicht mit munmap() von der MSA loesen [msa_id = %d msa_size = %d] : %s"
+
+#: src/common/check_msa.c:94
+#, c-format
+msgid "Failed to munmap_emu() from MSA (%d) : %s"
+msgstr "Konnte nicht mit munmap_emu() von der MSA loesen (%d) : %s"
+
+#: src/common/check_msa.c:102
+msgid "Failed to attach to MSA."
+msgstr "Konnte nicht auf die MSA aufsetzen."
+
+#: src/common/clr_fl.c:51 src/common/clr_fl.c:60 src/common/lock_region.c:95
+#: src/common/lock_region_w.c:96 src/common/rlock_region.c:88
+#: src/common/set_fl.c:51 src/common/set_fl.c:60 src/common/unlock_region.c:86
+#, c-format
+msgid "fcntl() error : %s"
+msgstr "fcntl() Fehler : %s"
+
+#: src/common/copy_file.c:88 src/common/copy_file.c:122
+#, c-format
+msgid "Could not open `%s' for copying : %s"
+msgstr "Konnte nicht die Datei `%s' oeffnen um zu kopieren : %s"
+
+#: src/common/copy_file.c:100 src/common/read_file.c:86
+#: src/common/read_file_no_cr.c:90
+#, c-format
+msgid "Could not fstat() `%s' : %s"
+msgstr "Konnte kein fstat() auf die Datei `%s' machen : %s"
+
+#: src/common/copy_file.c:136
+#, c-format
+msgid "Failed to create pipe for copying : %s"
+msgstr "Konnte keine Pipe zum kopieren erstellen : %s"
+
+#: src/common/copy_file.c:154 src/common/copy_file.c:167
+#, c-format
+msgid "splice() error : %s"
+msgstr "splice() Fehler : %s"
+
+#: src/common/copy_file.c:178
+#, c-format
+msgid "Failed to close() pipe : %s"
+msgstr "Konnte Pipe nicht mit close() schliessen : %s"
+
+#: src/common/copy_file.c:188
+#, c-format
+msgid "Failed to allocate memory : %s"
+msgstr "Konnte keinen Arbeitsspeicher reservieren : %s"
+
+#: src/common/create_message.c:160 src/common/create_message.c:168
+#: src/common/create_message.c:176 src/common/create_message.c:185
+#: src/common/create_message.c:193
+#, c-format
+msgid "Failed to write to `%s' : %s"
+msgstr "Konnte nicht in die Datei `%s' schreiben : %s"
+
+#: src/common/create_remote_dir.c:143
+#, c-format
+msgid "Incorrect url `%s'. Error is: %s."
+msgstr "Falsche URL `%s' Fehler ist: %s."
+
+#: src/common/daemon_init.c:74 src/common/daemon_init.c:87
+#, c-format
+msgid "fork() error : %s (%s %d)\n"
+msgstr "fork() Fehler : %s (%s %d)\n"
+
+#: src/common/daemon_init.c:115
+#, c-format
+msgid "Failed to create directory `%s' (%s %d)\n"
+msgstr "Konnte nicht Verzeichnis `%s' erstellen (%s %d)\n"
+
+#: src/common/daemon_init.c:139
+#, c-format
+msgid "Failed to coe_open() `%s' : %s (%s %d)\n"
+msgstr "Konnte `%s' nicht mit coe_open() oeffnen : %s (%s %d)\n"
+
+#: src/common/daemon_init.c:147 src/common/daemon_init.c:163
+#, c-format
+msgid "close() error : %s (%s %d)\n"
+msgstr "close() Fehler : %s (%s %d)\n"
+
+#: src/common/daemon_init.c:156
+#, c-format
+msgid "Failed to coe_open() /dev/null : %s (%s %d)\n"
+msgstr "Konnte nicht /dev/null mit coe_open() oeffnen : %s (%s %d)\n"
+
+#: src/common/daemon_init.c:173
+#, c-format
+msgid ""
+"%s\n"
+"%.24s : Started %s\n"
+msgstr ""
+"%s\n"
+"%.24s : %s gestartet\n"
+
+#: src/common/delete_log_ptrs.c:108
+#, c-format
+msgid "Failed to create fifo `%s'."
+msgstr "Konnte nicht Fifo `%s' erstellen."
+
+#: src/common/delete_log_ptrs.c:119 src/common/event_log.c:118
+#: src/common/event_log.c:127
+#, c-format
+msgid "Could not open fifo `%s' : %s"
+msgstr "Konnte nicht die Fifo `%s' oeffnen : %s"
+
+#: src/common/delete_log_ptrs.c:161
+#, c-format
+msgid "calloc() error : %s"
+msgstr "calloc() Fehler : %s"
+
+#: src/common/detach_afd_mon_status.c:74 src/common/detach_afd_status.c:72
+#: src/common/fra_attach.c:120 src/common/fra_attach.c:259
+#: src/common/fra_attach.c:378 src/common/fsa_attach.c:277
+#: src/common/fsa_attach.c:465 src/common/get_dir_number.c:101
+#: src/common/get_dir_number.c:111 src/common/get_dir_number.c:154
+#: src/common/get_rename_rules.c:114 src/common/lock_proc.c:97
+#: src/common/msa_attach.c:246 src/common/msa_attach.c:434
+#: src/common/rec_rmdir.c:76 src/common/remove_dir.c:155
+#: src/common/remove_job_files.c:129 src/common/set_afd_euid.c:63
+#: src/common/write_host_config.c:541
+#, c-format
+msgid "Failed to stat() `%s' : %s"
+msgstr "Konnte kein stat() auf die Datei `%s' machen : %s"
+
+#: src/common/detach_afd_mon_status.c:85 src/common/detach_afd_status.c:83
+#: src/common/mmap_resize.c:87 src/common/unmap_data.c:87
+#: src/protocols/ssh_common.c:1179
+#, c-format
+msgid "munmap() error : %s"
+msgstr "munmap() Fehler : %s"
+
+#: src/common/eaccess.c:173
+#, c-format
+msgid "Failed to getgrgid() : %s"
+msgstr "Konnte kein getgrgid() aufrufen : %s"
+
+#: src/common/eaccess.c:182
+#, c-format
+msgid "Failed to getpwuid() : %s"
+msgstr "Konnte kein getpwuid() aufrufen : %s"
+
+#: src/common/error_action.c:103
+#, c-format
+msgid "Unknown action type %d, please contact maintainer %s."
+msgstr "Ungueltiger Aktionstyp %d, bitte Betreuer %s informieren."
+
+#: src/common/error_action.c:128 src/common/error_action.c:138
+#, c-format
+msgid "Could not create a new process : %s"
+msgstr "Konnte keinen neuen Prozess erstellen : %s"
+
+#: src/common/error_action.c:158
+#, c-format
+msgid "Failed to start process %s (%d) : %s"
+msgstr "Konnte nicht den Prozess %s starten (%d) : %s"
+
+#: src/common/error_action.c:165
+#, c-format
+msgid "Error action: %s %s"
+msgstr "Fehler Aktion: %s %s"
+
+#: src/common/error_action.c:187
+#, c-format
+msgid "Abnormal termination caused by signal %d"
+msgstr "Ungewoehnliche Terminierung durch das Signal %d"
+
+#: src/common/error_action.c:192
+msgid "Unable to determine return code"
+msgstr "Konnte nicht den Rueckgabewert bestimmen"
+
+#: src/common/eval_dupcheck_options.c:147
+#, c-format
+msgid "Unkown duplicate check type %d using default %d."
+msgstr "Unbekannte duplikat Pruefmethode %d, benutze den Standardwert %d."
+
+#: src/common/eval_dupcheck_options.c:153
+#, c-format
+msgid "Unkown duplicate check type %d."
+msgstr "Unbekannte duplikat Pruefmethode %d."
+
+#: src/common/eval_dupcheck_options.c:156
+#, c-format
+msgid ""
+"Possible types are: %d (filename only), %d (filename and size), %d (filename "
+"no suffix), %d (file content only) and %d (filename and content)."
+msgstr ""
+"Moegliche Methoden sind: %d (nur Dateiname), %d (Dateiname und Groesse), %d "
+"(Dateiname ohne Suffix), %d (nur Dateiinhalt) und %d (Dateiname und Inhalt)."
+
+#: src/common/eval_dupcheck_options.c:205
+#, c-format
+msgid "Unkown duplicate check action %d using default %d."
+msgstr "Unbekannte duplikat Pruefaktion %d, benutze den Standardwert %d."
+
+#: src/common/eval_dupcheck_options.c:211
+#, c-format
+msgid "Unkown duplicate check action %d."
+msgstr "Unbekannte duplikat Pruefaktion %d."
+
+#: src/common/eval_dupcheck_options.c:236
+#, c-format
+msgid "Unkown duplicate check CRC type %d using default %d."
+msgstr ""
+"Unbekannter CRC-Typ %d fuer Duplikatpruefung. Nutze den Standardwert %d."
+
+#: src/common/eval_dupcheck_options.c:242
+#, c-format
+msgid "Unkown duplicate check CRC type %d."
+msgstr "Unbekannter CRC-Typ %d fuer Duplikatpruefung."
+
+#: src/common/eval_dupcheck_options.c:257
+msgid "Integer value for duplicate check CRC type to large."
+msgstr "Der Integer-Wert fuer den CRC-Typ der Duplikatpruefung ist zu gross."
+
+#: src/common/eval_dupcheck_options.c:271
+msgid "Integer value for duplicate check action to large."
+msgstr ""
+"Der Integer-Wert fuer den Aktion-Typ der Duplikatpruefung ist zu gross."
+
+#: src/common/eval_dupcheck_options.c:285
+msgid "Integer value for duplicate check type to large."
+msgstr "Der Integer-Wert fuer den Pruef-Typ der Duplikatpruefung ist zu gross."
+
+#: src/common/eval_dupcheck_options.c:300
+msgid "Long integer value for duplicate check timeout to large."
+msgstr "Der Long-Integer-Wert fuer den Wert Zeitueberschreitung ist zu gross."
+
+#: src/common/eval_host_config.c:215
+#, c-format
+msgid "Could not reallocate memory for host list : %s"
+msgstr "Konnte nicht zusaetzlichen Speicher allozieren fuer die Hostliste : %s"
+
+#: src/common/eval_host_config.c:238
+#, c-format
+msgid ""
+"Maximum length for host alias name %s exceeded in HOST_CONFIG. Will be "
+"truncated to %d characters."
+msgstr ""
+"Die maximale Laenge fuer den Hostaliasname %s wurde ueberschritten in der "
+"HOST_CONFIG. Der Name wird auf %d Zeichen abgeschnitten."
+
+#: src/common/eval_host_config.c:308
+#, c-format
+msgid ""
+"Maximum length for real hostname 1 for %s exceeded in HOST_CONFIG. Will be "
+"truncated to %d characters."
+msgstr ""
+"Die maximale Laenge fuer den real hostname 1 %s wurde ueberschritten in der "
+"HOST_CONFIG. Der Name wird auf %d Zeichen abgeschnitten."
+
+#: src/common/eval_host_config.c:379
+#, c-format
+msgid ""
+"Maximum length for real hostname 2 for %s exceeded in HOST_CONFIG. Will be "
+"truncated to %d characters."
+msgstr ""
+"Die maximale Laenge fuer den real hostname 2 %s wurde ueberschritten in der "
+"HOST_CONFIG. Der Name wird auf %d Zeichen abgeschnitten."
+
+#: src/common/eval_host_config.c:449
+#, c-format
+msgid ""
+"Maximum length for the host toggle string %s exceeded in HOST_CONFIG. Will "
+"be truncated to %d characters."
+msgstr ""
+"Die maximale Laenge fuer die host toggle Zeichenkette %s wurde "
+"ueberschritten in der HOST_CONFIG. Der Name wird auf %d Zeichen "
+"abgeschnitten."
+
+#: src/common/eval_host_config.c:466
+#, c-format
+msgid ""
+"Host toggle string <%s> not four characters long for host %s in HOST_CONFIG. "
+"Will be ignored."
+msgstr ""
+"Die host toggle Zeichenkette <%s> ist nicht wie erwartet vier Zeichen lang "
+"fuer den host %s in der HOST_CONFIG. Ignoriere das."
+
+#: src/common/eval_host_config.c:529
+#, c-format
+msgid ""
+"Maximum length for proxy name for host %s exceeded in HOST_CONFIG. Will be "
+"truncated to %d characters."
+msgstr ""
+"Die maximale Laenge fuer den proxy name fuer host %s wurde ueberschritten "
+"in der HOST_CONFIG. Der Name wird auf %d Zeichen abgeschnitten."
+
+#: src/common/eval_host_config.c:595
+#, c-format
+msgid ""
+"Non numeric character <%d> in allowed transfers field for host %s, using "
+"default %d."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den allowed transfers Feld fuer "
+"host %s gefunden, nutze den Standardwert %d."
+
+#: src/common/eval_host_config.c:621
+#, c-format
+msgid ""
+"Numeric value allowed transfers to large (>%d characters) for host %s to "
+"store as integer."
+msgstr ""
+"Der nummerische Wert fuer allowed transfer ist zu gross (%d Zeichen) fuer "
+"host %s um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:624 src/common/eval_host_config.c:738
+#: src/common/eval_host_config.c:836 src/common/eval_host_config.c:933
+#: src/common/eval_host_config.c:1042 src/common/eval_host_config.c:1137
+#: src/common/eval_host_config.c:1231 src/common/eval_host_config.c:1323
+#, c-format
+msgid "Setting it to the default value %d."
+msgstr "Setze auf den Standardwert %d."
+
+#: src/common/eval_host_config.c:642
+#, c-format
+msgid ""
+"Maximum number of parallel (%d) transfers exceeded for %s. Value found in "
+"HOST_CONFIG %d"
+msgstr ""
+"Der Maximalwert fuer parallele transfer (%d) wurde ueberschritten fuer %s. "
+"Der Wert in der HOST_CONFIG ist %d"
+
+#: src/common/eval_host_config.c:646
+#, c-format
+msgid "Setting it to the maximum value %d."
+msgstr "Setze auf den Maximalwert %d."
+
+#: src/common/eval_host_config.c:709
+#, c-format
+msgid ""
+"Non numeric character <%d> in max error field for host %s, using default %d."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den max error Feld fuer "
+"host %s gefunden, nutze den Standardwert %d."
+
+#: src/common/eval_host_config.c:735
+#, c-format
+msgid ""
+"Numeric value for max errors to large (>%d characters) for host %s to store "
+"as integer."
+msgstr ""
+"Der nummerische Wert fuer max errors ist zu gross (>%d Zeichen) fuer "
+"host %s um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:807
+#, c-format
+msgid ""
+"Non numeric character <%d> in retry interval field for host %s, using "
+"default %d."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den retry interval Feld fuer "
+"host %s gefunden, nutze den Standardwert %d."
+
+#: src/common/eval_host_config.c:833
+#, c-format
+msgid ""
+"Numeric value for retry interval to large (>%d characters) for host %s to "
+"store as integer."
+msgstr ""
+"Der nummerische Wert fuer retry interval ist zu gross (>%d Zeichen) fuer "
+"host %s um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:904
+#, c-format
+msgid ""
+"Non numeric character <%d> in transfer block size field for host %s, using "
+"default %d."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den block size Feld fuer "
+"host %s gefunden, nutze den Standardwert %d."
+
+#: src/common/eval_host_config.c:930
+#, c-format
+msgid ""
+"Numeric value for transfer block size to large (>%d characters) for host %s "
+"to store as integer."
+msgstr ""
+"Der nummerische Wert fuer block size ist zu gross (>%d Zeichen) fuer "
+"host %s um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:951
+#, c-format
+msgid ""
+"Transfer block size for host %s to large (%d bytes) setting it to %d bytes."
+msgstr ""
+"Transfer Blockgroesse fuer host %s ist zu gross (%s Bytes), korrigiere "
+"auf %d Bytes."
+
+#: src/common/eval_host_config.c:1013
+#, c-format
+msgid ""
+"Non numeric character <%d> in successful retries field for host %s, using "
+"default %d."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den successful retries Feld "
+"fuer host %s gefunden, nutze den Standardwert %d."
+
+#: src/common/eval_host_config.c:1039
+#, c-format
+msgid ""
+"Numeric value for successful retries to large (>%d characters) for host %s "
+"to store as integer."
+msgstr ""
+"Der nummerische Wert fuer successful retries ist zu gross (>%d Zeichen) fuer "
+"host %s um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:1108
+#, c-format
+msgid ""
+"Non numeric character <%d> in file size offset field for host %s, using "
+"default %d."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den file size offset Feld "
+"fuer host %s gefunden, nutze den Standardwert %d."
+
+#: src/common/eval_host_config.c:1134
+#, c-format
+msgid ""
+"Numeric value for file size offset to large (>%d characters) for host %s to "
+"store as integer."
+msgstr ""
+"Der nummerische Wert fuer file size offset ist zu gross (>%d Zeichen) fuer "
+"host %s um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:1202
+#, c-format
+msgid ""
+"Non numeric character <%d> in transfer timeout field for host %s, using "
+"default %d."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den transfer timeout Feld "
+"fuer host %s gefunden, nutze den Standardwert %d."
+
+#: src/common/eval_host_config.c:1228
+#, c-format
+msgid ""
+"Numeric value for transfer timeout to large (>%d characters) for host %s to "
+"store as integer."
+msgstr ""
+"Der nummerische Wert fuer transfer timeout ist zu gross (>%d Zeichen) fuer "
+"host %s um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:1294
+#, c-format
+msgid ""
+"Non numeric character <%d> in number of no bursts field for host %s, using "
+"default %d."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den number of no bursts Feld "
+"fuer host %s gefunden, nutze den Standardwert %d."
+
+#: src/common/eval_host_config.c:1320
+#, c-format
+msgid ""
+"Numeric value for number of no bursts to large (>%d characters) for host %s "
+"to store as integer."
+msgstr ""
+"Der nummerische Wert fuer number of no bursts ist zu gross (>%d Zeichen) "
+"fuer host %s um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:1341
+#, c-format
+msgid "Number of no bursts for host %s is larger (%d) then allowed transfers."
+msgstr ""
+"Die Anzahl von no bursts fuer host %s ist groesser (%d) als die erlaubte "
+"Anzahl von transfers."
+
+#: src/common/eval_host_config.c:1344
+#, c-format
+msgid "Setting it to %d."
+msgstr "Setze auf den Standardwert %d."
+
+#: src/common/eval_host_config.c:1465
+#, c-format
+msgid ""
+"Non numeric character <%d> in host status field for host %s, using default 0."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den host status Feld "
+"fuer host %s gefunden, nutze den Standardwert 0."
+
+#: src/common/eval_host_config.c:1490
+#, c-format
+msgid ""
+"Numeric value for host status to large (>%d characters) for host %s to store "
+"as integer."
+msgstr ""
+"Der nummerische Wert fuer host status ist zu gross (>%d Zeichen) "
+"fuer host %s um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:1493 src/common/eval_host_config.c:1626
+#: src/common/eval_host_config.c:1800 src/common/eval_host_config.c:1886
+#: src/common/eval_host_config.c:1970 src/common/eval_host_config.c:2053
+#: src/common/eval_host_config.c:2136 src/common/eval_host_config.c:2215
+#: src/common/eval_host_config.c:2294 src/common/eval_host_config.c:2371
+msgid "Setting it to the default value 0."
+msgstr "Setze auf den Standardwert 0."
+
+#: src/common/eval_host_config.c:1510
+#, c-format
+msgid "Unknown host status <%d> for host %s, largest value is %d."
+msgstr "Unbekannter host status <%d> fuer host %s, groesster Wert ist %d."
+
+#: src/common/eval_host_config.c:1514 src/common/eval_host_config.c:1750
+msgid "Setting it to 0."
+msgstr "Setze den Wert auf 0."
+
+#: src/common/eval_host_config.c:1598
+#, c-format
+msgid ""
+"Non numeric character <%d> in protocol options field for host %s, using "
+"default 0."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den protocol options Feld "
+"fuer host %s gefunden, nutze den Standardwert 0."
+
+#: src/common/eval_host_config.c:1623
+#, c-format
+msgid ""
+"Numeric value for protocol options to large (>%d characters) for host %s to "
+"store as integer."
+msgstr ""
+"Der nummerische Wert fuer protocol options ist zu gross (>%d Zeichen) "
+"fuer host %s um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:1729
+#, c-format
+msgid ""
+"Unknown protocol option <%d> for host %s, largest value is %d and smallest %"
+"d."
+msgstr ""
+"Unbekannte Protokolloption <%d> fuer host %s, groesst moeglicher Wert ist "
+"%d und der kleinste %d."
+
+#: src/common/eval_host_config.c:1772
+#, c-format
+msgid ""
+"Non numeric character <%d> in transfer rate limit field for host %s, using "
+"default 0."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den transfer rate limit Feld "
+"fuer host %s gefunden, nutze den Standardwert 0."
+
+#: src/common/eval_host_config.c:1797
+#, c-format
+msgid ""
+"Numeric value for transfer rate limit to large (>%d characters) for host %s "
+"to store as integer."
+msgstr ""
+"Der nummerische Wert fuer transfer rate limit ist zu gross (>%d Zeichen) "
+"fuer host %s um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:1858
+#, c-format
+msgid "Non numeric character <%d> in TTL field for host %s, using default 0."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den TTL Feld fuer host %s "
+"gefunden, nutze den Standardwert 0."
+
+#: src/common/eval_host_config.c:1883
+#, c-format
+msgid ""
+"Numeric value for TTL to large (>%d characters) for host %s to store as "
+"integer."
+msgstr ""
+"Der nummerische Wert fuer TTL ist zu gross (>%d Zeichen) fuer host %s um "
+"ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:1942
+#, c-format
+msgid "Non numeric character <%d> in SSB field for host %s, using default 0."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den SSB Feld fuer host %s "
+"gefunden, nutze den Standardwert 0."
+
+#: src/common/eval_host_config.c:1967
+#, c-format
+msgid ""
+"Numeric value for SSB to large (>%d characters) for host %s to store as "
+"integer."
+msgstr ""
+"Der nummerische Wert fuer SSB ist zu gross (>%d Zeichen) fuer host %s "
+"um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:2025
+#, c-format
+msgid "Non numeric character <%d> in SRB field for host %s, using default 0."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den SRB Feld fuer host %s "
+"gefunden, nutze den Standardwert 0."
+
+#: src/common/eval_host_config.c:2050
+#, c-format
+msgid ""
+"Numeric value for SRB to large (>%d characters) for host %s to store as "
+"integer."
+msgstr ""
+"Der nummerische Wert fuer SRB ist zu gross (>%d Zeichen) fuer host %s "
+"um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:2108
+#, c-format
+msgid "Non numeric character <%d> in DT field for host %s, using default 0."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den DT Feld fuer host %s "
+"gefunden, nutze den Standardwert 0."
+
+#: src/common/eval_host_config.c:2133
+#, c-format
+msgid ""
+"Numeric value for DT to large (>%d characters) for host %s to store as long "
+"integer."
+msgstr ""
+"Der nummerische Wert fuer DT ist zu gross (>%d Zeichen) fuer host %s "
+"um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:2187
+#, c-format
+msgid "Non numeric character <%d> in DF field for host %s, using default 0."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den DF Feld fuer host %s "
+"gefunden, nutze den Standardwert 0."
+
+#: src/common/eval_host_config.c:2212
+#, c-format
+msgid ""
+"Numeric value for DF to large (>%d characters) for host %s to store as "
+"integer."
+msgstr ""
+"Der nummerische Wert fuer DF ist zu gross (>%d Zeichen) fuer host %s "
+"um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:2266
+#, c-format
+msgid "Non numeric character <%d> in KC field for host %s, using default 0."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den KC Feld fuer host %s "
+"gefunden, nutze den Standardwert 0."
+
+#: src/common/eval_host_config.c:2291
+#, c-format
+msgid ""
+"Numeric value for KC to large (>%d characters) for host %s to store as "
+"integer."
+msgstr ""
+"Der nummerische Wert fuer KC ist zu gross (>%d Zeichen) fuer host %s "
+"um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_host_config.c:2343
+#, c-format
+msgid "Non numeric character <%d> in WT field for host %s, using default 0."
+msgstr ""
+"Ein nicht nummerisches Zeichen <%d> wurde in den WT Feld fuer host %s "
+"gefunden, nutze den Standardwert 0."
+
+#: src/common/eval_host_config.c:2368
+#, c-format
+msgid ""
+"Numeric value for WT to large (>%d characters) for host %s to store as "
+"integer."
+msgstr ""
+"Der nummerische Wert fuer WT ist zu gross (>%d Zeichen) fuer host %s "
+"um ihn als Integerwert abzuspeichern."
+
+#: src/common/eval_time_str.c:121 src/common/eval_time_str.c:257
+msgid ""
+"Combination of '*' and other numeric values in minute field not possible. "
+"Ignoring time entry."
+msgstr ""
+"Die Kombination von '*' und anderen nummerischen Werten im Minutenfeld "
+"ist nicht moeglich. Ignoriere Zeitauftrag."
+
+#: src/common/eval_time_str.c:136 src/common/eval_time_str.c:207
+#: src/common/eval_time_str.c:272
+msgid "Possible values for minute field : 0-59. Ignoring time entry!"
+msgstr ""
+"Moegliche Werte fuer das Minutenfeld sind : 0-59. Ignoriere Zeitauftrag."
+
+#: src/common/eval_time_str.c:341 src/common/eval_time_str.c:569
+#: src/common/eval_time_str.c:811 src/common/eval_time_str.c:1050
+msgid "Premature end of time entry. Ignoring time entry."
+msgstr ""
+"Vorzeitiges Ende des Zeitauftrag. Ignoriere Zeitauftrag."
+
+#: src/common/eval_time_str.c:361 src/common/eval_time_str.c:589
+#: src/common/eval_time_str.c:831 src/common/eval_time_str.c:1070
+#: src/common/eval_time_str.c:1289
+#, c-format
+msgid "Division by non numeric value <%c>. Ignoring time entry."
+msgstr ""
+"Division durch einen nicht nummerischen Wert <%c>. Ignoriere Zeitauftrag."
+
+#: src/common/eval_time_str.c:375
+#, c-format
+msgid "Invalid step size %d in minute field. Ignoring time entry."
+msgstr ""
+
+#: src/common/eval_time_str.c:390 src/common/eval_time_str.c:614
+#: src/common/eval_time_str.c:856 src/common/eval_time_str.c:1095
+#: src/common/eval_time_str.c:1316
+#, c-format
+msgid "Unable to handle time entry `%s'. Ignoring time entry."
+msgstr ""
+"Kann Zeitauftrag `%s' nicht auswerten. Ignoriere Zeitauftrag."
+
+#: src/common/eval_time_str.c:419 src/common/eval_time_str.c:512
+msgid ""
+"Combination of '*' and other numeric values in hour field not possible. "
+"Ignoring time entry."
+msgstr ""
+"Die Kombination von '*' und anderen nummerischen Werten im Stundenfeld "
+"ist nicht moeglich. Ignoriere Zeitauftrag."
+
+#: src/common/eval_time_str.c:435 src/common/eval_time_str.c:480
+#: src/common/eval_time_str.c:528
+msgid "Possible values for hour field : 0-23. Ignoring time entry!"
+msgstr ""
+"Moegliche Werte fuer das Stundenfeld sind : 0-23. Ignoriere Zeitauftrag."
+
+#: src/common/eval_time_str.c:603
+#, c-format
+msgid "Invalid step size %d in hour field. Ignoring time entry."
+msgstr ""
+
+#: src/common/eval_time_str.c:643 src/common/eval_time_str.c:748
+msgid ""
+"Combination of '*' and other numeric values in day of month field not "
+"possible. Ignoring time entry."
+msgstr ""
+"Die Kombination von '*' und anderen nummerischen Werten im Monatstagfeld "
+"ist nicht moeglich. Ignoriere Zeitauftrag."
+
+#: src/common/eval_time_str.c:654 src/common/eval_time_str.c:665
+#: src/common/eval_time_str.c:705 src/common/eval_time_str.c:716
+#: src/common/eval_time_str.c:759 src/common/eval_time_str.c:770
+msgid "Possible values for day of month field : 1-31. Ignoring time entry!"
+msgstr ""
+"Moegliche Werte fuer das Monatstagfeld sind : 1-31. Ignoriere Zeitauftrag."
+
+#: src/common/eval_time_str.c:845
+#, c-format
+msgid "Invalid step size %d in day of month field. Ignoring time entry."
+msgstr ""
+
+#: src/common/eval_time_str.c:885 src/common/eval_time_str.c:988
+#: src/common/eval_time_str.c:1124 src/common/eval_time_str.c:1218
+msgid ""
+"Combination of '*' and other numeric values in time string field not "
+"possible. Ignoring time entry."
+msgstr ""
+"Die Kombination von '*' und anderen nummerischen Werten im Zeiteingabefeld "
+"ist nicht moeglich. Ignoriere Zeitauftrag."
+
+#: src/common/eval_time_str.c:896 src/common/eval_time_str.c:906
+#: src/common/eval_time_str.c:946 src/common/eval_time_str.c:956
+#: src/common/eval_time_str.c:999 src/common/eval_time_str.c:1009
+msgid "Possible values for month field : 1-12. Ignoring time entry!"
+msgstr ""
+"Moegliche Werte fuer das Monatfeld sind : 1-12. Ignoriere Zeitauftrag."
+
+#: src/common/eval_time_str.c:1084
+#, c-format
+msgid "Invalid step size %d in month field. Ignoring time entry."
+msgstr ""
+
+#: src/common/eval_time_str.c:1135 src/common/eval_time_str.c:1143
+#: src/common/eval_time_str.c:1181 src/common/eval_time_str.c:1189
+#: src/common/eval_time_str.c:1229 src/common/eval_time_str.c:1237
+msgid "Possible values for day of week field : 1-7. Ignoring time entry!"
+msgstr ""
+
+#: src/common/eval_time_str.c:1298 src/common/eval_time_str.c:1305
+#, c-format
+msgid "Invalid step size %d in day of week field. Ignoring time entry."
+msgstr ""
+
+#: src/common/eval_time_str.c:1367 src/common/eval_time_str.c:1434
+msgid ""
+"Combination of '*' and other numeric values in minute field not possible."
+msgstr ""
+"Die Kombination von '*' und anderen nummerischen Werten im Minutenfeld "
+"ist nicht moeglich."
+
+#: src/common/eval_time_str.c:1382 src/common/eval_time_str.c:1406
+#: src/common/eval_time_str.c:1449
+msgid "Possible values for minute field : 0-59."
+msgstr "Moegliche Werte fuer das Minutenfeld : 0-59"
+
+#: src/common/eval_time_str.c:1479 src/common/eval_time_str.c:1653
+#: src/common/eval_time_str.c:1841 src/common/eval_time_str.c:2026
+msgid "Premature end of time entry."
+msgstr "Vorzeitiges Ende des Zeitauftrags."
+
+#: src/common/eval_time_str.c:1499 src/common/eval_time_str.c:1673
+#: src/common/eval_time_str.c:1861 src/common/eval_time_str.c:2046
+#: src/common/eval_time_str.c:2211
+#, c-format
+msgid "Division by non numeric value <%c>."
+msgstr "Division durch einen nicht nummerischen Wert <%c>."
+
+#: src/common/eval_time_str.c:1513
+#, c-format
+msgid "Invalid step size %d in minute field."
+msgstr ""
+
+#: src/common/eval_time_str.c:1528 src/common/eval_time_str.c:1698
+#: src/common/eval_time_str.c:1886 src/common/eval_time_str.c:2071
+#: src/common/eval_time_str.c:2238
+#, c-format
+msgid "Unable to handle time entry `%s'."
+msgstr "Kann nicht Zeitauftrag `%s' bearbeiten."
+
+#: src/common/eval_time_str.c:1556 src/common/eval_time_str.c:1616
+msgid "Combination of '*' and other numeric values in hour field not possible."
+msgstr ""
+"Die Kombination von '*' und anderen nummerischen Werten im Stundenfeld "
+"ist nicht moeglich."
+
+#: src/common/eval_time_str.c:1572 src/common/eval_time_str.c:1597
+#: src/common/eval_time_str.c:1632
+msgid "Possible values for hour field : 0-23."
+msgstr "Moegliche Werte fuer das Stundenfeld : 0-23."
+
+#: src/common/eval_time_str.c:1687
+#, c-format
+msgid "Invalid step size %d in hour field."
+msgstr ""
+
+#: src/common/eval_time_str.c:1726 src/common/eval_time_str.c:1798
+msgid ""
+"Combination of '*' and other numeric values in day of month field not "
+"possible."
+msgstr ""
+"Die Kombination von '*' und anderen nummerischen Werten im Monatstagfeld "
+"ist nicht moeglich."
+
+#: src/common/eval_time_str.c:1737 src/common/eval_time_str.c:1748
+#: src/common/eval_time_str.c:1768 src/common/eval_time_str.c:1779
+#: src/common/eval_time_str.c:1809 src/common/eval_time_str.c:1820
+msgid "Possible values for day of month field : 1-31."
+msgstr "Moegliche Werte fuer das Monatstagfeld : 1-31"
+
+#: src/common/eval_time_str.c:1875
+#, c-format
+msgid "Invalid step size %d in day of month field."
+msgstr ""
+
+#: src/common/eval_time_str.c:1914 src/common/eval_time_str.c:1984
+#: src/common/eval_time_str.c:2099 src/common/eval_time_str.c:2160
+msgid ""
+"Combination of '*' and other numeric values in time string field not "
+"possible."
+msgstr ""
+"Die Kombination von '*' und anderen nummerischen Werten im Zeiteingabefeld "
+"ist nicht moeglich."
+
+#: src/common/eval_time_str.c:1925 src/common/eval_time_str.c:1935
+#: src/common/eval_time_str.c:1955 src/common/eval_time_str.c:1965
+#: src/common/eval_time_str.c:1995 src/common/eval_time_str.c:2005
+msgid "Possible values for month field : 1-12."
+msgstr "Moegliche Werte fuer das Monatfeld : 1-12."
+
+#: src/common/eval_time_str.c:2060
+#, c-format
+msgid "Invalid step size %d in month field."
+msgstr ""
+
+#: src/common/eval_time_str.c:2110 src/common/eval_time_str.c:2118
+#: src/common/eval_time_str.c:2136 src/common/eval_time_str.c:2144
+#: src/common/eval_time_str.c:2171 src/common/eval_time_str.c:2179
+msgid "Possible values for day of week field : 1-7."
+msgstr ""
+msgstr "Moegliche Werte fuer das Wochenfeld : 1-7."
+
+#: src/common/eval_time_str.c:2220 src/common/eval_time_str.c:2227
+#, c-format
+msgid "Invalid step size %d in day of week field."
+msgstr ""
+
+#: src/common/eval_time_str.c:2266
+#, c-format
+msgid "Invalid character %c [%d] in time string! Ignoring time entry."
+msgstr "Ungueltiges Zeichen %c [%d] im Zeitauftrag! Ignoriere Zeitauftrag."
+
+#: src/common/eval_time_str.c:2272
+#, c-format
+msgid "Invalid character [%d] in time string! Ignoring time entry."
+msgstr ""
+msgstr "Ungueltiges Zeichen [%d] im Zeitauftrag! Ignoriere Zeitauftrag."
+
+#: src/common/eval_time_str.c:2284
+msgid "Hmm, no values entered. Ignoring time entry."
+msgstr "Hmm, es wurden keine Werte eingegeben. Ignoriere Zeitauftrag."
+
+#: src/common/eval_time_str.c:2290
+msgid "Hmm, number with more then two digits. Ignoring time entry."
+msgstr "Hmm, Zahl mit mehr als zwei Stellen. Ignoriere Zeitauftrag."
+
+#: src/common/exec_cmd.c:115 src/protocols/ssh_common.c:223
+#, c-format
+msgid "pipe() error : %s"
+msgstr "pipe() Fehler : %s"
+
+#: src/common/exec_cmd.c:163 src/protocols/ssh_common.c:378
+#, c-format
+msgid "fork() error : %s"
+msgstr "fork() Fehler : %s"
+
+#: src/common/exec_cmd.c:191 src/common/exec_cmd.c:296
+#: src/common/exec_cmd.c:343 src/common/exec_cmd.c:414
+#: src/common/get_checksum.c:209 src/common/get_checksum.c:229
+#: src/common/lock_proc.c:145 src/common/lock_proc.c:172
+#: src/protocols/ftpcmd.c:2990 src/protocols/httpcmd.c:1068
+#: src/protocols/httpcmd.c:1281 src/protocols/pop3cmd.c:464
+#: src/protocols/sftpcmd.c:2169 src/protocols/ssh_common.c:343
+#: src/protocols/ssh_common.c:563 src/protocols/ssh_common.c:983
+#: src/protocols/ssh_common.c:1245 src/protocols/wmocmd.c:371
+#, c-format
+msgid "read() error : %s"
+msgstr "Fehler beim Systemaufruf read() : %s"
+
+#: src/common/exec_cmd.c:230
+#, c-format
+msgid "Failed to malloc() %d bytes : %s"
+msgstr "Konnte nicht %d Bytes allozieren mit malloc() : %s"
+
+#: src/common/exec_cmd.c:264
+#, c-format
+msgid "%-*s%s: [%d] Done.\n"
+msgstr "%-*s%s: [%d] Fertig.\n"
+
+#: src/common/exec_cmd.c:266
+#, c-format
+msgid "%-*s%s: [%lld] Done.\n"
+msgstr "%-*s%s: [%lld] Fertig.\n"
+
+#: src/common/exec_cmd.c:274
+#, c-format
+msgid "%-*s%s: [%d] Exec time: %.3fs\n"
+msgstr "%-*s%s: [%d] Exec Zeit: %.3fs\n"
+
+#: src/common/exec_cmd.c:276
+#, c-format
+msgid "%-*s%s: [%lld] Exec time: %.3fs\n"
+msgstr "%-*s%s: [%lld] Exec Zeit: %.3fs\n"
+
+#: src/common/exec_cmd.c:317 src/common/exec_cmd.c:386
+msgid "exec_cmd(): Max read buffer reached! Starting from beginning."
+msgstr "exec_cmd(): Lesepuffer voll. Starte wieder vom Anfang."
+
+#: src/common/exec_cmd.c:331 src/common/exec_cmd.c:402
+#: src/protocols/httpcmd.c:1191
+#, c-format
+msgid "Failed to realloc() %d bytes : %s"
+msgstr "Konnte nicht %d Bytes allozieren mit realloc() : %s"
+
+#: src/common/exec_cmd.c:428 src/common/my_usleep.c:77
+#: src/protocols/ftpcmd.c:1171 src/protocols/ftpcmd.c:1211
+#: src/protocols/ftpcmd.c:2758 src/protocols/ftpcmd.c:2824
+#: src/protocols/ftpcmd.c:2888 src/protocols/ftpcmd.c:3026
+#: src/protocols/ftpcmd.c:3292 src/protocols/ftpcmd.c:3446
+#: src/protocols/ftpcmd.c:3577 src/protocols/httpcmd.c:908
+#: src/protocols/httpcmd.c:1127 src/protocols/httpcmd.c:1352
+#: src/protocols/httpcmd.c:1958 src/protocols/pop3cmd.c:564
+#: src/protocols/pop3cmd.c:647 src/protocols/pop3cmd.c:833
+#: src/protocols/scpcmd.c:273 src/protocols/sftpcmd.c:2101
+#: src/protocols/sftpcmd.c:2233 src/protocols/smtpcmd.c:708
+#: src/protocols/smtpcmd.c:869 src/protocols/smtpcmd.c:1289
+#: src/protocols/ssh_common.c:835 src/protocols/ssh_common.c:893
+#: src/protocols/ssh_common.c:944 src/protocols/ssh_common.c:1048
+#: src/protocols/ssh_common.c:1258 src/protocols/wmocmd.c:291
+#: src/protocols/wmocmd.c:380 src/protocols/wmocmd.c:437
+#, c-format
+msgid "select() error : %s"
+msgstr "select() Fehler : %s"
+
+#: src/common/exec_cmd.c:440 src/common/exec_cmd.c:472
+#, c-format
+msgid "Failed to kill() process %d, due to exec timeout."
+msgstr ""
+"Konnte Prozess %d nicht mit kill() beseitigen, wegen exec "
+"Zeitueberschreitung."
+
+#: src/common/exec_cmd.c:442 src/common/exec_cmd.c:474
+#, c-format
+msgid "Failed to kill() process %lld, due to exec timeout."
+msgstr ""
+"Konnte Prozess %lld nicht mit kill() beseitigen, wegen exec "
+"Zeitueberschreitung."
+
+#: src/common/exec_cmd.c:454 src/common/exec_cmd.c:488
+#, c-format
+msgid ""
+"%-*s%s: [%d] Killed command \"%s\" due to timeout (execution time > %lds).\n"
+msgstr ""
+"%-*s%s: [%d] Kommando \"%s\" wegen Zeitueberschreitung (Ausfuehrzeit > %lds) "
+"beendet.\n"
+
+#: src/common/exec_cmd.c:456 src/common/exec_cmd.c:490
+#, c-format
+msgid ""
+"%-*s%s: [%lld] Killed command \"%s\" due to timeout (execution time > %"
+"lds).\n"
+msgstr ""
+"%-*s%s: [%lld] Kommando \"%s\" wegen Zeitueberschreitung (Ausfuehrzeit > %"
+"lds) beendet.\n"
+
+#: src/common/expand_path.c:66
+#, c-format
+msgid "Cannot find working directory for userid %d in /etc/passwd : %s"
+msgstr ""
+"Konnte nicht das Arbeitsverzeichnis vom Nutzer mit der ID %d in der "
+"/etc/passwd finden %s"
+
+#: src/common/expand_path.c:68
+#, c-format
+msgid "Cannot find working directory for userid %lld in /etc/passwd : %s"
+msgstr ""
+"Konnte nicht das Arbeitsverzeichnis vom Nutzer mit der ID %lld in der "
+"/etc/passwd finden %s"
+
+#: src/common/expand_path.c:79
+#, c-format
+msgid "Cannot find users %s working directory in /etc/passwd : %s"
+msgstr ""
+"Konnte nicht das Arbeitsverzeichnis vom Nutzer %s in der /etc/passwd "
+"finden %s"
+
+#: src/common/fra_attach.c:128 src/common/fra_attach.c:140
+#: src/common/fsa_attach.c:151 src/common/fsa_attach.c:371
+#: src/common/msa_attach.c:120 src/common/msa_attach.c:340
+#, c-format
+msgid "Failed to munmap() `%s' : %s"
+msgstr "Konnte kein munmap() auf der Datei `%s' machen : %s"
+
+#: src/common/fra_attach.c:184 src/common/fsa_attach.c:202
+#: src/common/msa_attach.c:171
+#, c-format
+msgid "Could not set write lock for `%s' : %s"
+msgstr "Konnte kein schreib lock fuer `%s' setzen : %s"
+
+#: src/common/fra_attach.c:194 src/common/fra_attach.c:345
+#, c-format
+msgid "Could not read the value of the fra_id : %s"
+msgstr "Konnte nicht den Wert der fra_id einlesen : %s"
+
+#: src/common/fra_attach.c:289 src/common/fra_attach.c:412
+#, c-format
+msgid ""
+"This code is compiled for of FRA version %d, but the FRA we try to attach "
+"is %d."
+msgstr ""
+"Dieses Programm kann nur mit einer FRA version bis zu %d umgehen. Die FRA "
+"die wir nutzen wollen hat aber die Version %d."
+
+#: src/common/fra_attach.c:298 src/common/fra_attach.c:421
+#: src/common/fra_detach.c:89
+#, c-format
+msgid "Failed to munmap() FRA : %s"
+msgstr "Konnte nicht mit munmap() von der FRA loesen (%d) : %s"
+
+#: src/common/fra_attach.c:353 src/common/fsa_attach.c:230
+#: src/common/fsa_attach.c:419 src/common/msa_attach.c:199
+#: src/common/msa_attach.c:388
+#, c-format
+msgid "Could not close() `%s' : %s"
+msgstr "Konnte nicht die Datei `%s' schliessen : %s"
+
+#: src/common/fra_attach.c:387
+msgid "FRA not large enough to contain any meaningful data."
+msgstr "FRA ist nicht gross genug. Kann keine richtige Daten enthalten."
+
+#: src/common/fra_detach.c:96
+#, c-format
+msgid "Failed to munmap_emu() FRA : %s"
+msgstr "Konnte nicht mit munmap_emu() von der FRA loesen : %s"
+
+#: src/common/fsa_attach.c:163 src/common/fsa_attach.c:383
+msgid "Unable to attach to a new FSA."
+msgstr "Konnte nicht auf die neue FSA aufsetzen."
+
+#: src/common/fsa_attach.c:316 src/common/fsa_attach.c:511
+#: src/common/fsa_detach.c:98
+#, c-format
+msgid "Failed to munmap() FSA : %s"
+msgstr "Konnte nicht mit munmap() von der FSA loesen (%d) : %s"
+
+#: src/common/fsa_attach.c:403 src/common/msa_attach.c:372
+#, c-format
+msgid "Could not get read lock for `%s' : %s"
+msgstr "Konnte kein Leselock auf die Datei `%s' setzen : %s"
+
+#: src/common/fsa_attach.c:473
+msgid "FSA not large enough to contain any meaningful data."
+msgstr "FSA ist nicht gross genug. Kann keine richtige Daten enthalten."
+
+#: src/common/fsa_attach.c:502
+#, c-format
+msgid ""
+"This code is compiled for of FSA version %d, but the FSA we try to attach "
+"is %d."
+msgstr ""
+"Dieses Programm kann nur mit einer FSA version bis zu %d umgehen. Die FSA "
+"die wir nutzen wollen hat aber die Version %d."
+
+#: src/common/fsa_detach.c:91
+#, c-format
+msgid "Failed to msync() FSA : %s"
+msgstr "Konnte kein msync() auf die FSA machen : %s"
+
+#: src/common/fsa_detach.c:105
+#, c-format
+msgid "Failed to munmap_emu() FSA : %s"
+msgstr "Konnte nicht mit munmap_emu() von der FSA loesen : %s"
+
+#: src/common/get_afd_path.c:83 src/common/get_mon_path.c:84
+#: src/common/get_mon_path.c:93
+#, c-format
+msgid "ERROR   : Buffer for storing working directory is to short!\n"
+msgstr ""
+"FEHLER  : Puffer um das Arbeitverzeichnis zu speichern ist zu klein!\n"
+
+#: src/common/get_afd_path.c:90
+#, c-format
+msgid "ERROR   : Failed to determine AFD working directory!\n"
+msgstr "FEHLER  : Konnte nicht das AFD Arbeitsverzeichnis ermitteln!\n"
+
+#: src/common/get_afd_path.c:92 src/common/get_mon_path.c:102
+#, c-format
+msgid "          No option %s or environment variable %s set.\n"
+msgstr "          Kein Option %s oder Umgebungsvariabel %s gesetzt.\n"
+
+#: src/common/get_afd_path.c:103
+#, c-format
+msgid "ERROR   : Failed to create AFD working directory %s.\n"
+msgstr "FEHLER  : Konnte nicht AFD Arbeitsverzeichnis %s erstellen : %s"
+
+#: src/common/get_arg.c:82
+#, c-format
+msgid "Buffer for storing value for argument %s to short! (%s %d)\n"
+msgstr "Speicher um das Agrument %s zu Speichern ist zu klein! (%s %d)\n"
+
+#: src/common/get_definition.c:71 src/common/get_rename_rules.c:168
+#: src/protocols/ftpcmd.c:3425 src/protocols/httpcmd.c:835
+#: src/protocols/sftpcmd.c:229 src/protocols/ssh_common.c:184
+#: src/protocols/ssh_common.c:467
+#, c-format
+msgid "malloc() error : %s"
+msgstr "malloc() Fehler : %s"
+
+#: src/common/get_dir_number.c:79
+#, c-format
+msgid "pathconf() error for _PC_LINK_MAX : %s"
+msgstr "pathconf() Fehler fuer _PC_LINK_MAX : %s"
+
+#: src/common/get_dir_number.c:120 src/common/get_dir_number.c:134
+#, c-format
+msgid "Failed to mkdir() `%s' : %s"
+msgstr "Konnte nicht das Verzeichnis `%s' mit mkdir() erstellen : %s"
+
+#: src/common/get_dir_number.c:127
+#, c-format
+msgid "Hmm, created directory `%s'"
+msgstr "Hmm, Verzeichnis `%s' erstellt"
+
+#: src/common/get_dir_number.c:174
+#, c-format
+msgid "Directory `%s/%x' is full (%ld). Unable to create new jobs for it."
+msgstr ""
+"Das Verzeichnis `%s/%x' ist voll (%ld). Kann keine neuen Auftraege "
+"hierfuer erstellen."
+
+#: src/common/get_error_str.c:110
+msgid "Unknown error"
+msgstr "Unbekannter Fehler"
+
+#: src/common/get_log_number.c:101
+#, c-format
+msgid "Could not opendir() `%s' : %s"
+msgstr "Konnte nicht das Verzeichnis `%s' mit opendir() oeffnen : %s"
+
+#: src/common/get_log_number.c:121
+#, c-format
+msgid "Can't access file `%s' : %s"
+msgstr "Kein Zugriff auf die Datei `%s' : %s"
+
+#: src/common/get_log_number.c:150 src/common/write_host_config.c:517
+#, c-format
+msgid "Failed to unlink() `%s' : %s"
+msgstr "Konnte kein unlink() auf der Datei `%s' machen : %s"
+
+#: src/common/get_log_number.c:156
+#, c-format
+msgid "Removing log file `%s'"
+msgstr "Die Logdatei %s wurde geloescht."
+
+#: src/common/get_log_number.c:174
+#, c-format
+msgid "readdir() error : %s"
+msgstr "readdir() Fehler : %s"
+
+#: src/common/get_log_number.c:179
+#, c-format
+msgid "closedir() error : %s"
+msgstr "closedir() Fehler : %s"
+
+#: src/common/get_max_log_values.c:78
+#, c-format
+msgid ""
+"Incorrect value (%d, must be more then 1 but less then 600) set in "
+"AFD_CONFIG for %s. Setting to default %d."
+msgstr ""
+"Falscher Wert (%d, muss mehr als 1 sein aber kleiner als 600) gesetzt "
+"in AFD_CONFIG fuer %s. Setze den Standardwert %d."
+
+#: src/common/get_mon_path.c:100
+#, c-format
+msgid "ERROR   : Failed to determine working directory!\n"
+msgstr "FEHLER  : Konnte nicht das Arbeitsvrzeichnis ermitteln!\n"
+
+#: src/common/get_mon_path.c:113
+#, c-format
+msgid "ERROR   : Failed to create working directory %s.\n"
+msgstr "FEHLER  : Konnte nicht Arbeitsverzeichnis %s erstellen."
+
+#: src/common/get_permissions.c:131
+#, c-format
+msgid "Failed to read() `%s'. Permission control deactivated!!! : %s"
+msgstr ""
+"Konnte nicht die Datei `%s' lesen. Zugangangskontrolle deaktiviert!!! : %s"
+
+#: src/common/get_permissions.c:167
+#, c-format
+msgid "Failed to allocate memory. Permission control deactivated!!! : %s"
+msgstr ""
+"Konnte keinen Arbeitsspeicher reservieren. Zugangangskontrolle "
+"deaktiviert!!! : %s"
+
+#: src/common/get_permissions.c:175
+msgid "The function get_permissions() was not made to handle large file."
+msgstr "Die Funktion get_permissions() kann keine grossen Dateien bearbeiten."
+
+#: src/common/get_permissions.c:192
+#, c-format
+msgid "Failed to fstat() permission file `%s' : %s"
+msgstr "Konnte kein fstat() auf die Zugangsdatei `%s' machen : %s"
+
+#: src/common/get_pw.c:119
+#, c-format
+msgid "Password file %s is not long enough to contain any valid data."
+msgstr ""
+"Die Passwortdatei %s ist nicht gross genug um gueltige Daten zu "
+"enthalten."
+
+#: src/common/get_pw.c:136 src/common/handle_error_queue.c:109
+#: src/common/isdup.c:247
+#, c-format
+msgid "Failed to mmap() `%s' : %s"
+msgstr "Konnte nicht Datei `%s' nicht mit mmap() abbilden : %s"
+
+#: src/common/get_pw.c:183
+#, c-format
+msgid "Failed to munmap() from `%s' : %s"
+msgstr "Konnte nicht mit munmap() von der Datei `%s' loesen : %s"
+
+#: src/common/get_rename_rules.c:106
+#, c-format
+msgid "There is no renaming rules file `%s'"
+msgstr "Es existiert keine Umebenennungsregel Datei `%s'"
+
+#: src/common/get_rename_rules.c:137
+msgid "Rereading renaming rules file."
+msgstr "Lese Umebenennungsregel Datei neu ein."
+
+#: src/common/get_rename_rules.c:187
+#, c-format
+msgid "Failed to read() `%s' : %s"
+msgstr "Konnte nicht von der Datei `%s' lesen : %s"
+
+#: src/common/get_rename_rules.c:231
+#, c-format
+msgid "calloc() error : %s (%s %d)\n"
+msgstr "calloc() Fehler : %s (%s %d)\n"
+
+#: src/common/get_rename_rules.c:440
+#, c-format
+msgid ""
+"In rule [%s] the rule %s %s has data after the rename-to-part. Ignoring it!"
+msgstr ""
+"In Regel [%s] sind fuer die Regel %s %s weitere Daten am Ende vorhanden. "
+"Ignoriere diese Daten!"
+
+#: src/common/get_rename_rules.c:454
+#, c-format
+msgid "A filter is specified for the rule header %s but not a rule."
+msgstr ""
+"Ein Filter wurde fuer die Regelkopfzeile %s spezifiziert aber keine Regel."
+
+#: src/common/get_rename_rules.c:481
+#, c-format
+msgid "Rule header %s specified, but could not find any rules."
+msgstr "Regelkopfzeile %s spezifiziert, konnte aber keine Regel finden."
+
+#: src/common/get_rename_rules.c:488
+msgid "Failed to determine the end of the rule header."
+msgstr "Konnte nicht das Ende der Regelkopfzeile finden."
+
+#: src/common/get_rename_rules.c:494
+#, c-format
+msgid ""
+"Rule header to long. May not be longer then %d bytes "
+"[MAX_RULE_HEADER_LENGTH]."
+msgstr ""
+"Regelkopfzeile zu lang. Sie darf nicht laenger als %d Zeichen "
+"[MAX_RULE_HEADER_LENGTH] sein."
+
+#: src/common/get_rename_rules.c:502
+#, c-format
+msgid "Could not get start of rule header %d [%d]."
+msgstr "Konnte nicht den Anfang der Regelkopfzeile %d [%d] finden."
+
+#: src/common/get_rename_rules.c:513
+#, c-format
+msgid "Found %d rename rule headers with %d rules."
+msgstr "Habe %d Regelkopfzeilen mit %d Regeln gefunden."
+
+#: src/common/get_rename_rules.c:522
+#, c-format
+msgid "No rename rules found in %s"
+msgstr "Keine Regeln in %s gefunden."
+
+#: src/common/get_rule.c:71
+#, c-format
+msgid "Rule identifier is to long, limit is %d."
+msgstr "Regelbezeichner zu lang. Er darf nur %d Zeichen lang sein."
+
+#: src/common/get_update_config_str.c:90
+#: src/common/get_update_config_str.c:127
+#: src/common/get_update_config_str.c:231
+#: src/common/get_update_config_str.c:294
+#: src/common/get_update_config_str.c:329
+#: src/common/get_update_config_str.c:349
+#: src/common/get_update_config_str.c:386
+#: src/common/get_update_config_str.c:424
+msgid "Warning: "
+msgstr "Warnung: "
+
+#: src/common/get_update_config_str.c:98
+#: src/common/get_update_config_str.c:302
+#: src/common/get_update_config_str.c:394
+#, c-format
+msgid "%s, but %u warnings."
+msgstr "%s, aber %u Warnungen."
+
+#: src/common/get_update_config_str.c:106
+#: src/common/get_update_config_str.c:143
+#: src/common/get_update_config_str.c:310
+#: src/common/get_update_config_str.c:365
+#: src/common/get_update_config_str.c:402
+#: src/common/get_update_config_str.c:440
+msgid "Info   : "
+msgstr "Info   :"
+
+#: src/common/get_update_config_str.c:135
+#: src/common/get_update_config_str.c:172
+#: src/common/get_update_config_str.c:357
+#: src/common/get_update_config_str.c:432
+#: src/common/get_update_config_str.c:469
+#, c-format
+msgid "%s with %u warnings."
+msgstr "%s mit %u Warnungen."
+
+#: src/common/get_update_config_str.c:162
+#: src/common/get_update_config_str.c:186
+#: src/common/get_update_config_str.c:201
+#: src/common/get_update_config_str.c:216
+#: src/common/get_update_config_str.c:246
+#: src/common/get_update_config_str.c:261
+#: src/common/get_update_config_str.c:459
+#: src/common/get_update_config_str.c:483
+#: src/common/get_update_config_str.c:498
+msgid "ERROR  : "
+msgstr "FEHLER : "
+
+#: src/common/handle_counter.c:118
+#, c-format
+msgid "Could not lseek() to start in `%s' : %s"
+msgstr "Konnte nicht an den Anfang der Datei `%s' mit lseek() gehen : %s"
+
+#: src/common/handle_counter.c:152
+#, c-format
+msgid "Could not open `%s' : %s"
+msgstr "Konnte nicht die Datei `%s' oeffnen : %s"
+
+#: src/common/handle_counter.c:210
+#, c-format
+msgid "Could not unset write lock : %s"
+msgstr "Konnte schreib lock nicht entfernen : %s"
+
+#: src/common/handle_counter.c:246
+#, c-format
+msgid "Failed to munmap() from counter file : %s"
+msgstr "Konnte nicht mit munmap() von der Zaehlerdatei loesen : %s"
+
+#: src/common/handle_counter.c:257
+#, c-format
+msgid "Failed to close() counter file : %s"
+msgstr "Zaehlerdatei konnte nicht geschlossen werden : %s"
+
+#: src/common/handle_error_queue.c:150
+#, c-format
+msgid "Failed to munmap() from error queue : %s"
+msgstr "Konnte nicht mit munmap() von der Fehlerwarteschlange loesen : %s"
+
+#: src/common/handle_error_queue.c:406
+#, c-format
+msgid "%s: Removed job %x from error queue."
+msgstr "%s: Auftrag %x von der Fehlerwarteschlange entfernt."
+
+#: src/common/handle_error_queue.c:514
+#, c-format
+msgid ""
+"%u: Removed job %x from error queue, since it was removed from DIR_CONFIG."
+msgstr ""
+"%u: Auftrag %x von der Fehlerwarteschlange entfernt, da dieser aus der "
+"DIR_CONFIG entfernt wurde."
+
+#: src/common/handle_error_queue.c:520
+#, c-format
+msgid ""
+"%s: Removed job %x from error queue, since it was removed from DIR_CONFIG."
+msgstr ""
+"%s: Auftrag %x von der Fehlerwarteschlange entfernt, da dieser aus der "
+"DIR_CONFIG entfernt wurde."
+
+#: src/common/handle_error_queue.c:571
+#, c-format
+msgid ""
+"%s: Removed job %x from error queue, since the error queue flag is not set."
+msgstr ""
+"%s: Auftrag %x von der Fehlerwarteschlange entfernt, da das Flag dieser "
+"Warteschlange nicht gesetzt ist."
+
+#: src/common/inform_fd_about_fsa_change.c:104
+#, c-format
+msgid "Failed to send update command to FD : %s"
+msgstr ""
+"Konnte nicht das Aktualisierungs Kommando zum Prozess FD schicken : %s"
+
+#: src/common/inform_fd_about_fsa_change.c:133
+msgid "Hmmm, FD does not reply!"
+msgstr "Hmmm, Prozess FD antwortet nicht!"
+
+#: src/common/inform_fd_about_fsa_change.c:139
+#, c-format
+msgid "Got FD_WAITING after %d loops (%8.3fs)."
+msgstr "Habe FD_WAITING erhalten nach %d Schleifen (%8.3fs)."
+
+#: src/common/isdup.c:100 src/common/isdup.c:129 src/common/isdup.c:158
+#: src/common/isdup.c:233
+#, c-format
+msgid "Unable to find filename in `%s'."
+msgstr "Konnte nicht den Dateinamen `%s' finden."
+
+#: src/common/isdup.c:177 src/common/isdup.c:217
+#, c-format
+msgid "Failed to determine checksum for `%s'."
+msgstr "Konnte nicht die Pruefsumme fuer `%s' ermitteln."
+
+#: src/common/isdup.c:330
+#, c-format
+msgid "mmap_resize() error : %s"
+msgstr "mmap_resize() Fehler : %s"
+
+#: src/common/lock_file.c:94 src/common/lock_file.c:112
+#, c-format
+msgid "Could not set read lock : %s"
+msgstr "Konnte kein lese lock setzen : %s"
+
+#: src/common/lock_proc.c:90 src/common/lock_proc.c:105
+#: src/common/msa_attach.c:153 src/common/msa_attach.c:161
+#, c-format
+msgid "Failed to coe_open() `%s' : %s"
+msgstr "Konnte `%s' nicht mit coe_open() oeffnen : %s"
+
+#: src/common/lock_proc.c:116 src/common/mmap_resize.c:103
+#, c-format
+msgid "lseek() error : %s"
+msgstr "lseek() Fehler : %s"
+
+#: src/common/lock_proc.c:129
+#, c-format
+msgid "Could not get write lock : %s"
+msgstr "Konnte nicht den schreib lock erhalten : %s"
+
+#: src/common/make_fifo.c:68
+#, c-format
+msgid "Could not create fifo `%s' : %s"
+msgstr "Konnte nicht die Fifo `%s' erstellen : %s"
+
+#: src/common/mmap_resize.c:67 src/common/unmap_data.c:73
+#, c-format
+msgid "fstat() error : %s"
+msgstr "fstat() Fehler : %s"
+
+#: src/common/mmap_resize.c:81 src/common/unmap_data.c:82
+#: src/protocols/ssh_common.c:1163
+#, c-format
+msgid "msync() error : %s"
+msgstr "msync() Fehler : %s"
+
+#: src/common/mmap_resize.c:134 src/protocols/ssh_common.c:1186
+#, c-format
+msgid "ftruncate() error : %s"
+msgstr "ftruncate() Fehler : %s"
+
+#: src/common/move_file.c:76
+#, c-format
+msgid "Failed to copy `%s' to `%s'"
+msgstr "Konnte nicht `%s' nach `%s' kopieren"
+
+#: src/common/move_file.c:84
+#, c-format
+msgid "Could not delete file `%s' : %s"
+msgstr "Konnte nicht die Datei `%s' loeschen : %s"
+
+#: src/common/move_file.c:106
+#, c-format
+msgid "Error when renaming `%s' to `%s' : %s"
+msgstr "Fehler beim umbenennen der Datei `%s' nach `%s' : %s"
+
+#: src/common/msa_attach.c:132 src/common/msa_attach.c:352
+msgid "Unable to attach to a new MSA."
+msgstr "Konnte nicht auf die neue MSA aufsetzen."
+
+#: src/common/msa_attach.c:181 src/common/msa_attach.c:380
+#, c-format
+msgid "Could not read the value of the msa_id : %s"
+msgstr "Konnte nicht den Wert der msa_id einlesen : %s"
+
+#: src/common/msa_attach.c:276
+#, c-format
+msgid ""
+"This code is compiled for of MSA version %d, but the MSA we try to attach is "
+"%d."
+msgstr ""
+"Dieses Programm kann nur mit einer MSA version bis zu %d umgehen. Die MSA "
+"die wir nutzen wollen hat aber die Version %d."
+
+#: src/common/msa_attach.c:285 src/common/msa_attach.c:481
+#: src/common/msa_detach.c:92
+#, c-format
+msgid "Failed to munmap() MSA : %s"
+msgstr "Konnte nicht mit munmap() von der MSA loesen : %s"
+
+#: src/common/msa_attach.c:443
+msgid "MSA not large enough to contain any meaningful data."
+msgstr "MSA ist nicht gross genug. Kann keine richtige Daten enthalten."
+
+#: src/common/msa_detach.c:86
+#, c-format
+msgid "Failed to msync() MSA : %s"
+msgstr "Konnte kein msync() auf die MSA machen : %s"
+
+#: src/common/msa_detach.c:99
+#, c-format
+msgid "Failed to msync_emu() MSA : %s"
+msgstr "Konnte kein msync_emu() auf die MSA machen : %s"
+
+#: src/common/msa_detach.c:105
+#, c-format
+msgid "Failed to munmap_emu() MSA : %s"
+msgstr "Konnte nicht mit munmap_emu() von der MSA loesen : %s"
+
+#: src/common/msync_emu.c:89 src/common/munmap_emu.c:93
+msgid "Could not extract the filename."
+msgstr "Konnte nicht den Dateinamen extraieren."
+
+#: src/common/munmap_emu.c:99
+#, c-format
+msgid "shmdt() error : %s"
+msgstr "shmdt() Fehler : %s"
+
+#: src/common/munmap_emu.c:111
+#, c-format
+msgid "write() fifo error : %s"
+msgstr "Fehler beim Systemaufruf write() auf einer Fifo : %s"
+
+#: src/common/pmatch.c:365 src/common/pmatch_old.c:438
+#, c-format
+msgid "The time modifier specified in the filter %s is to long."
+msgstr "Der Zeitmodifizierer fuer die Regel %s ist zu lang."
+
+#: src/common/pmatch.c:371 src/common/pmatch_old.c:444
+#, c-format
+msgid "There is no time modifier specified in filter %s"
+msgstr "Es ist kein Zeitmodifizierer fuer die Regel %s spezifiziert."
+
+#: src/common/production_log.c:134 src/common/production_log.c:143
+#, c-format
+msgid "Could not open `%s' : %s"
+msgstr "Konnte nicht die Datei `%s' oeffnen : %s"
+
+#: src/common/read_file.c:96 src/common/read_file_no_cr.c:99
+#, c-format
+msgid "Could not malloc() memory : %s"
+msgstr "Konnte keinen Speicher mit malloc() allozieren : %s"
+
+#: src/common/read_file.c:113
+#, c-format
+msgid "Failed to read `%s' : %s"
+msgstr "Konnte nicht von der Datei `%s' lesen : %s"
+
+#: src/common/read_file.c:127
+#, c-format
+msgid "Could not realloc() memory : %s"
+msgstr "Konnte keinen zusaetzlichen Speicher mit realloc() allozieren : %s"
+
+#: src/common/read_file_no_cr.c:107
+#, c-format
+msgid "Could not fdopen() `%s' : %s"
+msgstr "Konnte nicht die Datei `%s' mit fdopen() oeffnen : %s"
+
+#: src/common/read_file_no_cr.c:146 src/protocols/smtpcmd.c:960
+#, c-format
+msgid "fclose() error : %s"
+msgstr "fclose() Fehler : %s"
+
+#: src/common/rec_rmdir.c:92 src/common/remove_dir.c:113
+#: src/common/remove_dir.c:167 src/common/remove_files.c:96
+#, c-format
+msgid "Failed to delete `%s' : %s"
+msgstr "Konnte `%s' nicht loeschen : %s"
+
+#: src/common/rec_rmdir.c:106 src/common/remove_dir.c:84
+#: src/common/remove_files.c:71 src/common/remove_job_files.c:98
+#, c-format
+msgid "Failed to opendir() `%s' : %s"
+msgstr "Konnte Verzeichnis `%s' nicht mit opendir() oeffnen : %s"
+
+#: src/common/rec_rmdir.c:129 src/common/remove_dir.c:207
+#, c-format
+msgid "Failed to delete directory `%s' with rmdir() : %s"
+msgstr "Konnte nicht das Verzeichnis `%s' mit rmdir() loeschen : %s"
+
+#: src/common/rec_rmdir.c:137 src/common/remove_dir.c:193
+#: src/common/remove_files.c:125
+#, c-format
+msgid "Failed to closedir() `%s' : %s"
+msgstr "Konnte `%s' nicht mit closedir() schliessen : %s"
+
+#: src/common/remove_files.c:119
+#, c-format
+msgid "Failed to readdir() `%s' : %s"
+msgstr "Konnte nicht `%s' mit readdir() lesen : %s"
+
+#: src/common/remove_job_files.c:134 src/common/remove_job_files.c:146
+#, c-format
+msgid "Failed to unlink() file `%s' : %s"
+msgstr "Konnte kein unlink() auf der Datei `%s' machen : %s"
+
+#: src/common/remove_job_files.c:194
+#, c-format
+msgid "UUUPS! A directory [%s]! Whats that doing here?"
+msgstr "UUUPS! Ein Verzichnis [%s]! Was geht hier ab?""
+
+#: src/common/remove_job_files.c:205
+#, c-format
+msgid "Could not readdir() `%s' : %s"
+msgstr "Konnte nicht das Verzeichnis `%s' mit readdir() lesen : %s"
+
+#: src/common/remove_job_files.c:210
+#, c-format
+msgid "Could not closedir() `%s' : %s"
+msgstr "Konnte nicht das Verzeichnis `%s' mit closedir() schliessen : %s"
+
+#: src/common/remove_job_files.c:217
+#, c-format
+msgid ""
+"Failed to rmdir() `%s' because there is still data in it, deleting "
+"everything in this directory."
+msgstr ""
+"Konnte nicht das Verzeichnis `%s' mit rmdir() loeschen da noch Dateien "
+"drin sind. Loesche jetzt alles im Verzeichnis."
+
+#: src/common/remove_job_files.c:224
+#, c-format
+msgid "Could not rmdir() `%s' : %s"
+msgstr "Konnte nicht das Verzeichnis `%s' mit rmdit() loeschen : %s"
+
+#: src/common/remove_job_files.c:252
+#, c-format
+msgid "Total file counter for host `%s' less then zero. Correcting."
+msgstr ""
+"Dateizaehler fuer den Totalwert fuer host `%s' kleiner Null. Korrigiere."
+
+#: src/common/remove_job_files.c:264
+#, c-format
+msgid "Total file size for host `%s' overflowed. Correcting."
+msgstr "Gesamtgroesse der Dateien fuer host `%s' uebergelaufen. Korrigiere."
+
+#: src/common/remove_job_files.c:272
+#, c-format
+msgid "fc for host `%s' is zero but fs is not zero. Correcting."
+msgstr ""
+"fc (Dateizaehler) fuer host `%s' ist Null, aber fs (Dateigroesse) nicht. "
+"Korrigiere."
+
+#: src/common/reshuffel_log_files.c:82
+#, c-format
+msgid "DISK FULL!!! Will retry in %d second interval."
+msgstr ""
+"PLATTE VOLL!!! Werde es immer wieder Versuchen in %d Sekunden Interval."
+
+#: src/common/reshuffel_log_files.c:94 src/common/reshuffel_log_files.c:110
+#: src/common/write_host_config.c:523
+#, c-format
+msgid "Failed to rename() `%s' to `%s' : %s"
+msgstr "Konnte nicht die Datei `%s' nach `%s' umbenennen : %s"
+
+#: src/common/reshuffel_log_files.c:104
+msgid "Continuing after disk was full."
+msgstr "Mache weiter nachdem Platte voll war."
+
+#: src/common/set_afd_euid.c:79
+#, c-format
+msgid "Failed to seteuid() to %d : %s"
+msgstr "Konnte kein seteuid() nach %d machen : %s"
+
+#: src/common/system_log.c:113 src/common/system_log.c:120
+#, c-format
+msgid "WARNING : Could not open fifo %s : %s (%s %d)\n"
+msgstr "WARNUNG : Konnte nicht die Fifo `%s' oeffnen : %s (%s %d)\n"
+
+#: src/common/system_log.c:165
+#, c-format
+msgid "ERROR   : Failed to write() %d bytes : %s (%s %d)\n"
+msgstr "FEHLER  : Konnte nicht %d Bytes mit write() schreiben : %s (%s %d)\n"
+
+#: src/common/system_log.c:167
+#, c-format
+msgid "ERROR   : Failed to write() %lld bytes : %s (%s %d)\n"
+msgstr "FEHLER  : Konnte nicht %lld Bytes mit write() schreiben : %s (%s %d)\n"
+
+#: src/common/unmap_data.c:100
+#, c-format
+msgid "msync_emu() error : %s"
+msgstr "msync_emu() Fehler : %s"
+
+#: src/common/unmap_data.c:105
+#, c-format
+msgid "munmap_emu() error : %s"
+msgstr "munmap_emu() Fehler : %s"
+
+#: src/common/write_host_config.c:382
+#, c-format
+msgid "Could not malloc() %d bytes : %s"
+msgstr "Konnte nicht %d Bytes allozieren mit malloc() : %s"
+
+#: src/common/write_host_config.c:416
+#, c-format
+msgid "Could not open() %s : %s"
+msgstr "Konnte nicht die Datei %s oeffnen : %s"
+
+#: src/common/write_host_config.c:506
+#, c-format
+msgid "Failed to sync `%s' : %s"
+msgstr "Konnte kein sync auf die Datei `%s' machen : %s"
+
+#: src/common/write_host_config.c:552
+#, c-format
+msgid "Can't change mode to %o for file %s : %s"
+msgstr "Kann nicht den Modus der Datei %s nach %o aendern : %s"
+
+#: src/protocols/common.c:180
+#, c-format
+msgid "SSL_write() error (%d) : %s"
+msgstr "SSL_write() Fehler (%d) : %s"
+
+#: src/protocols/common.c:186
+#, c-format
+msgid "SSL_write() error (%d)"
+msgstr "SSL_write() Fehler %d"
+
+#: src/protocols/common.c:213
+#, c-format
+msgid "%s error SSL_ERROR_NONE : The TLS/SSL I/O operation completed."
+msgstr ""
+"%s Fehler SSL_ERROR_NONE : Die TLS/SSL I/O Operation ist abgeschlossen."
+
+#: src/protocols/common.c:219
+#, c-format
+msgid ""
+"%s error SSL_ERROR_ZERO_RETURN : The TLS/SSL connection has been closed."
+msgstr ""
+"%s Fehler SSL_ERROR_ZERO_RETURN : Die TLS/SSL Verbindung wurde geschlossen."
+
+#: src/protocols/common.c:225
+#, c-format
+msgid ""
+"%s error SSL_ERROR_WANT_WRITE : Operation not complete, try again later."
+msgstr ""
+"%s Fehler SSL_ERROR_WANT_WRITE : Operation nicht abgeschlossen, versuch es "
+"spaeter nochmal."
+
+#: src/protocols/common.c:231
+#, c-format
+msgid "%s error SSL_ERROR_WANT_READ : Operation not complete, try again later."
+msgstr ""
+"%s Fehler SSL_ERROR_WANT_READ : Operation not nicht abgeschlossen, versuch "
+"es spaeter nochmal."
+
+#: src/protocols/common.c:238
+#, c-format
+msgid ""
+"%s error SSL_ERROR_WANT_ACCEPT : Operation not complete, try again later."
+msgstr ""
+"%s Fehler SSL_ERROR_WANT_ACCEPT : Operation not nicht abgeschlossen, versuch "
+"es spaeter nochmal."
+
+#: src/protocols/common.c:244
+#, c-format
+msgid ""
+"%s error SSL_ERROR_WANT_CONNECT : Operation not complete, try again later."
+msgstr ""
+"%s Fehler SSL_ERROR_WANT_CONNECT : Operation not nicht abgeschlossen, "
+"versuch es spaeter nochmal."
+
+#: src/protocols/common.c:250
+#, c-format
+msgid ""
+"%s error SSL_ERROR_WANT_X509_LOOKUP : Operation not complete, tray again."
+msgstr ""
+"%s Fehler SSL_ERROR_WANT_X509_LOOKUP : Operation not nicht abgeschlossen, "
+"versuch es nochmal."
+
+#: src/protocols/common.c:264
+#, c-format
+msgid "%s error SSL_ERROR_SYSCALL : Observed EOF which violates the protocol."
+msgstr ""
+"%s Fehler SSL_ERROR_SYSCALL : Habe ein EOF entdeckt das laut Protokoll nicht "
+"zulaessig ist."
+
+#: src/protocols/common.c:270 src/protocols/common.c:284
+#, c-format
+msgid "%s error SSL_ERROR_SYSCALL : %s"
+msgstr "%s Fehler SSL_ERROR_SYSCALL : %s"
+
+#: src/protocols/common.c:276
+#, c-format
+msgid "%s error SSL_ERROR_SYSCALL : No error queued."
+msgstr "%s Fehler SSL_ERROR_SYSCALL : Kein Fehler in der Warteschlange."
+
+#: src/protocols/common.c:294
+#, c-format
+msgid "%s error SSL_ERROR_SSL : %s"
+msgstr "%s Fehler SSL_ERROR_SSL : %s"
+
+#: src/protocols/common.c:300
+#, c-format
+msgid "%s error unknown (%d)."
+msgstr "%s unbekannter Fehler (%d)."
+
+#: src/protocols/ftpcmd.c:306 src/protocols/ftpcmd.c:325
+#: src/protocols/httpcmd.c:172 src/protocols/httpcmd.c:191
+#: src/protocols/pop3cmd.c:141 src/protocols/pop3cmd.c:160
+#: src/protocols/smtpcmd.c:181 src/protocols/smtpcmd.c:200
+#: src/protocols/wmocmd.c:121 src/protocols/wmocmd.c:140
+#, c-format
+msgid "Failed to gethostbyname() %s : %s"
+msgstr "Konnte Hostname %s nicht aufloesen : %s"
+
+#: src/protocols/ftpcmd.c:312 src/protocols/ftpcmd.c:317
+#: src/protocols/httpcmd.c:178 src/protocols/httpcmd.c:183
+#: src/protocols/pop3cmd.c:147 src/protocols/pop3cmd.c:152
+#: src/protocols/smtpcmd.c:187 src/protocols/smtpcmd.c:192
+#: src/protocols/wmocmd.c:127 src/protocols/wmocmd.c:132
+#, c-format
+msgid "Failed to gethostbyname() %s (h_errno = %d) : %s"
+msgstr "Konnte Hostname %s nicht aufloesen (h_errno = %d) : %s"
+
+#: src/protocols/ftpcmd.c:340 src/protocols/ftpcmd.c:1509
+#: src/protocols/ftpcmd.c:1569 src/protocols/ftpcmd.c:1922
+#: src/protocols/ftpcmd.c:2138 src/protocols/httpcmd.c:206
+#: src/protocols/pop3cmd.c:175 src/protocols/pop3cmd.c:235
+#: src/protocols/smtpcmd.c:215 src/protocols/wmocmd.c:155
+#: src/protocols/wmocmd.c:215
+#, c-format
+msgid "socket() error : %s"
+msgstr "socket() Fehler : %s"
+
+#: src/protocols/ftpcmd.c:354 src/protocols/httpcmd.c:249
+#: src/protocols/pop3cmd.c:190 src/protocols/smtpcmd.c:229
+#: src/protocols/wmocmd.c:170
+#, c-format
+msgid "setsockopt() SO_KEEPALIVE error : %s"
+msgstr "setsockopt() SO_KEEPALIVE Fehler : %s"
+
+#: src/protocols/ftpcmd.c:362 src/protocols/httpcmd.c:257
+#: src/protocols/pop3cmd.c:198 src/protocols/smtpcmd.c:237
+#: src/protocols/wmocmd.c:178
+#, c-format
+msgid "setsockopt() TCP_KEEPALIVE error : %s"
+msgstr "setsockopt() TCP_KEEPALIVE Fehler : %s"
+
+#: src/protocols/ftpcmd.c:373 src/protocols/httpcmd.c:267
+#: src/protocols/smtpcmd.c:247
+#, c-format
+msgid "Failed to connect() to %s : %s"
+msgstr "Konnte keine Verbindung zu %s aufbauen : %s"
+
+#: src/protocols/ftpcmd.c:378 src/protocols/smtpcmd.c:252
+#: src/protocols/wmocmd.c:228
+#, c-format
+msgid "Connected to %s"
+msgstr "Verbunden mit %s"
+
+#: src/protocols/ftpcmd.c:386 src/protocols/ftpcmd.c:1594
+#: src/protocols/ftpcmd.c:2179 src/protocols/smtpcmd.c:260
+#, c-format
+msgid "getsockname() error : %s"
+msgstr "getsockname() Fehler : %s"
+
+#: src/protocols/ftpcmd.c:397 src/protocols/ftpcmd.c:2390
+#, c-format
+msgid "setsockopt() IP_TOS error : %s"
+msgstr "setsockopt() IP_TOS Fehler : %s"
+
+#: src/protocols/ftpcmd.c:477 src/protocols/ftpcmd.c:2480
+#: src/protocols/httpcmd.c:377
+msgid " | Verify result: The signature of the certificate is invalid!"
+msgstr "  | Ueberpruefe das Ergebnis: Die Signatur vom Zertifikat is ungueltig"
+
+#: src/protocols/ftpcmd.c:482 src/protocols/ftpcmd.c:2485
+#: src/protocols/httpcmd.c:382
+msgid " | Verify result: The CRL nextUpdate field contains an invalid time."
+msgstr ""
+" | Ueberpruefe das Ergebnis: Das CRL nextUpdate Feld enthaelt eine "
+"ungueltige Zeit."
+
+#: src/protocols/ftpcmd.c:487 src/protocols/ftpcmd.c:2490
+#: src/protocols/httpcmd.c:387
+msgid " | Verify result: The CRL has expired."
+msgstr " | Ueberpruefe das Ergebnis: Die CRL ist abgelaufen."
+
+#: src/protocols/ftpcmd.c:492 src/protocols/ftpcmd.c:2495
+#: src/protocols/httpcmd.c:392
+msgid " | Verify result: Certificate revoked."
+msgstr " | Ueberpruefe das Ergebnis: Zertifikat wiederrufen"
+
+#: src/protocols/ftpcmd.c:496 src/protocols/ftpcmd.c:2499
+#: src/protocols/httpcmd.c:396
+#, c-format
+msgid " | Verify result: %d"
+msgstr " | Ueberpruefe das Ergebnis: %d"
+
+#: src/protocols/ftpcmd.c:552
+msgid "Hmmm. Still thinks I am logged on. Lets wait for a while."
+msgstr "Hmm. Denkt immer noch das ich eingelogged bin. Lass uns etwas warten."
+
+#: src/protocols/ftpcmd.c:1119
+#, c-format
+msgid "Hmmm, read %d bytes."
+msgstr "Hmmm, habe %d Bytes gelesen."
+
+#: src/protocols/ftpcmd.c:1150 src/protocols/ftpcmd.c:1201
+#: src/protocols/ftpcmd.c:2737 src/protocols/httpcmd.c:946
+#: src/protocols/scpcmd.c:262 src/protocols/sftpcmd.c:2041
+#: src/protocols/wmocmd.c:283
+#, c-format
+msgid "write() error (%d) : %s"
+msgstr "write() Fehler (%d) : %s"
+
+#: src/protocols/ftpcmd.c:1177 src/protocols/ftpcmd.c:1217
+#: src/protocols/ftpcmd.c:2764 src/protocols/ftpcmd.c:2894
+#: src/protocols/ftpcmd.c:3032 src/protocols/ftpcmd.c:3298
+#: src/protocols/ftpcmd.c:3452 src/protocols/ftpcmd.c:3583
+#: src/protocols/httpcmd.c:967 src/protocols/httpcmd.c:1133
+#: src/protocols/httpcmd.c:1358 src/protocols/httpcmd.c:1964
+#: src/protocols/pop3cmd.c:839 src/protocols/scpcmd.c:279
+#: src/protocols/sftpcmd.c:2107 src/protocols/smtpcmd.c:714
+#: src/protocols/smtpcmd.c:875 src/protocols/smtpcmd.c:1295
+#: src/protocols/wmocmd.c:297 src/protocols/wmocmd.c:442
+msgid "Unknown condition."
+msgstr "Unbekannter Zustand."
+
+#: src/protocols/ftpcmd.c:1492 src/protocols/ftpcmd.c:1501
+#: src/protocols/ftpcmd.c:1905 src/protocols/ftpcmd.c:1914
+#, c-format
+msgid "Failed to retrieve remote address %s"
+msgstr "Konnte die Remote-Adresse %s nicht ermitteln."
+
+#: src/protocols/ftpcmd.c:1517 src/protocols/ftpcmd.c:1577
+#: src/protocols/ftpcmd.c:1930 src/protocols/ftpcmd.c:1950
+#: src/protocols/ftpcmd.c:2146 src/protocols/ftpcmd.c:2202
+#: src/protocols/ftpcmd.c:2378 src/protocols/httpcmd.c:218
+#: src/protocols/httpcmd.c:232 src/protocols/pop3cmd.c:247
+#: src/protocols/wmocmd.c:239
+#, c-format
+msgid "setsockopt() error : %s"
+msgstr "setsockopt() Fehler : %s"
+
+#: src/protocols/ftpcmd.c:1524
+#, c-format
+msgid "connect() error : %s"
+msgstr "connect() Fehler : %s"
+
+#: src/protocols/ftpcmd.c:1553 src/protocols/ftpcmd.c:2099
+msgid "Failed to locate an open bracket <(> in reply from PASV command."
+msgstr "Konnte Klammer auf <(> beim Auswerten des PASV Kommando nicht finden."
+
+#: src/protocols/ftpcmd.c:1586 src/protocols/ftpcmd.c:2167
+#, c-format
+msgid "bind() error : %s"
+msgstr "Fehler bei Aufruf von bind() : %s"
+
+#: src/protocols/ftpcmd.c:1602 src/protocols/ftpcmd.c:2209
+#, c-format
+msgid "listen() error : %s"
+msgstr "Fehler bei Aufruf von listen() : %s"
+
+#: src/protocols/ftpcmd.c:1665 src/protocols/ftpcmd.c:2341
+#: src/protocols/httpcmd.c:352 src/protocols/scpcmd.c:243
+#: src/protocols/sftpcmd.c:2022 src/protocols/sftpcmd.c:2147
+#: src/protocols/ssh_common.c:519
+#, c-format
+msgid "Failed to set signal handler : %s"
+msgstr "Konnte Signalbehandlungsroutine nicht setzen : %s"
+
+#: src/protocols/ftpcmd.c:1672 src/protocols/ftpcmd.c:2348
+#, c-format
+msgid "accept() timeout (%lds)"
+msgstr "Zeitueberschreitung (%lds) beim Aufruf von accept()."
+
+#: src/protocols/ftpcmd.c:1685 src/protocols/ftpcmd.c:2361
+#, c-format
+msgid "accept() error : %s"
+msgstr "Fehler bei Aufruf von accept() : %s"
+
+#: src/protocols/ftpcmd.c:1738 src/protocols/ftpcmd.c:2625
+#: src/protocols/ftpcmd.c:3061 src/protocols/ftpcmd.c:3096
+#: src/protocols/httpcmd.c:1399 src/protocols/pop3cmd.c:608
+#: src/protocols/smtpcmd.c:952 src/protocols/wmocmd.c:403
+#, c-format
+msgid "shutdown() error : %s"
+msgstr "shutdown() Fehler : %s"
+
+#: src/protocols/ftpcmd.c:1817
+#, c-format
+msgid "Failed to get reply after sending PASV command (%d)."
+msgstr "Keine Rueckantwort beim senden des PASV Kommando (%d)."
+
+#: src/protocols/ftpcmd.c:1980
+#, c-format
+msgid "connect() error (%d,%d,%d,%d,%d,%d) : %s"
+msgstr "connect() Fehler (%d,%d,%d,%d,%d,%d) : %s"
+
+#: src/protocols/ftpcmd.c:2010 src/protocols/ftpcmd.c:2024
+#: src/protocols/ftpcmd.c:2279 src/protocols/ftpcmd.c:2293
+#, c-format
+msgid "Failed to get proper reply for REST command (%d)."
+msgstr "Keine ordnungsgemaesse Antwort fuer das REST Kommando (%d)."
+
+#: src/protocols/ftpcmd.c:2040 src/protocols/ftpcmd.c:2246
+#, c-format
+msgid "Failed to get proper reply (%d)."
+msgstr "Keine ordnungsgemaesse Antwort (%d)."
+
+#: src/protocols/ftpcmd.c:2077 src/protocols/ftpcmd.c:2309
+#, c-format
+msgid "Failed to get proper reply (%d) for command: %s %s"
+msgstr "Keine ordnungsgemaesse Antwort (%d) fuer das Kommando: %s %s"
+
+#: src/protocols/ftpcmd.c:2529
+msgid "Server did not present a certificate for data connection."
+msgstr "Server praesentiert kein Zertifikat fuer die Datenverbindung."
+
+#: src/protocols/ftpcmd.c:2539
+#, c-format
+msgid ""
+"Failed to compare server certificates for control and data connection (%d)."
+msgstr ""
+"Konnte Zertifikat fuer Kontrol- und Datenverbindung nicht vergleichen (%d)."
+
+#: src/protocols/ftpcmd.c:2810
+#, c-format
+msgid "sendfile() error (%d) : %s"
+msgstr "sendfile() Fehler (%d) : %s"
+
+#: src/protocols/ftpcmd.c:2863
+#, c-format
+msgid "Failed to write() descriptor of block header : %s"
+msgstr "Konnte Beschreibung des block headers nicht schreiben : %s"
+
+#: src/protocols/ftpcmd.c:2872
+#, c-format
+msgid "Failed to write() byte counter of block header : %s"
+msgstr "Konnte byte counter des block headers nicht schreiben : %s"
+
+#: src/protocols/ftpcmd.c:2944 src/protocols/ftpcmd.c:3008
+#: src/protocols/httpcmd.c:1022 src/protocols/httpcmd.c:1108
+#: src/protocols/httpcmd.c:1228 src/protocols/httpcmd.c:1323
+#: src/protocols/pop3cmd.c:482
+#, c-format
+msgid "SSL_read() error : %s"
+msgstr "SSL_read() Fehler : %s"
+
+#: src/protocols/ftpcmd.c:2949 src/protocols/ftpcmd.c:3013
+#: src/protocols/httpcmd.c:1027 src/protocols/httpcmd.c:1114
+#: src/protocols/httpcmd.c:1233 src/protocols/httpcmd.c:1329
+#: src/protocols/pop3cmd.c:487
+#, c-format
+msgid "SSL_read() error %d"
+msgstr "SSL_read() Fehler %d"
+
+#: src/protocols/ftpcmd.c:3237 src/protocols/ftpcmd.c:3365
+#: src/protocols/ftpcmd.c:3522 src/protocols/httpcmd.c:1905
+#: src/protocols/pop3cmd.c:778 src/protocols/smtpcmd.c:1273
+#, c-format
+msgid "read() error (after reading %d bytes) : %s"
+msgstr "read() Fehler (nachdem %d Bytes gelesen wurden) : %s"
+
+#: src/protocols/ftpcmd.c:3268 src/protocols/ftpcmd.c:3395
+#: src/protocols/ftpcmd.c:3552 src/protocols/httpcmd.c:1847
+#: src/protocols/httpcmd.c:1933 src/protocols/pop3cmd.c:808
+#, c-format
+msgid "SSL_read() error (after reading %d bytes) : %s"
+msgstr "SSL_read() Fehler (nachdem %d Bytes gelesen wurden) : %s"
+
+#: src/protocols/ftpcmd.c:3274 src/protocols/ftpcmd.c:3401
+#: src/protocols/ftpcmd.c:3558 src/protocols/httpcmd.c:1853
+#: src/protocols/httpcmd.c:1939 src/protocols/pop3cmd.c:814
+#, c-format
+msgid "SSL_read() error (after reading %d bytes) (%d)"
+msgstr "SSL_read() Fehler (nachdem %d Bytes gelesen wurden) (%d)"
+
+#: src/protocols/ftpcmd.c:3435
+#, c-format
+msgid "realloc() error (after reading %d bytes) : %s"
+msgstr "realloc() Fehler (nachdem %d Bytes gelesen wurden) : %s"
+
+#: src/protocols/ftpcmd.c:3512 src/protocols/ftpcmd.c:3539
+#: src/protocols/httpcmd.c:1375 src/protocols/httpcmd.c:1522
+#: src/protocols/httpcmd.c:1778 src/protocols/pop3cmd.c:768
+#: src/protocols/pop3cmd.c:795 src/protocols/smtpcmd.c:1263
+msgid "Remote hang up."
+msgstr "Der Remote-Rechner hat aufgelegt."
+
+#: src/protocols/ftpcmd.c:3622
+msgid "Can only handle IPv4."
+msgstr "Kann nur IPv4 behandeln."
+
+#: src/protocols/ftpcmd.c:3639
+msgid ""
+"Remote host reuturns a network address, which is not allowed according to "
+"RFC 2428."
+msgstr ""
+"Der Remote-Rechner hat eine Netzwerk Adresse zurueckgegeben, dies ist laut "
+"RFC 2428 nicht zulaessig."
+
+#: src/protocols/ftpcmd.c:3673
+msgid "Could not locate a port number."
+msgstr "Konnte keine Portnummer finden."
+
+#: src/protocols/httpcmd.c:360
+#, c-format
+msgid "SSL_connect() timeout (%ld)"
+msgstr "Zeitueberschreitung (%ld) beim Aufruf von SSL_connect()."
+
+#: src/protocols/httpcmd.c:530 src/protocols/httpcmd.c:636
+#: src/protocols/httpcmd.c:685 src/protocols/httpcmd.c:735
+#: src/protocols/httpcmd.c:794
+msgid "Failed to create basic authentication."
+msgstr "Konnte die Authentifikation `basic' nicht erstellen."
+
+#: src/protocols/httpcmd.c:535 src/protocols/httpcmd.c:641
+#: src/protocols/httpcmd.c:690 src/protocols/httpcmd.c:740
+#: src/protocols/httpcmd.c:799
+msgid "Digest authentication not yet implemented."
+msgstr "Die Authentifikationsmethode `digest' wurde noch nicht implementiert."
+
+#: src/protocols/httpcmd.c:564 src/protocols/httpcmd.c:1770
+msgid "Reconnected."
+msgstr "Erneut verbunden."
+
+#: src/protocols/httpcmd.c:604
+#, c-format
+msgid "Remote hang up. (%d %d)"
+msgstr "Der Remote-Rechner hat aufgelegt. (%d %d)"
+
+#: src/protocols/httpcmd.c:1089 src/protocols/httpcmd.c:1302
+#, c-format
+msgid "SSL_read() timeout (%ld)"
+msgstr "Zeitueberschreitung (%ld) beim Aufruf von SSL_read()"
+
+#: src/protocols/httpcmd.c:1174
+#, c-format
+msgid "Failed to determine the chunk size with strtol() : %s"
+msgstr "Konnte Groesse des chunks mit strtol() nicht ermitteln : %s"
+
+#: src/protocols/httpcmd.c:1241 src/protocols/httpcmd.c:1339
+#, c-format
+msgid "Remote side closed connection (expected: %d read: %d)"
+msgstr ""
+"Die Gegenseite hat die Verbindung getrennt (habe %d erwartet aber %d gelesen)"
+
+#: src/protocols/httpcmd.c:1452
+#, c-format
+msgid "HTTP connection to %s at port %d failed (%d)."
+msgstr "Die HTTP-Verbindung nach %s auf Port %d ist fehlgeschlagen (%d)."
+
+#: src/protocols/httpcmd.c:1787
+#, c-format
+msgid "Returning INCORRECT (bytes_buffered = %d)"
+msgstr "Rueckgabewert ist INCORRECT (bytes_buffered = %d)"
+
+#: src/protocols/pop3cmd.c:221 src/protocols/wmocmd.c:201
+#, c-format
+msgid "Failed to connect() to %s, have tried %d times : %s"
+msgstr "Konnte keine Verbindung zu %s aufbauen. Habe es %d mal probiert : %s"
+
+#: src/protocols/pop3cmd.c:328
+msgid "Number of messages in reply to large to store."
+msgstr ""
+"Die Anzahl der Meldungen in der Antwort ist zu gross um sie zu speichern."
+
+#: src/protocols/pop3cmd.c:358 src/protocols/pop3cmd.c:412
+msgid "Size in reply to large to store."
+msgstr "Die Groesse in der Antwort ist zu gross um sie zu speichern."
+
+#: src/protocols/pop3cmd.c:405 src/protocols/pop3cmd.c:419
+msgid "Failed to get size from reply."
+msgstr "Konnte Groeese aus Antwort nicht ableiten."
+
+#: src/protocols/pop3cmd.c:632 src/protocols/wmocmd.c:430
+#, c-format
+msgid "read() error (%d) : %s"
+msgstr "read() Fehler (%d) : %s"
+
+#: src/protocols/scpcmd.c:175
+#, c-format
+msgid "Failed to pipe_write() `%s' to pipe [%d] : %s"
+msgstr "Konnte nicht `%s' mit pipe_write() in die Pipe schreiben [%d] : %s"
+
+#: src/protocols/scpcmd.c:199
+#, c-format
+msgid "Failed to pipe_write() [close file] to pipe [%d] : %s"
+msgstr ""
+"Konnte nicht [close file] mit pipe_write() in die Pipe schreiben [%d] : %s"
+
+#: src/protocols/scpcmd.c:250 src/protocols/sftpcmd.c:2029
+#, c-format
+msgid "write() timeout (%ld)"
+msgstr "Zeitueberschreitung (%lds) beim Aufruf von write()"
+
+#: src/protocols/scpcmd.c:305 src/protocols/sftpcmd.c:1672
+#, c-format
+msgid "Failed to close() write pipe to ssh process : %s"
+msgstr ""
+"Konnte die Schreib-Pipe zum SSH Prozess nicht mit close() schliessen : %s"
+
+#: src/protocols/scpcmd.c:326 src/protocols/sftpcmd.c:1693
+#, c-format
+msgid "Failed to catch zombie of data ssh process : %s"
+msgstr "Konnte den Zombie des Daten SSH Prozess nicht einfangen : %s"
+
+#: src/protocols/scpcmd.c:335 src/protocols/sftpcmd.c:1701
+#: src/protocols/ssh_common.c:819
+#, c-format
+msgid "Failed to kill() data ssh process %d : %s"
+msgstr ""
+"Konnte Prozess fuer SSH Datenverbindung %d nicht mit kill() beseitigen : %s"
+
+#: src/protocols/scpcmd.c:337
+#, c-format
+msgid "Failed to kill() data ssh process %lld : %s"
+msgstr ""
+"Konnte Prozess fuer SSH Datenverbindung %lld nicht mit kill() beseitigen : %s"
+
+#: src/protocols/scpcmd.c:345
+#, c-format
+msgid "Killing hanging data ssh process %d."
+msgstr "Haengender SSH Prozess %d fuer Datenverbindung beseitigt."
+
+#: src/protocols/scpcmd.c:347
+#, c-format
+msgid "Killing hanging data ssh process %lld."
+msgstr "Haengender SSH Prozess %lld fuer Datenverbindung beseitigt."
+
+#: src/protocols/scpcmd.c:356 src/protocols/sftpcmd.c:1714
+#, c-format
+msgid "Hmm, pid is %d!!!"
+msgstr "Hmm, pid ist %d!!!"
+
+#: src/protocols/scpcmd.c:358 src/protocols/sftpcmd.c:1716
+#, c-format
+msgid "Hmm, pid is %lld!!!"
+msgstr "Hmm, pid ist %lld!!!"
+
+#: src/protocols/sftpcmd.c:288
+#, c-format
+msgid ""
+"Server version (%u) is higher, downgrading to version we can handle (%d)."
+msgstr ""
+"Die Serverversion (%u) ist hoeher als die eigene, setze sie runter aufdie "
+"Version (%d) die wir koennen."
+
+#: src/protocols/sftpcmd.c:325
+#, c-format
+msgid "Received invalid reply (%d) from SSH_FXP_INIT."
+msgstr "Ungueltige Antwort (%d) fuer SSH_FXP_INIT."
+
+#: src/protocols/sftpcmd.c:334 src/protocols/sftpcmd.c:1806
+#: src/protocols/sftpcmd.c:1922 src/protocols/sftpcmd.c:2351
+#, c-format
+msgid "Received message is %u bytes, can only handle %d bytes."
+msgstr "Die Meldung ist %u Bytes gross, kann aber nur %d Bytes behandeln."
+
+#: src/protocols/sftpcmd.c:416 src/protocols/sftpcmd.c:530
+#, c-format
+msgid ""
+"Expecting a one here, but received %d. We are only able to handle one name."
+msgstr ""
+"Habe eigentlich eine Eins hier erwartet, aber eine %d bekommen. Wir koennen "
+"aber nur einen Namen bearbeiten."
+
+#: src/protocols/sftpcmd.c:434 src/protocols/sftpcmd.c:598
+#: src/protocols/sftpcmd.c:1477
+#, c-format
+msgid "Expecting %d (SSH_FXP_NAME) but got %d (%s) as reply."
+msgstr "Habe %d (SSH_FXP_NAME) erwartet, aber %d (%s) als Antwort bekommen."
+
+#: src/protocols/sftpcmd.c:621
+msgid ""
+"Wrong usage of function. filename and scd.file_handle are both NULL! Remove "
+"the programmer."
+msgstr ""
+"Falscher gebrauch der Funktion. Dateiname und scd.file_handle sind beide "
+"NULL! Entferne den Programmierer."
+
+#: src/protocols/sftpcmd.c:688 src/protocols/sftpcmd.c:853
+#: src/protocols/sftpcmd.c:933
+#, c-format
+msgid "Expecting %d (SSH_FXP_HANDLE) but got %d (%s) as reply."
+msgstr "Habe %d (SSH_FXP_HANDLE) erwartet, aber %d (%s) als Antwort bekommen."
+
+#: src/protocols/sftpcmd.c:807
+#, c-format
+msgid "Unknown open mode %d."
+msgstr "Unbekannter oeffnen Modus %d."
+
+#: src/protocols/sftpcmd.c:989 src/protocols/sftpcmd.c:1043
+#: src/protocols/sftpcmd.c:1121 src/protocols/sftpcmd.c:1270
+#: src/protocols/sftpcmd.c:1333 src/protocols/sftpcmd.c:1539
+#: src/protocols/sftpcmd.c:1602
+#, c-format
+msgid "Expecting %d (SSH_FXP_STATUS) but got %d (%s) as reply."
+msgstr "Habe %d (SSH_FXP_STATUS) erwartet, aber %d (%s) als Antwort bekommen."
+
+#: src/protocols/sftpcmd.c:1242
+msgid "Hmm, something wrong here bailing out."
+msgstr "Hmm, etwas ist hier falsch. Steige aus."
+
+#: src/protocols/sftpcmd.c:1415
+#, c-format
+msgid "Expecting %d (SSH_FXP_DATA) but got %d (%s) as reply."
+msgstr "Habe %d (SSH_FXP_DATA) erwartet, aber %d (%s) als Antwort bekommen."
+
+#: src/protocols/sftpcmd.c:1707 src/protocols/ssh_common.c:825
+msgid "Killing hanging data ssh process."
+msgstr "Haengender SSH Prozess fuer Datenverbindung beseitigt."
+
+#: src/protocols/sftpcmd.c:1778 src/protocols/sftpcmd.c:1883
+#, c-format
+msgid ""
+"Only able to queue %d replies, try increase MAX_SFTP_REPLY_BUFFER and "
+"recompile."
+msgstr ""
+"Kann nur %d Antworten in die Warteschlange stellen. Versuche den Wert von "
+"MAX_SFTP_REPLY_BUFFER zu erhoehen und neu zu uebersetzen."
+
+#: src/protocols/sftpcmd.c:1787 src/protocols/sftpcmd.c:1892
+#, c-format
+msgid "Unable to malloc() %u bytes : %s"
+msgstr "Konnte nicht %u Bytes allozieren mit malloc() : %s"
+
+#: src/protocols/sftpcmd.c:2153 src/protocols/ssh_common.c:527
+#, c-format
+msgid "read() timeout (%ld)"
+msgstr "Zeitueberschreitung (%lds) beim Aufruf von read()"
+
+#: src/protocols/sftpcmd.c:2175
+msgid "Pipe has been closed!"
+msgstr "Pipe ist zu!"
+
+#: src/protocols/sftpcmd.c:2337 src/protocols/sftpcmd.c:2410
+#, c-format
+msgid "Failed to malloc() %u bytes : %s"
+msgstr "Konnte nicht %u Bytes allozieren mit malloc() : %s"
+
+#: src/protocols/sftpcmd.c:2455
+#, c-format
+msgid "String is %u bytes, can only handle %d bytes."
+msgstr "Konnte nicht %u Bytes allozieren mit malloc() : %s"
+
+#: src/protocols/sftpcmd.c:2610
+#, c-format
+msgid "Unknown type field %d in protocol."
+msgstr "Unbekanntes Type Feld %d im Protokoll."
+
+#: src/protocols/sftpcmd.c:2770
+msgid "No error. (0)"
+msgstr "Kein Fehler. (0)"
+
+#: src/protocols/sftpcmd.c:2772
+msgid ""
+"Attempted to read past the end-of-file or there are no more directory "
+"entries. (1)"
+msgstr ""
+"Es wurde versucht ueber das Ende einer Datei zu lesen oder es sind keine "
+"weiteren Verzeichniseintraege vorhanden. (1)"
+
+#: src/protocols/sftpcmd.c:2774
+msgid "A reference was made to a file which does not exist. (2)"
+msgstr "Es wurde versucht auf eine Datei zuzugreifen die nicht existiert. (2)"
+
+#: src/protocols/sftpcmd.c:2776
+msgid "Permission denied. (3)"
+msgstr "Zugriff verweigert. (3)"
+
+#: src/protocols/sftpcmd.c:2778
+msgid ""
+"An error occurred, but no specific error code exists to describe the "
+"failure. (4)"
+msgstr ""
+"Es trat ein Fehler auf, jedoch es existiert kein error code der diesen "
+"Fehler beschreiben koennte. (4)"
+
+#: src/protocols/sftpcmd.c:2780
+msgid ""
+"A badly formatted packet or other SFTP protocol incompatibility was "
+"detected. (5)"
+msgstr ""
+"Ein schlecht formatiertes Paket oder eine andere Inkompatibilitaet mit den "
+"SFTP Protokol wurde entdeckt. (5)"
+
+#: src/protocols/sftpcmd.c:2782
+msgid "There is no connection to the server. (6)"
+msgstr "Es besteht keine Verbindung zum Server. (6)"
+
+#: src/protocols/sftpcmd.c:2784
+msgid "The connection to the server was lost. (7)"
+msgstr "Die Verbindung zum Server wurde unterbrochen. (7)"
+
+#: src/protocols/sftpcmd.c:2786
+msgid "Operation unsupported. (8)"
+msgstr "Operation wird nicht unterstuetzt. (8)"
+
+#: src/protocols/sftpcmd.c:2788
+msgid "The handle value was invalid. (9)"
+msgstr "Der Uebername Wert ist ungueltig. (9)"
+
+#: src/protocols/sftpcmd.c:2790
+msgid "File path does not exist or is invalid. (10)"
+msgstr "Der Dateipfad existiert nicht oder ist ungueltig. (10)"
+
+#: src/protocols/sftpcmd.c:2792
+msgid "File already exists. (11)"
+msgstr "Datei existiert schon. (11)"
+
+#: src/protocols/sftpcmd.c:2794
+msgid "File is on read-only media, or the media is write protected. (12)"
+msgstr ""
+"Die Datei befindet sich auf einen nur lesbaren Medium oder das Medium "
+"schreib geschuetzt. (12)"
+
+#: src/protocols/sftpcmd.c:2796
+msgid ""
+"The requested operation cannot be completed because there is no media "
+"available in the drive. (13)"
+msgstr ""
+"Die angeforderte Operation kann nicht durchgefuehrt werden da sich im "
+"Laufwerk kein Medium befindet. (13)"
+
+#: src/protocols/sftpcmd.c:2798
+msgid "No space on filesystem. (14)"
+msgstr "Es ist kein Platz mehr im Dateisystem. (14)"
+
+#: src/protocols/sftpcmd.c:2800
+msgid "Quota exceeded. (15)"
+msgstr "Qutenueberschreitung. (15)"
+
+#: src/protocols/sftpcmd.c:2802
+msgid "Unknown principal. (16)"
+msgstr "Unbekannte Methode. (16)"
+
+#: src/protocols/sftpcmd.c:2804
+msgid "File could not be opened because it is locked by another process. (17)"
+msgstr ""
+"Die Datei konnte nicht geoeffnet werden da sie von einen anderen Prozess "
+"gesperrt wird. (17)"
+
+#: src/protocols/sftpcmd.c:2806
+msgid "Directory is not empty. (18)"
+msgstr "Das Verzeichnis ist nicht leer. (18)"
+
+#: src/protocols/sftpcmd.c:2808
+msgid "The specified file is not a directory. (19)"
+msgstr "Die angegebene Datei ist kein Verzeichnis. (19)"
+
+#: src/protocols/sftpcmd.c:2810
+msgid "Invalid filename. (20)"
+msgstr "Ungueltiger Dateiname. (20)"
+
+#: src/protocols/sftpcmd.c:2812
+msgid "Too many symbolic links encountered. (21)"
+msgstr "Es existieren zuviele symbolische Verknuepfungen. (21)"
+
+#: src/protocols/sftpcmd.c:2814
+msgid "File cannot be deleted. (22)"
+msgstr "Datei kann nicht geloescht werden. (22)"
+
+#: src/protocols/sftpcmd.c:2816
+msgid "Invalid parameter. (23)"
+msgstr "Ungueltiger Parameter. (23)"
+
+#: src/protocols/sftpcmd.c:2818
+msgid "File is a directory. (24)"
+msgstr "Datei ist ein Verzeichnis. (24)"
+
+#: src/protocols/sftpcmd.c:2820
+msgid "Byte range lock conflict. (25)"
+msgstr "Lock-Konflikt fuer den gewaelten Bereich. (25)"
+
+#: src/protocols/sftpcmd.c:2822
+msgid "Byte range lock refused. (26)"
+msgstr "Fuer den gewaelten Bereich wurde das Lock verweigert. (26)"
+
+#: src/protocols/sftpcmd.c:2824
+msgid "Delete is pending. (27)"
+msgstr "Es wird auf die Loeschoperation gewartet. (27)"
+
+#: src/protocols/sftpcmd.c:2826
+msgid "File is corrupt. (28)"
+msgstr "Datei ist beschaedigt. (28)"
+
+#: src/protocols/sftpcmd.c:2828
+msgid "Invalid owner. (29)"
+msgstr "Ungueltiger Besitzer. (29)"
+
+#: src/protocols/sftpcmd.c:2830
+msgid "Invalid group. (30)"
+msgstr "Ungueltige Gruppe. (30)"
+
+#: src/protocols/sftpcmd.c:2832
+msgid ""
+"Requested operation could not be completed, because byte range lock has not "
+"been granted. (31)"
+msgstr ""
+"Die gewuenschte Operation konnte nicht ausgefuehrt werden, da fuer den "
+"geforderten Bereich keine Sperre gestzt werden darf. (31)"
+
+#: src/protocols/sftpcmd.c:2834
+#, c-format
+msgid "Unknown error code. (%u)"
+msgstr "Unbekannter Fehlerkode. (%u)"
+
+#: src/protocols/smtpcmd.c:268
+#, c-format
+msgid "fdopen() error : %s"
+msgstr "fdopen() Fehler : %s"
+
+#: src/protocols/smtpcmd.c:356
+msgid "SMTP server does NOT support AUTH LOGIN."
+msgstr "Der SMTP-Server unterstuetzt kein AUTH LOGIN."
+
+#: src/protocols/smtpcmd.c:373
+msgid "SMTP server does NOT support AUTH PLAIN."
+msgstr "Der SMTP-Server unterstuetzt kein AUTH PLAIN."
+
+#: src/protocols/smtpcmd.c:380
+msgid "Unknown SMTP AUTH method not supported by AFD."
+msgstr "Unbekannt SMTP AUTH Methode. Wird nicht vom AFD unterstuetzt."
+
+#: src/protocols/smtpcmd.c:688 src/protocols/smtpcmd.c:849
+#, c-format
+msgid "send() error after writting %d bytes : %s"
+msgstr "send() Fehler nachdem %d Bytes geschrieben wurden : %s"
+
+#: src/protocols/smtpcmd.c:696 src/protocols/smtpcmd.c:857
+#, c-format
+msgid "write() error after writting %d bytes : %s"
+msgstr "write() Fehler nachdem %d Bytes geschrieben wurden : %s"
+
+#: src/protocols/smtpcmd.c:896
+#, c-format
+msgid "Failed to fflush() data when closing connection : %s"
+msgstr ""
+"Konnte kein fflush() auf die Datenverbindung machen bevor die Verbindung "
+"geschlossen wird : %s"
+
+#: src/protocols/smtpcmd.c:929
+#, c-format
+msgid "Failed to fflush() data before closing connection : %s"
+msgstr ""
+"Konnte kein fflush() auf die Datenverbindung machen bevor die Verbindung "
+"geschlossen wird : %s"
+
+#: src/protocols/ssh_common.c:196
+msgid "ptym_open() error"
+msgstr "ptym_open() Fehler"
+
+#: src/protocols/ssh_common.c:212
+#, c-format
+msgid "socketpair() error : %s"
+msgstr "socketpair() Fehler : %s"
+
+#: src/protocols/ssh_common.c:247
+msgid "ptys_open() error"
+msgstr "ptys_open() Fehler"
+
+#: src/protocols/ssh_common.c:255
+msgid "tty_raw() failed in child!"
+msgstr "tty_raw() ist im Kindprozess fehlgeschlagen!"
+
+#: src/protocols/ssh_common.c:349
+#, c-format
+msgid "execvp() error : %s"
+msgstr "execvp() Fehler : %s"
+
+#: src/protocols/ssh_common.c:369
+msgid "tty_raw() failed in parent!"
+msgstr "tty_raw() ist im Elternprozess fehlgeschlagen!"
+
+#: src/protocols/ssh_common.c:502
+msgid "Unix socket error."
+msgstr "Unix sochet Fehler."
+
+#: src/protocols/ssh_common.c:544
+msgid "Hit an Input/Output error, assuming child was not up. Retrying."
+msgstr ""
+"Es tratt ein Ein-/Ausgabe Fehler auf. Vermute das der Kindprozess noch nicht "
+"da war. Versuche es nochmal."
+
+#: src/protocols/ssh_common.c:555
+#, c-format
+msgid "Hit an Input/Output error, even after retrying %d times."
+msgstr ""
+"Es tratt immer noch ein Ein-/Ausgabe Fehler auf nachdem %d mal probiert "
+"wurde."
+
+#: src/protocols/ssh_common.c:576
+msgid "SSH program closed the socket unexpected."
+msgstr "Das SSH Programm hat den socket unerwartet geschlossen."
+
+#: src/protocols/ssh_common.c:600 src/protocols/ssh_common.c:679
+#: src/protocols/ssh_common.c:709
+#, c-format
+msgid "write() error [%d] : %s"
+msgstr "write() Fehler [%d] : %s"
+
+#: src/protocols/ssh_common.c:625
+msgid "Failed to enter password."
+msgstr "Konnte Passwort nicht eingeben."
+
+#: src/protocols/ssh_common.c:645
+msgid ""
+"ssh is asking for password (or passphrase) and none is provided. Bailing out!"
+msgstr ""
+"SSH fragt nach einen Passwort (oder passphrase). Es wurde aber keins "
+"konfiguriert. Steige aus!"
+
+#: src/protocols/ssh_common.c:689
+#, c-format
+msgid "Failed to send `no' to verify SSH connection. [%d]"
+msgstr ""
+"Konnte kein `no' (Nein) schicken um die SSH-Verbindung zu verifizieren. [%d]"
+
+#: src/protocols/ssh_common.c:695
+msgid ""
+"Please connect to this host with the command line SSH utility and answer "
+"this question appropriately, or use fingerprints."
+msgstr ""
+"Bitte verbinde dich manuell mit den SSH Programm zu diesen Rechner und "
+"beantworte die Frage, oder benutze SSH fingerprints."
+
+#: src/protocols/ssh_common.c:697
+msgid ""
+"Please connect to this host with the command line SSH utility and answer "
+"this question appropriately."
+msgstr ""
+"Bitte verbinde dich manuell mit den SSH Programm zu diesen Rechner und "
+"beantworte die Frage."
+
+#: src/protocols/ssh_common.c:720
+#, c-format
+msgid "Failed to send `yes' to verify SSH connection. [%d]"
+msgstr ""
+"Konnte kein `yes' (Ja) schicken um die SSH-Verbindung zu verifizieren. [%d]"
+
+#: src/protocols/ssh_common.c:794
+#, c-format
+msgid "Protocol error. SSH is complaining, see next message (%d)."
+msgstr "Protokoll Fehler. SSH beschwert sich, siehe naehste Meldung (%d)."
+
+#: src/protocols/ssh_common.c:812
+msgid "SSH program not responding."
+msgstr "Das SSH-Programm reagiert nicht."
+
+#: src/protocols/ssh_common.c:871 src/protocols/ssh_common.c:924
+#, c-format
+msgid "There is no reply from pipe, failed to send command %s."
+msgstr ""
+"Es kommt keine Antwort von der Pipe zurueck, konnte also Kommando %s nicht "
+"schicken."
+
+#: src/protocols/ssh_common.c:995
+msgid "Other side closed the pipe."
+msgstr "Die andere Seite hat die Pipe geschlossen."
+
+#: src/protocols/ssh_common.c:1075
+#, c-format
+msgid "Failed to open/lock file `%s' : %s"
+msgstr "Konnte Datei `%s' nicht oeffnen oder sperren : %s"
+
+#: src/protocols/ssh_common.c:1095
+#, c-format
+msgid "File `%s' is empty."
+msgstr "Die Datei `%s' ist leer."
+
+#: src/protocols/ssh_common.c:1122
+#, c-format
+msgid "Failed to locate `%s' in `%s'"
+msgstr "Konnte `%s' nicht in `%s' lokalisieren."
+
+#: src/protocols/ssh_common.c:1208
+#, c-format
+msgid "getpwuid() error : %s"
+msgstr "getpwuid() Fehler : %s"
+
+#: src/protocols/ssh_common.c:1236
+msgid "Timeout while waiting for password responce."
+msgstr ""
+
+#: src/protocols/ssh_common.c:1281
+#, c-format
+msgid "openpty() error : %s"
+msgstr "openpty() Fehler : %s"
+
+#: src/protocols/ssh_common.c:1303
+#, c-format
+msgid "_getpty() error : %s"
+msgstr "_getpty() Fehler : %s"
+
+#: src/protocols/ssh_common.c:1315
+#, c-format
+msgid "getpt() error : %s"
+msgstr "getpt() Fehler : %s"
+
+#: src/protocols/ssh_common.c:1321
+#, c-format
+msgid "ptsname() error : %s"
+msgstr "ptsname() Fehler : %s"
+
+#: src/protocols/ssh_common.c:1334 src/protocols/ssh_common.c:1380
+#: src/protocols/ssh_common.c:1414
+#, c-format
+msgid "Failed to open() `%s' error : %s"
+msgstr "Konnte `%s' nicht mit open() oeffnen : %s"
+
+#: src/protocols/ssh_common.c:1342
+#, c-format
+msgid "grantpt() error : %s"
+msgstr "grantpt() Fehler : %s"
+
+#: src/protocols/ssh_common.c:1350
+#, c-format
+msgid "unlockpt() error : %s"
+msgstr "unlockpt() Fehler : %s"
+
+#: src/protocols/ssh_common.c:1358
+#, c-format
+msgid "tempstr() error : %s"
+msgstr "tempstr() Fehler : %s"
+
+#: src/protocols/ssh_common.c:1423 src/protocols/ssh_common.c:1431
+#: src/protocols/ssh_common.c:1439 src/protocols/ssh_common.c:1449
+#, c-format
+msgid "ioctl() error : %s"
+msgstr "ioctl() Fehler : %s"
+
+#: src/protocols/ssh_common.c:1473
+#, c-format
+msgid "tcgetattr() error : %s"
+msgstr "tcgetattr() Fehler : %s"
+
+#: src/protocols/ssh_common.c:1491
+#, c-format
+msgid "tcsetattr() error : %s"
+msgstr "tcsetattr() Fehler : %s"
+
+#: src/protocols/wmocmd.c:223
+#, c-format
+msgid "Connected to %s after %d tries"
+msgstr "Verbunden mit %s nach %d Versuchen"
+
+#: src/protocols/wmocmd.c:276
+#, c-format
+msgid "send() error (%d) : %s"
+msgstr "send() Fehler (%d) : %s"
+
+#: src/protocols/wmocmd.c:330
+msgid "Incorrect reply from remote site."
+msgstr "Ungueltige Antwort von der Gegenseite."
+
+#: src/protocols/wmocmd.c:385
+msgid "Remote site closed connection."
+msgstr "Die Gegenseite hat die Verbindung geschlossen."
+
+#: src/cmdline/cmdline.h:145 src/cmdline/aftp.c:1726
+#, c-format
+msgid "%ld bytes send in %d file(s)."
+msgstr "%ld Bytes gesendet in %d Datei(en)."
+
+#: src/cmdline/cmdline.h:152 src/cmdline/aftp.c:1728
+#, c-format
+msgid "%lld bytes send in %d file(s)."
+msgstr "%lld Bytes gesendet in %d Datei(en)."
+
+#: src/cmdline/init_aftp.c:165
+#, c-format
+msgid "ERROR   : No file size offset specified for option -a.\n"
+msgstr "FEHLER  : Keine Spaltennummer angegeben fuer Option -a.\n"
+
+#: src/cmdline/init_aftp.c:172 src/cmdline/init_aftp.c:288
+#, c-format
+msgid "ERROR   : This option is only for %s.\n"
+msgstr "FEHLER  : Diese Option ist nur gueltig fuer %s.\n"
+
+#: src/cmdline/init_aftp.c:187
+#, c-format
+msgid "ERROR   : No block size specified for option -b.\n"
+msgstr "FEHLER  : Keine Blockgroesse angegeben fuer Option -b.\n"
+
+#: src/cmdline/init_aftp.c:201
+#, c-format
+msgid "ERROR   : No config file specified for option -c.\n"
+msgstr "FEHLER  : Keine Konfigurationsdatei angegeben fuer Option -c.\n"
+
+#: src/cmdline/init_aftp.c:223
+#, c-format
+msgid "ERROR   : No target directory for option -d.\n"
+msgstr "FEHLER  : Kein Verzeichnis angegeben fuer Option -d.\n"
+
+#: src/cmdline/init_aftp.c:237
+#, c-format
+msgid "ERROR   : No filename file specified for option -f.\n"
+msgstr "FEHLER  : Keine Dateinamesndatei angegeben fuer Option -f.\n"
+
+#: src/cmdline/init_aftp.c:264
+#, c-format
+msgid "ERROR   : No host name or IP number specified for option -h.\n"
+msgstr "FEHLER  : Kein Rechnername oder IP-Nummer angegeben fuer Option -h.\n"
+
+#: src/cmdline/init_aftp.c:278
+#, c-format
+msgid "ERROR   : No lock type specified for option -l.\n"
+msgstr "FEHLER  : Kein Verriegelungsmechanismus angegeben fuer Option -l.\n"
+
+#: src/cmdline/init_aftp.c:327
+#, c-format
+msgid "ERROR   : No transfer mode specified for option -m.\n"
+msgstr "FEHLER  : Kein Uebertragungsmodus angegeben fuer Option -m.\n"
+
+#: src/cmdline/init_aftp.c:360
+#, c-format
+msgid "ERROR   : Unknown FTP transfer mode <%c> specified for option -m.\n"
+msgstr ""
+"FEHLER  : Unbekannter FTP Uebertragungsmodus <%c> angegeben fuer Option -m.\n"
+
+#: src/cmdline/init_aftp.c:371
+#, c-format
+msgid "ERROR   : No number of files specified for option -n.\n"
+msgstr "FEHLER  : Keine Anzahl von Dateien angegeben fuer Option -n.\n"
+
+#: src/cmdline/init_aftp.c:388 src/cmdline/init_aftp.c:541
+#, c-format
+msgid "ERROR   : This option is only for t%s.\n"
+msgstr "FEHLER  : Diese Option ist nur gueltig fuer t%s.\n"
+
+#: src/cmdline/init_aftp.c:403
+#, c-format
+msgid "ERROR   : No mode number specified for option -o.\n"
+msgstr "FEHLER  : Keine Modusnummer angegeben fuer Option -o.\n"
+
+#: src/cmdline/init_aftp.c:424
+#, c-format
+msgid "ERROR   : Not a correct mode number for option -o.\n"
+msgstr "FEHLER  : Keine richtige Modusnummer fuer Option -o.\n"
+
+#: src/cmdline/init_aftp.c:435
+#, c-format
+msgid "ERROR   : No port number specified for option -p.\n"
+msgstr "FEHLER  : Keine Portnummer angegeben fuer Option -p.\n"
+
+#: src/cmdline/init_aftp.c:449
+#, c-format
+msgid "ERROR   : No proxy procedure for option -P.\n"
+msgstr "FEHLER  : Keine Proxy Prozedur angegeben fuer Option -P.\n"
+
+#: src/cmdline/init_aftp.c:464
+#, c-format
+msgid "ERROR   : No user and password specified for option -u.\n"
+msgstr "FEHLER  : Kein Nutzername und Passwort angegeben fuer Option -u.\n"
+
+#: src/cmdline/init_aftp.c:477
+#, c-format
+msgid "ERROR   : No password specified for option -u.\n"
+msgstr "FEHLER  : Kein Passwort angegeben fuer Option -u.\n"
+
+#: src/cmdline/init_aftp.c:496
+#, c-format
+msgid "ERROR   : No buffer size specified for option -R.\n"
+msgstr "FEHLER  : Keine Puffergroesse angegeben fuer Option -R.\n"
+
+#: src/cmdline/init_aftp.c:510
+#, c-format
+msgid "ERROR   : No buffer size specified for option -S.\n"
+msgstr "FEHLER  : Keine Puffergroesse angegeben fuer Option -S.\n"
+
+#: src/cmdline/init_aftp.c:524
+#, c-format
+msgid "ERROR   : No file size specified for option -s.\n"
+msgstr "FEHLER  : Keine Dateigroesse angegeben fuer Option -s.\n"
+
+#: src/cmdline/init_aftp.c:556
+#, c-format
+msgid "ERROR   : No timeout specified for option -t.\n"
+msgstr "FEHLER  : Keine maximale Wartezeit angegeben fuer Option -t.\n"
+
+#: src/cmdline/init_aftp.c:596
+#, c-format
+msgid "ERROR   : Unknown parameter <%c>. (%s %d)\n"
+msgstr "FEHLER  : Unbekannter Parameter <%c>. (%s %d)\n"
+
+#: src/cmdline/init_aftp.c:616
+#, c-format
+msgid "ERROR   : No host name or IP number specified.\n"
+msgstr "FEHLER  : Keinen Rechnernamen oder IP-Nummer angegeben.\n"
+
+#: src/cmdline/init_aftp.c:623
+#, c-format
+msgid "ERROR   : No files to be send specified.\n"
+msgstr "FEHLER  : Keine Dateien zum versenden angegeben.\n"
+
+#: src/cmdline/init_aftp.c:687
+#, c-format
+msgid ""
+"SYNTAX: [t|r]%s [options] [file 1 ... file n]\n"
+"\n"
+msgstr "SYNTAX: [t|r]%s [Optionen] [Datei 1 ... Datei n]\n"
+
+#: src/cmdline/init_aftp.c:688
+#, c-format
+msgid ""
+"   When calling it with r%s files will be retrieved from the\n"
+"   given host, otherwise (when using %s) files will be send to that host.\n"
+"\n"
+msgstr ""
+"   Wenn man das Programm mit r%s aufruft, werden die Dateien\n"
+"   abgeholt, sonst (mit %s) werden die Dateien geschickt.\n"
+"\n"
+
+#: src/cmdline/init_aftp.c:690
+#, c-format
+msgid "  OPTIONS                              DESCRIPTION\n"
+msgstr "  OPTIONEN                             BESCHREIBUNG\n"
+
+#: src/cmdline/init_aftp.c:691
+#, c-format
+msgid "  --version                          - Show current version\n"
+msgstr "  --version                          - Zeigt aktuelle Version.\n"
+
+#: src/cmdline/init_aftp.c:694
+#, c-format
+msgid ""
+"  -A                                 - If only part of a file was retrieved, "
+"you\n"
+"                                       can retrieve the rest with this "
+"option.\n"
+msgstr ""
+"  -A                                 - Wenn eine Datei nur teilweise "
+"uebertragen\n"
+"                                       wurde, wird nur der Rest uebertragen "
+"und ans\n"
+"                                       Ende der lokalen Datei angehaengt.\n"
+
+#: src/cmdline/init_aftp.c:700
+#, c-format
+msgid ""
+"  -a <file size offset>              - Offset of file name when doing a "
+"LIST\n"
+"                                       command on the remote side. If you\n"
+"                                       specify -2 it will try to determine\n"
+"                                       the size with the SIZE command.\n"
+msgstr ""
+"  -a <Spaltennummer>                 - Nummer der Spalte in der der "
+"Dateiname\n"
+"                                       steht bei LIST Kommando. Wenn man -2 "
+"eingibt\n"
+"                                       wird versucht automatisch die groesse "
+"mit\n"
+"                                       den SIZE Befehl zu ermitteln.\n"
+
+#: src/cmdline/init_aftp.c:705
+#, c-format
+msgid ""
+"  -b <block size>                    - FTP block size in bytes. Default %d\n"
+"                                       bytes.\n"
+msgstr ""
+"  -b <Blockgroesse>                  - FTP Blockgroesse in Bytes. Standard\n"
+"                                       %d Bytes.\n"
+
+#: src/cmdline/init_aftp.c:707
+#, c-format
+msgid ""
+"  -c <config file>                   - Configuration file holding user "
+"name,\n"
+"                                       password and target directory in URL\n"
+"                                       format.\n"
+msgstr ""
+"  -c <Konfigurations Datei>          - Konfigurationsdatei die den User, "
+"Passwort\n"
+"                                       und Zieleverzeichnis im URL Format "
+"beinhaltet.\n"
+
+#: src/cmdline/init_aftp.c:710
+#, c-format
+msgid ""
+"  -C                                 - If target directory does not exist "
+"create\n"
+"                                       it.\n"
+msgstr ""
+"  -C                                 - Wenn Zielverzeichnis nicht "
+"existiert,\n"
+"                                       dann erstelle es.\n"
+
+#: src/cmdline/init_aftp.c:712
+#, c-format
+msgid ""
+"  -d <remote directory>              - Directory where file(s) are to be "
+"stored.\n"
+msgstr ""
+"  -d <Zielverzeichnis>               - Verzeichnis auf dem Zielrechner.\n"
+
+#: src/cmdline/init_aftp.c:713
+#, c-format
+msgid ""
+"  -f <filename>                      - File containing a list of filenames\n"
+"                                       that are to be send.\n"
+msgstr ""
+"  -f <Dateinamen Datei>              - Datei in der alle Dateinamen stehen "
+"die\n"
+"                                       zu verschicken sind.\n"
+
+#: src/cmdline/init_aftp.c:715
+#, c-format
+msgid ""
+"  -h <host name | IP number>         - Hostname or IP number to which to\n"
+"                                       send the file(s).\n"
+msgstr ""
+"  -h <Rechnername | IP Nummer>       - Rechnername oder IP Nummer zu denen "
+"die\n"
+"                                       Dateien zu verschicken sind.\n"
+
+#: src/cmdline/init_aftp.c:718
+#, c-format
+msgid ""
+"  -k                                 - Keep FTP control connection with "
+"STAT\n"
+"                                       calls alive/fresh.\n"
+msgstr ""
+"  -k                                 - FTP Kontrolverbindung mit STAT-"
+"Befehlen\n"
+"                                       waerend eine Datei uebertragen wird,\n"
+"                                       aufrecht erhalten.\n"
+
+#: src/cmdline/init_aftp.c:724
+#, c-format
+msgid ""
+"  -l <DOT | DOT_VMS | OFF | RDYA | RDYB | xyz> - How to lock the file on the "
+"remote site.\n"
+msgstr ""
+"  -l <DOT | DOT_VMS | OFF | RDYA | RDYB | xyz> - Verriegelungsart waehrend "
+"der\n"
+"                                       Uebertragung.\n"
+
+#: src/cmdline/init_aftp.c:726
+#, c-format
+msgid ""
+"  -l <DOT | DOT_VMS | OFF | xyz.>    - How to lock the file on the remote "
+"site.\n"
+msgstr ""
+"  -l <DOT | DOT_VMS | OFF | xyz.>    - Verriegelungsart waehrend der\n"
+"                                       Uebertragung.\n"
+
+#: src/cmdline/init_aftp.c:729
+#, c-format
+msgid ""
+"  -m <A | I | D>                     - FTP transfer mode, ASCII, binary or "
+"DOS.\n"
+"                                       Default is binary.\n"
+msgstr ""
+"  -m <A | I | D>                     - FTP Uebertragungsmodus, ASCII,\n"
+"                                       Binaer (Standard) oder DOS.\n"
+
+#: src/cmdline/init_aftp.c:733
+#, c-format
+msgid ""
+"  -n <number of files>               - Number of files to be transfered.\n"
+msgstr ""
+"  -n <Anzahl Dateien>                - Anzahl der zu uebertragenen Dateien.\n"
+
+#: src/cmdline/init_aftp.c:737
+#, c-format
+msgid ""
+"  -o <mode>                          - Changes the permission of each file\n"
+"                                       distributed.\n"
+msgstr ""
+"  -o <mode>                          - Aendert die Rechte aller Dateien.\n"
+
+#: src/cmdline/init_aftp.c:740
+#, c-format
+msgid ""
+"  -p <port number>                   - Remote port number of FTP-server.\n"
+msgstr ""
+"  -p <Portnummer>                    - IP Portnummer des FTP-Servers.\n"
+
+#: src/cmdline/init_aftp.c:741
+#, c-format
+msgid ""
+"  -P <proxy procedure>               - Use the given proxy procedure to\n"
+"                                       login. See documentation for more\n"
+"                                       details on syntax.\n"
+msgstr ""
+"  -P <Proxy-prozedur>                - Die angegeben Proxy-prozdur wird\n"
+"                                       fuers Einloggen verwendet. Siehe\n"
+"                                       Dokumentation fuer mehr "
+"Informationen.\n"
+
+#: src/cmdline/init_aftp.c:744
+#, c-format
+msgid ""
+"  -u <user> <password>               - Remote user name and password. If "
+"not\n"
+"                                       supplied, it will login as %s.\n"
+msgstr ""
+"  -u <Nutzer> <Passwort>             - Nutzername und Passwort, wenn nicht\n"
+"                                       angegeben %s.\n"
+
+#: src/cmdline/init_aftp.c:748
+#, c-format
+msgid ""
+"  -R <buffer size>                   - Socket receive buffer size\n"
+"                                       (in bytes).\n"
+msgstr ""
+"  -R <Puffer groesse>                - Setzt die socket Puffer groesse fuer\n"
+"                                       den Empfang (in Bytes).\n"
+
+#: src/cmdline/init_aftp.c:750
+#, c-format
+msgid ""
+"  -r                                 - Remove remote file after it was\n"
+"                                       retrieved.\n"
+msgstr ""
+"  -r                                 - Loescht die Dateien die geholt "
+"wurden.\n"
+
+#: src/cmdline/init_aftp.c:755
+#, c-format
+msgid "  -r                                 - Remove transmitted file.\n"
+msgstr ""
+"  -r                                 - Loescht die uebertragenen Dateien.\n"
+
+#: src/cmdline/init_aftp.c:756
+#, c-format
+msgid ""
+"  -S <buffer size>                   - Socket send buffer size\n"
+"                                       (in bytes).\n"
+msgstr ""
+"  -S <Puffer groesse>                - Setzt die socket Puffer groesse fuer\n"
+
+#: src/cmdline/init_aftp.c:761
+#, c-format
+msgid ""
+"  -s <file size>                     - File size of file to be transfered.\n"
+msgstr ""
+"  -s <Dateigroesse>                  - Dateigroesse der zu uebertragenen "
+"Dateien.\n"
+
+#: src/cmdline/init_aftp.c:763
+#, c-format
+msgid ""
+"  -t <timout>                        - FTP timeout in seconds. Default %"
+"lds.\n"
+msgstr ""
+"  -t <Wartezeit>                     - Maximale Wartezeit fuer FTP, in "
+"Sekunden.\n"
+"                                       Standardwert %lds.\n"
+
+#: src/cmdline/init_aftp.c:764
+#, c-format
+msgid ""
+"  -v                                 - Verbose. Shows all FTP commands and\n"
+"                                       the reply from the remote server.\n"
+msgstr ""
+"  -v                                 - Ausfuehrlich. Die Kommandos und die\n"
+"                                       Antworten des Servers werden "
+"ausgegeben.\n"
+
+#: src/cmdline/init_aftp.c:766
+#, c-format
+msgid ""
+"  -x                                 - Use passive mode instead of active\n"
+"                                       mode when doing the data connection.\n"
+msgstr ""
+"  -x                                 - Benutzt den FTP passive mode anstatt\n"
+"                                       von aktive mode waehrend die Daten-\n"
+"                                       verbindung aufgebaut wird.\n"
+
+#: src/cmdline/init_aftp.c:768
+#, c-format
+msgid ""
+"  -X                                 - Use extended mode active or passive\n"
+"                                       (-x) mode.\n"
+msgstr ""
+"  -X                                 - Benutzt den erweiterten FTP aktiv "
+"bzw.\n"
+"                                       passive (-x) Modus.\n"
+
+#: src/cmdline/init_aftp.c:771
+#, c-format
+msgid ""
+"  -z                                 - Use SSL/TLS for control connection.\n"
+msgstr ""
+"  -z                                 - Benutzt SSL/TLS fuer "
+"Kontrollverbindung.\n"
+
+#: src/cmdline/init_aftp.c:772
+#, c-format
+msgid ""
+"  -Z                                 - Use SSL/TLS for control and data\n"
+"                                       connection.\n"
+msgstr ""
+"  -Z                                 - Benutzt SSL/TLS fuer Kontroll- und "
+"Daten-\n"
+"                                       verbindung.\n"
+
+#: src/cmdline/init_aftp.c:775
+#, c-format
+msgid "  -?                                 - Display this help and exit.\n"
+msgstr ""
+"  -?                                 - Diese Hilfe.\n"
+"\n"
+
+#: src/cmdline/init_aftp.c:776
+#, c-format
+msgid "  The following values are returned on exit:\n"
+msgstr "  Es werden folgende Rueckgabewerte zurueckgegeben:\n"
+
+#: src/cmdline/init_aftp.c:777
+#, c-format
+msgid "      %2d - File transmitted successfully.\n"
+msgstr "      %2d - Datei wurde erfolgreich Uebertragen.\n"
+
+#: src/cmdline/init_aftp.c:778
+#, c-format
+msgid "      %2d - Failed to connect.\n"
+msgstr "      %2d - Es konnte keine Verbindung hergestellt werden.\n"
+
+#: src/cmdline/init_aftp.c:780
+#, c-format
+msgid "      %2d - SSL/TLS authentification error.\n"
+msgstr "      %2d - SSL/TLS Authentifizierung fehlgeschalgen.\n"
+
+#: src/cmdline/init_aftp.c:782
+#, c-format
+msgid "      %2d - User name wrong.\n"
+msgstr "      %2d - Nutzername falsch.\n"
+
+#: src/cmdline/init_aftp.c:783
+#, c-format
+msgid "      %2d - Wrong password.\n"
+msgstr "      %2d - Passwort falsch.\n"
+
+#: src/cmdline/init_aftp.c:784
+#, c-format
+msgid "      %2d - Failed to set ascii/binary mode.\n"
+msgstr "      %2d - Konnte ascii/binary-modus nicht setzen.\n"
+
+#: src/cmdline/init_aftp.c:785
+#, c-format
+msgid "      %2d - Failed to send NLST command.\n"
+msgstr "      %2d - Konnte NLST Kommando nicht schicken.\n"
+
+#: src/cmdline/init_aftp.c:786
+#, c-format
+msgid "      %2d - Failed to open remote file.\n"
+msgstr "      %2d - Remote Datei konnte nicht geoeffnet werden.\n"
+
+#: src/cmdline/init_aftp.c:787
+#, c-format
+msgid "      %2d - Error when writing into remote file.\n"
+msgstr "      %2d - Fehler beim schreiben in der remote Datei.\n"
+
+#: src/cmdline/init_aftp.c:788
+#, c-format
+msgid "      %2d - Failed to close remote file.\n"
+msgstr "      %2d - Remote Datei konnte nicht geschlossen werden.\n"
+
+#: src/cmdline/init_aftp.c:789
+#, c-format
+msgid "      %2d - Failed to rename remote file.\n"
+msgstr "      %2d - Remote Datei konnte nicht umbenannt werden.\n"
+
+#: src/cmdline/init_aftp.c:790
+#, c-format
+msgid "      %2d - Remote directory could not be set.\n"
+msgstr "      %2d - Zielverzeichnis konnte nicht gesetzt werden.\n"
+
+#: src/cmdline/init_aftp.c:794
+#, c-format
+msgid "      %2d - Could not open source file.\n"
+msgstr "      %2d - Ursprungsdatei konnte nicht geoeffnet werden.\n"
+
+#: src/cmdline/init_aftp.c:795
+#, c-format
+msgid "      %2d - Failed to read source file.\n"
+msgstr "      %2d - Fehler beim lesen der Ursprungsdatei.\n"
+
+#: src/cmdline/init_aftp.c:796
+#, c-format
+msgid "      %2d - System error stat().\n"
+msgstr "      %2d - Systemfehler stat().\n"
+
+#: src/cmdline/init_aftp.c:797
+#, c-format
+msgid "      %2d - System error malloc().\n"
+msgstr "      %2d - Systemfehler malloc().\n"
+
+#: src/cmdline/init_aftp.c:798
+#, c-format
+msgid "      %2d - Failed to read file name file.\n"
+msgstr "      %2d - Konnte Datei mit Dateinamen nicht lesen.\n"
+
+#: src/cmdline/init_aftp.c:799
+#, c-format
+msgid "      %2d - Syntax wrong.\n"
+msgstr "      %2d - Falsche Eingabe.\n"
+
+#: src/cmdline/aftp.c:168
+#, c-format
+msgid "Could not register exit function : %s (%s %d)\n"
+msgstr "Konnte exit Funktion nicht registrieren : %s (%s %d)\n"
+
+#: src/cmdline/aftp.c:178 src/cmdline/aftp.c:1802
+#, c-format
+msgid "signal() error : %s (%s %d)\n"
+msgstr "signal() Fehler : %s (%s %d)\n"
+
+#: src/cmdline/aftp.c:203 src/cmdline/aftp.c:566
+#, c-format
+msgid "malloc() error : %s (%s %d)\n"
+msgstr "malloc() Fehler : %s (%s %d)\n"
+
+#: src/cmdline/aftp.c:216
+#, c-format
+msgid "FTP connection to %s at port %d failed (%d)."
+msgstr "FTP Verbindung zu %s auf Port %d ist fehlgeschlagen (%d)."
+
+#: src/cmdline/aftp.c:227
+msgid "Connected. No login required."
+msgstr "Verbunden. Einloggen wird nicht benoetigt."
+
+#: src/cmdline/aftp.c:231
+msgid "Connected."
+msgstr "Verbunden"
+
+#: src/cmdline/aftp.c:242
+#, c-format
+msgid "SSL/TSL connection to server `%s' failed."
+msgstr "SSL/TSL Verbindung zum Server `%s' ist fehlgeschlagen."
+
+#: src/cmdline/aftp.c:251 src/cmdline/aftp.c:661 src/cmdline/aftp.c:1144
+#: src/cmdline/aftp.c:1602
+msgid "Authentification successful."
+msgstr "Authentifizierung erfolgreich."
+
+#: src/cmdline/aftp.c:266
+#, c-format
+msgid "Failed to send user `%s' (%d)."
+msgstr "Konnte nicht den Nutzername `%s' uebertragen (%d)."
+
+#: src/cmdline/aftp.c:275
+#, c-format
+msgid "Entered user name `%s'."
+msgstr "Nutzername `%s' uebergeben."
+
+#: src/cmdline/aftp.c:285
+#, c-format
+msgid "Failed to send password for user `%s' (%d)."
+msgstr "Konnte nicht das Passwort fuer Nutzer `%s' uebertragen (%d)."
+
+#: src/cmdline/aftp.c:295
+#, c-format
+msgid "Logged in as `%s'."
+msgstr "Angemeldet als `%s'."
+
+#: src/cmdline/aftp.c:333
+#, c-format
+msgid "User name in proxy definition is to long (> %d)."
+msgstr "Nutzername in der Proxy Definition zu lang (> %d)."
+
+#: src/cmdline/aftp.c:350
+#, c-format
+msgid "Failed to send user `%s' (%d) [Proxy]."
+msgstr "Konnte nicht den Nutzername `%s' uebertragen (%d) [Proxy]."
+
+#: src/cmdline/aftp.c:362
+#, c-format
+msgid "Entered user name `%s' [Proxy]."
+msgstr "Nutzername `%s' uebergeben [Proxy]."
+
+#: src/cmdline/aftp.c:368
+#, c-format
+msgid "Entered user name `%s' [Proxy]. No password required, logged in."
+msgstr "Angemeldet als `%s' [Proxy]. Es wurde kein Passwort benoetigt."
+
+#: src/cmdline/aftp.c:380
+#, c-format
+msgid "Failed to send account `%s' (%d) [Proxy]."
+msgstr "Konnte account-Befehl fuer `%s' nicht schicken (%d) [Proxy]."
+
+#: src/cmdline/aftp.c:392
+#, c-format
+msgid "Entered account name `%s' [Proxy]."
+msgstr "Account `%s' uebergeben [Proxy]."
+
+#: src/cmdline/aftp.c:398
+#, c-format
+msgid "Entered account name `%s' [Proxy]. No password required, logged in."
+msgstr "Account `%s' uebergeben [Proxy].  Es wurde kein Passwort benoetigt."
+
+#: src/cmdline/aftp.c:432
+#, c-format
+msgid "Password in proxy definition is to long (> %d)."
+msgstr "Passwort in der Proxy Definition zu lang (> %d)."
+
+#: src/cmdline/aftp.c:449
+#, c-format
+msgid "Failed to send password (%d)."
+msgstr "Konnte nicht das Passwort uebertragen (%d)."
+
+#: src/cmdline/aftp.c:458
+msgid "Entered password."
+msgstr "Passwort uebergeben."
+
+#: src/cmdline/aftp.c:476 src/cmdline/aftp.c:485
+#, c-format
+msgid "Syntax error in proxy string `%s'."
+msgstr "Syntaxfehler in der Proxy Zeichenfolge `%s'."
+
+#: src/cmdline/aftp.c:500
+msgid "SSL/TSL initialisation failed."
+msgstr "SSL/TSL Initialisierung fehlgeschlagen."
+
+#: src/cmdline/aftp.c:509
+msgid "SSL/TLS initialisation successful."
+msgstr "SSL/TSL Initialisierung erfolgreich."
+
+#: src/cmdline/aftp.c:519
+#, c-format
+msgid "Failed to set transfer mode to %c (%d)."
+msgstr "Konnte Transfermodus nicht auf %c setzen (%d)."
+
+#: src/cmdline/aftp.c:529
+#, c-format
+msgid "Changed transfer mode to %c"
+msgstr "Transfermodus geaendert auf %c"
+
+#: src/cmdline/aftp.c:541
+#, c-format
+msgid "Failed to change/create directory to %s (%d)."
+msgstr ""
+"Konnte nicht ins Verzeichnis %s wechseln oder nicht das Verzeichnis "
+"erstellen (%d)."
+
+#: src/cmdline/aftp.c:547
+#, c-format
+msgid "Failed to change directory to %s (%d)."
+msgstr "Konnte nicht in das Verzeichnis %s wechseln (%d)."
+
+#: src/cmdline/aftp.c:558
+#, c-format
+msgid "Changed directory to %s"
+msgstr "Verzeichniswechsel nach %s"
+
+#: src/cmdline/aftp.c:624 src/cmdline/aftp.c:632 src/cmdline/aftp.c:1115
+#, c-format
+msgid "Failed to open remote file %s (%d)."
+msgstr "Konnte nicht die Remote Datei %s oeffnen (%d)."
+
+#: src/cmdline/aftp.c:642
+#, c-format
+msgid "Opened data connection for file %s."
+msgstr "Habe Datenverbindung fuer Datei %s geoeffnet."
+
+#: src/cmdline/aftp.c:651 src/cmdline/aftp.c:1134 src/cmdline/aftp.c:1592
+#, c-format
+msgid "TSL/SSL data connection to server `%s' failed."
+msgstr "Die TSL/SSL Datenverbindung zum Server `%s' ist fehlgeschlagen."
+
+#: src/cmdline/aftp.c:678
+#, c-format
+msgid "Failed to open local file %s : %s"
+msgstr "Konnte nicht lokale Datei %s oeffnen : %s"
+
+#: src/cmdline/aftp.c:688
+#, c-format
+msgid "Opened local file %s."
+msgstr "Lokale Datei %s geoeffnet."
+
+#: src/cmdline/aftp.c:702
+#, c-format
+msgid "Failed to read from remote file %s"
+msgstr "Konnte nicht von Remote Datei %s lesen."
+
+#: src/cmdline/aftp.c:707 src/cmdline/aftp.c:1211 src/cmdline/aftp.c:1286
+#: src/cmdline/aftp.c:1378 src/cmdline/aftp.c:1413 src/cmdline/aftp.c:1644
+msgid "Hmm. Pipe is broken. Will NOT send a QUIT."
+msgstr "Hmm. Pipe ist unterbrochen. Werde kein QUIT schicken."
+
+#: src/cmdline/aftp.c:720
+#, c-format
+msgid "Failed to write() to file %s : %s"
+msgstr "Konnte nicht in die Datei %s schreiben : %s"
+
+#: src/cmdline/aftp.c:733
+#, c-format
+msgid "Failed to close data connection (%d)."
+msgstr "Konnte nicht die Datenverbindung schliessen (%d)."
+
+#: src/cmdline/aftp.c:742
+#, c-format
+msgid "Closed data connection for file %s."
+msgstr "Datenverbindung fuer Datei %s geschlossen."
+
+#: src/cmdline/aftp.c:751
+#, c-format
+msgid "Failed to close() local file %s."
+msgstr "Konnte nicht lokale Datei %s schliessen."
+
+#: src/cmdline/aftp.c:758
+#, c-format
+msgid "Closed local file %s."
+msgstr "Lokake Datei %s geschlossen."
+
+#: src/cmdline/aftp.c:767
+#, c-format
+msgid "Failed to delete remote file %s (%d)."
+msgstr "Loeschen der Remote Datei %s fehlgeschlagen (%d)."
+
+#: src/cmdline/aftp.c:775
+#, c-format
+msgid "Deleted remote file %s."
+msgstr "Habe Remote Datei %s geloescht."
+
+#: src/cmdline/aftp.c:788
+#, c-format
+msgid "File size of file %s changed from %u to %u when it was retrieved."
+msgstr ""
+"Die Groesse der Datei %s hat sich von %u nach %u geaendert waerend des "
+"herunterladen."
+
+#: src/cmdline/aftp.c:797
+#, c-format
+msgid "Failed to rename() %s to %s : %s"
+msgstr "Konnte nicht die Datei %s nach %s umbenennen : %s"
+
+#: src/cmdline/aftp.c:805
+#, c-format
+msgid "Retrieved %s [%ld bytes]"
+msgstr "Datei %s abgeholt [%ld Bytes]"
+
+#: src/cmdline/aftp.c:807
+#, c-format
+msgid "Retrieved %s [%lld bytes]"
+msgstr "Datei %s abgeholt [%lld Bytes]"
+
+#: src/cmdline/aftp.c:820
+#, c-format
+msgid "%ld bytes retrieved in %d file(s)."
+msgstr "%ld Bytes abgeholt in %d Dateien."
+
+#: src/cmdline/aftp.c:822
+#, c-format
+msgid "%lld bytes retrieved in %d file(s)."
+msgstr "%lld Bytes abgeholt in %d Dateien."
+
+#: src/cmdline/aftp.c:828 src/cmdline/aftp.c:1734
+msgid " [APPEND]"
+msgstr " [ANGEHAENGT]"
+
+#: src/cmdline/aftp.c:834 src/cmdline/aftp.c:1740
+#, c-format
+msgid " [APPEND * %d]"
+msgstr " [ANGEHAENGT * %d]"
+
+#: src/cmdline/aftp.c:913
+#, c-format
+msgid "Failed to open() local file %s : %s"
+msgstr "Lokale Datei %s konnte nicht mit open() geoeffnet werden : %s"
+
+#: src/cmdline/aftp.c:927
+#, c-format
+msgid "Failed to fstat() local file %s"
+msgstr "Konnte kein fstat() auf die lokale Datei %s machen."
+
+#: src/cmdline/aftp.c:941
+#, c-format
+msgid "Local file %s is not a regular file."
+msgstr "Die lokale Datei %s ist keine regulaere Datei."
+
+#: src/cmdline/aftp.c:955
+#, c-format
+msgid "Open local file %s"
+msgstr "Lokale Datei %s geoeffnet."
+
+#: src/cmdline/aftp.c:973
+#, c-format
+msgid "Failed to send SIZE command for file %s (%d)."
+msgstr "Konnte nicht das SIZE Kommando fuer die Datei %s schicken (%d)."
+
+#: src/cmdline/aftp.c:987
+#, c-format
+msgid "Remote size of %s is %ld."
+msgstr "Groesse der Remote Datei %s ist %ld."
+
+#: src/cmdline/aftp.c:989
+#, c-format
+msgid "Remote size of %s is %lld."
+msgstr "Groesse der Remote Datei %s ist %lld."
+
+#: src/cmdline/aftp.c:1016
+#, c-format
+msgid "Failed to send LIST command for file %s (%d)."
+msgstr "Konnte nicht das LIST Kommando fuer die Datei %s schicken (%d)."
+
+#: src/cmdline/aftp.c:1052
+#, c-format
+msgid "The <file size offset> for host %s is to large! (%s %d)\n"
+msgstr "Der Versatz zu der Dateigroesse fuer host %s ist zu gross! (%s %d)\n"
+
+#: src/cmdline/aftp.c:1082 src/cmdline/aftp.c:1087
+#, c-format
+msgid "Failed to seek() in %s (Ignoring append): %s"
+msgstr ""
+"Konnte kein seek() in der Datei %s machen, daher wird kein Anhaengen "
+"probiert : %s"
+
+#: src/cmdline/aftp.c:1097
+#, c-format
+msgid "Appending file %s."
+msgstr "Haenge an Datei %s an."
+
+#: src/cmdline/aftp.c:1125
+#, c-format
+msgid "Open remote file %s"
+msgstr "Remote Datei %s geoeffnet."
+
+#: src/cmdline/aftp.c:1177 src/cmdline/aftp.c:1257
+#, c-format
+msgid "Could not read local file %s : %s"
+msgstr "Konnte nicht lokale Datei %s lesen : %s"
+
+#: src/cmdline/aftp.c:1203 src/cmdline/aftp.c:1370
+#, c-format
+msgid "Failed to write to remote file %s after writing %ld bytes."
+msgstr ""
+"Konnte nicht in der Remote Datei %s schreiben nachdem schon %ld Bytes "
+"geschrieben wurden."
+
+#: src/cmdline/aftp.c:1205 src/cmdline/aftp.c:1372
+#, c-format
+msgid "Failed to write to remote file %s after writing %lld bytes."
+msgstr ""
+"Konnte nicht in der Remote Datei %s schreiben nachdem schon %lld Bytes "
+"geschrieben wurden."
+
+#: src/cmdline/aftp.c:1234
+#, c-format
+msgid "Failed to send STAT command (%d)."
+msgstr "Konnte kein STAT Kommando schicken (%d)."
+
+#: src/cmdline/aftp.c:1244
+msgid "Send STAT command."
+msgstr "STAT Kommando geschickt."
+
+#: src/cmdline/aftp.c:1281 src/cmdline/aftp.c:1408
+#, c-format
+msgid "Failed to write rest to remote file %s"
+msgstr "Konnte nicht den Rest in die Remote Datei %s schreiben."
+
+#: src/cmdline/aftp.c:1321
+#, c-format
+msgid "Someone is still writting to file %s. (%s %d)\n"
+msgstr "Jemand schreibt immer noch in die Datei %s. (%s %d)\n"
+
+#: src/cmdline/aftp.c:1339
+#, c-format
+msgid "Failed to close() local file %s : %s"
+msgstr "Lokale Datei %s konnte nicht mit close() geschlossen werden : %s"
+
+#: src/cmdline/aftp.c:1441
+#, c-format
+msgid "Failed to close remote file %s"
+msgstr "Remote Datei %s konnte nicht geschlossen werden."
+
+#: src/cmdline/aftp.c:1449
+#, c-format
+msgid "Failed to close remote file %s (%d). Ignoring since file size is %ld."
+msgstr ""
+"Remote Datei %s konnte nicht geschlossen werden (%d). Ignoriere das denn die "
+"Dateigroesse is %ld."
+
+#: src/cmdline/aftp.c:1451
+#, c-format
+msgid "Failed to close remote file %s (%d). Ignoring since file size is %lld."
+msgstr ""
+"Remote Datei %s konnte nicht geschlossen werden (%d). Ignoriere das denn die "
+"Dateigroesse is %lld."
+
+#: src/cmdline/aftp.c:1461
+#, c-format
+msgid "Closed remote file %s"
+msgstr "Remote Datei %s wurde geschlossen."
+
+#: src/cmdline/aftp.c:1471
+#, c-format
+msgid "Failed to chmod remote file `%s' to %s (%d)."
+msgstr "Konnte nicht den Modus der Remote Datei `%s' nach %s aendern (%d)."
+
+#: src/cmdline/aftp.c:1481
+#, c-format
+msgid "Changed mode of remote file `%s' to %s"
+msgstr "Modus der Remote Datei %s nach %s geaendert."
+
+#: src/cmdline/aftp.c:1508
+#, c-format
+msgid "Failed to list remote file %s (%d)."
+msgstr "Konnte nicht die Remote Datei %s auflisten (%d)."
+
+#: src/cmdline/aftp.c:1520
+#, c-format
+msgid "Local file size of %s is %ld"
+msgstr "Groesse der lokalen Datei %s ist %ld."
+
+#: src/cmdline/aftp.c:1522
+#, c-format
+msgid "Local file size of %s is %lld"
+msgstr "Groesse der lokalen Datei %s ist %lld."
+
+#: src/cmdline/aftp.c:1540
+#, c-format
+msgid "Failed to move remote file %s to %s (%d)"
+msgstr "Konnte nicht die Remote Datei %s nicht nach %s umbenennen (%d)."
+
+#: src/cmdline/aftp.c:1550
+#, c-format
+msgid "Renamed remote file %s to %s"
+msgstr "Remote Datei %s nach %s umbenannt"
+
+#: src/cmdline/aftp.c:1573
+#, c-format
+msgid "Failed to open remote ready file %s (%d)."
+msgstr "Konnte Remote Bereitschaftsdatei %s nicht oeffnen (%d)."
+
+#: src/cmdline/aftp.c:1583
+#, c-format
+msgid "Open remote ready file %s"
+msgstr "Remote Bereitschaftsdatei %s geoeffnet"
+
+#: src/cmdline/aftp.c:1639
+#, c-format
+msgid "Failed to write to remote ready file %s (%d)."
+msgstr "Konnte nicht in Remote Bereitschaftsdatei %s schreiben (%d)."
+
+#: src/cmdline/aftp.c:1658
+#, c-format
+msgid "Failed to close remote ready file %s (%d)."
+msgstr "Konnte Remote Bereitschaftsdatei %s nicht schliessen (%d)."
+
+#: src/cmdline/aftp.c:1668
+#, c-format
+msgid "Closed remote ready file %s"
+msgstr "Remote Bereitschaftsdatei %s geschlossen"
+
+#: src/cmdline/aftp.c:1678
+#, c-format
+msgid "Failed to move remote ready file %s to %s (%d)"
+msgstr "Konnt Remote Bereitschaftsdatei %s nicht nach %s umbennen (%d)"
+
+#: src/cmdline/aftp.c:1688
+#, c-format
+msgid "Renamed remote ready file %s to %s"
+msgstr "Die Remote Bereitschaftsdatei %s wurde nach %s unbenannt."
+
+#: src/cmdline/aftp.c:1698
+#, c-format
+msgid "Send %s [%ld bytes]"
+msgstr "%s gesendet [%ld Bytes]"
+
+#: src/cmdline/aftp.c:1700
+#, c-format
+msgid "Send %s [%lld bytes]"
+msgstr "%s gesendet [%lld Bytes]"
+
+#: src/cmdline/aftp.c:1710
+#, c-format
+msgid "Could not unlink() local file %s after sending it successfully : %s"
+msgstr ""
+"Konnte lokale Datei %s nicht mit unlink() loeschen nachdem sie erfolgreich "
+"vermittelt wurde : %s"
+
+#: src/cmdline/aftp.c:1718
+#, c-format
+msgid "Removed orginal file %s"
+msgstr "Die original Datei %s wurde geloescht."
+
+#: src/cmdline/aftp.c:1758
+#, c-format
+msgid "Failed to disconnect from remote host (%d)."
+msgstr "Fehler beim Abmelden vom Remote-Host (%d)."
+
+#: src/cmdline/aftp.c:1765
+msgid "Logged out."
+msgstr "Abgemeldet."
+
+#: src/cmdline/aftp.c:1816
+#, c-format
+msgid ""
+"Aaarrrggh! Received SIGSEGV. Remove the programmer who wrote this! (%s %d)\n"
+msgstr ""
+"Aaarrrggh! Signal SIGSEGV empfangen. Entferne den Programmierer der das "
+"geschrieben hat! (%s %d)\n"
+
+#: src/cmdline/aftp.c:1827
+#, c-format
+msgid "Uuurrrggh! Received SIGBUS. (%s %d)\n"
+msgstr "Uuurrrggh! Signal SIGBUS empfangen. (%s %d)\n"
+
+#~ msgid "Failed to stat() %s : %s"
+#~ msgstr "Konnte kein stat() auf die Datei %s machen : %s"

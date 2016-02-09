@@ -1,0 +1,18 @@
+
+
+AFD source code style:
+
+  - 3 level indent
+
+  - no tabs, spaces only
+
+  - braces for if/for/while statement on separate line:
+
+       if (foo)
+       {
+          bla();
+       }
+
+   - use braces even for single-statement blocks
+
+   - try to keep source lines shorter than 80 columns
