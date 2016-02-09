@@ -1,6 +1,6 @@
 /*
  *  remove_connection.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -244,6 +244,7 @@ remove_connection(struct connection *p_con, int faulty, time_t now)
     * Reset all values of connection structure.
     */
    p_con->hostname[0] = '\0';
+   p_con->dir_alias[0] = '\0';
    p_con->host_id = 0;
    p_con->job_no = -1;
    p_con->fsa_pos = -1;

@@ -1,6 +1,6 @@
 /*
  *  dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -2941,14 +2941,15 @@ handle_dir(int                       dir_pos,
       if (*no_of_process >= max_process)
       {
          system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                    "Unable to handle directory %s since maximum number of process (%d) for process dir_check reached.",
-                    de[dir_pos].dir, max_process);
+                    "Unable to handle directory %s since maximum number of process (%d) for process dir_check reached. @%x",
+                    de[dir_pos].dir, max_process, de[dir_pos].dir_id);
       }
       else if (fra[de[dir_pos].fra_pos].no_of_process >= fra[de[dir_pos].fra_pos].max_process)
            {
               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                         "Unable to handle directory since maximum number of process (%d) reached for directory %s",
-                         fra[de[dir_pos].fra_pos].max_process, de[dir_pos].dir);
+                         "Unable to handle directory since maximum number of process (%d) reached for directory %s @%x",
+                         fra[de[dir_pos].fra_pos].max_process, de[dir_pos].dir,
+                         de[dir_pos].dir_id);
            }
       return(NO);
    }

@@ -255,7 +255,7 @@
 --with-gui=motif|none                - Compile AFD with a certain graphical
                                        user interface.
                                        [Default: motif]
---enable-ditro-rpm                   - Enables distribution style RPMS.
+--enable-distro-rpm                  - Enables distribution style RPMS.
                                        [Default: disabled]
 --with-initdir=INITDIR               - Directory where to put init/rc script
                                        to start/stop AFD. It is strongly

@@ -1,6 +1,6 @@
 /*
  *  fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -253,7 +253,8 @@ static void  check_zombie_queue(time_t, int),
              sig_exit(int),
              sig_segv(int),
              sig_bus(int);
-static int   check_local_interface_names(char *),
+static int   check_dir_in_use(int),
+             check_local_interface_names(char *),
              get_free_connection(void),
              get_free_disp_pos(int),
              zombie_check(struct connection *, time_t, int *, int);
@@ -962,6 +963,9 @@ system_log(DEBUG_SIGN, NULL, 0,
                for (i = 0; i < no_of_retrieves; i++)
                {
                   if ((fra[retrieve_list[i]].queued == 0) &&
+                      ((fsa[fra[retrieve_list[i]].fsa_pos].keep_connected == 0) ||
+                       (fsa[fra[retrieve_list[i]].fsa_pos].protocol_options & KEEP_CON_NO_FETCH_2) ||
+                       (check_dir_in_use(retrieve_list[i]) == NO)) &&
                       ((fra[retrieve_list[i]].dir_flag & DIR_DISABLED) == 0) &&
                       ((fsa[fra[retrieve_list[i]].fsa_pos].special_flag & HOST_DISABLED) == 0) &&
                       ((fsa[fra[retrieve_list[i]].fsa_pos].host_status & STOP_TRANSFER_STAT) == 0) &&
@@ -1305,7 +1309,8 @@ system_log(DEBUG_SIGN, NULL, 0,
                       * a new one.
                       */
                      if (((fsa[fsa_pos].protocol_options & DISABLE_BURSTING) == 0) &&
-                         (fsa[fsa_pos].job_status[connection[qb[qb_pos].connect_pos].job_no].unique_name[2] == 4))
+                         (fsa[fsa_pos].job_status[connection[qb[qb_pos].connect_pos].job_no].unique_name[2] == 4) &&
+                         (fsa[fsa_pos].job_status[connection[qb[qb_pos].connect_pos].job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] == 1))
                      {
                         start_new_process = NO;
                      }
@@ -2236,26 +2241,35 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
        (current_time > qb[qb_pos].creation_time) &&
        ((current_time - qb[qb_pos].creation_time) > mdb[qb[qb_pos].pos].age_limit))
    {
-      char del_dir[MAX_PATH_LENGTH];
+      if (qb[qb_pos].msg_name[0] == '\0')
+      {
+         system_log(WARN_SIGN, __FILE__, __LINE__,
+                    "No msg_name. Cannot remove job! [qb_pos=%d]",
+                    qb_pos);
+      }
+      else
+      {
+         char del_dir[MAX_PATH_LENGTH];
 
 #ifdef WITH_ERROR_QUEUE
-      if (fsa[fsa_pos].host_status & ERROR_QUEUE_SET)
-      {
-         remove_from_error_queue(mdb[qb[qb_pos].pos].job_id, &fsa[fsa_pos],
-                                 fsa_pos, fsa_fd);
-      }
+         if (fsa[fsa_pos].host_status & ERROR_QUEUE_SET)
+         {
+            remove_from_error_queue(mdb[qb[qb_pos].pos].job_id, &fsa[fsa_pos],
+                                    fsa_pos, fsa_fd);
+         }
 #endif
-      (void)snprintf(del_dir, MAX_PATH_LENGTH, "%s%s%s/%s",
-                     p_work_dir, AFD_FILE_DIR,
-                     OUTGOING_DIR, qb[qb_pos].msg_name);
+         (void)snprintf(del_dir, MAX_PATH_LENGTH, "%s%s%s/%s",
+                        p_work_dir, AFD_FILE_DIR,
+                        OUTGOING_DIR, qb[qb_pos].msg_name);
 #ifdef _DELETE_LOG
-      extract_cus(qb[qb_pos].msg_name, dl.input_time, dl.split_job_counter,
-                  dl.unique_number);
-      remove_job_files(del_dir, fsa_pos, mdb[qb[qb_pos].pos].job_id,
-                       FD, AGE_OUTPUT, -1);
+         extract_cus(qb[qb_pos].msg_name, dl.input_time, dl.split_job_counter,
+                     dl.unique_number);
+         remove_job_files(del_dir, fsa_pos, mdb[qb[qb_pos].pos].job_id,
+                          FD, AGE_OUTPUT, -1);
 #else
-      remove_job_files(del_dir, fsa_pos, -1);
+         remove_job_files(del_dir, fsa_pos, -1);
 #endif
+      }
       ABS_REDUCE(fsa_pos);
       pid = REMOVED;
    }
@@ -2319,7 +2333,8 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
             for (i = 0; i < fsa[fsa_pos].allowed_transfers; i++)
             {
                if ((fsa[fsa_pos].job_status[i].proc_id != -1) &&
-                   (fsa[fsa_pos].job_status[i].unique_name[2] == 5))
+                   (fsa[fsa_pos].job_status[i].unique_name[2] == 5) &&
+                   (fsa[fsa_pos].job_status[i].file_name_in_use[MAX_FILENAME_LENGTH - 1] == 1))
                {
                   int exec_qb_pos;
 
@@ -2403,64 +2418,82 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
                         connection[qb[exec_qb_pos].connect_pos].job_no = i;
                         if (qb[exec_qb_pos].pid > 0)
                         {
-                           if (kill(qb[exec_qb_pos].pid, SIGUSR1) == -1)
+                           if (fsa[fsa_pos].job_status[i].file_name_in_use[MAX_FILENAME_LENGTH - 1] == 1)
                            {
-                              system_log(DEBUG_SIGN, __FILE__, __LINE__,
-#if SIZEOF_PID_T == 4
-                                         "Failed to send SIGUSR1 to %d : %s",
-#else
-                                         "Failed to send SIGUSR1 to %lld : %s",
-#endif
-                                         (pri_pid_t)qb[exec_qb_pos].pid, strerror(errno));
-                           }
-                           p_afd_status->burst2_counter++;
-#ifdef HAVE_SETPRIORITY
-                           if (add_afd_priority == YES)
-                           {
-                              int sched_priority;
-
-                              sched_priority = current_priority + qb[qb_pos].msg_name[MAX_MSG_NAME_LENGTH - 1];
-                              if (sched_priority > min_sched_priority)
-                              {
-                                 sched_priority = min_sched_priority;
-                              }
-                              else if (sched_priority < max_sched_priority)
-                                   {
-                                      sched_priority = max_sched_priority;
-                                   }
-                              if (euid != ruid)
-                              {
-                                 if (seteuid(euid) == -1)
-                                 {
-                                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                                               "Failed to set the effective user ID : %s",
-                                               strerror(errno));
-                                 }
-                              }
-                              if (setpriority(PRIO_PROCESS, qb[qb_pos].pid,
-                                              sched_priority) == -1)
+                              if (kill(qb[exec_qb_pos].pid, SIGUSR1) == -1)
                               {
                                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
-# if SIZEOF_PID_T == 4
-                                            "Failed to setpriority() to %d of process %d : %s",
-# else
-                                            "Failed to setpriority() to %d of process %lld : %s",
-# endif
-                                            sched_priority,
-                                            (pri_pid_t)qb[qb_pos].pid,
-                                            strerror(errno));
+#if SIZEOF_PID_T == 4
+                                            "Failed to send SIGUSR1 to %d : %s",
+#else
+                                            "Failed to send SIGUSR1 to %lld : %s",
+#endif
+                                            (pri_pid_t)qb[exec_qb_pos].pid, strerror(errno));
                               }
-                              if (euid != ruid)
+                              p_afd_status->burst2_counter++;
+#ifdef HAVE_SETPRIORITY
+                              if (add_afd_priority == YES)
                               {
-                                 if (seteuid(ruid) == -1)
+                                 int sched_priority;
+
+                                 sched_priority = current_priority + qb[qb_pos].msg_name[MAX_MSG_NAME_LENGTH - 1];
+                                 if (sched_priority > min_sched_priority)
                                  {
-                                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                                               "Failed to set back to the real user ID : %s",
+                                    sched_priority = min_sched_priority;
+                                 }
+                                 else if (sched_priority < max_sched_priority)
+                                      {
+                                         sched_priority = max_sched_priority;
+                                      }
+                                 if (euid != ruid)
+                                 {
+                                    if (seteuid(euid) == -1)
+                                    {
+                                       system_log(WARN_SIGN, __FILE__, __LINE__,
+                                                  "Failed to set the effective user ID : %s",
+                                                  strerror(errno));
+                                    }
+                                 }
+                                 if (setpriority(PRIO_PROCESS, qb[qb_pos].pid,
+                                                 sched_priority) == -1)
+                                 {
+                                    system_log(DEBUG_SIGN, __FILE__, __LINE__,
+# if SIZEOF_PID_T == 4
+                                               "Failed to setpriority() to %d of process %d : %s",
+# else
+                                               "Failed to setpriority() to %d of process %lld : %s",
+# endif
+                                               sched_priority,
+                                               (pri_pid_t)qb[qb_pos].pid,
                                                strerror(errno));
                                  }
+                                 if (euid != ruid)
+                                 {
+                                    if (seteuid(ruid) == -1)
+                                    {
+                                       system_log(WARN_SIGN, __FILE__, __LINE__,
+                                                  "Failed to set back to the real user ID : %s",
+                                                  strerror(errno));
+                                    }
+                                 }
                               }
-                           }
 #endif /* HAVE_SETPRIORITY */
+                           }
+                           else
+                           {
+                              /* Process is no longer ready to receive a signal. */
+                              /* Restore everything and lets just continue.      */
+                              qb[qb_pos].pid = PENDING;
+                              qb[qb_pos].connect_pos = -1;
+                              connection[qb[exec_qb_pos].connect_pos].job_no = -1;
+                              connection[qb[exec_qb_pos].connect_pos].msg_name[0] = '\0';
+                              connection[qb[exec_qb_pos].connect_pos].fra_pos = -1;
+                              connection[qb[exec_qb_pos].connect_pos].dir_alias[0] = '\0';
+                              fsa[fsa_pos].job_status[i].job_id = NO_ID;
+                              fsa[fsa_pos].job_status[i].unique_name[0] = '\0';
+                              
+                              continue;
+                           }
                         }
                         else
                         {
@@ -2506,7 +2539,8 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
             {
                for (i = 0; i < wait_counter; i++)
                {
-                  if (fsa[fsa_pos].job_status[other_job_wait_pos[i]].unique_name[2] == 5)
+                  if ((fsa[fsa_pos].job_status[other_job_wait_pos[i]].unique_name[2] == 5) &&
+                      (fsa[fsa_pos].job_status[other_job_wait_pos[i]].file_name_in_use[MAX_FILENAME_LENGTH -1] == 1))
                   {
                      if (qb[other_qb_pos[i]].pid > 0)
                      {
@@ -4057,6 +4091,24 @@ qb_pos_fsa(int fsa_pos, int *qb_pos)
               fsa[fsa_pos].host_dsp_name);
 
    return;
+}
+
+
+/*+++++++++++++++++++++++++ check_dir_in_use() ++++++++++++++++++++++++++*/
+static int
+check_dir_in_use(int fra_pos)
+{
+   register int i;
+
+   for (i = 0; i < fsa[fra[fra_pos].fsa_pos].allowed_transfers; i++)
+   {
+      if (fsa[fra[fra_pos].fsa_pos].job_status[i].job_id == fra[fra_pos].dir_id)
+      {
+         return(YES);
+      }
+   }
+
+   return(NO);
 }
 
 

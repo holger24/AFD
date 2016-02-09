@@ -194,8 +194,19 @@ remove_job_files(char *del_dir, int fsa_pos, off_t sf_lock_offset)
          else
          {
             system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                       _("UUUPS! A directory [%s]! Whats that doing here?"),
-                       del_dir);
+                       _("UUUPS! A directory [%s]! Whats that doing here? Deleted %d files. [host_alias=%s]"),
+                       del_dir, number_deleted,
+                       (fsa_pos > -1) ? p_fsa->host_alias : "-");
+
+            /* Lets bail out. If del_dir contains garbage we should stop */
+            /* the deleting of files.                                    */
+            if (closedir(dp) == -1)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          _("Could not closedir() `%s' : %s"),
+                          del_dir, strerror(errno));
+            }
+            return;
          }
       }
       errno = 0;

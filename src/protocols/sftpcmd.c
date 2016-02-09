@@ -1,6 +1,6 @@
 /*
  *  sftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1727,7 +1727,7 @@ sftp_write(char *block, int size)
                {
                   /* Some error has occured. */
                   get_msg_str(&msg[9]);
-                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_write", NULL,
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_write", NULL,
                             "%s", error_2_str(&msg[5]));
                   status = INCORRECT;
                }

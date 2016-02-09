@@ -1,6 +1,6 @@
 /*
  *  check_inotify_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -176,14 +176,15 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
 
          if (((fra[p_de->fra_pos].ignore_size == -1) ||
               ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_EQUAL) &&
-               (fra[p_de->fra_pos].ignore_size == stat_buf.st_size)) ||
+               (fra[p_de->fra_pos].ignore_size != stat_buf.st_size)) ||
               ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_LESS_THEN) &&
                (fra[p_de->fra_pos].ignore_size < stat_buf.st_size)) ||
               ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_GREATER_THEN) &&
                (fra[p_de->fra_pos].ignore_size > stat_buf.st_size))) &&
              ((fra[p_de->fra_pos].ignore_file_time == 0) ||
+              (fra[p_de->fra_pos].fsa_pos != -1) || /* Time+size check only local dirs! */
                ((fra[p_de->fra_pos].gt_lt_sign & IFTIME_EQUAL) &&
-                (fra[p_de->fra_pos].ignore_file_time == diff_time)) ||
+                (fra[p_de->fra_pos].ignore_file_time != diff_time)) ||
               ((fra[p_de->fra_pos].gt_lt_sign & IFTIME_LESS_THEN) &&
                (fra[p_de->fra_pos].ignore_file_time < diff_time)) ||
               ((fra[p_de->fra_pos].gt_lt_sign & IFTIME_GREATER_THEN) &&

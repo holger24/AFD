@@ -1,6 +1,6 @@
 /*
  *  check_burst_gf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014, 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ extern struct filetransfer_status *fsa;
 extern struct job                 db;
 
 /* Local variables. */
-static sig_atomic_t               alarm_triggered;
+static sig_atomic_t               signal_caught;
 
 /* Local function prototypes. */
 static void                       sig_alarm(int);
@@ -148,6 +148,7 @@ check_burst_gf(unsigned int *values_changed)
          int diff_no_of_files_done;
 #endif
 
+         signal_caught = 0;
          newact.sa_handler = sig_alarm;
          sigemptyset(&newact.sa_mask);
          newact.sa_flags = 0;
@@ -169,6 +170,9 @@ check_burst_gf(unsigned int *values_changed)
                        "sigprocmask() error : %s", strerror(errno));
          }
          fsa->job_status[(int)db.job_no].unique_name[2] = 5;
+
+         /* Indicate to FD that signal handler is in place. */
+         fsa->job_status[(int)db.job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] = 1;
 
 #ifndef AFDBENCH_CONFIG
          diff_no_of_files_done = fsa->job_status[(int)db.job_no].no_of_files_done -
@@ -213,10 +217,16 @@ check_burst_gf(unsigned int *values_changed)
          (void)alarm(0);
          if (gsf_check_fsa((struct job *)&db) != NEITHER)
          {
-            if (fsa->job_status[(int)db.job_no].unique_name[2] == 5)
+            if (signal_caught != 2)
             {
-               fsa->job_status[(int)db.job_no].unique_name[2] = 0;
+               if (fsa->job_status[(int)db.job_no].unique_name[2] == 5)
+               {
+                  fsa->job_status[(int)db.job_no].unique_name[2] = 0;
+               }
             }
+
+            /* Indicate FD we no longer want any signals. */
+            fsa->job_status[(int)db.job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] = 2;
          }
 
          /*
@@ -292,7 +302,7 @@ check_burst_gf(unsigned int *values_changed)
                           generic_fifo, strerror(errno));
                return(NO);
             }
-            alarm_triggered = NO;
+            signal_caught = 0;
             pid = -db.my_pid;
 
             newact.sa_handler = sig_alarm;
@@ -318,11 +328,15 @@ check_burst_gf(unsigned int *values_changed)
 
             fsa->job_status[(int)db.job_no].unique_name[2] = 4;
 
+            /* Indicate to FD that signal handler is in place. */
+            fsa->job_status[(int)db.job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] = 1;
+
             if (write(fd, &pid, sizeof(pid_t)) != sizeof(pid_t))
             {
                int tmp_errno = errno;
 
                fsa->job_status[(int)db.job_no].unique_name[2] = 0;
+               fsa->job_status[(int)db.job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] = 2;
                if ((sigaction(SIGUSR1, &oldact_usr1, NULL) < 0) ||
                    (sigaction(SIGALRM, &oldact_alrm, NULL) < 0))
                {
@@ -356,10 +370,16 @@ check_burst_gf(unsigned int *values_changed)
             (void)alarm(0);
             if (gsf_check_fsa((struct job *)&db) != NEITHER)
             {
-               if (fsa->job_status[(int)db.job_no].unique_name[2] == 4)
+               if (signal_caught != 2)
                {
-                  fsa->job_status[(int)db.job_no].unique_name[2] = 0;
+                  if (fsa->job_status[(int)db.job_no].unique_name[2] == 4)
+                  {
+                     fsa->job_status[(int)db.job_no].unique_name[2] = 0;
+                  }
                }
+
+               /* Indicate FD we no longer want any signals. */
+               fsa->job_status[(int)db.job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] = 2;
             }
 
             /*
@@ -408,7 +428,7 @@ check_burst_gf(unsigned int *values_changed)
                           "close() error : %s", strerror(errno));
             }
 
-            if ((alarm_triggered == YES) &&
+            if ((signal_caught == 1) &&
                 (fsa->job_status[(int)db.job_no].unique_name[1] == '\0'))
             {
                if (gsf_check_fsa((struct job *)&db) != NEITHER)
@@ -953,8 +973,12 @@ sig_alarm(int signo)
 {
    if (signo == SIGALRM)
    {
-      alarm_triggered = YES;
+      signal_caught = 1;
    }
+   else if (signo == SIGUSR1)
+        {
+           signal_caught = 2;
+        }
 
    return; /* Return to wakeup sigsuspend(). */
 }

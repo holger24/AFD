@@ -482,6 +482,7 @@ init_sf(int argc, char *argv[], char *file_path, int protocol)
       fsa->job_status[(int)db.job_no].file_size_done = 0;
       fsa->job_status[(int)db.job_no].connect_status = CONNECTING;
       fsa->job_status[(int)db.job_no].job_id = db.id.job;
+      fsa->job_status[(int)db.job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] = 2;
 #ifdef LOCK_DEBUG
       unlock_region(fsa_fd, db.lock_offset, __FILE__, __LINE__);
 #else

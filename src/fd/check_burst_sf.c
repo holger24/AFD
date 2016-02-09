@@ -94,7 +94,7 @@ extern struct filetransfer_status *fsa;
 extern struct job                 db;
 
 /* Local variables. */
-static sig_atomic_t               alarm_triggered;
+static sig_atomic_t               signal_caught;
 
 /* Local function prototypes. */
 static void                       sig_alarm(int);
@@ -181,6 +181,7 @@ check_burst_sf(char         *file_path,
             int diff_no_of_files_done;
 #endif
 
+            signal_caught = 0;
             newact.sa_handler = sig_alarm;
             sigemptyset(&newact.sa_mask);
             newact.sa_flags = 0;
@@ -202,6 +203,10 @@ check_burst_sf(char         *file_path,
                           "sigprocmask() error : %s", strerror(errno));
             }
             fsa->job_status[(int)db.job_no].unique_name[2] = 5;
+
+            /* Indicate to FD that signal handler is in place. */
+            fsa->job_status[(int)db.job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] = 1;
+
 #ifdef _WITH_INTERRUPT_JOB
             if (interrupt == YES)
             {
@@ -331,10 +336,16 @@ check_burst_sf(char         *file_path,
             (void)alarm(0);
             if (gsf_check_fsa((struct job *)&db) != NEITHER)
             {
-               if (fsa->job_status[(int)db.job_no].unique_name[2] == 5)
+               if (signal_caught != 2)
                {
-                  fsa->job_status[(int)db.job_no].unique_name[2] = 0;
+                  if (fsa->job_status[(int)db.job_no].unique_name[2] == 5)
+                  {
+                     fsa->job_status[(int)db.job_no].unique_name[2] = 0;
+                  }
                }
+
+               /* Indicate FD we no longer want any signals. */
+               fsa->job_status[(int)db.job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] = 2;
             }
 
             /*
@@ -414,7 +425,7 @@ check_burst_sf(char         *file_path,
                              generic_fifo, strerror(errno));
                   return(NO);
                }
-               alarm_triggered = NO;
+               signal_caught = 0;
                pid = -db.my_pid;
 
                newact.sa_handler = sig_alarm;
@@ -439,6 +450,10 @@ check_burst_sf(char         *file_path,
                }
 
                fsa->job_status[(int)db.job_no].unique_name[2] = 4;
+
+               /* Indicate to FD that signal handler is in place. */
+               fsa->job_status[(int)db.job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] = 1;
+
 #ifdef _WITH_INTERRUPT_JOB
                if (interrupt == YES)
                {
@@ -451,6 +466,7 @@ check_burst_sf(char         *file_path,
                   int tmp_errno = errno;
 
                   fsa->job_status[(int)db.job_no].unique_name[2] = 0;
+                  fsa->job_status[(int)db.job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] = 2;
                   if ((sigaction(SIGUSR1, &oldact_usr1, NULL) < 0) ||
                       (sigaction(SIGALRM, &oldact_alrm, NULL) < 0))
                   {
@@ -484,10 +500,16 @@ check_burst_sf(char         *file_path,
                (void)alarm(0);
                if (gsf_check_fsa((struct job *)&db) != NEITHER)
                {
-                  if (fsa->job_status[(int)db.job_no].unique_name[2] == 4)
+                  if (signal_caught != 2)
                   {
-                     fsa->job_status[(int)db.job_no].unique_name[2] = 0;
+                     if (fsa->job_status[(int)db.job_no].unique_name[2] == 4)
+                     {
+                        fsa->job_status[(int)db.job_no].unique_name[2] = 0;
+                     }
                   }
+
+                  /* Indicate FD we no longer want any signals. */
+                  fsa->job_status[(int)db.job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] = 2;
                }
 
                /*
@@ -536,7 +558,7 @@ check_burst_sf(char         *file_path,
                              "close() error : %s", strerror(errno));
                }
 
-               if ((alarm_triggered == YES) &&
+               if ((signal_caught == 1) &&
                    (fsa->job_status[(int)db.job_no].unique_name[1] == '\0'))
                {
                   if (gsf_check_fsa((struct job *)&db) != NEITHER)
@@ -999,8 +1021,12 @@ sig_alarm(int signo)
 {
    if (signo == SIGALRM)
    {
-      alarm_triggered = YES;
+      signal_caught = 1;
    }
+   else if (signo == SIGUSR1)
+        {
+           signal_caught = 2;
+        }
 
    return; /* Return to wakeup sigsuspend(). */
 }
