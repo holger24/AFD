@@ -185,6 +185,23 @@ the new value:
    <td valign=top>init_afd</td>
 </tr>
 <tr>
+   <td valign=top><a name="extra_work_dir">EXTRA_WORK_DIR</a></td>
+   <td>If there are multiple filesystems from which AFD must distribute
+       files set this option for each extra filesystem. Otherwise AFD
+       will always copy from one filesystem to the other. Only one extra
+       filesystem can set for the key word EXTRA_WORK_DIR, so to specify
+       multiple filesystems you must use it multiple times. If you have
+       an extra filesystem in /ram and /drbd, you can set this as follows:
+       <pre>
+     EXTRA_WORK_DIR    /drbd/afd/files
+     EXTRA_WORK_DIR    /ram/afd/files
+       </pre>
+       AFD will then create its extra directories in /drbd/afd and
+       /ram/afd (files, archive).</td>
+   <td valign=top>Not set</td>
+   <td valign=top>amg, fd</td>
+</tr>
+<tr>
    <td valign=top><a name="dir_config_name">DIR_CONFIG_NAME</a></td>
    <td>The file from where AFD will read it's configuration. This
        option may be used more then once, thus making it possible
@@ -472,6 +489,27 @@ the new value:
    <td valign=top>amg</td>
 </tr>
 <tr>
+   <td valign=top><a name="gf_force_disconnect">GF_FORCE_DISCONNECT</a></td>
+   <td>If <a href="host_config.html#keep_connected">keep connected</a> is
+       set, it can be that the process never disconnects because there is
+       a constant flow of data. This can be a problem if there are changes
+       in the filesystem underneath. Depending on the implementation this
+       can go by unnoticed by the connected process. A good example is
+       if the directory we are in is a soft link and this is changed, then
+       the for example FTP session will not notice this. It will then
+       read from a directory different where the current symbolic link
+       points to. The value is in seconds.</td>
+   <td valign=top>0 (Never disconnect)</td>
+   <td valign=top>fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="sf_force_disconnect">SF_FORCE_DISCONNECT</a></td>
+   <td>See description above. This is the same the only differnce being
+       that this is for sending files.</td>
+   <td valign=top>0 (Never disconnect)</td>
+   <td valign=top>fd</td>
+</tr>
+<tr>
    <td valign=top><a name="max_system_log_files">MAX_SYSTEM_LOG_FILES</a></td>
    <td>The number of old system logfiles that AFD keeps before they are
        deleted.</td>
@@ -640,10 +678,10 @@ VIEW_DATA_PROG [--with-show_cmd] &lt;progname&gt; &lt;pattern&gt;
        option --with-show_cmd one can show the output of programs that just
        write to STDOUT and/or STDERR. here some example entries:
        <pre>
-VIEW_DATA_NO_FILTER_PROG    XV   /usr/bin/xv
-VIEW_DATA_NO_FILTER_PROG    Xpdf xpdf
-VIEW_DATA_NO_FILTER_PROG    od --with-show_cmd "od -A x -t x1z -v"
-VIEW_DATA_NO_FILTER_PROG    bufr --with-show_cmd "bufrtool -d -t ~/afd/usr/tables_v2 -i %s -o - "
+     VIEW_DATA_NO_FILTER_PROG    XV   /usr/bin/xv
+     VIEW_DATA_NO_FILTER_PROG    Xpdf xpdf
+     VIEW_DATA_NO_FILTER_PROG    od --with-show_cmd "od -A x -t x1z -v"
+     VIEW_DATA_NO_FILTER_PROG    bufr --with-show_cmd "bufrtool -d -t ~/afd/usr/tables_v2 -i %s -o - "
        </pre>
        </td>
    <td valign=top><pre>&nbsp;</pre></td>
@@ -658,16 +696,16 @@ VIEW_DATA_NO_FILTER_PROG    bufr --with-show_cmd "bufrtool -d -t ~/afd/usr/table
        example give operators limited permission and do not want to
        create a new user, you can do the following:
        <pre>
-             FAKE_USER     afd->operator
+     FAKE_USER     afd->operator
        </pre>
        If the user afd enters the following command:
        <pre>
-             afd_ctrl -u operator
+     afd_ctrl -u operator
        </pre>
        the afd_ctrl dialog will come up with the permissions of
        operator. More fake users can be added with a comma as separator:
        <pre>
-             FAKE_USER     afd->operator,afd->donald
+     FAKE_USER     afd->operator,afd->donald
        </pre>
        The list may not be longer then 1023 bytes.</td>
    <td valign=top><pre>&nbsp;</pre></td>
@@ -682,9 +720,9 @@ restarted.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1999 - 2014 by H.Kiehl<br>
+   Copyright &copy; 1999 - 2015 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 23.11.2014
+   Last updated: 14.08.2015
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

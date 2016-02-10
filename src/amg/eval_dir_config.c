@@ -1,6 +1,6 @@
 /*
  *  eval_dir_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -116,8 +116,8 @@ DESCR__S_M3
 DESCR__E_M3
 
 #include <stdio.h>                  /* fprintf()                         */
-#include <string.h>                 /* strlen(), strcmp(), strncmp(),    */
-                                    /* strcpy(), memmove(), strerror()   */
+#include <string.h>                 /* strlen(), strncmp(), strcpy()     */
+                                    /* memmove(), strerror()             */
 #include <stdlib.h>                 /* calloc(), realloc(), free(),      */
                                     /* atoi(), malloc()                  */
 #include <ctype.h>                  /* isdigit()                         */
@@ -135,6 +135,7 @@ DESCR__E_M3
 #include <errno.h>
 #include "amgdefs.h"
 
+#define USE_INOTIFY_FOR_REMOTE_DIRS
 
 /* External global variables. */
 #ifdef _DEBUG
@@ -190,13 +191,12 @@ static void                   copy_job(int, int, struct dir_group *),
 #else
                               copy_to_file(void),
 #endif
+                              expand_file_filter(struct dir_group *, int *),
                               insert_dir(struct dir_group *),
                               insert_hostname(struct dir_group *),
                               sort_jobs(void);
 static char                   *posi_identifier(char *, char *, size_t);
 
-#define RECIPIENT_STEP_SIZE 10
-#define FILE_MASK_STEP_SIZE 256
 /* #define _LINE_COUNTER_TEST */
 
 /* The following macro checks for spaces and comments. */
@@ -254,7 +254,9 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
 #endif
 {
    unsigned int          error_mask;
-   int                   dcd = 0,             /* DIR_CONFIG's done.            */
+   int                   dcd = 0,             /* DIR_CONFIG's done.       */
+                         dir_group_type,      /* Groups can either be of  */
+                                              /* type file or directory.  */
                          i,
                          j,
 #ifdef _DEBUG
@@ -280,6 +282,7 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                                               /* unique destination name. */
    uid_t                 current_uid;
    char                  *database = NULL,
+                         *dir_group_loop_ptr,
                          *dir_ptr,
                          dummy_transfer_mode,
 #ifdef WITH_SSH_FINGERPRINT
@@ -316,6 +319,7 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                          other_dest_flag,     /* If set, there is another */
                                               /* destination entry.       */
                          created_path[MAX_PATH_LENGTH],
+                         group_name[MAX_GROUPNAME_LENGTH],
                          prev_user_name[MAX_USER_NAME_LENGTH],
                          prev_user_dir[MAX_PATH_LENGTH],
                          user[MAX_USER_NAME_LENGTH],
@@ -437,7 +441,7 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
 #endif
 
       /* Read database file and store it into memory. */
-      if ((read_file_no_cr(dcl[dcd].dir_config_file, &database, __FILE__, __LINE__) == INCORRECT) ||
+      if ((read_file_no_cr(dcl[dcd].dir_config_file, &database, YES, __FILE__, __LINE__) == INCORRECT) ||
           (database == NULL) || (database[0] == '\0'))
       {
          if (database == NULL)
@@ -569,9 +573,11 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
 
          /* Store directory name. */
          i = 0;
+         group_name[0] = '\0';
          while ((*ptr != '\n') && (*ptr != '\0') && (i < (MAX_PATH_LENGTH - 2)))
          {
-            if ((*ptr == '\\') && ((*(ptr + 1) == '#') || (*(ptr + 1) == ' ')))
+            if ((*ptr == '\\') && ((*(ptr + 1) == '#') ||
+                (*(ptr + 1) == GROUP_SIGN) || (*(ptr + 1) == ' ')))
             {
                dir->location[i] = *(ptr + 1);
                i++;
@@ -593,11 +599,52 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                      i--;
                   }
                }
-               else
-               {
-                  dir->location[i] = *ptr;
-                  i++; ptr++;
-               }
+               else if ((*ptr == GROUP_SIGN) &&
+                        ((*(ptr + 1) == CURLY_BRACKET_OPEN) ||
+                         (*(ptr + 1) == SQUARE_BRACKET_OPEN)))
+                    {
+                       char close_bracket;
+
+                       if (*(ptr + 1) == CURLY_BRACKET_OPEN)
+                       {
+                          dir_group_type = YES;
+                          close_bracket = CURLY_BRACKET_CLOSE;
+                       }
+                       else
+                       {
+                          dir_group_type = NO;
+                          close_bracket = SQUARE_BRACKET_CLOSE;
+                       }
+                       dir->location[i] = *ptr;
+                       dir->location[i + 1] = *(ptr + 1);
+                       ptr += 2;
+                       i += 2;
+                       j = 0;
+                       while ((*ptr != close_bracket) &&
+                              (*ptr != '\n') && (*ptr != '\0'))
+                       {
+                          group_name[j] = *ptr;
+                          dir->location[i] = *ptr;
+                          j++; ptr++; i++;
+                       }
+                       if (*ptr == close_bracket)
+                       {
+                          group_name[j] = '\0';
+                          dir->location[i] = *ptr;
+                          ptr++; i++;
+                       }
+                       else
+                       {
+                          /* No end marker, so just take it as a normal */
+                          /* directory entry.                           */
+                          group_name[0] = '\0';
+                       }
+                    }
+                    else
+                    {
+                       dir->location[i] = *ptr;
+                       i++; ptr++;
+                    }
             }
          }
          if ((*ptr == '\n') && (i > 0))
@@ -620,800 +667,377 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
          dir->location[i] = '\0';
          dir->location_length = i;
 
-         /* Lets resolve any tilde signs ~. */
-         if (dir->location[0] == '~')
+         dir_group_loop_ptr = ptr;
+         if (group_name[0] != '\0')
          {
-            char tmp_char,
-                 tmp_location[MAX_PATH_LENGTH];
-
-            (void)memcpy(dir->orig_dir_name, dir->location,
-                         dir->location_length);
-            tmp_ptr = dir->location;
-            while ((*tmp_ptr != '/') && (*tmp_ptr != '\n') &&
-                   (*tmp_ptr != '\0') && (*tmp_ptr != ' ') &&
-                   (*tmp_ptr != '\t'))
-            {
-               tmp_ptr++;
-            }
-            tmp_char = *tmp_ptr;
-            *tmp_ptr = '\0';
-            if ((prev_user_name[0] == '\0') ||
-                (CHECK_STRCMP(dir->location, prev_user_name) != 0))
-            {
-               char          *p_end;
-               struct passwd *pwd;
-
-               if (*(tmp_ptr - 1) == '~')
-               {
-                  if ((pwd = getpwuid(current_uid)) == NULL)
-                  {
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                "Cannot find working directory for user with the user ID %d in /etc/passwd (ignoring directory from %s) : %s",
-                                current_uid, dcl[dcd].dir_config_file,
-                                strerror(errno));
-                     if (warn_counter != NULL)
-                     {
-                        (*warn_counter)++;
-                     }
-                     *tmp_ptr = tmp_char;
-                     continue;
-                  }
-               }
-               else
-               {
-                  if ((pwd = getpwnam(&dir->location[1])) == NULL)
-                  {
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                "Cannot find users %s working directory in /etc/passwd (ignoring directory from %s) : %s",
-                                &dir->location[1], dcl[dcd].dir_config_file,
-                                strerror(errno));
-                     if (warn_counter != NULL)
-                     {
-                        (*warn_counter)++;
-                     }
-                     *tmp_ptr = tmp_char;
-                     continue;
-                  }
-               }
-               (void)strcpy(prev_user_name, dir->location);
-               (void)strcpy(prev_user_dir, pwd->pw_dir);
-
-               /*
-                * Cut away /./ at end of user directory. This information
-                * is used by some FTP-servers so they chroot to this
-                * directory. We don't need that here.
-                */
-               p_end = prev_user_dir + strlen(prev_user_dir) - 1;
-               while ((p_end > prev_user_dir) &&
-                      ((*p_end == '/') || (*p_end == '.')))
-               {
-                  *p_end = '\0';
-                  p_end--;
-               }
-            }
-            *tmp_ptr = tmp_char;
-            (void)strcpy(tmp_location, prev_user_dir);
-            if (*tmp_ptr == '/')
-            {
-               (void)strcat(tmp_location, tmp_ptr);
-            }
-            (void)strcpy(dir->location, tmp_location);
-            dir->location_length = optimise_dir(dir->location);
-            dir->protocol = LOC;
-         }
-         else if (dir->location[0] == '/')
-              {
-                 (void)memcpy(dir->orig_dir_name, dir->location,
-                              dir->location_length);
-                 dir->location_length = optimise_dir(dir->location);
-                 dir->type = LOCALE_DIR;
-                 dir->protocol = LOC;
-              }
-         /* Assume it is url format. */
-         else if ((error_mask = url_evaluate(dir->location, &dir->scheme, user,
-                                             &smtp_auth, smtp_user,
-#ifdef WITH_SSH_FINGERPRINT
-                                             dummy_ssh_fingerprint,
-                                             &dummy_key_type,
-#endif
-#ifdef WITH_PASSWD_IN_MSG
-                                             password, NO, dir->real_hostname,
-#else
-                                             password, YES, dir->real_hostname,
-#endif
-                                             &dummy_port, directory, NULL,
-                                             NULL, &dummy_transfer_mode,
-                                             &dummy_ssh_protocol, NULL)) < 4)
-              {
-                 if (dir->scheme & FTP_FLAG)
-                 {
-                    dir->type = REMOTE_DIR;
-                    dir->protocol = FTP;
-                    if (password[0] != '\0')
-                    {
-                       store_passwd(user, dir->real_hostname, password);
-                    }
-                    t_hostname(dir->real_hostname, dir->host_alias);
-                    (void)strcpy(dir->url, dir->location);
-                    (void)strcpy(dir->orig_dir_name, dir->url);
-                    if (create_remote_dir(NULL, user, dir->real_hostname,
-                                          directory, dir->location,
-                                          &dir->location_length) == INCORRECT)
-                    {
-                       continue;
-                    }
-                 }
-                 else if (dir->scheme & LOC_FLAG)
-                      {
-                         (void)memcpy(dir->orig_dir_name, dir->location,
-                                      dir->location_length);
-                         dir->type = LOCALE_DIR;
-                         dir->protocol = LOC;
-                         if ((dir->real_hostname[0] != '\0') &&
-                             (dir->alias[0] == '\0'))
-                         {
-                            (void)my_strncpy(dir->alias, dir->real_hostname,
-                                             MAX_DIR_ALIAS_LENGTH + 1);
-                         }
-                         if (directory[0] != '/')
-                         {
-                            if ((prev_user_name[0] == '\0') ||
-                                (CHECK_STRCMP(user, prev_user_name) != 0))
-                            {
-                               char          *p_end;
-                               struct passwd *pwd;
-
-                               if (user[0] == '\0')
-                               {
-                                  if ((pwd = getpwuid(current_uid)) == NULL)
-                                  {
-                                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                                "Cannot find working directory for user with the user ID %d in /etc/passwd (ignoring directory from %s) : %s",
-                                                current_uid, dcl[dcd].dir_config_file,
-                                                strerror(errno));
-                                     if (warn_counter != NULL)
-                                     {
-                                        (*warn_counter)++;
-                                     }
-                                     continue;
-                                  }
-                               }
-                               else
-                               {
-                                  if ((pwd = getpwnam(user)) == NULL)
-                                  {
-                                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                                "Cannot find users %s working directory in /etc/passwd (ignoring directory from %s) : %s",
-                                                user, dcl[dcd].dir_config_file,
-                                                strerror(errno));
-                                     if (warn_counter != NULL)
-                                     {
-                                        (*warn_counter)++;
-                                     }
-                                     continue;
-                                  }
-                               }
-                               (void)strcpy(prev_user_name, user);
-                               (void)strcpy(prev_user_dir, pwd->pw_dir);
-
-                               /*
-                                * Cut away /./ at end of user directory. This
-                                * information * is used by some FTP-servers so
-                                * they chroot to this * directory. We don't
-                                * need that here.
-                                */
-                               p_end = prev_user_dir + strlen(prev_user_dir) - 1;
-                               while ((p_end > prev_user_dir) &&
-                                      ((*p_end == '/') || (*p_end == '.')))
-                               {
-                                  *p_end = '\0';
-                                  p_end--;
-                               }
-                            }
-                         }
-                         (void)memcpy(dir->orig_dir_name, dir->location,
-                                      dir->location_length);
-                         if (directory[0] == '\0')
-                         {
-                            (void)strcpy(dir->location, prev_user_dir);
-                            dir->location_length = strlen(dir->location) + 1;
-                         }
-                         else if (directory[0] == '/')
-                              {
-                                 (void)strcpy(dir->location, directory);
-                                 dir->location_length = optimise_dir(dir->location);
-                              }
-                              else
-                              {
-                                 (void)snprintf(dir->location, MAX_PATH_LENGTH,
-                                                "%s/%s",
-                                                prev_user_dir, directory);
-                                 dir->location_length = optimise_dir(dir->location);
-                              }
-                      }
-                 else if (dir->scheme & HTTP_FLAG)
-                      {
-                         dir->type = REMOTE_DIR;
-                         dir->protocol = HTTP;
-                         if (password[0] != '\0')
-                         {
-                            store_passwd(user, dir->real_hostname, password);
-                         }
-                         t_hostname(dir->real_hostname, dir->host_alias);
-                         (void)strcpy(dir->url, dir->location);
-                         (void)strcpy(dir->orig_dir_name, dir->url);
-                         if (create_remote_dir(NULL, user, dir->real_hostname,
-                                               directory, dir->location,
-                                               &dir->location_length) == INCORRECT)
-                         {
-                            continue;
-                         }
-                      }
-                 else if (dir->scheme & SFTP_FLAG)
-                      {
-                         dir->type = REMOTE_DIR;
-                         dir->protocol = SFTP;
-                         if (password[0] != '\0')
-                         {
-                            store_passwd(user, dir->real_hostname, password);
-                         }
-                         t_hostname(dir->real_hostname, dir->host_alias);
-                         (void)strcpy(dir->url, dir->location);
-                         (void)strcpy(dir->orig_dir_name, dir->url);
-                         if (create_remote_dir(NULL, user, dir->real_hostname,
-                                               directory, dir->location,
-                                               &dir->location_length) == INCORRECT)
-                         {
-                            continue;
-                         }
-                      }
-                 else if (dir->scheme & EXEC_FLAG)
-                      {
-                         unsigned int crc_val;
-
-                         dir->type = REMOTE_DIR;
-                         dir->protocol = EXEC;
-                         t_hostname(dir->real_hostname, dir->host_alias);
-                         (void)strcpy(dir->url, dir->location);
-                         (void)strcpy(dir->orig_dir_name, dir->url);
-#ifdef HAVE_HW_CRC32
-                         crc_val = get_str_checksum_crc32c(directory, have_hw_crc32);
-#else
-                         crc_val = get_str_checksum_crc32c(directory);
-#endif
-                         (void)snprintf(directory, MAX_RECIPIENT_LENGTH,
-                                        "%x", crc_val);
-                         if (create_remote_dir(NULL, user, dir->real_hostname,
-                                               directory, dir->location,
-                                               &dir->location_length) == INCORRECT)
-                         {
-                            continue;
-                         }
-                      }
-                      else
-                      {
-                         system_log(WARN_SIGN, __FILE__, __LINE__,
-                                    "Unknown or unsupported scheme, ignoring directory %s from %s",
-                                    dir->location, dcl[dcd].dir_config_file);
-                         if (warn_counter != NULL)
-                         {
-                            (*warn_counter)++;
-                         }
-                         continue;
-                      }
-              }
-              else
-              {
-                 char error_msg[MAX_URL_ERROR_MSG];
-
-                 url_get_error(error_mask, error_msg, MAX_URL_ERROR_MSG);
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Incorrect url `%s' in %s line %d. Error is: %s.",
-                            dir->location, dcl[dcd].dir_config_file,
-                            count_new_lines(database, search_ptr), error_msg);
-                 if (warn_counter != NULL)
-                 {
-                    (*warn_counter)++;
-                 }
-                 continue;
-              }
-         dir_ptr = ptr - 1;
-
-         /* Before we go on, we have to search for the beginning of */
-         /* the next directory entry so we can mark the end for     */
-         /* this directory entry.                                   */
-         if ((end_dir_ptr = posi_identifier(ptr, DIR_IDENTIFIER,
-                                            DIR_IDENTIFIER_LENGTH)) != NULL)
-         {
-            /* First save char we encounter here. */
-            tmp_dir_char = *end_dir_ptr;
-
-            /* Now mark end of this directory entry. */
-            *end_dir_ptr = '\0';
-
-            /* Set flag that we found another entry. */
-            other_dir_flag = YES;
-         }
-         else
-         {
-            other_dir_flag = NO;
+            init_dir_group_name(dir->location, group_name, dir_group_type);
          }
 
-         /*
-          ****************** Read Directory Options ***************
-          */
-         if ((search_ptr = posi_identifier(ptr, DIR_OPTION_IDENTIFIER,
-                                           DIR_OPTION_IDENTIFIER_LENGTH)) != NULL)
+         do
          {
-            int length = 0;
+            /* For each directory group entry reset ptr. */
+            ptr = dir_group_loop_ptr;
 
-#ifdef _LINE_COUNTER_TEST
-            system_log(INFO_SIGN, NULL, 0,
-                       "Found DIR_OPTION_IDENTIFIER at line %d in %s",
-                       count_new_lines(database, search_ptr),
-                       dcl[dcd].dir_config_file);
-#endif
-            if (*(search_ptr - 1) != '\n')
+            /* Lets resolve any tilde signs ~. */
+            if (dir->location[0] == '~')
             {
-               /* Ignore any data directly behind the identifier. */
-               while ((*search_ptr != '\n') && (*search_ptr != '\0'))
-               {
-                  search_ptr++;
-               }
-               search_ptr++;
-            }
-            while (*search_ptr == '#')
-            {
-               while ((*search_ptr != '\n') && (*search_ptr != '\0'))
-               {
-                  search_ptr++;
-               }
-               search_ptr++;
-            }
-            ptr = search_ptr;
+               char tmp_char,
+                    tmp_location[MAX_PATH_LENGTH];
 
-            while ((*ptr != '\n') && (*ptr != '\0'))
-            {
-               while ((*ptr == ' ') || (*ptr == '\t'))
+               (void)memcpy(dir->orig_dir_name, dir->location,
+                            dir->location_length);
+               tmp_ptr = dir->location;
+               while ((*tmp_ptr != '/') && (*tmp_ptr != '\n') &&
+                      (*tmp_ptr != '\0') && (*tmp_ptr != ' ') &&
+                      (*tmp_ptr != '\t'))
                {
-                  ptr++;
+                  tmp_ptr++;
                }
-               if (*ptr != '\n')
+               tmp_char = *tmp_ptr;
+               *tmp_ptr = '\0';
+               if ((prev_user_name[0] == '\0') ||
+                   (CHECK_STRCMP(dir->location, prev_user_name) != 0))
                {
-                  /* Check if this is a comment line. */
-                  if (*ptr == '#')
+                  char          *p_end;
+                  struct passwd *pwd;
+
+                  if (*(tmp_ptr - 1) == '~')
                   {
-                     while ((*ptr != '\n') && (*ptr != '\0'))
+                     if ((pwd = getpwuid(current_uid)) == NULL)
                      {
-                        ptr++;
-                     }
-                     if (*ptr == '\n')
-                     {
-                        ptr++;
-                     }
-                     continue;
-                  }
-
-                  while ((*ptr != '\n') && (*ptr != '\0'))
-                  {
-                     dir->dir_options[length] = *ptr;
-                     ptr++; length++;
-                  }
-                  dir->dir_options[length++] = '\n';
-                  if (*ptr == '\n')
-                  {
-                     ptr++;
-                  }
-               }
-            }
-            dir->dir_options[length] = '\0';
-         }
-         else
-         {
-            dir->dir_options[0] = '\0';
-         }
-
-         /*
-          ********************** Read filenames *******************
-          */
-         /* Position ptr after FILE_IDENTIFIER. */
-         dir->fgc = 0;
-         while ((search_ptr = posi_identifier(ptr, FILE_IDENTIFIER,
-                                              FILE_IDENTIFIER_LENGTH)) != NULL)
-         {
-            ptr = --search_ptr;
-#ifdef _LINE_COUNTER_TEST
-            system_log(INFO_SIGN, NULL, 0,
-                       "Found FILE_IDENTIFIER at line %d in %s",
-                       count_new_lines(database, search_ptr),
-                       dcl[dcd].dir_config_file);
-#endif
-
-            if ((dir->fgc % FG_BUFFER_STEP_SIZE) == 0)
-            {
-               char   *ptr_start;
-               size_t new_size;
-
-               /* Calculate new size of file group buffer. */
-               new_size = ((dir->fgc / FG_BUFFER_STEP_SIZE) + 1) *
-                           FG_BUFFER_STEP_SIZE * sizeof(struct file_group);
-
-               if (dir->fgc == 0)
-               {
-                  if ((dir->file = malloc(new_size)) == NULL)
-                  {
-                     system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                "Could not malloc() memory : %s",
-                                strerror(errno));
-                     exit(INCORRECT);
-                  }
-               }
-               else
-               {
-                  if ((dir->file = realloc(dir->file, new_size)) == NULL)
-                  {
-                     system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                "Could not realloc() memory : %s",
-                                strerror(errno));
-                     exit(INCORRECT);
-                  }
-               }
-
-               if (dir->fgc > (FG_BUFFER_STEP_SIZE - 1))
-               {
-                  ptr_start = (char *)(dir->file) + (dir->fgc * sizeof(struct file_group));
-               }
-               else
-               {
-                  ptr_start = (char *)dir->file;
-               }
-               (void)memset(ptr_start, 0, (FG_BUFFER_STEP_SIZE * sizeof(struct file_group)));
-            }
-
-            /* Store file-group name. */
-            if (*ptr != '\n') /* Is there a file group name? */
-            {
-               /* Store file group name. */
-               i = 0;
-               while ((*ptr != '\n') && (*ptr != '\0'))
-               {
-                  CHECK_SPACE();
-                  dir->file[dir->fgc].file_group_name[i] = *ptr;
-                  i++; ptr++;
-               }
-
-               /* Did we already reach end of current file group? */
-               if (*ptr == '\0')
-               {
-                  /* Generate warning that this file entry is faulty. */
-                  system_log(WARN_SIGN, __FILE__, __LINE__,
-                             "In %s line %d, directory %s does not have a destination entry.",
-                             dcl[dcd].dir_config_file,
-                             count_new_lines(database, search_ptr),
-                             dir->location);
-                  if (warn_counter != NULL)
-                  {
-                     (*warn_counter)++;
-                  }
-
-                  /* To read the next file entry, put back the char    */
-                  /* that was torn out to mark end of this file entry. */
-                  if (tmp_file_char != 1)
-                  {
-                     *end_file_ptr = tmp_file_char;
-                  }
-
-                  /* No need to carry on with this file entry. */
-                  continue;
-               }
-
-               /* Make sure that a file group name was defined. */
-               if (dir->file[dir->fgc].file_group_name[0] == '\0')
-               {
-                  /* Create a unique file group name. */
-                  (void)snprintf(dir->file[dir->fgc].file_group_name, MAX_GROUP_NAME_LENGTH,
-                                 "FILE_%d", unique_file_counter);
-                  unique_file_counter++;
-               }
-            }
-            else /* No file group name defined. */
-            {
-               /* Create a unique file group name. */
-               (void)snprintf(dir->file[dir->fgc].file_group_name, MAX_GROUP_NAME_LENGTH,
-                              "FILE_%d", unique_file_counter);
-               unique_file_counter++;
-            }
-
-            /* Before we go on, we have to search for the beginning of */
-            /* the next file group entry so we can mark the end for   */
-            /* this file entry.                                       */
-            if ((end_file_ptr = posi_identifier(ptr, FILE_IDENTIFIER,
-                                                FILE_IDENTIFIER_LENGTH)) != NULL)
-            {
-               /* First save char we encounter here. */
-               tmp_file_char = *end_file_ptr;
-   
-               /* Now mark end of this file group entry. */
-               *end_file_ptr = '\0';
-
-               /* Set flag that we found another entry. */
-               other_file_flag = YES;
-            }
-            else
-            {
-               other_file_flag = NO;
-            }
-
-            /* Store file names. */
-            ptr++;
-            if (*ptr == '\n') /* Are any files specified? */
-            {
-               /* We assume that all files in this */
-               /* directory should be send.        */
-               if (alfc > 0)
-               {
-                  if ((dir->file[dir->fgc].files = malloc(alfbl + 2)) == NULL)
-                  {
-                     system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                "Could not malloc() memory : %s",
-                                strerror(errno));
-                     exit(INCORRECT);
-                  }
-                  dir->file[dir->fgc].fbl = alfbl + 2;
-                  (void)memcpy(dir->file[dir->fgc].files, alfiles, alfbl);
-                  dir->file[dir->fgc].files[alfbl] = '*';
-                  dir->file[dir->fgc].files[alfbl + 1] = '\0';
-                  dir->file[dir->fgc].fc = alfc + 1;
-               }
-               else
-               {
-                  if ((dir->file[dir->fgc].files = malloc(2)) == NULL)
-                  {
-                     system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                "Could not malloc() memory : %s",
-                                strerror(errno));
-                     exit(INCORRECT);
-                  }
-                  dir->file[dir->fgc].fbl = 2;
-                  dir->file[dir->fgc].files[0] = '*';
-                  dir->file[dir->fgc].files[1] = '\0';
-                  dir->file[dir->fgc].fc = 1;
-               }
-            }
-            else /* Yes, files are specified. */
-            {
-               int total_length = alfbl;
-
-               if ((dir->file[dir->fgc].files = malloc(alfbl + FILE_MASK_STEP_SIZE)) == NULL)
-               {
-                  system_log(FATAL_SIGN, __FILE__, __LINE__,
-                             "Could not malloc() memory : %s", strerror(errno));
-                  exit(INCORRECT);
-               }
-               dir->file[dir->fgc].fbl = alfbl + FILE_MASK_STEP_SIZE;
-               (void)memcpy(dir->file[dir->fgc].files, alfiles, alfbl);
-               dir->file[dir->fgc].fc = alfc;
-
-               /* Read each filename line by line,  */
-               /* until we encounter an empty line. */
-               do
-               {
-                  /* Store file name. */
-                  i = 0;
-                  while ((*ptr != '\n') && (*ptr != '\0'))
-                  {
-                     CHECK_SPACE();
-
-                     /* Store file name. */
-                     dir->file[dir->fgc].files[total_length + i] = *ptr;
-                     ptr++; i++;
-                     if ((total_length + i + 1) >= dir->file[dir->fgc].fbl)
-                     {
-                        dir->file[dir->fgc].fbl += FILE_MASK_STEP_SIZE;
-                        if ((dir->file[dir->fgc].files = realloc(dir->file[dir->fgc].files,
-                                                                 dir->file[dir->fgc].fbl)) == NULL)
+                        system_log(WARN_SIGN, __FILE__, __LINE__,
+                                   "Cannot find working directory for user with the user ID %d in /etc/passwd (ignoring directory from %s) : %s",
+                                   current_uid, dcl[dcd].dir_config_file,
+                                   strerror(errno));
+                        if (warn_counter != NULL)
                         {
-                           system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                      "Could not realloc() memory : %s",
-                                      strerror(errno));
-                           exit(INCORRECT);
+                           (*warn_counter)++;
                         }
+                        *tmp_ptr = tmp_char;
+                        continue;
                      }
-                  }
-                  if (i != 0)
-                  {
-                     dir->file[dir->fgc].files[total_length + i] = '\0';
-                     total_length += i + 1;
-                     dir->file[dir->fgc].fc++;
-                  }
-                  ptr++;
-
-                  /* Check for a dummy empty line. */
-                  if (*ptr != '\n')
-                  {
-                     search_ptr = ptr;
-                     while ((*search_ptr == ' ') || (*search_ptr == '\t'))
-                     {
-                        search_ptr++;
-                     }
-                     ptr = search_ptr;
-                  }
-               } while (*ptr != '\n');
-               dir->file[dir->fgc].fbl = total_length;
-               if (dir->file[dir->fgc].fbl == 0)
-               {
-                  dir->file[dir->fgc].fbl = 2;
-                  dir->file[dir->fgc].files[0] = '*';
-                  dir->file[dir->fgc].files[1] = '\0';
-                  dir->file[dir->fgc].fc++;
-               }
-            }
-
-            /*
-             ******************** Read destinations ******************
-             */
-            /* Position ptr after DESTINATION_IDENTIFIER. */
-            ptr++;
-            dir->file[dir->fgc].dgc = 0;
-            while ((search_ptr = posi_identifier(ptr, DESTINATION_IDENTIFIER,
-                                                 DESTINATION_IDENTIFIER_LENGTH)) != NULL)
-            {
-               ptr = --search_ptr;
-#ifdef _LINE_COUNTER_TEST
-               system_log(INFO_SIGN, NULL, 0,
-                          "Found DESTINATION_IDENTIFIER at line %d in %s",
-                          count_new_lines(database, search_ptr),
-                          dcl[dcd].dir_config_file);
-#endif
-
-               if ((dir->file[dir->fgc].dgc % DG_BUFFER_STEP_SIZE) == 0)
-               {
-                  char   *ptr_start;
-                  size_t new_size;
-
-                  /* Calculate new size of destination group buffer. */
-                  new_size = ((dir->file[dir->fgc].dgc / DG_BUFFER_STEP_SIZE) + 1) * DG_BUFFER_STEP_SIZE * sizeof(struct dest_group);
-
-                  if ((dir->file[dir->fgc].dest = realloc(dir->file[dir->fgc].dest, new_size)) == NULL)
-                  {
-                     system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                "Could not realloc() memory : %s",
-                                strerror(errno));
-                     exit(INCORRECT);
-                  }
-
-                  if (dir->file[dir->fgc].dgc > (DG_BUFFER_STEP_SIZE - 1))
-                  {
-                     ptr_start = (char *)(dir->file[dir->fgc].dest) + (dir->file[dir->fgc].dgc * sizeof(struct dest_group));
                   }
                   else
                   {
-                     ptr_start = (char *)dir->file[dir->fgc].dest;
-                  }
-                  (void)memset(ptr_start, 0,
-                               (DG_BUFFER_STEP_SIZE * sizeof(struct dest_group)));
-               }
-
-               /* Store destination group name. */
-               if (*ptr != '\n') /* Is there a destination group name? */
-               {
-                  /* Store group name of destination. */
-                  i = 0;
-                  while ((*ptr != '\n') && (*ptr != '\0'))
-                  {
-                     CHECK_SPACE();
-                     dir->file[dir->fgc].\
-                             dest[dir->file[dir->fgc].dgc].\
-                             dest_group_name[i] = *ptr;
-                     i++; ptr++;
-                  }
-
-                  /* Check if we encountered end of destination entry. */
-                  if (*ptr == '\0')
-                  {
-                     /* Generate warning message, that no destination */
-                     /* has been defined.                             */
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                "Directory %s in %s at line %d does not have a destination entry for file group no. %d.",
-                                dir->location, dcl[dcd].dir_config_file,
-                                count_new_lines(database, ptr), dir->fgc);
-                     if (warn_counter != NULL)
+                     if ((pwd = getpwnam(&dir->location[1])) == NULL)
                      {
-                        (*warn_counter)++;
+                        system_log(WARN_SIGN, __FILE__, __LINE__,
+                                   "Cannot find users %s working directory in /etc/passwd (ignoring directory from %s) : %s",
+                                   &dir->location[1], dcl[dcd].dir_config_file,
+                                   strerror(errno));
+                        if (warn_counter != NULL)
+                        {
+                           (*warn_counter)++;
+                        }
+                        *tmp_ptr = tmp_char;
+                        continue;
                      }
+                  }
+                  (void)strcpy(prev_user_name, dir->location);
+                  (void)strcpy(prev_user_dir, pwd->pw_dir);
 
-                     /* To read the next destination entry, put back the */
-                     /* char that was torn out to mark end of this       */
-                     /* destination entry.                               */
-                     if (tmp_dest_char != 1)
-                     {
-                        *end_dest_ptr = tmp_dest_char;
-                     }
-
-                     continue; /* Go to next destination entry. */
+                  /*
+                   * Cut away /./ at end of user directory. This information
+                   * is used by some FTP-servers so they chroot to this
+                   * directory. We don't need that here.
+                   */
+                  p_end = prev_user_dir + strlen(prev_user_dir) - 1;
+                  while ((p_end > prev_user_dir) &&
+                         ((*p_end == '/') || (*p_end == '.')))
+                  {
+                     *p_end = '\0';
+                     p_end--;
                   }
                }
-               else /* No destination group name defined. */
+               *tmp_ptr = tmp_char;
+               (void)strcpy(tmp_location, prev_user_dir);
+               if (*tmp_ptr == '/')
                {
-                  /* Create a unique destination group name. */
-                  (void)snprintf(dir->file[dir->fgc].\
-                                 dest[dir->file[dir->fgc].dgc].dest_group_name,
-                                 MAX_GROUP_NAME_LENGTH,
-                                 "DEST_%d", unique_dest_counter);
-                  unique_dest_counter++;
+                  (void)strcat(tmp_location, tmp_ptr);
                }
-               ptr++;
-
-               /* Before we go on, we have to search for the beginning of */
-               /* the next destination entry so we can mark the end for   */
-               /* this destination entry.                                 */
-               if ((end_dest_ptr = posi_identifier(ptr, DESTINATION_IDENTIFIER,
-                                                   DESTINATION_IDENTIFIER_LENGTH)) != NULL)
-               {
-                  /* First save char we encounter here. */
-                  tmp_dest_char = *end_dest_ptr;
-   
-                  /* Now mark end of this destination entry. */
-                  *end_dest_ptr = '\0';
-
-                  /* Set flag that we found another entry. */
-                  other_dest_flag = YES;
-               }
-               else
-               {
-                  other_dest_flag = NO;
-               }
-
-               /*++++++++++++++++++++++ Read recipient +++++++++++++++++++++*/
-               /* Position ptr after RECIPIENT_IDENTIFIER. */
-               if ((search_ptr = posi_identifier(ptr, RECIPIENT_IDENTIFIER,
-                                                 RECIPIENT_IDENTIFIER_LENGTH)) != NULL)
-               {
-#ifdef _LINE_COUNTER_TEST
-                  system_log(INFO_SIGN, NULL, 0,
-                             "Found RECIPIENT_IDENTIFIER at line %d in %s",
-                             count_new_lines(database, search_ptr),
-                             dcl[dcd].dir_config_file);
+               (void)strcpy(dir->location, tmp_location);
+               dir->location_length = optimise_dir(dir->location);
+               dir->protocol = LOC;
+            }
+            else if (dir->location[0] == '/')
+                 {
+                    (void)memcpy(dir->orig_dir_name, dir->location,
+                                 dir->location_length);
+                    dir->location_length = optimise_dir(dir->location);
+                    dir->type = LOCALE_DIR;
+                    dir->protocol = LOC;
+                 }
+            /* Assume it is url format. */
+            else if ((error_mask = url_evaluate(dir->location, &dir->scheme, user,
+                                                &smtp_auth, smtp_user,
+#ifdef WITH_SSH_FINGERPRINT
+                                                dummy_ssh_fingerprint,
+                                                &dummy_key_type,
 #endif
-                  if (*(search_ptr - 1) != '\n')
+#ifdef WITH_PASSWD_IN_MSG
+                                                password, NO, dir->real_hostname,
+#else
+                                                password, YES, dir->real_hostname,
+#endif
+                                                &dummy_port, directory, NULL,
+                                                NULL, &dummy_transfer_mode,
+                                                &dummy_ssh_protocol, NULL)) < 4)
+                 {
+                    if (dir->scheme & FTP_FLAG)
+                    {
+                       dir->type = REMOTE_DIR;
+                       dir->protocol = FTP;
+                       if (password[0] != '\0')
+                       {
+                          store_passwd(user, dir->real_hostname, password);
+                       }
+                       t_hostname(dir->real_hostname, dir->host_alias);
+                       (void)strcpy(dir->url, dir->location);
+                       (void)strcpy(dir->orig_dir_name, dir->url);
+                       if (create_remote_dir(NULL, user, dir->real_hostname,
+                                             directory, dir->location,
+                                             &dir->location_length) == INCORRECT)
+                       {
+                          continue;
+                       }
+                    }
+                    else if (dir->scheme & LOC_FLAG)
+                         {
+                            (void)memcpy(dir->orig_dir_name, dir->location,
+                                         dir->location_length);
+                            dir->type = LOCALE_DIR;
+                            dir->protocol = LOC;
+                            if ((dir->real_hostname[0] != '\0') &&
+                                (dir->alias[0] == '\0'))
+                            {
+                               (void)my_strncpy(dir->alias, dir->real_hostname,
+                                                MAX_DIR_ALIAS_LENGTH + 1);
+                            }
+                            if (directory[0] != '/')
+                            {
+                               if ((prev_user_name[0] == '\0') ||
+                                   (CHECK_STRCMP(user, prev_user_name) != 0))
+                               {
+                                  char          *p_end;
+                                  struct passwd *pwd;
+
+                                  if (user[0] == '\0')
+                                  {
+                                     if ((pwd = getpwuid(current_uid)) == NULL)
+                                     {
+                                        system_log(WARN_SIGN, __FILE__, __LINE__,
+                                                   "Cannot find working directory for user with the user ID %d in /etc/passwd (ignoring directory from %s) : %s",
+                                                   current_uid, dcl[dcd].dir_config_file,
+                                                   strerror(errno));
+                                        if (warn_counter != NULL)
+                                        {
+                                           (*warn_counter)++;
+                                        }
+                                        continue;
+                                     }
+                                  }
+                                  else
+                                  {
+                                     if ((pwd = getpwnam(user)) == NULL)
+                                     {
+                                        system_log(WARN_SIGN, __FILE__, __LINE__,
+                                                   "Cannot find users %s working directory in /etc/passwd (ignoring directory from %s) : %s",
+                                                   user, dcl[dcd].dir_config_file,
+                                                   strerror(errno));
+                                        if (warn_counter != NULL)
+                                        {
+                                           (*warn_counter)++;
+                                        }
+                                        continue;
+                                     }
+                                  }
+                                  (void)strcpy(prev_user_name, user);
+                                  (void)strcpy(prev_user_dir, pwd->pw_dir);
+
+                                  /*
+                                   * Cut away /./ at end of user directory. This
+                                   * information * is used by some FTP-servers so
+                                   * they chroot to this * directory. We don't
+                                   * need that here.
+                                   */
+                                  p_end = prev_user_dir + strlen(prev_user_dir) - 1;
+                                  while ((p_end > prev_user_dir) &&
+                                         ((*p_end == '/') || (*p_end == '.')))
+                                  {
+                                     *p_end = '\0';
+                                     p_end--;
+                                  }
+                               }
+                            }
+                            (void)memcpy(dir->orig_dir_name, dir->location,
+                                         dir->location_length);
+                            if (directory[0] == '\0')
+                            {
+                               (void)strcpy(dir->location, prev_user_dir);
+                               dir->location_length = strlen(dir->location) + 1;
+                            }
+                            else if (directory[0] == '/')
+                                 {
+                                    (void)strcpy(dir->location, directory);
+                                    dir->location_length = optimise_dir(dir->location);
+                                 }
+                                 else
+                                 {
+                                    (void)snprintf(dir->location, MAX_PATH_LENGTH,
+                                                   "%s/%s",
+                                                   prev_user_dir, directory);
+                                    dir->location_length = optimise_dir(dir->location);
+                                 }
+                         }
+                    else if (dir->scheme & HTTP_FLAG)
+                         {
+                            dir->type = REMOTE_DIR;
+                            dir->protocol = HTTP;
+                            if (password[0] != '\0')
+                            {
+                               store_passwd(user, dir->real_hostname, password);
+                            }
+                            t_hostname(dir->real_hostname, dir->host_alias);
+                            (void)strcpy(dir->url, dir->location);
+                            (void)strcpy(dir->orig_dir_name, dir->url);
+                            if (create_remote_dir(NULL, user, dir->real_hostname,
+                                                  directory, dir->location,
+                                                  &dir->location_length) == INCORRECT)
+                            {
+                               continue;
+                            }
+                         }
+                    else if (dir->scheme & SFTP_FLAG)
+                         {
+                            dir->type = REMOTE_DIR;
+                            dir->protocol = SFTP;
+                            if (password[0] != '\0')
+                            {
+                               store_passwd(user, dir->real_hostname, password);
+                            }
+                            t_hostname(dir->real_hostname, dir->host_alias);
+                            (void)strcpy(dir->url, dir->location);
+                            (void)strcpy(dir->orig_dir_name, dir->url);
+                            if (create_remote_dir(NULL, user, dir->real_hostname,
+                                                  directory, dir->location,
+                                                  &dir->location_length) == INCORRECT)
+                            {
+                               continue;
+                            }
+                         }
+                    else if (dir->scheme & EXEC_FLAG)
+                         {
+                            unsigned int crc_val;
+
+                            dir->type = REMOTE_DIR;
+                            dir->protocol = EXEC;
+                            t_hostname(dir->real_hostname, dir->host_alias);
+                            (void)strcpy(dir->url, dir->location);
+                            (void)strcpy(dir->orig_dir_name, dir->url);
+#ifdef HAVE_HW_CRC32
+                            crc_val = get_str_checksum_crc32c(directory, have_hw_crc32);
+#else
+                            crc_val = get_str_checksum_crc32c(directory);
+#endif
+                            (void)snprintf(directory, MAX_RECIPIENT_LENGTH,
+                                           "%x", crc_val);
+                            if (create_remote_dir(NULL, user, dir->real_hostname,
+                                                  directory, dir->location,
+                                                  &dir->location_length) == INCORRECT)
+                            {
+                               continue;
+                            }
+                         }
+                         else
+                         {
+                            system_log(WARN_SIGN, __FILE__, __LINE__,
+                                       "Unknown or unsupported scheme, ignoring directory %s from %s",
+                                       dir->location, dcl[dcd].dir_config_file);
+                            if (warn_counter != NULL)
+                            {
+                               (*warn_counter)++;
+                            }
+                            continue;
+                         }
+                 }
+                 else
+                 {
+                    char error_msg[MAX_URL_ERROR_MSG];
+
+                    url_get_error(error_mask, error_msg, MAX_URL_ERROR_MSG);
+                    system_log(WARN_SIGN, __FILE__, __LINE__,
+                               "Incorrect url `%s' in %s line %d. Error is: %s.",
+                               dir->location, dcl[dcd].dir_config_file,
+                               count_new_lines(database, search_ptr), error_msg);
+                    if (warn_counter != NULL)
+                    {
+                       (*warn_counter)++;
+                    }
+                    continue;
+                 }
+            dir_ptr = ptr - 1;
+
+            /* Before we go on, we have to search for the beginning of */
+            /* the next directory entry so we can mark the end for     */
+            /* this directory entry.                                   */
+            if ((end_dir_ptr = posi_identifier(ptr, DIR_IDENTIFIER,
+                                               DIR_IDENTIFIER_LENGTH)) != NULL)
+            {
+               /* First save char we encounter here. */
+               tmp_dir_char = *end_dir_ptr;
+
+               /* Now mark end of this directory entry. */
+               *end_dir_ptr = '\0';
+
+               /* Set flag that we found another entry. */
+               other_dir_flag = YES;
+            }
+            else
+            {
+               other_dir_flag = NO;
+            }
+
+            /*
+             ****************** Read Directory Options ***************
+             */
+            if ((search_ptr = posi_identifier(ptr, DIR_OPTION_IDENTIFIER,
+                                              DIR_OPTION_IDENTIFIER_LENGTH)) != NULL)
+            {
+               int length = 0;
+
+#ifdef _LINE_COUNTER_TEST
+               system_log(INFO_SIGN, NULL, 0,
+                          "Found DIR_OPTION_IDENTIFIER at line %d in %s",
+                          count_new_lines(database, search_ptr),
+                          dcl[dcd].dir_config_file);
+#endif
+               if (*(search_ptr - 1) != '\n')
+               {
+                  /* Ignore any data directly behind the identifier. */
+                  while ((*search_ptr != '\n') && (*search_ptr != '\0'))
                   {
-                     /* Ignore any data directly behind the identifier. */
-                     while ((*search_ptr != '\n') && (*search_ptr != '\0'))
-                     {
-                        search_ptr++;
-                     }
                      search_ptr++;
                   }
-                  while (*search_ptr == '#')
+                  search_ptr++;
+               }
+               while (*search_ptr == '#')
+               {
+                  while ((*search_ptr != '\n') && (*search_ptr != '\0'))
                   {
-                     while ((*search_ptr != '\n') && (*search_ptr != '\0'))
-                     {
-                        search_ptr++;
-                     }
                      search_ptr++;
                   }
-                  ptr = search_ptr;
+                  search_ptr++;
+               }
+               ptr = search_ptr;
 
-                  /* Read the address for each recipient line by */
-                  /* line, until we encounter an empty line.     */
-                  dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc = 0;
-
-                  if ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec = malloc((RECIPIENT_STEP_SIZE * sizeof(struct recipient_group)))) == NULL)
+               while ((*ptr != '\n') && (*ptr != '\0'))
+               {
+                  while ((*ptr == ' ') || (*ptr == '\t'))
                   {
-                     system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                "Could not malloc() memory : %s",
-                                strerror(errno));
-                     exit(INCORRECT);
+                     ptr++;
                   }
-
-                  while ((*ptr != '\n') && (*ptr != '\0'))
+                  if (*ptr != '\n')
                   {
-                     /* Take away empty spaces from begining. */
-                     while ((*ptr == ' ') || (*ptr == '\t'))
-                     {
-                        ptr++;
-                     }
-
                      /* Check if this is a comment line. */
                      if (*ptr == '#')
                      {
@@ -1421,180 +1045,258 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                         {
                            ptr++;
                         }
-                        ptr++;
-
-                        goto check_dummy_line;
+                        if (*ptr == '\n')
+                        {
+                           ptr++;
+                        }
+                        continue;
                      }
 
-                     /* Store recipient. */
-                     i = 0;
-                     tmp_ptr = search_ptr = ptr;
                      while ((*ptr != '\n') && (*ptr != '\0'))
                      {
-                        if ((*ptr == ' ') || (*ptr == '\t'))
+                        dir->dir_options[length] = *ptr;
+                        ptr++; length++;
+                     }
+                     dir->dir_options[length++] = '\n';
+                     if (*ptr == '\n')
+                     {
+                        ptr++;
+                     }
+                  }
+               }
+               dir->dir_options[length] = '\0';
+            }
+            else
+            {
+               dir->dir_options[0] = '\0';
+            }
+
+            /*
+             ********************** Read filenames *******************
+             */
+            /* Position ptr after FILE_IDENTIFIER. */
+            dir->fgc = 0;
+            while ((search_ptr = posi_identifier(ptr, FILE_IDENTIFIER,
+                                                 FILE_IDENTIFIER_LENGTH)) != NULL)
+            {
+               ptr = --search_ptr;
+#ifdef _LINE_COUNTER_TEST
+               system_log(INFO_SIGN, NULL, 0,
+                          "Found FILE_IDENTIFIER at line %d in %s",
+                          count_new_lines(database, search_ptr),
+                          dcl[dcd].dir_config_file);
+#endif
+
+               if ((dir->fgc % FG_BUFFER_STEP_SIZE) == 0)
+               {
+                  char   *ptr_start;
+                  size_t new_size;
+
+                  /* Calculate new size of file group buffer. */
+                  new_size = ((dir->fgc / FG_BUFFER_STEP_SIZE) + 1) *
+                              FG_BUFFER_STEP_SIZE * sizeof(struct file_group);
+
+                  if (dir->fgc == 0)
+                  {
+                     if ((dir->file = malloc(new_size)) == NULL)
+                     {
+                        system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                   "Could not malloc() memory : %s",
+                                   strerror(errno));
+                        exit(INCORRECT);
+                     }
+                  }
+                  else
+                  {
+                     if ((dir->file = realloc(dir->file, new_size)) == NULL)
+                     {
+                        system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                   "Could not realloc() memory : %s",
+                                   strerror(errno));
+                        exit(INCORRECT);
+                     }
+                  }
+
+                  if (dir->fgc > (FG_BUFFER_STEP_SIZE - 1))
+                  {
+                     ptr_start = (char *)(dir->file) + (dir->fgc * sizeof(struct file_group));
+                  }
+                  else
+                  {
+                     ptr_start = (char *)dir->file;
+                  }
+                  (void)memset(ptr_start, 0, (FG_BUFFER_STEP_SIZE * sizeof(struct file_group)));
+               }
+
+               /* Store file-group name. */
+               if (*ptr != '\n') /* Is there a file group name? */
+               {
+                  /* Store file group name. */
+                  i = 0;
+                  while ((*ptr != '\n') && (*ptr != '\0'))
+                  {
+                     CHECK_SPACE();
+                     dir->file[dir->fgc].file_group_name[i] = *ptr;
+                     i++; ptr++;
+                  }
+
+                  /* Did we already reach end of current file group? */
+                  if (*ptr == '\0')
+                  {
+                     /* Generate warning that this file entry is faulty. */
+                     system_log(WARN_SIGN, __FILE__, __LINE__,
+                                "In %s line %d, directory %s does not have a destination entry.",
+                                dcl[dcd].dir_config_file,
+                                count_new_lines(database, search_ptr),
+                                dir->location);
+                     if (warn_counter != NULL)
+                     {
+                        (*warn_counter)++;
+                     }
+
+                     /* To read the next file entry, put back the char    */
+                     /* that was torn out to mark end of this file entry. */
+                     if (tmp_file_char != 1)
+                     {
+                        *end_file_ptr = tmp_file_char;
+                     }
+
+                     /* No need to carry on with this file entry. */
+                     continue;
+                  }
+
+                  /* Make sure that a file group name was defined. */
+                  if (dir->file[dir->fgc].file_group_name[0] == '\0')
+                  {
+                     /* Create a unique file group name. */
+                     (void)snprintf(dir->file[dir->fgc].file_group_name, MAX_GROUP_NAME_LENGTH,
+                                    "FILE_%d", unique_file_counter);
+                     unique_file_counter++;
+                  }
+               }
+               else /* No file group name defined. */
+               {
+                  /* Create a unique file group name. */
+                  (void)snprintf(dir->file[dir->fgc].file_group_name, MAX_GROUP_NAME_LENGTH,
+                                 "FILE_%d", unique_file_counter);
+                  unique_file_counter++;
+               }
+
+               /* Before we go on, we have to search for the beginning of */
+               /* the next file group entry so we can mark the end for   */
+               /* this file entry.                                       */
+               if ((end_file_ptr = posi_identifier(ptr, FILE_IDENTIFIER,
+                                                   FILE_IDENTIFIER_LENGTH)) != NULL)
+               {
+                  /* First save char we encounter here. */
+                  tmp_file_char = *end_file_ptr;
+   
+                  /* Now mark end of this file group entry. */
+                  *end_file_ptr = '\0';
+
+                  /* Set flag that we found another entry. */
+                  other_file_flag = YES;
+               }
+               else
+               {
+                  other_file_flag = NO;
+               }
+
+               /* Store file names. */
+               ptr++;
+               if (*ptr == '\n') /* Are any files specified? */
+               {
+                  /* We assume that all files in this */
+                  /* directory should be send.        */
+                  if (alfc > 0)
+                  {
+                     if ((dir->file[dir->fgc].files = malloc(alfbl + 2)) == NULL)
+                     {
+                        system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                   "Could not malloc() memory : %s",
+                                   strerror(errno));
+                        exit(INCORRECT);
+                     }
+                     dir->file[dir->fgc].fbl = alfbl + 2;
+                     (void)memcpy(dir->file[dir->fgc].files, alfiles, alfbl);
+                     dir->file[dir->fgc].files[alfbl] = '*';
+                     dir->file[dir->fgc].files[alfbl + 1] = '\0';
+                     dir->file[dir->fgc].fc = alfc + 1;
+                  }
+                  else
+                  {
+                     if ((dir->file[dir->fgc].files = malloc(2)) == NULL)
+                     {
+                        system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                   "Could not malloc() memory : %s",
+                                   strerror(errno));
+                        exit(INCORRECT);
+                     }
+                     dir->file[dir->fgc].fbl = 2;
+                     dir->file[dir->fgc].files[0] = '*';
+                     dir->file[dir->fgc].files[1] = '\0';
+                     dir->file[dir->fgc].fc = 1;
+                  }
+               }
+               else /* Yes, files are specified. */
+               {
+                  int total_length = alfbl;
+
+                  if ((dir->file[dir->fgc].files = malloc(alfbl + FILE_MASK_STEP_SIZE)) == NULL)
+                  {
+                     system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                "Could not malloc() memory : %s", strerror(errno));
+                     exit(INCORRECT);
+                  }
+                  dir->file[dir->fgc].fbl = alfbl + FILE_MASK_STEP_SIZE;
+                  (void)memcpy(dir->file[dir->fgc].files, alfiles, alfbl);
+                  dir->file[dir->fgc].fc = alfc;
+
+                  /* Read each filename line by line,  */
+                  /* until we encounter an empty line. */
+                  do
+                  {
+                     /* Store file name. */
+                     i = 0;
+                     while ((*ptr != '\n') && (*ptr != '\0'))
+                     {
+                        CHECK_SPACE();
+
+                        /* Store file name. */
+                        dir->file[dir->fgc].files[total_length + i] = *ptr;
+                        ptr++; i++;
+                        if ((total_length + i + 1) >= dir->file[dir->fgc].fbl)
                         {
-                           tmp_ptr = ptr;
-                           while ((*tmp_ptr == ' ') || (*tmp_ptr == '\t'))
+                           dir->file[dir->fgc].fbl += FILE_MASK_STEP_SIZE;
+                           if ((dir->file[dir->fgc].files = realloc(dir->file[dir->fgc].files,
+                                                                    dir->file[dir->fgc].fbl)) == NULL)
                            {
-                              tmp_ptr++;
-                           }
-
-                           switch (*tmp_ptr)
-                           {
-                              case '#' : /* Found comment. */
-                                 while ((*tmp_ptr != '\n') &&
-                                        (*tmp_ptr != '\0'))
-                                 {
-                                    tmp_ptr++;
-                                 }
-                                 ptr = tmp_ptr;
-                                 continue;
-
-                              case '\0': /* Found end for this entry. */
-                                 ptr = tmp_ptr;
-                                 continue;
-
-                              case '\n': /* End of line reached. */
-                                 ptr = tmp_ptr;
-                                 continue;
-
-                              default  : /* Assume the recipient string */
-                                         /* contains spaces.            */
-                                 (void)memmove(&dir->file[dir->fgc].\
-                                               dest[dir->file[dir->fgc].dgc].\
-                                               rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].\
-                                               recipient[i],
-                                               ptr, tmp_ptr - ptr);
-                                 i += (tmp_ptr - ptr);
-                                 ptr = tmp_ptr;
-                                 break;
+                              system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                         "Could not realloc() memory : %s",
+                                         strerror(errno));
+                              exit(INCORRECT);
                            }
                         }
-                        dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].\
-                                rec[dir->file[dir->fgc].\
-                                dest[dir->file[dir->fgc].dgc].rc].\
-                                recipient[i] = *ptr;
-                        ptr++; i++;
                      }
-                     dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].\
-                             rec[dir->file[dir->fgc].\
-                             dest[dir->file[dir->fgc].dgc].rc].\
-                             recipient[i] = '\0';
-                     ptr++;
-
-                     /* Make sure that we did read a line. */
                      if (i != 0)
                      {
-                        if ((error_mask = url_evaluate(dir->file[dir->fgc].\
-                                                       dest[dir->file[dir->fgc].dgc].\
-                                                       rec[dir->file[dir->fgc].\
-                                                       dest[dir->file[dir->fgc].dgc].rc].\
-                                                       recipient,
-                                                       &dir->file[dir->fgc].\
-                                                       dest[dir->file[dir->fgc].dgc].\
-                                                       rec[dir->file[dir->fgc].\
-                                                       dest[dir->file[dir->fgc].dgc].rc].\
-                                                       scheme, user,
-                                                       &smtp_auth, smtp_user,
-#ifdef WITH_SSH_FINGERPRINT
-                                                       dummy_ssh_fingerprint,
-                                                       &dummy_key_type,
-#endif
-                                                       password, YES,
-                                                       dir->file[dir->fgc].\
-                                                       dest[dir->file[dir->fgc].dgc].\
-                                                       rec[dir->file[dir->fgc].\
-                                                       dest[dir->file[dir->fgc].dgc].rc].real_hostname,
-                                                       &dummy_port,
-                                                       dummy_directory, NULL,
-                                                       NULL,
-                                                       &dummy_transfer_mode,
-                                                       &dummy_ssh_protocol,
-                                                       smtp_server)) < 4)
+                        dir->file[dir->fgc].files[total_length + i] = '\0';
+                        if ((dir->file[dir->fgc].files[total_length] == GROUP_SIGN) &&
+                            (((dir->file[dir->fgc].files[total_length + 1] == CURLY_BRACKET_OPEN) &&
+                              (dir->file[dir->fgc].files[total_length + i - 1] == CURLY_BRACKET_CLOSE)) ||
+                             ((dir->file[dir->fgc].files[total_length + 1] == SQUARE_BRACKET_OPEN) ||
+                              (dir->file[dir->fgc].files[total_length + i - 1] == SQUARE_BRACKET_CLOSE))))
                         {
-                           if (user[0] == '\0')
-                           {
-                              if (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[0] == MAIL_GROUP_IDENTIFIER)
-                              {
-                                 j = 0;
-                                 while (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j + 1] != '\0')
-                                 {
-                                    dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j] = dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j + 1];
-                                    j++;
-                                 }
-                                 dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j] = '\0';
-                              }
-                           }
-                           if ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].scheme & SMTP_FLAG) &&
-                               (smtp_server[0] != '\0'))
-                           {
-                              j = 0;
-                              while (smtp_server[j] != '\0')
-                              {
-                                 dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j] = smtp_server[j];
-                                 j++;
-                              }
-                              dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j] = '\0';
-                           }
-                           t_hostname(dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname,
-                                      dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].host_alias);
-
-                           if (password[0] != '\0')
-                           {
-                              if (smtp_auth == SMTP_AUTH_NONE)
-                              {
-                                 store_passwd(user,
-                                              dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname,
-                                              password);
-                              }
-                              else
-                              {
-                                 store_passwd(smtp_user,
-                                              dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname,
-                                              password);
-                              }
-                           }
-
-                           dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc++;
-                           t_rc++;
-                           if ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc % RECIPIENT_STEP_SIZE) == 0)
-                           {
-                              int new_size = ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc /
-                                               RECIPIENT_STEP_SIZE) + 1) * RECIPIENT_STEP_SIZE *
-                                             sizeof(struct recipient_group);
-
-                              if ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec = realloc(dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec,
-                                                                                                   new_size)) == NULL)
-                              {
-                                 system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                            "Could not realloc() memory : %s",
-                                            strerror(errno));
-                                 exit(INCORRECT);
-                              }
-                           }
+                           expand_file_filter(dir, &total_length);
                         }
                         else
                         {
-                           char error_msg[MAX_URL_ERROR_MSG];
-
-                           url_get_error(error_mask, error_msg, MAX_URL_ERROR_MSG);
-                           system_log(WARN_SIGN, __FILE__, __LINE__,
-                                      "Incorrect url `%s'. Error is: %s. Ignoring the recipient in %s at line %d.",
-                                      dir->file[dir->fgc].\
-                                      dest[dir->file[dir->fgc].dgc].\
-                                      rec[dir->file[dir->fgc].\
-                                      dest[dir->file[dir->fgc].dgc].rc].\
-                                      recipient, error_msg,
-                                      dcl[dcd].dir_config_file,
-                                      count_new_lines(database, search_ptr));
-                           if (warn_counter != NULL)
-                           {
-                              (*warn_counter)++;
-                           }
+                           total_length += i + 1;
+                           dir->file[dir->fgc].fc++;
                         }
-                     } /* if (i != 0) */
+                     }
+                     ptr++;
 
-check_dummy_line:
                      /* Check for a dummy empty line. */
                      if (*ptr != '\n')
                      {
@@ -1605,26 +1307,525 @@ check_dummy_line:
                         }
                         ptr = search_ptr;
                      }
+                  } while (*ptr != '\n');
+                  dir->file[dir->fgc].fbl = total_length;
+                  if (dir->file[dir->fgc].fbl == 0)
+                  {
+                     dir->file[dir->fgc].fbl = 2;
+                     dir->file[dir->fgc].files[0] = '*';
+                     dir->file[dir->fgc].files[1] = '\0';
+                     dir->file[dir->fgc].fc++;
                   }
                }
 
-               /* Make sure that at least one recipient was defined. */
-               if (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc == 0)
+               /*
+                ******************** Read destinations ******************
+                */
+               /* Position ptr after DESTINATION_IDENTIFIER. */
+               ptr++;
+               dir->file[dir->fgc].dgc = 0;
+               while ((search_ptr = posi_identifier(ptr, DESTINATION_IDENTIFIER,
+                                                    DESTINATION_IDENTIFIER_LENGTH)) != NULL)
                {
-                  if (search_ptr == NULL)
+                  ptr = --search_ptr;
+#ifdef _LINE_COUNTER_TEST
+                  system_log(INFO_SIGN, NULL, 0,
+                             "Found DESTINATION_IDENTIFIER at line %d in %s",
+                             count_new_lines(database, search_ptr),
+                             dcl[dcd].dir_config_file);
+#endif
+
+                  if ((dir->file[dir->fgc].dgc % DG_BUFFER_STEP_SIZE) == 0)
                   {
-                     search_ptr = ptr + 1;
+                     char   *ptr_start;
+                     size_t new_size;
+
+                     /* Calculate new size of destination group buffer. */
+                     new_size = ((dir->file[dir->fgc].dgc / DG_BUFFER_STEP_SIZE) + 1) * DG_BUFFER_STEP_SIZE * sizeof(struct dest_group);
+
+                     if ((dir->file[dir->fgc].dest = realloc(dir->file[dir->fgc].dest, new_size)) == NULL)
+                     {
+                        system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                   "Could not realloc() memory : %s",
+                                   strerror(errno));
+                        exit(INCORRECT);
+                     }
+
+                     if (dir->file[dir->fgc].dgc > (DG_BUFFER_STEP_SIZE - 1))
+                     {
+                        ptr_start = (char *)(dir->file[dir->fgc].dest) + (dir->file[dir->fgc].dgc * sizeof(struct dest_group));
+                     }
+                     else
+                     {
+                        ptr_start = (char *)dir->file[dir->fgc].dest;
+                     }
+                     (void)memset(ptr_start, 0,
+                                  (DG_BUFFER_STEP_SIZE * sizeof(struct dest_group)));
                   }
 
-                  /* Generate warning message. */
-                  system_log(WARN_SIGN, __FILE__, __LINE__,
-                             "No recipient specified for %s from %s at line %d.",
-                             dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].dest_group_name,
-                             dcl[dcd].dir_config_file,
-                             count_new_lines(database, search_ptr));
-                  if (warn_counter != NULL)
+                  /* Store destination group name. */
+                  if (*ptr != '\n') /* Is there a destination group name? */
                   {
-                     (*warn_counter)++;
+                     /* Store group name of destination. */
+                     i = 0;
+                     while ((*ptr != '\n') && (*ptr != '\0'))
+                     {
+                        CHECK_SPACE();
+                        dir->file[dir->fgc].\
+                                dest[dir->file[dir->fgc].dgc].\
+                                dest_group_name[i] = *ptr;
+                        i++; ptr++;
+                     }
+
+                     /* Check if we encountered end of destination entry. */
+                     if (*ptr == '\0')
+                     {
+                        /* Generate warning message, that no destination */
+                        /* has been defined.                             */
+                        system_log(WARN_SIGN, __FILE__, __LINE__,
+                                   "Directory %s in %s at line %d does not have a destination entry for file group no. %d.",
+                                   dir->location, dcl[dcd].dir_config_file,
+                                   count_new_lines(database, ptr), dir->fgc);
+                        if (warn_counter != NULL)
+                        {
+                           (*warn_counter)++;
+                        }
+
+                        /* To read the next destination entry, put back the */
+                        /* char that was torn out to mark end of this       */
+                        /* destination entry.                               */
+                        if (tmp_dest_char != 1)
+                        {
+                           *end_dest_ptr = tmp_dest_char;
+                        }
+
+                        continue; /* Go to next destination entry. */
+                     }
+                  }
+                  else /* No destination group name defined. */
+                  {
+                     /* Create a unique destination group name. */
+                     (void)snprintf(dir->file[dir->fgc].\
+                                    dest[dir->file[dir->fgc].dgc].dest_group_name,
+                                    MAX_GROUP_NAME_LENGTH,
+                                    "DEST_%d", unique_dest_counter);
+                     unique_dest_counter++;
+                  }
+                  ptr++;
+
+                  /* Before we go on, we have to search for the beginning of */
+                  /* the next destination entry so we can mark the end for   */
+                  /* this destination entry.                                 */
+                  if ((end_dest_ptr = posi_identifier(ptr, DESTINATION_IDENTIFIER,
+                                                      DESTINATION_IDENTIFIER_LENGTH)) != NULL)
+                  {
+                     /* First save char we encounter here. */
+                     tmp_dest_char = *end_dest_ptr;
+
+                     /* Now mark end of this destination entry. */
+                     *end_dest_ptr = '\0';
+
+                     /* Set flag that we found another entry. */
+                     other_dest_flag = YES;
+                  }
+                  else
+                  {
+                     other_dest_flag = NO;
+                  }
+
+                  /*++++++++++++++++++++++ Read recipient +++++++++++++++++++++*/
+                  /* Position ptr after RECIPIENT_IDENTIFIER. */
+                  if ((search_ptr = posi_identifier(ptr, RECIPIENT_IDENTIFIER,
+                                                    RECIPIENT_IDENTIFIER_LENGTH)) != NULL)
+                  {
+#ifdef _LINE_COUNTER_TEST
+                     system_log(INFO_SIGN, NULL, 0,
+                                "Found RECIPIENT_IDENTIFIER at line %d in %s",
+                                count_new_lines(database, search_ptr),
+                                dcl[dcd].dir_config_file);
+#endif
+                     if (*(search_ptr - 1) != '\n')
+                     {
+                        /* Ignore any data directly behind the identifier. */
+                        while ((*search_ptr != '\n') && (*search_ptr != '\0'))
+                        {
+                           search_ptr++;
+                        }
+                        search_ptr++;
+                     }
+                     while (*search_ptr == '#')
+                     {
+                        while ((*search_ptr != '\n') && (*search_ptr != '\0'))
+                        {
+                           search_ptr++;
+                        }
+                        search_ptr++;
+                     }
+                     ptr = search_ptr;
+
+                     /* Read the address for each recipient line by */
+                     /* line, until we encounter an empty line.     */
+                     dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc = 0;
+
+                     if ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec = malloc((RECIPIENT_STEP_SIZE * sizeof(struct recipient_group)))) == NULL)
+                     {
+                        system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                   "Could not malloc() memory : %s",
+                                   strerror(errno));
+                        exit(INCORRECT);
+                     }
+
+                     while ((*ptr != '\n') && (*ptr != '\0'))
+                     {
+                        /* Take away empty spaces from begining. */
+                        while ((*ptr == ' ') || (*ptr == '\t'))
+                        {
+                           ptr++;
+                        }
+
+                        /* Check if this is a comment line. */
+                        if (*ptr == '#')
+                        {
+                           while ((*ptr != '\n') && (*ptr != '\0'))
+                           {
+                              ptr++;
+                           }
+                           ptr++;
+
+                           goto check_dummy_line;
+                        }
+
+                        /* Store recipient. */
+                        i = 0;
+                        tmp_ptr = search_ptr = ptr;
+                        while ((*ptr != '\n') && (*ptr != '\0'))
+                        {
+                           if ((*ptr == ' ') || (*ptr == '\t'))
+                           {
+                              tmp_ptr = ptr;
+                              while ((*tmp_ptr == ' ') || (*tmp_ptr == '\t'))
+                              {
+                                 tmp_ptr++;
+                              }
+
+                              switch (*tmp_ptr)
+                              {
+                                 case '#' : /* Found comment. */
+                                    while ((*tmp_ptr != '\n') &&
+                                           (*tmp_ptr != '\0'))
+                                    {
+                                       tmp_ptr++;
+                                    }
+                                    ptr = tmp_ptr;
+                                    continue;
+
+                                 case '\0': /* Found end for this entry. */
+                                    ptr = tmp_ptr;
+                                    continue;
+
+                                 case '\n': /* End of line reached. */
+                                    ptr = tmp_ptr;
+                                    continue;
+
+                                 default  : /* Assume the recipient string */
+                                            /* contains spaces.            */
+                                    (void)memmove(&dir->file[dir->fgc].\
+                                                  dest[dir->file[dir->fgc].dgc].\
+                                                  rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].\
+                                                  recipient[i],
+                                                  ptr, tmp_ptr - ptr);
+                                    i += (tmp_ptr - ptr);
+                                    ptr = tmp_ptr;
+                                    break;
+                              }
+                           }
+                           dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].\
+                                   rec[dir->file[dir->fgc].\
+                                   dest[dir->file[dir->fgc].dgc].rc].\
+                                   recipient[i] = *ptr;
+                           ptr++; i++;
+                        }
+                        dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].\
+                                rec[dir->file[dir->fgc].\
+                                dest[dir->file[dir->fgc].dgc].rc].\
+                                recipient[i] = '\0';
+                        ptr++;
+
+                        /* Make sure that we did read a line. */
+                        if (i != 0)
+                        {
+                           if ((error_mask = url_evaluate(dir->file[dir->fgc].\
+                                                          dest[dir->file[dir->fgc].dgc].\
+                                                          rec[dir->file[dir->fgc].\
+                                                          dest[dir->file[dir->fgc].dgc].rc].\
+                                                          recipient,
+                                                          &dir->file[dir->fgc].\
+                                                          dest[dir->file[dir->fgc].dgc].\
+                                                          rec[dir->file[dir->fgc].\
+                                                          dest[dir->file[dir->fgc].dgc].rc].\
+                                                          scheme, user,
+                                                          &smtp_auth, smtp_user,
+#ifdef WITH_SSH_FINGERPRINT
+                                                          dummy_ssh_fingerprint,
+                                                          &dummy_key_type,
+#endif
+                                                          password, YES,
+                                                          dir->file[dir->fgc].\
+                                                          dest[dir->file[dir->fgc].dgc].\
+                                                          rec[dir->file[dir->fgc].\
+                                                          dest[dir->file[dir->fgc].dgc].rc].real_hostname,
+                                                          &dummy_port,
+                                                          dummy_directory, NULL,
+                                                          NULL,
+                                                          &dummy_transfer_mode,
+                                                          &dummy_ssh_protocol,
+                                                          smtp_server)) < 4)
+                           {
+                              if (user[0] == '\0')
+                              {
+                                 if (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[0] == MAIL_GROUP_IDENTIFIER)
+                                 {
+                                    j = 0;
+                                    while (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j + 1] != '\0')
+                                    {
+                                       dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j] = dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j + 1];
+                                       j++;
+                                    }
+                                    dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j] = '\0';
+                                 }
+                              }
+#ifdef _WITH_DE_MAIL_SUPPORT
+                              if (((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].scheme & SMTP_FLAG) ||
+                                   (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].scheme & DE_MAIL_FLAG)) &&
+                                  (smtp_server[0] != '\0'))
+#else
+                              if ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].scheme & SMTP_FLAG) &&
+                                  (smtp_server[0] != '\0'))
+#endif
+                              {
+                                 j = 0;
+                                 while (smtp_server[j] != '\0')
+                                 {
+                                    dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j] = smtp_server[j];
+                                    j++;
+                                 }
+                                 dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j] = '\0';
+                              }
+                              t_hostname(dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname,
+                                         dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].host_alias);
+
+                              if (password[0] != '\0')
+                              {
+                                 if (smtp_auth == SMTP_AUTH_NONE)
+                                 {
+                                    store_passwd(user,
+                                                 dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname,
+                                                 password);
+                                 }
+                                 else
+                                 {
+                                    store_passwd(smtp_user,
+                                                 dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname,
+                                                 password);
+                                 }
+                              }
+
+                              dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc++;
+                              t_rc++;
+                              if ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc % RECIPIENT_STEP_SIZE) == 0)
+                              {
+                                 int new_size = ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc /
+                                                  RECIPIENT_STEP_SIZE) + 1) * RECIPIENT_STEP_SIZE *
+                                                sizeof(struct recipient_group);
+
+                                 if ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec = realloc(dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec,
+                                                                                                      new_size)) == NULL)
+                                 {
+                                    system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                               "Could not realloc() memory : %s",
+                                               strerror(errno));
+                                    exit(INCORRECT);
+                                 }
+                              }
+                           }
+                           else
+                           {
+                              char error_msg[MAX_URL_ERROR_MSG];
+
+                              url_get_error(error_mask, error_msg, MAX_URL_ERROR_MSG);
+                              system_log(WARN_SIGN, __FILE__, __LINE__,
+                                         "Incorrect url `%s'. Error is: %s. Ignoring the recipient in %s at line %d.",
+                                         dir->file[dir->fgc].\
+                                         dest[dir->file[dir->fgc].dgc].\
+                                         rec[dir->file[dir->fgc].\
+                                         dest[dir->file[dir->fgc].dgc].rc].\
+                                         recipient, error_msg,
+                                         dcl[dcd].dir_config_file,
+                                         count_new_lines(database, search_ptr));
+                              if (warn_counter != NULL)
+                              {
+                                 (*warn_counter)++;
+                              }
+                           }
+                        } /* if (i != 0) */
+
+check_dummy_line:
+                        /* Check for a dummy empty line. */
+                        if (*ptr != '\n')
+                        {
+                           search_ptr = ptr;
+                           while ((*search_ptr == ' ') || (*search_ptr == '\t'))
+                           {
+                              search_ptr++;
+                           }
+                           ptr = search_ptr;
+                        }
+                     }
+                  }
+
+                  /* Make sure that at least one recipient was defined. */
+                  if (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc == 0)
+                  {
+                     if (search_ptr == NULL)
+                     {
+                        search_ptr = ptr + 1;
+                     }
+
+                     /* Generate warning message. */
+                     system_log(WARN_SIGN, __FILE__, __LINE__,
+                                "No recipient specified for %s from %s at line %d.",
+                                dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].dest_group_name,
+                                dcl[dcd].dir_config_file,
+                                count_new_lines(database, search_ptr));
+                     if (warn_counter != NULL)
+                     {
+                        (*warn_counter)++;
+                     }
+
+                     /* To read the next destination entry, put back the */
+                     /* char that was torn out to mark end of this       */
+                     /* destination entry.                               */
+                     if (other_dest_flag == YES)
+                     {
+                        *end_dest_ptr = tmp_dest_char;
+                     }
+
+                     /* Try to read the next destination. */
+                     continue;
+                  }
+   
+                  /*++++++++++++++++++++++ Read options ++++++++++++++++++++++++*/
+                  /* Position ptr after OPTION_IDENTIFIER. */
+                  if ((search_ptr = posi_identifier(ptr, OPTION_IDENTIFIER,
+                                                    OPTION_IDENTIFIER_LENGTH)) != NULL)
+                  {
+#ifdef _LINE_COUNTER_TEST
+                     system_log(INFO_SIGN, NULL, 0,
+                                "Found OPTION_IDENTIFIER at line %d in %s",
+                                count_new_lines(database, search_ptr),
+                                dcl[dcd].dir_config_file);
+#endif
+                     if (*(search_ptr - 1) != '\n')
+                     {
+                        /* Ignore any data directly behind the identifier. */
+                        while ((*search_ptr != '\n') && (*search_ptr != '\0'))
+                        {
+                           search_ptr++;
+                        }
+                        search_ptr++;
+                     }
+                     ptr = search_ptr;
+
+                     /* Read each option line by line, until */
+                     /* we encounter an empty line.          */
+                     dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].oc = 0;
+                     while ((*ptr != '\n') && (*ptr != '\0') &&
+                            (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].oc < MAX_NO_OPTIONS))
+                     {
+                        /* Store option. */
+                        i = 0;
+                        while ((*ptr != '\n') && (*ptr != '\0') &&
+                               (i < MAX_OPTION_LENGTH))
+                        {
+                           CHECK_SPACE();
+                           dir->file[dir->fgc].\
+                                   dest[dir->file[dir->fgc].dgc].\
+                                   options[dir->file[dir->fgc].\
+                                   dest[dir->file[dir->fgc].dgc].oc][i] = *ptr;
+                           ptr++; i++;
+                        }
+
+                        if (i >= MAX_OPTION_LENGTH)
+                        {
+                           while ((*ptr != '\n') && (*ptr != '\0'))
+                           {
+                              ptr++;
+                           }
+                           system_log(WARN_SIGN, __FILE__, __LINE__,
+                                      "Option at line %d in %s longer then %d, ignoring this option.",
+                                      count_new_lines(database, ptr),
+                                      dcl[dcd].dir_config_file,
+                                      MAX_OPTION_LENGTH);
+                           if (warn_counter != NULL)
+                           {
+                              (*warn_counter)++;
+                           }
+                        }
+                        else
+                        {
+                           /* Make sure that we did read a line. */
+                           if (i != 0)
+                           {
+                              dir->file[dir->fgc].\
+                                      dest[dir->file[dir->fgc].dgc].\
+                                      options[dir->file[dir->fgc].\
+                                      dest[dir->file[dir->fgc].dgc].oc][i] = '\0';
+                              if (check_option(dir->file[dir->fgc].\
+                                               dest[dir->file[dir->fgc].dgc].\
+                                               options[dir->file[dir->fgc].\
+                                               dest[dir->file[dir->fgc].dgc].oc]) == SUCCESS)
+                              {
+                                 dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].oc++;
+                              }
+                              else
+                              {
+                                 system_log(WARN_SIGN, __FILE__, __LINE__,
+                                            "Removing option `%s' at line %d in %s",
+                                            dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].options[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].oc],
+                                            count_new_lines(database, ptr),
+                                            dcl[dcd].dir_config_file);
+                                 if (warn_counter != NULL)
+                                 {
+                                    (*warn_counter)++;
+                                 }
+                              }
+                           }
+                        }
+                        ptr++;
+
+                        /* Check for a dummy empty line. */
+                        if (*ptr != '\n')
+                        {
+                           search_ptr = ptr;
+                           while ((*search_ptr == ' ') || (*search_ptr == '\t'))
+                           {
+                              search_ptr++;
+                           }
+                           ptr = search_ptr;
+                        }
+                     } /* while ((*ptr != '\n') && (*ptr != '\0')) */
+
+                     if (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].oc >= MAX_NO_OPTIONS)
+                     {
+                        system_log(WARN_SIGN, __FILE__, __LINE__,
+                                   "Exceeded the number of total options (max = %d) at line %d in %s. Ignoring.",
+                                   MAX_NO_OPTIONS, count_new_lines(database, ptr),
+                                   dcl[dcd].dir_config_file);
+                        if (warn_counter != NULL)
+                        {
+                           (*warn_counter)++;
+                        }
+                     }
                   }
 
                   /* To read the next destination entry, put back the */
@@ -1635,596 +1836,484 @@ check_dummy_line:
                      *end_dest_ptr = tmp_dest_char;
                   }
 
-                  /* Try to read the next destination. */
-                  continue;
-               }
-   
-               /*++++++++++++++++++++++ Read options ++++++++++++++++++++++++*/
-               /* Position ptr after OPTION_IDENTIFIER. */
-               if ((search_ptr = posi_identifier(ptr, OPTION_IDENTIFIER,
-                                                 OPTION_IDENTIFIER_LENGTH)) != NULL)
+                  dir->file[dir->fgc].dgc++;
+                  t_dgc++;
+               } /* while () searching for DESTINATION_IDENTIFIER */
+
+               /* Check if a destination was defined. */
+               if (dir->file[dir->fgc].dgc == 0)
                {
-#ifdef _LINE_COUNTER_TEST
-                  system_log(INFO_SIGN, NULL, 0,
-                             "Found OPTION_IDENTIFIER at line %d in %s",
-                             count_new_lines(database, search_ptr),
-                             dcl[dcd].dir_config_file);
-#endif
-                  if (*(search_ptr - 1) != '\n')
+                  /* Generate error message. */
+                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                             "Directory %s in %s does not have a destination entry for file group no. %d.",
+                             dir->location, dcl[dcd].dir_config_file, dir->fgc);
+                  if (warn_counter != NULL)
                   {
-                     /* Ignore any data directly behind the identifier. */
-                     while ((*search_ptr != '\n') && (*search_ptr != '\0'))
-                     {
-                        search_ptr++;
-                     }
-                     search_ptr++;
+                     (*warn_counter)++;
                   }
-                  ptr = search_ptr;
 
-                  /* Read each option line by line, until */
-                  /* we encounter an empty line.          */
-                  dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].oc = 0;
-                  while ((*ptr != '\n') && (*ptr != '\0') &&
-                         (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].oc < MAX_NO_OPTIONS))
-                  {
-                     /* Store option. */
-                     i = 0;
-                     while ((*ptr != '\n') && (*ptr != '\0') &&
-                            (i < MAX_OPTION_LENGTH))
-                     {
-                        CHECK_SPACE();
-                        dir->file[dir->fgc].\
-                                dest[dir->file[dir->fgc].dgc].\
-                                options[dir->file[dir->fgc].\
-                                dest[dir->file[dir->fgc].dgc].oc][i] = *ptr;
-                        ptr++; i++;
-                     }
-
-                     if (i >= MAX_OPTION_LENGTH)
-                     {
-                        while ((*ptr != '\n') && (*ptr != '\0'))
-                        {
-                           ptr++;
-                        }
-                        system_log(WARN_SIGN, __FILE__, __LINE__,
-                                   "Option at line %d in %s longer then %d, ignoring this option.",
-                                   count_new_lines(database, ptr),
-                                   dcl[dcd].dir_config_file,
-                                   MAX_OPTION_LENGTH);
-                        if (warn_counter != NULL)
-                        {
-                           (*warn_counter)++;
-                        }
-                     }
-                     else
-                     {
-                        /* Make sure that we did read a line. */
-                        if (i != 0)
-                        {
-                           dir->file[dir->fgc].\
-                                   dest[dir->file[dir->fgc].dgc].\
-                                   options[dir->file[dir->fgc].\
-                                   dest[dir->file[dir->fgc].dgc].oc][i] = '\0';
-                           if (check_option(dir->file[dir->fgc].\
-                                            dest[dir->file[dir->fgc].dgc].\
-                                            options[dir->file[dir->fgc].\
-                                            dest[dir->file[dir->fgc].dgc].oc]) == SUCCESS)
-                           {
-                              dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].oc++;
-                           }
-                           else
-                           {
-                              system_log(WARN_SIGN, __FILE__, __LINE__,
-                                         "Removing option `%s' at line %d in %s",
-                                         dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].options[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].oc],
-                                         count_new_lines(database, ptr),
-                                         dcl[dcd].dir_config_file);
-                              if (warn_counter != NULL)
-                              {
-                                 (*warn_counter)++;
-                              }
-                           }
-                        }
-                     }
-                     ptr++;
-
-                     /* Check for a dummy empty line. */
-                     if (*ptr != '\n')
-                     {
-                        search_ptr = ptr;
-                        while ((*search_ptr == ' ') || (*search_ptr == '\t'))
-                        {
-                           search_ptr++;
-                        }
-                        ptr = search_ptr;
-                     }
-                  } /* while ((*ptr != '\n') && (*ptr != '\0')) */
-
-                  if (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].oc >= MAX_NO_OPTIONS)
-                  {
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                "Exceeded the number of total options (max = %d) at line %d in %s. Ignoring.",
-                                MAX_NO_OPTIONS, count_new_lines(database, ptr),
-                                dcl[dcd].dir_config_file);
-                     if (warn_counter != NULL)
-                     {
-                        (*warn_counter)++;
-                     }
-                  }
+                  /* Reduce file counter, since this one is faulty. */
+                  dir->fgc--;
                }
 
-               /* To read the next destination entry, put back the */
-               /* char that was torn out to mark end of this       */
-               /* destination entry.                               */
-               if (other_dest_flag == YES)
+               /* To read the next file entry, put back the char    */
+               /* that was torn out to mark end of this file entry. */
+               if (other_file_flag == YES)
                {
-                  *end_dest_ptr = tmp_dest_char;
+                  *end_file_ptr = tmp_file_char;
                }
 
-               dir->file[dir->fgc].dgc++;
-               t_dgc++;
-            } /* while () searching for DESTINATION_IDENTIFIER */
+               dir->fgc++;
+               if (*ptr == '\0')
+               {
+                  break;
+               }
+               else
+               {
+                  ptr++;
+               }
+            } /* while () searching for FILE_IDENTIFIER */
 
-            /* Check if a destination was defined. */
-            if (dir->file[dir->fgc].dgc == 0)
+            /* Check special case when no file identifier is found. */
+            if ((dir->fgc == 0) && (dir->file != NULL))
             {
-               /* Generate error message. */
+               /* We assume that all files in this dir should be send. */
+               if ((dir->file[dir->fgc].files = malloc(2)) == NULL)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             "Could not malloc() memory : %s", strerror(errno));
+                  exit(INCORRECT);
+               }
+               dir->file[dir->fgc].fbl = 2;
+               dir->file[dir->fgc].files[0] = '*';
+               dir->file[dir->fgc].files[1] = '\0';
+               dir->fgc++;
+            }
+
+            /* To read the next directory entry, put back the char    */
+            /* that was torn out to mark end of this directory entry. */
+            if (other_dir_flag == YES)
+            {
+               *end_dir_ptr = tmp_dir_char;
+            }
+
+            /* Check if a destination was defined for the last directory. */
+            if ((dir->file == NULL) || (dir->file[0].dest == NULL) ||
+                (dir->file[0].dest[0].rc == 0))
+            {
+               char *end_ptr;
+
+               if (search_ptr == NULL)
+               {
+                  end_ptr = ptr;
+               }
+               else
+               {
+                  end_ptr = search_ptr;
+               }
                system_log(WARN_SIGN, __FILE__, __LINE__,
-                          "Directory %s in %s does not have a destination entry for file group no. %d.",
-                          dir->location, dcl[dcd].dir_config_file, dir->fgc);
+                          "In %s at line %d, no destination defined.",
+                          dcl[dcd].dir_config_file,
+                          count_new_lines(database, end_ptr));
                if (warn_counter != NULL)
                {
                   (*warn_counter)++;
                }
-
-               /* Reduce file counter, since this one is faulty. */
-               dir->fgc--;
-            }
-
-            /* To read the next file entry, put back the char    */
-            /* that was torn out to mark end of this file entry. */
-            if (other_file_flag == YES)
-            {
-               *end_file_ptr = tmp_file_char;
-            }
-
-            dir->fgc++;
-            if (*ptr == '\0')
-            {
-               break;
             }
             else
             {
-               ptr++;
-            }
-         } /* while () searching for FILE_IDENTIFIER */
+               int duplicate = NO;
 
-         /* Check special case when no file identifier is found. */
-         if ((dir->fgc == 0) && (dir->file != NULL))
-         {
-            /* We assume that all files in this dir should be send. */
-            if ((dir->file[dir->fgc].files = malloc(2)) == NULL)
-            {
-               system_log(FATAL_SIGN, __FILE__, __LINE__,
-                          "Could not malloc() memory : %s", strerror(errno));
-               exit(INCORRECT);
-            }
-            dir->file[dir->fgc].fbl = 2;
-            dir->file[dir->fgc].files[0] = '*';
-            dir->file[dir->fgc].files[1] = '\0';
-            dir->fgc++;
-         }
-
-         /* To read the next directory entry, put back the char    */
-         /* that was torn out to mark end of this directory entry. */
-         if (other_dir_flag == YES)
-         {
-            *end_dir_ptr = tmp_dir_char;
-         }
-
-         /* Check if a destination was defined for the last directory. */
-         if ((dir->file == NULL) || (dir->file[0].dest == NULL) ||
-             (dir->file[0].dest[0].rc == 0))
-         {
-            char *end_ptr;
-
-            if (search_ptr == NULL)
-            {
-               end_ptr = ptr;
-            }
-            else
-            {
-               end_ptr = search_ptr;
-            }
-            system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "In %s at line %d, no destination defined.",
-                       dcl[dcd].dir_config_file,
-                       count_new_lines(database, end_ptr));
-            if (warn_counter != NULL)
-            {
-               (*warn_counter)++;
-            }
-         }
-         else
-         {
-            int duplicate = NO;
-
-            /* Check if this directory was not already specified. */
-            for (j = 0; j < no_of_local_dirs; j++)
-            {
-               if (strcmp(dir->location, dd[j].dir_name) == 0)
+               /* Check if this directory was not already specified. */
+               for (j = 0; j < no_of_local_dirs; j++)
                {
-                  if (dcl[dcd].dc_id == dd[j].dir_config_id)
+                  if (my_strcmp(dir->location, dd[j].dir_name) == 0)
                   {
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                "Ignoring duplicate directory entry %s in %s.",
-                                dir->location, dcl[dcd].dir_config_file);
-                     if (warn_counter != NULL)
+                     if (dcl[dcd].dc_id == dd[j].dir_config_id)
                      {
-                        (*warn_counter)++;
+                        system_log(WARN_SIGN, __FILE__, __LINE__,
+                                   "Ignoring duplicate directory entry %s in %s.",
+                                   dir->location, dcl[dcd].dir_config_file);
+                        if (warn_counter != NULL)
+                        {
+                           (*warn_counter)++;
+                        }
+                        duplicate = YES;
                      }
-                     duplicate = YES;
+                     else
+                     {
+                        duplicate = NEITHER;
+                     }
+                     break;
                   }
-                  else
-                  {
-                     duplicate = NEITHER;
-                  }
-                  break;
                }
-            }
 
-            if (duplicate != YES)
-            {
-               if (duplicate == NO)
+               if (duplicate != YES)
                {
-                  int    tmp_create_source_dir;
-                  mode_t tmp_create_source_dir_mode;
-
-                  if ((no_of_local_dirs % 10) == 0)
+                  if (duplicate == NO)
                   {
-                     size_t new_size = (((no_of_local_dirs / 10) + 1) * 10) *
-                                       sizeof(struct dir_data);
+                     int    tmp_create_source_dir;
+                     mode_t tmp_create_source_dir_mode;
 
-                     if (no_of_local_dirs == 0)
+                     if ((no_of_local_dirs % 10) == 0)
                      {
-                        if ((dd = malloc(new_size)) == NULL)
-                        {
-                           system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                      "malloc() error : %s", strerror(errno));
-                           exit(INCORRECT);
-                        }
-                     }
-                     else
-                     {
-                        if ((dd = realloc((char *)dd, new_size)) == NULL)
-                        {
-                           system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                      "realloc() error : %s", strerror(errno));
-                           exit(INCORRECT);
-                        }
-                     }
-                  }
+                        size_t new_size = (((no_of_local_dirs / 10) + 1) * 10) *
+                                          sizeof(struct dir_data);
 
-                  dd[no_of_local_dirs].dir_pos = lookup_dir_id(dir->location,
-                                                               dir->orig_dir_name);
-                  dd[no_of_local_dirs].dir_id = dnb[dd[no_of_local_dirs].dir_pos].dir_id;
-                  dd[no_of_local_dirs].in_dc_flag = 0;
-                  if (dir->alias[0] == '\0')
-                  {
-                     (void)snprintf(dir->alias, MAX_DIR_ALIAS_LENGTH + 1, "%x",
-                                    dnb[dd[no_of_local_dirs].dir_pos].dir_id);
-                  }
-                  else
-                  {
-                     int gotcha = NO;
-
-                     /* Check if the directory alias was not already specified. */
-                     for (j = 0; j < no_of_local_dirs; j++)
-                     {
-                        if (CHECK_STRCMP(dir->alias, dd[j].dir_alias) == 0)
+                        if (no_of_local_dirs == 0)
                         {
-                           (void)snprintf(dir->alias, MAX_DIR_ALIAS_LENGTH + 1,
-                                          "%x",
-                                          dnb[dd[no_of_local_dirs].dir_pos].dir_id);
-                           gotcha = YES;
-                           system_log(WARN_SIGN, __FILE__, __LINE__,
-                                      "Duplicate directory alias `%s' in `%s', giving it another alias: `%s'",
-                                      dd[j].dir_alias, dcl[dcd].dir_config_file,
-                                      dir->alias);
-                           if (warn_counter != NULL)
+                           if ((dd = malloc(new_size)) == NULL)
                            {
-                              (*warn_counter)++;
+                              system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                         "malloc() error : %s", strerror(errno));
+                              exit(INCORRECT);
                            }
-                           break;
-                        }
-                     }
-                     if (gotcha == NO)
-                     {
-                        dd[no_of_local_dirs].in_dc_flag |= DIR_ALIAS_IDC;
-                     }
-                  }
-
-                  (void)strcpy(dd[no_of_local_dirs].dir_alias, dir->alias);
-                  if (dir->type == LOCALE_DIR)
-                  {
-                     dd[no_of_local_dirs].fsa_pos = -1;
-                     dd[no_of_local_dirs].host_alias[0] = '\0';
-                     STRNCPY(dd[no_of_local_dirs].url, dir->location,
-                             MAX_RECIPIENT_LENGTH);
-                     if (dir->location_length >= MAX_RECIPIENT_LENGTH)
-                     {
-                        dd[no_of_local_dirs].url[MAX_RECIPIENT_LENGTH - 1] = '\0';
-                     }
-                  }
-                  else if (dir->type == REMOTE_DIR)
-                       {
-                          (void)strcpy(dd[no_of_local_dirs].url, dir->url);
-                          dd[no_of_local_dirs].fsa_pos = check_hostname_list(dir->url,
-                                                                             dir->real_hostname,
-                                                                             dir->host_alias,
-                                                                             dir->scheme,
-                                                                             RETRIEVE_FLAG);
-                          (void)strcpy(dd[no_of_local_dirs].host_alias,
-                                       hl[dd[no_of_local_dirs].fsa_pos].host_alias);
-                          store_file_mask(dd[no_of_local_dirs].dir_alias, dir);
-                       }
-                       else
-                       {
-                          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                     "Unknown dir type %d for %s.",
-                                     dir->type, dir->alias);
-                          dd[no_of_local_dirs].fsa_pos = -1;
-                          dd[no_of_local_dirs].host_alias[0] = '\0';
-                          STRNCPY(dd[no_of_local_dirs].url, dir->location,
-                                  MAX_RECIPIENT_LENGTH);
-                          if (dir->location_length >= MAX_RECIPIENT_LENGTH)
-                          {
-                             dd[no_of_local_dirs].url[MAX_RECIPIENT_LENGTH - 1] = '\0';
-                          }
-                       }
-                  (void)strcpy(dd[no_of_local_dirs].dir_name, dir->location);
-                  dd[no_of_local_dirs].protocol = dir->protocol;
-                  dd[no_of_local_dirs].dir_config_id = dcl[dcd].dc_id;
-                  dir->dir_config_id = dcl[dcd].dc_id;
-
-                  /* Evaluate the directory options. */
-                  eval_dir_options(no_of_local_dirs, dir->dir_options);
-
-                  /* Now lets check if this directory does exist and if we */
-                  /* do have enough permissions to work in this directory. */
-                  created_path[0] = '\0';
-                  if (create_source_dir_disabled == NO)
-                  {
-                     if (dd[no_of_local_dirs].create_source_dir == YES)
-                     {
-                        tmp_create_source_dir = YES;
-                        tmp_create_source_dir_mode = dd[no_of_local_dirs].dir_mode;
-                     }
-                     else
-                     {
-                        if (dd[no_of_local_dirs].dont_create_source_dir == YES)
-                        {
-                           tmp_create_source_dir = NO;
-                           tmp_create_source_dir_mode = 0;
                         }
                         else
                         {
-                           tmp_create_source_dir = create_source_dir;
-                           tmp_create_source_dir_mode = create_source_dir_mode;
+                           if ((dd = realloc((char *)dd, new_size)) == NULL)
+                           {
+                              system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                         "realloc() error : %s", strerror(errno));
+                              exit(INCORRECT);
+                           }
                         }
                      }
+
+                     dd[no_of_local_dirs].dir_pos = lookup_dir_id(dir->location,
+                                                                  dir->orig_dir_name);
+                     dd[no_of_local_dirs].dir_id = dnb[dd[no_of_local_dirs].dir_pos].dir_id;
+                     dd[no_of_local_dirs].in_dc_flag = 0;
+                     if (dir->alias[0] == '\0')
+                     {
+                        (void)snprintf(dir->alias, MAX_DIR_ALIAS_LENGTH + 1,
+                                       "%x",
+                                       dnb[dd[no_of_local_dirs].dir_pos].dir_id);
+                     }
+                     else
+                     {
+                        int gotcha = NO;
+
+                        /* Check if the directory alias was not already specified. */
+                        for (j = 0; j < no_of_local_dirs; j++)
+                        {
+                           if (CHECK_STRCMP(dir->alias, dd[j].dir_alias) == 0)
+                           {
+                              (void)snprintf(dir->alias, MAX_DIR_ALIAS_LENGTH + 1,
+                                             "%x",
+                                             dnb[dd[no_of_local_dirs].dir_pos].dir_id);
+                              gotcha = YES;
+                              system_log(WARN_SIGN, __FILE__, __LINE__,
+                                         "Duplicate directory alias `%s' in `%s', giving it another alias: `%s'",
+                                         dd[j].dir_alias,
+                                         dcl[dcd].dir_config_file, dir->alias);
+                              if (warn_counter != NULL)
+                              {
+                                 (*warn_counter)++;
+                              }
+                              break;
+                           }
+                        }
+                        if (gotcha == NO)
+                        {
+                           dd[no_of_local_dirs].in_dc_flag |= DIR_ALIAS_IDC;
+                        }
+                     }
+
+                     (void)strcpy(dd[no_of_local_dirs].dir_alias, dir->alias);
+                     if (dir->type == LOCALE_DIR)
+                     {
+                        dd[no_of_local_dirs].fsa_pos = -1;
+                        dd[no_of_local_dirs].host_alias[0] = '\0';
+                        STRNCPY(dd[no_of_local_dirs].url, dir->location,
+                                MAX_RECIPIENT_LENGTH);
+                        if (dir->location_length >= MAX_RECIPIENT_LENGTH)
+                        {
+                           dd[no_of_local_dirs].url[MAX_RECIPIENT_LENGTH - 1] = '\0';
+                        }
+                     }
+                     else if (dir->type == REMOTE_DIR)
+                          {
+                             (void)strcpy(dd[no_of_local_dirs].url, dir->url);
+                             dd[no_of_local_dirs].fsa_pos = check_hostname_list(dir->url,
+                                                                                dir->real_hostname,
+                                                                                dir->host_alias,
+                                                                                dir->scheme,
+                                                                                RETRIEVE_FLAG);
+                             (void)strcpy(dd[no_of_local_dirs].host_alias,
+                                          hl[dd[no_of_local_dirs].fsa_pos].host_alias);
+                             store_file_mask(dd[no_of_local_dirs].dir_alias,
+                                             dir);
+                          }
+                          else
+                          {
+                             system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                        "Unknown dir type %d for %s.",
+                                        dir->type, dir->alias);
+                             dd[no_of_local_dirs].fsa_pos = -1;
+                             dd[no_of_local_dirs].host_alias[0] = '\0';
+                             STRNCPY(dd[no_of_local_dirs].url, dir->location,
+                                     MAX_RECIPIENT_LENGTH);
+                             if (dir->location_length >= MAX_RECIPIENT_LENGTH)
+                             {
+                                dd[no_of_local_dirs].url[MAX_RECIPIENT_LENGTH - 1] = '\0';
+                             }
+                          }
+                     (void)strcpy(dd[no_of_local_dirs].dir_name, dir->location);
+                     dd[no_of_local_dirs].protocol = dir->protocol;
+                     dd[no_of_local_dirs].dir_config_id = dcl[dcd].dc_id;
+                     dir->dir_config_id = dcl[dcd].dc_id;
+
+                     /* Evaluate the directory options. */
+                     eval_dir_options(no_of_local_dirs, dir->dir_options);
+#if defined (WITH_INOTIFY) && defined (USE_INOTIFY_FOR_REMOTE_DIRS)
+                     if (dir->type == REMOTE_DIR)
+                     {
+                        dd[no_of_local_dirs].inotify_flag = INOTIFY_RENAME_FLAG;
+                     }
+#endif
+
+                     /* Now lets check if this directory does exist and if we */
+                     /* do have enough permissions to work in this directory. */
+                     created_path[0] = '\0';
+                     if (create_source_dir_disabled == NO)
+                     {
+                        if (dd[no_of_local_dirs].create_source_dir == YES)
+                        {
+                           tmp_create_source_dir = YES;
+                           tmp_create_source_dir_mode = dd[no_of_local_dirs].dir_mode;
+                        }
+                        else
+                        {
+                           if (dd[no_of_local_dirs].dont_create_source_dir == YES)
+                           {
+                              tmp_create_source_dir = NO;
+                              tmp_create_source_dir_mode = 0;
+                           }
+                           else
+                           {
+                              tmp_create_source_dir = create_source_dir;
+                              tmp_create_source_dir_mode = create_source_dir_mode;
+                           }
+                        }
+                     }
+                     else
+                     {
+                        tmp_create_source_dir = NO;
+                        tmp_create_source_dir_mode = 0;
+                     }
+                     if ((ret = check_create_path(dir->location,
+                                                  tmp_create_source_dir_mode,
+                                                  &error_ptr,
+                                                  tmp_create_source_dir,
+                                                  dd[no_of_local_dirs].remove,
+                                                  created_path)) == CREATED_DIR)
+                     {
+                        system_log(INFO_SIGN, __FILE__, __LINE__,
+                                   "Created directory `%s' [%s] at line %d from %s",
+                                   dir->location, created_path,
+                                   count_new_lines(database, ptr - 1),
+                                   dcl[dcd].dir_config_file);
+                     }
+                     else if (ret == NO_ACCESS)
+                          {
+                             if (error_ptr != NULL)
+                             {
+                                *error_ptr = '\0';
+                             }
+                             if (warn_counter != NULL)
+                             {
+                                (*warn_counter)++;
+                             }
+                             if (dir->type == REMOTE_DIR)
+                             {
+                                system_log(WARN_SIGN, __FILE__, __LINE__,
+                                           "Cannot access directory `%s' at line %d from %s (Ignoring this entry) : %s",
+                                           dir->location,
+                                           count_new_lines(database, dir_ptr),
+                                           dcl[dcd].dir_config_file,
+                                           strerror(errno));
+                                continue;
+                             }
+                             else
+                             {
+                                system_log(WARN_SIGN, __FILE__, __LINE__,
+                                           "Cannot access directory `%s' or create a subdirectory in it at line %d from %s : %s",
+                                           dir->location,
+                                           count_new_lines(database, dir_ptr),
+                                           dcl[dcd].dir_config_file,
+                                           strerror(errno));
+                             }
+                             if (error_ptr != NULL)
+                             {
+                                *error_ptr = '/';
+                             }
+                          }
+                     else if (ret == MKDIR_ERROR)
+                          {
+                             if (error_ptr != NULL)
+                             {
+                                *error_ptr = '\0';
+                             }
+                             if (warn_counter != NULL)
+                             {
+                                (*warn_counter)++;
+                             }
+                             if (dir->type == REMOTE_DIR)
+                             {
+                                system_log(WARN_SIGN, __FILE__, __LINE__,
+                                           "Failed to create directory `%s' at line %d from %s (Ignoring this entry) : %s",
+                                           dir->location,
+                                           count_new_lines(database, dir_ptr),
+                                           dcl[dcd].dir_config_file,
+                                           strerror(errno));
+                                continue;
+                             }
+                             else
+                             {
+                                system_log(WARN_SIGN, __FILE__, __LINE__,
+                                           "Failed to create directory `%s' at line %d from %s : %s",
+                                           dir->location,
+                                           count_new_lines(database, dir_ptr),
+                                           dcl[dcd].dir_config_file,
+                                           strerror(errno));
+                             }
+                             if (error_ptr != NULL)
+                             {
+                                *error_ptr = '/';
+                             }
+                          }
+                     else if (ret == STAT_ERROR)
+                          {
+                             if (error_ptr != NULL)
+                             {
+                                *error_ptr = '\0';
+                             }
+                             system_log(WARN_SIGN, __FILE__, __LINE__,
+                                        "Failed to stat() `%s' at line %d from %s : %s",
+                                        dir->location,
+                                        count_new_lines(database, dir_ptr),
+                                        dcl[dcd].dir_config_file,
+                                        strerror(errno));
+                             if (warn_counter != NULL)
+                             {
+                                (*warn_counter)++;
+                             }
+                             if (error_ptr != NULL)
+                             {
+                                *error_ptr = '/';
+                             }
+                          }
+                     else if (ret == ALLOC_ERROR)
+                          {
+                             system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                        "Could not realloc() memory : %s",
+                                        strerror(errno));
+                             exit(INCORRECT);
+                          }
+                     else if (ret == SUCCESS)
+                          {
+                             /* Directory does exist, so nothing to do here. */;
+                          }
+                          else
+                          {
+                             system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                        "Unknown error, should not get here.");
+                             exit(INCORRECT);
+                          }
+
+                     /* Increase directory counter. */
+                     no_of_local_dirs++;
+
+#ifdef _DEBUG
+                     (void)fprintf(p_debug_file,
+                                   "\n\n=================> Contents of directory struct %4d<=================\n",
+                                   no_of_local_dirs);
+                     (void)fprintf(p_debug_file,
+                                   "                   =================================\n");
+
+                     /* Print directory name and alias. */
+                     (void)fprintf(p_debug_file, "%3d: %s Alias: %s DIR_CONFIG ID: %x\n",
+                                   i + 1, dir->location, dir->alias,
+                                   dir->dir_config_id);
+
+                     /* Print contents of each file group. */
+                     for (j = 0; j < dir->fgc; j++)
+                     {
+                        /* Print file group name. */
+                        (void)fprintf(p_debug_file, "    >%s<\n",
+                                      dir->file[j].file_group_name);
+
+                        /* Print the name of each file. */
+                        for (k = 0; k < dir->file[j].fc; k++)
+                        {
+                           (void)fprintf(p_debug_file, "\t%3d: %s\n", k + 1,
+                                         dir->file[j].files[k]);
+                        }
+
+                        /* Print all destinations. */
+                        for (k = 0; k < dir->file[j].dgc; k++)
+                        {
+                           /* First print destination group name. */
+                           (void)fprintf(p_debug_file, "\t\t%3d: >%s<\n", k + 1,
+                                         dir->file[j].dest[k].dest_group_name);
+
+                           /* Show all recipient's. */
+                           (void)fprintf(p_debug_file, "\t\t\tRecipients:\n");
+                           for (m = 0; m < dir->file[j].dest[k].rc; m++)
+                           {
+                              (void)fprintf(p_debug_file, "\t\t\t%3d: %s\n", m + 1,
+                                            dir->file[j].dest[k].rec[m].recipient);
+                           }
+
+                           /* Show all options. */
+                           (void)fprintf(p_debug_file, "\t\t\tOptions:\n");
+                           for (m = 0; m < dir->file[j].dest[k].oc; m++)
+                           {
+                              (void)fprintf(p_debug_file, "\t\t\t%3d: %s\n", m + 1,
+                                            dir->file[j].dest[k].options[m]);
+                           }
+                        }
+                     }
+#endif
                   }
                   else
                   {
-                     tmp_create_source_dir = NO;
-                     tmp_create_source_dir_mode = 0;
-                  }
-                  if ((ret = check_create_path(dir->location,
-                                               tmp_create_source_dir_mode,
-                                               &error_ptr,
-                                               tmp_create_source_dir,
-                                               dd[no_of_local_dirs].remove,
-                                               created_path)) == CREATED_DIR)
-                  {
-                     system_log(INFO_SIGN, __FILE__, __LINE__,
-                                "Created directory `%s' [%s] at line %d from %s",
-                                dir->location, created_path,
-                                count_new_lines(database, ptr - 1),
-                                dcl[dcd].dir_config_file);
-                  }
-                  else if (ret == NO_ACCESS)
-                       {
-                          if (error_ptr != NULL)
-                          {
-                             *error_ptr = '\0';
-                          }
-                          if (warn_counter != NULL)
-                          {
-                             (*warn_counter)++;
-                          }
-                          if (dir->type == REMOTE_DIR)
-                          {
-                             system_log(WARN_SIGN, __FILE__, __LINE__,
-                                        "Cannot access directory `%s' at line %d from %s (Ignoring this entry) : %s",
-                                        dir->location,
-                                        count_new_lines(database, dir_ptr),
-                                        dcl[dcd].dir_config_file,
-                                        strerror(errno));
-                             continue;
-                          }
-                          else
-                          {
-                             system_log(WARN_SIGN, __FILE__, __LINE__,
-                                        "Cannot access directory `%s' or create a subdirectory in it at line %d from %s : %s",
-                                        dir->location,
-                                        count_new_lines(database, dir_ptr),
-                                        dcl[dcd].dir_config_file,
-                                        strerror(errno));
-                          }
-                          if (error_ptr != NULL)
-                          {
-                             *error_ptr = '/';
-                          }
-                       }
-                  else if (ret == MKDIR_ERROR)
-                       {
-                          if (error_ptr != NULL)
-                          {
-                             *error_ptr = '\0';
-                          }
-                          if (warn_counter != NULL)
-                          {
-                             (*warn_counter)++;
-                          }
-                          if (dir->type == REMOTE_DIR)
-                          {
-                             system_log(WARN_SIGN, __FILE__, __LINE__,
-                                        "Failed to create directory `%s' at line %d from %s (Ignoring this entry) : %s",
-                                        dir->location,
-                                        count_new_lines(database, dir_ptr),
-                                        dcl[dcd].dir_config_file,
-                                        strerror(errno));
-                             continue;
-                          }
-                          else
-                          {
-                             system_log(WARN_SIGN, __FILE__, __LINE__,
-                                        "Failed to create directory `%s' at line %d from %s : %s",
-                                        dir->location,
-                                        count_new_lines(database, dir_ptr),
-                                        dcl[dcd].dir_config_file,
-                                        strerror(errno));
-                          }
-                          if (error_ptr != NULL)
-                          {
-                             *error_ptr = '/';
-                          }
-                       }
-                  else if (ret == STAT_ERROR)
-                       {
-                          if (error_ptr != NULL)
-                          {
-                             *error_ptr = '\0';
-                          }
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Failed to stat() `%s' at line %d from %s : %s",
-                                     dir->location,
-                                     count_new_lines(database, dir_ptr),
-                                     dcl[dcd].dir_config_file,
-                                     strerror(errno));
-                          if (warn_counter != NULL)
-                          {
-                             (*warn_counter)++;
-                          }
-                          if (error_ptr != NULL)
-                          {
-                             *error_ptr = '/';
-                          }
-                       }
-                  else if (ret == ALLOC_ERROR)
-                       {
-                          system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                     "Could not realloc() memory : %s",
-                                     strerror(errno));
-                          exit(INCORRECT);
-                       }
-                  else if (ret == SUCCESS)
-                       {
-                          /* Directory does exist, so nothing to do here. */;
-                       }
-                       else
-                       {
-                          system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                     "Unknown error, should not get here.");
-                          exit(INCORRECT);
-                       }
-
-                  /* Increase directory counter. */
-                  no_of_local_dirs++;
-
-#ifdef _DEBUG
-                  (void)fprintf(p_debug_file,
-                                "\n\n=================> Contents of directory struct %4d<=================\n",
-                                no_of_local_dirs);
-                  (void)fprintf(p_debug_file,
-                                "                   =================================\n");
-
-                  /* Print directory name and alias. */
-                  (void)fprintf(p_debug_file, "%3d: %s Alias: %s DIR_CONFIG ID: %x\n",
-                                i + 1, dir->location, dir->alias,
-                                dir->dir_config_id);
-
-                  /* Print contents of each file group. */
-                  for (j = 0; j < dir->fgc; j++)
-                  {
-                     /* Print file group name. */
-                     (void)fprintf(p_debug_file, "    >%s<\n",
-                                   dir->file[j].file_group_name);
-
-                     /* Print the name of each file. */
-                     for (k = 0; k < dir->file[j].fc; k++)
+                     (void)strcpy(dir->alias, dd[j].dir_alias);
+                     dir->dir_config_id = dcl[dcd].dc_id;
+                     if (dir->type == REMOTE_DIR)
                      {
-                        (void)fprintf(p_debug_file, "\t%3d: %s\n", k + 1,
-                                      dir->file[j].files[k]);
-                     }
-
-                     /* Print all destinations. */
-                     for (k = 0; k < dir->file[j].dgc; k++)
-                     {
-                        /* First print destination group name. */
-                        (void)fprintf(p_debug_file, "\t\t%3d: >%s<\n", k + 1,
-                                      dir->file[j].dest[k].dest_group_name);
-
-                        /* Show all recipient's. */
-                        (void)fprintf(p_debug_file, "\t\t\tRecipients:\n");
-                        for (m = 0; m < dir->file[j].dest[k].rc; m++)
-                        {
-                           (void)fprintf(p_debug_file, "\t\t\t%3d: %s\n", m + 1,
-                                         dir->file[j].dest[k].rec[m].recipient);
-                        }
-
-                        /* Show all options. */
-                        (void)fprintf(p_debug_file, "\t\t\tOptions:\n");
-                        for (m = 0; m < dir->file[j].dest[k].oc; m++)
-                        {
-                           (void)fprintf(p_debug_file, "\t\t\t%3d: %s\n", m + 1,
-                                         dir->file[j].dest[k].options[m]);
-                        }
+                        add_file_mask(dd[j].dir_alias, dir);
                      }
                   }
-#endif
-               }
-               else
+
+                  /* Insert directory into temporary memory. */
+                  insert_dir(dir);
+
+                  /* Insert hostnames into temporary memory. */
+                  insert_hostname(dir);
+               } /* if (duplicate == NO) */
+
+               for (j = 0; j < dir->fgc; j++)
                {
-                  (void)strcpy(dir->alias, dd[j].dir_alias);
-                  dir->dir_config_id = dcl[dcd].dc_id;
-                  if (dir->type == REMOTE_DIR)
+                  int m;
+
+                  for (m = 0; m < dir->file[j].dgc; m++)
                   {
-                     add_file_mask(dd[j].dir_alias, dir);
+                     free(dir->file[j].dest[m].rec);
+                     dir->file[j].dest[m].rec= NULL;
                   }
+                  free(dir->file[j].files);
+                  free(dir->file[j].dest);
                }
-
-               /* Insert directory into temporary memory. */
-               insert_dir(dir);
-
-               /* Insert hostnames into temporary memory. */
-               insert_hostname(dir);
-            } /* if (duplicate == NO) */
-
-            for (j = 0; j < dir->fgc; j++)
-            {
-               int m;
-
-               for (m = 0; m < dir->file[j].dgc; m++)
-               {
-                  free(dir->file[j].dest[m].rec);
-                  dir->file[j].dest[m].rec= NULL;
-               }
-               free(dir->file[j].files);
-               free(dir->file[j].dest);
+               free(dir->file);
+               dir->file = NULL;
             }
-            free(dir->file);
-            dir->file = NULL;
+         } while (next_dir_group_name(dir->location, dir->alias) == 1);
+
+         if (group_name[0] != '\0')
+         {
+            free_dir_group_name();
          }
       } /* while ((search_ptr = posi_identifier(ptr, DIR_IDENTIFIER, DIR_IDENTIFIER_LENGTH)) != NULL) */
       free(database);
@@ -2368,6 +2457,52 @@ check_dummy_line:
    }
 
    return(ret);
+}
+
+
+/*++++++++++++++++++++++++ expand_file_filter() ++++++++++++++++++++++++*/
+static void
+expand_file_filter(struct dir_group *dir, int *total_length)
+{
+   int  file_group_type,
+        i = 0;
+   char closing_bracket,
+        group_name[MAX_GROUPNAME_LENGTH],
+        *ptr;
+
+   if (dir->file[dir->fgc].files[*total_length + 1] == CURLY_BRACKET_OPEN)
+   {
+      closing_bracket = CURLY_BRACKET_CLOSE;
+      file_group_type = YES;
+   }
+   else
+   {
+      closing_bracket = SQUARE_BRACKET_CLOSE;
+      file_group_type = NO;
+   }
+   ptr = &dir->file[dir->fgc].files[*total_length + 2];
+
+   while ((*ptr != closing_bracket) && (*ptr != '\0'))
+   {
+      group_name[i] = *ptr;
+      ptr++; i++;
+   }
+
+   if (*ptr == closing_bracket)
+   {
+      group_name[i] = '\0';
+      get_file_group(group_name, file_group_type, dir, total_length);
+   }
+   else
+   {
+      /* No end marker, so just take it as a normal file entry. */
+      /* This should not happen because we did the check before */
+      /* calling this function.                                 */
+      system_log(WARN_SIGN, __FILE__, __LINE__,
+                 "Hmm, this should not happen. No closing bracket found!");
+   }
+
+   return;
 }
 
 
@@ -2918,8 +3053,8 @@ sort_jobs(void)
       }
       for (j = (i + 1); j < job_no; j++)
       {
-         if (strcmp(p_t + p_ptr[i].ptr[DIRECTORY_PTR_POS],
-                    p_t + p_ptr[j].ptr[DIRECTORY_PTR_POS]) == 0)
+         if (my_strcmp(p_t + p_ptr[i].ptr[DIRECTORY_PTR_POS],
+                       p_t + p_ptr[j].ptr[DIRECTORY_PTR_POS]) == 0)
          {
             int start_j = j;
 

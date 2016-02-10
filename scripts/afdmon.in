@@ -43,16 +43,22 @@ case "$1" in
 	RETVAL=1
 	for afduser in $AFDMON_USERS
 	do
-	   echo -n "Starting AFD Monitor for $afduser : "
-	   su - $afduser -c "mafd -a"
-	   if [ $? -eq 0 ]
-	   then
-	      RETVAL=0
-	      touch $SYS_LOCKDIR/afdmon.$afduser
-	      echo "Done"
-	   else
-	      echo "Failed"
-	   fi
+           USER_HOME_DIR="`grep \^${afduser}: /etc/passwd | cut -d ':' -f 6`"
+           if [ -d $USER_HOME_DIR ]
+           then
+	      echo -n "Starting AFD Monitor for $afduser : "
+	      su - $afduser -c "mafd -a"
+	      if [ $? -eq 0 ]
+	      then
+	         RETVAL=0
+	         touch $SYS_LOCKDIR/afdmon.$afduser
+	         echo "Done"
+	      else
+	         echo "Failed"
+	      fi
+           else
+              echo "Could not start AFD Monitor for $afduser since home directory is missing."
+           fi
 	done
 	[ $RETVAL -eq 0 ] && touch $SYS_LOCKDIR/afdmon
 	;;
@@ -60,23 +66,29 @@ case "$1" in
 	RETVAL=1
 	for afduser in $AFDMON_USERS
 	do
-	   echo -n "Stopping AFD Monitor for $afduser : "
-	   su - $afduser -c "mafd -S"
-	   case $? in
-	      0)
-	         RETVAL=0
-	         rm -f $SYS_LOCKDIR/afdmon.$afduser
-	         echo "Done"
-	         ;;
-	      10)
-	         RETVAL=0
-	         rm -f $SYS_LOCKDIR/afdmon.$afduser
-	         echo "Is already stopped"
-	         ;;
-	      *)
-	         echo "Failed"
-	         ;;
-	   esac
+           USER_HOME_DIR="`grep \^${afduser}: /etc/passwd | cut -d ':' -f 6`"
+           if [ -d $USER_HOME_DIR ]
+           then
+	      echo -n "Stopping AFD Monitor for $afduser : "
+	      su - $afduser -c "mafd -S"
+	      case $? in
+	         0)
+	            RETVAL=0
+	            rm -f $SYS_LOCKDIR/afdmon.$afduser
+	            echo "Done"
+	            ;;
+	         10)
+	            RETVAL=0
+	            rm -f $SYS_LOCKDIR/afdmon.$afduser
+	            echo "Is already stopped"
+	            ;;
+	         *)
+	            echo "Failed"
+	            ;;
+	      esac
+           else
+              echo "Could not stop AFD Monitor for $afduser since home directory is missing."
+           fi
 	done
 	[ $RETVAL -eq 0 ] && rm -f $SYS_LOCKDIR/afdmon
 	;;
@@ -90,46 +102,9 @@ case "$1" in
 	RETVAL=1
 	for afduser in $AFDMON_USERS
 	do
-	   if [ -f $SYS_LOCKDIR/restart_afdmon.$afduser ]
-	   then
-	      echo -n "Starting AFD Monitor for $afduser : "
-	      su - $afduser -c "mafd -a"
-	      if [ $? -eq 0 ]
-	      then
-	         RETVAL=0
-	         touch $SYS_LOCKDIR/afdmon.$afduser
-	         echo "Done"
-	      else
-	         echo "Failed"
-	      fi
-	      rm -f $SYS_LOCKDIR/restart_afdmon.$afduser
-	   else
-	      su - $afduser -c "mafd -S"
-	      if [ $? -eq 0 ]
-	      then
-	         sleep 2
-	         su - $afduser -c "mafd -a"
-	         if [ $? -eq 0 ]
-	         then
-	            RETVAL=0
-	            touch $SYS_LOCKDIR/afdmon.$afduser
-	            echo "Done"
-	         else
-	            echo "Failed"
-	         fi
-	      fi
-	   fi
-	done
-
-	if [ ! "$CURRENT_SCRIPT_NAME" = "afdmonha" ]
-	then
-	   # HA users may only be started if we find a restart_afdmon.user file!
-	   if [ -r @SYSCONFIGDIR@/afdmon ]
-	   then
-	      AFDMON_HA_USERS="`grep \^AFDMON_HA_USER_ @SYSCONFIGDIR@/afdmon | cut -d '=' -f2`"
-	   fi
-	   for afduser in $AFDMON_HA_USERS
-	   do
+           USER_HOME_DIR="`grep \^${afduser}: /etc/passwd | cut -d ':' -f 6`"
+           if [ -d $USER_HOME_DIR ]
+           then
 	      if [ -f $SYS_LOCKDIR/restart_afdmon.$afduser ]
 	      then
 	         echo -n "Starting AFD Monitor for $afduser : "
@@ -143,24 +118,79 @@ case "$1" in
 	            echo "Failed"
 	         fi
 	         rm -f $SYS_LOCKDIR/restart_afdmon.$afduser
+	      else
+	         su - $afduser -c "mafd -S"
+	         if [ $? -eq 0 ]
+	         then
+	            sleep 2
+	            su - $afduser -c "mafd -a"
+	            if [ $? -eq 0 ]
+	            then
+	               RETVAL=0
+	               touch $SYS_LOCKDIR/afdmon.$afduser
+	               echo "Done"
+	            else
+	               echo "Failed"
+	            fi
+	         fi
 	      fi
+           else
+              echo "Could not do a condrestart of AFD Monitor for $afduser since home directory is missing."
+           fi
+	done
+
+	if [ ! "$CURRENT_SCRIPT_NAME" = "afdmonha" ]
+	then
+	   # HA users may only be started if we find a restart_afdmon.user file!
+	   if [ -r @SYSCONFIGDIR@/afdmon ]
+	   then
+	      AFDMON_HA_USERS="`grep \^AFDMON_HA_USER_ @SYSCONFIGDIR@/afdmon | cut -d '=' -f2`"
+	   fi
+	   for afduser in $AFDMON_HA_USERS
+	   do
+              USER_HOME_DIR="`grep \^${afduser}: /etc/passwd | cut -d ':' -f 6`"
+              if [ -d $USER_HOME_DIR ]
+              then
+	         if [ -f $SYS_LOCKDIR/restart_afdmon.$afduser ]
+	         then
+	            echo -n "Starting AFD Monitor for $afduser : "
+	            su - $afduser -c "mafd -a"
+	            if [ $? -eq 0 ]
+	            then
+	               RETVAL=0
+	               touch $SYS_LOCKDIR/afdmon.$afduser
+	               echo "Done"
+	            else
+	               echo "Failed"
+	            fi
+	            rm -f $SYS_LOCKDIR/restart_afdmon.$afduser
+	         fi
+              else
+                 echo "Could not do a condrestart of AFD Monitor for $afduser since home directory is missing."
+              fi
 	   done
 	fi
 	rm -f $SYS_LOCKDIR/afdmon.restart
 	;;
-  status)
+  status|monitor)
 	NOT_RUNNING=""
 	IS_RUNNING=""
 	for afduser in $AFDMON_USERS
 	do
-	   su - $afduser -c "mafd -c"
-	   RETVAL=$?
-	   if [ $RETVAL -ne 5 ]
-	   then
-	      NOT_RUNNING="`echo $NOT_RUNNING` $afduser"
-	   else
-	      IS_RUNNING="`echo $IS_RUNNING` $afduser"
-	   fi
+           USER_HOME_DIR="`grep \^${afduser}: /etc/passwd | cut -d ':' -f 6`"
+           if [ -d $USER_HOME_DIR ]
+           then
+	      su - $afduser -c "mafd -c"
+	      RETVAL=$?
+	      if [ $RETVAL -ne 5 ]
+	      then
+	         NOT_RUNNING="`echo $NOT_RUNNING` $afduser"
+	      else
+	         IS_RUNNING="`echo $IS_RUNNING` $afduser"
+	      fi
+           else
+              echo "Not able to determine status of AFD Monitor for $afduser since home directory is missing."
+           fi
 	done
 	if [ "$NOT_RUNNING" = "" ]
 	then
@@ -172,7 +202,7 @@ case "$1" in
 	fi
 	;;
   *)
-	echo "*** Usage: afdmon {start|stop|restart|condrestart|status}"
+	echo "*** Usage: afdmon {start|stop|restart|condrestart|status|monitor}"
 	RETVAL=1
 	;;
 esac

@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_ftp.c - Part of AFD, an automatic file distribution
  *                                program.
- *  Copyright (c) 2000 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -508,7 +508,11 @@ get_remote_file_names_ftp(off_t *file_size_to_retrieve, int *more_files_in_list)
                {
                   if (fra[db.fra_pos].dir_flag == ALL_DISABLED)
                   {
-                     delete_remote_file(FTP, p_list, strlen(p_list), -1);
+                     delete_remote_file(FTP, p_list, strlen(p_list),
+#ifdef _DELETE_LOG
+                                        DEL_UNREADABLE_FILE,
+#endif
+                                        -1);
                   }
                   else
                   {
@@ -573,7 +577,11 @@ get_remote_file_names_ftp(off_t *file_size_to_retrieve, int *more_files_in_list)
                             ((diff_time > fra[db.fra_pos].unknown_file_time) &&
                              (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
                         {
-                           delete_remote_file(FTP, p_list, strlen(p_list), -1);
+                           delete_remote_file(FTP, p_list, strlen(p_list),
+#ifdef _DELETE_LOG
+                                              DEL_UNREADABLE_FILE,
+#endif
+                                              -1);
                         }
                      }
                   }

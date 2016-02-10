@@ -1,7 +1,7 @@
 /*
  *  handle_full_dc_names.c - Part of AFD, an automatic file distribution
  *                           program.
- *  Copyright (c) 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014, 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,8 +24,8 @@ DESCR__S_M3
 /*
  ** NAME
  **   get_full_dc_names - get all DIR_CONFIG names from the given filter
- **  check_full_dc_name_changes - check if this filter has any changes
- **  purge_full_dc_names - remove a 'filter'-DIR_CONFIG
+ **   check_full_dc_name_changes - check if this filter has any changes
+ **   purge_full_dc_names - remove a 'filter'-DIR_CONFIG
  **
  ** SYNOPSIS
  **   void get_full_dc_names(char *dc_filter, off_t *db_size)
@@ -50,7 +50,7 @@ DESCR__S_M3
 DESCR__E_M3
 
 #include <stdio.h>                 /* fprintf(), sprintf()               */
-#include <string.h>                /* strcmp(), strcpy(), strerror()     */
+#include <string.h>                /* strcpy(), strerror()               */
 #include <stdlib.h>                /* exit()                             */
 #include <sys/types.h>
 #include <sys/stat.h>              /* stat(), S_ISREG()                  */
@@ -270,7 +270,7 @@ check_full_dc_name(char *dc_filter)
          for (i = 0; i < no_of_dir_configs; i++)
          {
             if ((dc_dcl[i].is_filter == YES) &&
-                (strcmp(dc_dcl[i].dir_config_file, fullname) == 0))
+                (my_strcmp(dc_dcl[i].dir_config_file, fullname) == 0))
             {
                dc_dcl[i].in_list = YES;
                gotcha = YES;

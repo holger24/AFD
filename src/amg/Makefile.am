@@ -66,6 +66,8 @@ amg_SOURCES            = add_file_mask.c\
                          create_sa.c\
                          eval_dir_config.c\
                          eval_dir_options.c\
+                         handle_dir_group_name.c\
+                         handle_file_group_name.c\
                          handle_full_dc_names.c\
                          lookup_dc_id.c\
                          lookup_dir_id.c\

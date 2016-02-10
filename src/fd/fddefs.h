@@ -183,6 +183,10 @@
 #endif
 #define EXEC_ERROR               56
 #define EXEC_ERROR_STR           "External transmit failed"
+#ifdef _WITH_DFAX_SUPPORT
+# define DFAX_FUNCTION_ERROR     57
+# define DFAX_FUNCTION_ERROR_STR "Error in DFAX function"
+#endif
 #define SYNTAX_ERROR             60
 #define SYNTAX_ERROR_STR         "Syntax error"
 #define NO_FILES_TO_SEND         61
@@ -283,6 +287,17 @@
 #define MATCH_REMOTE_SIZE              16777216
 #define HIDE_ALL_GROUP_MEMBERS         33554432
 #define PATH_MAY_CHANGE                67108864
+#ifdef _WITH_TRANS_EXEC
+# define EXECUTE_IN_TARGET_DIR         134217728
+#endif
+
+#ifdef _WITH_DE_MAIL_SUPPORT
+/* Definition for de_mail_options in structure job. */
+# define CONF_OF_DISPATCH              1
+# define CONF_OF_RECEIPT               2
+# define CONF_OF_RETRIEVE              4
+# define DEFAULT_CONFIRMATION          (CONF_OF_DISPATCH | CONF_OF_RECEIPT)
+#endif
 
 #ifdef _WITH_BURST_2
 /* Definition for values that have changed during a burst. */
@@ -340,6 +355,7 @@ struct job
           int           port;            /* TCP port.                    */
           int           sndbuf_size;     /* Socket send buffer size.     */
           int           rcvbuf_size;     /* Socket receive buffer size.  */
+          unsigned int  disconnect;      /* Disconnect after given time. */
           unsigned int  unl;             /* Unique name length.          */
           union uiid    id;              /* Since each host can have     */
                                          /* different type of jobs (other*/
@@ -603,7 +619,26 @@ struct job
                                          /*|26 | SMTP: Hide all group   |*/
                                          /*|   |       members.         |*/
                                          /*|27 | Target dir can change. |*/
+                                         /*|28 | Execute in target dir. |*/
                                          /*+---+------------------------+*/
+#ifdef _WITH_DE_MAIL_SUPPORT
+          unsigned char de_mail_options; /* Flag storing the different   */
+                                         /* options for DE-mail, which   */
+                                         /* are:                         */
+                                         /*+------+---------------------+*/
+                                         /*|Bit(s)|       Meaning       |*/
+                                         /*+------+---------------------+*/
+                                         /*|    3 | CONF_OF_RETRIEVE    |*/
+                                         /*|    2 | CONF_OF_RECEIPT     |*/
+                                         /*|    1 | CONF_OF_DISPATCH    |*/
+                                         /*+------+---------------------+*/
+          int           de_mail_privat_id_length;
+          char          *de_mail_privat_id;
+          char          *de_mail_sender;
+          char          demcd_log;       /* When the file name           */
+                                         /* confirmation is to be logged,*/
+                                         /* this variable is set YES.    */
+#endif
 #ifdef WITH_DUP_CHECK
           unsigned int  dup_check_flag;  /* Flag storing the type of     */
                                          /* check that is to be done and */
@@ -812,7 +847,17 @@ extern void  calc_trl_per_process(int),
              check_queue_space(void),
              check_trl_file(void),
              compare_dir_local(void),
-             delete_remote_file(int, char *, int, off_t),
+             delete_remote_file(int, char *, int, int, off_t),
+#ifdef _WITH_DE_MAIL_SUPPORT
+# ifdef WITHOUT_FIFO_RW_SUPPORT
+             demcd_log_fd(int *, int *),
+# else
+             demcd_log_fd(int *),
+# endif
+             demcd_log_ptrs(unsigned int **, char **, char **,
+                            unsigned short **, off_t **, unsigned short **,
+                            size_t *, unsigned char **, char *),
+#endif
              detach_ls_data(int),
              fsa_detach_pos(int),
              get_group_list(char *, struct job *),
@@ -825,22 +870,15 @@ extern void  calc_trl_per_process(int),
              init_limit_transfer_rate(void),
              init_msg_buffer(void),
              init_msg_ptrs(time_t **, unsigned int **, unsigned int **,
-                           unsigned int **, off_t **, unsigned short **,
-                           unsigned int **, char **, char **, char **),
+                           unsigned int **, off_t **,
+#ifdef MULTI_FS_SUPPORT
+                           dev_t **,
+#endif
+                           unsigned short **, unsigned int **, char **,
+                           char **, char **),
              init_trl_data(void),
              limit_transfer_rate(int, off_t, clock_t),
              log_append(struct job *, char *, char *),
-#ifdef _OUTPUT_LOG
-# ifdef WITHOUT_FIFO_RW_SUPPORT
-             output_log_fd(int *, int *),
-# else
-             output_log_fd(int *),
-# endif
-             output_log_ptrs(unsigned int **, unsigned int **, char **,
-                             char **, unsigned short **, unsigned short **,
-                             off_t **, unsigned short **, size_t *, clock_t **,
-                             char **, char *, int, int),
-#endif
              receive_log(char *, char *, int, time_t, unsigned int, char *, ...),
              remove_all_appends(unsigned int),
              remove_append(unsigned int, char *),

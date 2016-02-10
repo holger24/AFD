@@ -1,6 +1,6 @@
 /*
  *  remove_job_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -156,22 +156,11 @@ remove_job_files(char *del_dir, int fsa_pos, off_t sf_lock_offset)
                file_size_deleted += stat_buf.st_size;
 #ifdef _DELETE_LOG
                (void)strcpy(dl.file_name, p_dir->d_name);
-               if (fsa_pos > -1)
-               {
-                  (void)snprintf(dl.host_name, MAX_HOSTNAME_LENGTH + 4 + 1,
-                                 "%-*s %03x",
-                                 MAX_HOSTNAME_LENGTH,
-                                 p_fsa->host_alias,
-                                 reason);
-               }
-               else
-               {
-                  (void)snprintf(dl.host_name, MAX_HOSTNAME_LENGTH + 4 + 1,
-                                 "%-*s %03x",
-                                 MAX_HOSTNAME_LENGTH,
-                                 "-",
-                                 reason);
-               }
+               (void)snprintf(dl.host_name, MAX_HOSTNAME_LENGTH + 4 + 1,
+                              "%-*s %03x",
+                              MAX_HOSTNAME_LENGTH,
+                              (fsa_pos > -1) ? p_fsa->host_alias : "-",
+                              reason);
                *dl.file_size = stat_buf.st_size;
                *dl.job_id = job_id;
                *dl.dir_id = 0;
@@ -193,7 +182,7 @@ remove_job_files(char *del_dir, int fsa_pos, off_t sf_lock_offset)
          }
          else
          {
-            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+            system_log(WARN_SIGN, __FILE__, __LINE__,
                        _("UUUPS! A directory [%s]! Whats that doing here? Deleted %d files. [host_alias=%s]"),
                        del_dir, number_deleted,
                        (fsa_pos > -1) ? p_fsa->host_alias : "-");

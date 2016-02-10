@@ -1,6 +1,6 @@
 /*
  *  init_asmtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2000 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -90,6 +90,9 @@ init_asmtp(int argc, char *argv[], struct data *p_db)
    p_db->special_flag     = 0;
    p_db->filename         = NULL;
    p_db->realname         = NULL;
+#ifdef WITH_SSL
+   p_db->strict           = NO;
+#endif
 
    /* Evaluate all arguments with '-'. */
    while ((--argc > 0) && ((*++argv)[0] == '-'))
@@ -414,6 +417,12 @@ init_asmtp(int argc, char *argv[], struct data *p_db)
             p_db->special_flag |= FILE_NAME_IS_USER;
             break;
 
+#ifdef WITH_SSL
+         case 'Y' : /* Strict SSL/TLS verification. */
+            p_db->strict = YES;
+            break;
+#endif
+
          case '?' : /* Help */
             usage();
             exit(0);
@@ -506,6 +515,9 @@ usage(void)
    (void)fprintf(stderr, _("  -v                         - Verbose. Shows all SMTP commands and\n"));
    (void)fprintf(stderr, _("                               the reply from the SMTP server.\n"));
    (void)fprintf(stderr, _("  -y                         - File name is user.\n"));
+#ifdef WITH_SSL
+   (void)fprintf(stderr, _("  -Y                         - Use strict SSL/TLS verification.\n"));
+#endif
    (void)fprintf(stderr, _("  -?                         - Display this help and exit.\n"));
    (void)fprintf(stderr, _("  The following values are returned on exit:\n"));
    (void)fprintf(stderr, _("      %2d - File transmitted successfully.\n"), TRANSFER_SUCCESS);

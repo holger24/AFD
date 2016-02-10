@@ -1,6 +1,6 @@
 /*
  *  afdcfg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2000 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -27,22 +27,23 @@ DESCR__S_M1
  **
  ** SYNOPSIS
  **   afdcfg [-w <working directory>] [-u[ <fake user>]] option
- **                  -a      enable archive
- **                  -A      disable archive
- **                  -b      enable create source dir
- **                  -B      disable create source dir
- **                  -c      enable create target dir
- **                  -C      disable create target dir
- **                  -d      enable directory warn time
- **                  -du     enable + update directory warn time
- **                  -D      disable directory warn time
- **                  -h      enable host warn time
- **                  -H      disable host warn time
- **                  -i      enable simulate send mode
- **                  -I      disable simulate send mode
- **                  -r      enable retrieving of files
- **                  -R      disable retrieving of files
- **                  -s      status of the above flags
+ **           -a                    enable archive
+ **           -A                    disable archive
+ **           -b                    enable create source dir
+ **           -B                    disable create source dir
+ **           -c                    enable create target dir
+ **           -C                    disable create target dir
+ **           -d                    enable directory warn time
+ **           -du                   enable + update directory warn time
+ **           -D                    disable directory warn time
+ **           -h                    enable host warn time
+ **           -H                    disable host warn time
+ **           -i                    enable simulate send mode
+ **           -I                    disable simulate send mode
+ **           -o <errors offline>   modify first errors offline\n"));
+ **           -r                    enable retrieving of files
+ **           -R                    disable retrieving of files
+ **           -s                    status of the above flags
  **
  ** DESCRIPTION
  **
@@ -114,7 +115,8 @@ static void                usage(char *);
 #define DISABLE_CREATE_SOURCE_DIR_SEL   13
 #define ENABLE_SIMULATE_SEND_MODE_SEL   14
 #define DISABLE_SIMULATE_SEND_MODE_SEL  15
-#define STATUS_SEL                      16
+#define MODIFY_ERRORS_OFFLINE_SEL       16
+#define STATUS_SEL                      17
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ afdcfg() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
@@ -122,6 +124,7 @@ int
 main(int argc, char *argv[])
 {
    int  action,
+        ignore_first_errors,
         ret,
         user_offset;
    char fake_user[MAX_FULL_USER_ID_LENGTH],
@@ -150,7 +153,7 @@ main(int argc, char *argv[])
       user_offset = strlen(profile);
    }
 
-   if (argc != 2)
+   if (argc == 1)
    {
       usage(argv[0]);
       exit(INCORRECT);
@@ -181,28 +184,45 @@ main(int argc, char *argv[])
                                     {
                                        if (get_arg(&argc, argv, "-I", NULL, 0) != SUCCESS)
                                        {
-                                          if (get_arg(&argc, argv, "-r", NULL, 0) != SUCCESS)
+                                          char value[MAX_INT_LENGTH + 1];
+
+                                          if (get_arg(&argc, argv, "-o", value, MAX_INT_LENGTH) != SUCCESS)
                                           {
-                                             if (get_arg(&argc, argv, "-R", NULL, 0) != SUCCESS)
+                                             if (get_arg(&argc, argv, "-r", NULL, 0) != SUCCESS)
                                              {
-                                                if (get_arg(&argc, argv, "-s", NULL, 0) != SUCCESS)
+                                                if (get_arg(&argc, argv, "-R", NULL, 0) != SUCCESS)
                                                 {
-                                                   usage(argv[0]);
-                                                   exit(INCORRECT);
+                                                   if (get_arg(&argc, argv, "-s", NULL, 0) != SUCCESS)
+                                                   {
+                                                      usage(argv[0]);
+                                                      exit(INCORRECT);
+                                                   }
+                                                   else
+                                                   {
+                                                      action = STATUS_SEL;
+                                                   }
                                                 }
                                                 else
                                                 {
-                                                   action = STATUS_SEL;
+                                                   action = DISABLE_RETRIEVE_SEL;
                                                 }
                                              }
                                              else
                                              {
-                                                action = DISABLE_RETRIEVE_SEL;
+                                                action = ENABLE_RETRIEVE_SEL;
                                              }
                                           }
                                           else
                                           {
-                                             action = ENABLE_RETRIEVE_SEL;
+                                             ignore_first_errors = atoi(value);
+                                             if (ignore_first_errors > 255)
+                                             {
+                                                (void)fprintf(stderr,
+                                                              "The number of errors to be ignored is to high (%d). It may not be larger then 255.\n",
+                                                              ignore_first_errors);
+                                                exit(INCORRECT);
+                                             }
+                                             action = MODIFY_ERRORS_OFFLINE_SEL;
                                           }
                                        }
                                        else
@@ -405,7 +425,8 @@ main(int argc, char *argv[])
           (action == DISABLE_HOST_WARN_TIME_SEL) ||
           (action == ENABLE_RETRIEVE_SEL) || (action == DISABLE_RETRIEVE_SEL) ||
           (action == ENABLE_SIMULATE_SEND_MODE_SEL) ||
-          (action == DISABLE_SIMULATE_SEND_MODE_SEL))
+          (action == DISABLE_SIMULATE_SEND_MODE_SEL) ||
+          (action == MODIFY_ERRORS_OFFLINE_SEL))
       {
          if ((ret = fsa_attach("afdcfg")) != SUCCESS)
          {
@@ -742,64 +763,88 @@ main(int argc, char *argv[])
                       "%s", user);
          }
          break;
+
+      case MODIFY_ERRORS_OFFLINE_SEL :
+         {
+            int original_value = *(unsigned char *)((char *)fsa - AFD_WORD_OFFSET  + SIZEOF_INT + 1 + 1);
+
+            if (original_value == ignore_first_errors)
+            {
+               (void)fprintf(stdout, _("Ignore first errors is already %d.\n"),
+                             ignore_first_errors);
+            }
+            else
+            {
+               *(unsigned char *)((char *)fsa - AFD_WORD_OFFSET  + SIZEOF_INT + 1 + 1) = ignore_first_errors;
+               system_log(CONFIG_SIGN, __FILE__, __LINE__,
+                          _("Ignore first errors is set to %d by %s"),
+                          ignore_first_errors, user);
+               event_log(0L, EC_GLOB, ET_MAN, EA_MODIFY_ERRORS_OFFLINE,
+                         "%s %d->%d",
+                         user, original_value, ignore_first_errors);
+            }
+         }
+         break;
          
       case STATUS_SEL :
          if (*ptr_fsa & DISABLE_ARCHIVE)
          {
-            (void)fprintf(stdout, _("Archiving        : Disabled\n"));
+            (void)fprintf(stdout, _("Archiving           : Disabled\n"));
          }
          else
          {
-            (void)fprintf(stdout, _("Archiving        : Enabled\n"));
+            (void)fprintf(stdout, _("Archiving           : Enabled\n"));
          }
          if (*ptr_fsa & DISABLE_RETRIEVE)
          {
-            (void)fprintf(stdout, _("Retrieving       : Disabled\n"));
+            (void)fprintf(stdout, _("Retrieving          : Disabled\n"));
          }
          else
          {
-            (void)fprintf(stdout, _("Retrieving       : Enabled\n"));
+            (void)fprintf(stdout, _("Retrieving          : Enabled\n"));
          }
          if (*ptr_fsa & DISABLE_HOST_WARN_TIME)
          {
-            (void)fprintf(stdout, _("Host warn time   : Disabled\n"));
+            (void)fprintf(stdout, _("Host warn time      : Disabled\n"));
          }
          else
          {
-            (void)fprintf(stdout, _("Host warn time   : Enabled\n"));
+            (void)fprintf(stdout, _("Host warn time      : Enabled\n"));
          }
          if (*ptr_fra & DISABLE_DIR_WARN_TIME)
          {
-            (void)fprintf(stdout, _("Dir warn time    : Disabled\n"));
+            (void)fprintf(stdout, _("Dir warn time       : Disabled\n"));
          }
          else
          {
-            (void)fprintf(stdout, _("Dir warn time    : Enabled\n"));
+            (void)fprintf(stdout, _("Dir warn time       : Enabled\n"));
          }
          if (*ptr_fsa & DISABLE_CREATE_SOURCE_DIR)
          {
-            (void)fprintf(stdout, _("Create source dir: Disabled\n"));
+            (void)fprintf(stdout, _("Create source dir   : Disabled\n"));
          }
          else
          {
-            (void)fprintf(stdout, _("Create source dir: Enabled\n"));
+            (void)fprintf(stdout, _("Create source dir   : Enabled\n"));
          }
          if (*ptr_fsa & ENABLE_CREATE_TARGET_DIR)
          {
-            (void)fprintf(stdout, _("Create target dir: Enabled\n"));
+            (void)fprintf(stdout, _("Create target dir   : Enabled\n"));
          }
          else
          {
-            (void)fprintf(stdout, _("Create target dir: Disabled\n"));
+            (void)fprintf(stdout, _("Create target dir   : Disabled\n"));
          }
          if (*ptr_fsa & ENABLE_SIMULATE_SEND_MODE)
          {
-            (void)fprintf(stdout, _("Simulate mode    : Enabled\n"));
+            (void)fprintf(stdout, _("Simulate mode       : Enabled\n"));
          }
          else
          {
-            (void)fprintf(stdout, _("Simulate mode    : Disabled\n"));
+            (void)fprintf(stdout, _("Simulate mode       : Disabled\n"));
          }
+         (void)fprintf(stdout, _("First errors offline: %d\n"),
+                       *(unsigned char *)((char *)fsa - AFD_WORD_OFFSET  + SIZEOF_INT + 1 + 1));
          break;
          
       default :
@@ -813,7 +858,7 @@ main(int argc, char *argv[])
        (action == ENABLE_CREATE_TARGET_DIR_SEL) ||
        (action == DISABLE_CREATE_TARGET_DIR_SEL) ||
        (action == ENABLE_RETRIEVE_SEL) || (action == DISABLE_RETRIEVE_SEL) ||
-       (action == STATUS_SEL))
+       (action == MODIFY_ERRORS_OFFLINE_SEL) || (action == STATUS_SEL))
    {
       (void)fsa_detach(YES);
    }
@@ -835,21 +880,22 @@ usage(char *progname)
    (void)fprintf(stderr,
                  _("SYNTAX  : %s [-w working directory] [-p <user profile>] [-u [<fake user>]] options\n"),
                  progname);
-   (void)fprintf(stderr, _("          -a      enable archive\n"));
-   (void)fprintf(stderr, _("          -A      disable archive\n"));
-   (void)fprintf(stderr, _("          -b      enable create source dir\n"));
-   (void)fprintf(stderr, _("          -B      disable create source dir\n"));
-   (void)fprintf(stderr, _("          -c      enable create target dir\n"));
-   (void)fprintf(stderr, _("          -C      disable create target dir\n"));
-   (void)fprintf(stderr, _("          -d      enable directory warn time\n"));
-   (void)fprintf(stderr, _("          -du     enable + update directory warn time\n"));
-   (void)fprintf(stderr, _("          -D      disable directory warn time\n"));
-   (void)fprintf(stderr, _("          -h      enable host warn time\n"));
-   (void)fprintf(stderr, _("          -H      disable host warn time\n"));
-   (void)fprintf(stderr, _("          -i      enable simulate send mode\n"));
-   (void)fprintf(stderr, _("          -I      disable simulate send mode\n"));
-   (void)fprintf(stderr, _("          -r      enable retrieving of files\n"));
-   (void)fprintf(stderr, _("          -R      disable retrieving of files\n"));
-   (void)fprintf(stderr, _("          -s      status of the above flags\n"));
+   (void)fprintf(stderr, _("          -a                    enable archive\n"));
+   (void)fprintf(stderr, _("          -A                    disable archive\n"));
+   (void)fprintf(stderr, _("          -b                    enable create source dir\n"));
+   (void)fprintf(stderr, _("          -B                    disable create source dir\n"));
+   (void)fprintf(stderr, _("          -c                    enable create target dir\n"));
+   (void)fprintf(stderr, _("          -C                    disable create target dir\n"));
+   (void)fprintf(stderr, _("          -d                    enable directory warn time\n"));
+   (void)fprintf(stderr, _("          -du                   enable + update directory warn time\n"));
+   (void)fprintf(stderr, _("          -D                    disable directory warn time\n"));
+   (void)fprintf(stderr, _("          -h                    enable host warn time\n"));
+   (void)fprintf(stderr, _("          -H                    disable host warn time\n"));
+   (void)fprintf(stderr, _("          -i                    enable simulate send mode\n"));
+   (void)fprintf(stderr, _("          -I                    disable simulate send mode\n"));
+   (void)fprintf(stderr, _("          -o <errors offline>   modify first errors offline\n"));
+   (void)fprintf(stderr, _("          -r                    enable retrieving of files\n"));
+   (void)fprintf(stderr, _("          -R                    disable retrieving of files\n"));
+   (void)fprintf(stderr, _("          -s                    status of the above flags\n"));
    return;
 }

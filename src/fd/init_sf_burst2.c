@@ -224,6 +224,19 @@ init_sf_burst2(struct job   *p_new_db,
          free(db.reply_to);
       }
       db.reply_to = p_new_db->reply_to;
+#ifdef _WITH_DE_MAIL_SUPPORT
+      db.de_mail_options = p_new_db->de_mail_options;
+      if (db.de_mail_sender != NULL)
+      {
+         free(db.de_mail_sender);
+      }
+      db.de_mail_sender = p_new_db->de_mail_sender;
+      if (db.de_mail_privat_id != NULL)
+      {
+         free(db.de_mail_privat_id);
+      }
+      db.de_mail_privat_id = p_new_db->de_mail_privat_id;
+#endif
       if (db.charset != NULL)
       {
          free(db.charset);

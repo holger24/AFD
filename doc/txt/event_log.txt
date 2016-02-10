@@ -27,6 +27,7 @@
           |manual|Starting FD              |<user>
           |manual|AFD shutdown             |<user>
           |manual|AFD startup              |<user>
+          |manual|Modify errors offline    |<user>|from->to
 ----------+------+-------------------+-----+------+----------------------------
  directory|extern|error start        |<dir alias> |<error id>
           |extern|error end          |<dir alias>

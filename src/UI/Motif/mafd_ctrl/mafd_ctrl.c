@@ -32,6 +32,7 @@ DESCR__S_M1
  **             [-u <fake user>]
  **             [-no_input]
  **             [-f <numeric font name>]
+ **             [-t <title>]
  **
  ** DESCRIPTION
  **
@@ -51,6 +52,7 @@ DESCR__S_M1
  **   16.02.2008 H.Kiehl All drawing areas are now also drawn to an off-line
  **                      pixmap.
  **   15.09.2014 H.Kiehl Added option for simulated send mode.
+ **   05.12.2014 H.Kiehl Added parameter -t to supply window title.
  **
  */
 DESCR__E_M1
@@ -58,7 +60,7 @@ DESCR__E_M1
 /* #define WITH_MEMCHECK */
 
 #include <stdio.h>            /* fprintf(), stderr                       */
-#include <string.h>           /* strcpy(), strcmp()                      */
+#include <string.h>           /* strcpy()                                */
 #include <ctype.h>            /* toupper()                               */
 #include <unistd.h>           /* gethostname(), getcwd(), STDERR_FILENO  */
 #include <stdlib.h>           /* getenv(), calloc()                      */
@@ -684,7 +686,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
        (get_arg(argc, argv, "--help", NULL, 0) == SUCCESS))
    {
       (void)fprintf(stdout,
-                    "Usage: %s [-w <work_dir>] [-p <user profile>] [-u[ <fake user>]] [-no_input] [-f <numeric font name>]\n",
+                    "Usage: %s [-w <work_dir>] [-p <user profile>] [-u[ <fake user>]] [-no_input] [-f <numeric font name>] [-t <title>]\n",
                     argv[0]);
       exit(SUCCESS);
    }
@@ -811,7 +813,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
          acp.retry_list               = NULL;
          acp.show_slog                = YES; /* View the system log   */
          acp.show_slog_list           = NULL;
-         acp.show_elog                = YES; /* View the event log    */
+         acp.show_elog                = YES; /* View the event log   */
          acp.show_elog_list           = NULL;
          acp.show_mlog                = YES; /* View the maintainer log */
          acp.show_mlog_list           = NULL;
@@ -850,12 +852,18 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
 
    /* Prepare title for mafd_ctrl window. */
    (void)snprintf(window_title, 100, "AFD %s ", PACKAGE_VERSION);
-   if (get_afd_name(hostname) == INCORRECT)
+   if (get_arg(argc, argv, "-t", hostname, MAX_AFD_NAME_LENGTH) == INCORRECT)
    {
-      if (gethostname(hostname, MAX_AFD_NAME_LENGTH) == 0)
+      if (get_afd_name(hostname) == INCORRECT)
       {
-         hostname[0] = toupper((int)hostname[0]);
-         (void)strcat(window_title, hostname);
+         if (gethostname(hostname, MAX_AFD_NAME_LENGTH) == 0)
+         {
+            hostname[0] = toupper((int)hostname[0]);
+            (void)strcat(window_title, hostname);
+         }
+      }
+      else
+      {
       }
    }
    else
@@ -1200,7 +1208,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
          gotcha = NO;
          for (j = 0; j < no_of_hosts; j++)
          {
-            if (strcmp(connect_data[j].hostname, hosts[i]) == 0)
+            if (my_strcmp(connect_data[j].hostname, hosts[i]) == 0)
             {
                gotcha = YES;
                break;
@@ -1251,7 +1259,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
          {
             for (j = 0; j < no_of_hosts; j++)
             {
-               if (strcmp(connect_data[j].hostname, hosts[i]) == 0)
+               if (my_strcmp(connect_data[j].hostname, hosts[i]) == 0)
                {
                   short_pos_list[i] = j;
                   break;
@@ -1306,7 +1314,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
             for (j = 0; j < no_of_hosts; j++)
             {
                if ((connect_data[j].short_pos == -1) &&
-                   (strcmp(connect_data[j].hostname, hosts[i]) == 0))
+                   (my_strcmp(connect_data[j].hostname, hosts[i]) == 0))
                {
                   connect_data[j].short_pos = i;
                   connect_data[j].long_pos = -1;
@@ -1376,7 +1384,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
    (void)snprintf(config_file, MAX_PATH_LENGTH, "%s%s%s",
                   p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(config_file, F_OK) == 0) &&
-       (read_file_no_cr(config_file, &buffer, __FILE__, __LINE__) != INCORRECT))
+       (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {
       int  str_length;
       char value[MAX_PATH_LENGTH];
@@ -2410,7 +2418,7 @@ create_pullright_row(Widget pullright_row)
                {
                   ROW_0, ROW_1, ROW_2, ROW_3, ROW_4, ROW_5, ROW_6,
                   ROW_7, ROW_8, ROW_9, ROW_10, ROW_11, ROW_12, ROW_13,
-                  ROW_14, ROW_15, ROW_16
+                  ROW_14, ROW_15, ROW_16, ROW_17, ROW_18, ROW_19
                };
    XmString    x_string;
    Arg         args[3];
@@ -2661,10 +2669,12 @@ eval_permissions(char *perm_buffer)
       acp.retry_list               = NULL;
       acp.show_slog                = YES;   /* View the system log   */
       acp.show_slog_list           = NULL;
-      acp.show_elog                = YES;   /* View the event log    */
+      acp.show_elog                = YES;   /* View the event log   */
       acp.show_elog_list           = NULL;
+#ifdef _MAINTAINER_LOG
       acp.show_mlog                = NO_PERMISSION; /* View the maintainer log */
       acp.show_mlog_list           = NULL;
+#endif
       acp.show_rlog                = YES;   /* View the receive log */
       acp.show_rlog_list           = NULL;
       acp.show_tlog                = YES;   /* View the transfer log */
@@ -2726,6 +2736,7 @@ eval_permissions(char *perm_buffer)
             }
          }
 
+#ifdef _MAINTAINER_LOG
          /* May the user view the maintainer log? */
          if ((ptr = posi(tmp_ptr, SHOW_MLOG_PERM)) != NULL)
          {
@@ -2740,6 +2751,7 @@ eval_permissions(char *perm_buffer)
                acp.show_mlog_list = NULL;
             }
          }
+#endif
       }
    }
    else
@@ -3101,6 +3113,7 @@ eval_permissions(char *perm_buffer)
          }
       }
 
+#ifdef _MAINTAINER_LOG
       /* May the user view the maintainer log? */
       if ((ptr = posi(perm_buffer, SHOW_MLOG_PERM)) == NULL)
       {
@@ -3120,6 +3133,7 @@ eval_permissions(char *perm_buffer)
             acp.show_mlog_list = NULL;
          }
       }
+#endif
 
       /* May the user view the receive log? */
       if ((ptr = posi(perm_buffer, SHOW_RLOG_PERM)) == NULL)

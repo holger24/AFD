@@ -1,6 +1,6 @@
 /*
  *  mon.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -152,7 +152,7 @@ main(int argc, char *argv[])
    {
       (void)fprintf(stderr,
                     "Usage: %s [-w working directory] AFD-number\n", argv[0]);
-      exit(SYNTAX_ERROR);
+      exit(MON_SYNTAX_ERROR);
    }
    else
    {
@@ -165,7 +165,7 @@ main(int argc, char *argv[])
             (void)fprintf(stderr,
                           "Usage: %s [-w working directory] AFD-number\n",
                           argv[0]);
-            exit(SYNTAX_ERROR);
+            exit(MON_SYNTAX_ERROR);
          }
          ptr++;
       }
@@ -463,7 +463,7 @@ main(int argc, char *argv[])
                     {
                        system_log(FATAL_SIGN, __FILE__, __LINE__,
                                   "select() error : %s", strerror(errno));
-                       exit(SELECT_ERROR);
+                       exit(MON_SELECT_ERROR);
                     }
 
                if ((msa[afd_no].connect_time != 0) &&

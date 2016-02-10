@@ -1,6 +1,6 @@
 /*
  *  eaccess.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2009 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2002 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -186,7 +186,7 @@ check_group(uid_t euid, gid_t guid, struct group **p_group, struct passwd **pass
    i = 0;
    while ((*p_group)->gr_mem[i] != NULL)
    {
-      if (strcmp((*p_group)->gr_mem[i], (*passwd)->pw_name) == 0)
+      if (my_strcmp((*p_group)->gr_mem[i], (*passwd)->pw_name) == 0)
       {
          return(YES);
       }

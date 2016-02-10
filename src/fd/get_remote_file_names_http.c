@@ -86,6 +86,14 @@ DESCR__E_M3
                                  break;                            \
                        case 'A': (html_str)[str_len++] = 196;      \
                                  break;                            \
+                       case 'e': (html_str)[str_len++] = 235;      \
+                                 break;                            \
+                       case 'E': (html_str)[str_len++] = 203;      \
+                                 break;                            \
+                       case 'i': (html_str)[str_len++] = 239;      \
+                                 break;                            \
+                       case 'I': (html_str)[str_len++] = 207;      \
+                                 break;                            \
                        case 'o': (html_str)[str_len++] = 246;      \
                                  break;                            \
                        case 'O': (html_str)[str_len++] = 214;      \
@@ -96,25 +104,51 @@ DESCR__E_M3
                                  break;                            \
                        case 's': (html_str)[str_len++] = 223;      \
                                  break;                            \
+                       case 'y': (html_str)[str_len++] = 255;      \
+                                 break;                            \
+                       case 'Y': (html_str)[str_len++] = 195;      \
+                                 break;                            \
                        default : /* Just ignore it. */             \
                                  break;                            \
                     }                                              \
                     ptr += 5;                                      \
                     continue;                                      \
                  }                                                 \
-                 else                                              \
-                 {                                                 \
-                    while ((*ptr != ';') && (*ptr != '<') &&       \
-                           (*ptr != '\n') && (*ptr != '\r') &&     \
-                           (*ptr != '\0'))                         \
-                    {                                              \
-                       ptr++;                                      \
-                    }                                              \
-                    if (*ptr != ';')                               \
-                    {                                              \
-                       break;                                      \
-                    }                                              \
-                 }                                                 \
+                 else if ((*ptr == 's') && (*(ptr + 1) == 'z') &&  \
+                          (*(ptr + 2) == 'l') && (*(ptr + 3) == 'i') &&\
+                          (*(ptr + 4) == 'g') && (*(ptr + 5) == ';'))\
+                      {                                            \
+                         (html_str)[str_len++] = 223;              \
+                         ptr += 6;                                 \
+                         continue;                                 \
+                      }                                            \
+                 else if ((*ptr == 'a') && (*(ptr + 1) == 'm') &&  \
+                          (*(ptr + 2) == 'p') && (*(ptr + 3) == ';'))\
+                      {                                            \
+                         (html_str)[str_len++] = 38;               \
+                         ptr += 4;                                 \
+                         continue;                                 \
+                      }                                            \
+                 else if ((*ptr == 'd') && (*(ptr + 1) == 'e') &&  \
+                          (*(ptr + 2) == 'g') && (*(ptr + 3) == ';'))\
+                      {                                            \
+                         (html_str)[str_len++] = 176;              \
+                         ptr += 4;                                 \
+                         continue;                                 \
+                      }                                            \
+                      else                                         \
+                      {                                            \
+                         while ((*ptr != ';') && (*ptr != '<') &&  \
+                                (*ptr != '\n') && (*ptr != '\r') &&\
+                                (*ptr != '\0'))                    \
+                         {                                         \
+                            ptr++;                                 \
+                         }                                         \
+                         if (*ptr != ';')                          \
+                         {                                         \
+                            break;                                 \
+                         }                                         \
+                      }                                            \
               }                                                    \
               (html_str)[str_len] = *ptr;                          \
               str_len++; ptr++;                                    \
@@ -2186,7 +2220,11 @@ check_name(char   *file_name,
 
       if (fra[db.fra_pos].dir_flag == ALL_DISABLED)
       {
-         delete_remote_file(HTTP, file_name, file_name_length, file_size);
+         delete_remote_file(HTTP, file_name, file_name_length,
+#ifdef _DELETE_LOG
+                            DEL_UNREADABLE_FILE,
+#endif
+                            file_size);
       }
       else
       {
@@ -2224,7 +2262,11 @@ check_name(char   *file_name,
                  (diff_time > fra[db.fra_pos].unknown_file_time) &&
                  (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
             {
-               delete_remote_file(HTTP, file_name, file_name_length, file_size);
+               delete_remote_file(HTTP, file_name, file_name_length,
+#ifdef _DELETE_LOG
+                                  DEL_UNREADABLE_FILE,
+#endif
+                                  file_size);
             }
          }
       }

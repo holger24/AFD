@@ -333,6 +333,44 @@ host. See below for a description of each entry.
           <td>If this is set it will disable <a href="host_config.html#keep_connected">
               keep connected</a> the option for sending files.</td>
        </tr>
+       <tr>
+          <td align=center>21</td>
+          <td align=center>1048576</td>
+          <td>FTPS Clear Control Connection. After sending the password
+              the communication via the control connection is done without
+              encryption.</td>
+       </tr>
+       <tr>
+          <td align=center>22</td>
+          <td align=center>2097152</td>
+          <td>When getting remote FTP directory this, when enabled, uses
+              the LIST command and evaluates this listing (the output
+              of the dir command of an ftp client). This can be far less
+              accurate with regard to time and size, depending on FTP
+              server and confiuration of it. Some represent larger size
+              values in human readable form kilobytes, megabytes, etc.
+              Some FTP servers represent the date of a file different
+              when the file reaches a certain date.</td>
+       </tr>
+       <tr>
+          <td align=center>23</td>
+          <td align=center>4194304</td>
+          <td>TLS uses strict verification of host. [Still untested!!!]</td>
+       </tr>
+       <tr>
+          <td align=center>24</td>
+          <td align=center>8388608</td>
+          <td>By default AFD tries to use MLST listing to get a directory
+              listing if the remote FTP server supports this. If this
+              causes problems you can disable it by setting this flag.</td>
+       </tr>
+       <tr>
+          <td align=center>25</td>
+          <td align=center>16777216</td>
+          <td>If <a href="edit_hc.html#keep_connected">keep connected</a>
+              is set and this flag, then it will always disconnect after
+              the time specified in keep connected.</td>
+       </tr>
        </table>
        The default is zero.</td>
 </tr>
@@ -402,9 +440,9 @@ host. See below for a description of each entry.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1997 - 2014 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2015 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 13.01.2014
+   Last updated: 29.09.2015
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

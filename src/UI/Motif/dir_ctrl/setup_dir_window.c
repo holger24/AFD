@@ -264,6 +264,9 @@ setup_dir_window(char *font_name)
       XtVaSetValues(rw[ROW_14_W], XmNfontList, fontlist, NULL);
       XtVaSetValues(rw[ROW_15_W], XmNfontList, fontlist, NULL);
       XtVaSetValues(rw[ROW_16_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(rw[ROW_17_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(rw[ROW_18_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(rw[ROW_19_W], XmNfontList, fontlist, NULL);
 
       /* Set the font for the Line Style pulldown. */
       XtVaSetValues(lsw[STYLE_0_W], XmNfontList, fontlist, NULL);

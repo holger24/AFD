@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2014 Holger Kiehl
+## Copyright (C) 2001 - 2015 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -37,6 +37,13 @@ else
    AFD_OUTPUT_LOG         =
    EXTRA_OUTPUT_LOG       = output_log
 endif
+if WITH_CONFIRMATION_LOG
+   AFD_CONFIRMATION_LOG   = confirmation_log
+   EXTRA_CONFIRMATION_LOG =
+else
+   AFD_CONFIRMATION_LOG   =
+   EXTRA_CONFIRMATION_LOG = confirmation_log
+endif
 if WITH_DELETE_LOG
    AFD_DELETE_LOG         = delete_log
    EXTRA_DELETE_LOG       =
@@ -69,12 +76,12 @@ else
 endif
 
 EXTRA_PROGRAMS           = $(EXTRA_INPUT_LOG) $(EXTRA_DISTRIBUTION_LOG)\
-                           $(EXTRA_OUTPUT_LOG) $(EXTRA_DELETE_LOG)\
-                           $(EXTRA_PRODUCTION_LOG) $(EXTRA_MON_PROGS)\
-                           $(EXTRA_MAINTAINER_LOG)
+                           $(EXTRA_OUTPUT_LOG) $(EXTRA_CONFIRMATION_LOG)\
+                           $(EXTRA_DELETE_LOG) $(EXTRA_PRODUCTION_LOG)\
+                           $(EXTRA_MON_PROGS) $(EXTRA_MAINTAINER_LOG)
 MAINTAINERCLEANFILES     = Makefile.in
 SUBDIRS                  = alda
-CLEANFILES               = gmon.out core core.*
+CLEANFILES               = gmon.out core core.* $(EXTRA_PROGRAMS)
 noinst_HEADERS           = logdefs.h
 if WITH_AFD_MON_ONLY
    bin_PROGRAMS          = mon_sys_log monitor_log
@@ -82,8 +89,8 @@ else
    bin_PROGRAMS          = system_log event_log receive_log transfer_log\
                            trans_db_log $(AFD_MON_PROGS) $(AFD_INPUT_LOG)\
                            $(AFD_DISTRIBUTION_LOG) $(AFD_OUTPUT_LOG)\
-                           $(AFD_DELETE_LOG) $(AFD_PRODUCTION_LOG)\
-                           $(AFD_MAINTAINER_LOG)
+                           $(AFD_CONFIRMATION_LOG) $(AFD_DELETE_LOG)\
+                           $(AFD_PRODUCTION_LOG) $(AFD_MAINTAINER_LOG)
 endif
 system_log_SOURCES       = fprint_dup_msg.c\
                            logger.c\
@@ -126,6 +133,9 @@ distribution_log_LDADD   = ../common/libafd.a
 output_log_SOURCES       = output_log.c\
                            open_log_file.c
 output_log_LDADD         = ../common/libafd.a
+confirmation_log_SOURCES = confirmation_log.c\
+                           open_log_file.c
+confirmation_log_LDADD   = ../common/libafd.a
 delete_log_SOURCES       = delete_log.c\
                            open_log_file.c
 delete_log_LDADD         = ../common/libafd.a

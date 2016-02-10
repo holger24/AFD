@@ -1,7 +1,7 @@
 /*
  *  check_distribution_line.c - Part of AFD, an automatic file distribution
  *                              program.
- *  Copyright (c) 2008 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -231,7 +231,7 @@ check_distribution_line(char         *line,
                {
                   if (prev_filename_length == ulog.filename_length)
                   {
-                     ret = strcmp(local_pattern[j], ulog.filename);
+                     ret = my_strcmp(local_pattern[j], ulog.filename);
                      if (ret == 1)
                      {
                         ret = 2;

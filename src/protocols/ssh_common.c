@@ -1,6 +1,6 @@
 /*
  *  ssh_common.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

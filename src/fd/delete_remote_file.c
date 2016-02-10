@@ -64,7 +64,13 @@ extern struct fileretrieve_status *fra;
 
 /*######################### delete_remote_file() ########################*/
 void
-delete_remote_file(int type, char *file_name, int namelen, off_t file_size)
+delete_remote_file(int   type,
+                   char  *file_name,
+                   int   namelen,
+#ifdef _DELETE_LOG
+                   int   delete_reason,
+#endif
+                   off_t file_size)
 {
    if (delete_wrapper(file_name) == SUCCESS)
    {
@@ -107,7 +113,7 @@ delete_remote_file(int type, char *file_name, int namelen, off_t file_size)
       (void)snprintf(dl.host_name,
                      MAX_HOSTNAME_LENGTH + 4 + 1,
                      "%-*s %03x",
-                     MAX_HOSTNAME_LENGTH, fsa->host_alias, DEL_UNKNOWN_FILE);
+                     MAX_HOSTNAME_LENGTH, fsa->host_alias, delete_reason);
       if (file_size == -1)
       {
          *dl.file_size = 0;

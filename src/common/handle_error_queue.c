@@ -1,6 +1,6 @@
 /*
  *  handle_error_queue.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2006 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -423,7 +423,7 @@ host_check_error_queue(unsigned int host_id, time_t now, int retry_interval)
          {
             /* Lets remove this entry from the error queue. */
             system_log(DEBUG_SIGN, NULL, 0,
-                       _("Hmm, removed possible stuck job %x from error queue."),
+                       _("Hmm, removed possible stuck job #%x from error queue."),
                        eq[i].job_id);
             if (i != (*no_of_error_ids - 1))
             {
@@ -532,7 +532,7 @@ remove_from_error_queue(unsigned int               job_id,
             else
             {
                system_log(DEBUG_SIGN, NULL, 0,
-                          _("%s: Removed job %x from error queue."),
+                          _("%s: Removed job #%x from error queue."),
                           fsa->host_dsp_name, job_id);
             }
          }
@@ -644,13 +644,13 @@ validate_error_queue(int                        no_of_ids,
          if ((prev_host_id == 0) || (j == -1))
          {
             system_log(DEBUG_SIGN, NULL, 0,
-                       _("%u: Removed job %x from error queue, since it was removed from DIR_CONFIG."),
+                       _("%u: Removed job #%x from error queue, since it was removed from DIR_CONFIG."),
                        eq[i].host_id, eq[i].job_id);
          }
          else
          {
             system_log(DEBUG_SIGN, NULL, 0,
-                       _("%s: Removed job %x from error queue, since it was removed from DIR_CONFIG."),
+                       _("%s: Removed job #%x from error queue, since it was removed from DIR_CONFIG."),
                        fsa[j].host_dsp_name, eq[i].job_id);
 
             /*
@@ -701,7 +701,7 @@ validate_error_queue(int                        no_of_ids,
                if ((fsa[j].host_status & ERROR_QUEUE_SET) == 0)
                {
                   system_log(DEBUG_SIGN, NULL, 0,
-                             _("%s: Removed job %x from error queue, since the error queue flag is not set."),
+                             _("%s: Removed job #%x from error queue, since the error queue flag is not set."),
                              fsa[j].host_dsp_name, eq[i].job_id);
                   if (i != (*no_of_error_ids - 1))
                   {

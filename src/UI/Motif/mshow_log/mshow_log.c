@@ -1,6 +1,6 @@
 /*
  *  mshow_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ DESCR__S_M1
 DESCR__E_M1
 
 #include <stdio.h>               /* fopen(), NULL                        */
-#include <string.h>              /* strcpy(), strcat(), strcmp()         */
+#include <string.h>              /* strcpy(), strcat()                   */
 #include <ctype.h>               /* toupper()                            */
 #include <signal.h>              /* signal()                             */
 #ifdef HAVE_SETPRIORITY
@@ -987,7 +987,7 @@ init_log_file(int *argc, char *argv[])
    /* Initialise log directory. */
    (void)strcpy(log_dir, work_dir);
    (void)strcat(log_dir, LOG_DIR);
-   if (strcmp(log_type, SYSTEM_STR) == 0)
+   if (my_strcmp(log_type, SYSTEM_STR) == 0)
    {
       (void)strcpy(log_name, SYSTEM_LOG_NAME);
       max_log_number = MAX_SYSTEM_LOG_FILES;
@@ -1000,7 +1000,7 @@ init_log_file(int *argc, char *argv[])
       log_type_flag = SYSTEM_LOG_TYPE;
    }
 #ifdef _MAINTAINER_LOG
-   else if (strcmp(log_type, MAINTAINER_STR) == 0)
+   else if (my_strcmp(log_type, MAINTAINER_STR) == 0)
         {
            (void)strcpy(log_name, MAINTAINER_LOG_NAME);
            max_log_number = MAX_MAINTAINER_LOG_FILES;
@@ -1014,7 +1014,7 @@ init_log_file(int *argc, char *argv[])
            log_type_flag = MAINTAINER_LOG_TYPE;
         }
 #endif
-   else if (strcmp(log_type, RECEIVE_STR) == 0)
+   else if (my_strcmp(log_type, RECEIVE_STR) == 0)
         {
            (void)strcpy(log_name, RECEIVE_LOG_NAME);
            max_log_number = MAX_RECEIVE_LOG_FILES;
@@ -1029,7 +1029,7 @@ init_log_file(int *argc, char *argv[])
            max_log_number--;
            log_type_flag = RECEIVE_LOG_TYPE;
         }
-   else if (strcmp(log_type, TRANSFER_STR) == 0)
+   else if (my_strcmp(log_type, TRANSFER_STR) == 0)
         {
            (void)strcpy(log_name, TRANSFER_LOG_NAME);
            max_log_number = MAX_TRANSFER_LOG_FILES;
@@ -1044,7 +1044,7 @@ init_log_file(int *argc, char *argv[])
            max_log_number--;
            log_type_flag = TRANSFER_LOG_TYPE;
         }
-   else if (strcmp(log_type, TRANS_DB_STR) == 0)
+   else if (my_strcmp(log_type, TRANS_DB_STR) == 0)
         {
            (void)strcpy(log_name, TRANS_DB_LOG_NAME);
            max_log_number = MAX_TRANS_DB_LOG_FILES;
@@ -1062,7 +1062,7 @@ init_log_file(int *argc, char *argv[])
            max_log_number--;
            log_type_flag = TRANS_DB_LOG_TYPE;
         }
-   else if (strcmp(log_type, MON_SYSTEM_STR) == 0)
+   else if (my_strcmp(log_type, MON_SYSTEM_STR) == 0)
         {
            (void)strcpy(log_name, MON_SYS_LOG_NAME);
            max_log_number = MAX_MON_SYS_LOG_FILES;
@@ -1072,7 +1072,7 @@ init_log_file(int *argc, char *argv[])
            max_log_number--;
            log_type_flag = MON_SYSTEM_LOG_TYPE;
         }
-   else if (strcmp(log_type, MONITOR_STR) == 0)
+   else if (my_strcmp(log_type, MONITOR_STR) == 0)
         {
            (void)strcpy(log_name, MON_LOG_NAME);
            max_log_number = MAX_MON_LOG_FILES;
@@ -1148,7 +1148,7 @@ get_afd_config_value(void)
    (void)sprintf(config_file, "%s%s%s",
                  p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(config_file, F_OK) == 0) &&
-       (read_file_no_cr(config_file, &buffer, __FILE__, __LINE__) != INCORRECT))
+       (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {
       char value[MAX_INT_LENGTH];
 

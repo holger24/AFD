@@ -1,6 +1,6 @@
 /*
  *  init_msg_ptrs.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ DESCR__S_M3
  **                      unsigned int   **split_job_counter,
  **                      unsigned int   **files_to_send,
  **                      off_t          **file_size_to_send,
+ **                      dev_t          **dev,
  **                      unsigned short **dir_no,
  **                      unsigned int   **unique_number,
  **                      char           **msg_priority,
@@ -66,6 +67,9 @@ init_msg_ptrs(time_t         **creation_time,
               unsigned int   **split_job_counter,
               unsigned int   **files_to_send,
               off_t          **file_size_to_send,
+#ifdef MULTI_FS_SUPPORT
+              dev_t          **dev,
+#endif
               unsigned short **dir_no,
               unsigned int   **unique_number,
               char           **msg_priority,
@@ -80,7 +84,56 @@ init_msg_ptrs(time_t         **creation_time,
       exit(INCORRECT);
    }
    *creation_time     = (time_t *)*msg_buffer;
-#if SIZEOF_TIME_T == 4
+#ifdef MULTI_FS_SUPPORT
+# if SIZEOF_TIME_T == 4
+   *dev               = (dev_t *)(*msg_buffer + sizeof(time_t));
+   *job_id            = (unsigned int *)(*msg_buffer + sizeof(time_t) +
+                                         sizeof(dev_t));
+   *split_job_counter = (unsigned int *)(*msg_buffer + sizeof(time_t) +
+                                         sizeof(dev_t) + sizeof(unsigned int));
+   *files_to_send     = (unsigned int *)(*msg_buffer + sizeof(time_t) +
+                                         sizeof(dev_t) + sizeof(unsigned int) +
+                                         sizeof(unsigned int));
+   *file_size_to_send = (off_t *)(*msg_buffer + sizeof(time_t) + sizeof(dev_t) +
+                                  sizeof(unsigned int) + sizeof(unsigned int) +
+                                  sizeof(unsigned int));
+# else
+   *file_size_to_send = (off_t *)(*msg_buffer + sizeof(time_t));
+   *dev               = (dev_t *)(*msg_buffer + sizeof(time_t) + sizeof(off_t));
+   *job_id            = (unsigned int *)(*msg_buffer + sizeof(time_t) +
+                                         sizeof(off_t) + sizeof(dev_t));
+   *split_job_counter = (unsigned int *)(*msg_buffer + sizeof(time_t) +
+                                         sizeof(off_t) + sizeof(dev_t) +
+                                         sizeof(unsigned int));
+   *files_to_send     = (unsigned int *)(*msg_buffer + sizeof(time_t) +
+                                         sizeof(off_t) + sizeof(dev_t) +
+                                         sizeof(unsigned int) +
+                                         sizeof(unsigned int));
+# endif
+   *unique_number     = (unsigned int *)(*msg_buffer + sizeof(time_t) +
+                                         sizeof(dev_t) + sizeof(unsigned int) +
+                                         sizeof(unsigned int) +
+                                         sizeof(unsigned int) +
+                                         sizeof(off_t));
+   *dir_no            = (unsigned short *)(*msg_buffer + sizeof(time_t) +
+                                           sizeof(dev_t) +
+                                           sizeof(unsigned int) +
+                                           sizeof(unsigned int) +
+                                           sizeof(unsigned int) +
+                                           sizeof(off_t) +
+                                           sizeof(unsigned int));
+   *msg_priority      = (char *)(*msg_buffer + sizeof(time_t) + sizeof(dev_t) +
+                                 sizeof(unsigned int) + sizeof(unsigned int) +
+                                 sizeof(unsigned int) + sizeof(off_t) +
+                                 sizeof(unsigned int) +
+                                 sizeof(unsigned short));
+   *originator        = (char *)(*msg_buffer + sizeof(time_t) + sizeof(dev_t) +
+                                 sizeof(unsigned int) + sizeof(unsigned int) +
+                                 sizeof(unsigned int) + sizeof(off_t) +
+                                 sizeof(unsigned int) +
+                                 sizeof(unsigned short) + sizeof(char));
+#else
+# if SIZEOF_TIME_T == 4
    *job_id            = (unsigned int *)(*msg_buffer + sizeof(time_t));
    *split_job_counter = (unsigned int *)(*msg_buffer + sizeof(time_t) +
                                          sizeof(unsigned int));
@@ -90,7 +143,7 @@ init_msg_ptrs(time_t         **creation_time,
    *file_size_to_send = (off_t *)(*msg_buffer + sizeof(time_t) +
                                   sizeof(unsigned int) + sizeof(unsigned int) +
                                   sizeof(unsigned int));
-#else
+# else
    *file_size_to_send = (off_t *)(*msg_buffer + sizeof(time_t));
    *job_id            = (unsigned int *)(*msg_buffer + sizeof(time_t) +
                                          sizeof(off_t));
@@ -99,7 +152,7 @@ init_msg_ptrs(time_t         **creation_time,
    *files_to_send     = (unsigned int *)(*msg_buffer + sizeof(time_t) +
                                          sizeof(off_t) + sizeof(unsigned int) +
                                          sizeof(unsigned int));
-#endif
+# endif
    *unique_number     = (unsigned int *)(*msg_buffer + sizeof(time_t) +
                                          sizeof(unsigned int) +
                                          sizeof(unsigned int) +
@@ -121,6 +174,7 @@ init_msg_ptrs(time_t         **creation_time,
                                  sizeof(unsigned int) + sizeof(off_t) +
                                  sizeof(unsigned int) +
                                  sizeof(unsigned short) + sizeof(char));
+#endif
 
    return;
 }

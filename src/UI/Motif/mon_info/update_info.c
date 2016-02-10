@@ -1,6 +1,6 @@
 /*
  *  update_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -94,8 +94,8 @@ update_info(Widget w)
        */
    }
 
-   if (strcmp(prev.real_hostname[(int)prev.afd_toggle],
-              msa[afd_position].hostname[(int)prev.afd_toggle]) != 0)
+   if (my_strcmp(prev.real_hostname[(int)prev.afd_toggle],
+                 msa[afd_position].hostname[(int)prev.afd_toggle]) != 0)
    {
       (void)strcpy(prev.real_hostname[(int)prev.afd_toggle],
                    msa[afd_position].hostname[(int)prev.afd_toggle]);
@@ -116,7 +116,7 @@ update_info(Widget w)
       flush = YES;
    }
 
-   if (strcmp(prev.r_work_dir, msa[afd_position].r_work_dir) != 0)
+   if (my_strcmp(prev.r_work_dir, msa[afd_position].r_work_dir) != 0)
    {
       (void)strcpy(prev.r_work_dir, msa[afd_position].r_work_dir);
       (void)sprintf(str_line, "%*s", MON_INFO_LENGTH, prev.r_work_dir);
@@ -158,7 +158,7 @@ update_info(Widget w)
       flush = YES;
    }
 
-   if (strcmp(prev.afd_version, msa[afd_position].afd_version) != 0)
+   if (my_strcmp(prev.afd_version, msa[afd_position].afd_version) != 0)
    {
       (void)strcpy(prev.afd_version, msa[afd_position].afd_version);
       (void)sprintf(str_line, "%*s", MON_INFO_LENGTH, prev.afd_version);

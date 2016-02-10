@@ -107,6 +107,7 @@ DESCR__E_M1
 #include <unistd.h>                /* fork(), rmdir(), getuid(), getgid()*/
 #include <dirent.h>                /* opendir(), closedir(), readdir(),  */
                                    /* DIR, struct dirent                 */
+#include <setjmp.h>                /* sigsetjmp(), siglongjmp()          */
 #include <signal.h>                /* signal()                           */
 #include <errno.h>
 #ifdef _WITH_PTHREAD
@@ -155,6 +156,11 @@ int                        afd_file_dir_length,
                            *no_of_file_masks,
                            *no_msg_buffered,
                            no_of_time_jobs,
+#ifdef MULTI_FS_SUPPORT
+                           no_of_extra_work_dirs,
+#else
+                           outgoing_file_dir_length,
+#endif
                            mb_fd,
                            fd_cmd_fd,
                            full_scan_timeout,
@@ -225,18 +231,21 @@ char                       *afd_file_dir,
 #endif
 #ifndef MULTI_FS_SUPPORT
                            outgoing_file_dir[MAX_PATH_LENGTH],
+                           *p_time_dir_id,
+                           time_dir[MAX_PATH_LENGTH],
 #endif
                            *p_mmap = NULL,
-                           *p_time_dir,
                            *p_work_dir,
-                           *rep_file = NULL,
-                           time_dir[MAX_PATH_LENGTH];
+                           *rep_file = NULL;
 #ifndef _WITH_PTHREAD
 unsigned char              *file_length_pool;
 #endif
 struct dc_proc_list        *dcpl;      /* Dir Check Process List.*/
 struct directory_entry     *de;
 struct instant_db          *db = NULL;
+#ifdef MULTI_FS_SUPPORT
+struct extra_work_dirs     *ewl;
+#endif
 struct filetransfer_status *fsa;
 struct fileretrieve_status *fra,
                            *p_fra;
@@ -273,6 +282,7 @@ const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 
 /* Local variables. */
 static int                 in_child = NO;
+static sigjmp_buf          env_alrm;
 
 /* Local function prototypes. */
 #ifdef _WITH_PTHREAD
@@ -282,6 +292,7 @@ static void                add_to_proc_stat(unsigned int),
                            check_fifo(int, int),
                            check_orphaned_procs(time_t),
                            check_pool_dir(time_t),
+                           sig_handler(int),
                            sig_bus(int),
                            sig_segv(int);
 static pid_t               get_one_zombie(pid_t, time_t);
@@ -540,6 +551,18 @@ main(int argc, char *argv[])
    system_log(DEBUG_SIGN, NULL, 0, "%s: Inotfiy directories   : %d",
               DC_PROC_NAME, no_of_inotify_dirs);
 #endif
+#ifdef MULTI_FS_SUPPORT
+   if (no_of_extra_work_dirs > 1)
+   {
+      system_log(DEBUG_SIGN, NULL, 0, "%s: Extra filesystem dirs : %d",
+                 DC_PROC_NAME, no_of_extra_work_dirs - 1);
+      for (i = 1; i < no_of_extra_work_dirs; i++)
+      {
+         system_log(DEBUG_SIGN, NULL, 0, "   %s (%xh)",
+                    ewl[i].dir_name, ewl[i].dev);
+      }
+   }
+#endif
 
    /*
     * Before we start lets make sure that there are no old
@@ -604,7 +627,19 @@ main(int argc, char *argv[])
       if ((p_afd_status->fd == ON) &&
           ((force_check == YES) || (now >= next_dir_check_time)))
       {
-         check_file_dir(now);
+#ifdef MULTI_FS_SUPPORT
+         for (i = 0; i < no_of_extra_work_dirs; i++)
+         {
+            if (ewl[i].dir_name != NULL)
+            {
+               check_file_dir(time(NULL), ewl[i].dev,
+                              ewl[i].outgoing_file_dir,
+                              ewl[i].outgoing_file_dir_length);
+            }
+         }
+#else
+         check_file_dir(now, outgoing_file_dir, outgoing_file_dir_length);
+#endif
          next_dir_check_time = ((time(&now) / DIR_CHECK_TIME) * DIR_CHECK_TIME) +
                                DIR_CHECK_TIME;
          force_check = NO;
@@ -702,7 +737,7 @@ main(int argc, char *argv[])
 #ifdef WITH_ONETIME
          if (FD_ISSET(ot_job_fd, &rset))
          {
-            if ((n = read(fin_fd, fifo_buffer, fifo_size)) >= sizeof(unsigned int))
+            if ((n = read(ot_job_fd, fifo_buffer, fifo_size)) >= sizeof(unsigned int))
             {
                unsigned int onetime_jid;
 
@@ -723,16 +758,34 @@ main(int argc, char *argv[])
                  {
                     system_log(WARN_SIGN, __FILE__, __LINE__,
                                "read() error while reading from %s : %s",
-                               IP_FIN_FIFO, strerror(errno));
+                               OT_JOB_FIFO, strerror(errno));
                  }
          }
 #endif
 
          if (FD_ISSET(fin_fd, &rset))
          {
-            int bytes_done = 0;
+            int bytes_done = 0,
+                tmp_errno;
 
-            if ((n = read(fin_fd, fifo_buffer, fifo_size)) >= sizeof(pid_t))
+            if (signal(SIGALRM, sig_handler) == SIG_ERR)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "Failed to set signal handler : %s", strerror(errno));
+               exit(INCORRECT);
+            }
+            if (sigsetjmp(env_alrm, 1) != 0)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "read() timeout (25s), avoiding deadlock!");
+               continue;
+            }
+            (void)alarm(25L);
+            n = read(fin_fd, fifo_buffer, fifo_size);
+            tmp_errno = errno;
+            (void)alarm(0);
+
+            if (n >= sizeof(pid_t))
             {
                pid_t pid;
 
@@ -775,7 +828,7 @@ main(int argc, char *argv[])
                  {
                     system_log(WARN_SIGN, __FILE__, __LINE__,
                                "read() error while reading from %s : %s",
-                               IP_FIN_FIFO, strerror(errno));
+                               IP_FIN_FIFO, strerror(tmp_errno));
                  }
          }
 
@@ -824,8 +877,8 @@ main(int argc, char *argv[])
                                    {
                                       p_fra = &fra[de[iwl[j].de_pos].fra_pos];
                                       receive_log(DEBUG_SIGN, __FILE__, __LINE__, now,
-                                                 "Inotify event queue for directory %s overflowed.",
-                                                 de[iwl[j].de_pos].dir);
+                                                 "Inotify event queue for directory %s overflowed. @%x",
+                                                 de[iwl[j].de_pos].dir, de[iwl[j].de_pos].dir_id);
                                       fra[de[iwl[j].de_pos].fra_pos].dir_flag |= INOTIFY_NEEDS_SCAN;
                                       j = no_of_inotify_dirs;
                                    }
@@ -873,7 +926,7 @@ main(int argc, char *argv[])
                           }
                        }
                        i += (sizeof(struct inotify_event)) + event->len;
-                    }
+                    } /* while (i < n) */
 
                     if (valid_events > 0)
                     {
@@ -915,18 +968,36 @@ main(int argc, char *argv[])
                      if (CHECK_STRCMP(p_host_name,
                                       db[time_job_list[i]].host_alias) == 0)
                      {
-                        (void)strcpy(p_time_dir,
+#ifdef MULTI_FS_SUPPORT
+                        (void)strcpy(ewl[db[time_job_list[i]].ewl_pos].p_time_dir_id,
+#else
+                        (void)strcpy(p_time_dir_id,
+#endif
                                      db[time_job_list[i]].str_job_id);
 #ifdef _DELETE_LOG
-                        remove_time_dir(p_host_name, NO,
-                                        db[time_job_list[i]].job_id,
+                        remove_time_dir(p_host_name,
+# ifdef MULTI_FS_SUPPORT
+                                        ewl[db[time_job_list[i]].ewl_pos].time_dir,
+# else
+                                        time_dir,
+# endif
+                                        NO, db[time_job_list[i]].job_id,
                                         db[time_job_list[i]].dir_id,
                                         USER_DEL, __FILE__, __LINE__);
 #else
-                        remove_time_dir(p_host_name, NO,
-                                        db[time_job_list[i]].job_id);
+                        remove_time_dir(p_host_name,
+# ifdef MULTI_FS_SUPPORT
+                                        ewl[db[time_job_list[i]].ewl_pos].time_dir,
+# else
+                                        time_dir,
+# endif
+                                        NO, db[time_job_list[i]].job_id);
 #endif
-                        *p_time_dir = '\0';
+#ifdef MULTI_FS_SUPPORT
+                        *ewl[db[time_job_list[i]].ewl_pos].p_time_dir_id = '\0';
+#else
+                        *p_time_dir_id = '\0';
+#endif
                      }
                   }
 
@@ -1068,7 +1139,7 @@ main(int argc, char *argv[])
          check_fifo(read_fd, write_fd);
 #else
          /*
-          * Since it can take very long until we hace travelled
+          * Since it can take very long until we have travelled
           * through all directories lets always check the time
           * and ensure we do not take too long.
           */
@@ -1104,8 +1175,8 @@ main(int argc, char *argv[])
                      {
                         p_fra = &fra[de[i].fra_pos];
                         receive_log(INFO_SIGN, __FILE__, __LINE__, start_time,
-                                    "Created source directory `%s', since it has been removed.",
-                                    de[i].dir);
+                                    "Created source directory `%s', since it has been removed. @%x",
+                                    de[i].dir, de[i].dir_id);
 
                         /* Since it is new, there cannot be any files. */
                         continue;
@@ -1123,8 +1194,8 @@ main(int argc, char *argv[])
                      {
                         p_fra = &fra[de[i].fra_pos];
                         receive_log(INFO_SIGN, __FILE__, __LINE__, start_time,
-                                    "Created source directory `%s', since it has been removed.",
-                                    de[i].dir);
+                                    "Created source directory `%s', since it has been removed. @%x",
+                                    de[i].dir, de[i].dir_id);
 
                         /* Since it is new, there cannot be any files. */
                         continue;
@@ -1133,8 +1204,8 @@ main(int argc, char *argv[])
 # endif
                   p_fra = &fra[de[i].fra_pos];
                   receive_log(ERROR_SIGN, __FILE__, __LINE__, start_time,
-                             "Can't access directory entry %d %s : %s",
-                             i, de[i].dir, strerror(errno));
+                             "Can't access directory entry %d %s : %s @%x",
+                             i, de[i].dir, strerror(errno), de[i].dir_id);
                   if (fra[de[i].fra_pos].fsa_pos == -1)
                   {
                      lock_region_w(fra_fd,
@@ -1201,7 +1272,8 @@ main(int argc, char *argv[])
                   {
                      p_fra = &fra[de[i].fra_pos];
                      receive_log(INFO_SIGN, NULL, 0, start_time,
-                                 "Directory timestamp unchanged.");
+                                 "Directory timestamp unchanged. @%x",
+                                 de[i].dir_id);
                   }
 # endif
 
@@ -1977,7 +2049,7 @@ handle_dir(int                       dir_pos,
                  unique_name[MAX_FILENAME_LENGTH];
 #ifdef _WITH_PTHREAD
                  time_dir[MAX_PATH_LENGTH],
-                 *p_time_dir,
+                 *p_time_dir_id,
 #endif
 #ifdef _DEBUG_THREAD
       char       debug_file[MAX_FILENAME_LENGTH];
@@ -1991,7 +2063,7 @@ handle_dir(int                       dir_pos,
       (void)strcpy(time_dir, afd_file_dir);
       (void)strcat(time_dir, AFD_TIME_DIR);
       (void)strcat(time_dir, "/");
-      p_time_dir = time_dir + strlen(time_dir);
+      p_time_dir_id = time_dir + strlen(time_dir);
 #endif
       total_file_size = 0;
 
@@ -2269,9 +2341,11 @@ handle_dir(int                       dir_pos,
                         split_job_counter = 0;
                         if ((files_linked = link_files(orig_file_path,
 #ifdef MULTI_FS_SUPPORT
-                                                       de[dir_pos].outgoing_file_dir,
+                                                       ewl[de[dir_pos].ewl_pos].outgoing_file_dir,
+                                                       ewl[de[dir_pos].ewl_pos].outgoing_file_dir_length,
 #else
                                                        outgoing_file_dir,
+                                                       outgoing_file_dir_length,
 #endif
                                                        current_time,
 #ifdef _WITH_PTHREAD
@@ -2324,7 +2398,8 @@ handle_dir(int                       dir_pos,
                                      * a lot slower, but better then exiting.
                                      */
 #ifdef MULTI_FS_SUPPORT
-                                    send_message(de[dir_pos].outgoing_file_dir,
+                                    send_message(ewl[de[dir_pos].ewl_pos].outgoing_file_dir,
+                                                 ewl[de[dir_pos].ewl_pos].dev,
 #else
                                     send_message(outgoing_file_dir,
 #endif
@@ -2383,7 +2458,7 @@ handle_dir(int                       dir_pos,
                                                        src_file_path[MAX_PATH_LENGTH];
 
 #ifdef MULTI_FS_SUPPORT
-                                          (void)strcpy(src_file_path, de[dir_pos].outgoing_file_dir);
+                                          (void)strcpy(src_file_path, ewl[de[dir_pos].ewl_pos].outgoing_file_dir);
 #else
                                           (void)strcpy(src_file_path, outgoing_file_dir);
 #endif
@@ -2441,9 +2516,11 @@ handle_dir(int                       dir_pos,
                                              tmp_split_job_counter = split_job_counter + ii + 1;
                                              if ((split_files_renamed = rename_files(src_file_path,
 #ifdef MULTI_FS_SUPPORT
-                                                                                     de[dir_pos].outgoing_file_dir,
+                                                                                     ewl[de[dir_pos].ewl_pos].outgoing_file_dir,
+                                                                                     ewl[de[dir_pos].ewl_pos].outgoing_file_dir_length,
 #else
                                                                                      outgoing_file_dir,
+                                                                                     outgoing_file_dir_length,
 #endif
                                                                                      files_moved,
                                                                                      &db[de[dir_pos].fme[j].pos[k]],
@@ -2454,7 +2531,8 @@ handle_dir(int                       dir_pos,
                                                                                      &split_file_size_renamed)) > 0)
                                              {
 #ifdef MULTI_FS_SUPPORT
-                                                send_message(de[dir_pos].outgoing_file_dir,
+                                                send_message(ewl[de[dir_pos].ewl_pos].outgoing_file_dir,
+                                                             ewl[de[dir_pos].ewl_pos].dev,
 #else
                                                 send_message(outgoing_file_dir,
 #endif
@@ -2507,7 +2585,8 @@ handle_dir(int                       dir_pos,
                                                 (void)memcpy(file_name_buffer, (tmp_file_name_buffer + file_offset), (files_linked * MAX_FILENAME_LENGTH));
                                              }
 # ifdef MULTI_FS_SUPPORT
-                                             send_message(de[dir_pos].outgoing_file_dir,
+                                             send_message(ewl[de[dir_pos].ewl_pos].outgoing_file_dir,
+                                                          ewl[de[dir_pos].ewl_pos].dev,
 # else
                                              send_message(outgoing_file_dir,
 # endif
@@ -2539,7 +2618,7 @@ handle_dir(int                       dir_pos,
                                              (void)snprintf(fullname, MAX_PATH_LENGTH,
                                                             "%s%s",
 # ifdef MULTI_FS_SUPPORT
-                                                            de[dir_pos].outgoing_file_dir,
+                                                            ewl[de[dir_pos].ewl_pos].outgoing_file_dir,
 # else
                                                             outgoing_file_dir,
 # endif
@@ -2559,7 +2638,8 @@ handle_dir(int                       dir_pos,
                                        else
                                        {
 # ifdef MULTI_FS_SUPPORT
-                                          send_message(de[dir_pos].outgoing_file_dir,
+                                          send_message(ewl[de[dir_pos].ewl_pos].outgoing_file_dir,
+                                                       ewl[de[dir_pos].ewl_pos].dev,
 # else
                                           send_message(outgoing_file_dir,
 # endif
@@ -2657,7 +2737,8 @@ handle_dir(int                       dir_pos,
                                * large number of files to smaller ones.
                                */
 #ifdef MULTI_FS_SUPPORT
-                              send_message(de[dir_pos].outgoing_file_dir,
+                              send_message(ewl[de[dir_pos].ewl_pos].outgoing_file_dir,
+                                           ewl[de[dir_pos].ewl_pos].dev,
 #else
                               send_message(outgoing_file_dir,
 #endif
@@ -2697,9 +2778,18 @@ handle_dir(int                       dir_pos,
                         if ((db[de[dir_pos].fme[j].pos[k]].time_option_type == SEND_COLLECT_TIME) &&
                             ((fsa[db[de[dir_pos].fme[j].pos[k]].position].special_flag & HOST_DISABLED) == 0))
                         {
-                           (void)strcpy(p_time_dir, db[de[dir_pos].fme[j].pos[k]].str_job_id);
+#ifdef MULTI_FS_SUPPORT
+                           (void)strcpy(ewl[de[dir_pos].ewl_pos].p_time_dir_id,
+#else
+                           (void)strcpy(p_time_dir_id,
+#endif
+                                        db[de[dir_pos].fme[j].pos[k]].str_job_id);
                            if (save_files(orig_file_path,
+#ifdef MULTI_FS_SUPPORT
+                                          ewl[de[dir_pos].ewl_pos].time_dir,
+#else
                                           time_dir,
+#endif
                                           current_time,
                                           db[de[dir_pos].fme[j].pos[k]].age_limit,
 #ifdef _WITH_PTHREAD
@@ -2722,7 +2812,11 @@ handle_dir(int                       dir_pos,
                                          "Failed to queue files for host %s",
                                          db[de[dir_pos].fme[j].pos[k]].host_alias);
                            }
-                           *p_time_dir = '\0';
+#ifdef MULTI_FS_SUPPORT
+                           *ewl[de[dir_pos].ewl_pos].p_time_dir_id = '\0';
+#else
+                           *p_time_dir_id = '\0';
+#endif
                         }
                      }
                   }
@@ -3235,6 +3329,32 @@ check_fifo(int read_fd, int write_fd)
       {
          switch (buffer[count])
          {
+#ifdef WITH_DIR_CHECK_RESTART
+            case HALT :
+               pause_flag = YES;
+               *time_buf = AMG_TIMEOUT;
+               count += 2;
+
+               /* Set flag to indicate that the the dir_check is NOT active. */
+               if (p_afd_status->amg_jobs & INST_JOB_ACTIVE)
+               {
+                  p_afd_status->amg_jobs ^= INST_JOB_ACTIVE;
+               }
+
+#ifdef _FIFO_DEBUG
+               cmd[0] = ACKN; cmd[1] = '\0';
+               show_fifo_data('W', "ip_resp", cmd, 1, __FILE__, __LINE__);
+#endif
+               if (send_cmd(ACKN, write_fd) < 0)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                            "Could not write to fifo %s : %s (%s %d)",
+                            ip_resp_fifo, strerror(errno));
+                  exit(INCORRECT);
+               }
+               return(HALT);
+#endif /* WITH_DIR_CHECK_RESTART */
+
             case STOP  :
 #ifdef SHOW_EXEC_TIMES
                for (i = 0; i < no_fork_jobs; i++)
@@ -3582,4 +3702,12 @@ sig_bus(int signo)
    system_log(FATAL_SIGN, __FILE__, __LINE__,
               "Uuurrrggh! Received SIGBUS. Dump programmers!");
    abort();
+}
+
+
+/*++++++++++++++++++++++++++++ sig_handler() ++++++++++++++++++++++++++++*/
+static void
+sig_handler(int signo)
+{
+   siglongjmp(env_alrm, 1);
 }

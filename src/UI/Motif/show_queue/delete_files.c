@@ -1,6 +1,6 @@
 /*
  *  delete_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ DESCR__S_M3
 DESCR__E_M3
 
 #include <stdio.h>
-#include <string.h>         /* strerror(), strcmp(), strcpy(), strcat()  */
+#include <string.h>         /* strerror(), strcpy(), strcat()            */
 #include <stdlib.h>         /* calloc(), free()                          */
 #include <unistd.h>         /* rmdir()                                   */
 #include <time.h>           /* time()                                    */
@@ -494,7 +494,7 @@ delete_files(int no_selected, int *select_list)
          gotcha = NO;
          for (k = (*no_msg_queued - 1); k > -1; k--)
          {
-            if (strcmp(qb[k].msg_name, qtb[i].msg_name) == 0)
+            if (my_strcmp(qb[k].msg_name, qtb[i].msg_name) == 0)
             {
                if (qb[k].pid == PENDING)
                {

@@ -1,6 +1,6 @@
 /*
  *  remove_host.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2013 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -82,7 +82,7 @@ remove_host(char *host_name)
    (void)sprintf(host_config_file, "%s%s%s",
                  p_work_dir, ETC_DIR, DEFAULT_HOST_CONFIG_FILE);
 
-   if (read_file_no_cr(host_config_file, &file_buffer, __FILE__, __LINE__) == INCORRECT)
+   if (read_file_no_cr(host_config_file, &file_buffer, YES, __FILE__, __LINE__) == INCORRECT)
    {
       char tmp_file[256];
 

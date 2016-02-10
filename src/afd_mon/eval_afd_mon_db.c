@@ -1,6 +1,6 @@
 /*
  *  eval_afd_mon_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2011 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -881,16 +881,25 @@ eval_afd_mon_db(struct mon_list **nml)
       {
          (*nml)[no_of_afds].rcmd[i] = '\0';
       }
-      else
-      {
-         (void)strcpy((*nml)[no_of_afds].rcmd, DEFAULT_REMOTE_CMD);
-         if (i > 0)
-         {
-            system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "Unknown remote command for %s in AFD_MON_CONFIG. Will set to default (%s).",
-                       (*nml)[no_of_afds].afd_alias, DEFAULT_REMOTE_CMD);
-         }
-      }
+      else if ((i == 4) &&
+               (((*nml)[no_of_afds].rcmd[0] == 'n') &&
+                ((*nml)[no_of_afds].rcmd[1] == 'o') &&
+                ((*nml)[no_of_afds].rcmd[2] == 'n') &&
+                ((*nml)[no_of_afds].rcmd[3] == 'e')))
+           {
+              (*nml)[no_of_afds].rcmd[0] = '\0';
+           }
+           else
+           {
+              (void)strcpy((*nml)[no_of_afds].rcmd, DEFAULT_REMOTE_CMD);
+              if (i > 0)
+              {
+                 system_log(WARN_SIGN, __FILE__, __LINE__,
+                            "Unknown remote command for %s in AFD_MON_CONFIG. Will set to default (%s).",
+                            (*nml)[no_of_afds].afd_alias, DEFAULT_REMOTE_CMD);
+              }
+           }
+
       while ((*ptr == ' ') || (*ptr == '\t'))
       {
          ptr++;

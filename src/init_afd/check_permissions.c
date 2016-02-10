@@ -111,11 +111,17 @@ check_permissions(void)
 # ifdef _OUTPUT_LOG
                         { OUTPUT_LOG_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) },
 # endif
+# ifdef _CONFIRMATION_LOG
+                        { CONFIRMATION_LOG_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) },
+# endif
 # ifdef _DELETE_LOG
                         { DELETE_LOG_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) },
 # endif
 # ifdef _PRODUCTION_LOG
                         { PRODUCTION_LOG_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) },
+# endif
+# ifdef _WITH_DE_MAIL_SUPPORT
+                        { DEMCD_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) },
 # endif
                         { DEL_TIME_JOB_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) },
                         { STATUS_SHMID_FILE, (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) },
@@ -165,11 +171,17 @@ check_permissions(void)
 # ifdef _OUTPUT_LOG
                         { OUTPUT_LOG_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR), (S_IRUSR | S_IWUSR) },
 # endif
+# ifdef _CONFIRMATION_LOG
+                        { CONFIRMATION_LOG_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR), (S_IRUSR | S_IWUSR) },
+# endif
 # ifdef _DELETE_LOG
                         { DELETE_LOG_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR), (S_IRUSR | S_IWUSR) },
 # endif
 # ifdef _PRODUCTION_LOG
                         { PRODUCTION_LOG_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR), (S_IRUSR | S_IWUSR) },
+# endif
+# ifdef _WITH_DE_MAIL_SUPPORT
+                        { DEMCD_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR), (S_IRUSR | S_IWUSR) },
 # endif
                         { DEL_TIME_JOB_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR), (S_IRUSR | S_IWUSR) },
                         { STATUS_SHMID_FILE, (S_IFREG | S_IRUSR | S_IWUSR), (S_IRUSR | S_IWUSR) },
@@ -196,6 +208,9 @@ check_permissions(void)
                         { FRA_ID_FILE, (S_IFREG | FILE_MODE), FILE_MODE },
                         { MSG_CACHE_FILE, (S_IFREG | FILE_MODE), FILE_MODE },
                         { MSG_QUEUE_FILE, (S_IFREG | FILE_MODE), FILE_MODE },
+#ifdef _WITH_DE_MAIL_SUPPORT
+                        { DEMCD_QUEUE_FILE, (S_IFREG | FILE_MODE), FILE_MODE },
+#endif
                         { QUEUE_LIST_READY_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR), (S_IRUSR | S_IWUSR) },
                         { QUEUE_LIST_DONE_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR), (S_IRUSR | S_IWUSR) },
 #ifdef WITH_ERROR_QUEUE
@@ -225,6 +240,11 @@ check_permissions(void)
 # endif
 # ifdef _OUTPUT_LOG
                         { OUTPUT_BUFFER_FILE, (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH) },
+# else
+                        { "", 0, 0 },
+# endif
+# ifdef _CONFIRMATION_LOG
+                        { CONFIRMATION_BUFFER_FILE, (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH) },
 # else
                         { "", 0, 0 },
 # endif
@@ -262,6 +282,11 @@ check_permissions(void)
 # endif
 # ifdef _OUTPUT_LOG
                         { OUTPUT_BUFFER_FILE, (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH), (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH) },
+# else
+                        { "", 0, 0 },
+# endif
+# ifdef _CONFIRMATION_LOG
+                        { CONFIRMATION_BUFFER_FILE, (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH), (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH) },
 # else
                         { "", 0, 0 },
 # endif

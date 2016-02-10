@@ -1,6 +1,6 @@
 /*
  *  draw_mon_line.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2008 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -223,7 +223,7 @@ draw_label_line(void)
       if (line_style != BARS_ONLY)
       {
          /*
-          * Draw string " fc  fs tr ec  jq   at eh"
+          * Draw string " fc   fs   tr   fr  jq  at ec eh"
           *     fc - file counter
           *     fs - file size
           *     tr - transfer rate
@@ -303,81 +303,97 @@ draw_line_status(int pos, signed char delta)
    }
    else
    {
-      tmp_gc = default_bg_gc;
+      if (connect_data[pos].rcmd != '\0')
+      {
+         tmp_gc = default_bg_gc;
+      }
+      else
+      {
+         tmp_gc = label_bg_gc;
+      }
    }
    XFillRectangle(display, line_window, tmp_gc, x, y, line_length, line_height);
    XFillRectangle(display, line_pixmap, tmp_gc, x, y, line_length, line_height);
 
-   /* Write destination identifier to screen. */
-   draw_afd_identifier(pos, x, y);
-
-   /* Draw status LED's of remote AFD. */
-   draw_mon_proc_led(AMG_LED, connect_data[pos].amg, x, y);
-   draw_mon_proc_led(FD_LED, connect_data[pos].fd, x, y);
-   draw_mon_proc_led(AW_LED, connect_data[pos].archive_watch, x, y);
-
-   draw_remote_log_status(pos, connect_data[pos].sys_log_ec % LOG_FIFO_SIZE, x, y);
-
-   if (his_log_set > 0)
+   if (connect_data[pos].rcmd == '\0')
    {
-      draw_remote_history(pos, RECEIVE_HISTORY, x, y);
-      draw_remote_history(pos, SYSTEM_HISTORY, x, y + bar_thickness_3);
-      draw_remote_history(pos, TRANSFER_HISTORY, x,
-                          y + bar_thickness_3 + bar_thickness_3);
+      draw_plus_minus(pos, x, y);
+
+      draw_afd_identifier(pos, x + (4 * glyph_width), y);
    }
-
-   /* Print information for number of files to be send (nf), */
-   /* total file size (tfs), transfer rate (tr) and error    */
-   /* counter (ec).                                          */
-   if (line_style != BARS_ONLY)
+   else
    {
-      draw_mon_chars(pos, FILES_TO_BE_SEND, x, y);
-      draw_mon_chars(pos, FILE_SIZE_TO_BE_SEND, x + (5 * glyph_width), y);
-      draw_mon_chars(pos, AVERAGE_TRANSFER_RATE, x + (10 * glyph_width), y);
-      draw_mon_chars(pos, AVERAGE_CONNECTION_RATE, x + (15 * glyph_width), y);
-      draw_mon_chars(pos, JOBS_IN_QUEUE, x + (19 * glyph_width), y);
-      draw_mon_chars(pos, ACTIVE_TRANSFERS, x + (23 * glyph_width), y);
-      draw_mon_chars(pos, TOTAL_ERROR_COUNTER, x + (27 * glyph_width), y);
-      draw_mon_chars(pos, ERROR_HOSTS, x + (30 * glyph_width), y);
-   }
+      /* Write destination identifier to screen. */
+      draw_afd_identifier(pos, x, y);
 
-   /* Draw bars, indicating graphically how many errors have */
-   /* occurred, total file size still to do and the transfer */
-   /* rate.                                                  */
-   if (line_style != CHARACTERS_ONLY)
-   {
-      /* Draw bars. */
-      draw_mon_bar(pos, delta, MON_TR_BAR_NO, x, y);
-      draw_mon_bar(pos, delta, ACTIVE_TRANSFERS_BAR_NO, x, y);
-      draw_mon_bar(pos, delta, HOST_ERROR_BAR_NO, x, y);
+      /* Draw status LED's of remote AFD. */
+      draw_mon_proc_led(AMG_LED, connect_data[pos].amg, x, y);
+      draw_mon_proc_led(FD_LED, connect_data[pos].fd, x, y);
+      draw_mon_proc_led(AW_LED, connect_data[pos].archive_watch, x, y);
 
-      /* Show beginning and end of bars. */
-      if (connect_data[pos].inverse > OFF)
+      draw_remote_log_status(pos, connect_data[pos].sys_log_ec % LOG_FIFO_SIZE, x, y);
+
+      if (his_log_set > 0)
       {
-         tmp_gc = white_line_gc;
+         draw_remote_history(pos, RECEIVE_HISTORY, x, y);
+         draw_remote_history(pos, SYSTEM_HISTORY, x, y + bar_thickness_3);
+         draw_remote_history(pos, TRANSFER_HISTORY, x,
+                             y + bar_thickness_3 + bar_thickness_3);
       }
-      else
+
+      /* Print information for number of files to be send (nf), */
+      /* total file size (tfs), transfer rate (tr) and error    */
+      /* counter (ec).                                          */
+      if (line_style != BARS_ONLY)
       {
-         tmp_gc = black_line_gc;
+         draw_mon_chars(pos, FILES_TO_BE_SEND, x, y);
+         draw_mon_chars(pos, FILE_SIZE_TO_BE_SEND, x + (5 * glyph_width), y);
+         draw_mon_chars(pos, AVERAGE_TRANSFER_RATE, x + (10 * glyph_width), y);
+         draw_mon_chars(pos, AVERAGE_CONNECTION_RATE, x + (15 * glyph_width), y);
+         draw_mon_chars(pos, JOBS_IN_QUEUE, x + (19 * glyph_width), y);
+         draw_mon_chars(pos, ACTIVE_TRANSFERS, x + (23 * glyph_width), y);
+         draw_mon_chars(pos, TOTAL_ERROR_COUNTER, x + (27 * glyph_width), y);
+         draw_mon_chars(pos, ERROR_HOSTS, x + (30 * glyph_width), y);
       }
-      XDrawLine(display, line_window, black_line_gc,
-                x + x_offset_bars - 1,
-                y + SPACE_ABOVE_LINE,
-                x + x_offset_bars - 1,
-                y + glyph_height);
-      XDrawLine(display, line_window, black_line_gc,
-                x + x_offset_bars + (int)max_bar_length,
-                y + SPACE_ABOVE_LINE,
-                x + x_offset_bars + (int)max_bar_length, y + glyph_height);
-      XDrawLine(display, line_pixmap, black_line_gc,
-                x + x_offset_bars - 1,
-                y + SPACE_ABOVE_LINE,
-                x + x_offset_bars - 1,
-                y + glyph_height);
-      XDrawLine(display, line_pixmap, black_line_gc,
-                x + x_offset_bars + (int)max_bar_length,
-                y + SPACE_ABOVE_LINE,
-                x + x_offset_bars + (int)max_bar_length, y + glyph_height);
+
+      /* Draw bars, indicating graphically how many errors have */
+      /* occurred, total file size still to do and the transfer */
+      /* rate.                                                  */
+      if (line_style != CHARACTERS_ONLY)
+      {
+         /* Draw bars. */
+         draw_mon_bar(pos, delta, MON_TR_BAR_NO, x, y);
+         draw_mon_bar(pos, delta, ACTIVE_TRANSFERS_BAR_NO, x, y);
+         draw_mon_bar(pos, delta, HOST_ERROR_BAR_NO, x, y);
+
+         /* Show beginning and end of bars. */
+         if (connect_data[pos].inverse > OFF)
+         {
+            tmp_gc = white_line_gc;
+         }
+         else
+         {
+            tmp_gc = black_line_gc;
+         }
+         XDrawLine(display, line_window, black_line_gc,
+                   x + x_offset_bars - 1,
+                   y + SPACE_ABOVE_LINE,
+                   x + x_offset_bars - 1,
+                   y + glyph_height);
+         XDrawLine(display, line_window, black_line_gc,
+                   x + x_offset_bars + (int)max_bar_length,
+                   y + SPACE_ABOVE_LINE,
+                   x + x_offset_bars + (int)max_bar_length, y + glyph_height);
+         XDrawLine(display, line_pixmap, black_line_gc,
+                   x + x_offset_bars - 1,
+                   y + SPACE_ABOVE_LINE,
+                   x + x_offset_bars - 1,
+                   y + glyph_height);
+         XDrawLine(display, line_pixmap, black_line_gc,
+                   x + x_offset_bars + (int)max_bar_length,
+                   y + SPACE_ABOVE_LINE,
+                   x + x_offset_bars + (int)max_bar_length, y + glyph_height);
+      }
    }
 
    return;
@@ -422,6 +438,37 @@ draw_mon_button_line(void)
 
    /* Draw clock. */
    draw_clock(time(NULL));
+
+   return;
+}
+
+
+/*++++++++++++++++++++++++++ draw_plus_minus() ++++++++++++++++++++++++++*/
+void
+draw_plus_minus(int pos, int x, int y)
+{
+   char      plus_minus_str[] = { '[', '-', ']', '\0' };
+   XGCValues gc_values;
+
+
+   gc_values.foreground = color_pool[FG];
+   gc_values.background = color_pool[DEFAULT_BG];
+   XChangeGC(display, color_letter_gc,
+             GCForeground | GCBackground, &gc_values);
+
+   if (connect_data[pos].plus_minus == PM_CLOSE_STATE)
+   {
+      plus_minus_str[1] = '+';
+   }
+
+   XDrawImageString(display, line_window, color_letter_gc,
+                    DEFAULT_FRAME_SPACE + x,
+                    y + text_offset + SPACE_ABOVE_LINE,
+                    plus_minus_str, 3);
+   XDrawImageString(display, line_pixmap, color_letter_gc,
+                    DEFAULT_FRAME_SPACE + x,
+                    y + text_offset + SPACE_ABOVE_LINE,
+                    plus_minus_str, 3);
 
    return;
 }

@@ -1,6 +1,6 @@
 /*
  *  handle_time_jobs.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -66,14 +66,21 @@ extern int                        *amg_counter,
                                   max_process,
                                   *no_of_process,
                                   no_of_time_jobs,
+#ifndef MULTI_FS_SUPPORT
+                                  outgoing_file_dir_length,
+#endif
                                   *time_job_list;
 #ifndef MULTI_FS_SUPPORT
-extern char                       outgoing_file_dir[];
+extern char                       outgoing_file_dir[],
+                                  *p_time_dir_id,
+                                  time_dir[];
 #endif
 #ifndef _WITH_PTHREAD
 extern char                       *file_name_buffer;
 #endif
-extern char                       time_dir[];
+#ifdef MULTI_FS_SUPPORT
+extern struct extra_work_dirs     *ewl;
+#endif
 extern struct dc_proc_list        *dcpl;      /* Dir Check Process List. */
 extern struct instant_db          *db;
 extern struct filetransfer_status *fsa;
@@ -83,7 +90,6 @@ extern struct afd_status          *p_afd_status;
 
 /* Local variables. */
 static unsigned int               files_handled;
-static size_t                     time_dir_length;
 
 /* Local function prototypes. */
 static void                       handle_time_dir(int);
@@ -124,18 +130,26 @@ handle_time_jobs(time_t now)
 static void
 handle_time_dir(int time_job_no)
 {
+#ifdef MULTI_FS_SUPPORT
+   int  outgoing_file_dir_length;
+   char *outgoing_file_dir,
+        *time_dir;
+#endif
    char *time_dir_ptr;
    DIR  *dp;
 
+#ifdef MULTI_FS_SUPPORT
+   outgoing_file_dir_length = ewl[db[time_job_list[time_job_no]].ewl_pos].outgoing_file_dir_length;
+   outgoing_file_dir = ewl[db[time_job_list[time_job_no]].ewl_pos].outgoing_file_dir;
+   time_dir = ewl[db[time_job_list[time_job_no]].ewl_pos].time_dir;
+   time_dir_ptr = ewl[db[time_job_list[time_job_no]].ewl_pos].p_time_dir_id;
+#else
+   time_dir_ptr = p_time_dir_id;
+#endif
    /*
     * Now search time job directory and see if there are any files to
     * be processed.
     */
-   if (time_dir_length == 0)
-   {
-      time_dir_length = strlen(time_dir);
-   }
-   time_dir_ptr = time_dir + time_dir_length;
    (void)strcpy(time_dir_ptr, db[time_job_list[time_job_no]].str_job_id);
 
    if ((dp = opendir(time_dir)) == NULL)
@@ -201,6 +215,7 @@ handle_time_dir(int time_job_no)
                      next_counter_no_lock(amg_counter, MAX_MSG_PER_SEC);
                      unique_number = *amg_counter;
                      if (create_name(dest_file_path,
+                                     outgoing_file_dir_length,
                                      db[time_job_list[time_job_no]].priority,
                                      creation_time,
                                      db[time_job_list[time_job_no]].job_id,
@@ -223,6 +238,7 @@ handle_time_dir(int time_job_no)
                               next_counter_no_lock(amg_counter, MAX_MSG_PER_SEC);
                               unique_number = *amg_counter;
                               if (create_name(dest_file_path,
+                                              outgoing_file_dir_length,
                                               db[time_job_list[time_job_no]].priority,
                                               creation_time,
                                               db[time_job_list[time_job_no]].job_id,
@@ -403,6 +419,9 @@ handle_time_dir(int time_job_no)
                                 "close() error : %s", strerror(errno));
                   }
                   send_message(outgoing_file_dir,
+#ifdef MULTI_FS_SUPPORT
+                               ewl[db[time_job_list[time_job_no]].ewl_pos].dev,
+#endif
                                unique_name, split_job_counter,
                                unique_number, creation_time,
                                time_job_list[time_job_no], 0,
@@ -429,7 +448,11 @@ handle_time_dir(int time_job_no)
                                      "close() error : %s", strerror(errno));
                        }
 
-                       send_message(outgoing_file_dir, unique_name,
+                       send_message(outgoing_file_dir,
+#ifdef MULTI_FS_SUPPORT
+                                    ewl[db[time_job_list[time_job_no]].ewl_pos].dev,
+#endif
+                                    unique_name,
                                     split_job_counter, unique_number,
                                     creation_time, time_job_list[time_job_no],
                                     0, files_moved, file_size_moved, YES);
@@ -479,7 +502,11 @@ handle_time_dir(int time_job_no)
             }
             else
             {
-               send_message(outgoing_file_dir, unique_name, split_job_counter,
+               send_message(outgoing_file_dir,
+#ifdef MULTI_FS_SUPPORT
+                            ewl[db[time_job_list[time_job_no]].ewl_pos].dev,
+#endif
+                            unique_name, split_job_counter,
                             unique_number, creation_time,
                             time_job_list[time_job_no], 0,
                             files_moved, file_size_moved, YES);

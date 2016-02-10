@@ -1,7 +1,7 @@
 /*
  *  check_old_time_jobs.c - Part of AFD, an automatic file distribution
  *                          program.
- *  Copyright (c) 1999 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ DESCR__S_M3
  **                         after a DIR_CONFIG update
  **
  ** SYNOPSIS
- **   void check_old_time_jobs(int no_of_jobs)
+ **   void check_old_time_jobs(int no_of_jobs, char *time_dir)
  **
  ** DESCRIPTION
  **   The function check_old_time_jobs() searches the time directory
@@ -64,20 +64,19 @@ DESCR__E_M3
 extern int                 *no_of_job_ids,
                            no_of_time_jobs,
                            *time_job_list;
-extern char                time_dir[];
 extern struct instant_db   *db;
 extern struct job_id_data  *jd;
 extern struct dir_name_buf *dnb;
 
 /* Local function prototype. */
-static void move_time_dir(unsigned int);
+static void move_time_dir(char *, unsigned int);
 
 /* #define _STRONG_OPTION_CHECK 1 */
 
 
 /*####################### check_old_time_jobs() #########################*/
 void
-check_old_time_jobs(int no_of_jobs)
+check_old_time_jobs(int no_of_jobs, char *time_dir)
 {
    DIR *dp;
 
@@ -184,11 +183,11 @@ check_old_time_jobs(int no_of_jobs)
                             * The only thing we can do now is remove them.
                             */
 #ifdef _DELETE_LOG
-                           remove_time_dir("-", YES, -1, -1,
+                           remove_time_dir("-", time_dir, YES, -1, -1,
                                            JID_LOOKUP_FAILURE_DEL,
                                            __FILE__, __LINE__);
 #else
-                           remove_time_dir("-", YES, -1);
+                           remove_time_dir("-", time_dir, YES, -1);
 #endif
                         }
                         else
@@ -272,14 +271,14 @@ check_old_time_jobs(int no_of_jobs)
                                * all files.
                                */
 #ifdef _DELETE_LOG
-                             remove_time_dir(jd[jid_pos].host_alias, YES,
-                                             jd[jid_pos].job_id,
+                             remove_time_dir(jd[jid_pos].host_alias, time_dir,
+                                             YES, jd[jid_pos].job_id,
                                              jd[jid_pos].dir_id,
                                              JID_LOOKUP_FAILURE_DEL,
                                              __FILE__, __LINE__);
 #else
-                             remove_time_dir(jd[jid_pos].host_alias, YES,
-                                             jd[jid_pos].job_id);
+                             remove_time_dir(jd[jid_pos].host_alias, time_dir,
+                                             YES, jd[jid_pos].job_id);
 #endif
                            }
                            else
@@ -288,7 +287,7 @@ check_old_time_jobs(int no_of_jobs)
                                * Lets move all files from the old job directory
                                * to the new one.
                                */
-                              move_time_dir(new_job_id);
+                              move_time_dir(time_dir, new_job_id);
                            }
                         }
                      } /* if ((rmdir(time_dir) == -1) && (errno == ENOTEMPTY)) */
@@ -324,7 +323,7 @@ check_old_time_jobs(int no_of_jobs)
 
 /*+++++++++++++++++++++++++++ move_time_dir() +++++++++++++++++++++++++++*/
 static void
-move_time_dir(unsigned int job_id)
+move_time_dir(char *time_dir, unsigned int job_id)
 {
 #ifdef _CHECK_TIME_DIR_DEBUG
    system_log(INFO_SIGN, __FILE__, __LINE__,

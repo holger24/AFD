@@ -25,7 +25,7 @@ DESCR__S_M3
  **   httpcmd - commands to send and retrieve files via HTTP
  **
  ** SYNOPSIS
- **   int  http_connect(char *hostname, int port, int sndbuf_size, int rcvbuf_size)
+ **   int  http_connect(char *hostname, int port, int sndbuf_size, int rcvbuf_size, int strict)
  **   int  http_ssl_auth(void)
  **   int  http_options(char *host, char *path)
  **   int  http_del(char *host, char *path, char *filename)
@@ -145,8 +145,8 @@ static struct http_message_reply hmr;
 static int                       basic_authentication(void),
                                  check_connection(void),
                                  flush_read(void),
-                                 get_http_reply(int *, int),
-                                 read_msg(int *, int);
+                                 get_http_reply(int *, int, int),
+                                 read_msg(int *, int, int);
 static void                      read_last_chunk(void),
 #ifdef WITH_SSL
                                  sig_handler(int),
@@ -163,6 +163,7 @@ http_connect(char *hostname,
              char *passwd,
 #ifdef WITH_SSL
              int  ssl,
+             int  strict,
 #endif
              int  sndbuf_size,
              int  rcvbuf_size)
@@ -210,6 +211,9 @@ http_connect(char *hostname,
          }
          hmr.port = port;
          hmr.free = YES;
+#ifdef WITH_SSL
+         hmr.strict = strict;
+#endif
          hmr.http_version = 0;
          hmr.http_options = 0;
          hmr.http_options_not_working = 0;
@@ -694,6 +698,7 @@ http_connect(char *hostname,
       hmr.bytes_read = 0;
 
 #ifdef WITH_SSL
+      hmr.strict = strict;
       if ((ssl == YES) || (ssl == BOTH))
       {
          char *p_env,
@@ -705,8 +710,27 @@ http_connect(char *hostname,
          }
          hmr.ssl = YES;
          SSLeay_add_ssl_algorithms();
-         ssl_ctx=(SSL_CTX *)SSL_CTX_new(SSLv23_client_method());
+         if ((ssl_ctx = (SSL_CTX *)SSL_CTX_new(SSLv23_client_method())) == NULL)
+         {
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_connect", NULL,
+                      _("SSL_CTX_new() unable to create a new SSL context structure."));
+            (void)close(http_fd);
+            http_fd = -1;
+            return(INCORRECT);
+         }
+# ifdef NO_SSLv2
+         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2);
+# else 
+#  ifdef NO_SSLv3
+         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv3);
+#  else
+#   ifdef NO_SSLv23
+         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+#   else
          SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL);
+#   endif
+#  endif
+# endif
          SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
          if ((p_env = getenv("SSL_CIPHER")) != NULL)
          {
@@ -730,7 +754,9 @@ http_connect(char *hostname,
          {
          }
 # endif
-         SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
+         SSL_CTX_set_verify(ssl_ctx,
+                            (strict == YES) ? SSL_VERIFY_PEER : SSL_VERIFY_NONE,
+                            NULL);
 
          ssl_con = (SSL *)SSL_new(ssl_ctx);
          SSL_set_connect_state(ssl_con);
@@ -809,18 +835,26 @@ http_connect(char *hostname,
          else
          {
             char             *ssl_version;
-            int              length,
-                             ssl_bits;
+            int              length;
             const SSL_CIPHER *ssl_cipher;
 
             ssl_version = SSL_get_cipher_version(ssl_con);
-            ssl_cipher = SSL_get_current_cipher(ssl_con);
-            SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
-            length = strlen(msg_str);        
-            (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
-                           "  <%s, cipher %s, %d bits>",
-                           ssl_version, SSL_CIPHER_get_name(ssl_cipher),
-                           ssl_bits);
+            length = strlen(msg_str);
+            if ((ssl_cipher = SSL_get_current_cipher(ssl_con)) != NULL)
+            {
+               int ssl_bits;
+
+               SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
+               (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                              "  <%s, cipher %s, %d bits>",
+                              ssl_version, SSL_CIPHER_get_name(ssl_cipher),
+                              ssl_bits);
+            }
+            else
+            {
+               (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                              "  <%s, cipher ?, ? bits>", ssl_version);
+            }
             reply = SUCCESS;
          }
 # ifdef WITH_SSL_READ_AHEAD
@@ -997,7 +1031,7 @@ retry_get:
                            host)) == SUCCESS)
       {
          hmr.content_length = -1;
-         if (((reply = get_http_reply(&hmr.bytes_buffered, 200)) == 200) ||
+         if (((reply = get_http_reply(&hmr.bytes_buffered, 200, __LINE__)) == 200) ||
              (reply == 204) || /* No content. */
              (reply == 206))   /* Partial Content. */
          {
@@ -1146,8 +1180,8 @@ http_put_response(void)
    hmr.date = -1;
    hmr.content_length = 0;
 retry_put_response:
-   if (((reply = get_http_reply(NULL, 201)) == 201) || (reply == 204) ||
-       (reply == 200))
+   if (((reply = get_http_reply(NULL, 201, __LINE__)) == 201) ||
+       (reply == 204) || (reply == 200))
    {
       reply = SUCCESS;
    }
@@ -1255,7 +1289,7 @@ retry_del:
                            (hmr.authorization == NULL) ? "" : hmr.authorization,
                            host)) == SUCCESS)
       {
-         if ((reply = get_http_reply(NULL, 200)) == 200)
+         if ((reply = get_http_reply(NULL, 200, __LINE__)) == 200)
          {
             reply = SUCCESS;
          }
@@ -1360,7 +1394,7 @@ retry_options:
                            (hmr.authorization == NULL) ? "" : hmr.authorization,
                            host)) == SUCCESS)
       {
-         if ((reply = get_http_reply(&hmr.bytes_buffered, 200)) == 200)
+         if ((reply = get_http_reply(&hmr.bytes_buffered, 200, __LINE__)) == 200)
          {
             reply = SUCCESS;
             if (hmr.chunked == YES)
@@ -1500,7 +1534,7 @@ retry_head:
                            (hmr.authorization == NULL) ? "" : hmr.authorization,
                            host)) == SUCCESS)
       {
-         if ((reply = get_http_reply(NULL, 999)) == 200)
+         if ((reply = get_http_reply(NULL, 999, __LINE__)) == 200)
          {
             reply = SUCCESS;
             *content_length = hmr.content_length;
@@ -1913,7 +1947,7 @@ http_chunk_read(char **chunk, int *chunksize)
        read_length;
 
    /* First, try read the chunk size. */
-   if ((bytes_buffered = read_msg(&read_length, 0)) > 0)
+   if ((bytes_buffered = read_msg(&read_length, 0, __LINE__)) > 0)
    {
       int    bytes_read,
              status,
@@ -1963,7 +1997,7 @@ http_chunk_read(char **chunk, int *chunksize)
          {
             (void)memcpy(*chunk, msg_str + read_length + 1, tmp_chunksize - 2);
             hmr.bytes_read = bytes_buffered - tmp_chunksize;
-            (void)read_msg(NULL, tmp_chunksize);
+            (void)read_msg(NULL, tmp_chunksize, __LINE__);
             return(tmp_chunksize - 2);
          }
       }
@@ -2205,7 +2239,7 @@ check_connection(void)
       if ((status = http_connect(hmr.hostname, hmr.http_proxy, hmr.port,
                                  hmr.user, hmr.passwd,
 #ifdef WITH_SSL
-                                 hmr.ssl,
+                                 hmr.ssl, hmr.strict,
 #endif
                                  hmr.sndbuf_size, hmr.rcvbuf_size)) != SUCCESS)
       {
@@ -2235,7 +2269,7 @@ check_connection(void)
 
 /*+++++++++++++++++++++++++++ get_http_reply() ++++++++++++++++++++++++++*/
 static int
-get_http_reply(int *ret_bytes_buffered, int reply)
+get_http_reply(int *ret_bytes_buffered, int reply, int line)
 {
    int bytes_buffered,
        read_length,
@@ -2261,7 +2295,7 @@ get_http_reply(int *ret_bytes_buffered, int reply)
    {
       *ret_bytes_buffered = 0;
    }
-   if ((bytes_buffered = read_msg(&read_length, 0)) > 0)
+   if ((bytes_buffered = read_msg(&read_length, 0, line)) > 0)
    {
       hmr.close = NO;
       hmr.chunked = NO;
@@ -2298,12 +2332,12 @@ get_http_reply(int *ret_bytes_buffered, int reply)
           */
          for (;;)
          {
-            if ((bytes_buffered = read_msg(&read_length, 0)) <= 0)
+            if ((bytes_buffered = read_msg(&read_length, 0, line)) <= 0)
             {
                if (bytes_buffered == 0)
                {
                   trans_log(ERROR_SIGN,  __FILE__, __LINE__, "get_http_reply", NULL,
-                            _("Remote hang up."));
+                            _("Remote hang up. [%d]"), line);
                   timeout_flag = NEITHER;
                }
                return(INCORRECT);
@@ -2547,7 +2581,7 @@ get_http_reply(int *ret_bytes_buffered, int reply)
          if ((read_length == 1) && (msg_str[0] == '\0') && (msg_str[1] == '\n'))
          {
             (void)memmove(msg_str, msg_str + 1 + 1, (bytes_buffered - 1 - 1));
-            (void)read_msg(NULL, -2);
+            (void)read_msg(NULL, -2, line);
          }
       }
    }
@@ -2559,7 +2593,7 @@ get_http_reply(int *ret_bytes_buffered, int reply)
               if ((status_code = check_connection()) == CONNECTION_REOPENED)
               {
                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "get_http_reply", NULL,
-                           _("Reconnected."));
+                           _("Reconnected. [%d]"), line);
                  hmr.retries = 1;
               }
            }
@@ -2567,7 +2601,7 @@ get_http_reply(int *ret_bytes_buffered, int reply)
            {
               timeout_flag = NEITHER;
               trans_log(ERROR_SIGN,  __FILE__, __LINE__, "get_http_reply", NULL,
-                        _("Remote hang up."));
+                        _("Remote hang up. [%d]"), line);
               status_code = INCORRECT;
            }
         }
@@ -2576,7 +2610,8 @@ get_http_reply(int *ret_bytes_buffered, int reply)
    if (status_code == INCORRECT)
    {
       trans_log(DEBUG_SIGN, __FILE__, __LINE__, "get_http_reply", msg_str,
-                _("Returning INCORRECT (bytes_buffered = %d)"), bytes_buffered);
+                _("Returning INCORRECT (bytes_buffered = %d) [%d]"),
+                bytes_buffered, line);
    }
 #endif
    return(status_code);
@@ -2591,7 +2626,7 @@ get_http_reply(int *ret_bytes_buffered, int reply)
 /* returned by read_length.                                              */
 /*-----------------------------------------------------------------------*/
 static int
-read_msg(int *read_length, int offset)
+read_msg(int *read_length, int offset, int line)
 {
    static int  bytes_buffered;
    static char *read_ptr = NULL;
@@ -2645,14 +2680,14 @@ read_msg(int *read_length, int offset)
                         timeout_flag = CON_RESET;
                      }
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                               _("SSL_read() error (after reading %d bytes) : %s"),
-                               bytes_buffered, strerror(errno));
+                               _("SSL_read() error (after reading %d bytes) [%d] : %s"),
+                               bytes_buffered, line, strerror(errno));
                   }
                   else
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                               _("SSL_read() error (after reading %d bytes) (%d)"),
-                               bytes_buffered, status);
+                               _("SSL_read() error (after reading %d bytes) (%d) [%d]"),
+                               bytes_buffered, status, line);
                   }
                   hmr.bytes_read = 0;
                   return(INCORRECT);
@@ -2707,8 +2742,8 @@ read_msg(int *read_length, int offset)
                                 timeout_flag = CON_RESET;
                              }
                              trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                                       _("read() error (after reading %d bytes) : %s"),
-                                       bytes_buffered, strerror(errno));
+                                       _("read() error (after reading %d bytes) [%d] : %s"),
+                                       bytes_buffered, line, strerror(errno));
                              hmr.bytes_read = 0;
                              return(INCORRECT);
                           }
@@ -2739,14 +2774,14 @@ read_msg(int *read_length, int offset)
                                    timeout_flag = CON_RESET;
                                 }
                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                                          _("SSL_read() error (after reading %d bytes) : %s"),
-                                          bytes_buffered, strerror(errno));
+                                          _("SSL_read() error (after reading %d bytes) [%d] : %s"),
+                                          bytes_buffered, line, strerror(errno));
                              }
                              else
                              {
                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                                          _("SSL_read() error (after reading %d bytes) (%d)"),
-                                          bytes_buffered, status);
+                                          _("SSL_read() error (after reading %d bytes) (%d) [%d]"),
+                                          bytes_buffered, status, line);
                              }
                              hmr.bytes_read = 0;
                              return(INCORRECT);
@@ -2766,13 +2801,14 @@ read_msg(int *read_length, int offset)
             else if (status < 0)
                  {
                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                              _("select() error : %s"), strerror(errno));
+                              _("select() error [%d] : %s"),
+                              line, strerror(errno));
                     return(INCORRECT);
                  }
                  else
                  {
                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                              _("Unknown condition."));
+                              _("Unknown condition. [%d]"), line);
                     return(INCORRECT);
                  }
 #ifdef WITH_SSL

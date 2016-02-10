@@ -1,6 +1,6 @@
 /*
  *  eval_recipient.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2013 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -139,9 +139,11 @@ eval_recipient(char       *recipient,
       {
          p_db->special_flag |= PATH_MAY_CHANGE;
       }
-#ifdef WITH_MSG_PROTOCOL_CHANGE
-      if ((scheme & p_db->protocol) == 0)
+#ifdef _WITH_DE_MAIL_SUPPORT
+      if ((p_db->protocol & SMTP_FLAG) && (scheme & DE_MAIL_FLAG))
       {
+         p_db->protocol &= ~SMTP_FLAG;    /* Unset flag. */
+         p_db->protocol |= DE_MAIL_FLAG;  /* Set flag.   */
       }
 #endif
       if (p_db->protocol & EXEC_FLAG)
@@ -155,7 +157,11 @@ eval_recipient(char       *recipient,
       }
       if (server[0] != '\0')
       {
+#ifdef _WITH_DE_MAIL_SUPPORT
+         if ((scheme & SMTP_FLAG) || (scheme & DE_MAIL_FLAG))
+#else
          if (scheme & SMTP_FLAG)
+#endif
          {
             p_db->special_flag |= SMTP_SERVER_NAME_IN_MESSAGE;
             (void)strcpy(p_db->smtp_server, server);
@@ -223,15 +229,24 @@ eval_recipient(char       *recipient,
 #ifndef WITH_PASSWD_IN_MSG
       if (p_db->password[0] == '\0')
       {
-         if (((p_db->protocol & SMTP_FLAG) &&
+         if ((p_db->protocol & LOC_FLAG) ||
+# ifdef _WITH_DE_MAIL_SUPPORT
+             (((p_db->protocol & SMTP_FLAG) ||
+               (p_db->protocol & DE_MAIL_FLAG)) &&
               (p_db->smtp_auth == SMTP_AUTH_NONE)) ||
+# else
+             ((p_db->protocol & SMTP_FLAG) &&
+              (p_db->smtp_auth == SMTP_AUTH_NONE)) ||
+# endif
 # ifdef _WITH_WMO_SUPPORT
              (p_db->protocol & WMO_FLAG) ||
 # endif
 # ifdef _WITH_MAP_SUPPORT
              (p_db->protocol & MAP_FLAG) ||
 # endif
-             (p_db->protocol & LOC_FLAG) ||
+# ifdef _WITH_DFAX_SUPPORT
+             (p_db->protocol & DFAX_FLAG) ||
+# endif
              (p_db->protocol & EXEC_FLAG))
          {
             /* No need to lookup a passwd. */;
@@ -240,8 +255,14 @@ eval_recipient(char       *recipient,
          {
             char uh_name[MAX_USER_NAME_LENGTH + MAX_REAL_HOSTNAME_LENGTH + 1];
 
+# ifdef _WITH_DE_MAIL_SUPPORT
+            if (((p_db->protocol & SMTP_FLAG) ||
+                 (p_db->protocol & DE_MAIL_FLAG)) &&
+                (p_db->smtp_auth != SMTP_AUTH_NONE))
+# else
             if ((p_db->protocol & SMTP_FLAG) &&
                 (p_db->smtp_auth != SMTP_AUTH_NONE))
+# endif
             {
                (void)strcpy(uh_name, p_db->smtp_user);
                if (server[0] == '\0')

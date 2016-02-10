@@ -1,6 +1,6 @@
 /*
  *  create_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -91,6 +91,11 @@ extern int                        fsa_fd,
                                   no_of_hosts,
                                   no_of_local_dirs,
                                   no_of_time_jobs,
+#ifdef MULTI_FS_SUPPORT
+                                  no_of_extra_work_dirs,
+#else
+                                  outgoing_file_dir_length,
+#endif
                                   *time_job_list;
 extern unsigned int               default_age_limit;
 #ifdef _DISTRIBUTION_LOG
@@ -98,12 +103,19 @@ extern unsigned int               max_jobs_per_file;
 #endif
 extern off_t                      amg_data_size;
 extern char                       *afd_file_dir,
+#ifndef MULTI_FS_SUPPORT
+                                  outgoing_file_dir[],
+                                  time_dir[],
+#endif
                                   *p_mmap,
                                   *p_work_dir;
 #ifdef _WITH_PTHREAD
 extern struct data_t              *p_data;
 #else
 extern unsigned int               max_file_buffer;
+#endif
+#ifdef MULTI_FS_SUPPORT
+extern struct extra_work_dirs     *ewl;
 #endif
 extern struct fork_job_data       *fjd;
 extern struct directory_entry     *de;
@@ -136,48 +148,52 @@ struct dir_name_buf               *dnb;
 struct passwd_buf                 *pwb;
 
 /* Local function prototypes. */
+#ifdef MULTI_FS_SUPPORT
+static int                        check_extra_filesystem(dev_t, int);
+#endif
 static void                       write_current_job_list(int);
 
 /* #define _WITH_JOB_LIST_TEST 1 */
 #define POS_STEP_SIZE      20
 #define FORK_JOB_STEP_SIZE 20
 
+
 /*+++++++++++++++++++++++++++++ create_db() +++++++++++++++++++++++++++++*/
 int
 create_db(void)
 {
-   int             amg_data_fd,
-                   exec_flag,
-                   exec_flag_dir,
-                   i,
-                   j,
+   int            amg_data_fd,
+                  exec_flag,
+                  exec_flag_dir,
+                  i,
+                  j,
 #if defined (_TEST_FILE_TABLE) || defined (_DISTRIBUTION_LOG)
-                   k,
+                  k,
 #endif
-                   not_in_same_file_system = 0,
-                   one_job_only_dir = 0,
-                   show_one_job_no_link,
-                   size,
-                   dir_counter = 0,
-                   no_of_jobs;
-   unsigned int    jid_number,
-                   scheme;
+                  not_in_same_file_system = 0,
+                  one_job_only_dir = 0,
+                  show_one_job_no_link,
+                  size,
+                  dir_counter = 0,
+                  no_of_jobs;
+   unsigned int   jid_number,
+                  scheme;
 #ifdef WITH_ERROR_QUEUE
-   int             no_of_cids;
-   unsigned int    *cml;
+   int            no_of_cids;
+   unsigned int   *cml;
 #endif
 #ifdef _DISTRIBUTION_LOG
-   unsigned int    max_jobs_per_dir;
+   unsigned int   max_jobs_per_dir;
 #endif
-   dev_t           ldv;               /* Local device number (filesystem). */
-   char            amg_data_file[MAX_PATH_LENGTH],
-                   *ptr,
-                   *tmp_ptr,
-                   *p_offset,
-                   *p_loptions,
-                   *p_file;
-   struct p_array  *p_ptr;
-   struct stat     stat_buf;
+   dev_t          ldv;               /* Local device number (filesystem). */
+   char           amg_data_file[MAX_PATH_LENGTH],
+                  *ptr,
+                  *tmp_ptr,
+                  *p_offset,
+                  *p_loptions,
+                  *p_file;
+   struct p_array *p_ptr;
+   struct stat    stat_buf;
 
    /* Check if we need to free some data. */
    if (fjd != NULL)
@@ -454,12 +470,16 @@ create_db(void)
    if (stat_buf.st_dev != ldv)
    {
 #ifdef MULTI_FS_SUPPORT
-      if (check_extra_filesystem(stat_buf.st_dev, &de[0].afd_file_dir) == YES)
+      if (check_extra_filesystem(stat_buf.st_dev, 0) == YES)
       {
-         de[0].flag |= IN_EXTRA_FILESYSTEM;
+         de[0].flag |= IN_SAME_FILESYSTEM;
       }
       else
       {
+#endif
+#ifdef _MAINTAINER_LOG
+         maintainer_log(INFO_SIGN, NULL, 0,
+                        "%s not in same filesystem", db[0].dir);
 #endif
          not_in_same_file_system++;
 #ifdef MULTI_FS_SUPPORT
@@ -469,6 +489,9 @@ create_db(void)
    else
    {
       de[0].flag |= IN_SAME_FILESYSTEM;
+#ifdef MULTI_FS_SUPPORT
+      de[0].ewl_pos = 0;
+#endif
    }
    if (((no_of_jobs - 1) == 0) ||
        (de[0].dir != (p_ptr[1].ptr[DIRECTORY_PTR_POS] + p_offset)))
@@ -587,13 +610,16 @@ create_db(void)
          if (stat_buf.st_dev != ldv)
          {
 #ifdef MULTI_FS_SUPPORT
-            if (check_extra_filesystem(stat_buf.st_dev,
-                                       &de[dir_counter].afd_file_dir) == YES)
+            if (check_extra_filesystem(stat_buf.st_dev, dir_counter) == YES)
             {
-               de[dir_counter].flag |= IN_EXTRA_FILESYSTEM;
+               de[dir_counter].flag |= IN_SAME_FILESYSTEM;
             }
             else
             {
+#endif
+#ifdef _MAINTAINER_LOG
+               maintainer_log(INFO_SIGN, NULL, 0,
+                              "%s not in same filesystem", de[dir_counter].dir);
 #endif
                not_in_same_file_system++;
 #ifdef MULTI_FS_SUPPORT
@@ -603,6 +629,9 @@ create_db(void)
          else
          {
             de[dir_counter].flag |= IN_SAME_FILESYSTEM;
+#ifdef MULTI_FS_SUPPORT
+            de[dir_counter].ewl_pos = 0;
+#endif
          }
          if ((i == (no_of_jobs - 1)) ||
              (db[i].dir != (p_ptr[i + 1].ptr[DIRECTORY_PTR_POS] + p_offset)))
@@ -613,6 +642,9 @@ create_db(void)
       }
       db[i].fra_pos = de[dir_counter].fra_pos;
       db[i].dir_id = de[dir_counter].dir_id;
+#ifdef MULTI_FS_SUPPORT
+      db[i].ewl_pos = de[dir_counter].ewl_pos;
+#endif
 
       /*
        * Check if this directory is in the same file system
@@ -620,10 +652,17 @@ create_db(void)
        * lets fork when we copy.
        */
       db[i].lfs = 0;
+#ifdef MULTI_FS_SUPPORT
+      if (de[dir_counter].flag & IN_SAME_FILESYSTEM)
+      {
+         db[i].lfs |= IN_SAME_FILESYSTEM;
+      }
+#else
       if (stat_buf.st_dev == ldv)
       {
          db[i].lfs |= IN_SAME_FILESYSTEM;
       }
+#endif
 
       if ((i == 0) || ((i > 0) && (db[i].files != db[i - 1].files)))
       {
@@ -1050,6 +1089,18 @@ create_db(void)
               db[i].protocol = MAP;
            }
 #endif
+#ifdef _WITH_DFAX_SUPPORT
+      else if (scheme & DFAX_FLAG)
+           {
+              db[i].protocol = DFAX;
+           }
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+      else if (scheme & DE_MAIL_FLAG)
+           {
+              db[i].protocol = DE_MAIL;
+           }
+#endif
            else
            {
               system_log(FATAL_SIGN, __FILE__, __LINE__,
@@ -1063,7 +1114,14 @@ create_db(void)
               exit(INCORRECT);
            }
 
-      lookup_job_id(&db[i], &jid_number);
+#ifdef MULTI_FS_SUPPORT
+      lookup_job_id(&db[i], &jid_number,
+                    ewl[de[dir_counter].ewl_pos].outgoing_file_dir,
+                    ewl[de[dir_counter].ewl_pos].outgoing_file_dir_length);
+#else
+      lookup_job_id(&db[i], &jid_number, outgoing_file_dir,
+                    outgoing_file_dir_length);
+#endif
       if (db[i].time_option_type == SEND_COLLECT_TIME)
       {
          enter_time_job(i);
@@ -1223,7 +1281,17 @@ create_db(void)
    write_current_job_list(no_of_jobs);
 
    /* Remove old time job directories. */
-   check_old_time_jobs(no_of_jobs);
+#ifdef MULTI_FS_SUPPORT
+   for (i = 0; i < no_of_extra_work_dirs; i++)
+   {
+      if (ewl[i].time_dir != NULL)
+      {
+         check_old_time_jobs(no_of_jobs, ewl[i].time_dir);
+      }
+   }
+#else
+   check_old_time_jobs(no_of_jobs, time_dir);
+#endif
 
 #ifdef WITH_ERROR_QUEUE
    /* Validate error queue. */
@@ -1405,3 +1473,35 @@ write_current_job_list(int no_of_jobs)
 
    return;
 }
+
+
+#ifdef MULTI_FS_SUPPORT
+/*++++++++++++++++++++++++ check_extra_filesystem() +++++++++++++++++++++*/
+static int
+check_extra_filesystem(dev_t dev, int de_no)
+{
+   int i;
+
+   for (i = 0; i < no_of_extra_work_dirs; i++)
+   {
+      if (ewl[i].dev == dev)
+      {
+         if (ewl[i].dir_name == NULL)
+         {
+            de[de_no].ewl_pos = 0;
+
+            return(NO);
+         }
+         else
+         {
+            de[de_no].ewl_pos = i;
+
+            return(YES);
+         }
+      }
+   }
+   de[de_no].ewl_pos = 0;
+
+   return(NO);
+}
+#endif /* MULTI_FS_SUPPORT */

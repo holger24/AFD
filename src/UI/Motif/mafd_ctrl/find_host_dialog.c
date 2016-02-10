@@ -1,6 +1,6 @@
 /*
  *  select_host_dialog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,6 +48,9 @@ DESCR__S_M3
 DESCR__E_M3
 
 #include <stdio.h>
+#ifdef HAVE_STRCASESTR
+#include <string.h>
+#endif
 #include <stdlib.h>
 #include <Xm/Xm.h>
 #include <Xm/Form.h>
@@ -63,7 +66,6 @@ DESCR__E_M3
 #include <errno.h>
 #include "mafd_ctrl.h"
 
-/* #define WITH_EXACT_MATCH 1 */
 
 /* Global variables. */
 Widget                            findshell = (Widget)NULL;
@@ -95,9 +97,6 @@ static void                       done_button(Widget, XtPointer, XtPointer),
                                   search_select_host(Widget, XtPointer, XtPointer),
                                   select_callback(Widget, XtPointer, XtPointer),
                                   toggled(Widget, XtPointer, XtPointer);
-#ifdef WITH_EXACT_MATCH
-static int                        find_substr(char *, char *);
-#endif
 
 #define STATIC_SELECT_CB          1
 #define DESELECT_CB               2
@@ -397,6 +396,15 @@ select_host_dialog(Widget w, XtPointer client_data, XtPointer call_data)
       XtAddCallback(toggle_w, XmNvalueChangedCallback,
                     (XtCallbackProc)toggled, (XtPointer)SHOW_SMTPS);
 #endif
+#ifdef _WITH_DE_MAIL
+      toggle_w = XtVaCreateManagedWidget("DEMAIL",
+                                xmToggleButtonGadgetClass, proto_togglebox_w,
+                                XmNfontList,               p_fontlist,
+                                XmNset,                    True,
+                                NULL);
+      XtAddCallback(toggle_w, XmNvalueChangedCallback,
+                    (XtCallbackProc)toggled, (XtPointer)SHOW_DEMAIL);
+#endif
       toggle_w = XtVaCreateManagedWidget("FILE",
                                 xmToggleButtonGadgetClass, proto_togglebox_w,
                                 XmNfontList,               p_fontlist,
@@ -445,6 +453,15 @@ select_host_dialog(Widget w, XtPointer client_data, XtPointer call_data)
       XtAddCallback(toggle_w, XmNvalueChangedCallback,
                     (XtCallbackProc)toggled, (XtPointer)SHOW_MAP);
 #endif
+#ifdef _WITH_DFAX_SUPPORT
+      toggle_w = XtVaCreateManagedWidget("DFAX",
+                                xmToggleButtonGadgetClass, proto_togglebox_w,
+                                XmNfontList,               p_fontlist,
+                                XmNset,                    True,
+                                NULL);
+      XtAddCallback(toggle_w, XmNvalueChangedCallback,
+                    (XtCallbackProc)toggled, (XtPointer)SHOW_DFAX);
+#endif
       toggle_w = XtVaCreateManagedWidget("None",
                                 xmToggleButtonGadgetClass, proto_togglebox_w,
                                 XmNfontList,               p_fontlist,
@@ -457,6 +474,9 @@ select_host_dialog(Widget w, XtPointer client_data, XtPointer call_data)
       toggles_set = SHOW_FTP |
                     SHOW_HTTP |
                     SHOW_SMTP |
+#ifdef _WITH_DE_MAIL
+                    SHOW_DEMAIL |
+#endif
                     SHOW_SFTP |
 #ifdef _WITH_SCP_SUPPORT
                     SHOW_SCP |
@@ -466,6 +486,9 @@ select_host_dialog(Widget w, XtPointer client_data, XtPointer call_data)
 #endif
 #ifdef _WITH_MAP_SUPPORT
                     SHOW_MAP |
+#endif
+#ifdef _WITH_DFAX_SUPPORT
+                    SHOW_DFAX |
 #endif
 #ifdef WITH_SSL
                     SHOW_FTPS |
@@ -712,6 +735,9 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
              ((fsa[i].protocol & LOC_FLAG) && (toggles_set & SHOW_FILE)) ||
              ((fsa[i].protocol & EXEC_FLAG) && (toggles_set & SHOW_EXEC)) ||
              ((fsa[i].protocol & SMTP_FLAG) && (toggles_set & SHOW_SMTP)) ||
+#ifdef _WITH_DE_MAIL_SUPPORT
+             ((fsa[i].protocol & DE_MAIL_FLAG) && (toggles_set & SHOW_DEMAIL)) ||
+#endif
 #ifdef _WITH_SCP_SUPPORT
              ((fsa[i].protocol & SCP_FLAG) && (toggles_set & SHOW_SCP)) ||
 #endif
@@ -720,6 +746,9 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
 #endif
 #ifdef _WITH_MAP_SUPPORT
              ((fsa[i].protocol & MAP_FLAG) && (toggles_set & SHOW_MAP)) ||
+#endif
+#ifdef _WITH_DFAX_SUPPORT
+             ((fsa[i].protocol & DFAX_FLAG) && (toggles_set & SHOW_DFAX)) ||
 #endif
              ((fsa[i].protocol & HTTP_FLAG) && (toggles_set & SHOW_HTTP)) ||
              ((fsa[i].protocol == 0) && (toggles_set & SHOW_NONE)))
@@ -813,8 +842,7 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
    }
    else
    {
-#ifndef WITH_EXACT_MATCH
-      int    match;
+#ifndef HAVE_STRCASESTR
       size_t length;
       char   *real_text;
 
@@ -835,11 +863,10 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
          (void)check_info_file(connect_data[i].hostname, HOST_INFO_FILE, NO);
          if (info_data != NULL)
          {
-#ifdef WITH_EXACT_MATCH
-            if (find_substr(info_data, text) != -1)
+#ifdef HAVE_STRCASESTR
+            if (strcasestr(info_data, text) != NULL)
 #else
-            match = pmatch(real_text, info_data, NULL);
-            if (match == 0)
+            if (pmatch(real_text, info_data, NULL) == 0)
 #endif
             {
                if (deselect == YES)
@@ -906,7 +933,7 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
             info_data = NULL;
          }
       }
-#ifndef WITH_EXACT_MATCH
+#ifndef HAVE_STRCASESTR
       (void)free(real_text);
 #endif
    }
@@ -915,40 +942,6 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
 
    return;
 }
-
-
-#ifdef WITH_EXACT_MATCH
-/*---------------------------- find_substr() ----------------------------*/
-/*                             -------------                             */
-/* Taken from:                                                           */
-/*   http://www.java2s.com/Code/C/String/Findsubstringourownfunction.htm */
-/*-----------------------------------------------------------------------*/
-static int
-find_substr(char *listPointer, char *itemPointer)
-{
-   int  t;
-   char *p,
-        *p2;
-
-   for (t = 0; listPointer[t]; t++)
-   {
-      p = &listPointer[t];
-      p2 = itemPointer;
-
-      while ((*p2) && (*p2 == *p))
-      {
-         p++;
-         p2++;
-      }
-      if (!*p2)
-      {
-         return(t); /* 1st return */
-      }
-   }
-
-   return(-1); /* 2nd return */
-}
-#endif
 
 
 /*++++++++++++++++++++++++++++ done_button() ++++++++++++++++++++++++++++*/

@@ -1,6 +1,6 @@
 /*
  *  convert_jid.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -119,7 +119,6 @@ struct job_id_data_2
 
 struct job_id_data_3
        {
-          time_t       last_usage;     /* New */
           time_t       creation_time;  /* New */
           unsigned int special_flag;   /* New */
           unsigned int job_id;
@@ -368,7 +367,6 @@ convert_jid(int           old_jid_fd,
               (void)strcpy(new_jid[i].recipient, old_jid[i].recipient);
               (void)memcpy(new_jid[i].soptions, old_jid[i].soptions, MAX_OPTION_LENGTH_1);
               (void)memcpy(new_jid[i].loptions, old_jid[i].loptions, MAX_OPTION_LENGTH_1);
-              new_jid[i].last_usage     = 0L;
               new_jid[i].creation_time  = 0L;
               new_jid[i].special_flag   = 0;
               new_jid[i].no_of_soptions = old_jid[i].no_of_soptions;
@@ -507,7 +505,6 @@ convert_jid(int           old_jid_fd,
               (void)strcpy(new_jid[i].recipient, old_jid[i].recipient);
               (void)memcpy(new_jid[i].soptions, old_jid[i].soptions, MAX_OPTION_LENGTH_2);
               (void)memcpy(new_jid[i].loptions, old_jid[i].loptions, MAX_OPTION_LENGTH_2);
-              new_jid[i].last_usage     = 0L;
               new_jid[i].creation_time  = 0L;
               new_jid[i].special_flag   = 0;
               new_jid[i].no_of_soptions = old_jid[i].no_of_soptions;

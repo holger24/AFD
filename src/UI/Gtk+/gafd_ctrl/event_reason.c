@@ -1,6 +1,6 @@
 /*
  *  event_reason.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007, 2008 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -251,7 +251,7 @@ get_event_reason(char *reason_str, char *host_alias)
    (void)sprintf(log_file, "%s%s%s",
                  p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(log_file, F_OK) == 0) &&
-       (read_file_no_cr(log_file, &src, __FILE__, __LINE__) != INCORRECT))
+       (read_file_no_cr(log_file, &src, YES, __FILE__, __LINE__) != INCORRECT))
    {
       char value[MAX_INT_LENGTH + 1];
 

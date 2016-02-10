@@ -1,6 +1,6 @@
 /*
  *  common.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ DESCR__S_M3
  **
  ** SYNOPSIS
  **   int     command(int fd, char *fmt, ...)
+ **   int     ssl_connect(int sock_fd, char *func_name, int strict)
  **   ssize_t ssl_write(SSL *ssl, const char *buf, size_t count)
  **   char    *ssl_error_msg(char *function, SSL *ssl, int *ssl_ret, int reply, char *msg_str)
  **   int     connect_with_timeout(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
@@ -202,7 +203,7 @@ command(int fd, char *fmt, ...)
 #ifdef WITH_SSL
 /*############################ ssl_connect() ############################*/
 int
-ssl_connect(int sock_fd, char *func_name)
+ssl_connect(int sock_fd, char *func_name, int strict)
 {
    int  reply;
    char *p_env,
@@ -213,8 +214,26 @@ ssl_connect(int sock_fd, char *func_name)
       SSL_CTX_free(ssl_ctx);
    }
    SSLeay_add_ssl_algorithms();
-   ssl_ctx=(SSL_CTX *)SSL_CTX_new(SSLv23_client_method());
+   if ((ssl_ctx = (SSL_CTX *)SSL_CTX_new(SSLv23_client_method())) == NULL)
+   {
+      trans_log(ERROR_SIGN, __FILE__, __LINE__, func_name, NULL,
+                _("SSL_CTX_new() unable to create a new SSL context structure."));
+      (void)close(sock_fd);
+      return(INCORRECT);
+   }
+# ifdef NO_SSLv2
+   SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2);
+# else
+#  ifdef NO_SSLv3
+   SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv3);
+#  else
+#   ifdef NO_SSLv23
+   SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+#   else
    SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL);
+#   endif
+#  endif
+# endif
    SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
    if ((p_env = getenv("SSL_CIPHER")) != NULL)
    {
@@ -238,7 +257,9 @@ ssl_connect(int sock_fd, char *func_name)
    {
    }
 # endif
-   SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
+   SSL_CTX_set_verify(ssl_ctx,
+                      (strict == YES) ? SSL_VERIFY_PEER : SSL_VERIFY_NONE,
+                      NULL);
 
    ssl_con = (SSL *)SSL_new(ssl_ctx);
    SSL_set_connect_state(ssl_con);
@@ -310,18 +331,25 @@ ssl_connect(int sock_fd, char *func_name)
    else
    {
       char             *ssl_version;
-      int              length,
-                       ssl_bits;
+      int              length;
       const SSL_CIPHER *ssl_cipher;
 
       ssl_version = SSL_get_cipher_version(ssl_con);
-      ssl_cipher = SSL_get_current_cipher(ssl_con);
-      SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
       length = strlen(msg_str);
-      (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
-                     "  <%s, cipher %s, %d bits>",
-                     ssl_version, SSL_CIPHER_get_name(ssl_cipher),
-                     ssl_bits);
+      if ((ssl_cipher = SSL_get_current_cipher(ssl_con)) != NULL)
+      {
+         int ssl_bits;
+
+         SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
+         (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                        "  <%s, cipher %s, %d bits>",
+                        ssl_version, SSL_CIPHER_get_name(ssl_cipher), ssl_bits);
+      }
+      else
+      {
+         (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                        "  <%s, cipher ?, ? bits>", ssl_version);
+      }
       reply = SUCCESS;
    }
 # ifdef WITH_SSL_READ_AHEAD

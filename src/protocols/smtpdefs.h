@@ -1,6 +1,6 @@
 /*
  *  smtpdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ extern int  encode_base64(unsigned char *, int, unsigned char *),
             smtp_user(char *),
             smtp_rcpt(char *),
 #ifdef WITH_SSL
-            smtp_smarttls(void),
+            smtp_smarttls(int),
 #endif
             smtp_open(void),
             smtp_write(char *, char *, int),

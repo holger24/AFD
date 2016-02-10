@@ -1,6 +1,6 @@
 /*
  *  watch_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2012 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -100,8 +100,8 @@ main(int argc, char *argv[])
       gotcha = 0;
       while ((dirp = readdir(dp)) != NULL)
       {
-         if ((strcmp(dirp->d_name, ".") == 0) ||
-             (strcmp(dirp->d_name, "..") == 0))
+         if ((my_strcmp(dirp->d_name, ".") == 0) ||
+             (my_strcmp(dirp->d_name, "..") == 0))
          {
             continue;
          }
@@ -117,7 +117,7 @@ main(int argc, char *argv[])
          /* Make sure it's NOT a directory. */
          if (S_ISDIR(stat_buf.st_mode) == 0)
          {
-            if (((ret = strcmp(dirp->d_name, filename)) != 0) ||
+            if (((ret = my_strcmp(dirp->d_name, filename)) != 0) ||
                 ((ret == 0) && (filesize != stat_buf.st_size)))
             {
                (void)printf("%-39s |%10d | %s",

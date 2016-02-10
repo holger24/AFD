@@ -3,6 +3,10 @@
                                        log data to a log file. So this
                                        is only useful for the maintainer.
                                        [Default: disabled]
+--enable-confirmation_log            - If you want to log all files names
+                                       which need confirmation you have to
+                                       enable this feature.
+                                       [Default: disabled]
 --disable-input_log                  - If you want to log all files names
                                        on input you have to enable these
                                        features. But note that enabling this
@@ -21,8 +25,8 @@
                                        changed its content.
                                        [Default: enabled]
 --disable-output_log                 - If you want to log all files names on
-                                       output you have to enable these
-                                       features. But note that enabling this
+                                       output you have to enable this
+                                       feature. But note that enabling this
                                        will pose a performance penalty,
                                        especially if the log files are
                                        very large.
@@ -57,6 +61,9 @@
 --disable-fd_exec_support            - Support for using an external program
                                        to transmit the data.
                                        [Default: enabled]
+--enable-atpd_support                - Enable support for the ATP daemon.
+                                       ATP is AFD's own transfer protocol.
+                                       [Default: disabled]
 --disable-dupcheck_support           - When enabled AFD will be able to check
                                        the input and output for duplicates.
                                        [Default: enabled]
@@ -105,13 +112,20 @@
                                        To solve problems on distributions
                                        that still use openmotif provide
                                        this option to use the old name.
+--enable-html_gui                    - Enable HTML GUI.
 --enable-ip_database                 - Enable AFD's own internal IP database.
                                        This is only used when it fails lookup
                                        the IP from DNS.
+--enable-dfax_support                - Enable support for Divas Fax API
+                                       for sending Fax. With the option
+                                       --with-dfax-libraries=DIR one can
+                                       specify the path and libraries.
 --enable-map_support                 - Enable support for DWD's MAP weather
                                        visualisation tool. With the option
                                        --with-map-libraries=DIR one can
                                        specify the path and libraries.
+--enable-de_mail_support             - Enables the special DE-mail support
+                                       that is used in Germany.
 --enable-report_empty_dir_scan       - Enables reporting of empty directory
                                        scans.
                                        [Default: disabled]
@@ -149,6 +163,10 @@
                                        directories scanned by AFD is not
                                        updated correctly. Normally it is not
                                        needed to set this.
+                                       [Default: disabled]
+--enable-multi_fs_support            - Enable AFD scanning multiple local
+                                       filesystems without internal copying
+                                       of data.
                                        [Default: disabled]
 --enable-ftp_reuse_data_port         - Reuse the FTP data port when sending
                                        multiple files. This reduces the
@@ -282,6 +300,8 @@
 --with-max-afdname-length=N          - The maximum length that the AFD
                                        alias name may have in mon_ctrl
                                        dialog. [Default: 12]
+--with-max-real-hostname-length=N    - The maximum length that the real
+                                       hostname or IP may have. [Default: 40]
 --with-xor-key=KEY                   - With compiled in xor key KEY. Where
                                        KEY can be any ASCII string. If this
                                        is not set one needs to set the key

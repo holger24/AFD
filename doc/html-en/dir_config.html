@@ -138,6 +138,111 @@ or current hostname with the following modifiers:
 </tr>
 </table>
 <p>
+If you wish to monitor many directories with the same set of recipients,
+you can use groups of directory names. A group can be specified with the
+sign &amp; and a group name in brackets, either {} or []. In case the square
+brackets [] are used the group name will be looked up in
+$AFD_WORK_DIR/etc/group.list and will be inserted. Curly brackets make
+it look into the file with the name $AFD_WORK_DIR/etc/groups/directory/group_name.
+One can also use this group name to only insert part of the directory name. For
+example a directory entry specified as follows:
+</p>
+<pre>
+      [directory]
+      ftp://donald@daisytown/&[dirs_in_daisytown]
+</pre>
+<p>
+And with a corresponding entry in the $AFD_WORK_DIR/etc/group.list:
+</p>
+<pre>
+      [dirs_in_daisytown]
+      /daisy/archive
+      /micky/data/house
+      ~donald/backup
+</pre>
+<p>
+Will have the same result if the user had specified each directory on
+its own section [dir options], [files], [destination], [recipient] and
+[options]:
+</p>
+<pre>
+      [directory]
+      ftp://donald@daisytown//daisy/archive
+
+         [dir options]
+         do not report unknown files
+
+         [files]
+         *.txt
+
+            [destination]
+
+               [recipient]
+               ftp://goofy@ducktown//data/messages
+               mailto://dagobert@moneyhouse
+
+               [options]
+               exec compress %s
+
+      [directory]
+      ftp://donald@daisytown//micky/data/house
+
+         [dir options]
+         do not report unknown files
+
+         [files]
+         *.txt
+
+            [destination]
+
+               [recipient]
+               ftp://goofy@ducktown//data/messages
+               mailto://dagobert@moneyhouse
+
+               [options]
+               exec compress %s
+
+      [directory]
+      ftp://donald@daisytown/~donald/backup
+
+         [dir options]
+         do not report unknown files
+
+         [files]
+         *.txt
+
+            [destination]
+
+               [recipient]
+               ftp://goofy@ducktown//data/messages
+               mailto://dagobert@moneyhouse
+
+               [options]
+               exec compress %s
+</pre>
+<p>
+You will agree that the following via dir groups is much shorter:
+</p>
+<pre>
+      [directory]
+      ftp://donald@daisytown/&[dirs_in_daisytown]
+
+         [dir options]
+         do not report unknown files
+
+         [files]
+         *.txt
+
+            [destination]
+
+               [recipient]
+               ftp://goofy@ducktown//data/messages
+               mailto://dagobert@moneyhouse
+
+               [options]
+               exec compress %s
+</pre>
+<p>
 NOTE: The option [directory] must always start at the beginning of a line.
 There may not be any tabs or spaces in front.
 </p>
@@ -226,7 +331,7 @@ defaults is shown in the table below:
    <td align=center>&nbsp;</td>
 </tr>
 <tr>
-   <td width="30%">report unknown files</td>
+   <td width="30%"><a name="report_unknown_files">report unknown files</a></td>
    <td>Any files found in this directory that are not being
        distributed and are older then the number of hours specified
        in the &lt;old file time&gt; option will be reported in the
@@ -236,14 +341,14 @@ defaults is shown in the table below:
    <td align=center>X</td>
 </tr>
 <tr>
-   <td width="30%">do not report unknown files</td>
+   <td width="30%"><a name="do_not_report_unknown_files">do not report unknown files</a></td>
    <td>The opposite of the above option.</td>
    <td align=center>X</td>
    <td align=center>&nbsp;</td>
    <td align=center>&nbsp;</td>
 </tr>
 <tr>
-   <td width="30%">old file time &lt;value in hours&gt;</td>
+   <td width="30%"><a name="old_file_time">old file time &lt;value in hours&gt;</a></td>
    <td>The age of a file in hours before a file is being reported
        in the system log or being deleted.</td>
    <td align=center>X</td>
@@ -251,7 +356,7 @@ defaults is shown in the table below:
    <td align=center>24</td>
 </tr>
 <tr>
-   <td width="30%">end character &lt;decimal number&gt;</td>
+   <td width="30%"><a name="end_character">end character &lt;decimal number&gt;</a></td>
    <td>Sometimes some application may not be able to send files with
        a leading dot and then rename these files after they have send all
        data. With this option AFD will wait until the character specified
@@ -262,7 +367,7 @@ defaults is shown in the table below:
    <td align=center>&nbsp;</td>
 </tr>
 <tr>
-   <td width="30%">create source dir</td>
+   <td width="30%"><a name="create_source_dir">create source dir</a></td>
    <td>When set and the directory does not exist, it will be created. This
        will override option <a href="afd_config.html#create_source_dir">
        CREATE_SOURCE_DIR</a> in AFD_CONFIG.</td>
@@ -271,7 +376,7 @@ defaults is shown in the table below:
    <td align=center>&nbsp;</td>
 </tr>
 <tr>
-   <td width="30%">do not create source dir</td>
+   <td width="30%"><a name="do_not_create_source_dir">do not create source dir</a></td>
    <td>When set the source directory will not be created if it does not exist.
        This will override option <a href="afd_config.html#create_source_dir">
        CREATE_SOURCE_DIR</a> in AFD_CONFIG.</td>
@@ -280,7 +385,7 @@ defaults is shown in the table below:
    <td align=center>&nbsp;</td>
 </tr>
 <tr>
-   <td width="30%">important dir</td>
+   <td width="30%"><a name="important_dir">important dir</a></td>
    <td>This marks the directory as important. This is useful when you
        have lots of directories that are to be monitored by the AMG
        and/or you have only a slow disk. The process dir_check will now
@@ -312,7 +417,7 @@ defaults is shown in the table below:
    <td align=center>&nbsp;</td>
 </tr>
 <tr>
-   <td width="30%">do not get dir list</td>
+   <td width="30%"><a name="do_not_get_dir_list">do not get dir list</a></td>
    <td>Setting this option will disable the directory scanning for
        this directory. This can be used when directory listing are
        not possible or disabled because of security reasons. Currently
@@ -324,7 +429,7 @@ defaults is shown in the table below:
    <td align=center>&nbsp;</td>
 </tr>
 <tr>
-   <td width="30%">do not remove</td>
+   <td width="30%"><a name="do_not_remove">do not remove</a></td>
    <td>By default when AMG will remove all files that it finds in
        the directory being scanned. With this option set it will NOT
        remove these files.</td>
@@ -353,7 +458,7 @@ defaults is shown in the table below:
    <td align=center>&nbsp;</td>
 </tr>
 <tr>
-   <td width="30%">priority &lt;value&gt;</td>
+   <td width="30%"><a name="dir_priority">priority &lt;value&gt;</td>
    <td>With this you can give the directory a priority. This option
        is only useful for remote directories, ie. from where the
        files have to be retrieved. 0 is highest priority and 9 is
@@ -388,7 +493,7 @@ defaults is shown in the table below:
    <td align=center>not set</td>
 </tr>
 <tr>
-   <td width="30%">max process &lt;value&gt;</td>
+   <td width="30%"><a name="max_process">max process &lt;value&gt;</a></td>
    <td>Here you may limit the number of process that the AMG may
        fork to handle files for this directory. AMG will only fork
        a process when using the exec option, or some other option
@@ -398,7 +503,7 @@ defaults is shown in the table below:
    <td align=center>10</td>
 </tr>
 <tr>
-   <td width="30%">max errors &lt;value&gt;</td>
+   <td width="30%"><a name="max_errors">max errors &lt;value&gt;</a></td>
    <td>The number of errors that may occur before this source/directory
        will become red in dir_ctrl dialog or if an action is configured
        this will activate this action.</td>
@@ -407,7 +512,7 @@ defaults is shown in the table below:
    <td align=center>10</td>
 </tr>
 <tr>
-   <td width="30%">do not parallelize</td>
+   <td width="30%"><a name="do_not_parallelize">do not parallelize</a></td>
    <td>Normally when AFD fetches files from a remote site it tries to
        parallelize this. However, if you have many directories on a
        remote host that are all fetched via the same alias, it can take
@@ -419,7 +524,7 @@ defaults is shown in the table below:
    <td align=center>not set</td>
 </tr>
 <tr>
-   <td width="30%">ignore size &lt;[=|&gt;|&lt;] value&gt;</td>
+   <td width="30%"><a name="ignore_size">ignore size &lt;[=|&gt;|&lt;] value&gt;</a></td>
    <td>If the files in the directory have the given size they will
        be ignored. A greater or less then sign may also be used to
        ignore files which have a size greater or less then the
@@ -429,7 +534,7 @@ defaults is shown in the table below:
    <td align=center>&nbsp;</td>
 </tr>
 <tr>
-   <td width="30%">ignore file time &lt;[=|&gt;|&lt;] value&gt;</td>
+   <td width="30%"><a name="ignore_file_time">ignore file time &lt;[=|&gt;|&lt;] value&gt;</a></td>
    <td>If the files in the directory have the given difference of the
        current time and the files modification time, then it will be
        ignored. The unit is in seconds. A greater or less then sign
@@ -459,7 +564,7 @@ defaults is shown in the table below:
    <td align=center>100</td>
 </tr>
 <tr>
-   <td width="30%">max size &lt;value&gt;</td>
+   <td width="30%"><a name="max_size">max size &lt;value&gt;</a></td>
    <td>The maximum size in Kilobytes that are copied before they are
        send to the FD.</td>
    <td align=center>X</td>
@@ -467,7 +572,7 @@ defaults is shown in the table below:
    <td align=center>100 MB</td>
 </tr>
 <tr>
-   <td width="30%">accept dot files</td>
+   <td width="30%"><a name="accept_dot_files">accept dot files</a></td>
    <td>Setting this option will enable AFD to retrieve files starting
        with a dot from a remote host. When downloaded the dot will
        be automatically removed. Use the trans_rename option if you
@@ -610,7 +715,7 @@ defaults is shown in the table below:
    <td align=center>&nbsp;</td>
 </tr>
 <tr>
-   <td width="30%">keep connected &lt;time in seconds&gt;</td>
+   <td width="30%"><a name="keep_connected">keep connected &lt;time in seconds&gt;</a></td>
    <td>The number of seconds that the connection should be kept open
        after retrieving all files. Note this can also be set via
        <a href="edit_hc.html#keep_connected">Keep connected</a>
@@ -1544,8 +1649,9 @@ section. Valid options can be taken from the following table:
       </tr>
       </table>
       The &lt;file name&gt; may contain a %n to insert a unique
-      number four characters long and/or with the help of %tx insert
-      the actual time, where character x may be one of the following:
+      number four characters long (hexa decimal) and/or with the help
+      of %tx insert the actual time, where character x may be one of
+      the following:
       <pre>
          a - short day "Tue",           A - long day "Tuesday",
          b - short month "Jan",         B - long month "January",
@@ -1565,6 +1671,20 @@ section. Valid options can be taken from the following table:
       modifier is seconds this can be changed to minute (M), hour (H)
       or day (d). Once set the modifier is used for all subsequent
       %t until it changed by the next modifier.
+      </p>
+      <p>
+      A counter with a fixed length can also be specified. If you
+      want a fixed 5 digital counter, just specify it as:
+      <pre>
+         %5d.xyz
+      </pre>
+      The resulting name will then be:
+      <pre>
+         00001.xyz
+      </pre>
+      A hexadecimal number can be produced by setting %5x. If the length
+      is not set, ie. one just uses %d or %x, the default field length
+      will be 8.
       </p>
       If no file name is specified the default will be no_file_name.
    </td>
@@ -1874,13 +1994,26 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
-   <td><a name="pexec">pexec [-l|-L|-t] &lt;command&gt;</a></td>
+   <td><a name="pexec">pexec [-l|-L|-r|-t] &lt;command&gt;</a></td>
    <td>Executes a command specified in &lt;command&gt; for each file after
        it was distributed. The file name can be supplied with %s. There may
        be up to 10 places in the command where you can insert the file name.
        The files stored in the archive will NOT be effected by this option.
-       The optional options have the same meaning as those above in the
-       exec option.</td>
+       The optional parameters have the same meaning as those above in the
+       exec option. The following additional parameters only used for
+       pexec are as follows:<br>
+       <pre>
+       </pre>
+          -r                  Execute the command in the target directory.
+                              When this parameter is not set the command
+                              is executed in an internal AFD directory.
+                              Note that this only works with the scheme
+                              file, ie. when the directory is local. Also
+                              note that this command is executed after the
+                              file has been renamed, so if another process
+                              is using that file, both AFD and that process
+                              work on that file at the same time.
+       </td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
    <td align=center>X</td>
@@ -2111,7 +2244,7 @@ section. Valid options can be taken from the following table:
        main body of the mail. If the option is used without the optional
        mail header file, it will take the file MAIL-host_alias in the
        $AFD_WORK_DIR/etc directory as the header file. If the optional mail
-       header fail does not start with a / it take this as a rename rule
+       header file does not start with a / it take this as a rename rule
        identifier. For a detailed description of the renaming procedure see
        <a href="rename_rules.html">rename rule</a>. Note that in this case
        if the resulting file name does not start with a / it will search
@@ -2619,9 +2752,9 @@ section. Valid options can be taken from the following table:
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 1997 - 2014 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2015 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 02.12.2014
+   Last updated: 27.11.2015
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

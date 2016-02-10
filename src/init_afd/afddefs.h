@@ -204,9 +204,9 @@ typedef unsigned long       u_long_64;
  */
 #ifndef MAX_REAL_HOSTNAME_LENGTH
 # if defined NEW_FRA && defined NEW_FSA && defined NEW_PWB
-#  define MAX_REAL_HOSTNAME_LENGTH     65   
+#  define MAX_REAL_HOSTNAME_LENGTH     65
 # else
-#  define MAX_REAL_HOSTNAME_LENGTH     40   
+#  define MAX_REAL_HOSTNAME_LENGTH     40
 # endif
 #endif
 
@@ -251,6 +251,10 @@ typedef unsigned long       u_long_64;
 #ifdef _WITH_MAP_SUPPORT
 # define SEND_FILE_MAP             "sf_map"
 #endif
+#ifdef _WITH_DFAX_SUPPORT
+# define SEND_FILE_DFAX            "sf_dfax"
+# define SEND_FILE_DFAX_TRACE      "sf_dfax_trace"
+#endif
 #define SEND_FILE_SFTP             "sf_sftp"
 #define SEND_FILE_SFTP_LENGTH      (sizeof(SEND_FILE_SFTP) - 1)
 #define SEND_FILE_SFTP_TRACE       "sf_sftp_trace"
@@ -271,11 +275,15 @@ typedef unsigned long       u_long_64;
 #define SHOW_QUEUE                 "show_queue"
 #define SHOW_TRANS                 "show_trans"
 #define XSEND_FILE                 "xsend_file"
+#define XSEND_FILE_LENGTH          (sizeof(XSEND_FILE) - 1)
 #ifdef _INPUT_LOG
 # define INPUT_LOG_PROCESS         "input_log"
 #endif
 #ifdef _OUTPUT_LOG
 # define OUTPUT_LOG_PROCESS        "output_log"
+#endif
+#ifdef _CONFIRMATION_LOG
+# define CONFIRMATION_LOG_PROCESS  "confirmation_log"
 #endif
 #ifdef _DELETE_LOG
 # define DELETE_LOG_PROCESS        "delete_log"
@@ -286,7 +294,7 @@ typedef unsigned long       u_long_64;
 #ifdef _DISTRIBUTION_LOG
 # define DISTRIBUTION_LOG_PROCESS  "distribution_log"
 #endif
-#if defined (_INPUT_LOG) || defined (_OUTPUT_LOG) || defined (_DELETE_LOG) || defined (_PRODUCTION_LOG) || defined (DISTRIBUTION_OFFSET)
+#if defined (_INPUT_LOG) || defined (_OUTPUT_LOG) || defined (_CONFIRMATION_LOG) || defined (_DELETE_LOG) || defined (_PRODUCTION_LOG) || defined (DISTRIBUTION_OFFSET)
 # define ALDAD                     "aldad"
 # define ALDA_CMD                  "alda"
 #endif
@@ -302,9 +310,14 @@ typedef unsigned long       u_long_64;
 #define AFD_CTRL                   "afd_ctrl"
 #define AFD_CTRL_LENGTH            (sizeof(AFD_CTRL) - 1)
 #define AFDD                       "afdd"
-#ifdef _WITH_SERVER_SUPPORT
-# define AFDS                      "afds"
+#ifdef _WITH_ATPD_SUPPORT
+# define ATPD                      "atpd"
+#endif
+#ifdef _WITH_WMOD_SUPPORT
 # define WMOD                      "wmod"
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define DEMCD                     "demcd"
 #endif
 #define AFD_MON                    "afd_mon"
 #define MON_PROC                   "mon"
@@ -322,7 +335,9 @@ typedef unsigned long       u_long_64;
 #define HANDLE_EVENT               "handle_event"
 #define MAX_PROCNAME_LENGTH        17
 #define AFTP                       "aftp"
+#define ASFTP                      "asftp"
 #define ASMTP                      "asmtp"
+#define AWMO                       "awmo"
 #define HEX_PRINT                  "afd_hex_print"
 #ifdef WITH_AUTO_CONFIG
 # define AFD_AUTO_CONFIG           "afd_auto_config"
@@ -345,6 +360,12 @@ typedef unsigned long       u_long_64;
 # endif
 # define OT_UNKNOWN                8
 # define OT_NORMAL_RECEIVED        9
+# if defined(_WITH_DE_MAIL_SUPPORT) && !defined(_CONFIRMATION_LOG)
+#  define OT_CONF_OF_DISPATCH      10
+#  define OT_CONF_OF_RECEIPT       11
+#  define OT_CONF_OF_RETRIEVE      12
+#  define OT_CONF_TIMEUP           13
+# endif
 #endif
 
 #ifdef _DELETE_LOG
@@ -377,7 +398,8 @@ typedef unsigned long       u_long_64;
 # define MIRROR_REMOVE              21
 # define MKDIR_QUEUE_ERROR          22
 # define INTERNAL_LINK_FAILED       23
-# define MAX_DELETE_REASONS         23
+# define DEL_UNREADABLE_FILE        24
+# define MAX_DELETE_REASONS         24
 # define UKN_DEL_REASON_STR         "Unknown delete reason"
 # define UKN_DEL_REASON_STR_LENGTH  (sizeof(UKN_DEL_REASON_STR) - 1)
 /* NOTE: Only 4096 (0 - fff) may be defined here. */
@@ -406,7 +428,42 @@ typedef unsigned long       u_long_64;
 #define AW_LOCK_ID                 4    /* Archive watch                */
 #define AS_LOCK_ID                 5    /* AFD statistics               */
 #define AFDD_LOCK_ID               6    /* AFD TCP Daemon               */
-#define NO_OF_LOCK_PROC            7
+#ifdef _WITH_ATPD_SUPPORT
+# define ATPD_LOCK_ID              7    /* AFD Transfer Protocol Daemon */
+# ifdef _WITH_WMOD_SUPPORT
+#  define WMOD_LOCK_ID             8    /* WMO protocol Daemon          */
+#  ifdef _WITH_DE_MAIL_SUPPORT
+#   define DEMCD_LOCK_ID           9    /* De Mail Confirmation Daemon  */
+#   define NO_OF_LOCK_PROC         10
+#  else
+#   define NO_OF_LOCK_PROC         9
+#  endif
+# else
+#  ifdef _WITH_DE_MAIL_SUPPORT
+#   define DEMCD_LOCK_ID           8    /* De Mail Confirmation Daemon  */
+#   define NO_OF_LOCK_PROC         9
+#  else
+#   define NO_OF_LOCK_PROC         8
+#  endif
+# endif
+#else
+# ifdef _WITH_WMOD_SUPPORT
+#  define WMOD_LOCK_ID             7    /* WMO protocol Daemon          */
+#  ifdef _WITH_DE_MAIL_SUPPORT
+#   define DEMCD_LOCK_ID           8    /* De Mail Confirmation Daemon  */
+#   define NO_OF_LOCK_PROC         9
+#  else
+#   define NO_OF_LOCK_PROC         8
+#  endif
+# else
+#  ifdef _WITH_DE_MAIL_SUPPORT
+#   define DEMCD_LOCK_ID           7    /* De Mail Confirmation Daemon  */
+#   define NO_OF_LOCK_PROC         8
+#  else
+#   define NO_OF_LOCK_PROC         7
+#  endif
+# endif
+#endif
 
 /* Commands that can be send to DB_UPDATE_FIFO of the AMG. */
 #define HOST_CONFIG_UPDATE         4
@@ -466,56 +523,74 @@ typedef unsigned long       u_long_64;
 #define STAT_NO                    8
 #define DC_NO                      9
 #define AFDD_NO                    10
-#ifdef _WITH_SERVER_SUPPORT
-# define AFDS_OFFSET               1
-# define AFDS_NO                   (AFDD_NO + AFDS_OFFSET)
+#ifdef _WITH_ATPD_SUPPORT
+# define ATPD_OFFSET               1
+# define ATPD_NO                   (AFDD_NO + ATPD_OFFSET)
 #else
-# define AFDS_OFFSET               0
+# define ATPD_OFFSET               0
+#endif
+#ifdef _WITH_WMOD_SUPPORT
+# define WMOD_OFFSET               1
+# define WMOD_NO                   (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET)
+#else
+# define WMOD_OFFSET               0
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define DEMCD_OFFSET              1
+# define DEMCD_NO                  (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET)
+#else
+# define DEMCD_OFFSET              0
 #endif
 #ifdef HAVE_MMAP
 # define MAPPER_OFFSET             0
 #else
 # define MAPPER_OFFSET             1
-# define MAPPER_NO                 (AFDD_NO + AFDS_OFFSET + MAPPER_OFFSET)
+# define MAPPER_NO                 (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET)
 #endif
 #ifdef _INPUT_LOG
 # define INPUT_OFFSET              1
-# define INPUT_LOG_NO              (AFDD_NO + AFDS_OFFSET + MAPPER_OFFSET + INPUT_OFFSET)
+# define INPUT_LOG_NO              (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET)
 #else
 # define INPUT_OFFSET              0
 #endif
 #ifdef _OUTPUT_LOG
 # define OUTPUT_OFFSET             1
-# define OUTPUT_LOG_NO             (AFDD_NO + AFDS_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET)
+# define OUTPUT_LOG_NO             (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET)
 #else
 # define OUTPUT_OFFSET             0
 #endif
+#ifdef _CONFIRMATION_LOG
+# define CONFIRMATION_OFFSET       1
+# define CONFIRMATION_LOG_NO       (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET)
+#else
+# define CONFIRMATION_OFFSET       0
+#endif
 #ifdef _DELETE_LOG
 # define DELETE_OFFSET             1
-# define DELETE_LOG_NO             (AFDD_NO + AFDS_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + DELETE_OFFSET)
+# define DELETE_LOG_NO             (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET)
 #else
 # define DELETE_OFFSET             0
 #endif
 #ifdef _PRODUCTION_LOG
 # define PRODUCTION_OFFSET         1
-# define PRODUCTION_LOG_NO         (AFDD_NO + AFDS_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET)
+# define PRODUCTION_LOG_NO         (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET)
 #else
 # define PRODUCTION_OFFSET         0
 #endif
 #ifdef _DISTRIBUTION_LOG
 # define DISTRIBUTION_OFFSET       1
-# define DISTRIBUTION_LOG_NO       (AFDD_NO + AFDS_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET)
+# define DISTRIBUTION_LOG_NO       (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET)
 #else
 # define DISTRIBUTION_OFFSET       0
 #endif
-#define MAINTAINER_LOG_NO          (AFDD_NO + AFDS_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + 1)
-#if defined (_INPUT_LOG) || defined (_OUTPUT_LOG) || defined (_DELETE_LOG) || defined (_PRODUCTION_LOG) || defined (_DISTRIBUTION_LOG)
+#define MAINTAINER_LOG_NO          (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + 1)
+#if defined (_INPUT_LOG) || defined (_OUTPUT_LOG) || defined (_CONFIRMATION_LOG) || defined (_DELETE_LOG) || defined (_PRODUCTION_LOG) || defined (_DISTRIBUTION_LOG)
 # define ALDAD_OFFSET              1
-# define ALDAD_NO                  (AFDD_NO + AFDS_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + 1 + ALDAD_OFFSET)
+# define ALDAD_NO                  (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + 1 + ALDAD_OFFSET)
 #else
 # define ALDAD_OFFSET              0
 #endif
-#define NO_OF_PROCESS              (AFDD_NO + AFDS_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + 1 + ALDAD_OFFSET + 1)
+#define NO_OF_PROCESS              (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + 1 + ALDAD_OFFSET + 1)
 #define SHOW_OLOG_NO               30
 
 #define NA                         -1
@@ -661,6 +736,12 @@ typedef unsigned long       u_long_64;
 #define STATIC_TOGGLE_OPEN         '['
 #define STATIC_TOGGLE_CLOSE        ']'
 
+/* Some editors cannot handle curly and spare brackets in code. */
+#define CURLY_BRACKET_OPEN         '{'
+#define CURLY_BRACKET_CLOSE        '}'
+#define SQUARE_BRACKET_OPEN        '['
+#define SQUARE_BRACKET_CLOSE       ']'
+
 /* Definitions of the protocol's and extensions. */
 #define UNKNOWN_FLAG               0
 #define FTP                        0
@@ -694,9 +775,14 @@ typedef unsigned long       u_long_64;
 #define SFTP_FLAG                  128
 #define EXEC                       11
 #define EXEC_FLAG                  256
-#define GET_FTP_FLAG               32768
-#define GET_HTTP_FLAG              65536
-#define GET_SFTP_FLAG              131072
+#ifdef _WITH_DFAX_SUPPORT
+# define DFAX                      12 /* NOTE: when changed, change log/aldadefs.h! */
+# define DFAX_FLAG                 512
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define DE_MAIL                   13 /* NOTE: when changed, change log/aldadefs.h! */
+# define DE_MAIL_FLAG              1024
+#endif
 #define DISABLE_IPV6_FLAG          268435456
 #define SEND_FLAG                  1073741824
 #define RETRIEVE_FLAG              2147483648U
@@ -801,31 +887,39 @@ typedef unsigned long       u_long_64;
 #define EXEC_SHEME                 "exec"
 #define EXEC_SHEME_LENGTH          (sizeof(EXEC_SHEME) - 1)
 #ifdef _WITH_SCP_SUPPORT
-# define SCP_SHEME                 "scp" /* NOTE: when changed, change log/aldadefs.h! */
+# define SCP_SHEME                 "scp" /* NOTE: when changed, change log/alda/aldadefs.h! */
 # define SCP_SHEME_LENGTH          (sizeof(SCP_SHEME) - 1)
 #endif
 #ifdef _WITH_WMO_SUPPORT
-# define WMO_SHEME                 "wmo" /* NOTE: when changed, change log/aldadefs.h! */
+# define WMO_SHEME                 "wmo" /* NOTE: when changed, change log/alda/aldadefs.h! */
 # define WMO_SHEME_LENGTH          (sizeof(WMO_SHEME) - 1)
 #endif
 #ifdef _WITH_MAP_SUPPORT
-# define MAP_SHEME                 "map" /* NOTE: when changed, change log/aldadefs.h! */
+# define MAP_SHEME                 "map" /* NOTE: when changed, change log/alda/aldadefs.h! */
 # define MAP_SHEME_LENGTH          (sizeof(MAP_SHEME) - 1)
 #endif
 #define SMTP_SHEME                 "mailto"
 #define SMTP_SHEME_LENGTH          (sizeof(SMTP_SHEME) - 1)
 #ifdef WITH_SSL
-# define SMTPS_SHEME               "mailtos" /* NOTE: when changed, change log/aldadefs.h! */
+# define SMTPS_SHEME               "mailtos" /* NOTE: when changed, change log/alda/aldadefs.h! */
 # define SMTPS_SHEME_LENGTH        (sizeof(SMTPS_SHEME) - 1)
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define DEMAIL_SHEME              "demail"
+# define DEMAIL_SHEME_LENGTH       (sizeof(DEMAIL_SHEME) - 1)
 #endif
 #define HTTP_SHEME                 "http"
 #define HTTP_SHEME_LENGTH          (sizeof(HTTP_SHEME) - 1)
 #ifdef WITH_SSL
-# define HTTPS_SHEME               "https" /* NOTE: when changed, change log/aldadefs.h! */
+# define HTTPS_SHEME               "https" /* NOTE: when changed, change log/alda/aldadefs.h! */
 # define HTTPS_SHEME_LENGTH        (sizeof(HTTPS_SHEME) - 1)
 #endif
 #define SFTP_SHEME                 "sftp"
 #define SFTP_SHEME_LENGTH          (sizeof(SFTP_SHEME) - 1)
+#ifdef _WITH_DFAX_SUPPORT
+# define DFAX_SHEME                "dfax" /* NOTE: when changed, change log/alda/aldadefs.h! */
+# define DFAX_SHEME_LENGTH         (sizeof(DFAX_SHEME) - 1)
+#endif
 
 
 /* Definitions for [dir options]. */
@@ -958,6 +1052,12 @@ typedef unsigned long       u_long_64;
 #define FROM_ID_LENGTH                   (sizeof(FROM_ID) - 1)
 #define CHARSET_ID                       "charset"
 #define CHARSET_ID_LENGTH                (sizeof(CHARSET_ID) - 1)
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define DE_MAIL_SENDER_ID               "demail sender"
+# define DE_MAIL_SENDER_ID_LENGTH        (sizeof(DE_MAIL_SENDER_ID) - 1)
+# define CONF_OF_RETRIEVE_ID             "confirmation of retrieve"
+# define CONF_OF_RETRIEVE_ID_LENGTH      (sizeof(CONF_OF_RETRIEVE_ID) - 1)
+#endif
 #ifdef WITH_EUMETSAT_HEADERS
 # define EUMETSAT_HEADER_ID              "eumetsat"
 # define EUMETSAT_HEADER_ID_LENGTH       (sizeof(EUMETSAT_HEADER_ID) - 1)
@@ -1038,10 +1138,16 @@ typedef unsigned long       u_long_64;
 #define DEFAULT_HEARTBEAT_TIMEOUT        25L
 #define DEFAULT_TRANSFER_MODE            'I'
 #define DIR_ALIAS_OFFSET                 16
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define DEFAULT_DE_MAIL_CONF_TIMEUP     172800L /* 2 days */
+#endif
 
 /* Definitions to be read from the AFD_CONFIG file. */
 #define AFD_TCP_PORT_DEF                 "AFD_TCP_PORT"
 #define AFD_TCP_LOGS_DEF                 "AFD_TCP_LOGS"
+#ifdef _WITH_ATPD_SUPPORT
+# define ATPD_TCP_PORT_DEF               "ATPD_TCP_PORT"
+#endif
 #define DEFAULT_PRINTER_CMD_DEF          "DEFAULT_PRINTER_CMD"
 #define DEFAULT_PRINTER_NAME_DEF         "DEFAULT_PRINTER_NAME"
 #define DEFAULT_AGE_LIMIT_DEF            "DEFAULT_AGE_LIMIT"
@@ -1058,6 +1164,9 @@ typedef unsigned long       u_long_64;
 # define DIR_CHECK_TIMEOUT_DEF           "DIR_CHECK_TIMEOUT"
 #endif
 #define TRUSTED_REMOTE_IP_DEF            "TRUSTED_REMOTE_IP"
+#ifdef _WITH_ATPD_SUPPORT
+# define ATPD_TRUSTED_REMOTE_IP_DEF      "ATPD_TRUSTED_REMOTE_IP"
+#endif
 #define ALDA_DAEMON_DEF                  "ALDA_DAEMON"
 #define PING_CMD_DEF                     "PING_CMD"
 #define TRACEROUTE_CMD_DEF               "TRACEROUTE_CMD"
@@ -1075,6 +1184,10 @@ typedef unsigned long       u_long_64;
 #define DEFAULT_SMTP_SERVER_DEF          "DEFAULT_SMTP_SERVER"
 #define DEFAULT_SMTP_FROM_DEF            "DEFAULT_SMTP_FROM"
 #define DEFAULT_SMTP_REPLY_TO_DEF        "DEFAULT_SMTP_REPLY_TO"
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define DEFAULT_DE_MAIL_SENDER_DEF      "DEFAULT_DE_MAIL_SENDER"
+# define DEFAULT_DE_MAIL_CONF_TIMEUP_DEF "DEFAULT_DE_MAIL_CONF_TIMEUP"
+#endif
 #define REMOVE_UNUSED_HOSTS_DEF          "REMOVE_UNUSED_HOSTS"
 #define DELETE_STALE_ERROR_JOBS_DEF      "DELETE_STALE_ERROR_JOBS"
 #define DEFAULT_DIR_WARN_TIME_DEF        "DEFAULT_DIR_WARN_TIME"
@@ -1087,6 +1200,15 @@ typedef unsigned long       u_long_64;
 #define RENAME_RULE_NAME_DEF             "RENAME_RULE_NAME"
 #ifdef HAVE_SETPRIORITY
 # define AFDD_PRIORITY_DEF               "AFDD_PRIORITY"
+# ifdef _WITH_ATPD_SUPPORT
+#  define ATPD_PRIORITY_DEF              "ATPD_PRIORITY"
+# endif
+# ifdef _WITH_WMOD_SUPPORT
+#  define WMOD_PRIORITY_DEF              "WMOD_PRIORITY"
+# endif
+# ifdef _WITH_DE_MAIL_SUPPORT
+#  define DEMCD_PRIORITY_DEF             "DEMCD_PRIORITY"
+# endif
 # define AFD_STAT_PRIORITY_DEF           "AFD_STAT_PRIORITY"
 # define AMG_PRIORITY_DEF                "AMG_PRIORITY"
 # define ARCHIVE_WATCH_PRIORITY_DEF      "ARCHIVE_WATCH_PRIORITY"
@@ -1103,10 +1225,16 @@ typedef unsigned long       u_long_64;
 #endif
 #define BUL_RULE_FILE_NAME_DEF           "BUL_RULE_FILE_NAME"
 #define REP_RULE_FILE_NAME_DEF           "REP_RULE_FILE_NAME"
+#define GF_FORCE_DISCONNECT_DEF          "GF_FORCE_DISCONNECT"
+#define SF_FORCE_DISCONNECT_DEF          "SF_FORCE_DISCONNECT"
 #ifdef MULTI_FS_SUPPORT
 # define EXTRA_WORK_DIR_DEF              "EXTRA_WORK_DIR"
 #endif
 #define ADDITIONAL_LOCKED_FILES_DEF      "ADDITIONAL_LOCKED_FILES"
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define DE_MAIL_RESPONSE_FILE_DEF       "DE_MAIL_RESPONSE_FILE"
+#endif
+
 
 /* Heading identifiers for the DIR_CONFIG file and messages. */
 #define DIR_IDENTIFIER                   "[directory]"
@@ -1156,15 +1284,21 @@ typedef unsigned long       u_long_64;
 #define AFDD_COMPRESSION_1               8192
 #define AFDD_EVENT_LOG                   16384
 #define AFDD_DISTRIBUTION_LOG            32768
+#define AFDD_CONFIRMATION_LOG            65536
 /* NOTE: If new flags are added check afd_mon/mondefs.h first! */
 
 /* Group identifier for mails. */
 #define MAIL_GROUP_IDENTIFIER        '$'
 
+/* Group identifier for either file or directory groups. */
+#define GROUP_SIGN                   '&'
+
 /* Length of log date in log files. */
 #define LOG_DATE_LENGTH              10
 
 /* Definitions of maximum values. */
+#define MAX_GROUPNAME_LENGTH         65     /* The maximum length a group   */
+                                            /* name (GROUP_SIGN) may have.  */
 #define MAX_SHUTDOWN_TIME           600     /* When the AMG gets the order  */
                                             /* shutdown, this the time it   */
                                             /* waits for its children to    */
@@ -1181,10 +1315,17 @@ typedef unsigned long       u_long_64;
                                             /* length:                      */
                                             /* <creation_time>_<unique_no>_<split_job_counter>_ */
                                             /* 16 + 1 + 8 + 1 + 8 + 1        */
-#define MAX_MSG_NAME_LENGTH          (MAX_ADD_FNL + 19) /* Maximum length   */
+#ifdef MULTI_FS_SUPPORT
+# define MAX_MSG_NAME_LENGTH         (MAX_ADD_FNL + 28) /* Maximum length   */
+                                            /* of message name.             */
+                                            /* <dev_id>/<job_id>/<counter>/<creation_time>_<unique_no>_<split_job_counter>_ */
+                                            /* 8 + 1 + 8 + 1 + 8 + 1 + 16 + 1 + 8 + 1 + 8 + 1 + 1 */
+#else
+# define MAX_MSG_NAME_LENGTH         (MAX_ADD_FNL + 19) /* Maximum length   */
                                             /* of message name.             */
                                             /* <job_id>/<counter>/<creation_time>_<unique_no>_<split_job_counter>_ */
                                             /* 8 + 1 + 8 + 1 + 16 + 1 + 8 + 1 + 8 + 1 + 1 */
+#endif
 #define MAX_MSG_NAME_LENGTH_STR      "MAX_MSG_NAME_LENGTH"
 #define MAX_INT_LENGTH               11     /* When storing integer values  */
                                             /* as string this is the no.    */
@@ -1304,7 +1445,11 @@ typedef unsigned long       u_long_64;
 #endif
 
 /* The length of message we send via fifo from AMG to FD. */
-#define MAX_BIN_MSG_LENGTH (sizeof(time_t) + sizeof(unsigned int) + sizeof(unsigned int) + sizeof(unsigned int) + sizeof(off_t) + sizeof(unsigned int) + sizeof(unsigned short) + sizeof(char) + sizeof(char))
+#ifdef MULTI_FS_SUPPORT
+# define MAX_BIN_MSG_LENGTH (sizeof(time_t) + sizeof(dev_t) + sizeof(unsigned int) + sizeof(unsigned int) + sizeof(unsigned int) + sizeof(off_t) + sizeof(unsigned int) + sizeof(unsigned short) + sizeof(char) + sizeof(char))
+#else
+# define MAX_BIN_MSG_LENGTH (sizeof(time_t) + sizeof(unsigned int) + sizeof(unsigned int) + sizeof(unsigned int) + sizeof(off_t) + sizeof(unsigned int) + sizeof(unsigned short) + sizeof(char) + sizeof(char))
+#endif
 
 /* Miscellaneous definitions. */
 #define LOG_SIGN_POSITION          13     /* Position in log file where   */
@@ -1362,31 +1507,37 @@ typedef unsigned long       u_long_64;
 
 /* Position of each colour in global array. */
 /*############################ LightBlue1 ###############################*/
+#define HTML_COLOR_0               "#BFEFFF"
 #define DEFAULT_BG                 0  /* Background                      */
 #define HTTP_ACTIVE                0
 #define NORMAL_MODE                0
 /*############################## White ##################################*/
+#define HTML_COLOR_1               "#FFFFFF"
 #define WHITE                      1
 #define DISCONNECT                 1  /* Successful completion of        */
                                       /* operation and disconnected.     */
 #define DISABLED                   1
 #define NO_INFORMATION             1
 /*########################### lightskyblue2 #############################*/
+#define HTML_COLOR_2               "#A4D3EE"
 #define CHAR_BACKGROUND            2  /* Background color for characters.*/
 #define DISCONNECTED               2  /* AFD_MON not connected.          */
 #define CLOSING_CONNECTION         2  /* Closing an active connection.   */
 /*############################ SaddleBrown ##############################*/
+#define HTML_COLOR_3               "#8B4513"
 #define PAUSE_QUEUE                3
 #ifdef _WITH_SCP_SUPPORT
 # define SCP_ACTIVE                3
 #endif
 /*############################## brown3 #################################*/
+#define HTML_COLOR_4               "#CD3333"
 #define AUTO_PAUSE_QUEUE           4
 #ifdef _WITH_SCP_SUPPORT
 # define SCP_BURST_TRANSFER_ACTIVE 4
 #endif
 #define SFTP_RETRIEVE_ACTIVE       4
 /*############################### Blue ##################################*/
+#define HTML_COLOR_5               "#0000FF"
 #define CONNECTING                 5  /* Open connection to remote host, */
                                       /* sending user and password,      */
                                       /* setting transfer type and       */
@@ -1395,44 +1546,56 @@ typedef unsigned long       u_long_64;
 #define EXEC_BURST_TRANSFER_ACTIVE 5
 #define SIMULATE_MODE              5
 /*############################## gray37 #################################*/
+#define HTML_COLOR_6               "#5E5E5E"
 #define LOCKED_INVERSE             6
 #define HTTP_RETRIEVE_ACTIVE       6
 #define EXEC_RETRIEVE_ACTIVE       6
 /*############################### gold ##################################*/
+#define HTML_COLOR_7               "#FFD700"
 #define TR_BAR                     7  /* Colour for transfer rate bar.   */
 #define DEBUG_MODE                 7
 #ifdef _WITH_WMO_SUPPORT
 # define WMO_ACTIVE                7
 #endif
 /*########################### NavajoWhite1 ##############################*/
+#define HTML_COLOR_8               "#FFDEAD"
 #define LABEL_BG                   8  /* Background for label.           */
 #ifdef _WITH_MAP_SUPPORT
 # define MAP_ACTIVE                8
 #endif
+#ifdef _WITH_DFAX_SUPPORT
+# define DFAX_ACTIVE               8
+#endif
 #define SFTP_ACTIVE                8
 /*############################ SteelBlue1 ###############################*/
+#define HTML_COLOR_9               "#63B8FF"
 #define BUTTON_BACKGROUND          9  /* Background for button line in   */
                                       /* afd_ctrl dialog.                */
 #define LOC_ACTIVE                 9
 #define EXEC_ACTIVE                9
 #define ERROR_OFFLINE_ID           9
 /*############################### pink ##################################*/
+#define HTML_COLOR_10              "#FFC0CB"
 #define SMTP_ACTIVE                10
 #define ERROR_ACKNOWLEDGED_ID      10
 /*############################## green ##################################*/
+#define HTML_COLOR_11              "#00FF00"
 #define FTP_BURST2_TRANSFER_ACTIVE 11
 /*############################## green3 #################################*/
+#define HTML_COLOR_12              "#00CD00"
 #define CONNECTION_ESTABLISHED     12 /* AFD_MON                         */
 #define NORMAL_STATUS              12
 #define INFO_ID                    12
 #define FTP_RETRIEVE_ACTIVE        12 /* When gf_ftp retrieves files.    */
 /*############################# SeaGreen ################################*/
+#define HTML_COLOR_13              "#2E8B57"
 #define CONFIG_ID                  13
 #define TRANSFER_ACTIVE            13 /* Creating remote lockfile and    */
                                       /* transferring files.             */
 #define FTP_ACTIVE                 13
 #define DIRECTORY_ACTIVE           13
 /*############################ DarkOrange ###############################*/
+#define HTML_COLOR_14              "#FF8C00"
 #define STOP_TRANSFER              14 /* Transfer to this host is        */
                                       /* stopped.                        */
 #ifdef WITH_ERROR_QUEUE
@@ -1444,23 +1607,29 @@ typedef unsigned long       u_long_64;
 # define POST_EXEC                 14
 #endif
 /*############################## tomato #################################*/
+#define HTML_COLOR_15              "#FF6347"
 #define NOT_WORKING                15
 /*################################ Red ##################################*/
+#define HTML_COLOR_16              "#FF0000"
 #define NOT_WORKING2               16
 #define FULL_TRACE_MODE            16
 #define ERROR_ID                   16
 #define CONNECTION_DEFUNCT         16 /* AFD_MON, connection not         */
                                       /* working.                        */
 /*############################### Black #################################*/
+#define HTML_COLOR_17              "#000000"
 #define BLACK                      17
 #define FG                         17 /* Foreground                      */
 #define FAULTY_ID                  17
 /*########################## BlanchedAlmond #############################*/
+#define HTML_COLOR_18              "#FFEBCD"
 #define SFTP_BURST_TRANSFER_ACTIVE 18
 /*############################### cyan ##################################*/
+#define HTML_COLOR_19              "#00FFFF"
 #define SMTP_BURST_TRANSFER_ACTIVE 19
 /*############################## yellow #################################*/
 #ifdef _WITH_WMO_SUPPORT
+# define HTML_COLOR_20             "#FFFF00"
 # define WMO_BURST_TRANSFER_ACTIVE 20
 # define COLOR_POOL_SIZE           21
 #else
@@ -1500,6 +1669,7 @@ typedef unsigned long       u_long_64;
 #define AFD_TIME_DIR               "/time"
 #define AFD_TIME_DIR_LENGTH        (sizeof(AFD_TIME_DIR) - 1)
 #define AFD_ARCHIVE_DIR            "/archive"
+#define AFD_ARCHIVE_DIR_LENGTH     (sizeof(AFD_ARCHIVE_DIR) - 1)
 #define FIFO_DIR                   "/fifodir"
 #define LOG_DIR                    "/log"
 #define LOG_DIR_LENGTH             (sizeof(LOG_DIR) - 1)
@@ -1507,8 +1677,11 @@ typedef unsigned long       u_long_64;
 #define ETC_DIR                    "/etc"
 #define ETC_DIR_LENGTH             (sizeof(ETC_DIR) - 1)
 #define ACTION_DIR                 "/action"
+#define ACTION_DIR_LENGTH          (sizeof(ACTION_DIR) - 1)
 #define ACTION_TARGET_DIR          "/target"
+#define ACTION_TARGET_DIR_LENGTH   (sizeof(ACTION_TARGET_DIR) - 1)
 #define ACTION_SOURCE_DIR          "/source"
+#define ACTION_SOURCE_DIR_LENGTH   (sizeof(ACTION_SOURCE_DIR) - 1)
 #define ACTION_ERROR_DIR           "/error"
 #define ACTION_WARN_DIR            "/warn"
 #ifdef NEW_FRA
@@ -1516,6 +1689,10 @@ typedef unsigned long       u_long_64;
 #endif
 #define ACTION_SUCCESS_DIR         "/success"
 #define MAIL_HEADER_DIR            "/mail_header"
+#define GROUP_NAME_DIR             "/groups"
+#define GROUP_NAME_DIR_LENGTH      (sizeof(GROUP_NAME_DIR) - 1)
+#define DIR_GROUP_NAME             "/directory"
+#define FILE_GROUP_NAME            "/files"
 #define INCOMING_DIR               "/incoming"
 #define INCOMING_DIR_LENGTH        (sizeof(INCOMING_DIR) - 1)
 #define OUTGOING_DIR               "/outgoing"
@@ -1579,6 +1756,10 @@ typedef unsigned long       u_long_64;
 #ifdef WITH_IP_DB
 # define IP_DB_FILE                "/ip_data"
 #endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define DEMCD_QUEUE_FILE          "/demcd_queue"
+#endif
+#define JIS_FILE                   "/jis_data"
 
 /* Definitions of fifo names. */
 #define SYSTEM_LOG_FIFO            "/system_log.fifo"
@@ -1619,6 +1800,9 @@ typedef unsigned long       u_long_64;
 #ifdef _OUTPUT_LOG
 # define OUTPUT_LOG_FIFO           "/output_log.fifo"
 #endif
+#ifdef _CONFIRMATION_LOG
+# define CONFIRMATION_LOG_FIFO     "/confirmation_log.fifo"
+#endif
 #ifdef _DELETE_LOG
 # define DELETE_LOG_FIFO           "/delete_log.fifo"
 #endif
@@ -1629,6 +1813,9 @@ typedef unsigned long       u_long_64;
 #define DEL_TIME_JOB_FIFO          "/del_time_job.fifo"
 #define MSG_FIFO                   "/msg.fifo"
 #define AFDD_LOG_FIFO              "/afdd_log.fifo"
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define DEMCD_FIFO                "/demcd.fifo"
+#endif
 /*-----------------------------------------------------------------------*/
 
 /* Definitions for the AFD name. */
@@ -1864,7 +2051,8 @@ typedef unsigned long       u_long_64;
 #define EA_DISABLE_SIMULATE_SEND_MODE   66
 #define EA_ENABLE_SIMULATE_SEND_HOST    67
 #define EA_DISABLE_SIMULATE_SEND_HOST   68
-#define EA_MAX_EVENT_ACTION             68
+#define EA_MODIFY_ERRORS_OFFLINE        69
+#define EA_MAX_EVENT_ACTION             69
 
 /* See ea_str.h for longest event string. */
 #define MAX_EVENT_ACTION_LENGTH     (sizeof("Disable create target dir") - 1)
@@ -1891,8 +2079,6 @@ typedef unsigned long       u_long_64;
 #define TRANSFER_RATE              9
 #define NO_OF_FILES                11
 #define CONNECT_STATUS             20
-
-#define AFDD_SHUTDOWN_MESSAGE      "500 AFDD shutdown."
 
 /* In case some key values of any structure are changed. */
 #define MAX_MSG_NAME_LENGTH_NR      1
@@ -2020,7 +2206,7 @@ typedef unsigned long       u_long_64;
 #define AFD_START_ERROR_OFFSET_END    10 /* From end   */
 
 /* Structure that holds status of the file transfer for each host. */
-# define CURRENT_FSA_VERSION 3
+#define CURRENT_FSA_VERSION 3
 struct status
        {
           pid_t         proc_id;                /* Process ID of trans-  */
@@ -2136,11 +2322,9 @@ struct filetransfer_status
                                             /*| 31   | SEND             |*/
                                             /*| 30   | SSL              |*/
                                             /*| 29   | DISABLE_IPV6     |*/
-                                            /*| 19-28| Not used.        |*/
-                                            /*| 18   | GET_SFTP         |*/
-                                            /*| 17   | GET_HTTP  [SSL]  |*/
-                                            /*| 16   | GET_FTP   [SSL]  |*/
-                                            /*| 10-15| Not used.        |*/
+                                            /*| 12-28| Not used.        |*/
+                                            /*| 11   | DEMAIL           |*/
+                                            /*| 10   | DFAX             |*/
                                             /*| 9    | EXEC             |*/
                                             /*| 8    | SFTP             |*/
                                             /*| 7    | HTTP      [SSL]  |*/
@@ -2156,7 +2340,8 @@ struct filetransfer_status
                                             /*+------+------------------+*/
                                             /*|Bit(s)|     Meaning      |*/
                                             /*+------+------------------+*/
-                                            /*| 25-32| Not used.        |*/
+                                            /*| 26-32| Not used.        |*/
+                                            /*| 25   | KEEP_CONNECTED_DISCONNECT|*/
                                             /*| 24   | FTP_DISABLE_MLST |*/
                                             /*| 23   | TLS_STRICT_VERIFY|*/
                                             /*| 22   | FTP_USE_LIST     |*/
@@ -2400,6 +2585,23 @@ struct host_list
           unsigned char number_of_no_bursts;
           signed char   in_dir_config;
        };
+
+#ifdef MULTI_FS_SUPPORT
+/* Structure holding all information of extra working directories. */
+struct extra_work_dirs
+       {
+          dev_t dev;
+          char  *dir_name;
+          char  *time_dir;
+          char  *p_time_dir_id;
+          char  *afd_file_dir;
+          char  *outgoing_file_dir;
+          int   dir_name_length;
+          int   time_dir_length;
+          int   afd_file_dir_length;
+          int   outgoing_file_dir_length;
+       };
+#endif
 
 /* Structure to hold all possible bits for a time entry. */
 #define TIME_EXTERNAL SHRT_MAX
@@ -2756,8 +2958,14 @@ struct afd_status
           signed char    archive_watch;
           signed char    afd_stat;        /* Statistic program            */
           signed char    afdd;
-#ifdef _WITH_SERVER_SUPPORT
-          signed char    afds;            /* AFD servers.                 */
+#ifdef _WITH_ATPD_SUPPORT
+          signed char    atpd;            /* AFD Transfer Protocol Daemon.*/
+#endif
+#ifdef _WITH_WMOD_SUPPORT
+          signed char    wmod;            /* WMO Protocol Daemon.         */
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+          signed char    demcd;           /* De Mail Confirmation Daemon. */
 #endif
 #ifndef HAVE_MMAP
           signed char    mapper;
@@ -2771,13 +2979,16 @@ struct afd_status
 #ifdef _OUTPUT_LOG
           signed char    output_log;
 #endif
+#ifdef _CONFIRMATION_LOG
+          signed char    confirmation_log;
+#endif
 #ifdef _DELETE_LOG
           signed char    delete_log;
 #endif
 #ifdef _PRODUCTION_LOG
           signed char    production_log;
 #endif
-#if defined (_INPUT_LOG) || defined (_OUTPUT_LOG) || defined (_DELETE_LOG) || defined (_PRODUCTION_LOG) || defined (_DISTRIBUTION_LOG)
+#if defined (_INPUT_LOG) || defined (_OUTPUT_LOG) || defined (_CONFIRMATION_LOG) || defined (_DELETE_LOG) || defined (_PRODUCTION_LOG) || defined (_DISTRIBUTION_LOG)
           signed char    aldad;
 #endif
           unsigned int   sys_log_ec;         /* System log entry counter. */
@@ -2872,7 +3083,6 @@ struct rule
 struct job_id_data
        {
 #ifdef _NEW_JID
-          time_t       last_usage;      /* Last time this job was used.  */
           time_t       creation_time;   /* Time when job was created.    */
           unsigned int special_flag;    /*+------+----------------------+*/
                                         /*|Bit(s)|      Meaning         |*/
@@ -2923,6 +3133,24 @@ struct passwd_buf
           unsigned char passwd[MAX_USER_NAME_LENGTH];
           signed char   dup_check;
        };
+
+#ifdef WHEN_WE_KNOW
+/* Definition for structure that holds all status and statistic for one job ID. */
+#define CURRENT_JIS_VERSION 0
+struct job_id_stat
+       {
+          double       nbs;             /* Number of bytes send.         */
+          time_t       creation_time;   /* Time when job was created.    */
+          time_t       usage_time;      /* Last time this job was used.  */
+          unsigned int special_flag;    /*+------+----------------------+*/
+                                        /*|Bit(s)|      Meaning         |*/
+                                        /*+------+----------------------+*/
+                                        /*|1 - 32| Not used.            |*/
+                                        /*+------+----------------------+*/
+          unsigned int nfs;             /* Number of files send.         */
+          unsigned int ne;              /* Number of errors.             */
+       };
+#endif /* WHEN_WE_KNOW */
 
 /* Structure to hold a message of process FD. */
 #define MSG_QUE_BUF_SIZE 10000
@@ -3529,7 +3757,7 @@ struct old_int_retrieve_list
 #endif
 
 /* Macro to check if we can avoid a strcmp or strncmp. */
-#define CHECK_STRCMP(a, b)  (*(a) != *(b) ? (int)((unsigned char) *(a) - (unsigned char) *(b)) : strcmp((a), (b)))
+#define CHECK_STRCMP(a, b)  (*(a) != *(b) ? (int)((unsigned char) *(a) - (unsigned char) *(b)) : my_strcmp((a), (b)))
 #define CHECK_STRNCMP(a, b, c)  (*(a) != *(b) ? (int)((unsigned char) *(a) - (unsigned char) *(b)) : strncmp((a), (b), (c)))
 
 /* Function prototypes. */
@@ -3570,6 +3798,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
 #ifdef WITH_IP_DB
                     attach_ip_db(void),
 #endif
+                    attach_jis(void),
 #ifdef WITH_ERROR_QUEUE
                     attach_error_queue(void),
                     check_error_queue(unsigned int, int, time_t, int),
@@ -3606,7 +3835,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     convert_grib2wmo(char *, off_t *, char *),
                     copy_file(char *, char *, struct stat *),
                     create_message(unsigned int, char *, char *),
-                    create_name(char *, signed char, time_t, unsigned int,
+                    create_name(char *, int, signed char, time_t, unsigned int,
                                 unsigned int *, int *, char *, int, int),
                     create_remote_dir(char *, char *, char *, char *, char *,
                                       int *),
@@ -3614,6 +3843,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
 #ifdef WITH_IP_DB
                     detach_ip_db(void),
 #endif
+                    detach_jis(void),
 #ifdef HAVE_HW_CRC32
                     detect_cpu_crc32(void),
 #endif
@@ -3702,6 +3932,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     msa_attach_passive(void),
                     msa_detach(void),
                     my_power(int, int),
+                    my_strcmp(const char *, const char *),
                     my_strncpy(char *, const char *, const size_t),
                     next_counter(int, int *, int),
                     open_counter_file(char *, int **),
@@ -3738,7 +3969,7 @@ extern off_t        bin_file_convert(char *, off_t, int),
                     gts2tiff(char *, char *),
                     iso8859_2ascii(char *, char *, off_t),
                     read_file(char *, char **),
-                    read_file_no_cr(char *, char **, char *, int),
+                    read_file_no_cr(char *, char **, int, char *, int),
                     tiff2gts(char *, char *);
 extern ssize_t      readn(int, void *, int, long),
                     writen(int, const void *, size_t, ssize_t);
@@ -3778,6 +4009,12 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
                               unsigned int, char *, ...),
                     extract_cus(char *, time_t *, unsigned int *,
                                 unsigned int *),
+#ifdef MULTI_FS_SUPPORT
+                    delete_stale_extra_work_dir_links(int,
+                                                      struct extra_work_dirs *),
+                    free_extra_work_dirs(int, struct extra_work_dirs **),
+                    get_extra_work_dirs(int *, struct extra_work_dirs **, int),
+#endif
                     get_additional_locked_files(int *, int *, char **),
                     get_alias_names(void),
                     get_dir_alias(unsigned, char *),
@@ -3810,6 +4047,18 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
                     *mmap_resize(int, void *, size_t),
                     my_usleep(unsigned long),
                     next_counter_no_lock(int *, int),
+#ifdef _OUTPUT_LOG
+# ifdef WITHOUT_FIFO_RW_SUPPORT
+                    output_log_fd(int *, int *, char *),
+# else
+                    output_log_fd(int *, char *),
+# endif
+                    output_log_ptrs(unsigned int **, unsigned int **, char **,
+                                    char **, unsigned short **,
+                                    unsigned short **, off_t **,
+                                    unsigned short **, size_t *, clock_t **,
+                                    char **, char *, int, int, char *),
+#endif
 #ifdef _PRODUCTION_LOG
                     production_log(time_t, unsigned int, unsigned int,
                                    unsigned int, unsigned int,
@@ -3859,5 +4108,6 @@ extern caddr_t      mmap_emu(caddr_t, size_t, int, int, char *, off_t);
 extern int          msync_emu(char *),
                     munmap_emu(char *);
 #endif
+extern mode_t       str2mode_t(char *);
 
 #endif /* __afddefs_h */

@@ -1,6 +1,6 @@
 /*
  *  trans_exec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -88,6 +88,7 @@ trans_exec(char *file_path, char *fullname, char *p_file_name_buffer)
    {
       register int ii = 0,
                    k = 0;
+      int          doit;
       char         *p_end = p_command,
                    *p_tmp_dir,
                    *insert_list[MAX_EXEC_FILE_SUBSTITUTION],
@@ -122,141 +123,211 @@ trans_exec(char *file_path, char *fullname, char *p_file_name_buffer)
       tmp_option[k] = '\0';
       p_command = tmp_option;
 
-      /*
-       * Create a temporary directory in which the user can execute
-       * the commands. We do not want the manipulated files in the
-       * archive. After the user commands are executed the files
-       * in the temporary directory and the directory will be
-       * removed. This is not efficient, but is the simplest way
-       * to implement this.
-       */
-      p_tmp_dir = file_path + strlen(file_path);
-      (void)strcpy(p_tmp_dir, "/.tmp");
-      if ((mkdir(file_path, DIR_MODE) == -1) && (errno != EEXIST))
+      if ((db.special_flag & EXECUTE_IN_TARGET_DIR) &&
+          (db.protocol & LOC_FLAG))
       {
-         trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                   "Failed to mkdir() %s : %s", file_path, strerror(errno));
+         doit = YES;
+         p_tmp_dir = NULL;
       }
       else
       {
-         *(p_tmp_dir + 5) = '/';
-         (void)strcpy(p_tmp_dir + 6, p_file_name_buffer);
-         if (copy_file(fullname, file_path, NULL) < 0)
+         /*
+          * Create a temporary directory in which the user can execute
+          * the commands. We do not want the manipulated files in the
+          * archive. After the user commands are executed the files
+          * in the temporary directory and the directory will be
+          * removed. This is not efficient, but is the simplest way
+          * to implement this.
+          */
+         p_tmp_dir = file_path + strlen(file_path);
+         (void)strcpy(p_tmp_dir, "/.tmp");
+         if ((mkdir(file_path, DIR_MODE) == -1) && (errno != EEXIST))
          {
             trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                      "Failed to copy_file() `%s' to `%s'.",
-                      fullname, file_path);
-            *(p_tmp_dir + 5) = '\0';
+                      "Failed to mkdir() %s : %s", file_path, strerror(errno));
+            doit = NO;
          }
          else
          {
-#ifdef HAVE_SETPRIORITY
-            int  sched_priority;
-#endif
-            char job_str[4];
-
-            job_str[0] = '[';
-            job_str[1] = db.job_no + '0';
-            job_str[2] = ']';
-            job_str[3] = '\0';
-            *(p_tmp_dir + 5) = '\0';
-
-#ifdef HAVE_SETPRIORITY
-            if (db.exec_base_priority != NO_PRIORITY)
+            *(p_tmp_dir + 5) = '/';
+            (void)strcpy(p_tmp_dir + 6, p_file_name_buffer);
+            if (copy_file(fullname, file_path, NULL) < 0)
             {
-               sched_priority = db.exec_base_priority;
-               if (db.add_afd_priority == YES)
-               {                           
-                  sched_priority += (int)(fsa->job_status[(int)db.job_no].unique_name[MAX_MSG_NAME_LENGTH - 1]);
-                  if (sched_priority > db.min_sched_priority)        
-                  {
-                     sched_priority = db.min_sched_priority;
-                  }
-                  else if (sched_priority < db.max_sched_priority)
-                       {
-                          sched_priority = db.max_sched_priority;
-                       }
-               }
-               if ((sched_priority == db.current_priority) ||
-                   ((db.current_priority > sched_priority) && (geteuid() != 0)))
+               trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "Failed to copy_file() `%s' to `%s'.",
+                         fullname, file_path);
+               *(p_tmp_dir + 5) = '\0';
+               doit = NEITHER;
+            }
+            else
+            {
+               doit = YES;
+            }
+         }
+      }
+
+      if (doit == YES)
+      {
+#ifdef HAVE_SETPRIORITY
+         int  sched_priority;
+#endif
+         char job_str[4];
+
+         job_str[0] = '[';
+         job_str[1] = db.job_no + '0';
+         job_str[2] = ']';
+         job_str[3] = '\0';
+         if (p_tmp_dir != NULL)
+         {
+            *(p_tmp_dir + 5) = '\0';
+         }
+
+#ifdef HAVE_SETPRIORITY
+         if (db.exec_base_priority != NO_PRIORITY)
+         {
+            sched_priority = db.exec_base_priority;
+            if (db.add_afd_priority == YES)
+            {                           
+               sched_priority += (int)(fsa->job_status[(int)db.job_no].unique_name[MAX_MSG_NAME_LENGTH - 1]);
+               if (sched_priority > db.min_sched_priority)        
                {
-                  sched_priority = NO_PRIORITY;
+                  sched_priority = db.min_sched_priority;
+               }
+               else if (sched_priority < db.max_sched_priority)
+                    {
+                       sched_priority = db.max_sched_priority;
+                    }
+            }
+            if ((sched_priority == db.current_priority) ||
+                ((db.current_priority > sched_priority) && (geteuid() != 0)))
+            {
+               sched_priority = NO_PRIORITY;
+            }
+         }
+         else
+         {
+            sched_priority = NO_PRIORITY;
+         }
+#endif
+
+         if (db.set_trans_exec_lock == YES)
+         {
+#ifdef LOCK_DEBUG
+            lock_region_w(fsa_fd, db.lock_offset + LOCK_EXEC, __FILE__, __LINE__);
+#else
+            lock_region_w(fsa_fd, db.lock_offset + LOCK_EXEC);
+#endif
+         }
+
+         /* Setup command by inserting the filenames for all %s */
+         if (ii > 0)
+         {
+            int  length,
+                 length_start,
+                 mask_file_name,
+                 ret;
+            char *fnp,
+                 tmp_char;
+
+            insert_list[ii] = &tmp_option[k];
+            tmp_char = *insert_list[0];
+            *insert_list[0] = '\0';
+            length_start = snprintf(command_str, 1024,
+                                    "cd %s && %s", file_path, p_command);
+            *insert_list[0] = tmp_char;
+
+            fnp = p_file_name_buffer;
+            mask_file_name = NO;
+            do
+            {
+               if ((*fnp == ';') || (*fnp == ' '))
+               {
+                  mask_file_name = YES;
+                  break;
+               }
+               fnp++;
+            } while (*fnp != '\0');
+
+            /* Generate command string with file name(s). */
+            length = 0;
+            for (k = 1; k < (ii + 1); k++)
+            {
+               tmp_char = *insert_list[k];
+               *insert_list[k] = '\0';
+               if (mask_file_name == YES)
+               {
+                  length += snprintf(command_str + length_start + length,
+                                     1024 - (length_start + length),
+                                     "\"%s\"%s", p_file_name_buffer,
+                                     insert_list[k - 1] + 2);
+               }
+               else
+               {
+                  length += snprintf(command_str + length_start + length,
+                                     1024 - (length_start + length),
+                                     "%s%s", p_file_name_buffer,
+                                     insert_list[k - 1] + 2);
+               }
+               *insert_list[k] = tmp_char;
+            }
+
+            if ((ret = exec_cmd(command_str, &return_str, transfer_log_fd,
+                                fsa->host_dsp_name, MAX_HOSTNAME_LENGTH,
+#ifdef HAVE_SETPRIORITY
+                                sched_priority,
+#endif
+                                job_str, db.trans_exec_timeout,
+                                YES, YES)) != 0) /* ie != SUCCESS */
+            {
+               trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "Failed to execute command %s [Return code = %d]",
+                         command_str, ret);
+               if ((return_str != NULL) && (return_str[0] != '\0'))
+               {
+                  char *end_ptr = return_str,
+                       *start_ptr;
+
+                  do
+                  {
+                     start_ptr = end_ptr;
+                     while ((*end_ptr != '\n') && (*end_ptr != '\0'))
+                     {
+                        end_ptr++;
+                     }
+                     if (*end_ptr == '\n')
+                     {
+                        *end_ptr = '\0';
+                        end_ptr++;
+                     }
+                     trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "%s", start_ptr);
+                  } while (*end_ptr != '\0');
                }
             }
             else
             {
-               sched_priority = NO_PRIORITY;
+               (void)my_strncpy(fsa->job_status[(int)db.job_no].file_name_in_use,
+                                command_str, MAX_MSG_NAME_LENGTH + 1);
             }
-#endif
+         }
+         else /* Just execute command without file. */
+         {
+            int ret;
 
-            if (db.set_trans_exec_lock == YES)
+            if (snprintf(command_str, 1024, "cd %s && %s", file_path, p_command) >= 1024)
             {
-#ifdef LOCK_DEBUG
-               lock_region_w(fsa_fd, db.lock_offset + LOCK_EXEC, __FILE__, __LINE__);
-#else
-               lock_region_w(fsa_fd, db.lock_offset + LOCK_EXEC);
-#endif
+               trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "Failed to copy full command to buffer since it is longer then 1024 bytes.");
             }
-
-            /* Setup command by inserting the filenames for all %s */
-            if (ii > 0)
+            else
             {
-               int  length,
-                    length_start,
-                    mask_file_name,
-                    ret;
-               char *fnp,
-                    tmp_char;
-
-               insert_list[ii] = &tmp_option[k];
-               tmp_char = *insert_list[0];
-               *insert_list[0] = '\0';
-               length_start = snprintf(command_str, 1024,
-                                       "cd %s && %s", file_path, p_command);
-               *insert_list[0] = tmp_char;
-
-               fnp = p_file_name_buffer;
-               mask_file_name = NO;
-               do
-               {
-                  if ((*fnp == ';') || (*fnp == ' '))
-                  {
-                     mask_file_name = YES;
-                     break;
-                  }
-                  fnp++;
-               } while (*fnp != '\0');
-
-               /* Generate command string with file name(s). */
-               length = 0;
-               for (k = 1; k < (ii + 1); k++)
-               {
-                  tmp_char = *insert_list[k];
-                  *insert_list[k] = '\0';
-                  if (mask_file_name == YES)
-                  {
-                     length += snprintf(command_str + length_start + length,
-                                        1024 - (length_start + length),
-                                        "\"%s\"%s", p_file_name_buffer,
-                                        insert_list[k - 1] + 2);
-                  }
-                  else
-                  {
-                     length += snprintf(command_str + length_start + length,
-                                        1024 - (length_start + length),
-                                        "%s%s", p_file_name_buffer,
-                                        insert_list[k - 1] + 2);
-                  }
-                  *insert_list[k] = tmp_char;
-               }
-
                if ((ret = exec_cmd(command_str, &return_str, transfer_log_fd,
                                    fsa->host_dsp_name, MAX_HOSTNAME_LENGTH,
 #ifdef HAVE_SETPRIORITY
                                    sched_priority,
 #endif
-                                   job_str, db.trans_exec_timeout,
-                                   YES, YES)) != 0) /* ie != SUCCESS */
+                                   job_str, db.trans_exec_timeout, YES,
+                                   YES)) != 0)
                {
                   trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
                             "Failed to execute command %s [Return code = %d]",
@@ -286,77 +357,32 @@ trans_exec(char *file_path, char *fullname, char *p_file_name_buffer)
                else
                {
                   (void)my_strncpy(fsa->job_status[(int)db.job_no].file_name_in_use,
-                                   command_str, MAX_MSG_NAME_LENGTH + 1);
+                                   p_command, MAX_MSG_NAME_LENGTH + 1);
                }
             }
-            else /* Just execute command without file. */
-            {
-               int ret;
-
-               if (snprintf(command_str, 1024, "cd %s && %s", file_path, p_command) >= 1024)
-               {
-                  trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "Failed to copy full command to buffer since it is longer then 1024 bytes.");
-               }
-               else
-               {
-                  if ((ret = exec_cmd(command_str, &return_str, transfer_log_fd,
-                                      fsa->host_dsp_name, MAX_HOSTNAME_LENGTH,
-#ifdef HAVE_SETPRIORITY
-                                      sched_priority,
-#endif
-                                      job_str, db.trans_exec_timeout, YES,
-                                      YES)) != 0)
-                  {
-                     trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                               "Failed to execute command %s [Return code = %d]",
-                               command_str, ret);
-                     if ((return_str != NULL) && (return_str[0] != '\0'))
-                     {
-                        char *end_ptr = return_str,
-                             *start_ptr;
-
-                        do
-                        {
-                           start_ptr = end_ptr;
-                           while ((*end_ptr != '\n') && (*end_ptr != '\0'))
-                           {
-                              end_ptr++;
-                           }
-                           if (*end_ptr == '\n')
-                           {
-                              *end_ptr = '\0';
-                              end_ptr++;
-                           }
-                           trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                     "%s", start_ptr);
-                        } while (*end_ptr != '\0');
-                     }
-                  }
-                  else
-                  {
-                     (void)my_strncpy(fsa->job_status[(int)db.job_no].file_name_in_use,
-                                      p_command, MAX_MSG_NAME_LENGTH + 1);
-                  }
-               }
-            }
-            if (db.set_trans_exec_lock == YES)
-            {
-#ifdef LOCK_DEBUG
-               unlock_region(fsa_fd, db.lock_offset + LOCK_EXEC, __FILE__, __LINE__);
-#else
-               unlock_region(fsa_fd, db.lock_offset + LOCK_EXEC);
-#endif
-            }
-            free(return_str);
          }
-         if (rec_rmdir(file_path) < 0)
+         if (db.set_trans_exec_lock == YES)
          {
-            trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                      "Failed to remove directory %s.", file_path);
+#ifdef LOCK_DEBUG
+            unlock_region(fsa_fd, db.lock_offset + LOCK_EXEC, __FILE__, __LINE__);
+#else
+            unlock_region(fsa_fd, db.lock_offset + LOCK_EXEC);
+#endif
          }
+         free(return_str);
       }
-      *p_tmp_dir = '\0';
+      if (p_tmp_dir != NULL)
+      {
+         if ((doit == YES) || (doit == NEITHER))
+         {
+            if (rec_rmdir(file_path) < 0)
+            {
+               trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "Failed to remove directory %s.", file_path);
+            }
+         }
+         *p_tmp_dir = '\0';
+      }
    }
    fsa->job_status[(int)db.job_no].file_name_in_use[0] = '\0';
    fsa->job_status[(int)db.job_no].connect_status = tmp_connect_status;

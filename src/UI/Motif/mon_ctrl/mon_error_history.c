@@ -1,6 +1,6 @@
 /*
  *  mon_error_history.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@ DESCR__E_M3
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include "fddefs.h"
 #include "mon_ctrl.h"
 #include "mondefs.h"
 #include <Xm/Xm.h>
@@ -116,7 +117,8 @@ popup_error_history(int x_root, int y_root, int afd_no)
    error_hosts = length = max_length = str_length = lines = 0;
    for (i = 0; ((i < msa[afd_no].no_of_hosts) && (lines < max_lines)); i++)
    {
-      if ((ahl[i].error_history[0] != 0) &&
+      if ((ahl[i].error_history[0] != TRANSFER_SUCCESS) &&
+          (ahl[i].error_history[0] != OPEN_FILE_DIR_ERROR) &&
           ((msa[afd_no].ec > 0) || (msa[afd_no].host_error_counter > 0)))
       {
          if (error_hosts != 0)

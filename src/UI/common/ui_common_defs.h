@@ -1,6 +1,6 @@
 /*
  *  ui_common_defs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -80,7 +80,13 @@
 #endif
 #define SHOW_SFTP                        1024
 #define SHOW_EXEC                        2048
-#define SHOW_NONE                        4096
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define SHOW_DEMAIL                     4096
+#endif
+#ifdef _WITH_DFAX_SUPPORT
+# define SHOW_DFAX                       8192
+#endif
+#define SHOW_NONE                        16384
 
 /* Definitions for all X programs of the AFD. */
 #define MAX_MESSAGE_LENGTH               80
@@ -167,7 +173,10 @@
 #define ROW_14_W                         14
 #define ROW_15_W                         15
 #define ROW_16_W                         16
-#define NO_OF_ROWS                       17
+#define ROW_17_W                         17
+#define ROW_18_W                         18
+#define ROW_19_W                         19
+#define NO_OF_ROWS                       20
 
 /* Definitions for the Line Style pulldown widgets. */
 #define STYLE_0_W                        0
@@ -281,6 +290,9 @@
 #define ROW_14                           "80"
 #define ROW_15                           "90"
 #define ROW_16                           "100"
+#define ROW_17                           "120"
+#define ROW_18                           "140"
+#define ROW_19                           "160"
 
 /* All colors for status, background, foreground, etc. */
 #define DEFAULT_BG_COLOR                   "LightBlue1"

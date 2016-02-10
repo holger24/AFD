@@ -1,6 +1,6 @@
 /*
  *  rm_job.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -190,7 +190,7 @@ main(int argc, char *argv[])
 
             for (i = 0; i < *no_msg_queued; i++)
             {
-               if (strcmp(qb[i].msg_name, p_job_name) == 0)
+               if (my_strcmp(qb[i].msg_name, p_job_name) == 0)
                {
                   char *ptr;
 

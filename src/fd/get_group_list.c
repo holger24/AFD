@@ -65,7 +65,7 @@ get_group_list(char *user, struct job *p_db)
 
    (void)snprintf(group_file, MAX_PATH_LENGTH, "%s%s%s",
                   p_work_dir, ETC_DIR, GROUP_FILE);
-   if (((file_size = read_file_no_cr(group_file, &buffer, __FILE__, __LINE__)) != INCORRECT) &&
+   if (((file_size = read_file_no_cr(group_file, &buffer, YES, __FILE__, __LINE__)) != INCORRECT) &&
        (file_size > 0))
    {
       int  length;

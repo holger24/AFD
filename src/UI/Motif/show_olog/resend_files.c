@@ -1,6 +1,6 @@
 /*
  *  resend_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -107,6 +107,7 @@ static char             archive_dir[MAX_PATH_LENGTH],
                         *p_file_name,
                         *p_archive_name,
                         *p_dest_dir_end = NULL,
+                        *p_msg_name,
                         dest_dir[MAX_PATH_LENGTH];
 
 /* Local function prototypes. */
@@ -142,8 +143,7 @@ resend_files(int no_selected, int *select_list)
    off_t              file_size,
                       total_file_size;
    static int         user_limit = 0;
-   char               *p_msg_name,
-                      user_message[256];
+   char               user_message[256];
    XmString           xstr;
    struct resend_list *rl;
 
@@ -346,11 +346,13 @@ resend_files(int no_selected, int *select_list)
 
                   /* Create a new directory. */
                   creation_time = time(NULL);
+#ifndef MULTI_FS_SUPPORT
                   *p_msg_name = '\0';
+#endif
                   split_job_counter = 0;
-                  if (create_name(dest_dir, id.priority, creation_time,
-                                  current_job_id, &split_job_counter,
-                                  unique_number, p_msg_name,
+                  if (create_name(dest_dir, strlen(dest_dir), id.priority,
+                                  creation_time, current_job_id,
+                                  &split_job_counter, unique_number, p_msg_name,
                                   MAX_PATH_LENGTH - (p_msg_name - dest_dir),
                                   counter_fd) < 0)
                   {
@@ -447,6 +449,7 @@ resend_files(int no_selected, int *select_list)
    }
 
    /* Show user a summary of what was done. */
+   length = 0;
    if (no_done > 0)
    {
       if ((no_done - overwrite) == 1)
@@ -657,6 +660,28 @@ get_archive_data(int pos, int file_no)
    (void)strcpy((p_archive_name + i), &buffer[log_date_length + 1 + max_hostname_length + type_offset + 2]);
    p_file_name = p_archive_name + i;
 
+#ifdef MULTI_FS_SUPPORT
+   /* Copy the filesystem ID to dest_dir. */
+   i = 0;
+   while ((*(p_archive_name + i) != '/') && (*(p_archive_name + i) != '\0') &&
+          (i < MAX_INT_HEX_LENGTH))
+   {
+      *(p_msg_name + i) = *(p_archive_name + i);
+      i++;
+   }
+   if ((i == MAX_INT_HEX_LENGTH) || (*(p_archive_name + i) == '\0'))
+   {
+      (void)xrec(FATAL_DIALOG,
+                 "Failed to locate filesystem ID in `%s' : (%s %d)",
+                 p_archive_name, __FILE__, __LINE__);
+      return(INCORRECT);
+   }
+   *(p_msg_name + i) = '/';
+   *(p_msg_name + i + 1) = '\0';
+   p_dest_dir_end = p_msg_name + i + 1;
+   p_msg_name += (i + 1);
+#endif
+
    return(SUCCESS);
 }
 
@@ -697,6 +722,7 @@ send_new_message(char         *p_msg_name,
       return(INCORRECT);
    }
    dir_no = (unsigned short)strtoul(ptr + 1, NULL, 16);
+
    /* Write data to FSA so it can be seen in 'afd_ctrl'. */
    write_fsa(YES, files_to_send, file_size_to_send);
 
@@ -721,7 +747,47 @@ send_new_message(char         *p_msg_name,
 
       /* Fill fifo buffer with data. */
       *(time_t *)(fifo_buffer) = creation_time;
-#if SIZEOF_TIME_T == 4
+#ifdef MULTI_FS_SUPPORT
+# if SIZEOF_TIME_T == 4
+      *(unsigned int *)(fifo_buffer + sizeof(time_t)) = (dev_t)strtoul(p_archive_name, NULL, 16);;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t)) = job_id;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                        sizeof(unsigned int)) = split_job_counter;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                        sizeof(unsigned int) +
+                        sizeof(unsigned int)) = files_to_send;
+      *(off_t *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                 sizeof(unsigned int) + sizeof(unsigned int) +
+                 sizeof(unsigned int)) = file_size_to_send;
+# else
+      *(off_t *)(fifo_buffer + sizeof(time_t)) = file_size_to_send;
+      *(off_t *)(fifo_buffer + sizeof(time_t) + sizeof(off_t)) = (dev_t)strtoul(p_archive_name, NULL, 16);;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(off_t) +
+                        sizeof(dev_t)) = job_id;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(off_t) +
+                        sizeof(dev_t) +
+                        sizeof(unsigned int)) = split_job_counter;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(off_t) +
+                        sizeof(dev_t) + sizeof(unsigned int) +
+                        sizeof(unsigned int)) = files_to_send;
+# endif
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                        sizeof(unsigned int) + sizeof(unsigned int) +
+                        sizeof(unsigned int) + sizeof(off_t)) = unique_number;
+      *(unsigned short *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                          sizeof(unsigned int) + sizeof(unsigned int) +
+                          sizeof(unsigned int) + sizeof(off_t) +
+                          sizeof(unsigned int)) = dir_no;
+      *(char *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                sizeof(unsigned int) + sizeof(unsigned int) +
+                sizeof(unsigned int) + sizeof(off_t) + sizeof(unsigned int) +
+                sizeof(unsigned short)) = priority;
+      *(char *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                sizeof(unsigned int) + sizeof(unsigned int) +
+                sizeof(unsigned int) + sizeof(off_t) + sizeof(unsigned int) +
+                sizeof(unsigned short) + sizeof(char)) = SHOW_OLOG_NO;
+#else
+# if SIZEOF_TIME_T == 4
       *(unsigned int *)(fifo_buffer + sizeof(time_t)) = job_id;
       *(unsigned int *)(fifo_buffer + sizeof(time_t) +
                         sizeof(unsigned int)) = split_job_counter;
@@ -730,7 +796,7 @@ send_new_message(char         *p_msg_name,
       *(off_t *)(fifo_buffer + sizeof(time_t) + sizeof(unsigned int) +
                  sizeof(unsigned int) +
                  sizeof(unsigned int)) = file_size_to_send;
-#else
+# else
       *(off_t *)(fifo_buffer + sizeof(time_t)) = file_size_to_send;
       *(unsigned int *)(fifo_buffer + sizeof(time_t) +
                         sizeof(off_t)) = job_id;
@@ -739,7 +805,7 @@ send_new_message(char         *p_msg_name,
       *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(off_t) +
                         sizeof(unsigned int) +
                         sizeof(unsigned int)) = files_to_send;
-#endif
+# endif
       *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(unsigned int) +
                         sizeof(unsigned int) + sizeof(unsigned int) +
                         sizeof(off_t)) = unique_number;
@@ -753,6 +819,7 @@ send_new_message(char         *p_msg_name,
                 sizeof(unsigned int) + sizeof(unsigned int) + sizeof(off_t) +
                 sizeof(unsigned int) + sizeof(unsigned short) +
                 sizeof(char)) = SHOW_OLOG_NO;
+#endif
 
       /* Send the message. */
       if (write(fd, fifo_buffer, MAX_BIN_MSG_LENGTH) != MAX_BIN_MSG_LENGTH)
@@ -1025,7 +1092,12 @@ write_fsa(int add, int files_to_send, off_t file_size_to_send)
                real_hostname[position] = '\0';
             }
          }
+#ifdef _WITH_DE_MAIL_SUPPORT
+         if (((scheme & SMTP_FLAG) || (scheme & DE_MAIL_FLAG)) &&
+             (smtp_server[0] != '\0'))
+#else
          if ((scheme & SMTP_FLAG) && (smtp_server[0] != '\0'))
+#endif
          {
             position = 0;
             while (smtp_server[position] != '\0')
@@ -1103,7 +1175,7 @@ get_afd_config_value(void)
    (void)sprintf(config_file, "%s%s%s",
                  p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(config_file, F_OK) == 0) &&
-       (read_file_no_cr(config_file, &buffer, __FILE__, __LINE__) != INCORRECT))
+       (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {
       char value[MAX_INT_LENGTH];
 

@@ -1,6 +1,6 @@
 /*
  *  select_afd_dialog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -510,7 +510,7 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
          {
             match = pmatch((text[0] == '\0') ? "*" : text, msa[i].hostname[0], NULL);
             if ((match != 0) && (msa[i].hostname[1][0] != '\0') &&
-                (strcmp(msa[i].hostname[0], msa[i].hostname[0]) != 0))
+                (my_strcmp(msa[i].hostname[0], msa[i].hostname[0]) != 0))
             {
                match = pmatch((text[0] == '\0') ? "*" : text, msa[i].hostname[1], NULL);
             }

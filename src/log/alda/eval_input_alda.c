@@ -1,6 +1,6 @@
 /*
  *  eval_input_alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1448,49 +1448,57 @@ store_protocols(char *str_protocols)
          *ptr = '\0';
          ptr++;
       }
-      if (strcmp(p_start, ALDA_FTP_SHEME) == 0)
+      if (my_strcmp(p_start, ALDA_FTP_SHEME) == 0)
       {
          protocols |= ALDA_FTP_FLAG;
       }
-      else if (strcmp(p_start, ALDA_LOC_SHEME) == 0)
+      else if (my_strcmp(p_start, ALDA_LOC_SHEME) == 0)
            {
               protocols |= ALDA_LOC_FLAG;
            }
-      else if (strcmp(p_start, ALDA_EXEC_SHEME) == 0)
+      else if (my_strcmp(p_start, ALDA_EXEC_SHEME) == 0)
            {
               protocols |= ALDA_EXEC_FLAG;
            }
-      else if (strcmp(p_start, ALDA_SMTP_SHEME) == 0)
+      else if (my_strcmp(p_start, ALDA_SMTP_SHEME) == 0)
            {
               protocols |= ALDA_SMTP_FLAG;
            }
-      else if (strcmp(p_start, ALDA_SFTP_SHEME) == 0)
+      else if (my_strcmp(p_start, ALDA_DEMAIL_SHEME) == 0)
+           {
+              protocols |= ALDA_DE_MAIL_FLAG;
+           }
+      else if (my_strcmp(p_start, ALDA_SFTP_SHEME) == 0)
            {
               protocols |= ALDA_SFTP_FLAG;
            }
-      else if (strcmp(p_start, ALDA_SCP_SHEME) == 0)
+      else if (my_strcmp(p_start, ALDA_SCP_SHEME) == 0)
            {
               protocols |= ALDA_SCP_FLAG;
            }
-      else if (strcmp(p_start, ALDA_HTTP_SHEME) == 0)
+      else if (my_strcmp(p_start, ALDA_HTTP_SHEME) == 0)
            {
               protocols |= ALDA_HTTP_FLAG;
            }
-      else if (strcmp(p_start, ALDA_HTTPS_SHEME) == 0)
+      else if (my_strcmp(p_start, ALDA_HTTPS_SHEME) == 0)
            {
               protocols |= ALDA_HTTPS_FLAG;
            }
-      else if (strcmp(p_start, ALDA_FTPS_SHEME) == 0)
+      else if (my_strcmp(p_start, ALDA_FTPS_SHEME) == 0)
            {
               protocols |= ALDA_FTPS_FLAG;
            }
-      else if (strcmp(p_start, ALDA_WMO_SHEME) == 0)
+      else if (my_strcmp(p_start, ALDA_WMO_SHEME) == 0)
            {
               protocols |= ALDA_WMO_FLAG;
            }
-      else if (strcmp(p_start, ALDA_MAP_SHEME) == 0)
+      else if (my_strcmp(p_start, ALDA_MAP_SHEME) == 0)
            {
               protocols |= ALDA_MAP_FLAG;
+           }
+      else if (my_strcmp(p_start, ALDA_DFAX_SHEME) == 0)
+           {
+              protocols |= ALDA_DFAX_FLAG;
            }
            else
            {
@@ -2156,6 +2164,7 @@ usage(char *progname)
    (void)fprintf(stderr, "                                          %s\n", ALDA_LOC_SHEME);
    (void)fprintf(stderr, "                                          %s\n", ALDA_EXEC_SHEME);
    (void)fprintf(stderr, "                                          %s\n", ALDA_SMTP_SHEME);
+   (void)fprintf(stderr, "                                          %s\n", ALDA_DEMAIL_SHEME);
    (void)fprintf(stderr, "                                          %s\n", ALDA_SFTP_SHEME);
    (void)fprintf(stderr, "                                          %s\n", ALDA_SCP_SHEME);
    (void)fprintf(stderr, "                                          %s\n", ALDA_HTTP_SHEME);
@@ -2163,6 +2172,7 @@ usage(char *progname)
    (void)fprintf(stderr, "                                          %s\n", ALDA_FTPS_SHEME);
    (void)fprintf(stderr, "                                          %s\n", ALDA_WMO_SHEME);
    (void)fprintf(stderr, "                                          %s\n", ALDA_MAP_SHEME);
+   (void)fprintf(stderr, "                                          %s\n", ALDA_DFAX_SHEME);
    (void)fprintf(stderr, "    Other parameters\n");
    (void)fprintf(stderr, "            -F <file name>               Footer to add to output.\n");
    (void)fprintf(stderr, "            -R <x>                       Rotate log x times.\n");

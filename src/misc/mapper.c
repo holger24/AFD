@@ -1,6 +1,6 @@
 /*
  *  mapper.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -534,7 +534,7 @@ find_filename(char *filename)
 
    for (i = 0; i < count; i++)
    {
-      if (strcmp(region[i].filename, filename) == 0)
+      if (my_strcmp(region[i].filename, filename) == 0)
       {
          return(i);
       }

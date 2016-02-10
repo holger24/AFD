@@ -1,6 +1,6 @@
 /*
  *  format_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -717,7 +717,7 @@ format_input_info(char **text, int pos)
          if ((qfl[pos].dir_id_pos == jd[i].dir_id_pos) &&
              ((qfl[pos].hostname[0] == '\0') ||
               ((qfl[pos].hostname[0] != '\0') &&
-               (strcmp(qfl[pos].hostname, jd[i].host_alias) == 0))))
+               (my_strcmp(qfl[pos].hostname, jd[i].host_alias) == 0))))
          {
             int  no_of_file_masks;
             char *p_file_list;

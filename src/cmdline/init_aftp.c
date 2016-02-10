@@ -1,6 +1,6 @@
 /*
  *  init_aftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -131,6 +131,7 @@ init_aftp(int argc, char *argv[], struct data *p_db)
    p_db->verbose           = NO;
    p_db->append            = NO;
 #ifdef WITH_SSL
+   p_db->auth              = NO;
    p_db->auth              = NO;
 #endif
    p_db->create_target_dir = NO;
@@ -319,7 +320,7 @@ init_aftp(int argc, char *argv[], struct data *p_db)
                else
                {
                   /* Check which lock type is specified. */
-                  if (strcmp(argv[0], LOCK_DOT) == 0)
+                  if (my_strcmp(argv[0], LOCK_DOT) == 0)
                   {
                      p_db->lock = DOT;
                   }
@@ -328,16 +329,16 @@ init_aftp(int argc, char *argv[], struct data *p_db)
                           p_db->lock = DOT_VMS;
                        }
 #ifdef WITH_READY_FILES
-                  else if (strcmp(argv[0], READY_FILE_ASCII) == 0)
+                  else if (my_strcmp(argv[0], READY_FILE_ASCII) == 0)
                        {
                           p_db->lock = READY_A_FILE;
                        }
-                  else if (strcmp(argv[0], READY_FILE_BINARY) == 0)
+                  else if (my_strcmp(argv[0], READY_FILE_BINARY) == 0)
                        {
                           p_db->lock = READY_B_FILE;
                        }
 #endif /* WITH_READY_FILES */
-                  else if (strcmp(argv[0], LOCK_OFF) == 0)
+                  else if (my_strcmp(argv[0], LOCK_OFF) == 0)
                        {
                           p_db->lock = OFF;
                        }
@@ -608,6 +609,10 @@ init_aftp(int argc, char *argv[], struct data *p_db)
             break;
 
 #ifdef WITH_SSL
+         case 'Y' : /* Remove file that was transmitted. */
+            p_db->strict = YES;
+            break;
+
          case 'z' : /* SSL/TLS authentification for control connection only. */
             p_db->auth = YES;
             break;
@@ -775,8 +780,8 @@ usage(void)
                                        specify -2 it will try to determine\n\
                                        the size with the SIZE command.\n"));
    }
-   (void)fprintf(stderr, _("  -b <block size>                    - Transfer block size in bytes. Default %d\n\
-                                       bytes.\n"), DEFAULT_TRANSFER_BLOCKSIZE);
+   (void)fprintf(stderr, _("  -b <block size>                    - Transfer block size in byte. Default %d\n\
+                                       byte.\n"), DEFAULT_TRANSFER_BLOCKSIZE);
    (void)fprintf(stderr, _("  -c <config file>                   - Configuration file holding user name,\n\
                                        password and target directory in URL\n\
                                        format.\n"));
@@ -842,6 +847,7 @@ usage(void)
    (void)fprintf(stderr, _("  -X                                 - Use extended mode active or passive\n\
                                        (-x) mode.\n"));
 #ifdef WITH_SSL
+   (void)fprintf(stderr, _("  -Y                                 - Use strict SSL/TLS checks.\n"));
    (void)fprintf(stderr, _("  -z                                 - Use SSL/TLS for control connection.\n"));
    (void)fprintf(stderr, _("  -Z                                 - Use SSL/TLS for control and data\n\
                                        connection.\n"));

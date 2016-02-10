@@ -106,6 +106,17 @@ MIN_NICE_VALUE                   19
 #IN_GLOBAL_FILESYSTEM            NO
 
 ##########################################################################
+# If there are multiple filesystems from which AFD must distribute files #
+# set this option for each extra filesystem. Otherwise AFD will always   #
+# copy from one filesystem to the other. Only one extra filesystem can   #
+# set for the key word EXTRA_WORK_DIR, so to specify multiple filesystems#
+# you must use it multiple times as shown below.                         #
+# Default: not set                                                       #
+##########################################################################
+#EXTRA_WORK_DIR                  /drbd/afd/files
+#EXTRA_WORK_DIR                  /ram/afd/files
+
+##########################################################################
 # The configuration file from where AFD will read it's configuration.    #
 # This option may be used more then once, making it possible to have     #
 # multiple DIR_CONFIGS. If the name specified does not contain the       #
@@ -136,10 +147,11 @@ MIN_NICE_VALUE                   19
 #REP_RULE_FILE_NAME               rep.csv
 
 ##########################################################################
-# Maximum number of times that the process inst_job may fork itself.     #
+# Maximum number of times that the process dir_check may fork itself to  #
+# copy or exec some command.                                             #
 # Default: 20                                                            #
 ##########################################################################
-MAX_NO_OF_DIR_CHECKS             12
+#MAX_NO_OF_DIR_CHECKS             12
 
 ##########################################################################
 # The following flag determines the default inotify flag for all         #
@@ -369,6 +381,17 @@ ONE_DIR_COPY_TIMEOUT             10
 # Default: None                                                          #
 ##########################################################################
 #ADDITIONAL_LOCKED_FILES          *.tmp|*.temp|*.lock
+
+##########################################################################
+# If keep connected is set, it can be that the process never disconnects.#
+# This can be a problem if there are changes in the filesystem           #
+# underneath. Depending on the implementation this can go by unnoticed   #
+# by the connected process. The value is in seconds. GF_* is for         #
+# fetching files and SF_* is for sending files.                          #
+# Default: 0 (Never disconnect.)                                         #
+##########################################################################
+#GF_FORCE_DISCONNECT              3600
+#SF_FORCE_DISCONNECT              3600
 
 ##########################################################################
 # The number of old logfiles that AFD keeps before they are deleted.     #

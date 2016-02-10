@@ -100,6 +100,9 @@ extern char                       **file_name_pool;
 extern unsigned char              *file_length_pool;
 #endif
 extern char                       *afd_file_dir;
+#ifdef MULTI_FS_SUPPORT
+extern struct extra_work_dirs     *ewl;
+#endif
 extern struct fileretrieve_status *fra;
 #ifdef _DELETE_LOG
 extern struct delete_log          dl;
@@ -321,8 +324,9 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                             (fra[p_de->fra_pos].dup_check_flag & DC_WARN))
                         {
                            receive_log(WARN_SIGN, NULL, 0, current_time,
-                                       _("File %s is duplicate."),
-                                       &p_iwl->file_name[current_fnl_pos]);
+                                       _("File %s is duplicate. @%x"),
+                                       &p_iwl->file_name[current_fnl_pos],
+                                       p_de->dir_id);
                         }
 #endif
                      if ((fra[p_de->fra_pos].fsa_pos != -1) ||
@@ -337,10 +341,17 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
 
                            if (tmp_file_dir[0] == '\0')
                            {
+#ifdef MULTI_FS_SUPPORT
+                              (void)strcpy(tmp_file_dir, ewl[p_de->ewl_pos].afd_file_dir);
+                              (void)strcpy(tmp_file_dir + ewl[p_de->ewl_pos].afd_file_dir_length,
+                                           AFD_TMP_DIR);
+                              ptr = tmp_file_dir + ewl[p_de->ewl_pos].afd_file_dir_length + AFD_TMP_DIR_LENGTH;
+#else
                               (void)strcpy(tmp_file_dir, afd_file_dir);
                               (void)strcpy(tmp_file_dir + afd_file_dir_length,
                                            AFD_TMP_DIR);
                               ptr = tmp_file_dir + afd_file_dir_length + AFD_TMP_DIR_LENGTH;
+#endif
                               *(ptr++) = '/';
                               *ptr = '\0';
 
@@ -348,7 +359,13 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                               next_counter_no_lock(amg_counter,
                                                    MAX_MSG_PER_SEC);
                               *unique_number = *amg_counter;
-                              if (create_name(tmp_file_dir, NO_PRIORITY,
+                              if (create_name(tmp_file_dir,
+#ifdef MULTI_FS_SUPPORT
+                                               ewl[p_de->ewl_pos].afd_file_dir_length + AFD_TMP_DIR_LENGTH,
+#else
+                                               afd_file_dir_length + AFD_TMP_DIR_LENGTH,
+#endif
+                                              NO_PRIORITY,
                                               current_time,
                                               p_de->dir_id,
                                               &split_job_counter, unique_number,
@@ -370,6 +387,11 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                                             MAX_MSG_PER_SEC);
                                        *unique_number = *amg_counter;
                                        if (create_name(tmp_file_dir,
+#ifdef MULTI_FS_SUPPORT
+                                                       ewl[p_de->ewl_pos].afd_file_dir_length + AFD_TMP_DIR_LENGTH,
+#else
+                                                       afd_file_dir_length + AFD_TMP_DIR_LENGTH,
+#endif
                                                        NO_PRIORITY,
                                                        current_time,
                                                        p_de->dir_id,
@@ -508,11 +530,11 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                  sign = ERROR_SIGN;
                               }
                               receive_log(sign, __FILE__, __LINE__, current_time,
-                                          _("Failed (%d) to %s file `%s' to `%s' %s: %s"),
+                                          _("Failed (%d) to %s file `%s' to `%s' %s: %s @%x"),
                                           ret,
                                           (what_done == DATA_MOVED) ? "move" : "copy",
                                           fullname, tmp_file_dir, reason_str,
-                                          strerror(errno));
+                                          strerror(errno), p_de->dir_id);
                               lock_region_w(fra_fd,
 #ifdef LOCK_DEBUG
                                             (char *)&fra[p_de->fra_pos].error_counter - (char *)fra, __FILE__, __LINE__);
@@ -837,8 +859,8 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                            if (fra[p_de->fra_pos].dup_check_flag & DC_WARN)
                            {
                               receive_log(WARN_SIGN, NULL, 0, current_time,
-                                          _("File %s is duplicate."),
-                                          &p_iwl->file_name[current_fnl_pos]);
+                                          _("File %s is duplicate. @%x"),
+                                          &p_iwl->file_name[current_fnl_pos], p_de->dir_id);
                            }
                         }
                      }
@@ -983,7 +1005,7 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
 
    /*
     * With inotify it is to expansive to count the number of files
-    * int the directory. So lets always set this to zero.
+    * in the directory. So lets always set this to zero.
     */
    if (fra[p_de->fra_pos].files_in_dir > 0)
    {

@@ -304,7 +304,8 @@ main(int argc, char *argv[])
 #else
          transfer_file = open_log_file(current_log_file);
 #endif
-         next_file_time = (now / SWITCH_FILE_TIME) * SWITCH_FILE_TIME + SWITCH_FILE_TIME;
+         next_file_time = (now / SWITCH_FILE_TIME) * SWITCH_FILE_TIME +
+                          SWITCH_FILE_TIME;
       }
       if (now > next_his_time)
       {
@@ -344,7 +345,8 @@ main(int argc, char *argv[])
                             fifo_size - bytes_buffered)) > 0)
               {
 #ifdef _FIFO_DEBUG
-                 show_fifo_data('R', TRANSFER_LOG_FIFO, fifo_buffer, n + bytes_buffered, __FILE__, __LINE__);
+                 show_fifo_data('R', TRANSFER_LOG_FIFO, fifo_buffer,
+                                n + bytes_buffered, __FILE__, __LINE__);
 #endif
                  if (bytes_buffered != 0)
                  {

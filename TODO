@@ -415,6 +415,11 @@ o       Make use of off-screen pixmap in afd_ctrl,
 
 
 ------------------------>>>>> Version 1.5.x <<<<<--------------------------
+o       HTTP proxy support.                       *    [DONE]
+o       Use inotify to detect new files.        ***    [DONE]
+o       Support for IP6.                        ***    [DONE]
+o       Implement sf_exec and gf_exec to send and/or
+        retrieve data via any command.           **    [DONE]
 o       Add support for groups in afd_ctrl
         dialog.                                ****    [TODO]
 o       Use alda to get the data for show_xlog
@@ -423,8 +428,6 @@ o       Extra process that stores data into archive
         in case archive directory lies on a
         different file system.                  ***    [TODO]
 o       Implement support for one time jobs.      *    [UNDER CONSTRUCTION]
-o       HTTP proxy support.                       *    [DONE]
-o       Use inotify to detect new files.        ***    [DONE]
 o       Dialog to view statistics.                *    [UNDER CONSTRUCTION]
 o       Create WMO server.                        *    [UNDER CONSTRUCTION]
 o       Command line tool that allows to follow
@@ -436,7 +439,6 @@ o       Follow directories. Add a dir option that
         directories.                             **    [TODO]
 o       Rename option for send in show_olog.      *    [TODO]
 o       Dialog to edit DIR_CONFIG.             ****    [TODO]
-o       Support for IP6.                        ***    [DONE]
 o       Write process sf_sql to send files to
         a database and gf_sql to retrieve data
         from a database.                         **    [TODO]

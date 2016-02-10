@@ -219,7 +219,7 @@ format_output_info(char **text)
          max_x = count;
       }
       max_y++;
-      if (id.d_o.dir_alias != '\0')
+      if (id.d_o.dir_alias[0] != '\0')
       {
          count = sprintf(*text + length, "Dir_Alias  : %s\n", id.d_o.dir_alias);
          length += count;
@@ -574,7 +574,7 @@ format_input_info(char **text)
          max_x = count;
       }
       max_y++;
-      if (id.d_o.dir_alias != '\0')
+      if (id.d_o.dir_alias[0] != '\0')
       {
          count = sprintf(*text + length, "Dir_Alias  : %s\n", id.d_o.dir_alias);
          length += count;

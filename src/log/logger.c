@@ -1,6 +1,6 @@
 /*
  *  logger.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2007 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -190,9 +190,20 @@ check_data(long rescan_time)
          }
          else
          {
-            total_length += fprint_dup_msg(p_log_file, dup_msg,
-                                           &prev_msg_str[LOG_SIGN_POSITION - 1],
-                                           NULL, 0, time(NULL));
+            if (p_log_his != NULL)
+            {
+               total_length += fprint_dup_msg(p_log_file, dup_msg,
+                                              &prev_msg_str[LOG_SIGN_POSITION - 1],
+                                              NULL, 0, time(NULL));
+            }
+            else
+            {
+               total_length += fprint_dup_msg(p_log_file, dup_msg,
+                                              &prev_msg_str[LOG_SIGN_POSITION - 1],
+                                              &prev_msg_str[LOG_SIGN_POSITION + 3],
+                                              MAX_HOSTNAME_LENGTH + 3,
+                                              time(NULL));
+            }
          }
          (void)fflush(p_log_file);
          dup_msg = 0;
@@ -323,11 +334,23 @@ check_data(long rescan_time)
                                   }
                                   else
                                   {
-                                     total_length += fprint_dup_msg(p_log_file,
-                                                                    dup_msg,
-                                                                    &prev_msg_str[LOG_SIGN_POSITION - 1],
-                                                                    NULL, 0,
-                                                                    now);
+                                     if (p_log_his != NULL)
+                                     {
+                                        total_length += fprint_dup_msg(p_log_file,
+                                                                       dup_msg,
+                                                                       &prev_msg_str[LOG_SIGN_POSITION - 1],
+                                                                       NULL, 0,
+                                                                       now);
+                                     }
+                                     else
+                                     {
+                                        total_length += fprint_dup_msg(p_log_file,
+                                                                       dup_msg,
+                                                                       &prev_msg_str[LOG_SIGN_POSITION - 1],
+                                                                       &prev_msg_str[LOG_SIGN_POSITION + 3],
+                                                                       MAX_HOSTNAME_LENGTH + 3,
+                                                                       now);
+                                     }
                                   }
                                   (void)fflush(p_log_file);
                                   dup_msg = 0;
@@ -344,11 +367,23 @@ check_data(long rescan_time)
                              }
                              else
                              {
-                                total_length += fprint_dup_msg(p_log_file,
-                                                               dup_msg,
-                                                               &prev_msg_str[LOG_SIGN_POSITION - 1],
-                                                               NULL, 0,
-                                                               now);
+                                if (p_log_his != NULL)
+                                {
+                                   total_length += fprint_dup_msg(p_log_file,
+                                                                  dup_msg,
+                                                                  &prev_msg_str[LOG_SIGN_POSITION - 1],
+                                                                  NULL, 0,
+                                                                  now);
+                                }
+                                else
+                                {
+                                   total_length += fprint_dup_msg(p_log_file,
+                                                                  dup_msg,
+                                                                  &prev_msg_str[LOG_SIGN_POSITION - 1],
+                                                                  &prev_msg_str[LOG_SIGN_POSITION + 3],
+                                                                  MAX_HOSTNAME_LENGTH + 3,
+                                                                  now);
+                                }
                              }
                              dup_msg = 0;
                           }
@@ -370,11 +405,23 @@ check_data(long rescan_time)
                           }
                           else
                           {
-                             total_length += fprint_dup_msg(p_log_file,
-                                                            dup_msg,
-                                                            &prev_msg_str[LOG_SIGN_POSITION - 1],
-                                                            NULL, 0,
-                                                            now);
+                             if (p_log_his != NULL)
+                             {
+                                total_length += fprint_dup_msg(p_log_file,
+                                                               dup_msg,
+                                                               &prev_msg_str[LOG_SIGN_POSITION - 1],
+                                                               NULL, 0,
+                                                               now);
+                             }
+                             else
+                             {
+                                total_length += fprint_dup_msg(p_log_file,
+                                                               dup_msg,
+                                                               &prev_msg_str[LOG_SIGN_POSITION - 1],
+                                                               &prev_msg_str[LOG_SIGN_POSITION + 3],
+                                                               MAX_HOSTNAME_LENGTH + 3,
+                                                               now);
+                             }
                           }
                           dup_msg = 0;
                        }

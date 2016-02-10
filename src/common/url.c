@@ -327,6 +327,25 @@ url_evaluate(char          *url,
               ptr += 3;
            }
 #endif
+#ifdef _WITH_DFAX_SUPPORT
+           /* DFAX_SHEME : dfax */
+      else if ((*ptr == 'd') && (*(ptr + 1) == 'f') && (*(ptr + 2) == 'a') &&
+               (*(ptr + 3) == 'x') && (*(ptr + 4) == ':'))
+           {
+              *scheme = DFAX_FLAG;
+              ptr += 4;
+           }
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+           /* DEMAIL_SHEME : demail */
+      else if ((*ptr == 'd') && (*(ptr + 1) == 'e') && (*(ptr + 2) == 'm') &&
+               (*(ptr + 3) == 'a') && (*(ptr + 4) == 'i') &&
+               (*(ptr + 5) == 'l') && (*(ptr + 6) == ':'))
+           {
+              *scheme = DE_MAIL_FLAG;
+              ptr += 6;
+           }
+#endif
            else
            {
               *scheme = UNKNOWN_FLAG;
@@ -1937,6 +1956,12 @@ url_insert_password(char *url, char *password)
        ((*ptr == 'm') && (*(ptr + 1) == 'a') && (*(ptr + 2) == 'i') &&
         (*(ptr + 3) == 'l') && (*(ptr + 4) == 't') && (*(ptr + 5) == 'o') &&
         (*(ptr + 6) == ':')) ||
+#ifdef _WITH_DE_MAIL_SUPPORT
+       /* DEMAIL_SHEME : demail */
+       ((*ptr == 'd') && (*(ptr + 1) == 'e') && (*(ptr + 2) == 'm') &&
+        (*(ptr + 3) == 'a') && (*(ptr + 4) == 'i') && (*(ptr + 5) == 'l') &&
+        (*(ptr + 6) == ':')) ||
+#endif
        /* SFTP_SHEME : sftp */
        ((*ptr == 's') && (*(ptr + 1) == 'f') && (*(ptr + 2) == 't') &&
         (*(ptr + 3) == 'p') && (*(ptr + 4) == ':')) ||

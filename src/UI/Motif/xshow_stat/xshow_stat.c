@@ -1,6 +1,6 @@
 /*
  *  xshow_stat.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -527,7 +527,7 @@ init_show_stat(int *argc, char *argv[], char *font_name, char *window_title)
       {
          for (j = 0; j < no_of_hosts; j++)
          {
-            if (strcmp(hosts[i], stat_db[j].hostname) == 0)
+            if (my_strcmp(hosts[i], stat_db[j].hostname) == 0)
             {
                stat_pos[i] = j;
                break;

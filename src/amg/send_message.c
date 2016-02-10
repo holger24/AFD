@@ -1,6 +1,6 @@
 /*
  *  send_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ DESCR__S_M3
  **
  ** SYNOPSIS
  **   void send_message(char         *outgoing_file_dir,
+ **                     dev_t        dev,
  **                     char         *p_unique_name,
  **                     unsigned int split_job_counter,
  **                     unsigned int unique_number,
@@ -39,45 +40,50 @@ DESCR__S_M3
  ** DESCRIPTION
  **   The function send_message() sends a message of the following
  **   format to the FD if SIZEOF_TIME_T is 4:
- **   <creation time><JID><SJC><FTS><FSTS><unique number><dir no><Priority><Originator>
- **          |         |    |    |    |     |              |         |       |
- **          |         |    |    |    |     |  +-----------+         |       |
- **          |         |    |    |    |     |  |  +------------------+       |
- **          |         |    |    |    |     |  |  |  +-----------------------+
- **          |         |    |    |    |     |  |  |  |
- **          |         |    |    |    |     |  |  |  +--------> char
- **          |         |    |    |    |     |  |  +-----------> char
- **          |         |    |    |    |     |  +--------------> unsigned short
- **          |         |    |    |    |     +-----------------> unsigned int
- **          |         |    |    |    +-----------------------> off_t
+ **   <creation time><FID><JID><SJC><FTS><FSTS><unique number><dir no><Priority><Originator>
+ **          |         |    |    |    |    |     |              |         |       |
+ **          |         |    |    |    |    |     |  +-----------+         |       |
+ **          |         |    |    |    |    |     |  |  +------------------+       |
+ **          |         |    |    |    |    |     |  |  |  +-----------------------+
+ **          |         |    |    |    |    |     |  |  |  |
+ **          |         |    |    |    |    |     |  |  |  +---> char
+ **          |         |    |    |    |    |     |  |  +------> char
+ **          |         |    |    |    |    |     |  +---------> unsigned short
+ **          |         |    |    |    |    |     +------------> unsigned int
+ **          |         |    |    |    |    +------------------> off_t
+ **          |         |    |    |    +-----------------------> unsigned int
  **          |         |    |    +----------------------------> unsigned int
  **          |         |    +---------------------------------> unsigned int
- **          |         +--------------------------------------> unsigned int
+ **          |         +--------------------------------------> dev_t
  **          +------------------------------------------------> time_t
  **
  **   If SIZEOF_TIME_T is not 4 then the order is as follows:
  **
- **   <creation time><FSTS><JID><SJC><FTS><unique number><dir no><Priority><Originator>
- **          |         |    |    |    |     |              |         |       |
- **          |         |    |    |    |     |  +-----------+         |       |
- **          |         |    |    |    |     |  |  +------------------+       |
- **          |         |    |    |    |     |  |  |  +-----------------------+
- **          |         |    |    |    |     |  |  |  |
- **          |         |    |    |    |     |  |  |  +--------> char
- **          |         |    |    |    |     |  |  +-----------> char
- **          |         |    |    |    |     |  +--------------> unsigned short
- **          |         |    |    |    |     +-----------------> unsigned int
+ **   <creation time><FSTS><FID><JID><SJC><FTS><unique number><dir no><Priority><Originator>
+ **          |         |    |    |    |    |     |              |         |       |
+ **          |         |    |    |    |    |     |  +-----------+         |       |
+ **          |         |    |    |    |    |     |  |  +------------------+       |
+ **          |         |    |    |    |    |     |  |  |  +-----------------------+
+ **          |         |    |    |    |    |     |  |  |  |
+ **          |         |    |    |    |    |     |  |  |  +---> char
+ **          |         |    |    |    |    |     |  |  +------> char
+ **          |         |    |    |    |    |     |  +---------> unsigned short
+ **          |         |    |    |    |    |     +------------> unsigned int
+ **          |         |    |    |    |    +------------------> unsigned int
  **          |         |    |    |    +-----------------------> unsigned int
  **          |         |    |    +----------------------------> unsigned int
- **          |         |    +---------------------------------> unsigned int
+ **          |         |    +---------------------------------> dev_t
  **          |         +--------------------------------------> off_t
  **          +------------------------------------------------> time_t
  **
  **
- **   JID  - Job ID
- **   SJC  - Split Job Counter
- **   FTS  - Files To Send
- **   FSTS - File Size To Send
+ **   FID    - Filesystem Device ID.
+ **   JID    - Job ID
+ **   SJC    - Split Job Counter
+ **   FTS    - Files To Send
+ **   FSTS   - File Size To Send
+ **   dir no - this is the extra directory number so we do not create
+ **            to many directories in one dir
  **
  **   But only when the FD is currently active. If not these messages
  **   get stored in the buffer 'mb'.
@@ -139,6 +145,9 @@ static void                       store_msg(char *);
 /*############################ send_message() ###########################*/
 void
 send_message(char          *outgoing_file_dir,
+#ifdef MULTI_FS_SUPPORT
+             dev_t         dev,
+#endif
              char          *p_unique_name,
              unsigned int  split_job_counter,
              unsigned int  unique_number,
@@ -301,7 +310,48 @@ send_message(char          *outgoing_file_dir,
 #endif
       }
       *(time_t *)(fifo_buffer) = creation_time;
-#if SIZEOF_TIME_T == 4
+#ifdef MULTI_FS_SUPPORT
+# if SIZEOF_TIME_T == 4
+      *(dev_t *)(fifo_buffer + sizeof(time_t)) = dev;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) +
+                        sizeof(dev_t)) = db[position].job_id;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                        sizeof(unsigned int)) = split_job_counter;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                        sizeof(unsigned int) +
+                        sizeof(unsigned int)) = files_to_send;
+      *(off_t *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                 sizeof(unsigned int) + sizeof(unsigned int) +
+                 sizeof(unsigned int)) = file_size_to_send;
+# else
+      *(off_t *)(fifo_buffer + sizeof(time_t)) = file_size_to_send;
+      *(dev_t *)(fifo_buffer + sizeof(time_t) + sizeof(off_t)) = dev;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) +  sizeof(off_t) +
+                        sizeof(dev_t)) = db[position].job_id;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(off_t) +
+                        sizeof(dev_t) +
+                        sizeof(unsigned int)) = split_job_counter;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(off_t) +
+                        sizeof(dev_t) + sizeof(unsigned int) +
+                        sizeof(unsigned int)) = files_to_send;
+# endif
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                        sizeof(unsigned int) + sizeof(unsigned int) +
+                        sizeof(unsigned int) + sizeof(off_t)) = unique_number;
+      *(unsigned short *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                          sizeof(unsigned int) + sizeof(unsigned int) +
+                          sizeof(unsigned int) + sizeof(off_t) +
+                          sizeof(unsigned int)) = dir_no;
+      *(char *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                sizeof(unsigned int) + sizeof(unsigned int) +
+                sizeof(unsigned int) + sizeof(off_t) + sizeof(unsigned int) +
+                sizeof(unsigned short)) = db[position].priority;
+      *(char *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                sizeof(unsigned int) + sizeof(unsigned int) +
+                sizeof(unsigned int) + sizeof(off_t) + sizeof(unsigned int) +
+                sizeof(unsigned short) + sizeof(char)) = AMG_NO;
+#else
+# if SIZEOF_TIME_T == 4
       *(unsigned int *)(fifo_buffer + sizeof(time_t)) = db[position].job_id;
       *(unsigned int *)(fifo_buffer + sizeof(time_t) +
                         sizeof(unsigned int)) = split_job_counter;
@@ -310,7 +360,7 @@ send_message(char          *outgoing_file_dir,
       *(off_t *)(fifo_buffer + sizeof(time_t) + sizeof(unsigned int) +
                  sizeof(unsigned int) +
                  sizeof(unsigned int)) = file_size_to_send;
-#else
+# else
       *(off_t *)(fifo_buffer + sizeof(time_t)) = file_size_to_send;
       *(unsigned int *)(fifo_buffer + sizeof(time_t) +
                         sizeof(off_t)) = db[position].job_id;
@@ -319,7 +369,7 @@ send_message(char          *outgoing_file_dir,
       *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(off_t) +
                         sizeof(unsigned int) +
                         sizeof(unsigned int)) = files_to_send;
-#endif
+# endif
       *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(unsigned int) +
                         sizeof(unsigned int) + sizeof(unsigned int) +
                         sizeof(off_t)) = unique_number;
@@ -334,7 +384,7 @@ send_message(char          *outgoing_file_dir,
                 sizeof(unsigned int) + sizeof(unsigned int) + sizeof(off_t) +
                 sizeof(unsigned int) + sizeof(unsigned short) +
                 sizeof(char)) = AMG_NO;
-
+#endif /* MULTI_FS_SUPPORT */
       /*
        * Send the message name via fifo to the FD. If the
        * FD is not active queue it in a special buffer.

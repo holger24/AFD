@@ -216,6 +216,9 @@ static void                     get_msg_str(char *),
                                 set_xfer_uint(char *, unsigned int),
                                 set_xfer_uint64(char *, u_long_64),
                                 sig_handler(int);
+#ifdef WITH_TRACE
+static void                     show_sftp_cmd(unsigned int, int);
+#endif
 
 
 /*########################### sftp_connect() ############################*/
@@ -338,6 +341,12 @@ retry_connect:
                {
                   if ((status = read_msg(msg, (int)ui_var, __LINE__)) == SUCCESS)
                   {
+#ifdef WITH_TRACE
+                     if (scd.debug == TRACE_MODE)
+                     {
+                        show_sftp_cmd(ui_var, R_TRACE);
+                     }
+#endif
                      if (msg[0] == SSH_FXP_VERSION)
                      {
                         char *ptr,
@@ -374,8 +383,8 @@ retry_connect:
                               }
                               else
                               {
-                                 if (strcmp(p_xfer_str,
-                                            OPENSSH_POSIX_RENAME_EXT) == 0)
+                                 if (my_strcmp(p_xfer_str,
+                                               OPENSSH_POSIX_RENAME_EXT) == 0)
                                  {
                                     ui_var -= (str_len + 4);
                                     ptr += (str_len + 4);
@@ -391,8 +400,8 @@ retry_connect:
                                        scd.posix_rename = atoi(p_xfer_str);
                                     }
                                  }
-                                 else if (strcmp(p_xfer_str,
-                                                 OPENSSH_STATFS_EXT) == 0)
+                                 else if (my_strcmp(p_xfer_str,
+                                                    OPENSSH_STATFS_EXT) == 0)
                                       {
                                          ui_var -= (str_len + 4);
                                          ptr += (str_len + 4);
@@ -408,8 +417,8 @@ retry_connect:
                                             scd.statvfs = atoi(p_xfer_str);
                                          }
                                       }
-                                 else if (strcmp(p_xfer_str,
-                                                 OPENSSH_FSTATFS_EXT) == 0)
+                                 else if (my_strcmp(p_xfer_str,
+                                                    OPENSSH_FSTATFS_EXT) == 0)
                                       {
                                          ui_var -= (str_len + 4);
                                          ptr += (str_len + 4);
@@ -425,8 +434,8 @@ retry_connect:
                                             scd.fstatvfs = atoi(p_xfer_str);
                                          }
                                       }
-                                 else if (strcmp(p_xfer_str,
-                                                 OPENSSH_HARDLINK_EXT) == 0)
+                                 else if (my_strcmp(p_xfer_str,
+                                                    OPENSSH_HARDLINK_EXT) == 0)
                                       {
                                          ui_var -= (str_len + 4);
                                          ptr += (str_len + 4);
@@ -442,8 +451,8 @@ retry_connect:
                                             scd.hardlink = atoi(p_xfer_str);
                                          }
                                       }
-                                 else if (strcmp(p_xfer_str,
-                                                 OPENSSH_FSYNC_EXT) == 0)
+                                 else if (my_strcmp(p_xfer_str,
+                                                    OPENSSH_FSYNC_EXT) == 0)
                                       {
                                          ui_var -= (str_len + 4);
                                          ptr += (str_len + 4);
@@ -2255,7 +2264,8 @@ sftp_quit(void)
 static int
 get_reply(unsigned int id, int line)
 {
-   int reply;
+   unsigned int msg_length;
+   int          reply;
 
    if (simulation_mode == YES)
    {
@@ -2292,8 +2302,6 @@ get_reply(unsigned int id, int line)
 retry:
    if ((reply = read_msg(msg, 4, line)) == SUCCESS)
    {
-      unsigned int msg_length;
-
       msg_length = get_xfer_uint(msg);
       if (msg_length <= MAX_SFTP_MSG_LENGTH)
       {
@@ -2341,6 +2349,13 @@ retry:
       }
    }
 
+#ifdef WITH_TRACE
+   if ((reply == SUCCESS) && (scd.debug == TRACE_MODE))
+   {
+      show_sftp_cmd(msg_length, R_TRACE);
+   }
+#endif
+
    return(reply);
 }
 
@@ -2387,6 +2402,12 @@ get_write_reply(unsigned int id, int line)
             {
                if ((reply = read_msg(msg, (int)msg_length, line)) == SUCCESS)
                {
+#ifdef WITH_TRACE
+                  if (scd.debug == TRACE_MODE)
+                  {
+                     show_sftp_cmd(msg_length, R_TRACE);
+                  }
+#endif
                   gotcha = NO;
                   reply_id = get_xfer_uint(&msg[1]);
 
@@ -2592,6 +2613,7 @@ write_msg(char *block, int size, int line)
               {
                  if ((nleft == size) && (status > 4))
                  {
+                    show_sftp_cmd((unsigned int)(size - 4), W_TRACE);
                     if (*(ptr + 4) == SSH_FXP_WRITE)
                     {
                        if (status < (4 + 1 + 4 + 4 + scd.file_handle_length + 8 + 4))
@@ -2783,6 +2805,232 @@ read_msg(char *block, int blocksize, int line)
 
    return(SUCCESS);
 }
+
+
+#ifdef WITH_TRACE
+/*++++++++++++++++++++++++++ show_sftp_cmd() ++++++++++++++++++++++++++++*/
+static void
+show_sftp_cmd(unsigned int ui_var, int type)
+{
+   int  length,
+        offset;
+   char buffer[1024];
+
+   if (type == R_TRACE)
+   {
+      offset = 0;
+   }
+   else
+   {
+      offset = 4;
+   }
+
+   switch ((unsigned char)msg[offset])
+   {
+      case SSH_FXP_INIT :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_INIT length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_VERSION :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_VERSION length=%u version=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         if ((offset == 0) && (ui_var > 5))
+         {
+            int  str_len;
+            char *ptr,
+                 *p_xfer_str;
+
+            length += snprintf(buffer + length, 1024 - length, " extensions=");
+            ui_var -= 5;
+            ptr = &msg[5];
+            while ((ui_var > 0) && (length < 1024))
+            {
+               if (((str_len = get_xfer_str(ptr, &p_xfer_str)) == 0) ||
+                   (str_len > ui_var))
+               {
+                  break;
+               }
+               else
+               {
+                  length += snprintf(buffer + length, 1024 - length,
+                                     "%s", p_xfer_str);
+                  ui_var -= (str_len + 4);
+                  ptr += (str_len + 4);
+                  free(p_xfer_str);
+                  p_xfer_str = NULL;
+                  if (((str_len = get_xfer_str(ptr, &p_xfer_str)) == 0) ||
+                      (str_len > ui_var))
+                  {
+                     break;
+                  }
+                  else
+                  {
+                     length += snprintf(buffer + length, 1024 - length,
+                                        ":%s ", p_xfer_str);
+                  }
+
+                  /* Away with the version number. */
+                  ui_var -= (str_len + 4);
+                  ptr += (str_len + 4);
+                  free(p_xfer_str);
+                  p_xfer_str = NULL;
+               }
+            }
+         }
+         break;
+      case SSH_FXP_OPEN :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_OPEN length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_CLOSE :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_CLOSE length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_READ :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_READ length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_WRITE :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_WRITE length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_LSTAT :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_LSTAT length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_FSTAT :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_FSTAT length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_SETSTAT :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_SETSTAT length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_FSETSTAT :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_FSETSTAT length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_OPENDIR :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_OPENDIR length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_READDIR :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_READDIR length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_REMOVE :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_REMOVE length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_MKDIR :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_MKDIR length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_RMDIR :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_RMDIR length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_REALPATH :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_REALPATH length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_STAT :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_STAT length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_RENAME :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_RENAME length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_READLINK :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_READLINK length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_SYMLINK :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_SYMLINK length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_LINK :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_LINK length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_BLOCK :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_BLOCK length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_UNBLOCK :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_UNBLOCK length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_STATUS :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_STATUS length=%u id=%u %s",
+                           ui_var, get_xfer_uint(&msg[offset + 1]),
+                           error_2_str(&msg[5]));
+         break;
+      case SSH_FXP_HANDLE :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_HANDLE length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_DATA :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_DATA length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_NAME :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_NAME length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_ATTRS :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_ATTRS length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_EXTENDED :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_EXTENDED length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      case SSH_FXP_EXTENDED_REPLY :
+         length = snprintf(buffer, 1024,
+                           "SSH_FXP_EXTENDED_REPLY length=%u id=%u",
+                           ui_var, get_xfer_uint(&msg[offset + 1]));
+         break;
+      default :
+         length = 0;
+         break;
+   }
+   if (length > 0)
+   {
+      trace_log(NULL, 0, type, buffer, length, NULL);
+   }
+}
+#endif
 
 
 /*++++++++++++++++++++++++++ get_xfer_uint() ++++++++++++++++++++++++++++*/
@@ -3345,69 +3593,69 @@ error_2_str(char *msg)
    switch (error_code)
    {
       case SSH_FX_OK                          : /*  0 */
-         return(_("No error. (0)"));
+         return(_("SSH_FX_OK: No error. (0)"));
       case SSH_FX_EOF                         : /*  1 */
-         return(_("Attempted to read past the end-of-file or there are no more directory entries. (1)"));
+         return(_("SSH_FX_EOF: Attempted to read past the end-of-file or there are no more directory entries. (1)"));
       case SSH_FX_NO_SUCH_FILE                : /*  2 */
-         return(_("A reference was made to a file which does not exist. (2)"));
+         return(_("SSH_FX_NO_SUCH_FILE: A reference was made to a file which does not exist. (2)"));
       case SSH_FX_PERMISSION_DENIED           : /*  3 */
-         return(_("Permission denied. (3)"));
+         return(_("SSH_FX_PERMISSION_DENIED: Permission denied. (3)"));
       case SSH_FX_FAILURE                     : /*  4 */
-         return(_("An error occurred, but no specific error code exists to describe the failure. (4)"));
+         return(_("SSH_FX_FAILURE: An error occurred, but no specific error code exists to describe the failure. (4)"));
       case SSH_FX_BAD_MESSAGE                 : /*  5 */
-         return(_("A badly formatted packet or other SFTP protocol incompatibility was detected. (5)"));
+         return(_("SSH_FX_BAD_MESSAGE: A badly formatted packet or other SFTP protocol incompatibility was detected. (5)"));
       case SSH_FX_NO_CONNECTION               : /*  6 */
-         return(_("There is no connection to the server. (6)"));
+         return(_("SSH_FX_NO_CONNECTION: There is no connection to the server. (6)"));
       case SSH_FX_CONNECTION_LOST             : /*  7 */
-         return(_("The connection to the server was lost. (7)"));
+         return(_("SSH_FX_CONNECTION_LOST: The connection to the server was lost. (7)"));
       case SSH_FX_OP_UNSUPPORTED              : /*  8 */
-         return(_("Operation unsupported. (8)"));
+         return(_("SSH_FX_OP_UNSUPPORTED: Operation unsupported. (8)"));
       case SSH_FX_INVALID_HANDLE              : /*  9 */
-         return(_("The handle value was invalid. (9)"));
+         return(_("SSH_FX_INVALID_HANDLE: The handle value was invalid. (9)"));
       case SSH_FX_NO_SUCH_PATH                : /* 10 */
-         return(_("File path does not exist or is invalid. (10)"));
+         return(_("SSH_FX_NO_SUCH_PATH: File path does not exist or is invalid. (10)"));
       case SSH_FX_FILE_ALREADY_EXISTS         : /* 11 */
-         return(_("File already exists. (11)"));
+         return(_("SSH_FX_FILE_ALREADY_EXISTS: File already exists. (11)"));
       case SSH_FX_WRITE_PROTECT               : /* 12 */
-         return(_("File is on read-only media, or the media is write protected. (12)"));
+         return(_("SSH_FX_WRITE_PROTECT: File is on read-only media, or the media is write protected. (12)"));
       case SSH_FX_NO_MEDIA                    : /* 13 */
-         return(_("The requested operation cannot be completed because there is no media available in the drive. (13)"));
+         return(_("SSH_FX_NO_MEDIA: The requested operation cannot be completed because there is no media available in the drive. (13)"));
       case SSH_FX_NO_SPACE_ON_FILESYSTEM      : /* 14 */
-         return(_("No space on filesystem. (14)"));
+         return(_("SSH_FX_NO_SPACE_ON_FILESYSTEM: No space on filesystem. (14)"));
       case SSH_FX_QUOTA_EXCEEDED              : /* 15 */
-         return(_("Quota exceeded. (15)"));
+         return(_("SSH_FX_QUOTA_EXCEEDED: Quota exceeded. (15)"));
       case SSH_FX_UNKNOWN_PRINCIPAL           : /* 16 */
-         return(_("Unknown principal. (16)"));
+         return(_("SSH_FX_UNKNOWN_PRINCIPAL: Unknown principal. (16)"));
       case SSH_FX_LOCK_CONFLICT               : /* 17 */
-         return(_("File could not be opened because it is locked by another process. (17)"));
+         return(_("SSH_FX_LOCK_CONFLICT: File could not be opened because it is locked by another process. (17)"));
       case SSH_FX_DIR_NOT_EMPTY               : /* 18 */
-         return(_("Directory is not empty. (18)"));
+         return(_("SSH_FX_DIR_NOT_EMPTY: Directory is not empty. (18)"));
       case SSH_FX_NOT_A_DIRECTORY             : /* 19 */
-         return(_("The specified file is not a directory. (19)"));
+         return(_("SSH_FX_NOT_A_DIRECTORY: The specified file is not a directory. (19)"));
       case SSH_FX_INVALID_FILENAME            : /* 20 */
-         return(_("Invalid filename. (20)"));
+         return(_("SSH_FX_INVALID_FILENAME: Invalid filename. (20)"));
       case SSH_FX_LINK_LOOP                   : /* 21 */
-         return(_("Too many symbolic links encountered. (21)"));
+         return(_("SSH_FX_LINK_LOOP: Too many symbolic links encountered. (21)"));
       case SSH_FX_CANNOT_DELETE               : /* 22 */
-         return(_("File cannot be deleted. (22)"));
+         return(_("SSH_FX_CANNOT_DELETE: File cannot be deleted. (22)"));
       case SSH_FX_INVALID_PARAMETER           : /* 23 */
-         return(_("Invalid parameter. (23)"));
+         return(_("SSH_FX_INVALID_PARAMETER: Invalid parameter. (23)"));
       case SSH_FX_FILE_IS_A_DIRECTORY         : /* 24 */
-         return(_("File is a directory. (24)"));
+         return(_("SSH_FX_FILE_IS_A_DIRECTORY: File is a directory. (24)"));
       case SSH_FX_BYTE_RANGE_LOCK_CONFLICT    : /* 25 */
-         return(_("Byte range lock conflict. (25)"));
+         return(_("SSH_FX_BYTE_RANGE_LOCK_CONFLICT: Byte range lock conflict. (25)"));
       case SSH_FX_BYTE_RANGE_LOCK_REFUSED     : /* 26 */
-         return(_("Byte range lock refused. (26)"));
+         return(_("SSH_FX_BYTE_RANGE_LOCK_REFUSED: Byte range lock refused. (26)"));
       case SSH_FX_DELETE_PENDING              : /* 27 */
-         return(_("Delete is pending. (27)"));
+         return(_("SSH_FX_DELETE_PENDING: Delete is pending. (27)"));
       case SSH_FX_FILE_CORRUPT                : /* 28 */
-         return(_("File is corrupt. (28)"));
+         return(_("SSH_FX_FILE_CORRUPT: File is corrupt. (28)"));
       case SSH_FX_OWNER_INVALID               : /* 29 */
-         return(_("Invalid owner. (29)"));
+         return(_("SSH_FX_OWNER_INVALID: Invalid owner. (29)"));
       case SSH_FX_GROUP_INVALID               : /* 30 */
-         return(_("Invalid group. (30)"));
+         return(_("SSH_FX_GROUP_INVALID: Invalid group. (30)"));
       case SSH_FX_NO_MATCHING_BYTE_RANGE_LOCK : /* 31 */
-         return(_("Requested operation could not be completed, because byte range lock has not been granted. (31)"));
+         return(_("SSH_FX_NO_MATCHING_BYTE_RANGE_LOCK: Requested operation could not be completed, because byte range lock has not been granted. (31)"));
       default                                 : /* ?? */
          (void)snprintf(msg_str, MAX_PATH_LENGTH,
                         _("Unknown error code. (%u)"), error_code);

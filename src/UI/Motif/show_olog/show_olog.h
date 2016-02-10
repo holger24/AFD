@@ -1,6 +1,6 @@
 /*
  *  show_olog.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,9 @@
 #ifdef _WITH_SMTP_SUPPORT
 # define SMTP_ID_STR             "SMTP "
 #endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define DEMAIL_ID_STR           "DEMAI"
+#endif
 #ifdef _WITH_HTTP_SUPPORT
 # define HTTP_ID_STR             "HTTP "
 #endif
@@ -53,6 +56,9 @@
 #endif
 #ifdef _WITH_MAP_SUPPORT
 # define MAP_ID_STR              "MAP  "
+#endif
+#ifdef _WITH_DFAX_SUPPORT
+# define DFAX_ID_STR             "DFAX"
 #endif
 #ifdef WITH_SSL
 # ifdef _WITH_FTP_SUPPORT
@@ -88,12 +94,20 @@
 #define FILE_NAME                6
 #define DIRECTORY_NAME_NO_ENTER  7
 #define DIRECTORY_NAME           8
-#define FILE_LENGTH_NO_ENTER     9
-#define FILE_LENGTH              10
-#define RECIPIENT_NAME_NO_ENTER  11
-#define RECIPIENT_NAME           12
+#define JOB_ID_NO_ENTER          9
+#define JOB_ID                   10
+#define FILE_LENGTH_NO_ENTER     11
+#define FILE_LENGTH              12
+#define RECIPIENT_NAME_NO_ENTER  13
+#define RECIPIENT_NAME           14
 
 #define NO_OF_VISIBLE_LINES      20
+
+#ifdef MULTI_FS_SUPPORT
+# define ARCHIVE_SUB_DIR_LEVEL   4
+#else
+# define ARCHIVE_SUB_DIR_LEVEL   3
+#endif
 
 #define LINES_BUFFERED           1000
 #define MAX_DISPLAYED_FILE_SIZE  10
@@ -278,6 +292,9 @@ struct sol_perm
 extern void calculate_summary(char *, time_t, time_t, unsigned int,
                               double, double),
             close_button(Widget, XtPointer, XtPointer),
+#ifdef _WITH_DE_MAIL_SUPPORT
+            confirmation_toggle(Widget, XtPointer, XtPointer),
+#endif
             continues_toggle(Widget, XtPointer, XtPointer),
             file_name_toggle(Widget, XtPointer, XtPointer),
             format_receive_info(char **, int),
@@ -299,8 +316,8 @@ extern void calculate_summary(char *, time_t, time_t, unsigned int,
             scrollbar_moved(Widget, XtPointer, XtPointer),
             search_button(Widget, XtPointer, XtPointer),
             select_all_button(Widget, XtPointer, XtPointer),
+            select_protocol(Widget, XtPointer, XtPointer),
             set_view_mode(Widget, XtPointer, XtPointer),
-            toggled(Widget, XtPointer, XtPointer),
             view_button(Widget, XtPointer, XtPointer),
             view_files(int, int *);
 extern int  get_sum_data(int, time_t *, double *, double *);

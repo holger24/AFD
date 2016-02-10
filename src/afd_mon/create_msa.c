@@ -1,6 +1,6 @@
 /*
  *  create_msa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -61,8 +61,7 @@ DESCR__S_M3
 DESCR__E_M3
 
 #include <stdio.h>
-#include <string.h>                 /* strlen(), strcmp(), strcpy(),     */
-                                    /* strerror()                        */
+#include <string.h>                 /* strlen(), strcpy(), strerror()    */
 #include <stdlib.h>                 /* calloc(), free()                  */
 #include <time.h>                   /* time()                            */
 #include <sys/types.h>
@@ -495,7 +494,7 @@ create_msa(void)
          {
             if (gotcha[k] != YES)
             {
-               if (strcmp(old_msa[k].afd_alias, ml[i].afd_alias) == 0)
+               if (my_strcmp(old_msa[k].afd_alias, ml[i].afd_alias) == 0)
                {
                   afd_pos = k;
                   break;

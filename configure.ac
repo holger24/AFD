@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.59])
-AC_INIT([afd], [1.4.7-11], [Holger.Kiehl@dwd.de])
+AC_INIT([afd], [1.4.8-0.8.beta], [Holger.Kiehl@dwd.de])
 AC_CONFIG_SRCDIR(src/init_afd/afd.c)
 AC_CONFIG_AUX_DIR(ac-tools)
 dnl# AC_PREFIX_DEFAULT("/usr/local/afd")
@@ -43,6 +43,14 @@ AC_ARG_ENABLE(output_log,
    [AC_DEFINE([_OUTPUT_LOG], [], [With output log support])
     ac_cv_output_log="OUTPUT "
     AM_CONDITIONAL(WITH_OUTPUT_LOG, true)])
+
+AC_ARG_ENABLE(confirmation_log,
+   [  --enable-confirmation_log       enable confirmation_log support],
+   [AC_DEFINE([_CONFIRMATION_LOG], [], [With confirmation log support])
+    ac_cv_confirmation_log="CONFIRMATION "
+    AM_CONDITIONAL(WITH_CONFIRMATION_LOG, true)],
+   [AM_CONDITIONAL(WITH_CONFIRMATION_LOG, false)
+    ac_cv_confirmation_log=""])
 
 AC_ARG_ENABLE(delete_log,
    [  --disable-delete_log            disable delete_log support],
@@ -176,6 +184,13 @@ AC_ARG_ENABLE(sftp_support,
     ac_cv_sftp_support="SFTP "
     AM_CONDITIONAL(WITH_SFTP_SUPPORT, true)])
 
+AC_ARG_ENABLE(html_gui,
+   [  --enable-html_gui               enable HTML gui],
+   [AM_CONDITIONAL(WITH_HTML_GUI, true)
+    ac_cv_html_gui="yes"],
+   [ac_cv_html_gui="no"
+    AM_CONDITIONAL(WITH_HTML_GUI, false)])
+
 AC_ARG_ENABLE(ip_database,
    [  --enable-ip_database            enable internal IP database],
    [AM_CONDITIONAL(WITH_IP_DATABASE, true)
@@ -277,13 +292,29 @@ AC_ARG_ENABLE(setuid_progs,
    [ac_cv_setuid_progs="no"
     AM_CONDITIONAL(WITH_SETUID, false)])
 
-AC_ARG_ENABLE(server_support,
-   [  --enable-server_support         enable server support],
-   [AM_CONDITIONAL(WITH_SERVER_SUPPORT, true)
-    AC_DEFINE([_WITH_SERVER_SUPPORT], [], [With server support])
-    ac_cv_server_support="yes"],
-   [ac_cv_server_support="no"
-    AM_CONDITIONAL(WITH_SERVER_SUPPORT, false)])
+AC_ARG_ENABLE(atpd_support,
+   [  --enable-atpd_support           enable ATPD support],
+   [AM_CONDITIONAL(WITH_ATPD_SUPPORT, true)
+    AC_DEFINE([_WITH_ATPD_SUPPORT], [], [With ATPD support])
+    ac_cv_atpd_support="ATPD "],
+   [ac_cv_atpd_support=""
+    AM_CONDITIONAL(WITH_ATPD_SUPPORT, false)])
+
+AC_ARG_ENABLE(wmod_support,
+   [  --enable-wmod_support           enable WMOD support],
+   [AM_CONDITIONAL(WITH_WMOD_SUPPORT, true)
+    AC_DEFINE([_WITH_WMOD_SUPPORT], [], [With WMOD support])
+    ac_cv_wmod_support="WMOD "],
+   [ac_cv_wmod_support=""
+    AM_CONDITIONAL(WITH_WMOD_SUPPORT, false)])
+
+AC_ARG_ENABLE(de_mail_support,
+   [  --enable-de_mail_support        enable DE-mail support],
+   [AM_CONDITIONAL(WITH_DE_MAIL_SUPPORT, true)
+    AC_DEFINE([_WITH_DE_MAIL_SUPPORT], [], [With DE-mail support])
+    ac_cv_demail_support="DE-mail "],
+   [ac_cv_demail_support=""
+    AM_CONDITIONAL(WITH_DE_MAIL_SUPPORT, false)])
 
 AC_ARG_ENABLE(with_unlink_delay,
    [  --enable-with_unlink_delay      enable delay and retry when unlink fails],
@@ -296,6 +327,14 @@ AC_ARG_ENABLE(multi_dir_scans,
    [if test x$enableval = xyes; then
       AC_DEFINE([WITH_MULTI_DIR_SCANS], [], [Enable multiple directory scans])
    fi])
+
+AC_ARG_ENABLE(multi_fs_support,
+   [  --enable-multi_fs_support       enable multiple local filesystem support],
+   [AM_CONDITIONAL(WITH_MULTI_FS_SUPPORT, true)
+    AC_DEFINE([MULTI_FS_SUPPORT], [], [Enable multiple local filesystem support])
+    ac_cv_multi_fs_support="YES"],
+   [ac_cv_multi_fs_support="NO"
+    AM_CONDITIONAL(WITH_MULTI_FS_SUPPORT, false)])
 
 AC_ARG_ENABLE(ftp_reuse_data_port,
    [  --enable-ftp_reuse_data_port    enable reusing FTP data port],
@@ -365,6 +404,30 @@ else
    AFD_MAP_LIBS="-L$afd_map_lib_dir -lmfse2 -lz -lfaxe -lgeo"
 fi
 AC_SUBST(AFD_MAP_LIBS)
+
+AC_ARG_ENABLE(dfax_support,
+   [  --enable-dfax_support           enable DFAX support],
+   [if test x$enableval = xyes; then
+      AC_DEFINE([_WITH_DFAX_SUPPORT], [], [With DFAX support])
+      AM_CONDITIONAL(WITH_DFAX_SUPPORT, true)
+      ac_cv_dfax_support="DFAX "
+   else
+      AM_CONDITIONAL(WITH_DFAX_SUPPORT, false)
+      ac_cv_dfax_support=""
+   fi],
+   [AM_CONDITIONAL(WITH_DFAX_SUPPORT, false)
+    ac_cv_dfax_support=""])
+
+AC_ARG_WITH(dfax-libraries,
+   [  --with-dfax-libraries=DIR       location where DFAX libraries are],
+   afd_dfax_lib_dir="$withval")
+if test "x$afd_dfax_lib_dir" = "x"
+then
+   AFD_DFAX_LIBS="-lDivaS"
+else
+   AFD_DFAX_LIBS="-L$afd_dfax_lib_dir -lDivaS"
+fi
+AC_SUBST(AFD_DFAX_LIBS)
 
 AC_ARG_ENABLE(passwd_in_msg,
    [  --enable-passwd_in_msg          enable password in message],
@@ -1358,8 +1421,8 @@ AC_CHECK_FUNC([mmap],
               [AM_CONDITIONAL(WITHOUT_MMAP, true)])
 AC_CHECK_FUNCS(fdatasync gai_strerror getline getaddrinfo gethostname memcpy\
                mkdir mkfifo mktime rmdir select setpriority seteuid setreuid\
-               socket strerror strtod strtol strtoll strtoul strtoull\
-               unsetenv)
+               socket strcasestr strerror strtod strtol strtoll strtoul\
+               strtoull unsetenv)
 
 AM_GNU_GETTEXT([external])
 if test "x$LIBINTL" != "x"
@@ -1382,9 +1445,13 @@ src/archive_watch/Makefile
 src/statistics/Makefile
 src/tools/Makefile
 src/afd_mon/Makefile
-src/afdd/Makefile
 src/cmdline/Makefile
 src/servers/Makefile
+src/servers/common/Makefile
+src/servers/afdd/Makefile
+src/servers/atpd/Makefile
+src/servers/demcd/Makefile
+src/servers/wmod/Makefile
 src/test/Makefile
 src/test/filter/Makefile
 src/UI/Makefile
@@ -1416,6 +1483,8 @@ src/UI/Motif/mon_info/Makefile
 src/UI/Motif/view_dc/Makefile
 src/UI/Motif/xsend_file/Makefile
 src/UI/Motif/xshow_stat/Makefile
+src/UI/HTML/Makefile
+src/UI/HTML/hmon_ctrl/Makefile
 doc/Makefile
 doc/html-en/Makefile
 doc/images/Makefile
@@ -1461,12 +1530,13 @@ then
 else
    echo "    With TLS/SSL support             : no"
 fi
-echo "    Logs                             : ${ac_cv_input_log}${ac_cv_distribution_log}${ac_cv_output_log}${ac_cv_delete_log}${ac_cv_production_log}${ac_cv_maintainer_log}${ac_cv_alda_cache}"
+echo "    Logs                             : ${ac_cv_input_log}${ac_cv_distribution_log}${ac_cv_output_log}${ac_cv_confirmation_log}${ac_cv_delete_log}${ac_cv_production_log}${ac_cv_maintainer_log}${ac_cv_alda_cache}"
 echo "    Error queue support              : ${ac_cv_error_queue}"
 echo "    With AFD monitor                 : ${ac_cv_afd_mon}"
+echo "    Multiple file system support     : ${ac_cv_multi_fs_support}"
 echo "    With duplicate check support     : ${ac_cv_dupcheck_support}"
-echo "    Protocols supported              : ${ac_cv_ftp_support}${ac_cv_sftp_support}${ac_cv_smtp_support}${ac_cv_http_support}${ac_cv_wmo_support}${ac_cv_loc_support}${ac_cv_fd_exec_support}${ac_cv_scp_support}"
-echo "    With server support              : ${ac_cv_server_support}"
+echo "    Protocols supported              : ${ac_cv_ftp_support}${ac_cv_sftp_support}${ac_cv_smtp_support}${ac_cv_http_support}${ac_cv_wmo_support}${ac_cv_loc_support}${ac_cv_fd_exec_support}${ac_cv_scp_support}${ac_cv_demail_support}${ac_cv_dfax_support}"
+echo "    With server support              : ${ac_cv_atpd_support}${ac_cv_wmod_support}"
 echo "    With largefile support           : ${ac_cv_largefile}"
 echo "    With inotify support             : ${ac_cv_allow_inotify}"
 echo "    With internal IP database        : ${ac_cv_ip_database}"

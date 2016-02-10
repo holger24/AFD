@@ -1,6 +1,6 @@
 /*
  *  log_callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -234,7 +234,7 @@ search_text(Widget w, XtPointer client_data, XtPointer call_data)
       }
       else
       {
-         if (strcmp(last_search_str, search_str) != 0)
+         if (my_strcmp(last_search_str, search_str) != 0)
          {
             size_t length;
 

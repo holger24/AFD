@@ -105,6 +105,9 @@ get_error_str(int error_code)
       case MAP_FUNCTION_ERROR : return(MAP_FUNCTION_ERROR_STR);            /* 55 */
 #endif
       case EXEC_ERROR : return(EXEC_ERROR_STR);                            /* 56 */
+#ifdef _WITH_DFAX_SUPPORT
+      case DFAX_FUNCTION_ERROR : return(DFAX_FUNCTION_ERROR_STR);          /* 57 */
+#endif
       case SYNTAX_ERROR : return(SYNTAX_ERROR_STR);                        /* 60 */
       case NO_FILES_TO_SEND : return(NO_FILES_TO_SEND_STR);                /* 61 */
       case STILL_FILES_TO_SEND : return(STILL_FILES_TO_SEND_STR);          /* 62 */

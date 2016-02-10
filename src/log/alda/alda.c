@@ -1,6 +1,6 @@
 /*
  *  alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1021,7 +1021,7 @@ search_afd(char *search_afd)
                   {
                      search_loop = SEARCH_PRODUCTION_LOG;
                      prod_counter = 0;
-                     if (strcmp(plog.what_done, DELETE_ID) == 0)
+                     if (my_strcmp(plog.what_done, DELETE_ID) == 0)
                      {
 # ifdef _DELETE_LOG
                         dlog.alias_name[0] = '\0';
@@ -1075,7 +1075,7 @@ search_afd(char *search_afd)
                         got_data |= SEARCH_DELETE_LOG;
 # endif
                      }
-                     else if (strcmp(plog.what_done, TIFF2GTS_ID) == 0)
+                     else if (my_strcmp(plog.what_done, TIFF2GTS_ID) == 0)
                           {
                              search_loop |= SEARCH_DELETE_LOG;
                           }
@@ -1411,7 +1411,8 @@ search_afd(char *search_afd)
                                      (void)strcpy(dlog.user_process, SEND_FILE_EXEC);
                                      dlog.user_process_length = SEND_FILE_EXEC_LENGTH;
                                   }
-                             else if (olog.protocol == ALDA_SMTP_FLAG)
+                             else if ((olog.protocol == ALDA_SMTP_FLAG) ||
+                                      (olog.protocol == ALDA_DE_MAIL_FLAG))
                                   {
                                      (void)strcpy(dlog.user_process, SEND_FILE_SMTP);
                                      dlog.user_process_length = SEND_FILE_SMTP_LENGTH;
@@ -1450,6 +1451,11 @@ search_afd(char *search_afd)
                                   {
                                      (void)strcpy(dlog.user_process, "sf_map");
                                      dlog.user_process_length = 6;
+                                  }
+                             else if (olog.protocol == ALDA_DFAX_FLAG)
+                                  {
+                                     (void)strcpy(dlog.user_process, "sf_dfax");
+                                     dlog.user_process_length = 7;
                                   }
                                   else
                                   {
@@ -1642,7 +1648,7 @@ search_afd(char *search_afd)
                   {
 #   ifdef _PRODUCTION_LOG
                      if ((plog.original_filename[0] != '\0') &&
-                         (strcmp(plog.original_filename, ilog.filename) != 0))
+                         (my_strcmp(plog.original_filename, ilog.filename) != 0))
                      {
                         p_file_pattern = plog.original_filename;
                         prev_filename_length = plog.original_filename_length;

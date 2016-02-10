@@ -79,7 +79,7 @@ only possible to have one of this dialog open at the same time.
               timeout.</td>
        </tr>
        <tr>
-          <td>Ignore errors+warnings</td>
+          <td><a name="ignore_errors_warnings">Ignore errors+warnings</a></td>
           <td>If set, errors and warnings for this host will be set to
               offline. If the value of 'Maximum errors' is reached the
               host will turn 'blue'.</td>
@@ -119,7 +119,11 @@ only possible to have one of this dialog open at the same time.
               open for retrieving and sending files, when the toggle
               button 'Both' is set. If the toggle button 'Fetch' is set,
               this value is only set when retrieving files. When 'Send'
-              is set the value is only valid for sending files.</td>
+              is set the value is only valid for sending files. 'Disconnect'
+              will make AFD to disconnect after the specified number
+              of seconds above, even if there are still files comming.
+              This is usefull if you do not want an active connection
+              for a very long time.</td>
        </tr>
        <tr>
           <td><a name="warn_time">Warn time</a></td>
@@ -437,9 +441,9 @@ only possible to have one of this dialog open at the same time.
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 1997 - 2014 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2016 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 01.12.2014
+   Last updated: 13.01.2016
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

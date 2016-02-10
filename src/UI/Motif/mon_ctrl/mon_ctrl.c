@@ -1,6 +1,6 @@
 /*
  *  mon_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2013 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -53,7 +53,7 @@ DESCR__S_M1
 DESCR__E_M1
 
 #include <stdio.h>            /* fprintf(), stderr                       */
-#include <string.h>           /* strcpy(), strcmp()                      */
+#include <string.h>           /* strcpy()                                */
 #include <ctype.h>            /* toupper()                               */
 #include <unistd.h>           /* gethostname(), getcwd(), STDERR_FILENO  */
 #include <stdlib.h>           /* getenv(), calloc()                      */
@@ -850,6 +850,8 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
       connect_data[i].amg = msa[i].amg;
       connect_data[i].fd = msa[i].fd;
       connect_data[i].archive_watch = msa[i].archive_watch;
+      connect_data[i].rcmd = msa[i].rcmd[0];
+      connect_data[i].plus_minus = PM_OPEN_STATE;
       if ((connect_data[i].amg == OFF) ||
           (connect_data[i].fd == OFF) ||
           (connect_data[i].archive_watch == OFF))
@@ -972,7 +974,7 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
    (void)sprintf(config_file, "%s%s%s",
                  p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(config_file, F_OK) == 0) &&
-       (read_file_no_cr(config_file, &buffer, __FILE__, __LINE__) != INCORRECT))
+       (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {
       int  str_length;
       char value[MAX_PATH_LENGTH];
@@ -1845,7 +1847,7 @@ create_pullright_font(Widget pullright_font)
 
    for (i = 0; i < NO_OF_FONTS; i++)
    {
-      if ((current_font == -1) && (strcmp(font_name, font[i]) == 0))
+      if ((current_font == -1) && (my_strcmp(font_name, font[i]) == 0))
       {
          current_font = i;
       }
@@ -1892,7 +1894,7 @@ create_pullright_row(Widget pullright_row)
                {
                   ROW_0, ROW_1, ROW_2, ROW_3, ROW_4, ROW_5, ROW_6,
                   ROW_7, ROW_8, ROW_9, ROW_10, ROW_11, ROW_12, ROW_13,
-                  ROW_14, ROW_15, ROW_16
+                  ROW_14, ROW_15, ROW_16, ROW_17, ROW_18, ROW_19
                };
    XmString    x_string;
    Arg         args[MAXARGS];

@@ -52,7 +52,7 @@ DESCR__S_M1
 DESCR__E_M1
 
 #include <stdio.h>                       /* fprintf(), stderr            */
-#include <string.h>                      /* strcmp(), strerror()         */
+#include <string.h>                      /* strerror()                   */
 #include <stdlib.h>                      /* exit(), atexit()             */
 #include <sys/types.h>
 #include <sys/stat.h>                    /* umask()                      */
@@ -130,7 +130,7 @@ main(int argc, char *argv[])
 #ifdef WITH_SETUID_PROGS
    set_afd_euid(work_dir);
 #endif
-   if (strcmp((argv[0] + strlen(argv[0]) - 3), "udc") == 0)
+   if (my_strcmp((argv[0] + strlen(argv[0]) - 3), "udc") == 0)
    {
       udc = YES;
    }

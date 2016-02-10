@@ -199,6 +199,9 @@ main(int argc, char *argv[])
    off_t            no_of_bytes;
    clock_t          clktck;
    time_t           connected,
+#ifdef _WITH_BURST_2
+                    diff_time,
+#endif
                     end_transfer_time_file,
                     start_transfer_time_file,
                     now,
@@ -690,9 +693,9 @@ main(int argc, char *argv[])
                         if (ol_fd == -2)
                         {
 #  ifdef WITHOUT_FIFO_RW_SUPPORT
-                           output_log_fd(&ol_fd, &ol_readfd);
+                           output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
 #  else
-                           output_log_fd(&ol_fd);
+                           output_log_fd(&ol_fd, &db.output_log);
 #  endif
                         }
                         if (ol_fd > -1)
@@ -712,7 +715,8 @@ main(int argc, char *argv[])
                                               &ol_output_type,
                                               db.host_alias,
                                               (current_toggle - 1),
-                                              SFTP);
+                                              SFTP,
+                                              &db.output_log);
                            }
                            (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
                            (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
@@ -1288,7 +1292,7 @@ main(int argc, char *argv[])
             if (sftp_flush() != SUCCESS)
             {
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                         "Failed to flush remaining writes to `%s'",
+                         "Failed to flush remaining writes to remote file `%s'",
                          initial_filename);
                sftp_quit();
                exit(eval_timeout(WRITE_REMOTE_ERROR));
@@ -1607,9 +1611,9 @@ main(int argc, char *argv[])
             if (ol_fd == -2)
             {
 # ifdef WITHOUT_FIFO_RW_SUPPORT
-               output_log_fd(&ol_fd, &ol_readfd);
+               output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
 # else
-               output_log_fd(&ol_fd);
+               output_log_fd(&ol_fd, &db.output_log);
 # endif
             }
             if ((ol_fd > -1) && (ol_data == NULL))
@@ -1627,7 +1631,8 @@ main(int argc, char *argv[])
                                &ol_output_type,
                                db.host_alias,
                                (current_toggle - 1),
-                               SFTP);
+                               SFTP,
+                               &db.output_log);
             }
          }
 #endif
@@ -2033,9 +2038,10 @@ try_again_unlink:
       burst_2_counter++;
       total_append_count += append_count;
       append_count = 0;
-      if ((fsa->protocol_options & KEEP_CONNECTED_DISCONNECT) &&
-          (db.keep_connected > 0) &&
-          ((time(NULL) - connected) > db.keep_connected))
+      diff_time = time(NULL) - connected;
+      if (((fsa->protocol_options & KEEP_CONNECTED_DISCONNECT) &&
+           (db.keep_connected > 0) && (diff_time > db.keep_connected)) ||
+           ((db.disconnect > 0) && (diff_time > db.disconnect)))
       {
          cb2_ret = NO;
          break;

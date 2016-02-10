@@ -1,6 +1,6 @@
 /*
  *  print_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -469,6 +469,25 @@ write_header(int fd, char *sum_sep_line)
       }
    }
 #endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+   if (toggles_set & SHOW_DEMAIL)
+   {
+      if (length == tmp_length)
+      {
+         length += snprintf(&buffer[length], 1024 - length,
+                            "\tProtocol      : DEMAIL");
+      }
+      else
+      {
+         length += snprintf(&buffer[length], 1024 - length, ", DEMAIL");
+      }
+      if (length >= 1024)
+      {
+         length = 1024;
+         goto write_data;
+      }
+   }
+#endif
 #ifdef _WITH_LOC_SUPPORT
    if (toggles_set & SHOW_FILE)
    {
@@ -576,6 +595,25 @@ write_header(int fd, char *sum_sep_line)
       else
       {
          length += snprintf(&buffer[length], 1024 - length, ", MAP");
+      }
+      if (length >= 1024)
+      {
+         length = 1024;
+         goto write_data;
+      }
+   }
+#endif
+#ifdef _WITH_DFAX_SUPPORT
+   if (toggles_set & SHOW_DFAX)
+   {
+      if (length == tmp_length)
+      {
+         length += snprintf(&buffer[length], 1024 - length,
+                            "\tProtocol      : DFAX");
+      }
+      else
+      {
+         length += snprintf(&buffer[length], 1024 - length, ", DFAX");
       }
       if (length >= 1024)
       {

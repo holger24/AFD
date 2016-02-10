@@ -1,6 +1,6 @@
 /*
  *  update_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2013 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ DESCR__S_M3
 DESCR__E_M3
 
 #include <stdio.h>
-#include <string.h>           /* strcmp()                                */
+#include <string.h>           /* strcpy()                                */
 #include <stdlib.h>           /* exit()                                  */
 #include <time.h>             /* strftime(), localtime()                 */
 #include <Xm/Xm.h>
@@ -96,7 +96,7 @@ update_info(Widget w)
       fra_pos = -1;
       for (i = 0; i < no_of_dirs; i++)
       {
-         if (strcmp(fra[i].dir_alias, prev.dir_alias) == 0)
+         if (my_strcmp(fra[i].dir_alias, prev.dir_alias) == 0)
          {
             fra_pos = i;
             break;
@@ -113,7 +113,7 @@ update_info(Widget w)
 
    if (fra[fra_pos].host_alias[0] != '\0')
    {
-      if (strcmp(prev.url, fra[fra_pos].url) != 0)
+      if (my_strcmp(prev.url, fra[fra_pos].url) != 0)
       {
          (void)strcpy(prev.url, fra[fra_pos].url);
          (void)strcpy(prev.display_url, prev.url);

@@ -1,6 +1,6 @@
 /*
  *  smtpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ DESCR__S_M3
  **   int smtp_auth(char *user, char *passwd)
  **   int smtp_helo(char *host_name)
  **   int smtp_ehlo(char *host_name)
- **   int smtp_smarttls(void)
+ **   int smtp_smarttls(int strict)
  **   int smtp_user(char *user)
  **   int smtp_rcpt(char *recipient)
  **   int smtp_open(void)
@@ -164,9 +164,9 @@ static struct timeval                  timeout;
 static struct smtp_server_capabilities ssc;
 
 /* Local function prototypes. */
-static int                             get_ehlo_reply(int),
-                                       get_reply(int),
-                                       read_msg(void);
+static int                             get_ehlo_reply(int, int),
+                                       get_reply(int, int),
+                                       read_msg(int);
 
 
 /*########################## smtp_connect() #############################*/
@@ -466,7 +466,7 @@ smtp_connect(char *hostname, int port, int sockbuf_size)
       trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
 #endif
 
-      if ((reply = get_reply(220)) < 0)
+      if ((reply = get_reply(220, __LINE__)) < 0)
       {
          (void)close(smtp_fd);
          return(INCORRECT);
@@ -490,7 +490,7 @@ smtp_helo(char *host_name)
 
    if ((reply = command(smtp_fd, "HELO %s", host_name)) == SUCCESS)
    {
-      if ((reply = get_reply(250)) != INCORRECT)
+      if ((reply = get_reply(250, __LINE__)) != INCORRECT)
       {
          if (reply == 250)
          {
@@ -511,7 +511,7 @@ smtp_ehlo(char *host_name)
 
    if ((reply = command(smtp_fd, "EHLO %s", host_name)) == SUCCESS)
    {
-      if ((reply = get_ehlo_reply(250)) != INCORRECT)
+      if ((reply = get_ehlo_reply(250, __LINE__)) != INCORRECT)
       {
          if (reply == 250)
          {
@@ -527,7 +527,7 @@ smtp_ehlo(char *host_name)
 #ifdef WITH_SSL
 /*########################### smtp_smarttls() ###########################*/
 int
-smtp_smarttls(void)
+smtp_smarttls(int strict)
 {
    int reply;
 
@@ -535,7 +535,7 @@ smtp_smarttls(void)
    {
       if ((reply = command(smtp_fd, "STARTTLS")) == SUCCESS)
       {
-         if ((reply = get_reply(220)) != INCORRECT)
+         if ((reply = get_reply(220, __LINE__)) != INCORRECT)
          {
             if (reply == 220)
             {
@@ -546,7 +546,7 @@ smtp_smarttls(void)
                }
                else
                {
-                  if ((reply = ssl_connect(smtp_fd, "smtp_smarttls")) == SUCCESS)
+                  if ((reply = ssl_connect(smtp_fd, "smtp_smarttls", strict)) == SUCCESS)
                   {
                      ssc.ssl_enabled = YES;
                   }
@@ -617,7 +617,7 @@ smtp_auth(unsigned char auth_type, char *user, char *passwd)
 
    if ((reply = command(smtp_fd, "AUTH %s", auth_type_str)) == SUCCESS)
    {
-      if ((reply = get_reply(334)) != INCORRECT)
+      if ((reply = get_reply(334, __LINE__)) != INCORRECT)
       {
          if (reply == 334)
          {
@@ -678,7 +678,7 @@ smtp_auth(unsigned char auth_type, char *user, char *passwd)
 
             if ((reply = command(smtp_fd, "%s", userpasswd_b64)) == SUCCESS)
             {
-               if ((reply = get_reply(334)) != INCORRECT)
+               if ((reply = get_reply(334, __LINE__)) != INCORRECT)
                {
                   if (reply == 334)
                   {
@@ -717,7 +717,7 @@ smtp_auth(unsigned char auth_type, char *user, char *passwd)
 
                         if ((reply = command(smtp_fd, "%s", userpasswd_b64)) == SUCCESS)
                         {
-                           if ((reply = get_reply(235)) != INCORRECT)
+                           if ((reply = get_reply(235, __LINE__)) != INCORRECT)
                            {
                               if (reply == 235)
                               {
@@ -749,7 +749,7 @@ smtp_user(char *user)
 
    if ((reply = command(smtp_fd, "MAIL FROM:%s", user)) == SUCCESS)
    {
-      if ((reply = get_reply(250)) != INCORRECT)
+      if ((reply = get_reply(250, __LINE__)) != INCORRECT)
       {
          if (reply == 250)
          {
@@ -770,7 +770,7 @@ smtp_rcpt(char *recipient)
 
    if ((reply = command(smtp_fd, "RCPT TO:%s", recipient)) == SUCCESS)
    {
-      if ((reply = get_reply(250)) != INCORRECT)
+      if ((reply = get_reply(250, __LINE__)) != INCORRECT)
       {
          if ((reply == 250) || (reply == 251))
          {
@@ -791,7 +791,7 @@ smtp_noop(void)
 
    if ((reply = command(smtp_fd, "NOOP")) == SUCCESS)
    {
-      if ((reply = get_reply(250)) != INCORRECT)
+      if ((reply = get_reply(250, __LINE__)) != INCORRECT)
       {
          if (reply == 250)
          {
@@ -812,7 +812,7 @@ smtp_open(void)
 
    if ((reply = command(smtp_fd, "DATA")) == SUCCESS)
    {
-      if ((reply = get_reply(354)) != INCORRECT)
+      if ((reply = get_reply(354, __LINE__)) != INCORRECT)
       {
          if (reply == 354)
          {
@@ -1131,7 +1131,7 @@ smtp_close(void)
    {
       if (timeout_flag == OFF)
       {
-         if ((reply = get_reply(250)) != INCORRECT)
+         if ((reply = get_reply(250, __LINE__)) != INCORRECT)
          {
             if (reply == 250)
             {
@@ -1155,7 +1155,7 @@ smtp_quit(void)
    {
       int reply;
 
-      if ((reply = get_reply(221)) < 0)
+      if ((reply = get_reply(221, __LINE__)) < 0)
       {
          (void)close(smtp_fd);
          return(INCORRECT);
@@ -1403,7 +1403,7 @@ get_content_type(char *filename, char *content_type)
 
 /*++++++++++++++++++++++++++++++ get_reply() ++++++++++++++++++++++++++++*/
 static int
-get_reply(int reply)
+get_reply(int reply, int line)
 {
    if (simulation_mode == YES)
    {
@@ -1412,7 +1412,7 @@ get_reply(int reply)
 
    for (;;)
    {
-      if (read_msg() == INCORRECT)
+      if (read_msg(line) == INCORRECT)
       {
          return(INCORRECT);
       }
@@ -1435,7 +1435,7 @@ get_reply(int reply)
 
 /*+++++++++++++++++++++++++++ get_ehlo_reply() ++++++++++++++++++++++++++*/
 static int
-get_ehlo_reply(int reply)
+get_ehlo_reply(int reply, int line)
 {
    ssc.auth_login = NO;
    ssc.auth_plain = NO;
@@ -1447,7 +1447,7 @@ get_ehlo_reply(int reply)
    }
    for (;;)
    {
-      if (read_msg() == INCORRECT)
+      if (read_msg(line) == INCORRECT)
       {
          return(INCORRECT);
       }
@@ -1533,7 +1533,7 @@ get_ehlo_reply(int reply)
 
 /*----------------------------- read_msg() ------------------------------*/
 static int
-read_msg(void)
+read_msg(int line)
 {
    static int  bytes_buffered,
                bytes_read = 0;
@@ -1588,7 +1588,7 @@ try_again_read_msg:
                        if (bytes_read == 0)
                        {
                           trans_log(ERROR_SIGN,  __FILE__, __LINE__, "read_msg", NULL,
-                                    _("Remote hang up."));
+                                    _("Remote hang up. [%d]"), line);
                           timeout_flag = NEITHER;
                        }
                        else
@@ -1598,8 +1598,8 @@ try_again_read_msg:
                              timeout_flag = CON_RESET;
                           }
                           trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                                    _("read() error (after reading %d bytes) : %s"),
-                                    bytes_buffered, strerror(errno));
+                                    _("read() error (after reading %d bytes) [%d] : %s"),
+                                    bytes_buffered, line, strerror(errno));
                           bytes_read = 0;
                        }
                        return(INCORRECT);
@@ -1615,7 +1615,7 @@ try_again_read_msg:
                        if (bytes_read == 0)
                        {
                           trans_log(ERROR_SIGN,  __FILE__, __LINE__, "read_msg", NULL,
-                                    _("Remote hang up."));
+                                    _("Remote hang up. [%d]"), line);
                           timeout_flag = NEITHER;
                        }
                        else
@@ -1625,8 +1625,8 @@ try_again_read_msg:
                           ssl_error_msg("SSL_read", ssl_con, &ssl_ret,
                                         bytes_read, msg_str);
                           trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", msg_str,
-                                    _("SSL_read() error (after reading %d bytes) (%d)"),
-                                    bytes_buffered, status);
+                                    _("SSL_read() error (after reading %d bytes) (%d) [%d]"),
+                                    bytes_buffered, status, line);
 
                           /*
                            * In case SMTP server has dropped back to clear text.
@@ -1657,13 +1657,14 @@ try_again_read_msg:
          else if (status < 0)
               {
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                           _("select() error : %s"), strerror(errno));
+                           _("select() error [%d] : %s"),
+                           line, strerror(errno));
                  exit(INCORRECT);
               }
               else
               {
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
-                           _("Unknown condition."));
+                           _("Unknown condition. [%d]"), line);
                  exit(INCORRECT);
               }
       }

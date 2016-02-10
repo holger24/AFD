@@ -1,6 +1,6 @@
 /*
  *  setup_window.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -403,6 +403,9 @@ setup_window(char *font_name, int redraw_mainmenu)
          XtVaSetValues(rw[ROW_14_W], XmNfontList, fontlist, NULL);
          XtVaSetValues(rw[ROW_15_W], XmNfontList, fontlist, NULL);
          XtVaSetValues(rw[ROW_16_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(rw[ROW_17_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(rw[ROW_18_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(rw[ROW_19_W], XmNfontList, fontlist, NULL);
 
          /* Set the font for the Line Style pulldown. */
          XtVaSetValues(lsw[STYLE_0_W], XmNfontList, fontlist, NULL);

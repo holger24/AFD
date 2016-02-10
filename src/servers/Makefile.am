@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2005 - 2013 Holger Kiehl
+## Copyright (C) 2015 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -16,14 +16,20 @@
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
 
-MAINTAINERCLEANFILES  = Makefile.in
-CLEANFILES            = gmon.out core core.*
-noinst_HEADERS        = commondefs.h wmoddefs.h
-AM_CPPFLAGS           = -I.. -I../init_afd
-bin_PROGRAMS          = wmod
-wmod_SOURCES          = check_fsa_pos.c\
-                        get_free_connection.c\
-                        handle_wmo_request.c\
-                        trans_log.c\
-                        wmod.c
-wmod_LDADD            = ../common/libafd.a
+if WITH_ATPD_SUPPORT
+   ATPD_DIR  = atpd
+else
+   ATPD_DIR  =
+endif
+if WITH_WMOD_SUPPORT
+   WMOD_DIR  = wmod
+else
+   WMOD_DIR  =
+endif
+if WITH_DE_MAIL_SUPPORT
+   DEMCD_DIR = demcd
+else
+   DEMCD_DIR =
+endif
+MAINTAINERCLEANFILES     = Makefile.in
+SUBDIRS                  = common afdd $(ATPD_DIR) $(DEMCD_DIR) $(WMOD_DIR)

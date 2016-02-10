@@ -1,6 +1,6 @@
 /*
  *  cmdline.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -165,6 +165,9 @@ struct data
                                          /* transfered in test mode.       */
           int          sndbuf_size;      /* Socket send buffer size.       */
           int          rcvbuf_size;      /* Socket receive buffer size.    */
+#ifdef WITH_SSL
+          int          strict;
+#endif
           long         transfer_timeout; /* When to timeout the            */
                                          /* transmitting job.              */
           char         *subject;         /* Subject of the mail.           */
@@ -194,6 +197,14 @@ struct data
                                          /* passive, extended active,      */
                                          /* extended passive or passive    */
                                          /* (with redirect).               */
+#ifdef WITH_SSH_FINGERPRINT
+          char          ssh_fingerprint[MAX_FINGERPRINT_LENGTH + 1];
+          char          key_type;
+#endif
+          mode_t       chmod;            /* The permissions that the       */
+                                         /* file should have.              */
+          mode_t       dir_mode;         /* The permissions that the       */
+                                         /* directory should have.         */
           char         transfer_mode;    /* Transfer mode, A (ASCII) or I  */
                                          /* (Image, binary). (Default I)   */
           char         ftp_mode;         /* How the ftp data mode is       */
@@ -208,6 +219,7 @@ struct data
                                          /*  BOTH - Control and data       */
                                          /*         connection.            */
 #endif
+          unsigned char ssh_protocol;    /* SSH protocol version to use.   */
           char         create_target_dir;/* Create the target directory if */
                                          /* does not exist.                */
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL

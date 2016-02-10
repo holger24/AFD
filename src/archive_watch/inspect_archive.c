@@ -1,6 +1,6 @@
 /*
  *  inspect_archive.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2009 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -47,6 +47,7 @@ DESCR__S_M3
  **   29.11.2000 H.Kiehl Optimized the removing of files.
  **   28.12.2000 H.Kiehl Remove all empty directories in archive.
  **   23.02.2005 H.Kiehl Remove priority from archive name.
+ **   18.08.2015 H.Kiehl Added supoort for multiple filesystems.
  **
  */
 DESCR__E_M3
@@ -90,6 +91,13 @@ inspect_archive(char *archive_dir)
    }
    else
    {
+#ifdef MULTI_FS_SUPPORT
+      int           nof;
+      char          *ptr_filesystemname;
+      struct dirent *dp_filesystemname;
+      struct stat   stat_buf;
+      DIR           *p_dir_filesystemname;
+#endif
       int           noh, nou, nod;
       char          *ptr_archive,
                     *ptr_hostname,
@@ -109,131 +117,174 @@ inspect_archive(char *archive_dir)
       {
          if (dp_archive->d_name[0]  != '.')
          {
-            /* Enter directory with hostname. */
+#ifdef MULTI_FS_SUPPORT
+            /* Enter directory with filesystem number. */
             (void)strcpy(ptr_archive, dp_archive->d_name);
-            if ((p_dir_hostname = opendir(archive_dir)) != NULL)
+            if ((stat(archive_dir, &stat_buf) != -1) &&
+                (S_ISLNK(stat_buf.st_mode)))
             {
-               ptr_hostname = archive_dir + strlen(archive_dir);
-               *(ptr_hostname++) = '/';
-               noh = 0;
-               while ((dp_hostname = readdir(p_dir_hostname)) != NULL)
+               if ((p_dir_filesystemname = opendir(archive_dir)) != NULL)
                {
-                  noh++;
-                  if (dp_hostname->d_name[0]  != '.')
+                  ptr_filesystemname = archive_dir + strlen(archive_dir);
+                  *(ptr_filesystemname++) = '/';
+                  nof = 0;
+                  while ((dp_filesystemname = readdir(p_dir_filesystemname)) != NULL)
                   {
-                     /* Enter directory with username. */
-                     (void)strcpy(ptr_hostname, dp_hostname->d_name);
-                     if ((p_dir_username = opendir(archive_dir)) != NULL)
+                     nof++;
+                     if (dp_filesystemname->d_name[0]  != '.')
                      {
-                        ptr_username = archive_dir + strlen(archive_dir);
-                        *(ptr_username++) = '/';
-                        nou = 0;
-                        while ((dp_username = readdir(p_dir_username)) != NULL)
-                        {
-                           nou++;
-                           if (dp_username->d_name[0]  != '.')
-                           {
-                              /* Enter directory with dirnumber. */
-                              (void)strcpy(ptr_username, dp_username->d_name);
-                              if ((p_dir_dirnumber = opendir(archive_dir)) != NULL)
-                              {
-                                 ptr_dirnumber = archive_dir + strlen(archive_dir);
-                                 *(ptr_dirnumber++) = '/';
-                                 nod = 0;
-                                 while ((dp_dirnumber = readdir(p_dir_dirnumber)) != NULL)
-                                 {
-                                    nod++;
-                                    if (dp_dirnumber->d_name[0]  != '.')
-                                    {
-                                       if (is_archive_name(dp_dirnumber->d_name) != INCORRECT)
-                                       {
-                                          if (check_time(dp_dirnumber->d_name) == TIME_UP)
-                                          {
-                                             (void)strcpy(ptr_dirnumber, dp_dirnumber->d_name);
-                                             if (remove_archive(archive_dir) != INCORRECT)
-                                             {
-                                                removed_archives++;
-                                                nod--;
-#ifdef _LOG_REMOVE_INFO
-                                                system_log(INFO_SIGN, __FILE__, __LINE__,
-                                                           _("Removed archive `%s'."),
-                                                           archive_dir);
+                        /* Enter directory with hostname. */
+                        (void)strcpy(ptr_filesystemname, dp_archive->d_name);
+#else
+                        (void)strcpy(ptr_archive, dp_archive->d_name);
 #endif
+                        if ((p_dir_hostname = opendir(archive_dir)) != NULL)
+                        {
+                           ptr_hostname = archive_dir + strlen(archive_dir);
+                           *(ptr_hostname++) = '/';
+                           noh = 0;
+                           while ((dp_hostname = readdir(p_dir_hostname)) != NULL)
+                           {
+                              noh++;
+                              if (dp_hostname->d_name[0]  != '.')
+                              {
+                                 /* Enter directory with username. */
+                                 (void)strcpy(ptr_hostname, dp_hostname->d_name);
+                                 if ((p_dir_username = opendir(archive_dir)) != NULL)
+                                 {
+                                    ptr_username = archive_dir + strlen(archive_dir);
+                                    *(ptr_username++) = '/';
+                                    nou = 0;
+                                    while ((dp_username = readdir(p_dir_username)) != NULL)
+                                    {
+                                       nou++;
+                                       if (dp_username->d_name[0]  != '.')
+                                       {
+                                          /* Enter directory with dirnumber. */
+                                          (void)strcpy(ptr_username, dp_username->d_name);
+                                          if ((p_dir_dirnumber = opendir(archive_dir)) != NULL)
+                                          {
+                                             ptr_dirnumber = archive_dir + strlen(archive_dir);
+                                             *(ptr_dirnumber++) = '/';
+                                             nod = 0;
+                                             while ((dp_dirnumber = readdir(p_dir_dirnumber)) != NULL)
+                                             {
+                                                nod++;
+                                                if (dp_dirnumber->d_name[0]  != '.')
+                                                {
+                                                   if (is_archive_name(dp_dirnumber->d_name) != INCORRECT)
+                                                   {
+                                                      if (check_time(dp_dirnumber->d_name) == TIME_UP)
+                                                      {
+                                                         (void)strcpy(ptr_dirnumber, dp_dirnumber->d_name);
+                                                         if (remove_archive(archive_dir) != INCORRECT)
+                                                         {
+                                                            removed_archives++;
+                                                            nod--;
+#ifdef _LOG_REMOVE_INFO
+                                                            system_log(INFO_SIGN, __FILE__, __LINE__,
+                                                                       _("Removed archive `%s'."),
+                                                                       archive_dir);
+#endif
+                                                         }
+                                                      }
+                                                   }
+                                                }
+                                             } /* while (readdir(dirnumber)) */
+                                             if (closedir(p_dir_dirnumber) == -1)
+                                             {
+                                                ptr_dirnumber[-1] = '\0';
+                                                system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                                           _("Failed to closedir() `%s' : %s"),
+                                                           archive_dir, strerror(errno));
                                              }
+                                             else if (nod == 2)
+                                                  {
+                                                     ptr_dirnumber[-1] = '\0';
+                                                     if ((rmdir(archive_dir) == -1) &&
+                                                         (errno != EEXIST))
+                                                     {
+                                                        system_log(WARN_SIGN, __FILE__, __LINE__,
+                                                                   _("Failed to rmdir() `%s' : %s"),
+                                                                   archive_dir,
+                                                                   strerror(errno));
+                                                     }
+                                                     else
+                                                     {
+                                                        nou--;
+                                                     }
+                                                  }
                                           }
                                        }
                                     }
-                                 } /* while (readdir(dirnumber)) */
-                                 if (closedir(p_dir_dirnumber) == -1)
-                                 {
-                                    ptr_dirnumber[-1] = '\0';
-                                    system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                               _("Failed to closedir() `%s' : %s"),
-                                               archive_dir, strerror(errno));
+                                    if (closedir(p_dir_username) == -1)
+                                    {
+                                       ptr_username[-1] = '\0';
+                                       system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                                  _("Failed to closedir() `%s' : %s"),
+                                                  archive_dir, strerror(errno));
+                                    }
+                                    else if (nou == 2)
+                                         {
+                                            ptr_username[-1] = '\0';
+                                            if ((rmdir(archive_dir) == -1) &&
+                                                (errno != EEXIST))
+                                            {
+                                               system_log(WARN_SIGN, __FILE__, __LINE__,
+                                                          _("Failed to rmdir() `%s' : %s"),
+                                                          archive_dir, strerror(errno));
+                                            }
+                                            else
+                                            {
+                                               noh--;
+                                            }
+                                         }
                                  }
-                                 else if (nod == 2)
-                                      {
-                                         ptr_dirnumber[-1] = '\0';
-                                         if ((rmdir(archive_dir) == -1) &&
-                                             (errno != EEXIST))
-                                         {
-                                            system_log(WARN_SIGN, __FILE__, __LINE__,
-                                                       _("Failed to rmdir() `%s' : %s"),
-                                                       archive_dir,
-                                                       strerror(errno));
-                                         }
-                                         else
-                                         {
-                                            nou--;
-                                         }
-                                      }
                               }
                            }
-                        }
-                        if (closedir(p_dir_username) == -1)
-                        {
-                           ptr_username[-1] = '\0';
-                           system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                      _("Failed to closedir() `%s' : %s"),
-                                      archive_dir, strerror(errno));
-                        }
-                        else if (nou == 2)
-                             {
-                                ptr_username[-1] = '\0';
-                                if ((rmdir(archive_dir) == -1) &&
-                                    (errno != EEXIST))
+                           if (closedir(p_dir_hostname) == -1)
+                           {
+                              ptr_hostname[-1] = '\0';
+                              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                         _("Failed to closedir() `%s' : %s"),
+                                         archive_dir, strerror(errno));
+                           }
+                           else if (noh == 2)
                                 {
-                                   system_log(WARN_SIGN, __FILE__, __LINE__,
-                                              _("Failed to rmdir() `%s' : %s"),
-                                              archive_dir, strerror(errno));
+                                   ptr_hostname[-1] = '\0';
+                                   if ((rmdir(archive_dir) == -1) &&
+                                       (errno != EEXIST))
+                                   {
+                                      system_log(WARN_SIGN, __FILE__, __LINE__,
+                                                 _("Failed to rmdir() `%s' : %s"),
+                                                 archive_dir, strerror(errno));
+                                   }
                                 }
-                                else
-                                {
-                                   noh--;
-                                }
-                             }
+                        }
+#ifdef MULTI_FS_SUPPORT
                      }
                   }
-               }
-               if (closedir(p_dir_hostname) == -1)
-               {
-                  ptr_hostname[-1] = '\0';
-                  system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             _("Failed to closedir() `%s' : %s"),
-                             archive_dir, strerror(errno));
-               }
-               else if (noh == 2)
-                    {
-                       ptr_hostname[-1] = '\0';
-                       if ((rmdir(archive_dir) == -1) &&
-                           (errno != EEXIST))
+                  if (closedir(p_dir_filesystemname) == -1)
+                  {
+                     ptr_filesystemname[-1] = '\0';
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                _("Failed to closedir() `%s' : %s"),
+                                archive_dir, strerror(errno));
+                  }
+                  else if (noh == 2)
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     _("Failed to rmdir() `%s' : %s"),
-                                     archive_dir, strerror(errno));
+                          ptr_filesystemname[-1] = '\0';
+                          if ((rmdir(archive_dir) == -1) &&
+                              (errno != EEXIST))
+                          {
+                             system_log(WARN_SIGN, __FILE__, __LINE__,
+                                        _("Failed to rmdir() `%s' : %s"),
+                                        archive_dir, strerror(errno));
+                          }
                        }
-                    }
+               }
             }
+#endif
          }
       }
       ptr_archive[-1] = '\0';

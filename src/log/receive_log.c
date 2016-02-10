@@ -343,7 +343,8 @@ main(int argc, char *argv[])
                             fifo_size - bytes_buffered)) > 0)
               {
 #ifdef _FIFO_DEBUG
-                 show_fifo_data('R', RECEIVE_LOG_FIFO, fifo_buffer, n + bytes_buffered, __FILE__, __LINE__);
+                 show_fifo_data('R', RECEIVE_LOG_FIFO, fifo_buffer,
+                                n + bytes_buffered, __FILE__, __LINE__);
 #endif
                  if (bytes_buffered != 0)
                  {

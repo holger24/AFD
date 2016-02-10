@@ -224,6 +224,9 @@ main(int argc, char *argv[])
    off_t            no_of_bytes;
    clock_t          clktck;
    time_t           connected,
+#ifdef _WITH_BURST_2
+                    diff_time,
+#endif
                     end_transfer_time_file,
                     start_transfer_time_file,
                     last_update_time,
@@ -502,7 +505,7 @@ main(int argc, char *argv[])
 # endif
          if ((db.auth == YES) || (db.auth == BOTH))
          {
-            if (ftp_ssl_auth() == INCORRECT)
+            if (ftp_ssl_auth((fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO) == INCORRECT)
             {
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          "SSL/TSL connection to server `%s' failed.",
@@ -1151,9 +1154,9 @@ main(int argc, char *argv[])
                         if (ol_fd == -2)
                         {
 #  ifdef WITHOUT_FIFO_RW_SUPPORT
-                           output_log_fd(&ol_fd, &ol_readfd);
+                           output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
 #  else
-                           output_log_fd(&ol_fd);
+                           output_log_fd(&ol_fd, &db.output_log);
 #  endif
                         }
                         if (ol_fd > -1)
@@ -1174,10 +1177,11 @@ main(int argc, char *argv[])
                                               db.host_alias,
                                               (current_toggle - 1),
 # ifdef WITH_SSL
-                                              (db.auth == NO) ? FTP : FTPS);
+                                              (db.auth == NO) ? FTP : FTPS,
 # else
-                                              FTP);
+                                              FTP,
 # endif
+                                              &db.output_log);
                            }
                            (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
                            (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
@@ -1791,6 +1795,13 @@ main(int argc, char *argv[])
             if (fsa->protocol_options & STAT_KEEPALIVE)
             {
                keep_alive_time = time(NULL);
+            }
+#endif
+
+#ifdef READ_FROM_STDIN_SUPPORT
+            /* Create process writting to stdout. */
+            if ((fd = create_stdout_proc(cmd)) == -1)
+            {
             }
 #endif
 
@@ -2939,9 +2950,9 @@ main(int argc, char *argv[])
             if (ol_fd == -2)
             {
 # ifdef WITHOUT_FIFO_RW_SUPPORT
-               output_log_fd(&ol_fd, &ol_readfd);
+               output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
 # else
-               output_log_fd(&ol_fd);
+               output_log_fd(&ol_fd, &db.output_log);
 # endif
             }
             if ((ol_fd > -1) && (ol_data == NULL))
@@ -2960,10 +2971,11 @@ main(int argc, char *argv[])
                                db.host_alias,
                                (current_toggle - 1),
 # ifdef WITH_SSL
-                               (db.auth == NO) ? FTP : FTPS);
+                               (db.auth == NO) ? FTP : FTPS,
 # else
-                               FTP);
+                               FTP,
 # endif
+                               &db.output_log);
             }
          }
 #endif
@@ -3385,9 +3397,10 @@ try_again_unlink:
       burst_2_counter++;
       total_append_count += append_count;
       append_count = 0;
-      if ((fsa->protocol_options & KEEP_CONNECTED_DISCONNECT) &&
-          (db.keep_connected > 0) &&
-          ((time(NULL) - connected) > db.keep_connected))
+      diff_time = time(NULL) - connected;
+      if (((fsa->protocol_options & KEEP_CONNECTED_DISCONNECT) &&
+           (db.keep_connected > 0) && (diff_time > db.keep_connected)) ||
+          ((db.disconnect > 0) && (diff_time > db.disconnect)))
       {
          cb2_ret = NO;
          break;
@@ -3416,9 +3429,6 @@ try_again_unlink:
       fsa->job_status[(int)db.job_no].connect_status = CLOSING_CONNECTION;
    }
    free(buffer);
-
-#ifdef _CHECK_BEFORE_EXIT
-#endif
 
    /* Logout again. */
    if ((status = ftp_quit()) != SUCCESS)

@@ -47,7 +47,7 @@ DESCR__E_M3
 
 #include <stdio.h>        /* sprintf()                                   */
 #include <string.h>       /* strerror()                                  */
-#include <stdlib.h>       /* malloc(), realloc(), free(), strtod(), abs()*/
+#include <stdlib.h>       /* malloc(), realloc(), free(), strtod(), labs()*/
 #include <time.h>         /* time()                                      */
 #include <unistd.h>       /* close()                                     */
 #include <sys/types.h>
@@ -1279,8 +1279,8 @@ search_time(char   *src,
        * or end in our buffer. Thats where we will start our
        * search.
        */
-      if (abs(search_time_val - earliest_entry) >
-          abs(latest_entry - search_time_val))
+      if (labs(search_time_val - earliest_entry) >
+          labs(latest_entry - search_time_val))
       {
          /* Start search from end. */
          bs_ptr = src + size - 2;

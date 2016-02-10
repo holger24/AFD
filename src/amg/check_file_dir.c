@@ -1,6 +1,6 @@
 /*
  *  check_file_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -27,7 +27,10 @@ DESCR__S_M3
  **                    messages
  **
  ** SYNOPSIS
- **   void check_file_dir(time_t now)
+ **   void check_file_dir(time_t now,
+ **                       dev_t  dev,
+ **                       char   *outgoing_file_dir,
+ **                       int    outgoing_file_dir_length)
  **
  ** DESCRIPTION
  **   The function check_file_dir() checks the AFD file directory for
@@ -47,7 +50,7 @@ DESCR__S_M3
  */
 DESCR__E_M3
 
-#include <string.h>          /* strcmp(), strerror(), strcpy(), strlen() */
+#include <string.h>          /* strerror(), strcpy(), strlen()           */
 #include <stdlib.h>          /* strtoul(), strtol()                      */
 #include <time.h>            /* time()                                   */
 #include <sys/time.h>
@@ -78,6 +81,10 @@ extern struct afd_status          *p_afd_status;
 #ifdef _DELETE_LOG
 extern struct delete_log          dl;
 #endif
+#ifdef MULTI_FS_SUPPORT
+extern int                        no_of_extra_work_dirs;
+extern struct extra_work_dirs     *ewl;
+#endif
 
 /* Local global variables. */
 static int                        no_of_fd_msgs = 0,
@@ -88,26 +95,46 @@ static char                       **fd_msg_list = NULL,
 static struct job_id_data         *jd = NULL;
 
 /* Local function prototypes. */
+#ifdef MULTI_FS_SUPPORT
+static int                        not_a_multi_fs_link(unsigned int),
+                                  message_in_queue(char *, int, char *);
+static void                       add_message_to_queue(char *, dev_t, int, off_t,
+                                                       unsigned int, int),
+                                  check_jobs(dev_t);
+#else
+static int                        message_in_queue(char *);
 static void                       add_message_to_queue(char *, int, off_t,
                                                        unsigned int, int),
                                   check_jobs(void);
-static int                        lookup_db_pos(unsigned int),
-                                  message_in_queue(char *);
+#endif
+static int                        lookup_db_pos(unsigned int);
 
 
 /*########################## check_file_dir() ###########################*/
 void
-check_file_dir(time_t now)
+check_file_dir(time_t now,
+#ifdef MULTI_FS_SUPPORT
+               dev_t  dev,
+#endif
+               char   *outgoing_file_dir,
+               int    outgoing_file_dir_length)
 {
    time_t      diff_time;
    struct stat stat_buf;
 
-   p_file_dir = file_dir + snprintf(file_dir, MAX_PATH_LENGTH, "%s%s%s/",
-                                    p_work_dir, AFD_FILE_DIR, OUTGOING_DIR);
+   (void)strcpy(file_dir, outgoing_file_dir);
+   p_file_dir = file_dir + outgoing_file_dir_length;
+   if (*(p_file_dir - 1) != '/')
+   {
+      *p_file_dir = '/';
+      p_file_dir++;
+      *p_file_dir = '\0';
+   }
    if (stat(file_dir, &stat_buf) == -1)
    {
       system_log(WARN_SIGN, __FILE__, __LINE__,
-                 _("Failed to stat() `%s' : %s"), file_dir, strerror(errno));
+                 _("Failed to stat() `%s' [%d] : %s"),
+                 file_dir, outgoing_file_dir_length, strerror(errno));
       return;
    }
    p_afd_status->amg_jobs |= CHECK_FILE_DIR_ACTIVE;
@@ -123,7 +150,11 @@ check_file_dir(time_t now)
       no_of_job_ids = 0;
    }
 
+#ifdef MULTI_FS_SUPPORT
+   check_jobs(dev);
+#else
    check_jobs();
+#endif
 
    p_afd_status->amg_jobs &= ~CHECK_FILE_DIR_ACTIVE;
 
@@ -207,7 +238,11 @@ check_file_dir(time_t now)
 
 /*++++++++++++++++++++++++++++++ check_jobs() +++++++++++++++++++++++++++*/
 static void
+#ifdef MULTI_FS_SUPPORT
+check_jobs(dev_t dev)
+#else
 check_jobs(void)
+#endif
 {
    int           i,
                  jd_pos;
@@ -215,6 +250,10 @@ check_jobs(void)
    char          *p_dir_no,
                  *p_job_id,
                  *ptr;
+#ifdef MULTI_FS_SUPPORT
+   int           str_dev_length;
+   char          str_dev[MAX_INT_HEX_LENGTH + 1];
+#endif
    DIR           *dir_no_dp,
                  *dp,
                  *id_dp;
@@ -237,6 +276,10 @@ check_jobs(void)
    {
       *(ptr++) = '/';
    }
+#ifdef MULTI_FS_SUPPORT
+   str_dev_length = snprintf(str_dev, MAX_INT_HEX_LENGTH,
+                             "%x", (unsigned int)dev);
+#endif
 
    /* Check each job if it has a corresponding message. */
    errno = 0;
@@ -262,18 +305,25 @@ check_jobs(void)
              * our job list. So lets remove the
              * entire directory.
              */
-            if (rec_rmdir(file_dir) < 0)
+#ifdef MULTI_FS_SUPPORT
+            if (not_a_multi_fs_link(job_id) == 0)
             {
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          _("Failed to rec_rmdir() `%s' #%x"),
-                          file_dir, job_id);
+#endif
+               if (rec_rmdir(file_dir) < 0)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             _("Failed to rec_rmdir() `%s' #%x"),
+                             file_dir, job_id);
+               }
+               else
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             _("Removed directory `%s' since it is no longer in database. #%x"),
+                             file_dir, job_id);
+               }
+#ifdef MULTI_FS_SUPPORT
             }
-            else
-            {
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          _("Removed directory `%s' since it is no longer in database. #%x"),
-                          file_dir, job_id);
-            }
+#endif
          }
          else
          {
@@ -374,7 +424,11 @@ check_jobs(void)
                                                 {
                                                    if (S_ISDIR(stat_buf.st_mode))
                                                    {
+#ifdef MULTI_FS_SUPPORT
+                                                      if (message_in_queue(str_dev, str_dev_length, ptr) == NO)
+#else
                                                       if (message_in_queue(ptr) == NO)
+#endif
                                                       {
                                                          char          *p_file;
                                                          DIR           *file_dp;
@@ -447,7 +501,11 @@ check_jobs(void)
                                                                           ptr, file_counter,
                                                                           (pri_off_t)size_counter,
                                                                           job_id);
-                                                               add_message_to_queue(ptr, file_counter, size_counter, job_id, jd_pos);
+                                                               add_message_to_queue(ptr,
+#ifdef MULTI_FS_SUPPORT
+                                                                                    dev,
+#endif
+                                                                                    file_counter, size_counter, job_id, jd_pos);
                                                             }
                                                             else
                                                             {
@@ -550,11 +608,42 @@ check_jobs(void)
 }
 
 
+#ifdef MULTI_FS_SUPPORT
+/*------------------------- not_a_multi_fs_link() -----------------------*/
+static int
+not_a_multi_fs_link(unsigned int job_id)
+{
+   register int i;
+
+   for (i = 0; i < no_of_extra_work_dirs; i++)
+   {
+      if (job_id == (unsigned int)ewl[i].dev)
+      {
+         return(1);
+      }
+   }
+
+   return(0);
+}
+#endif
+
+
 /*-------------------------- message_in_queue() -------------------------*/
 static int
+#ifdef MULTI_FS_SUPPORT
+message_in_queue(char *str_dev, int str_dev_length, char *msg_name)
+#else
 message_in_queue(char *msg_name)
+#endif
 {
    int i;
+#ifdef MULTI_FS_SUPPORT
+   char full_msg_name[MAX_MSG_NAME_LENGTH + 1];
+
+   (void)memcpy(full_msg_name, str_dev, str_dev_length);
+   full_msg_name[str_dev_length] = '/';
+   (void)strcpy(full_msg_name + str_dev_length + 1, msg_name);
+#endif
 
    /*
     * If we do not already have it, ask FD to send us a current
@@ -845,7 +934,11 @@ message_in_queue(char *msg_name)
    /* in its queue or is under proccessing.                          */
    for (i = 0; i < no_of_fd_msgs; i++)
    {
-      if (strcmp(msg_name, fd_msg_list[i]) == 0)
+#ifdef MULTI_FS_SUPPORT
+      if (my_strcmp(full_msg_name, fd_msg_list[i]) == 0)
+#else
+      if (my_strcmp(msg_name, fd_msg_list[i]) == 0)
+#endif
       {
          return(YES);
       }
@@ -858,6 +951,9 @@ message_in_queue(char *msg_name)
 /*------------------------ add_message_to_queue() -----------------------*/
 static void
 add_message_to_queue(char         *dir_name,
+#ifdef MULTI_FS_SUPPORT
+                     dev_t        dev,
+#endif
                      int          file_counter,
                      off_t        size_counter,
                      unsigned int job_id,
@@ -874,13 +970,21 @@ add_message_to_queue(char         *dir_name,
 
    /*
     * Retrieve priority, creation time, unique number and job ID
-    * from the message name.
+    * from the message name. This looks for example as follows:
+    *
+    *      ae891320/0/56a1bc00_a9f3_0
+    *         |     |    |      |   |
+    *         |     |    |      |   +-> split job counter
+    *         |     |    |      +-----> unique number
+    *         |     |    +------------> creation time
+    *         |     +-----------------> directory number
+    *         +-----------------------> job ID
     */
    (void)strcpy(msg_name, dir_name);
    ptr = msg_name;
    while ((*ptr != '/') && (*ptr != '\0'))
    {
-      ptr++;
+      ptr++; /* Ignore job ID */
    }
    if (*ptr != '/')
    {
@@ -936,8 +1040,14 @@ add_message_to_queue(char         *dir_name,
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  _("Could not locate job %x"), job_id);
+#ifdef MULTI_FS_SUPPORT
+      (void)snprintf(missing_file_dir, MAX_PATH_LENGTH, "%s%s%s/%x/%s",
+                     p_work_dir, AFD_FILE_DIR, OUTGOING_DIR, (unsigned int)dev,
+                     dir_name);
+#else
       (void)snprintf(missing_file_dir, MAX_PATH_LENGTH, "%s%s%s/%s", p_work_dir,
                      AFD_FILE_DIR, OUTGOING_DIR, dir_name);
+#endif
 #ifdef _DELETE_LOG
       *dl.input_time = creation_time;
       *dl.unique_number = unique_number;
@@ -952,10 +1062,18 @@ add_message_to_queue(char         *dir_name,
    {
       char *p_unique_name;
 
+#ifdef MULTI_FS_SUPPORT
+      p_unique_name = missing_file_dir + snprintf(missing_file_dir, MAX_PATH_LENGTH,
+                                                  "%s%s%s/%x",
+                                                  p_work_dir, AFD_FILE_DIR,
+                                                  OUTGOING_DIR,
+                                                  (unsigned int)dev);
+#else
       p_unique_name = missing_file_dir + snprintf(missing_file_dir, MAX_PATH_LENGTH,
                                                   "%s%s%s",
                                                   p_work_dir, AFD_FILE_DIR,
                                                   OUTGOING_DIR);
+#endif
       p_unique_name++;
       (void)snprintf(p_unique_name,
                      MAX_PATH_LENGTH - (p_unique_name - missing_file_dir),
@@ -963,7 +1081,11 @@ add_message_to_queue(char         *dir_name,
       if (jd_pos != -1)
       {
          p_fra = &fra[db[pos].fra_pos];
-         send_message(missing_file_dir, p_unique_name, split_job_counter,
+         send_message(missing_file_dir,
+#ifdef MULTI_FS_SUPPORT
+                      dev,
+#endif
+                      p_unique_name, split_job_counter,
                       unique_number, creation_time, pos, 0, file_counter,
                       size_counter, NO);
       }

@@ -184,6 +184,9 @@ main(int argc, char *argv[])
 #endif
                     ret;
    time_t           connected,
+#ifdef _WITH_BURST_2
+                    diff_time,
+#endif
                     last_update_time,
                     now,
                     *p_file_mtime_buffer;
@@ -577,9 +580,9 @@ main(int argc, char *argv[])
             if (ol_fd == -2)
             {
 # ifdef WITHOUT_FIFO_RW_SUPPORT
-               output_log_fd(&ol_fd, &ol_readfd);
+               output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
 # else
-               output_log_fd(&ol_fd);
+               output_log_fd(&ol_fd, &db.output_log);
 # endif
             }
             if ((ol_fd > -1) && (ol_data == NULL))
@@ -588,7 +591,8 @@ main(int argc, char *argv[])
                                &ol_file_name, &ol_file_name_length,
                                &ol_archive_name_length, &ol_file_size,
                                &ol_unl, &ol_size, &ol_transfer_time,
-                               &ol_output_type, db.host_alias, 0, EXEC);
+                               &ol_output_type, db.host_alias, 0, EXEC,
+                               &db.output_log);
             }
          }
 #endif
@@ -963,9 +967,10 @@ try_again_unlink:
 
 #ifdef _WITH_BURST_2
       burst_2_counter++;
-      if ((fsa->protocol_options & KEEP_CONNECTED_DISCONNECT) &&
-          (db.keep_connected > 0) &&
-          ((time(NULL) - connected) > db.keep_connected))
+      diff_time = time(NULL) - connected;
+      if (((fsa->protocol_options & KEEP_CONNECTED_DISCONNECT) &&
+           (db.keep_connected > 0) && (diff_time > db.keep_connected)) ||
+          ((db.disconnect > 0) && (diff_time > db.disconnect)))
       {
          cb2_ret = NO;
          break;

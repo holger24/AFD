@@ -424,35 +424,38 @@ main(int argc, char *argv[])
    }
    else
    {
-      p_afd_status->amg             = 0;
-      p_afd_status->amg_jobs        = 0;
-      p_afd_status->fd              = 0;
-      p_afd_status->sys_log         = 0;
-      p_afd_status->maintainer_log  = 0;
-      p_afd_status->event_log       = 0;
-      p_afd_status->receive_log     = 0;
-      p_afd_status->trans_log       = 0;
-      p_afd_status->trans_db_log    = 0;
-      p_afd_status->archive_watch   = 0;
-      p_afd_status->afd_stat        = 0;
-      p_afd_status->afdd            = 0;
+      p_afd_status->amg              = 0;
+      p_afd_status->amg_jobs         = 0;
+      p_afd_status->fd               = 0;
+      p_afd_status->sys_log          = 0;
+      p_afd_status->maintainer_log   = 0;
+      p_afd_status->event_log        = 0;
+      p_afd_status->receive_log      = 0;
+      p_afd_status->trans_log        = 0;
+      p_afd_status->trans_db_log     = 0;
+      p_afd_status->archive_watch    = 0;
+      p_afd_status->afd_stat         = 0;
+      p_afd_status->afdd             = 0;
 #ifndef HAVE_MMAP
-      p_afd_status->mapper          = 0;
+      p_afd_status->mapper           = 0;
 #endif
 #ifdef _INPUT_LOG
-      p_afd_status->input_log       = 0;
+      p_afd_status->input_log        = 0;
 #endif
 #ifdef _OUTPUT_LOG
-      p_afd_status->output_log      = 0;
+      p_afd_status->output_log       = 0;
+#endif
+#ifdef _CONFIRMATION_LOG
+      p_afd_status->confirmation_log = 0;
 #endif
 #ifdef _DELETE_LOG
-      p_afd_status->delete_log      = 0;
+      p_afd_status->delete_log       = 0;
 #endif
 #ifdef _PRODUCTION_LOG
-      p_afd_status->production_log  = 0;
+      p_afd_status->production_log   = 0;
 #endif
 #ifdef _DISTRIBUTION_LOG
-      p_afd_status->distribution_log  = 0;
+      p_afd_status->distribution_log = 0;
 #endif
       p_afd_status->no_of_transfers = 0;
       p_afd_status->start_time      = 0L;
@@ -527,10 +530,22 @@ main(int argc, char *argv[])
             (void)strcpy(proc_table[i].proc_name, AFDD);
             break;
 
-#ifdef _WITH_SERVER_SUPPORT
-         case AFDS_NO :
-            proc_table[i].status = &p_afd_status->afds;
-            (void)strcpy(proc_table[i].proc_name, AFDS);
+#ifdef _WITH_ATPD_SUPPORT
+         case ATPD_NO :
+            proc_table[i].status = &p_afd_status->atpd;
+            (void)strcpy(proc_table[i].proc_name, ATPD);
+            break;
+#endif
+#ifdef _WITH_WMOD_SUPPORT
+         case WMOD_NO :
+            proc_table[i].status = &p_afd_status->wmod;
+            (void)strcpy(proc_table[i].proc_name, WMOD);
+            break;
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+         case DEMCD_NO :
+            proc_table[i].status = &p_afd_status->demcd;
+            (void)strcpy(proc_table[i].proc_name, DEMCD);
             break;
 #endif
 #ifndef HAVE_MMAP
@@ -550,6 +565,12 @@ main(int argc, char *argv[])
          case OUTPUT_LOG_NO :
             proc_table[i].status = &p_afd_status->output_log;
             (void)strcpy(proc_table[i].proc_name, OUTPUT_LOG_PROCESS);
+            break;
+#endif
+#ifdef _CONFIRMATION_LOG
+         case CONFIRMATION_LOG_NO :
+            proc_table[i].status = &p_afd_status->confirmation_log;
+            (void)strcpy(proc_table[i].proc_name, CONFIRMATION_LOG_PROCESS);
             break;
 #endif
 #ifdef _DELETE_LOG
@@ -678,6 +699,11 @@ main(int argc, char *argv[])
    *(pid_t *)(pid_list + ((OUTPUT_LOG_NO + 1) * sizeof(pid_t))) = proc_table[OUTPUT_LOG_NO].pid;
    *proc_table[OUTPUT_LOG_NO].status = ON;
 #endif
+#ifdef _CONFIRMATION_LOG
+   proc_table[CONFIRMATION_LOG_NO].pid = make_process(CONFIRMATION_LOG_PROCESS, work_dir, NULL);
+   *(pid_t *)(pid_list + ((CONFIRMATION_LOG_NO + 1) * sizeof(pid_t))) = proc_table[CONFIRMATION_LOG_NO].pid;
+   *proc_table[CONFIRMATION_LOG_NO].status = ON;
+#endif
 #ifdef _DELETE_LOG
    proc_table[DELETE_LOG_NO].pid = make_process(DELETE_LOG_PROCESS, work_dir, NULL);
    *(pid_t *)(pid_list + ((DELETE_LOG_NO + 1) * sizeof(pid_t))) = proc_table[DELETE_LOG_NO].pid;
@@ -739,11 +765,25 @@ main(int argc, char *argv[])
       *proc_table[AFDD_NO].status = NEITHER;
    }
 
-#ifdef _WITH_SERVER_SUPPORT
-   /* Start TCP server daemon of AFD. */
-   proc_table[AFDS_NO].pid = make_process(AFDS, work_dir, NULL);
-   *(pid_t *)(pid_list + ((AFDS_NO + 1) * sizeof(pid_t))) = proc_table[AFDS_NO].pid;
-   *proc_table[AFDS_NO].status = ON;
+#ifdef _WITH_ATPD_SUPPORT
+   /* Start AFD Transfer Protocol daemon. */
+   proc_table[ATPD_NO].pid = make_process(ATPD, work_dir, NULL);
+   *(pid_t *)(pid_list + ((ATPD_NO + 1) * sizeof(pid_t))) = proc_table[ATPD_NO].pid;
+   *proc_table[ATPD_NO].status = ON;
+#endif
+
+#ifdef _WITH_WMOD_SUPPORT
+   /* Start WMO Protocol daemon. */
+   proc_table[WMOD_NO].pid = make_process(WMOD, work_dir, NULL);
+   *(pid_t *)(pid_list + ((WMOD_NO + 1) * sizeof(pid_t))) = proc_table[WMOD_NO].pid;
+   *proc_table[WMOD_NO].status = ON;
+#endif
+
+#ifdef _WITH_DE_MAIL_SUPPORT
+   /* Start De Mail Confirmation daemon. */
+   proc_table[DEMCD_NO].pid = make_process(DEMCD, work_dir, NULL);
+   *(pid_t *)(pid_list + ((DEMCD_NO + 1) * sizeof(pid_t))) = proc_table[DEMCD_NO].pid;
+   *proc_table[DEMCD_NO].status = ON;
 #endif
 
 #ifdef ALDAD_OFFSET
@@ -1029,7 +1069,7 @@ main(int argc, char *argv[])
             p_ip_hl = ip_hl;
             for (j = 0; j < no_of_ip_hl; j++)
             {
-               if (strcmp(fsa[i].real_hostname[0], p_ip_hl) == 0)
+               if (my_strcmp(fsa[i].real_hostname[0], p_ip_hl) == 0)
                {
                   if (j != (no_of_ip_hl - 1))
                   {
@@ -1371,7 +1411,7 @@ main(int argc, char *argv[])
                }
                else if ((fsa[i].host_status & DANGER_PAUSE_QUEUE_STAT) &&
                         ((fsa[i].total_file_counter < (danger_no_of_files / 2)) ||
-                        (p_afd_status->jobs_in_queue < ((link_max / 2) - 10))))
+                         (p_afd_status->jobs_in_queue < (3 * (link_max / 4)))))
                     {
                        if (lock_set == NO)
                        {
@@ -1793,7 +1833,7 @@ get_afd_config_value(int          *afdd_port,
    (void)snprintf(config_file, MAX_PATH_LENGTH, "%s%s%s",
                   p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(config_file, F_OK) == 0) &&
-       (read_file_no_cr(config_file, &buffer, __FILE__, __LINE__) != INCORRECT))
+       (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {
       char value[MAX_INT_LENGTH];
 
@@ -1893,14 +1933,56 @@ check_dirs(char *work_dir)
 {
    int         tmp_sys_log_fd = sys_log_fd;
    char        new_dir[MAX_PATH_LENGTH],
-#ifdef WITH_ONETIME
                *ptr2,
-#endif
                *ptr;
    struct stat stat_buf;
 
    /* First check that the working directory does exist */
    /* and make sure that it is a directory.             */
+#ifdef MULTI_FS_SUPPORT
+   int                    no_of_extra_work_dirs;
+   struct extra_work_dirs *ewl;
+
+   get_extra_work_dirs(&no_of_extra_work_dirs, &ewl, YES);
+   if (no_of_extra_work_dirs > 0)
+   {
+      int i;
+
+      for (i = 0; i < no_of_extra_work_dirs; i++)
+      {
+         if (stat(ewl[i].dir_name, &stat_buf) < 0)
+         {
+            (void)fprintf(stderr, _("Could not stat() `%s' : %s (%s %d)\n"),
+                          ewl[i].dir_name, strerror(errno), __FILE__, __LINE__);
+            if (i == 0)
+            {
+               (void)unlink(afd_active_file);
+               exit(INCORRECT);
+            }
+         }
+         if (!S_ISDIR(stat_buf.st_mode))
+         {
+            (void)fprintf(stderr, _("`%s' is not a directory. (%s %d)\n"),
+                          ewl[i].dir_name, __FILE__, __LINE__);
+            if (i == 0)
+            {
+               (void)unlink(afd_active_file);
+               exit(INCORRECT);
+            }
+         }
+      }
+   }
+   else
+   {
+      (void)fprintf(stderr,
+                    _("Failed to locate any valid working directories. (%s %d)\n"),
+                    __FILE__, __LINE__);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+   delete_stale_extra_work_dir_links(no_of_extra_work_dirs, ewl);
+   free_extra_work_dirs(no_of_extra_work_dirs, &ewl);
+#else
    if (stat(work_dir, &stat_buf) < 0)
    {
       (void)fprintf(stderr, _("Could not stat() `%s' : %s (%s %d)\n"),
@@ -1915,6 +1997,7 @@ check_dirs(char *work_dir)
       (void)unlink(afd_active_file);
       exit(INCORRECT);
    }
+#endif
    sys_log_fd = STDERR_FILENO;
 
    /* Now lets check if the fifo directory is there. */
@@ -2003,12 +2086,118 @@ check_dirs(char *work_dir)
       (void)unlink(afd_active_file);
       exit(INCORRECT);
    }
-#endif
-
-   /* Is file directory there? */
-#ifdef WITH_ONETIME
    ptr = ptr2;
 #endif
+
+   /* Is etc/groups directory there? */
+   ptr2 = ptr;
+   (void)strcpy(ptr, ETC_DIR);
+   ptr += ETC_DIR_LENGTH;
+   (void)strcpy(ptr, GROUP_NAME_DIR);
+   if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
+   {
+      (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+   ptr += GROUP_NAME_DIR_LENGTH;
+   (void)strcpy(ptr, DIR_GROUP_NAME);
+   if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
+   {
+      (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+
+   ptr = ptr2 + ETC_DIR_LENGTH;
+   (void)strcpy(ptr, ACTION_DIR);
+   if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
+   {
+      (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+   ptr += ACTION_DIR_LENGTH;
+   (void)strcpy(ptr, ACTION_TARGET_DIR);
+   if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
+   {
+      (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+   ptr += ACTION_TARGET_DIR_LENGTH;
+   (void)strcpy(ptr, ACTION_ERROR_DIR);
+   if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
+   {
+      (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+   (void)strcpy(ptr, ACTION_WARN_DIR);
+   if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
+   {
+      (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+#ifdef NEW_FRA
+   (void)strcpy(ptr, ACTION_INFO_DIR);
+   if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
+   {
+      (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+#endif
+   (void)strcpy(ptr, ACTION_SUCCESS_DIR);
+   if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
+   {
+      (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+   ptr = ptr2 + ETC_DIR_LENGTH + ACTION_DIR_LENGTH;
+   (void)strcpy(ptr, ACTION_SOURCE_DIR);
+   if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
+   {
+      (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+   ptr += ACTION_SOURCE_DIR_LENGTH;
+   (void)strcpy(ptr, ACTION_ERROR_DIR);
+   if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
+   {
+      (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+   (void)strcpy(ptr, ACTION_WARN_DIR);
+   if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
+   {
+      (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+#ifdef NEW_FRA
+   (void)strcpy(ptr, ACTION_INFO_DIR);
+   if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
+   {
+      (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+#endif
+   (void)strcpy(ptr, ACTION_SUCCESS_DIR);
+   if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
+   {
+      (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+   ptr = ptr2;
+
+   /* Is file directory there? */
    (void)strcpy(ptr, AFD_FILE_DIR);
    if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
    {
@@ -2238,8 +2427,14 @@ zombie_check(void)
 #ifndef HAVE_MMAP
                          (i == MAPPER_NO) ||
 #endif
-#ifdef _WITH_SERVER_SUPPORT
-                         (i == AFDS_NO) ||
+#ifdef _WITH_ATPD_SUPPORT
+                         (i == ATPD_NO) ||
+#endif
+#ifdef _WITH_WMOD_SUPPORT
+                         (i == WMOD_NO) ||
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+                         (i == DEMCD_NO) ||
 #endif
 #ifdef ALDAD_OFFSET
                          (i == ALDAD_NO) ||

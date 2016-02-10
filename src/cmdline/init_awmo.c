@@ -1,6 +1,6 @@
 /*
  *  init_awmo.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2010 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2010 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -134,6 +134,24 @@ init_awmo(int argc, char *argv[], struct data *p_db)
                p_db->blocksize = atoi(*(argv + 1));
                argc--;
                argv++;
+            }
+            break;
+
+         case 'c' : /* Configuration file for user, passwd, etc. */
+            if ((argc == 1) || (*(argv + 1)[0] == '-'))
+            {
+               (void)fprintf(stderr, _("ERROR   : No config file specified for option -c.\n"));
+               correct = NO;
+            }
+            else
+            {
+               char config_file[MAX_PATH_LENGTH];
+
+               argv++;
+               (void)my_strncpy(config_file, argv[0], MAX_PATH_LENGTH);
+               argc--;
+
+               eval_config_file(config_file, p_db);
             }
             break;
 
@@ -430,9 +448,12 @@ usage(void)
    (void)fprintf(stderr, _("SYNTAX: [t]%s [options] [file 1 ... file n]\n\n"), p_name);
    (void)fprintf(stderr, _("  OPTIONS                              DESCRIPTION\n"));
    (void)fprintf(stderr, _("  --version                          - Show current version\n"));
-   (void)fprintf(stderr, _("  -a                                 - Wait for an acknowledge from server.\n"));
-   (void)fprintf(stderr, _("  -b <block size>                    - Transfer block size in bytes. Default %d\n\
-                                       bytes.\n"), DEFAULT_TRANSFER_BLOCKSIZE);
+   (void)fprintf(stderr, _("  -A                                 - Wait for an acknowledge from server.\n"));
+   (void)fprintf(stderr, _("  -b <block size>                    - Transfer block size in byte. Default %d\n\
+                                       byte.\n"), DEFAULT_TRANSFER_BLOCKSIZE);
+   (void)fprintf(stderr, _("  -c <config file>                   - Configuration file holding user name,\n\
+                                       password and target directory in URL\n\
+                                       format.\n"));
    (void)fprintf(stderr, _("  -f <filename>                      - File containing a list of filenames\n\
                                        that are to be send.\n"));
    (void)fprintf(stderr, _("  -h <host name | IP number>         - Hostname or IP number to which to\n\

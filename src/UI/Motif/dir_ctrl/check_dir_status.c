@@ -1,7 +1,7 @@
 /*
  *  check_dir_status.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 2000 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ DESCR__S_M3
 DESCR__E_M3
 
 #include <stdio.h>               /* sprintf()                            */
-#include <string.h>              /* strcmp(), strcpy(), memcpy()         */
+#include <string.h>              /* strcpy(), memcpy()                   */
 #include <stdlib.h>              /* calloc(), realloc(), free()          */
 #include <time.h>                /* time()                               */
 #include <math.h>                /* log10()                              */
@@ -132,7 +132,7 @@ check_dir_status(Widget w)
       for (i = 0, location_where_changed = 0;
            i < prev_no_of_dirs; i++, location_where_changed++)
       {
-         if (strcmp(connect_data[i].dir_alias, fra[i].dir_alias) == 0)
+         if (my_strcmp(connect_data[i].dir_alias, fra[i].dir_alias) == 0)
          {
             (void)memcpy(&new_connect_data[i], &connect_data[i],
                          sizeof(struct dir_line));
@@ -897,7 +897,7 @@ check_fra_data(char *dir_alias)
 
    for (i = 0; i < no_of_dirs; i++)
    {
-      if (strcmp(fra[i].dir_alias, dir_alias) == 0)
+      if (my_strcmp(fra[i].dir_alias, dir_alias) == 0)
       {
          return(i);
       }
@@ -915,7 +915,7 @@ check_disp_data(char *dir_alias, int prev_no_of_dirs)
 
    for (i = 0; i < prev_no_of_dirs; i++)
    {
-      if (strcmp(connect_data[i].dir_alias, dir_alias) == 0)
+      if (my_strcmp(connect_data[i].dir_alias, dir_alias) == 0)
       {
          return(i);
       }

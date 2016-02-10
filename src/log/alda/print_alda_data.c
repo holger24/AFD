@@ -1,6 +1,6 @@
 /*
  *  print_alda_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -628,6 +628,12 @@ print_alda_data(void)
                                                  ALDA_SMTP_SHEME_LENGTH, i);
                                  break;
 
+                              case ALDA_DE_MAIL_FLAG :
+                                 i += pri_string(right_side, max_length,
+                                                 ALDA_DEMAIL_SHEME,
+                                                 ALDA_DEMAIL_SHEME_LENGTH, i);
+                                 break;
+
                               case ALDA_SFTP_FLAG :
                                  i += pri_string(right_side, max_length,
                                                  ALDA_SFTP_SHEME,
@@ -668,6 +674,12 @@ print_alda_data(void)
                                  i += pri_string(right_side, max_length,
                                                  ALDA_MAP_SHEME,
                                                  ALDA_MAP_SHEME_LENGTH, i);
+                                 break;
+
+                              case ALDA_DFAX_FLAG :
+                                 i += pri_string(right_side, max_length,
+                                                 ALDA_DFAX_SHEME,
+                                                 ALDA_DFAX_SHEME_LENGTH, i);
                                  break;
 
                               default :

@@ -1,6 +1,6 @@
 /*
  *  eval_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -171,6 +171,10 @@ static void store_mode(char *, struct job *, char *, int);
 #define SHOW_ALL_GROUP_MEMBERS_FLAG 32
 #define CHECK_REMOTE_SIZE_FLAG      64
 #define HIDE_ALL_GROUP_MEMBERS_FLAG 128
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define CONF_OF_RETRIEVE_FLAG      256
+# define DE_MAIL_SENDER_FLAG        512
+#endif
 
 
 #define MAX_HUNK                    4096
@@ -1038,7 +1042,12 @@ eval_message(char *message_name, struct job *p_db)
                      (CHECK_STRNCMP(ptr, SUBJECT_ID, SUBJECT_ID_LENGTH) == 0))
                  {
                     used |= SUBJECT_FLAG;
+#ifdef _WITH_DE_MAIL_SUPPORT
+                    if ((p_db->protocol & SMTP_FLAG) ||
+                        (p_db->protocol & DE_MAIL_FLAG))
+#else
                     if (p_db->protocol & SMTP_FLAG)
+#endif
                     {
                        off_t length = 0;
 
@@ -1551,7 +1560,12 @@ eval_message(char *message_name, struct job *p_db)
                                     FILE_NAME_IS_SUBJECT_ID_LENGTH) == 0))
                  {
                     used |= FILE_NAME_IS_SUBJECT_FLAG;
+#ifdef _WITH_DE_MAIL_SUPPORT
+                    if ((p_db->protocol & SMTP_FLAG) ||
+                        (p_db->protocol & DE_MAIL_FLAG))
+#else
                     if (p_db->protocol & SMTP_FLAG)
+#endif
                     {
                        p_db->special_flag |= FILE_NAME_IS_SUBJECT;
                     }
@@ -1568,7 +1582,12 @@ eval_message(char *message_name, struct job *p_db)
                      (CHECK_STRNCMP(ptr, REPLY_TO_ID, REPLY_TO_ID_LENGTH) == 0))
                  {
                     used |= REPLY_TO_FLAG;
+#ifdef _WITH_DE_MAIL_SUPPORT
+                    if ((p_db->protocol & SMTP_FLAG) ||
+                        (p_db->protocol & DE_MAIL_FLAG))
+#else
                     if (p_db->protocol & SMTP_FLAG)
+#endif
                     {
                        size_t length = 0;
 
@@ -1616,11 +1635,88 @@ eval_message(char *message_name, struct job *p_db)
                        ptr++;
                     }
                  }
+#ifdef _WITH_DE_MAIL_SUPPORT
+            else if (((used & DE_MAIL_SENDER_FLAG) == 0) &&
+                     (CHECK_STRNCMP(ptr, DE_MAIL_SENDER_ID, DE_MAIL_SENDER_ID_LENGTH) == 0))
+                 {
+                    used |= DE_MAIL_SENDER_FLAG;
+                    if (p_db->protocol & DE_MAIL_FLAG)
+                    {
+                       size_t length = 0;
+
+                       ptr += DE_MAIL_SENDER_ID_LENGTH;
+                       while ((*ptr == ' ') || (*ptr == '\t'))
+                       {
+                          ptr++;
+                       }
+                       end_ptr = ptr;
+                       while ((*end_ptr != '\n') && (*end_ptr != '\0'))
+                       {
+                         end_ptr++;
+                         length++;
+                       }
+
+                       /* Discard global DEFAULT_DE_MAIL_SENDER from */
+                       /* AFD_CONFIG when set.                       */
+                       if (p_db->de_mail_sender != NULL)
+                       {
+                          free(p_db->de_mail_sender);
+                          p_db->de_mail_sender = NULL;
+                       }
+                       if ((p_db->de_mail_sender = malloc(length + 1)) == NULL)
+                       {
+                          system_log(WARN_SIGN, __FILE__, __LINE__,
+                                     "Failed to malloc() memory, will ignore DE-mail sender option : %s",
+                                     strerror(errno));
+                       }
+                       else
+                       {
+                          (void)memcpy(p_db->de_mail_sender, ptr, length);
+                          p_db->de_mail_sender[length] = '\0';
+                       }
+                       ptr = end_ptr;
+                    }
+                    else
+                    {
+                       while ((*ptr != '\n') && (*ptr != '\0'))
+                       {
+                          ptr++;
+                       }
+                    }
+                    while (*ptr == '\n')
+                    {
+                       ptr++;
+                    }
+                 }
+            else if (((used & CONF_OF_RETRIEVE_FLAG) == 0) &&
+                     (CHECK_STRNCMP(ptr, CONF_OF_RETRIEVE_ID,
+                                    CONF_OF_RETRIEVE_ID_LENGTH) == 0))
+                 {
+                    used |= CONF_OF_RETRIEVE_FLAG;
+                    if (p_db->protocol & DE_MAIL_FLAG)
+                    {
+                       p_db->de_mail_options |= CONF_OF_RETRIEVE;
+                    }
+                    while ((*ptr != '\n') && (*ptr != '\0'))
+                    {
+                       ptr++;
+                    }
+                    while (*ptr == '\n')
+                    {
+                       ptr++;
+                    }
+                 }
+#endif
             else if (((used & FROM_FLAG) == 0) &&
                      (CHECK_STRNCMP(ptr, FROM_ID, FROM_ID_LENGTH) == 0))
                  {
                     used |= FROM_FLAG;
+#ifdef _WITH_DE_MAIL_SUPPORT
+                    if ((p_db->protocol & SMTP_FLAG) ||
+                        (p_db->protocol & DE_MAIL_FLAG))
+#else
                     if (p_db->protocol & SMTP_FLAG)
+#endif
                     {
                        size_t length = 0;
 
@@ -1673,7 +1769,12 @@ eval_message(char *message_name, struct job *p_db)
                                     ENCODE_ANSI_ID_LENGTH) == 0))
                  {
                     used |= CHECK_ANSI_FLAG;
+#ifdef _WITH_DE_MAIL_SUPPORT
+                    if ((p_db->protocol & SMTP_FLAG) ||
+                        (p_db->protocol & DE_MAIL_FLAG))
+#else
                     if (p_db->protocol & SMTP_FLAG)
+#endif
                     {
                        p_db->special_flag |= ENCODE_ANSI;
                     }
@@ -1730,7 +1831,12 @@ eval_message(char *message_name, struct job *p_db)
                  {
                     used |= ATTACH_FILE_FLAG;
                     ptr += ATTACH_FILE_ID_LENGTH;
+#ifdef _WITH_DE_MAIL_SUPPORT
+                    if ((p_db->protocol & SMTP_FLAG) ||
+                        (p_db->protocol & DE_MAIL_FLAG))
+#else
                     if (p_db->protocol & SMTP_FLAG)
+#endif
                     {
                        p_db->special_flag |= ATTACH_FILE;
 
@@ -1777,7 +1883,12 @@ eval_message(char *message_name, struct job *p_db)
                      (CHECK_STRNCMP(ptr, ADD_MAIL_HEADER_ID,
                                     ADD_MAIL_HEADER_ID_LENGTH) == 0))
                  {
+#ifdef _WITH_DE_MAIL_SUPPORT
+                    if ((p_db->protocol & SMTP_FLAG) ||
+                        (p_db->protocol & DE_MAIL_FLAG))
+#else
                     if (p_db->protocol & SMTP_FLAG)
+#endif
                     {
                        int length = 0;
 
@@ -1930,7 +2041,12 @@ eval_message(char *message_name, struct job *p_db)
                      (CHECK_STRNCMP(ptr, CHARSET_ID, CHARSET_ID_LENGTH) == 0))
                  {
                     used |= CHARSET_FLAG;
+#ifdef _WITH_DE_MAIL_SUPPORT
+                    if ((p_db->protocol & SMTP_FLAG) ||
+                        (p_db->protocol & DE_MAIL_FLAG))
+#else
                     if (p_db->protocol & SMTP_FLAG)
+#endif
                     {
                        size_t length = 0;
 
@@ -1976,7 +2092,12 @@ eval_message(char *message_name, struct job *p_db)
                                     FILE_NAME_IS_USER_ID_LENGTH) == 0))
                  {
                     used |= FILE_NAME_IS_USER_FLAG;
+#ifdef _WITH_DE_MAIL_SUPPORT
+                    if ((p_db->protocol & SMTP_FLAG) ||
+                        (p_db->protocol & DE_MAIL_FLAG))
+#else
                     if (p_db->protocol & SMTP_FLAG)
+#endif
                     {
                        p_db->special_flag |= FILE_NAME_IS_USER;
                        ptr += FILE_NAME_IS_USER_ID_LENGTH;
@@ -2013,7 +2134,12 @@ eval_message(char *message_name, struct job *p_db)
                                     FILE_NAME_IS_TARGET_ID_LENGTH) == 0))
                  {
                     used2 |= FILE_NAME_IS_TARGET_FLAG;
+#ifdef _WITH_DE_MAIL_SUPPORT
+                    if ((p_db->protocol & SMTP_FLAG) ||
+                        (p_db->protocol & DE_MAIL_FLAG))
+#else
                     if (p_db->protocol & SMTP_FLAG)
+#endif
                     {
                        p_db->special_flag |= FILE_NAME_IS_TARGET;
                        ptr += FILE_NAME_IS_TARGET_ID_LENGTH;
@@ -2214,7 +2340,12 @@ eval_message(char *message_name, struct job *p_db)
                     used |= ATTACH_ALL_FILES_FLAG;
                     used |= ATTACH_FILE_FLAG;
                     ptr += ATTACH_ALL_FILES_ID_LENGTH;
+#ifdef _WITH_DE_MAIL_SUPPORT
+                    if ((p_db->protocol & SMTP_FLAG) ||
+                        (p_db->protocol & DE_MAIL_FLAG))
+#else
                     if (p_db->protocol & SMTP_FLAG)
+#endif
                     {
                        p_db->special_flag |= ATTACH_FILE;
                        p_db->special_flag |= ATTACH_ALL_FILES;
@@ -2333,6 +2464,15 @@ eval_message(char *message_name, struct job *p_db)
                              p_db->set_trans_exec_lock = YES;
                              break;
 
+                          case 'r': /* Execute in target directory. */
+                             ptr++;
+                             while ((*ptr == ' ') || (*ptr == '\t'))
+                             {
+                                ptr++;
+                             }
+                             p_db->special_flag |= EXECUTE_IN_TARGET_DIR;
+                             break;
+
                           default: /* Unknown, lets ignore this. Do as if we */
                                    /* did not know about any options.        */
                              ptr++;
@@ -2373,8 +2513,8 @@ eval_message(char *message_name, struct job *p_db)
                                             "%s%s%s", p_work_dir, ETC_DIR,
                                             AFD_CONFIG_FILE);
                              if ((eaccess(config_file, F_OK) == 0) &&
-                                 (read_file_no_cr(config_file,
-                                                  &buffer, __FILE__, __LINE__) != INCORRECT))
+                                 (read_file_no_cr(config_file, &buffer, YES,
+                                                  __FILE__, __LINE__) != INCORRECT))
                              {
                                 char value[MAX_INT_LENGTH];
 
@@ -2418,7 +2558,8 @@ eval_message(char *message_name, struct job *p_db)
                                 {
                                    char *buffer = NULL;
 
-                                   if (read_file_no_cr(config_file, &buffer, __FILE__, __LINE__) != INCORRECT)
+                                   if (read_file_no_cr(config_file, &buffer, YES,
+                                                       __FILE__, __LINE__) != INCORRECT)
                                    {
                                       char value[MAX_INT_LENGTH + 1];
 

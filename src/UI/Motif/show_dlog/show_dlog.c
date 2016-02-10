@@ -1,6 +1,6 @@
 /*
  *  show_dlog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1139,31 +1139,32 @@ init_show_dlog(int *argc, char *argv[])
    special_button_flag = SEARCH_BUTTON;
    no_of_log_files = 0;
    dr_toggles_set = ((1 << (AGE_OUTPUT + 1)) |
-                    (1 << (AGE_INPUT + 1)) |
-                    (1 << (USER_DEL + 1)) |
-                    (1 << (EXEC_FAILED_DEL + 1)) |
-                    (1 << (NO_MESSAGE_FILE_DEL + 1)) |
+                     (1 << (AGE_INPUT + 1)) |
+                     (1 << (USER_DEL + 1)) |
+                     (1 << (EXEC_FAILED_DEL + 1)) |
+                     (1 << (NO_MESSAGE_FILE_DEL + 1)) |
 #ifdef WITH_DUP_CHECK
-                    (1 << (DUP_INPUT + 1)) |
-                    (1 << (DUP_OUTPUT + 1)) |
+                     (1 << (DUP_INPUT + 1)) |
+                     (1 << (DUP_OUTPUT + 1)) |
 #endif
-                    (1 << (DEL_UNKNOWN_FILE + 1)) |
-                    (1 << (JID_LOOKUP_FAILURE_DEL + 1)) |
-                    (1 << (DEL_OLD_LOCKED_FILE + 1)) |
-                    (1 << (DEL_QUEUED_FILE + 1)) |
-                    (1 << (DELETE_OPTION + 1)) |
-                    (1 << (DELETE_STALE_ERROR_JOBS + 1)) |
-                    (1 << (CLEAR_STALE_MESSAGES + 1)) |
-                    (1 << (FILE_CURRENTLY_TRANSMITTED + 1)) |
-                    (1 << (DELETE_UNKNOWN_POOL_DIR + 1)) |
-                    (1 << (EXEC_FAILED_STORED + 1)) |
-                    (1 << (DELETE_HOST_DISABLED + 1)) |
-                    (1 << (CONVERSION_FAILED + 1)) |
-                    (1 << (RENAME_OVERWRITE + 1)) |
-                    (1 << (RECIPIENT_REJECTED + 1)) |
-                    (1 << (MIRROR_REMOVE + 1)) |
-                    (1 << (MKDIR_QUEUE_ERROR + 1)) |
-                    (1 << (INTERNAL_LINK_FAILED + 1))) + 1;
+                     (1 << (DEL_UNKNOWN_FILE + 1)) |
+                     (1 << (JID_LOOKUP_FAILURE_DEL + 1)) |
+                     (1 << (DEL_OLD_LOCKED_FILE + 1)) |
+                     (1 << (DEL_QUEUED_FILE + 1)) |
+                     (1 << (DELETE_OPTION + 1)) |
+                     (1 << (DELETE_STALE_ERROR_JOBS + 1)) |
+                     (1 << (CLEAR_STALE_MESSAGES + 1)) |
+                     (1 << (FILE_CURRENTLY_TRANSMITTED + 1)) |
+                     (1 << (DELETE_UNKNOWN_POOL_DIR + 1)) |
+                     (1 << (EXEC_FAILED_STORED + 1)) |
+                     (1 << (DELETE_HOST_DISABLED + 1)) |
+                     (1 << (CONVERSION_FAILED + 1)) |
+                     (1 << (RENAME_OVERWRITE + 1)) |
+                     (1 << (RECIPIENT_REJECTED + 1)) |
+                     (1 << (MIRROR_REMOVE + 1)) |
+                     (1 << (MKDIR_QUEUE_ERROR + 1)) |
+                     (1 << (INTERNAL_LINK_FAILED + 1)) |
+                     (1 << (DEL_UNREADABLE_FILE + 1))) + 1;
 
    /* Get the maximum number of logfiles we keep for history. */
    get_max_log_values(&max_delete_log_files, MAX_DELETE_LOG_FILES_DEF,
@@ -1184,7 +1185,7 @@ get_afd_config_value(void)
    (void)sprintf(config_file, "%s%s%s",
                  p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(config_file, F_OK) == 0) &&
-       (read_file_no_cr(config_file, &buffer, __FILE__, __LINE__) != INCORRECT))
+       (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {
       char value[MAX_INT_LENGTH];
 

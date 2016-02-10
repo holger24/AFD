@@ -1,6 +1,6 @@
 /*
  *  archive_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -130,13 +130,38 @@ archive_file(char       *file_path,  /* Original path of file to archive.*/
          p_db->archive_dir[p_db->archive_offset] = '/';
          p_db->archive_offset++;
       }
+#ifdef MULTI_FS_SUPPORT
+      length = 0;
+      while ((*(p_db->msg_name + length) != '/') &&
+             (*(p_db->msg_name + length) != '\0') &&
+             (length < MAX_INT_HEX_LENGTH))
+      {
+         p_db->archive_dir[p_db->archive_offset + length] = *(p_db->msg_name + length);
+         length++;
+      }
+      if ((length == MAX_INT_HEX_LENGTH) ||
+          (*(p_db->msg_name + length) == '\0'))
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Unable to determine filesystem ID from `%s' [%d]",
+                    p_db->msg_name, length);
+         return(INCORRECT);
+      }
+      p_db->archive_dir[p_db->archive_offset + length] = '/';
+      length++;
+      (void)strcpy(&p_db->archive_dir[p_db->archive_offset + length], p_db->host_alias);
+#else
       (void)strcpy(&p_db->archive_dir[p_db->archive_offset], p_db->host_alias);
+#endif
 
       /*
        * Lets make an educated guest: Most the time both host_alias,
        * user name and directory number zero do already exist.
        */
       tmp_ptr = ptr = p_db->archive_dir + p_db->archive_offset +
+#ifdef MULTI_FS_SUPPORT
+                      length +
+#endif
                       strlen(p_db->host_alias);
       *ptr = '/';
       ptr++;
@@ -287,6 +312,7 @@ archive_file(char       *file_path,  /* Original path of file to archive.*/
    (void)strcpy(ptr, filename);
 #else
    tmp_ptr = p_db->msg_name;
+# ifdef MULTI_FS_SUPPORT
    while ((*tmp_ptr != '/') && (*tmp_ptr != '\0'))
    {
       tmp_ptr++;
@@ -294,6 +320,7 @@ archive_file(char       *file_path,  /* Original path of file to archive.*/
    if (*tmp_ptr == '/')
    {
       tmp_ptr++;
+# endif
       while ((*tmp_ptr != '/') && (*tmp_ptr != '\0'))
       {
          tmp_ptr++;
@@ -301,17 +328,39 @@ archive_file(char       *file_path,  /* Original path of file to archive.*/
       if (*tmp_ptr == '/')
       {
          tmp_ptr++;
-         while (*tmp_ptr != '\0')
+         while ((*tmp_ptr != '/') && (*tmp_ptr != '\0'))
          {
-            *ptr = *tmp_ptr;
-            ptr++; tmp_ptr++;
+            tmp_ptr++;
          }
-         if (*(ptr - 1) != '/')
+         if (*tmp_ptr == '/')
          {
-            *ptr = '_';
-            ptr++;
+            tmp_ptr++;
+            while (*tmp_ptr != '\0')
+            {
+               *ptr = *tmp_ptr;
+               ptr++; tmp_ptr++;
+            }
+            if (*(ptr - 1) != '/')
+            {
+               *ptr = '_';
+               ptr++;
+            }
+            (void)strcpy(ptr, filename);
          }
-         (void)strcpy(ptr, filename);
+         else
+         {
+            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       "Hmm, `%s' this does not look like a message.",
+                       p_db->msg_name);
+            (void)snprintf(ptr, MAX_PATH_LENGTH - (ptr - newname),
+# if SIZEOF_TIME_T == 4
+                           "%lx_%x_%x_%s",
+# else
+                           "%llx_%x_%x_%s",
+# endif
+                           (pri_time_t)p_db->creation_time, p_db->unique_number,
+                           p_db->split_job_counter, filename);
+         }
       }
       else
       {
@@ -327,6 +376,7 @@ archive_file(char       *file_path,  /* Original path of file to archive.*/
                         (pri_time_t)p_db->creation_time, p_db->unique_number,
                         p_db->split_job_counter, filename);
       }
+# ifdef MULTI_FS_SUPPORT
    }
    else
    {
@@ -334,14 +384,15 @@ archive_file(char       *file_path,  /* Original path of file to archive.*/
                  "Hmm, `%s' this does not look like a message.",
                  p_db->msg_name);
       (void)snprintf(ptr, MAX_PATH_LENGTH - (ptr - newname),
-# if SIZEOF_TIME_T == 4
+#  if SIZEOF_TIME_T == 4
                      "%lx_%x_%x_%s",
-# else
+#  else
                      "%llx_%x_%x_%s",
-# endif
+#  endif
                      (pri_time_t)p_db->creation_time, p_db->unique_number,
                      p_db->split_job_counter, filename);
    }
+# endif
 #endif
    (void)strcpy(oldname, file_path);
    (void)strcat(oldname, "/");

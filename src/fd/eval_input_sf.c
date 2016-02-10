@@ -1,6 +1,6 @@
 /*
  *  eval_input_sf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -37,6 +37,8 @@ DESCR__S_M3
  **          -a <age limit>            The age limit for the files being send.
  **          -A                        Disable archiving of files.
  **          -c                        Enable support for hardware CRC-32.
+ **          -D <DE-mail sender>       The sender DE-mail address.
+ **          -e <seconds>              Disconnect after given time.
  **          -f <SMTP from>            Default from identifier to send.
  **          -h <HTTP proxy>[:<port>]  Proxy where to send the HTTP requests.
  **          -o <retries>              Old/Error message and number of retries.
@@ -66,6 +68,7 @@ DESCR__S_M3
  **   28.12.2011 H.Kiehl Added -h to specify HTTP proxy.
  **   23.11.2012 H.Kiehl Added -c for hardware CRC-32 support.
  **   15.09.2014 H.Kiehl Added -S for simulation mode.
+ **   01.07.2015 H.Kiehl Added -e for disconnect time.
  **
  */
 DESCR__E_M3
@@ -185,7 +188,8 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                msg_length = i;
                if ((i > 0) && (i < MAX_MSG_NAME_LENGTH))
                {
-                  char *ptr;
+                  char *p_job_id,
+                       *ptr;
 
                   p_db->msg_name[msg_length] = '\0';
                   ptr = p_db->msg_name;
@@ -193,6 +197,24 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                   {
                      ptr++;
                   }
+#ifdef MULTI_FS_SUPPORT
+                  if (*ptr != '/')
+                  {
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                "Failed to filesystem ID in message name %s",
+                                argv[5]);
+                     ret = JID_NUMBER_ERROR;
+                     return(-ret);
+                  }
+                  ptr++;
+                  p_job_id = ptr;
+                  while ((*ptr != '/') && (*ptr != '\0'))
+                  {
+                     ptr++;
+                  }
+#else
+                  p_job_id = p_db->msg_name;
+#endif
                   if (*ptr != '/')
                   {
                      system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -203,7 +225,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                   else
                   {
                      *ptr = '\0';
-                     p_db->id.job = (unsigned int)strtoul(p_db->msg_name, (char **)NULL, 16);
+                     p_db->id.job = (unsigned int)strtoul(p_job_id, (char **)NULL, 16);
                      if (fsa_attach_pos(p_db->fsa_pos) == SUCCESS)
                      {
                         /*
@@ -257,6 +279,55 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                     have_hw_crc32 = YES;
                                     break;
 #endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+                                 case 'D' : /* DE-Mail sender address. */
+                                    if (((i + 1) < argc) &&
+                                        (argv[i + 1][0] != '-'))
+                                    {
+                                       size_t length;
+
+                                       i++;
+                                       length = strlen(argv[i]) + 1;
+                                       if ((p_db->de_mail_sender = malloc(length)) == NULL)
+                                       {
+                                          (void)fprintf(stderr,
+# if SIZEOF_SIZE_T == 4
+                                                        "ERROR   : Failed to malloc() %d bytes : %s",
+# else
+                                                        "ERROR   : Failed to malloc() %lld bytes : %s",
+# endif
+                                                        (pri_size_t)length,
+                                                        strerror(errno));
+                                          ret = ALLOC_ERROR;
+                                       }
+                                       else
+                                       {
+                                          (void)strcpy(p_db->de_mail_sender, argv[i]);
+                                       }
+                                    }
+                                    else
+                                    {
+                                       (void)fprintf(stderr,
+                                                     "ERROR   : No DE-Mail sender address specified for -D option.\n");
+                                       usage(argv[0]);
+                                       ret = SYNTAX_ERROR;
+                                    }
+                                    break;
+#endif /* _WITH_DE_MAIL_SUPPORT */
+                                 case 'e' : /* Disconnect after given time. */
+                                    if (((i + 1) < argc) &&
+                                        (argv[i + 1][0] != '-'))
+                                    {
+                                       p_db->disconnect = (unsigned int)strtoul(argv[i + 1], (char **)NULL, 10);
+                                    }
+                                    else
+                                    {
+                                       (void)fprintf(stderr,
+                                                     "ERROR   : No disconnect time specified for -d option.\n");
+                                       usage(argv[0]);
+                                       ret = SYNTAX_ERROR;
+                                    }
+                                    break;
                                  case 'f' : /* Default SMTP from. */
                                     if (((i + 1) < argc) &&
                                         (argv[i + 1][0] != '-'))
@@ -485,8 +556,7 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                            char fullname[MAX_PATH_LENGTH];
 
                            (void)snprintf(fullname, MAX_PATH_LENGTH, "%s%s/%s",
-                                          p_work_dir, AFD_MSG_DIR,
-                                          p_db->msg_name);
+                                          p_work_dir, AFD_MSG_DIR, p_job_id);
                            if (eval_message(fullname, p_db) < 0)
                            {
                               ret = SYNTAX_ERROR;
@@ -554,6 +624,10 @@ usage(char *name)
 #ifdef HAVE_HW_CRC32
    (void)fprintf(stderr, "  -c                        - Enable support for hardware CRC-32.\n");
 #endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+   (void)fprintf(stderr, "  -D <DE-Mail sender>       - DE-Mail sender address.\n");
+#endif
+   (void)fprintf(stderr, "  -e <seconds>              - Disconnect after the given amount of time.\n");
    (void)fprintf(stderr, "  -f <SMTP from>            - Default from identifier to send.\n");
    (void)fprintf(stderr, "  -h <HTTP proxy>[:<port>]  - Proxy where to send the HTTP request.\n");
    (void)fprintf(stderr, "  -o <retries>              - Old/error message and number of retries.\n");

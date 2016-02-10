@@ -1,6 +1,6 @@
 /*
  *  mafd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -259,7 +259,7 @@ main(int argc, char *argv[])
    {
       if (argc == 2)
       {
-         if (strcmp(argv[1], "-a") == 0) /* Start AFD_MON. */
+         if (my_strcmp(argv[1], "-a") == 0) /* Start AFD_MON. */
          {
             if (startup_perm != YES)
             {
@@ -269,11 +269,11 @@ main(int argc, char *argv[])
             }
             start_up = AFD_MON_ONLY;
          }
-         else if (strcmp(argv[1], "-c") == 0) /* Only check if AFD_MON is active. */
+         else if (my_strcmp(argv[1], "-c") == 0) /* Only check if AFD_MON is active. */
               {
                  start_up = AFD_MON_CHECK_ONLY;
               }
-         else if (strcmp(argv[1], "-C") == 0) /* Only check if AFD_MON is active. */
+         else if (my_strcmp(argv[1], "-C") == 0) /* Only check if AFD_MON is active. */
               {
                  if (startup_perm != YES)
                  {
@@ -283,7 +283,7 @@ main(int argc, char *argv[])
                  }
                  start_up = AFD_MON_CHECK;
               }
-         else if (strcmp(argv[1], "-d") == 0) /* Start mon_ctrl. */
+         else if (my_strcmp(argv[1], "-d") == 0) /* Start mon_ctrl. */
               {
                  if (mon_ctrl_perm != YES)
                  {
@@ -293,7 +293,7 @@ main(int argc, char *argv[])
                  }
                  start_up = MON_CTRL_ONLY;
               }
-         else if (strcmp(argv[1], "-i") == 0) /* Initialize AFD_MON. */
+         else if (my_strcmp(argv[1], "-i") == 0) /* Initialize AFD_MON. */
               {
                  if (initialize_perm != YES)
                  {
@@ -303,7 +303,7 @@ main(int argc, char *argv[])
                  }
                  start_up = AFD_MON_INITIALIZE;
               }
-         else if (strcmp(argv[1], "-I") == 0) /* Full Initialization AFD_MON. */
+         else if (my_strcmp(argv[1], "-I") == 0) /* Full Initialization AFD_MON. */
               {
                  if (initialize_perm != YES)
                  {
@@ -313,7 +313,7 @@ main(int argc, char *argv[])
                  }
                  start_up = AFD_MON_FULL_INITIALIZE;
               }
-         else if (strcmp(argv[1], "-s") == 0) /* Shutdown AFD_MON. */
+         else if (my_strcmp(argv[1], "-s") == 0) /* Shutdown AFD_MON. */
               {
                  if (shutdown_perm != YES)
                  {
@@ -323,7 +323,7 @@ main(int argc, char *argv[])
                  }
                  start_up = SHUTDOWN_ONLY;
               }
-         else if (strcmp(argv[1], "-S") == 0) /* Silent AFD_MON shutdown. */
+         else if (my_strcmp(argv[1], "-S") == 0) /* Silent AFD_MON shutdown. */
               {
                  if (shutdown_perm != YES)
                  {
@@ -333,9 +333,9 @@ main(int argc, char *argv[])
                  }
                  start_up = SILENT_SHUTDOWN_ONLY;
               }
-         else if ((strcmp(argv[1], "-h") == 0) ||
-                  (strcmp(argv[1], "-?") == 0) ||
-                  (strcmp(argv[1], "--help") == 0)) /* Show usage. */
+         else if ((my_strcmp(argv[1], "-h") == 0) ||
+                  (my_strcmp(argv[1], "-?") == 0) ||
+                  (my_strcmp(argv[1], "--help") == 0)) /* Show usage. */
               {
                  usage(argv[0]);
                  exit(0);

@@ -1,6 +1,6 @@
 /*
  *  logdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -99,6 +99,10 @@
  *                              for output logging. If it is set to 10 and
  *                              SWITCH_FILE_TIME is 86400 (i.e. one day),
  *                              you will store the output log for 10 days.
+ * MAX_CONFIRMATION_LOG_FILES - The number of log files that should be kept
+ *                              for confirmation logging. If it is set to 10
+ *                              and SWITCH_FILE_TIME is 86400 (i.e. one day),
+ *                              you will store the confirmation log for 10 days.
  * MAX_DELETE_LOG_FILES       - Same as above only for the delete log.
  * MAX_PRODUCTION_LOG_FILES   - Same as above only for the production log.
  *-----------------------------------------------------------------------*/
@@ -140,6 +144,14 @@
 #  define OUTPUT_BUFFER_CACHE_FILE        "OUTPUT_CACHE_LOG."
 # endif
 #endif
+#ifdef _CONFIRMATION_LOG
+/* Definitions for confirmation logging. */
+# define MAX_CONFIRMATION_LOG_FILES       7
+# define CONFIRMATION_BUFFER_FILE         "CONFIRMATION_LOG."
+# define CONFIRMATION_BUFFER_FILE_LENGTH  (sizeof(CONFIRMATION_BUFFER_FILE) - 1)
+# define CONFIRMATION_BUFFER_FILE_ALL     "CONFIRMATION_LOG.*"
+# define MAX_CONFIRMATION_LOG_FILES_DEF   "MAX_CONFIRMATION_LOG_FILES"
+#endif
 #ifdef _DELETE_LOG
 /* Definitions for delete logging. */
 # define MAX_DELETE_LOG_FILES             7
@@ -163,17 +175,20 @@
                                              /* INPUT_BUFFER_FILE        */
                                              /* DISTRIBUTION_BUFFER_FILE */
                                              /* OUTPUT_BUFFER_FILE       */
+                                             /* CONFIRMATION_BUFFER_FILE */
                                              /* DELETE_BUFFER_FILE       */
                                              /* PRODUCTION_BUFFER_FILE   */
-#define MAX_LOG_DEF_NAME_LENGTH           26 /* Max length of:               */
-                                             /* MAX_SYSTEM_LOG_FILES_DEF     */
-                                             /* MAX_RECEIVE_LOG_FILES_DEF    */
-                                             /* MAX_TRANSFER_LOG_FILES_DEF   */
-                                             /* MAX_TRANS_DB_LOG_FILES_DEF   */
-                                             /* MAX_INPUT_LOG_FILES_DEF      */
-                                             /* MAX_OUTPUT_LOG_FILES_DEF     */
-                                             /* MAX_DELETE_LOG_FILES_DEF     */
-                                             /* MAX_PRODUCTION_LOG_FILES_DEF */
+#define MAX_LOG_DEF_NAME_LENGTH           26 /* Max length of:                */
+                                             /* MAX_SYSTEM_LOG_FILES_DEF      */
+                                             /* MAX_RECEIVE_LOG_FILES_DEF     */
+                                             /* MAX_TRANSFER_LOG_FILES_DEF    */
+                                             /* MAX_TRANS_DB_LOG_FILES_DEF    */
+                                             /* MAX_INPUT_LOG_FILES_DEF       */
+                                             /* MAX_DISTRIBUTION_LOG_FILES_DEF*/
+                                             /* MAX_OUTPUT_LOG_FILES_DEF      */
+                                             /* MAX_CONFIRMATION_LOG_FILES_DEF*/
+                                             /* MAX_DELETE_LOG_FILES_DEF      */
+                                             /* MAX_PRODUCTION_LOG_FILES_DEF  */
 
 #ifdef _DISTRIBUTION_LOG
 /* Structure for distribution_log to store segmented lines. */

@@ -1,7 +1,7 @@
 /*
  *  check_afd_status.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ DESCR__S_M3
 DESCR__E_M3
 
 #include <stdio.h>               /* sprintf()                            */
-#include <string.h>              /* strcmp(), strcpy(), memcpy()         */
+#include <string.h>              /* strcpy(), memcpy()                   */
 #include <stdlib.h>              /* calloc(), realloc(), free()          */
 #include <signal.h>              /* kill(), SIGKILL                      */
 #include <math.h>                /* log10()                              */
@@ -128,7 +128,7 @@ check_afd_status(Widget w)
       for (i = 0, location_where_changed = 0;
            i < prev_no_of_afds; i++, location_where_changed++)
       {
-         if (strcmp(connect_data[i].afd_alias, msa[i].afd_alias) == 0)
+         if (my_strcmp(connect_data[i].afd_alias, msa[i].afd_alias) == 0)
          {
             (void)memcpy(&new_connect_data[i], &connect_data[i],
                          sizeof(struct mon_line));
@@ -182,6 +182,8 @@ check_afd_status(Widget w)
             new_connect_data[i].amg = msa[i].amg;
             new_connect_data[i].fd = msa[i].fd;
             new_connect_data[i].archive_watch = msa[i].archive_watch;
+            new_connect_data[i].rcmd = msa[i].rcmd[0];
+            new_connect_data[i].plus_minus = PM_OPEN_STATE;
             if ((new_connect_data[i].amg == OFF) ||
                 (new_connect_data[i].fd == OFF) ||
                 (new_connect_data[i].archive_watch == OFF))
@@ -937,6 +939,8 @@ check_afd_status(Widget w)
 
                if (i < location_where_changed)
                {
+                  int delta;
+
                   if (x == -1)
                   {
                      locate_xy(i, &x, &y);
@@ -944,14 +948,14 @@ check_afd_status(Widget w)
 
                   if (connect_data[i].bar_length[ACTIVE_TRANSFERS_BAR_NO] < new_bar_length)
                   {
-                     connect_data[i].bar_length[ACTIVE_TRANSFERS_BAR_NO] = new_bar_length;
-                     draw_mon_bar(i, 1, ACTIVE_TRANSFERS_BAR_NO, x, y);
+                     delta = 1;
                   }
                   else
                   {
-                     connect_data[i].bar_length[ACTIVE_TRANSFERS_BAR_NO] = new_bar_length;
-                     draw_mon_bar(i, -1, ACTIVE_TRANSFERS_BAR_NO, x, y);
+                     delta = -1;
                   }
+                  connect_data[i].bar_length[ACTIVE_TRANSFERS_BAR_NO] = new_bar_length;
+                  draw_mon_bar(i, delta, ACTIVE_TRANSFERS_BAR_NO, x, y);
                   flush = YES;
                }
             }
@@ -1052,7 +1056,7 @@ check_msa_data(char *afd_alias)
 
    for (i = 0; i < no_of_afds; i++)
    {
-      if (strcmp(msa[i].afd_alias, afd_alias) == 0)
+      if (my_strcmp(msa[i].afd_alias, afd_alias) == 0)
       {
          return(i);
       }
@@ -1070,7 +1074,7 @@ check_disp_data(char *afd_alias, int prev_no_of_afds)
 
    for (i = 0; i < prev_no_of_afds; i++)
    {
-      if (strcmp(connect_data[i].afd_alias, afd_alias) == 0)
+      if (my_strcmp(connect_data[i].afd_alias, afd_alias) == 0)
       {
          return(i);
       }

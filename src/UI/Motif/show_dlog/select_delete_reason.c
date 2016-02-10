@@ -80,7 +80,7 @@ static void         done_button(Widget, XtPointer, XtPointer),
 
 
 
-/*####################### select_event_actions() ########################*/
+/*####################### select_delete_reason() ########################*/
 void
 select_delete_reason(Widget w, XtPointer client_data, XtPointer call_data)
 {

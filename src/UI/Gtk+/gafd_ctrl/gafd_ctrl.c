@@ -1,6 +1,6 @@
 /*
  *  gafd_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ DESCR__E_M1
 /* #define WITH_MEMCHECK */
 
 #include <stdio.h>            /* fprintf(), stderr                       */
-#include <string.h>           /* strcpy(), strcmp()                      */
+#include <string.h>           /* strcpy()                                */
 #include <ctype.h>            /* toupper()                               */
 #include <unistd.h>           /* gethostname(), getcwd(), STDERR_FILENO  */
 #include <stdlib.h>           /* getenv(), calloc()                      */
@@ -947,7 +947,7 @@ init_afd_ctrl(int *argc, char *argv[], char *window_title)
          gotcha = NO;
          for (j = 0; j < no_of_hosts; j++)
          {
-            if (strcmp(connect_data[j].hostname, hosts[i]) == 0)
+            if (my_strcmp(connect_data[j].hostname, hosts[i]) == 0)
             {
                gotcha = YES;
                break;
@@ -998,7 +998,7 @@ init_afd_ctrl(int *argc, char *argv[], char *window_title)
          {
             for (j = 0; j < no_of_hosts; j++)
             {
-               if (strcmp(connect_data[j].hostname, hosts[i]) == 0)
+               if (my_strcmp(connect_data[j].hostname, hosts[i]) == 0)
                {
                   short_pos_list[i] = j;
                   break;
@@ -1050,7 +1050,7 @@ init_afd_ctrl(int *argc, char *argv[], char *window_title)
             for (j = 0; j < no_of_hosts; j++)
             {
                if ((connect_data[j].short_pos == -1) &&
-                   (strcmp(connect_data[j].hostname, hosts[i]) == 0))
+                   (my_strcmp(connect_data[j].hostname, hosts[i]) == 0))
                {
                   connect_data[j].short_pos = i;
                   connect_data[j].long_pos = -1;
@@ -1120,7 +1120,7 @@ init_afd_ctrl(int *argc, char *argv[], char *window_title)
    (void)sprintf(config_file, "%s%s%s",
                  p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(config_file, F_OK) == 0) &&
-       (read_file_no_cr(config_file, &buffer, __FILE__, __LINE__) != INCORRECT))
+       (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {
       int  str_length;
       char value[MAX_PATH_LENGTH];

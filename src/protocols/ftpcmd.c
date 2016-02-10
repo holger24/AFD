@@ -1,6 +1,6 @@
 /*
  *  ftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ DESCR__S_M3
  **   int ftp_close_data(void)
  **   int ftp_connect(char *hostname, int port)
  **   int ftp_auth_data(void)
- **   int ftp_ssl_auth(void)
+ **   int ftp_ssl_auth(int strict)
  **   int ftp_ssl_init(char type)
  **   int ftp_ssl_disable_ctrl_encrytion(void)
  **   int ftp_feat(unsigned int *)
@@ -305,7 +305,7 @@ static int                check_data_socket(int, int, int *, char *, int,
                                             char *, char *),
                           get_extended_number(char *),
                           get_number(char **, char),
-                          get_reply(char *, int),
+                          get_reply(char *, int, int),
 #ifdef WITH_SSL
                           encrypt_data_connection(int),
                           read_data_line(int, SSL *, char *),
@@ -314,7 +314,7 @@ static int                check_data_socket(int, int, int *, char *, int,
                           read_data_line(int, char *),
                           read_data_to_buffer(int, char ***),
 #endif
-                          read_msg(char *);
+                          read_msg(char *, int);
 static void               sig_handler(int);
 
 
@@ -748,7 +748,7 @@ ftp_connect(char *hostname, int port)
       }
 #endif
 
-      if ((reply = get_reply(ERROR_SIGN, 0)) < 0)
+      if ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0)
       {
          (void)close(control_fd);
          return(INCORRECT);
@@ -770,14 +770,15 @@ ftp_connect(char *hostname, int port)
 #ifdef WITH_SSL
 /*########################## ftp_ssl_auth() #############################*/
 int
-ftp_ssl_auth(void)
+ftp_ssl_auth(int strict)
 {
    int reply = SUCCESS;
 
    if (ssl_con == NULL)
    {
       reply = command(control_fd, "AUTH TLS");
-      if ((reply == SUCCESS) && ((reply = get_reply(ERROR_SIGN, 999)) != INCORRECT))
+      if ((reply == SUCCESS) &&
+          ((reply = get_reply(ERROR_SIGN, 999, __LINE__)) != INCORRECT))
       {
          if ((reply == 234) || (reply == 334))
          {
@@ -789,8 +790,26 @@ ftp_ssl_auth(void)
                SSL_CTX_free(ssl_ctx);
             }
             SSLeay_add_ssl_algorithms();
-            ssl_ctx=(SSL_CTX *)SSL_CTX_new(SSLv23_client_method());
+            if ((ssl_ctx = (SSL_CTX *)SSL_CTX_new(SSLv23_client_method())) == NULL)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_ssl_auth", NULL,
+                         _("SSL_CTX_new() unable to create a new SSL context structure."));
+               (void)close(control_fd);
+               return(INCORRECT);
+            }
+# ifdef NO_SSLv2
+            SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2);
+# else
+#  ifdef NO_SSLv3
+            SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv3);
+#  else
+#   ifdef NO_SSLv23
+            SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+#   else
             SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL);
+#   endif
+#  endif
+# endif
             SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
             if ((p_env = getenv("SSL_CIPHER")) != NULL)
             {
@@ -805,7 +824,7 @@ ftp_ssl_auth(void)
             {
                SSL_CTX_load_verify_locations(ssl_ctx, p_env, p_env1);
             }
-#ifdef WHEN_WE_KNOW
+# ifdef WHEN_WE_KNOW
             if (((p_env = getenv("SSL_CRL_FILE")) != NULL) && 
                 ((p_env1 = getenv("SSL_CRL_DIR")) != NULL))
             {
@@ -813,14 +832,34 @@ ftp_ssl_auth(void)
             else
             {
             }
-#endif
-            SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
+# endif
+            SSL_CTX_set_verify(ssl_ctx,
+                               (strict == YES) ? SSL_VERIFY_PEER : SSL_VERIFY_NONE,
+                               NULL);
 
             ssl_con = (SSL *)SSL_new(ssl_ctx);
             SSL_set_connect_state(ssl_con);
             SSL_set_fd(ssl_con, control_fd);
 
-            if ((reply = SSL_connect(ssl_con)) <= 0)
+            if (signal(SIGALRM, sig_handler) == SIG_ERR)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_ssl_auth", NULL,
+                         _("Failed to set signal handler : %s"), strerror(errno));
+               (void)close(control_fd);
+               return(INCORRECT);
+            }
+            if (sigsetjmp(env_alrm, 1) != 0)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_ssl_auth", NULL,
+                         _("accept() timeout (%lds)"), transfer_timeout);
+               timeout_flag = ON;
+               (void)close(control_fd);
+               return(INCORRECT);
+            }
+            (void)alarm(transfer_timeout);
+            reply = SSL_connect(ssl_con);
+            (void)alarm(0);
+            if (reply <= 0)
             {
                char *ptr;
 
@@ -860,18 +899,26 @@ ftp_ssl_auth(void)
             else
             {
                char             *ssl_version;
-               int              length,
-                                ssl_bits;
+               int              length;
                const SSL_CIPHER *ssl_cipher;
 
                ssl_version = SSL_get_cipher_version(ssl_con);
-               ssl_cipher = SSL_get_current_cipher(ssl_con);
-               SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
                length = strlen(msg_str);
-               (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
-                              "  <%s, cipher %s, %d bits>",
-                              ssl_version, SSL_CIPHER_get_name(ssl_cipher),
-                              ssl_bits);
+               if ((ssl_cipher = SSL_get_current_cipher(ssl_con)) != NULL)
+               {
+                  int ssl_bits;
+
+                  SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
+                  (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                                 "  <%s, cipher %s, %d bits>",
+                                 ssl_version, SSL_CIPHER_get_name(ssl_cipher),
+                                 ssl_bits);
+               }
+               else
+               {
+                  (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                                 "  <%s, cipher ?, ? bits>", ssl_version);
+               }
                reply = SUCCESS;
             }
          }
@@ -902,7 +949,8 @@ ftp_user(char *user)
    do
    {
       reply = command(control_fd, "USER %s", user);
-      if ((reply != SUCCESS) || ((reply = get_reply(ERROR_SIGN, 230)) < 0))
+      if ((reply != SUCCESS) ||
+          ((reply = get_reply(ERROR_SIGN, 230, __LINE__)) < 0))
       {
          return(INCORRECT);
       }
@@ -970,7 +1018,7 @@ ftp_account(char *user)
 
    if ((reply = command(control_fd, "ACCT %s", user)) == SUCCESS)
    {
-      if ((reply = get_reply(ERROR_SIGN, 202)) != INCORRECT)
+      if ((reply = get_reply(ERROR_SIGN, 202, __LINE__)) != INCORRECT)
       {
          /*
           * NOTE: We delibaretly ignore 230 here, since this means that no
@@ -996,7 +1044,7 @@ ftp_pass(char *password)
 
    if ((reply = command(control_fd, "PASS %s", password)) == SUCCESS)
    {
-      if ((reply = get_reply(ERROR_SIGN, 230)) != INCORRECT)
+      if ((reply = get_reply(ERROR_SIGN, 230, __LINE__)) != INCORRECT)
       {
           /*
            * If the remote server returns 332, it want's as the next step
@@ -1027,7 +1075,8 @@ ftp_ssl_init(char type)
    if ((type == YES) || (type == BOTH))
    {
       reply = command(control_fd, "PBSZ 0");
-      if ((reply == SUCCESS) && ((reply = get_reply(ERROR_SIGN, 200)) != INCORRECT))
+      if ((reply == SUCCESS) &&
+          ((reply = get_reply(ERROR_SIGN, 200, __LINE__)) != INCORRECT))
       {
          if (reply == 200)
          {
@@ -1039,7 +1088,8 @@ ftp_ssl_init(char type)
             {
                reply = command(control_fd, "PROT C");
             }
-            if ((reply == SUCCESS) && ((reply = get_reply(ERROR_SIGN, 200)) != INCORRECT))
+            if ((reply == SUCCESS) &&
+                ((reply = get_reply(ERROR_SIGN, 200, __LINE__)) != INCORRECT))
             {
                if (reply == 200)
                {
@@ -1065,7 +1115,8 @@ ftp_ssl_disable_ctrl_encrytion(void)
    int reply;
 
    reply = command(control_fd, "CCC");
-   if ((reply == SUCCESS) && ((reply = get_reply(ERROR_SIGN, 999)) != INCORRECT))
+   if ((reply == SUCCESS) &&
+       ((reply = get_reply(ERROR_SIGN, 999, __LINE__)) != INCORRECT))
    {
       if (reply == 200)
       {
@@ -1109,7 +1160,7 @@ ftp_feat(unsigned int *ftp_options)
          return(SUCCESS);
       }
 
-      if (read_msg(ERROR_SIGN) == INCORRECT)
+      if (read_msg(ERROR_SIGN, __LINE__) == INCORRECT)
       {
          return(INCORRECT);
       }
@@ -1118,7 +1169,7 @@ ftp_feat(unsigned int *ftp_options)
       {
          for (;;)
          {
-            if (read_msg(ERROR_SIGN) == INCORRECT)
+            if (read_msg(ERROR_SIGN, __LINE__) == INCORRECT)
             {
                return(INCORRECT);
             }
@@ -1239,7 +1290,7 @@ ftp_idle(int timeout)
 
    if ((reply = command(control_fd, "SITE IDLE %d", timeout)) == SUCCESS)
    {
-      if ((reply = get_reply(ERROR_SIGN, 200)) != INCORRECT)
+      if ((reply = get_reply(ERROR_SIGN, 200, __LINE__)) != INCORRECT)
       {
          if (reply == 200)
          {
@@ -1260,7 +1311,7 @@ ftp_pwd(void)
 
    if ((reply = command(control_fd, "PWD")) == SUCCESS)
    {
-      if ((reply = get_reply(ERROR_SIGN, 999)) != INCORRECT)
+      if ((reply = get_reply(ERROR_SIGN, 999, __LINE__)) != INCORRECT)
       {
          if (reply == 257)
          {
@@ -1305,7 +1356,7 @@ ftp_type(char type)
 
    if ((reply = command(control_fd, "TYPE %c", type)) == SUCCESS)
    {
-      if ((reply = get_reply(ERROR_SIGN, 200)) != INCORRECT)
+      if ((reply = get_reply(ERROR_SIGN, 200, __LINE__)) != INCORRECT)
       {
          if (reply == 200)
          {
@@ -1333,7 +1384,8 @@ ftp_cd(char *directory, int create_dir, char *dir_mode, char *created_path)
       reply = command(control_fd, "CWD %s", directory);
    }
 
-   if ((reply == SUCCESS) && ((reply = get_reply(ERROR_SIGN, 250)) != INCORRECT))
+   if ((reply == SUCCESS) &&
+       ((reply = get_reply(ERROR_SIGN, 250, __LINE__)) != INCORRECT))
    {
       if ((reply == 250) || (reply == 200))
       {
@@ -1384,13 +1436,13 @@ ftp_cd(char *directory, int create_dir, char *dir_mode, char *created_path)
                     *ptr = '\0';
                     reply = command(control_fd, "CWD %s", p_start);
                     if ((reply == SUCCESS) &&
-                        ((reply = get_reply(ERROR_SIGN, 0)) != INCORRECT))
+                        ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) != INCORRECT))
                     {
                        if ((reply != 250) && (reply != 200))
                        {
                           reply = command(control_fd, "MKD %s", p_start);
                           if ((reply == SUCCESS) &&
-                              ((reply = get_reply(ERROR_SIGN, 0)) != INCORRECT))
+                              ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) != INCORRECT))
                           {
                              if (reply == 257) /* Directory created. */
                              {
@@ -1417,7 +1469,7 @@ ftp_cd(char *directory, int create_dir, char *dir_mode, char *created_path)
 
                                 reply = command(control_fd, "CWD %s", p_start);
                                 if ((reply == SUCCESS) &&
-                                    ((reply = get_reply(ERROR_SIGN, 0)) != INCORRECT))
+                                    ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) != INCORRECT))
                                 {
                                    if ((reply != 250) && (reply != 200))
                                    {
@@ -1458,7 +1510,7 @@ ftp_chmod(char *filename, char *mode)
 
    if ((reply = command(control_fd, "SITE CHMOD %s %s", mode, filename)) == SUCCESS)
    {
-      if ((reply = get_reply(ERROR_SIGN, 250)) != INCORRECT)
+      if ((reply = get_reply(ERROR_SIGN, 250, __LINE__)) != INCORRECT)
       {
          if ((reply == 250) || (reply == 200))
          {
@@ -1497,7 +1549,7 @@ retry_command:
       reply = command(control_fd, "RNFR %s", from);
    }
 
-   if ((reply != SUCCESS) || ((reply = get_reply(ERROR_SIGN, 350)) < 0))
+   if ((reply != SUCCESS) || ((reply = get_reply(ERROR_SIGN, 350, __LINE__)) < 0))
    {
       return(INCORRECT);
    }
@@ -1507,7 +1559,7 @@ retry_command:
    {
       if (fast_move)
       {
-         (void)get_reply(ERROR_SIGN, 0);
+         (void)get_reply(ERROR_SIGN, 0, __LINE__);
       }
       retries++;
       my_usleep(50000L);
@@ -1531,7 +1583,7 @@ retry_command:
           * wrong.
           */
          (void)memcpy(tmp_msg_str, msg_str, MAX_RET_MSG_LENGTH);
-         (void)get_reply(ERROR_SIGN, 0);
+         (void)get_reply(ERROR_SIGN, 0, __LINE__);
          (void)memcpy(msg_str, tmp_msg_str, MAX_RET_MSG_LENGTH);
       }
       return(reply);
@@ -1546,7 +1598,7 @@ retry_command:
    }
 
    /* Get reply from RNTO part. */
-   if ((reply = get_reply(ERROR_SIGN, 250)) < 0)
+   if ((reply = get_reply(ERROR_SIGN, 250, __LINE__)) < 0)
    {
       return(INCORRECT);
    }
@@ -1567,7 +1619,8 @@ retry_command:
              * again.
              */
             reply = command(control_fd, "RNFR %s", from);
-            if ((reply != SUCCESS) || ((reply = get_reply(ERROR_SIGN, 0)) < 0))
+            if ((reply != SUCCESS) ||
+                ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0))
             {
                return(INCORRECT);
             }
@@ -1579,7 +1632,8 @@ retry_command:
          }
 
          reply = command(control_fd, "RNTO %s", to);
-         if ((reply != SUCCESS) || ((reply = get_reply(ERROR_SIGN, 0)) < 0))
+         if ((reply != SUCCESS) ||
+             ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0))
          {
             return(INCORRECT);
          }
@@ -1620,12 +1674,14 @@ retry_command:
                        if (ftp_cd(current_dir, NO, "", NULL) == SUCCESS)
                        {
                           reply = command(control_fd, "RNFR %s", from);
-                          if ((reply != SUCCESS) || ((reply = get_reply(ERROR_SIGN, 0)) < 0))
+                          if ((reply != SUCCESS) ||
+                              ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0))
                           {
                              return(INCORRECT);
                           }
                           reply = command(control_fd, "RNTO %s", to);
-                          if ((reply != SUCCESS) || ((reply = get_reply(ERROR_SIGN, 0)) < 0))
+                          if ((reply != SUCCESS) ||
+                              ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0))
                           {
                              return(INCORRECT);
                           }
@@ -1672,7 +1728,7 @@ ftp_dele(char *filename)
 
    if ((reply = command(control_fd, "DELE %s", filename)) == SUCCESS)
    {
-      if ((reply = get_reply(ERROR_SIGN, 250)) != INCORRECT)
+      if ((reply = get_reply(ERROR_SIGN, 250, __LINE__)) != INCORRECT)
       {
          if ((reply == 250) || (reply == 200))
          {
@@ -1693,7 +1749,7 @@ ftp_noop(void)
 
    if ((reply = command(control_fd, "NOOP")) == SUCCESS)
    {
-      if ((reply = get_reply(ERROR_SIGN, 200)) != INCORRECT)
+      if ((reply = get_reply(ERROR_SIGN, 200, __LINE__)) != INCORRECT)
       {
          if (reply == 200)
          {
@@ -1723,7 +1779,7 @@ ftp_keepalive(void)
 
       tmp_transfer_timeout = transfer_timeout;
       transfer_timeout = 0L;
-      while ((reply = read_msg(ERROR_SIGN)) > 0)
+      while ((reply = read_msg(ERROR_SIGN, __LINE__)) > 0)
       {
          trans_log(INFO_SIGN, __FILE__, __LINE__, "ftp_keepalive", msg_str,
                    _("Hmmm, read %d bytes."), reply);
@@ -1866,7 +1922,7 @@ ftp_size(char *filename, off_t *remote_size)
 
    if ((reply = command(control_fd, "SIZE %s", filename)) == SUCCESS)
    {
-      if ((reply = get_reply(ERROR_SIGN, 999)) != INCORRECT)
+      if ((reply = get_reply(ERROR_SIGN, 999, __LINE__)) != INCORRECT)
       {
          if (reply == 213)
          {
@@ -1913,7 +1969,7 @@ ftp_date(char *filename, time_t *file_mtime)
 
    if ((reply = command(control_fd, "MDTM %s", filename)) == SUCCESS)
    {
-      if ((reply = get_reply(ERROR_SIGN, 999)) != INCORRECT)
+      if ((reply = get_reply(ERROR_SIGN, 999, __LINE__)) != INCORRECT)
       {
          if (reply == 213)
          {
@@ -1980,7 +2036,7 @@ ftp_set_date(char *filename, time_t file_mtime)
 
    if ((reply = command(control_fd, "MDTM %s %s", date, filename)) == SUCCESS)
    {
-      if ((reply = get_reply(ERROR_SIGN, 213)) != INCORRECT)
+      if ((reply = get_reply(ERROR_SIGN, 213, __LINE__)) != INCORRECT)
       {
          if (reply == 213)
          {
@@ -2008,7 +2064,8 @@ ftp_exec(char *cmd, char *filename)
       reply = command(control_fd, "SITE %s %s", cmd, filename);
    }
 
-   if ((reply == SUCCESS) && ((reply = get_reply(ERROR_SIGN, 250)) != INCORRECT))
+   if ((reply == SUCCESS) &&
+       ((reply = get_reply(ERROR_SIGN, 250, __LINE__)) != INCORRECT))
    {
       if ((reply == 250) || (reply == 200))
       {
@@ -2105,7 +2162,8 @@ ftp_list(int mode, int type, ...)
          if (ai_family == AF_INET6)
          {
             reply = command(control_fd, "EPSV");
-            if ((reply != SUCCESS) || ((reply = get_reply(ERROR_SIGN, 0)) < 0))
+            if ((reply != SUCCESS) ||
+                ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0))
             {
                return(INCORRECT);
             }
@@ -2126,7 +2184,8 @@ ftp_list(int mode, int type, ...)
             {
                reply = command(control_fd, "EPSV");
             }
-            if ((reply != SUCCESS) || ((reply = get_reply(ERROR_SIGN, 0)) < 0))
+            if ((reply != SUCCESS) ||
+                ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0))
             {
                return(INCORRECT);
             }
@@ -2382,7 +2441,8 @@ ftp_list(int mode, int type, ...)
                     }
                  }
 
-            if ((reply != SUCCESS) || ((reply = get_reply(ERROR_SIGN, 0)) < 0))
+            if ((reply != SUCCESS) ||
+                ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0))
             {
                (void)close(new_sock_fd);
                return(INCORRECT);
@@ -2544,7 +2604,8 @@ ftp_list(int mode, int type, ...)
          }
 #endif
 
-         if ((reply != SUCCESS) || ((reply = get_reply(ERROR_SIGN, 0)) < 0))
+         if ((reply != SUCCESS) ||
+             ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0))
          {
             (void)close(sock_fd);
             return(INCORRECT);
@@ -2576,7 +2637,8 @@ ftp_list(int mode, int type, ...)
                  }
               }
 
-         if ((reply != SUCCESS) || ((reply = get_reply(ERROR_SIGN, 0)) < 0))
+         if ((reply != SUCCESS) ||
+             ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0))
          {
             return(INCORRECT);
          }
@@ -2683,7 +2745,7 @@ ftp_list(int mode, int type, ...)
       }
 
       /* Read last message: 'Binary Transfer complete'. */
-      if ((reply = get_reply(ERROR_SIGN, 0)) != INCORRECT)
+      if ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) != INCORRECT)
       {
          if ((reply == 226) || (reply == 250))
          {
@@ -2809,7 +2871,7 @@ ftp_data(char  *filename,
             {
                return(INCORRECT);
             }
-            if ((reply = get_reply(ERROR_SIGN, 0)) < 0)
+            if ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0)
             {
                if (timeout_flag == OFF)
                {
@@ -2842,7 +2904,7 @@ ftp_data(char  *filename,
                   return(INCORRECT);
                }
             }
-            if ((reply = get_reply(ERROR_SIGN, 0)) < 0)
+            if ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0)
             {
                if (timeout_flag == OFF)
                {
@@ -3151,7 +3213,7 @@ ftp_data(char  *filename,
                   (void)close(new_sock_fd);
                   return(INCORRECT);
                }
-               if ((reply = get_reply(ERROR_SIGN, 0)) < 0)
+               if ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0)
                {
                   if (timeout_flag == OFF)
                   {
@@ -3181,7 +3243,7 @@ ftp_data(char  *filename,
                (void)close(new_sock_fd);
                return(INCORRECT);
             }
-            if ((reply = get_reply(ERROR_SIGN, 0)) < 0)
+            if ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0)
             {
                if (timeout_flag == OFF)
                {
@@ -3218,7 +3280,7 @@ ftp_data(char  *filename,
                      (void)close(new_sock_fd);
                      return(INCORRECT);
                   }
-                  if ((reply = get_reply(ERROR_SIGN, 0)) < 0)
+                  if ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0)
                   {
                      if (timeout_flag == OFF)
                      {
@@ -3270,7 +3332,7 @@ ftp_data(char  *filename,
                                  (void)close(new_sock_fd);
                                  return(INCORRECT);
                               }
-                              if ((reply = get_reply(ERROR_SIGN, 0)) < 0)
+                              if ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0)
                               {
                                  if (timeout_flag == OFF)
                                  {
@@ -3593,7 +3655,7 @@ try_again:
 #if defined (HAVE_GETADDRINFO) && defined (HAVE_GAI_STRERROR)
             }
 #endif
-            if ((reply = get_reply(ERROR_SIGN, 0)) < 0)
+            if ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0)
             {
                if (timeout_flag == OFF)
                {
@@ -3626,7 +3688,7 @@ try_again:
                   (void)close(sock_fd);
                   return(INCORRECT);
                }
-               if ((reply = get_reply(ERROR_SIGN, 0)) < 0)
+               if ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0)
                {
                   if (timeout_flag == OFF)
                   {
@@ -3656,7 +3718,7 @@ try_again:
                (void)close(sock_fd);
                return(INCORRECT);
             }
-            if ((reply = get_reply(ERROR_SIGN, 0)) < 0)
+            if ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0)
             {
                if (timeout_flag == OFF)
                {
@@ -3999,7 +4061,8 @@ ftp_open(char *filename, int seek)
    if (seek != 0)
    {
       reply = command(control_fd, "REST %d", seek);
-      if ((reply != SUCCESS) || ((reply = get_reply(ERROR_SIGN, 350)) < 0))
+      if ((reply != SUCCESS) ||
+          ((reply = get_reply(ERROR_SIGN, 350, __LINE__)) < 0))
       {
          return(INCORRECT);
       }
@@ -4011,7 +4074,8 @@ ftp_open(char *filename, int seek)
    }
 
    reply = command(control_fd, "STOR %s", filename);
-   if ((reply != SUCCESS) || ((reply = get_reply(ERROR_SIGN, 125)) < 0))
+   if ((reply != SUCCESS) ||
+       ((reply = get_reply(ERROR_SIGN, 125, __LINE__)) < 0))
    {
       return(INCORRECT);
    }
@@ -4078,7 +4142,7 @@ ftp_close_data(void)
           * helps.
           */
          transfer_timeout += transfer_timeout;
-         if ((reply = get_reply(ERROR_SIGN, 0)) < 0)
+         if ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0)
          {
             transfer_timeout = tmp_ftp_timeout;
             return(INCORRECT);
@@ -4358,7 +4422,7 @@ ftp_mode(char mode)
 
    if ((reply = command(control_fd, "MODE %c", mode)) == SUCCESS)
    {
-      if ((reply = get_reply(ERROR_SIGN, 200)) != INCORRECT)
+      if ((reply = get_reply(ERROR_SIGN, 200, __LINE__)) != INCORRECT)
       {
          if (reply == 200)
          {
@@ -4523,7 +4587,7 @@ ftp_quit(void)
       {
          int reply;
 
-         if ((reply = get_reply(INFO_SIGN, 0)) < 0)
+         if ((reply = get_reply(INFO_SIGN, 0, __LINE__)) < 0)
          {
             (void)close(control_fd);
 #ifdef WITH_SSL
@@ -4599,7 +4663,7 @@ ftp_get_reply(void)
    {
       tmp_timeout_flag = OFF;
    }
-   reply = get_reply(ERROR_SIGN, 0);
+   reply = get_reply(ERROR_SIGN, 0, __LINE__);
    if ((timeout_flag == ON) && (tmp_timeout_flag == OFF))
    {
       timeout_flag = ON;
@@ -4615,7 +4679,7 @@ ftp_get_reply(void)
 
 /*++++++++++++++++++++++++++++++ get_reply() ++++++++++++++++++++++++++++*/
 static int
-get_reply(char *sign, int reply)
+get_reply(char *sign, int reply, int line)
 {
    if (simulation_mode == YES)
    {
@@ -4624,7 +4688,7 @@ get_reply(char *sign, int reply)
 
    for (;;)
    {
-      if (read_msg(sign) == INCORRECT)
+      if (read_msg(sign, line) == INCORRECT)
       {
          return(INCORRECT);
       }
@@ -4912,7 +4976,7 @@ read_data_to_buffer(int read_fd, char ***buffer)
 
 /*----------------------------- read_msg() ------------------------------*/
 static int
-read_msg(char *sign)
+read_msg(char *sign, int line)
 {
    static int  bytes_buffered,
                bytes_read = 0;
@@ -4967,7 +5031,7 @@ try_again_read_msg:
                        if (bytes_read == 0)
                        {
                           trans_log(sign,  __FILE__, __LINE__, "read_msg", NULL,
-                                    _("Remote hang up."));
+                                    _("Remote hang up. [%d]"), line);
                           timeout_flag = NEITHER;
                        }
                        else
@@ -4977,8 +5041,8 @@ try_again_read_msg:
                              timeout_flag = CON_RESET;
                           }
                           trans_log(sign, __FILE__, __LINE__, "read_msg", NULL,
-                                    _("read() error (after reading %d bytes) : %s"),
-                                    bytes_buffered, strerror(errno));
+                                    _("read() error (after reading %d bytes) [%d] : %s"),
+                                    bytes_buffered, line, strerror(errno));
                           bytes_read = 0;
                        }
                        return(INCORRECT);
@@ -4994,7 +5058,7 @@ try_again_read_msg:
                        if (bytes_read == 0)
                        {
                           trans_log(sign,  __FILE__, __LINE__, "read_msg", NULL,
-                                    _("Remote hang up."));
+                                    _("Remote hang up. [%d]"), line);
                           timeout_flag = NEITHER;
                        }
                        else
@@ -5004,8 +5068,8 @@ try_again_read_msg:
                           ssl_error_msg("SSL_read", ssl_con, &ssl_ret,
                                         bytes_read, msg_str);
                           trans_log(sign, __FILE__, __LINE__, "read_msg", msg_str,
-                                    _("SSL_read() error (after reading %d bytes) (%d)"),
-                                    bytes_buffered, status);
+                                    _("SSL_read() error (after reading %d bytes) (%d) [%d]"),
+                                    bytes_buffered, status, line);
 
                           /*
                            * Some FTP servers drop back to clear text.
@@ -5035,13 +5099,14 @@ try_again_read_msg:
          else if (status < 0)
               {
                  trans_log(sign, __FILE__, __LINE__, "read_msg", NULL,
-                           _("select() error : %s"), strerror(errno));
+                           _("select() error [%d] : %s"),
+                           line, strerror(errno));
                  return(INCORRECT);
               }
               else
               {
                  trans_log(sign, __FILE__, __LINE__, "read_msg", NULL,
-                           _("Unknown condition."));
+                           _("Unknown condition. [%d]"), line);
                  return(INCORRECT);
               }
       }

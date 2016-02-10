@@ -1,6 +1,6 @@
 /*
  *  send_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2007 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -95,8 +95,8 @@ send_file(void)
     */
    if (db->protocol == FTP)
    {
-      length = sprintf(&cmd[length], "%s -c %s -m %c",
-                       AFTP, url_file_name, (char)db->transfer_mode);
+      length = sprintf(&cmd[length], "%s -c %s -p %d -m %c",
+                       AFTP, url_file_name, db->port, (char)db->transfer_mode);
       if (db->mode_flag & PASSIVE_MODE)
       {
          length += sprintf(&cmd[length], " -x");
@@ -110,26 +110,39 @@ send_file(void)
          length += sprintf(&cmd[length], " -P %s", db->proxy_name);
       }
    }
+   else if (db->protocol == SFTP)
+        {
+           length = sprintf(&cmd[length], "%s -c %s -p %d",
+                            ASFTP, url_file_name, db->port);
+        }
    else if (db->protocol == SMTP)
         {
-           length = sprintf(&cmd[length], "%s -c %s", ASMTP, url_file_name);
+           length = sprintf(&cmd[length], "%s -c %s -p %d",
+                            ASMTP, url_file_name, db->port);
            if (db->attach_file_flag == YES)
            {
               length += sprintf(&cmd[length], " -e");
            }
         }
+#ifdef _WITH_WMO_SUPPORT
+   else if (db->protocol == WMO)
+        {
+           length = sprintf(&cmd[length], "%s -c %s -p %d",
+                            AWMO, url_file_name, db->port);
+        }
+#endif
         else
         {
 #if SIZEOF_LONG == 4
-           (void)fprintf(stderr, "Unknown or not implemented protocol %d\n",
+           (void)fprintf(stderr, "Unknown or not implemented protocol (%d)\n",
 #else
-           (void)fprintf(stderr, "Unknown or not implemented protocol %ld\n",
+           (void)fprintf(stderr, "Unknown or not implemented protocol (%ld)\n",
 #endif
                          db->protocol);
            exit(INCORRECT);
         }
 
-   if (db->protocol != SMTP)
+   if ((db->protocol != SMTP) && (db->protocol != WMO))
    {
       if (db->lock == SET_LOCK_DOT)
       {
@@ -163,6 +176,10 @@ send_file(void)
    (void)sprintf(&cmd[length], " -t %lld -f %s",
 #endif
                  (pri_time_t)db->timeout, file_name_file);
+
+#ifdef DEBUG_SHOW_CMD
+   printf("cmd=%s\n", cmd);
+#endif
 
    if (pipe(channels) == -1)
    {

@@ -89,10 +89,7 @@ fd_check_fsa(void)
            loops = 0;
       char *ptr;
 
-      if ((p_afd_status->amg_jobs & FD_WAITING) == 0)
-      {
-         p_afd_status->amg_jobs ^= FD_WAITING;
-      }
+      p_afd_status->amg_jobs |= FD_WAITING; /* Set flag */
       do
       {
          if ((p_afd_status->amg_jobs & REREADING_DIR_CONFIG) == 0)
@@ -130,7 +127,7 @@ fd_check_fsa(void)
 #endif
          (void)my_usleep(100000L);
       } while (loops++ < WAIT_LOOPS);
-      p_afd_status->amg_jobs ^= FD_WAITING;
+      p_afd_status->amg_jobs &= ~FD_WAITING; /* Unset flag */
       if (gotcha == NO)
       {
          system_log(DEBUG_SIGN, __FILE__, __LINE__,

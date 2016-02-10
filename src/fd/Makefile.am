@@ -28,12 +28,12 @@ else
    AFD_MAP_PROG          =
    EXTRA_MAP_PROG        = sf_map
 endif
-if WITH_OUTPUT_LOG
-   OUTPUT_LOG_PTRS       = output_log_fd.c output_log_ptrs.c
-   EXTRA_OUTPUT_PTRS     =
+if WITH_DFAX_SUPPORT
+   AFD_DFAX_PROG         = sf_dfax
+   EXTRA_DFAX_PROG       =
 else
-   OUTPUT_LOG_PTRS       =
-   EXTRA_OUTPUT_PTRS     = output_log_fd.c output_log_ptrs.c
+   AFD_DFAX_PROG         =
+   EXTRA_DFAX_PROG       = sf_dfax
 endif
 if WITH_LOC_SUPPORT
    LOC_PROG              = sf_loc
@@ -98,19 +98,32 @@ else
    TRANS_EXEC_PTRS       =
    EXTRA_TRANS_EXEC_PTRS = trans_exec.c
 endif
+if WITH_DE_MAIL_SUPPORT
+   DEMCD_LOG_FD          = demcd_log_fd.c
+   EXTRA_DEMCD_LOG_FD    =
+   DEMCD_LOG_PTRS        = demcd_log_ptrs.c
+   EXTRA_DEMCD_LOG_PTRS  =
+else
+   DEMCD_LOG_FD          =
+   EXTRA_DEMCD_LOG_FD    = demcd_log_fd.c
+   DEMCD_LOG_PTRS        =
+   EXTRA_DEMCD_LOG_PTRS  = demcd_log_ptrs.c
+endif
 
 noinst_HEADERS        = fddefs.h
 AM_CPPFLAGS           = -I.. -I../init_afd -I../amg -I../log -I../misc\
                         -I../protocols
 bin_PROGRAMS          = fd $(EXEC_PROG) $(FTP_PROG) $(SMTP_PROG) $(SCP_PROG)\
                         $(SFTP_PROG) $(WMO_PROG) $(AFD_MAP_PROG) $(LOC_PROG)\
-                        $(HTTP_PROG)
+                        $(HTTP_PROG) $(AFD_DFAX_PROG)
 EXTRA_PROGRAMS        = $(EXTRA_MAP_PROG) $(EXTRA_FTP_PROG) $(EXTRA_SFTP_PROG)\
                         $(EXTRA_WMO_PROG) $(EXTRA_HTTP_PROG) $(EXTRA_SCP_PROG)\
-			$(EXTRA_EXEC_PROG) $(EXTRA_LOC_PROG) $(EXTRA_SMTP_PROG)
-EXTRA_DIST            = $(EXTRA_OUTPUT_PTRS) $(EXTRA_TRANS_EXEC_PTRS)
-MAINTAINERCLEANFILES  = Makefile.in $(EXTRA_PROGRAMS)
-CLEANFILES            = gmon.out core core.*
+			$(EXTRA_EXEC_PROG) $(EXTRA_LOC_PROG) $(EXTRA_SMTP_PROG)\
+			$(EXTRA_DFAX_PROG)
+EXTRA_DIST            = $(EXTRA_TRANS_EXEC_PTRS) $(EXTRA_DEMCD_LOG_FD)\
+                        $(EXTRA_DEMCD_LOG_PTRS)
+MAINTAINERCLEANFILES  = Makefile.in
+CLEANFILES            = gmon.out core core.* $(EXTRA_PROGRAMS)
 fd_SOURCES            = check_fra_fd.c\
                         check_fsa_entries.c\
                         check_msg_time.c\
@@ -149,7 +162,6 @@ sf_ftp_SOURCES        = append.c\
                         init_sf_burst2.c\
                         limit_transfer_rate.c\
                         noop_wrapper_ftp.c\
-                        $(OUTPUT_LOG_PTRS)\
                         receive_log.c\
                         reset_fsa.c\
                         send_proc_fin.c\
@@ -180,7 +192,6 @@ sf_http_SOURCES       = append.c\
                         init_sf_burst2.c\
                         limit_transfer_rate.c\
                         noop_wrapper_dummy.c\
-                        $(OUTPUT_LOG_PTRS)\
                         receive_log.c\
                         reset_fsa.c\
                         send_proc_fin.c\
@@ -212,7 +223,6 @@ sf_sftp_SOURCES       = append.c\
                         init_sf_burst2.c\
                         limit_transfer_rate.c\
                         noop_wrapper_sftp.c\
-                        $(OUTPUT_LOG_PTRS)\
                         receive_log.c\
                         reset_fsa.c\
                         send_proc_fin.c\
@@ -232,6 +242,8 @@ sf_smtp_SOURCES       = append.c\
                         archive_file.c\
                         check_burst_sf.c\
                         check_exec_type.c\
+			$(DEMCD_LOG_FD)\
+			$(DEMCD_LOG_PTRS)\
                         eval_input_sf.c\
                         eval_message.c\
                         eval_recipient.c\
@@ -243,7 +255,6 @@ sf_smtp_SOURCES       = append.c\
                         init_sf_burst2.c\
                         limit_transfer_rate.c\
                         noop_wrapper_smtp.c\
-                        $(OUTPUT_LOG_PTRS)\
                         receive_log.c\
                         reset_fsa.c\
                         send_proc_fin.c\
@@ -272,7 +283,6 @@ sf_scp_SOURCES        = append.c\
                         init_sf_burst2.c\
                         limit_transfer_rate.c\
                         noop_wrapper_dummy.c\
-                        $(OUTPUT_LOG_PTRS)\
                         receive_log.c\
                         reset_fsa.c\
                         send_proc_fin.c\
@@ -301,7 +311,6 @@ sf_wmo_SOURCES        = append.c\
                         init_sf_burst2.c\
                         limit_transfer_rate.c\
                         noop_wrapper_dummy.c\
-                        $(OUTPUT_LOG_PTRS)\
                         receive_log.c\
                         reset_fsa.c\
                         send_proc_fin.c\
@@ -327,7 +336,6 @@ sf_map_SOURCES        = append.c\
                         gsf_check_fsa.c\
                         init_sf.c\
                         noop_wrapper_dummy.c\
-                        $(OUTPUT_LOG_PTRS)\
                         receive_log.c\
                         reset_fsa.c\
                         send_proc_fin.c\
@@ -336,6 +344,26 @@ sf_map_SOURCES        = append.c\
                         trans_log.c\
                         update_tfc.c
 sf_map_LDADD          = @EXTRA_SOCKET_LIBS@ ../common/libafd.a @AFD_MAP_LIBS@
+sf_dfax_SOURCES       = append.c\
+                        archive_file.c\
+                        check_exec_type.c\
+                        eval_input_sf.c\
+                        eval_message.c\
+                        eval_recipient.c\
+                        fsa_attach_pos.c\
+                        get_file_names.c\
+                        get_group_list.c\
+                        gsf_check_fsa.c\
+                        init_sf.c\
+                        noop_wrapper_dummy.c\
+                        receive_log.c\
+                        reset_fsa.c\
+                        send_proc_fin.c\
+                        sf_dfax.c\
+                        trans_db_log.c\
+                        trans_log.c\
+                        update_tfc.c
+sf_dfax_LDADD         = @EXTRA_SOCKET_LIBS@ ../common/libafd.a @AFD_DFAX_LIBS@
 sf_loc_SOURCES        = append.c\
                         archive_file.c\
                         handle_ls_data.c\
@@ -352,7 +380,6 @@ sf_loc_SOURCES        = append.c\
                         init_sf.c\
                         init_sf_burst2.c\
                         noop_wrapper_dummy.c\
-                        $(OUTPUT_LOG_PTRS)\
                         receive_log.c\
                         reset_fsa.c\
                         send_proc_fin.c\
@@ -378,7 +405,6 @@ sf_exec_SOURCES       = append.c\
                         init_sf.c\
                         init_sf_burst2.c\
                         noop_wrapper_dummy.c\
-                        $(OUTPUT_LOG_PTRS)\
                         receive_log.c\
                         reset_fsa.c\
                         send_proc_fin.c\
@@ -421,7 +447,6 @@ gf_ftp_SOURCES        = check_burst_gf.c\
                         init_gf_burst2.c\
                         limit_transfer_rate.c\
                         noop_wrapper_ftp.c\
-                        $(OUTPUT_LOG_PTRS)\
                         read_file_mask.c\
                         reset_fsa.c\
                         reset_values.c\
@@ -449,7 +474,6 @@ gf_sftp_SOURCES       = check_burst_gf.c\
                         init_gf_burst2.c\
                         limit_transfer_rate.c\
                         noop_wrapper_sftp.c\
-                        $(OUTPUT_LOG_PTRS)\
                         read_file_mask.c\
                         reset_fsa.c\
                         reset_values.c\
@@ -477,7 +501,6 @@ gf_http_SOURCES       = check_burst_gf.c\
                         init_gf_burst2.c\
                         limit_transfer_rate.c\
                         noop_wrapper_dummy.c\
-                        $(OUTPUT_LOG_PTRS)\
                         read_file_mask.c\
                         reset_fsa.c\
                         reset_values.c\

@@ -1020,8 +1020,8 @@ search_time(char   *src,
        * or end in our buffer. Thats where we will start our
        * search.
        */
-      if (abs(search_time_val - earliest_entry) >
-          abs(latest_entry - search_time_val))
+      if (labs(search_time_val - earliest_entry) >
+          labs(latest_entry - search_time_val))
       {
          /* Start search from end. */
          bs_ptr = src + size - 2;

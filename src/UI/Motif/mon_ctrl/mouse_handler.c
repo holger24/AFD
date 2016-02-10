@@ -77,6 +77,8 @@ DESCR__E_M3
 #include "mon_ctrl.h"
 #include "permission.h"
 
+/* #define TEST_OUTPUT */
+
 /* External global variables. */
 extern Display                 *display;
 extern Widget                  fw[],
@@ -256,7 +258,7 @@ mon_input(Widget w, XtPointer client_data, XEvent *event)
             for (i = 0; i < no_of_active_process; i++)
             {
                if ((apps_list[i].position == select_no) &&
-                   (strcmp(apps_list[i].progname, MON_INFO) == 0))
+                   (my_strcmp(apps_list[i].progname, MON_INFO) == 0))
                {
                   if ((window_id = get_window_id(apps_list[i].pid,
                                                  MON_CTRL)) != 0L)
@@ -1110,7 +1112,7 @@ mon_popup_cb(Widget    w,
                   for (ii = 0; ii < no_of_active_process; ii++)
                   {
                      if ((apps_list[ii].position == i) &&
-                         (strcmp(apps_list[ii].progname, MON_INFO) == 0))
+                         (my_strcmp(apps_list[ii].progname, MON_INFO) == 0))
                      {
                         if ((window_id = get_window_id(apps_list[ii].pid,
                                                        MON_CTRL)) != 0L)
@@ -1293,10 +1295,12 @@ start_remote_prog(Widget    w,
                   args[arg_count + display_offset + 5] = AFD_CTRL;
                   args[arg_count + display_offset + 6] = "-f";
                   args[arg_count + display_offset + 7] = font_name;
+                  args[arg_count + display_offset + 8] = "-t";
+                  args[arg_count + display_offset + 9] = msa[i].afd_alias;
                   if (fake_user[0] != '\0')
                   {
-                     args[arg_count + display_offset + 8] = "-u";
-                     args[arg_count + display_offset + 9] = fake_user;
+                     args[arg_count + display_offset + 10] = "-u";
+                     args[arg_count + display_offset + 11] = fake_user;
                      offset = 2;
                   }
                   else
@@ -1305,13 +1309,13 @@ start_remote_prog(Widget    w,
                   }
                   if (profile[0] != '\0')
                   {
-                     args[arg_count + display_offset + offset + 8] = "-p";
-                     args[arg_count + display_offset + offset + 9] = profile;
-                     args[arg_count + display_offset + offset + 10] = NULL;
+                     args[arg_count + display_offset + offset + 10] = "-p";
+                     args[arg_count + display_offset + offset + 11] = profile;
+                     args[arg_count + display_offset + offset + 12] = NULL;
                   }
                   else
                   {
-                     args[arg_count + display_offset + offset + 8] = NULL;
+                     args[arg_count + display_offset + offset + 10] = NULL;
                   }
                }
                break;
@@ -1788,9 +1792,9 @@ start_remote_prog(Widget    w,
                {
                   if ((apps_list[j].position == i) &&
                       (((item_no == AFD_CTRL_SEL) &&
-                        (strcmp(apps_list[j].progname, AFD_CTRL) == 0)) ||
+                        (my_strcmp(apps_list[j].progname, AFD_CTRL) == 0)) ||
                        ((item_no == DIR_CTRL_SEL) &&
-                        (strcmp(apps_list[j].progname, DIR_CTRL) == 0))))
+                        (my_strcmp(apps_list[j].progname, DIR_CTRL) == 0))))
                   {
 #ifdef WHEN_WE_KNOW
                      if ((window_id = get_window_id(apps_list[j].pid,
@@ -1814,7 +1818,7 @@ start_remote_prog(Widget    w,
                {
                   if (msa[i].convert_username[j][0][0] != '\0')
                   {
-                     if (strcmp(msa[i].convert_username[j][0], username) == 0)
+                     if (my_strcmp(msa[i].convert_username[j][0], username) == 0)
                      {
                         args[arg_count + 1] = msa[i].convert_username[j][1];
                         break;

@@ -60,7 +60,7 @@ extern struct fileretrieve_status *fra;
 void
 remove_msg(int qb_pos)
 {
-   if ((qb[qb_pos].special_flag & FETCH_JOB) && (fra != NULL) &&
+   if ((fra != NULL) && (qb[qb_pos].special_flag & FETCH_JOB) &&
        (qb[qb_pos].pos < no_of_dirs))
    {
       /* Dequeue in FRA. */

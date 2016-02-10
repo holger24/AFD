@@ -3485,7 +3485,7 @@ control_cb(Widget w, XtPointer client_data, XtPointer call_data)
                if (write(db_update_fd, buffer, (1 + SIZEOF_PID_T)) != (1 + SIZEOF_PID_T))
                {
                   (void)xrec(ERROR_DIALOG,
-                             "Was not able to send reread command to %s. (%s %d)",
+                             "Was not able to send reread DIR_CONFIG command to %s. (%s %d)",
                              AMG, __FILE__, __LINE__);
                   read_reply_length = 0;
                }
@@ -3506,7 +3506,7 @@ control_cb(Widget w, XtPointer client_data, XtPointer call_data)
                if (write(db_update_fd, buffer, (1 + SIZEOF_PID_T)) != (1 + SIZEOF_PID_T))
                {
                   (void)xrec(ERROR_DIALOG,
-                             "Was not able to send reread command to %s. (%s %d)",
+                             "Was not able to send reread HOST_CONFIG command to %s. (%s %d)",
                              AMG, __FILE__, __LINE__);
                   read_reply_length = 0;
                }
@@ -4512,7 +4512,7 @@ insert_dir_ids_input(int fsa_pos)
    for (i = 0; i < no_of_dirs; i++)
    {
       if ((fra[i].host_alias[0] != '\0') &&
-          (strcmp(fra[i].host_alias, fsa[fsa_pos].host_alias) == 0))
+          (my_strcmp(fra[i].host_alias, fsa[fsa_pos].host_alias) == 0))
       {
          if (no_of_dids_found == 0)
          {

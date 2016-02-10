@@ -1,6 +1,6 @@
 /*
  *  append.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -586,8 +586,8 @@ remove_all_appends(unsigned int job_id)
       system_log(WARN_SIGN, __FILE__, __LINE__,
                  "Failed to close() %s : %s", msg, strerror(errno));
    }
-   system_log(DEBUG_SIGN, __FILE__, __LINE__,
-              "Hmm. Removed all append options for JID %x.", job_id);
+   trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+             "Hmm. Removed all append options for #%x.", job_id);
 
    return;
 }

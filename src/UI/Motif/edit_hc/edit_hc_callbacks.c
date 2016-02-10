@@ -149,6 +149,9 @@ extern Widget                     active_mode_w,
                                   ssl_ccc_w,
                                   start_drag_w,
                                   statusbox_w,
+#ifdef WITH_SSL
+                                  strict_tls_w,
+#endif
                                   successful_retries_label_w,
                                   successful_retries_w,
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
@@ -1249,6 +1252,12 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
 #ifdef _WITH_MAP_SUPPORT
           (fsa[cur_pos].protocol & MAP_FLAG) ||
 #endif
+#ifdef _WITH_DFAX_SUPPORT
+          (fsa[cur_pos].protocol & DFAX_FLAG) ||
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+          (fsa[cur_pos].protocol & DE_MAIL_FLAG) ||
+#endif
           (fsa[cur_pos].protocol & SMTP_FLAG))
       {
          char label_1_str[] = { 'H', 'o', 's', 't', '/', 'I', 'P', ' ', '1', ':', '\0' },
@@ -1534,6 +1543,12 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
 #ifdef _WITH_MAP_SUPPORT
           (fsa[cur_pos].protocol & MAP_FLAG) ||
 #endif
+#ifdef _WITH_DFAX_SUPPORT
+          (fsa[cur_pos].protocol & DFAX_FLAG) ||
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+          (fsa[cur_pos].protocol & DE_MAIL_FLAG) ||
+#endif
           (fsa[cur_pos].protocol & SMTP_FLAG) ||
           (fsa[cur_pos].protocol & EXEC_FLAG))
       {
@@ -1732,6 +1747,27 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
          }
          XtSetSensitive(ftp_ignore_bin_w, False);
       }
+
+#ifdef WITH_SSL
+      if ((fsa[cur_pos].protocol & FTP_FLAG) ||
+          (fsa[cur_pos].protocol & SMTP_FLAG) ||
+          (fsa[cur_pos].protocol & HTTP_FLAG))
+      {
+         XtSetSensitive(strict_tls_w, True);
+         if (fsa[cur_pos].protocol_options & TLS_STRICT_VERIFY)
+         {
+            XtVaSetValues(strict_tls_w, XmNset, True, NULL);
+         }
+         else
+         {
+            XtVaSetValues(strict_tls_w, XmNset, False, NULL);
+         }
+      }
+      else
+      {
+         XtSetSensitive(strict_tls_w, False);
+      }
+#endif
 
 #ifdef _WITH_BURST_2
       if (fsa[cur_pos].protocol_options & DISABLE_BURSTING)
@@ -2221,6 +2257,9 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
           (fsa[cur_pos].protocol & WMO_FLAG) ||
 # endif
           (fsa[cur_pos].protocol & HTTP_FLAG) ||
+# ifdef _WITH_DE_MAIL_SUPPORT
+          (fsa[cur_pos].protocol & DE_MAIL_FLAG) ||
+# endif
           (fsa[cur_pos].protocol & SMTP_FLAG))
       {
          XtSetSensitive(tcp_keepalive_w, True);
@@ -3017,6 +3056,11 @@ submite_button(Widget w, XtPointer client_data, XtPointer call_data)
          if (ce[i].value_changed2 & DISABLE_MLST_CHANGED)
          {
             fsa[i].protocol_options ^= FTP_DISABLE_MLST;
+            changes++;
+         }
+         if (ce[i].value_changed2 & STRICT_TLS_CHANGED)
+         {
+            fsa[i].protocol_options ^= TLS_STRICT_VERIFY;
             changes++;
          }
          if (ce[i].value_changed2 & FTPS_CCC_CHANGED)

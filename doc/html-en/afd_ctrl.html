@@ -142,10 +142,13 @@ see <a href="afd_users.html">afd.users</a> for more details.
    <tr>
       <td>Search + (De)Select</td>
       <td>This allows to search for a given host (alias and real) name,
-          with wild cards, when selecting search type Hostname. If instead
-          Information is selected as search type, it will search the
-          <a href="host_info.html">host information file(s)</a> for the
-          given information. The found hosts will then be selected.</td>
+          with wild cards, when selecting search type Hostname. This search
+          will be case sensitive. If instead Information is selected as
+          search type, it will search the <a href="host_info.html">host
+          information file(s)</a> for the given information. Note that the
+          search is always case insensitive and no wild cards are possible
+          when the system supports the strcasestr() function. The found
+          hosts will then be selected.</td>
       <td align=center><img src="../images/search_select.png" alt="[Search and select dialog]"></td>
    </tr>
    <tr>
@@ -1114,9 +1117,9 @@ it shorter.
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 1997 - 2014 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2015 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 02.12.2014
+   Last updated: 19.02.2015
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

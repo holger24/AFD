@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -70,6 +70,8 @@ DESCR__E_M3
 #include "mshow_log.h"
 #include "dir_ctrl.h"
 #include "permission.h"
+
+/* #define SHOW_CALLS */
 
 /* External global variables. */
 extern Display                    *display;
@@ -520,6 +522,9 @@ dir_popup_cb(Widget    w,
       FREE_RT_ARRAY(hosts)
       return;
    }
+#ifdef SHOW_CALLS
+   args[0] = NULL;
+#endif
 
    switch (sel_typ)
    {
@@ -1427,6 +1432,16 @@ dir_popup_cb(Widget    w,
            args[k + offset] = NULL;
            make_xprocess(progname, progname, args, -1);
         }
+
+#ifdef SHOW_CALLS
+   i = 0;
+   while (args[i] != NULL)
+   {
+      (void)printf("%s ", args[i]);
+      i++;
+   }
+   (void)printf("\n");
+#endif
 
    /* Memory for arg list stuff no longer needed. */
    free(args);

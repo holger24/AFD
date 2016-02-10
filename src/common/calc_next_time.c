@@ -1,6 +1,6 @@
 /*
  *  calc_next_time.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -154,7 +154,7 @@ calc_next_time(struct bd_time_entry *te,
    {
       if ((p_env = getenv("TZ")) != NULL)
       {
-         if (strcmp(p_env, timezone) != 0)
+         if (my_strcmp(p_env, timezone) != 0)
          {
             if (setenv("TZ", timezone, 1) == -1)
             {

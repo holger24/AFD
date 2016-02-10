@@ -1,6 +1,6 @@
 /*
  *  handle_alias_name.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2009 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2009 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -137,8 +137,8 @@ get_alias_names(void)
          }
          last_read = stat_buf.st_mtime;
 
-         if (((file_size = read_file_no_cr(alias_file,
-                                           &buffer, __FILE__, __LINE__)) != INCORRECT) &&
+         if (((file_size = read_file_no_cr(alias_file, &buffer, YES,
+                                           __FILE__, __LINE__)) != INCORRECT) &&
              (file_size > 0))
          {
             int data;
@@ -362,7 +362,7 @@ search_insert_alias_name(char *search_str, char *result_str, int max_length)
 
    for (i = 0; i < no_of_alias_names; i++)
    {
-      if (strcmp(search_str, an[i].alias_from) == 0)
+      if (my_strcmp(search_str, an[i].alias_from) == 0)
       {
          int j = 0;
 

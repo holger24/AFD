@@ -1,6 +1,6 @@
 /*
  *  rename_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2013 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -29,6 +29,7 @@ DESCR__S_M3
  ** SYNOPSIS
  **   int rename_files(char                   *src_file_path,
  **                    char                   *dest_file_path,
+ **                    int                    dest_file_path_length,
  **                    int                    files_moved,
  **                    struct instant_db      *p_db,
  **                    time_t                 current_time,
@@ -81,6 +82,7 @@ extern char            *file_name_buffer,
 int
 rename_files(char                   *src_file_path,
              char                   *dest_file_path,
+             int                    dest_file_path_length,
              int                    files_moved,
              struct instant_db      *p_db,
              time_t                 current_time,
@@ -109,9 +111,10 @@ rename_files(char                   *src_file_path,
       if (p_src == NULL)
       {
          /* Create a new message name and directory. */
-         if (create_name(dest_file_path, p_db->priority, current_time,
-                         p_db->job_id, split_job_counter, &unique_number,
-                         unique_name, MAX_FILENAME_LENGTH - 1, -1) < 0)
+         if (create_name(dest_file_path, dest_file_path_length, p_db->priority,
+                         current_time, p_db->job_id, split_job_counter,
+                         &unique_number, unique_name, MAX_FILENAME_LENGTH - 1,
+                         -1) < 0)
          {
             if (errno == ENOSPC)
             {
@@ -123,8 +126,8 @@ rename_files(char                   *src_file_path,
                {
                   (void)sleep(DISK_FULL_RESCAN_TIME);
                   errno = 0;
-                  if (create_name(dest_file_path, p_db->priority,
-                                  current_time, p_db->job_id,
+                  if (create_name(dest_file_path, dest_file_path_length,
+                                  p_db->priority, current_time, p_db->job_id,
                                   split_job_counter, &unique_number,
                                   unique_name, MAX_FILENAME_LENGTH - 1, -1) < 0)
                   {

@@ -1,6 +1,6 @@
 /*
  *  set_counter.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ main(int argc, char *argv[])
 
    CHECK_FOR_VERSION(argc, argv);
 
-   if ((argc < 2) || (strcmp(argv[1], "-w") == 0))
+   if ((argc < 2) || (my_strcmp(argv[1], "-w") == 0))
    {
       (void)fprintf(stderr, "%s: <new value> [-w <workdir>]\n", argv[0]);
       exit(INCORRECT);

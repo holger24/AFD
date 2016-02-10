@@ -110,6 +110,7 @@ init_gf(int argc, char *argv[], int protocol)
            db.port = -1;
         }
 
+/* db.disconnect = 0; */
    db.fsa_pos = INCORRECT;
    db.fra_pos = INCORRECT;
    db.recipient = NULL;
@@ -117,15 +118,15 @@ init_gf(int argc, char *argv[], int protocol)
    db.toggle_host = NO;
    db.protocol = protocol;
    db.special_ptr = NULL;
-   db.special_flag = 0;
-   db.mode_flag = 0;
-   db.dir_mode = 0;
-   db.dir_mode_str[0] = '\0';
+/* db.special_flag = 0; */
+/* db.mode_flag = 0; */
+/* db.dir_mode = 0; */
+/* db.dir_mode_str[0] = '\0'; */
    db.user_home_dir = NULL;
-   db.password[0] = '\0';
+/* db.password[0] = '\0'; */
 #ifdef WITH_SSH_FINGERPRINT
-   db.ssh_fingerprint[0] = '\0';
-   db.key_type = 0;
+/* db.ssh_fingerprint[0] = '\0'; */
+/* db.key_type = 0; */
 #endif
 #ifdef WITH_SSL
    db.auth = NO;
@@ -133,10 +134,10 @@ init_gf(int argc, char *argv[], int protocol)
 #ifdef _OUTPUT_LOG
    db.output_log = YES;
 #endif
-   db.http_proxy[0] = '\0';
-   db.ssh_protocol = 0;
-   db.sndbuf_size = 0;
-   db.rcvbuf_size = 0;
+/* db.http_proxy[0] = '\0'; */
+/* db.ssh_protocol = 0; */
+/* db.sndbuf_size = 0; */
+/* db.rcvbuf_size = 0; */
    db.my_pid = getpid();
    db.remote_file_check_interval = DEFAULT_REMOTE_FILE_CHECK_INTERVAL;
 

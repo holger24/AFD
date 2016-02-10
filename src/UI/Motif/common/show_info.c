@@ -1,6 +1,6 @@
 /*
  *  show_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -371,7 +371,7 @@ search_button(Widget w, XtPointer client_data, XtPointer call_data)
       }
       else
       {
-         if (strcmp(last_search_str, search_str) != 0)
+         if (my_strcmp(last_search_str, search_str) != 0)
          {
             size_t length;
 

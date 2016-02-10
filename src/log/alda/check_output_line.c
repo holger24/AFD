@@ -1,6 +1,6 @@
 /*
  *  check_output_line.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -169,30 +169,34 @@ check_output_line(char         *line,
          {
             switch (tmp_char)
             {
-               case ALDA_FTP   : olog.protocol = ALDA_FTP_FLAG;
-                                 break;
-               case ALDA_LOC   : olog.protocol = ALDA_LOC_FLAG;
-                                 break;
-               case ALDA_EXEC  : olog.protocol = ALDA_EXEC_FLAG;
-                                 break;
-               case ALDA_SMTP  : olog.protocol = ALDA_SMTP_FLAG;
-                                 break;
-               case ALDA_MAP   : olog.protocol = ALDA_MAP_FLAG;
-                                 break;
-               case ALDA_SCP   : olog.protocol = ALDA_SCP_FLAG;
-                                 break;
-               case ALDA_WMO   : olog.protocol = ALDA_WMO_FLAG;
-                                 break;
-               case ALDA_HTTP  : olog.protocol = ALDA_HTTP_FLAG;
-                                 break;
-               case ALDA_FTPS  : olog.protocol = ALDA_FTPS_FLAG;
-                                 break;
-               case ALDA_HTTPS : olog.protocol = ALDA_HTTPS_FLAG;
-                                 break;
-               case ALDA_SFTP  : olog.protocol = ALDA_SFTP_FLAG;
-                                 break;
-               default         : olog.protocol = ~0u;
-                                 break;
+               case ALDA_FTP    : olog.protocol = ALDA_FTP_FLAG;
+                                  break;
+               case ALDA_LOC    : olog.protocol = ALDA_LOC_FLAG;
+                                  break;
+               case ALDA_EXEC   : olog.protocol = ALDA_EXEC_FLAG;
+                                  break;
+               case ALDA_SMTP   : olog.protocol = ALDA_SMTP_FLAG;
+                                  break;
+               case ALDA_MAP    : olog.protocol = ALDA_MAP_FLAG;
+                                  break;
+               case ALDA_DFAX   : olog.protocol = ALDA_DFAX_FLAG;
+                                  break;
+               case ALDA_DE_MAIL: olog.protocol = ALDA_DE_MAIL_FLAG;
+                                  break;
+               case ALDA_SCP    : olog.protocol = ALDA_SCP_FLAG;
+                                  break;
+               case ALDA_WMO    : olog.protocol = ALDA_WMO_FLAG;
+                                  break;
+               case ALDA_HTTP   : olog.protocol = ALDA_HTTP_FLAG;
+                                  break;
+               case ALDA_FTPS   : olog.protocol = ALDA_FTPS_FLAG;
+                                  break;
+               case ALDA_HTTPS  : olog.protocol = ALDA_HTTPS_FLAG;
+                                  break;
+               case ALDA_SFTP   : olog.protocol = ALDA_SFTP_FLAG;
+                                  break;
+               default          : olog.protocol = ~0u;
+                                  break;
             }
             ptr++;
             i = 0;
@@ -238,7 +242,7 @@ check_output_line(char         *line,
                   {
                      if (prev_filename_length == olog.local_filename_length)
                      {
-                        ret = strcmp(local_pattern[j], olog.local_filename);
+                        ret = my_strcmp(local_pattern[j], olog.local_filename);
                         if (ret == 1)
                         {
                            ret = 2;

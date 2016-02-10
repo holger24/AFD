@@ -1,6 +1,6 @@
 /*
  *  topview.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2013 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2000 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -164,7 +164,7 @@ main(int argc, char *argv[])
       {
          for (j = 0; j < no_of_afds; j++)
          {
-            if (strcmp(argv[1 + i], msa[j].afd_alias) == 0)
+            if (my_strcmp(argv[1 + i], msa[j].afd_alias) == 0)
             {
                print_data(j, show);
                break;

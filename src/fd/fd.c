@@ -165,7 +165,9 @@ int                        amg_flag = NO,
                            transfer_log_fd = STDERR_FILENO,
                            trl_calc_fd,
                            *zwl;
-unsigned int               get_free_disp_pos_lc = 0;
+unsigned int               gf_force_disconnect = 0,
+                           get_free_disp_pos_lc = 0,
+                           sf_force_disconnect = 0;
 long                       link_max;
 #ifdef HAVE_MMAP
 off_t                      fra_size,
@@ -182,10 +184,15 @@ char                       stop_flag = 0,
                            str_age_limit[MAX_INT_LENGTH],
                            str_create_source_dir_mode[MAX_INT_LENGTH],
                            str_fsa_id[MAX_INT_LENGTH],
+                           str_gf_disconnect[MAX_INT_LENGTH],
+                           str_sf_disconnect[MAX_INT_LENGTH],
                            str_remote_file_check_interval[MAX_INT_LENGTH],
                            file_dir[MAX_PATH_LENGTH],
                            msg_dir[MAX_PATH_LENGTH],
                            default_http_proxy[MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH],
+#ifdef _WITH_DE_MAIL_SUPPORT
+                           default_de_mail_sender[MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH],
+#endif
                            *default_smtp_from,
                            *default_smtp_reply_to,
                            default_smtp_server[MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH];
@@ -214,7 +221,7 @@ static double              max_threshold;
                kk;                                            \
                                                               \
            /* Try handle any pending jobs. */                 \
-           for (kk = 0; ((kk < *no_msg_queued) && (p_afd_status->no_of_transfers < max_connections)); kk++) \
+           for (kk = 0; kk < *no_msg_queued; kk++)            \
            {                                                  \
               if (qb[kk].pid == PENDING)                      \
               {                                               \
@@ -292,6 +299,9 @@ main(int argc, char *argv[])
 #endif
                     remote_file_check_time;
    off_t            *file_size_to_send;
+#ifdef MULTI_FS_SUPPORT
+   dev_t            *dev;
+#endif
    size_t           fifo_size;
    char             *fifo_buffer,
                     *msg_buffer,
@@ -381,6 +391,9 @@ main(int argc, char *argv[])
                  &split_job_counter,
                  &files_to_send,
                  &file_size_to_send,
+#ifdef MULTI_FS_SUPPORT
+                 &dev,
+#endif
                  &dir_no,
                  &unique_number,
                  &msg_priority,
@@ -689,6 +702,14 @@ main(int argc, char *argv[])
    system_log(DEBUG_SIGN, NULL, 0,
               "FD configuration: Default SMTP server           %s",
               (default_smtp_server[0] == '\0') ? SMTP_HOST_NAME : default_smtp_server);
+#ifdef _WITH_DE_MAIL_SUPPORT
+   if (default_de_mail_sender[0] != '\0')
+   {
+      system_log(DEBUG_SIGN, NULL, 0,
+                 "FD configuration: Default DE-Mail sender        %s",
+                 default_de_mail_sender);
+   }
+#endif
    if (default_smtp_from != NULL)
    {
       system_log(DEBUG_SIGN, NULL, 0,
@@ -1273,6 +1294,17 @@ system_log(DEBUG_SIGN, NULL, 0,
                }
 #endif
                pid = *(pid_t *)&fifo_buffer[bytes_done];
+
+#if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
+               maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+# if SIZEOF_PID_T == 4
+                              "Termination/DATA pid=%d bytes_done=%d n=%d no_msg_queued=%d",
+# else
+                              "Termination/DATA pid=%lld bytes_done=%d n=%d no_msg_queued=%d",
+# endif
+                              (pri_pid_t)pid, bytes_done, n, *no_msg_queued);
+#endif
+
 #ifdef _WITH_BURST_2
                if (pid < 0)
                {
@@ -1313,6 +1345,15 @@ system_log(DEBUG_SIGN, NULL, 0,
                          (fsa[fsa_pos].job_status[connection[qb[qb_pos].connect_pos].job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] == 1))
                      {
                         start_new_process = NO;
+# if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
+                        maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+#  if SIZEOF_PID_T == 4
+                                       "Want's more data! pid=%d bytes_done=%d n=%d no_msg_queued=%d",
+#  else
+                                       "Want's more data! pid=%lld bytes_done=%d n=%d no_msg_queued=%d",
+#  endif
+                                       (pri_pid_t)pid, bytes_done, n, *no_msg_queued);
+# endif
                      }
                      else
                      {
@@ -1834,10 +1875,19 @@ system_log(DEBUG_SIGN, NULL, 0,
                      /*       long.                                  */
 #endif
                      (void)snprintf(qb[qb_pos].msg_name, MAX_MSG_NAME_LENGTH,
-#if SIZEOF_TIME_T == 4
-                                    "%x/%x/%lx_%x_%x",
+#ifdef MULTI_FS_SUPPORT
+# if SIZEOF_TIME_T == 4
+                                    "%x/%x/%x/%lx_%x_%x",
+# else
+                                    "%x/%x/%x/%llx_%x_%x",
+# endif
+                                    (unsigned int)*dev,
 #else
+# if SIZEOF_TIME_T == 4
+                                    "%x/%x/%lx_%x_%x",
+# else
                                     "%x/%x/%llx_%x_%x",
+# endif
 #endif
                                     *job_id, *dir_no,
                                     (pri_time_t)*creation_time,
@@ -2018,8 +2068,7 @@ system_log(DEBUG_SIGN, NULL, 0,
             int fsa_pos;
 
             /* Try handle any pending jobs. */
-            for (i = 0; ((i < *no_msg_queued) &&
-                         (p_afd_status->no_of_transfers < max_connections)); i++)
+            for (i = 0; i < *no_msg_queued; i++)
             {
                if (qb[i].pid == PENDING)
                {
@@ -2413,6 +2462,17 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
                         (void)memcpy(connection[qb[exec_qb_pos].connect_pos].msg_name,
                                      qb[qb_pos].msg_name, MAX_MSG_NAME_LENGTH);
 
+#if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
+                        maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+# if SIZEOF_PID_T == 4
+                                       "FD trying BURST: pid=%d job_id=%x msg_name=%s",
+# else
+                                       "FD trying BURST: pid=%lld job_id=%x msg_name=%s",
+# endif
+                                       (pri_pid_t)qb[exec_qb_pos].pid,
+                                       fsa[fsa_pos].job_status[i].job_id,
+                                       qb[qb_pos].msg_name);
+#endif
                         qb[qb_pos].pid = qb[exec_qb_pos].pid;
                         qb[qb_pos].connect_pos = qb[exec_qb_pos].connect_pos;
                         connection[qb[exec_qb_pos].connect_pos].job_no = i;
@@ -2491,7 +2551,7 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
                               connection[qb[exec_qb_pos].connect_pos].dir_alias[0] = '\0';
                               fsa[fsa_pos].job_status[i].job_id = NO_ID;
                               fsa[fsa_pos].job_status[i].unique_name[0] = '\0';
-                              
+
                               continue;
                            }
                         }
@@ -2533,14 +2593,14 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
                                 fsa_pos);
                   }
                }
-            }
+            } /* for (i = 0; i < fsa[fsa_pos].allowed_transfers; i++) */
             if ((fsa[fsa_pos].active_transfers == fsa[fsa_pos].allowed_transfers) &&
                 (wait_counter > 0))
             {
                for (i = 0; i < wait_counter; i++)
                {
                   if ((fsa[fsa_pos].job_status[other_job_wait_pos[i]].unique_name[2] == 5) &&
-                      (fsa[fsa_pos].job_status[other_job_wait_pos[i]].file_name_in_use[MAX_FILENAME_LENGTH -1] == 1))
+                      (fsa[fsa_pos].job_status[other_job_wait_pos[i]].file_name_in_use[MAX_FILENAME_LENGTH - 1] == 1))
                   {
                      if (qb[other_qb_pos[i]].pid > 0)
                      {
@@ -2590,17 +2650,6 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
             }
             else
             {
-#ifdef _WITH_SERVER_SUPPORT
-# ifdef LOCK_DEBUG
-               lock_region_w(fsa_fd, (AFD_WORD_OFFSET +
-                                      (fsa_pos * sizeof(struct filetransfer_status)) +
-                                      LOCK_CON), __FILE__, __LINE__);
-# else
-               lock_region_w(fsa_fd, (AFD_WORD_OFFSET +
-                                      (fsa_pos * sizeof(struct filetransfer_status)) +
-                                      LOCK_CON));
-# endif
-#endif
                if ((connection[pos].job_no = get_free_disp_pos(fsa_pos)) != INCORRECT)
                {
                   if (qb[qb_pos].special_flag & FETCH_JOB)
@@ -2683,6 +2732,16 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
                   if ((connection[pos].pid = make_process(&connection[pos],
                                                           qb_pos)) > 0)
                   {
+#if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
+                     maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+# if SIZEOF_PID_T == 4
+                                    "FD started process: pid=%d msg_name=%s",
+# else
+                                    "FD started process: pid=%lld msg_name=%s",
+# endif
+                                    (pri_pid_t)connection[pos].pid,
+                                    connection[pos].msg_name);
+#endif
                      pid = fsa[fsa_pos].job_status[connection[pos].job_no].proc_id = connection[pos].pid;
 #ifdef HAVE_SETPRIORITY
                      if (add_afd_priority == YES)
@@ -2763,17 +2822,6 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
                      connection[pos].pid = 0;
                   }
                }
-#ifdef _WITH_SERVER_SUPPORT
-# ifdef LOCK_DEBUG
-               unlock_region(fsa_fd, (AFD_WORD_OFFSET +
-                                      (fsa_pos * sizeof(struct filetransfer_status)) +
-                                      LOCK_CON), __FILE__, __LINE__);
-# else
-               unlock_region(fsa_fd, (AFD_WORD_OFFSET +
-                                      (fsa_pos * sizeof(struct filetransfer_status)) +
-                                      LOCK_CON));
-# endif
-#endif
             }
          }
       }
@@ -3003,7 +3051,11 @@ make_process(struct connection *con, int qb_pos)
                  }
               }
            }
+#ifdef _WITH_DE_MAIL_SUPPORT
+      else if ((con->protocol == SMTP) || (con->protocol == DE_MAIL))
+#else
       else if (con->protocol == SMTP)
+#endif
            {
               if (fsa[con->fsa_pos].debug > DEBUG_MODE)
               {
@@ -3025,6 +3077,19 @@ make_process(struct connection *con, int qb_pos)
                  args[0] = SEND_FILE_EXEC;
               }
            }
+#ifdef _WITH_DFAX_SUPPORT
+      else if (con->protocol == DFAX)
+           {
+              if (fsa[con->fsa_pos].debug > DEBUG_MODE)
+              {
+                 args[0] = SEND_FILE_DFAX_TRACE;
+              }
+              else
+              {
+                 args[0] = SEND_FILE_DFAX;
+              }
+           }
+#endif
            else
            {
               system_log(DEBUG_SIGN, __FILE__, __LINE__,
@@ -3057,6 +3122,13 @@ make_process(struct connection *con, int qb_pos)
          argcount++;
          args[argcount] = str_age_limit;
       }
+      if (sf_force_disconnect > 0)
+      {
+         argcount++;
+         args[argcount] = "-e";
+         argcount++;
+         args[argcount] = str_sf_disconnect;
+      }
       if ((simulate_send_mode == YES) ||
           (*(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) & ENABLE_SIMULATE_SEND_MODE) ||
           (fsa[con->fsa_pos].host_status & SIMULATE_SEND_MODE))
@@ -3072,6 +3144,13 @@ make_process(struct connection *con, int qb_pos)
          argcount++;
          args[argcount] = "-d";
       }
+      if (gf_force_disconnect > 0)
+      {
+         argcount++;
+         args[argcount] = "-e";
+         argcount++;
+         args[argcount] = str_gf_disconnect;
+      }
       argcount++;
       args[argcount] = "-i";
       argcount++;
@@ -3086,7 +3165,11 @@ make_process(struct connection *con, int qb_pos)
       argcount++;
       args[argcount] = "-t";
    }
+#ifdef _WITH_DE_MAIL_SUPPORT
+   if ((con->protocol == SMTP) || (con->protocol == DE_MAIL))
+#else
    if (con->protocol == SMTP)
+#endif
    {
       if (default_smtp_from != NULL)
       {
@@ -3109,6 +3192,15 @@ make_process(struct connection *con, int qb_pos)
          argcount++;
          args[argcount] = default_smtp_server;
       }
+#ifdef _WITH_DE_MAIL_SUPPORT
+      if ((con->protocol == DE_MAIL) && (default_de_mail_sender[0] != '\0'))
+      {
+         argcount++;
+         args[argcount] = "-D";
+         argcount++;
+         args[argcount] = default_de_mail_sender;
+      }
+#endif
    }
    if (con->protocol == HTTP)
    {
@@ -3187,6 +3279,16 @@ check_zombie_queue(time_t now, int qb_pos)
       if ((faulty = zombie_check(&connection[qb[qb_pos].connect_pos], now,
                                  &qb_pos, WNOHANG)) == NO)
       {
+#if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
+         maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+# if SIZEOF_PID_T == 4
+                        "removing msg: pid=%d msg_name=%s faulty=%d",
+# else
+                        "removing msg: pid=%lld msg_name=%s faulty=%d",
+# endif
+                        (pri_pid_t)connection[qb[qb_pos].connect_pos].pid,
+                        connection[qb[qb_pos].connect_pos].msg_name, faulty);
+#endif
          remove_msg(qb_pos);
       }
       else if ((faulty == YES) || (faulty == NONE))
@@ -3324,6 +3426,17 @@ zombie_check(struct connection *p_con,
             {
                dj_id = fra[p_con->fra_pos].dir_id;
             }
+#endif
+
+#if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
+            maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+# if SIZEOF_PID_T == 4
+                           "got zombie: pid=%d msg_name=%s exit_status=%d un2=%d",
+# else
+                           "got zombie: pid=%lld msg_name=%s exit_status=%d un2=%d",
+# endif
+                           (pri_pid_t)ret, p_con->msg_name, WEXITSTATUS(status),
+                           (int)fsa[p_con->fsa_pos].job_status[p_con->job_no].unique_name[2]);
 #endif
 
             qb[*qb_pos].retries++;
@@ -4023,6 +4136,15 @@ zombie_check(struct connection *p_con,
          }
          else
          {
+#if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
+            maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+# if SIZEOF_PID_T == 4
+                           "got nothing: pid=%d msg_name=%s ret=%d",
+# else
+                           "got nothing: pid=%lld msg_name=%s ret=%lld",
+# endif
+                           (pri_pid_t)p_con->pid, p_con->msg_name, (pri_pid_t)ret);
+#endif
             faulty = NEITHER;
          }
       }
@@ -4122,7 +4244,7 @@ get_afd_config_value(void)
    (void)snprintf(config_file, MAX_PATH_LENGTH, "%s%s%s",
                   p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(config_file, F_OK) == 0) &&
-       (read_file_no_cr(config_file, &buffer, __FILE__, __LINE__) != INCORRECT))
+       (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {
       if (get_definition(buffer, CREATE_SOURCE_DIR_MODE_DEF,
                          config_file, MAX_INT_LENGTH) != NULL)
@@ -4253,6 +4375,16 @@ get_afd_config_value(void)
          }
       }
 #endif
+      if (get_definition(buffer, SF_FORCE_DISCONNECT_DEF,
+                         str_sf_disconnect, MAX_INT_LENGTH) != NULL)
+      {
+         sf_force_disconnect = (unsigned int)atoi(str_sf_disconnect);
+      }
+      if (get_definition(buffer, GF_FORCE_DISCONNECT_DEF,
+                         str_gf_disconnect, MAX_INT_LENGTH) != NULL)
+      {
+         gf_force_disconnect = (unsigned int)atoi(str_gf_disconnect);
+      }
       if (get_definition(buffer, DEFAULT_AGE_LIMIT_DEF,
                          config_file, MAX_INT_LENGTH) != NULL)
       {
@@ -4322,7 +4454,7 @@ get_afd_config_value(void)
       }
       else
       {
-          default_http_proxy[0] = '\0';
+         default_http_proxy[0] = '\0';
       }
       if (get_definition(buffer, DEFAULT_SMTP_SERVER_DEF,
                          config_file, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH) != NULL)
@@ -4331,8 +4463,37 @@ get_afd_config_value(void)
       }
       else
       {
-          default_smtp_server[0] = '\0';
+         default_smtp_server[0] = '\0';
       }
+#ifdef _WITH_DE_MAIL_SUPPORT
+      if (get_definition(buffer, DEFAULT_DE_MAIL_SENDER_DEF,
+                         config_file, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH) != NULL)
+      {
+         (void)strcpy(default_de_mail_sender, config_file);
+      }
+      else
+      {
+         char host_name[256],
+              *ptr;
+
+         if (gethostname(host_name, 255) < 0)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "gethostname() error : %s", strerror(errno));
+            exit(INCORRECT);
+         }
+         if ((ptr = getenv("LOGNAME")) != NULL)
+         {
+            (void)snprintf(default_de_mail_sender, MAX_FILENAME_LENGTH,
+                           "%s@%s", ptr, host_name);
+         }
+         else
+         {
+            (void)snprintf(default_de_mail_sender, MAX_FILENAME_LENGTH,
+                           "%s@%s", AFD_USER_NAME, host_name);
+         }
+      }
+#endif
       if (get_definition(buffer, DEFAULT_SMTP_FROM_DEF,
                          config_file, MAX_RECIPIENT_LENGTH) != NULL)
       {
@@ -4369,7 +4530,7 @@ get_afd_config_value(void)
       }
       else
       {
-          default_smtp_reply_to = NULL;
+         default_smtp_reply_to = NULL;
       }
       if (get_definition(buffer, DELETE_STALE_ERROR_JOBS_DEF,
                          config_file, MAX_INT_LENGTH) != NULL)
@@ -4457,6 +4618,27 @@ get_afd_config_value(void)
    }
    else
    {
+#ifdef _WITH_DE_MAIL_SUPPORT
+      char host_name[256],
+           *ptr;
+
+      if (gethostname(host_name, 255) < 0)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "gethostname() error : %s", strerror(errno));
+         exit(INCORRECT);
+      }
+      if ((ptr = getenv("LOGNAME")) != NULL)
+      {
+         (void)snprintf(default_de_mail_sender, MAX_FILENAME_LENGTH,
+                        "%s@%s", ptr, host_name);
+      }
+      else
+      {
+         (void)snprintf(default_de_mail_sender, MAX_FILENAME_LENGTH,
+                        "%s@%s", AFD_USER_NAME, host_name);
+      }
+#endif
       default_smtp_server[0] = '\0';
       default_http_proxy[0] = '\0';
       default_smtp_from = NULL;
@@ -4495,7 +4677,7 @@ get_local_interface_names(void)
          char *buffer = NULL;
 
          if ((eaccess(interface_file, F_OK) == 0) &&
-             (read_file_no_cr(interface_file, &buffer, __FILE__, __LINE__) != INCORRECT))
+             (read_file_no_cr(interface_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
          {
             int  i;
             char *ptr,

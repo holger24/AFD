@@ -130,7 +130,7 @@ check_burst_gf(unsigned int *values_changed)
          return(NO);
       }
       if ((db.protocol != LOC_FLAG) && (db.protocol != EXEC_FLAG) &&
-          (strcmp(db.hostname, fsa->real_hostname[(int)(fsa->host_toggle - 1)]) != 0))
+          (my_strcmp(db.hostname, fsa->real_hostname[(int)(fsa->host_toggle - 1)]) != 0))
       {
          /*
           * Hostname changed, either a switch host or the real
@@ -474,6 +474,7 @@ check_burst_gf(unsigned int *values_changed)
           (fsa->job_status[(int)db.job_no].unique_name[0] != '\0') &&
           (fsa->job_status[(int)db.job_no].unique_name[2] != '\0'))
       {
+#ifdef RETRIEVE_JOB_HACK
          /*
           * This is only a hack! Somehow FD sends send jobs
           * to gf_xxx!. If the bug is found remove this.
@@ -498,6 +499,7 @@ check_burst_gf(unsigned int *values_changed)
          /*
           * End of hack!
           */
+#endif /* RETRIEVE_JOB_HACK */
 
          (void)memcpy(db.msg_name, 
                       fsa->job_status[(int)db.job_no].unique_name,
@@ -566,7 +568,6 @@ check_burst_gf(unsigned int *values_changed)
             p_new_db->restart_file           = NULL;
             p_new_db->user_id                = -1;
             p_new_db->group_id               = -1;
-            p_new_db->filename_pos_subject   = -1;
 #ifdef WITH_SSL
             p_new_db->auth                   = NO;
 #endif

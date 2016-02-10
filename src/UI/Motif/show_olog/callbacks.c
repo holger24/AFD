@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -26,9 +26,9 @@ DESCR__S_M3
  **   callbacks - all callback functions for module show_olog
  **
  ** SYNOPSIS
+ **   void confirmation_toggle(Widget w, XtPointer client_data, XtPointer call_data)
  **   void continues_toggle(Widget w, XtPointer client_data, XtPointer call_data)
  **   void only_archived_toggle(Widget w, XtPointer client_data, XtPointer call_data)
- **   void toggled(Widget w, XtPointer client_data, XtPointer call_data)
  **   void file_name_toggle(Widget w, XtPointer client_data, XtPointer call_data)
  **   void radio_button(Widget w, XtPointer client_data, XtPointer call_data)
  **   void item_selection(Widget w, XtPointer client_data, XtPointer call_data)
@@ -128,7 +128,6 @@ extern Widget           appshell,
                         start_time_w,
                         statusbox_w,
                         summarybox_w,
-                        togglebox_w,
                         view_button_w;
 extern Window           main_window;
 extern int              continues_toggle_set,
@@ -137,16 +136,21 @@ extern int              continues_toggle_set,
                         no_of_search_dirs,
                         no_of_search_dirids,
                         no_of_search_hosts,
+                        no_of_search_jobids,
                         file_name_length,
                         *search_dir_length,
                         special_button_flag,
                         sum_line_length,
                         no_of_log_files,
                         char_width,
+#ifdef _WITH_DE_MAIL_SUPPORT
+                        view_confirmation,
+#endif
                         view_archived_only,
                         view_mode;
 extern unsigned int     all_list_items,
-                        *search_dirid;
+                        *search_dirid,
+                        *search_jobid;
 extern XT_PTR_TYPE      toggles_set;
 extern time_t           start_time_val,
                         end_time_val;
@@ -172,15 +176,22 @@ struct info_data        id;
 /* Local global variables. */
 static int              scrollbar_moved_flag;
 
-
-/*############################## toggled() ##############################*/
+#ifdef _WITH_DE_MAIL_SUPPORT
+/*######################## confirmation_toggle() ########################*/
 void
-toggled(Widget w, XtPointer client_data, XtPointer call_data)
+confirmation_toggle(Widget w, XtPointer client_data, XtPointer call_data)
 {
-   toggles_set ^= (XT_PTR_TYPE)client_data;
-
+   if (view_confirmation == NO)
+   {
+      view_confirmation = YES;
+   }
+   else
+   {
+      view_confirmation = NO;
+   }
    return;
 }
+#endif /* _WITH_DE_MAIL_SUPPORT */
 
 
 /*########################## continues_toggle() #########################*/
@@ -563,7 +574,6 @@ search_button(Widget w, XtPointer client_data, XtPointer call_data)
    if (special_button_flag == SEARCH_BUTTON)
    {
       XtSetSensitive(cont_togglebox_w, False);
-      XtSetSensitive(togglebox_w, False);
       XtSetSensitive(selectionbox_w, False);
       XtSetSensitive(start_time_w, False);
       XtSetSensitive(end_time_w, False);
@@ -636,7 +646,6 @@ void
 set_sensitive(void)
 {
    XtSetSensitive(cont_togglebox_w, True);
-   XtSetSensitive(togglebox_w, True);
    XtSetSensitive(selectionbox_w, True);
    XtSetSensitive(start_time_w, True);
    XtSetSensitive(end_time_w, True);
@@ -1169,6 +1178,131 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
          }
          reset_message(statusbox_w);
          if (type == DIRECTORY_NAME)
+         {
+            XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         }
+         break;
+
+      case JOB_ID_NO_ENTER :
+      case JOB_ID :
+         {
+            int length,
+                max_jobid_length = 0;
+
+            if (no_of_search_jobids != 0)
+            {
+               free(search_jobid);
+               search_jobid = NULL;
+               no_of_search_jobids = 0;
+            }
+            ptr = value;
+            for (;;)
+            {
+               while (*ptr == ' ')
+               {
+                  if (*ptr == '\\')
+                  {
+                     ptr++;
+                  }
+                  ptr++;
+               }
+               if (*ptr == '\0')
+               {
+                  if (ptr == value)
+                  {
+                     no_of_search_jobids = 0;
+                  }
+                  break;
+               }
+               if (*ptr == '#')
+               {
+                  ptr++;
+               }
+               length = 0;
+               while ((*ptr != '\0') && (*ptr != ','))
+               {
+                  if (*ptr == '\\')
+                  {
+                     ptr++;
+                  }
+                  ptr++; length++;
+               }
+               no_of_search_jobids++;
+               if (length > max_jobid_length)
+               {
+                  max_jobid_length = length;
+               }
+               if (*ptr == '\0')
+               {
+                  if (ptr == value)
+                  {
+                     no_of_search_jobids = 0;
+                  }
+                  break;
+               }
+               ptr++;
+            }
+            if (no_of_search_jobids > 0)
+            {
+               int  ii_jobids = 0;
+               char *p_job,
+                    *str_search_jobid = NULL;
+
+               if (no_of_search_jobids > 0)
+               {
+                  if ((search_jobid = malloc((no_of_search_jobids * sizeof(int)))) == NULL)
+                  {
+                     (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
+                                   strerror(errno), __FILE__, __LINE__);
+                     exit(INCORRECT);
+                  }
+                  if ((str_search_jobid = malloc((max_jobid_length + 1))) == NULL)
+                  {
+                     (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
+                                   strerror(errno), __FILE__, __LINE__);
+                     exit(INCORRECT);
+                  }
+               }
+
+               ptr = value;
+               for (;;)
+               {
+                  while ((*ptr == ' ') || (*ptr == '\t'))
+                  {
+                     if (*ptr == '\\')
+                     {
+                        ptr++;
+                     }
+                     ptr++;
+                  }
+                  p_job = str_search_jobid;
+                  if (*ptr == '#')
+                  {
+                     ptr++;
+                  }
+
+                  while ((*ptr != '\0') && (*ptr != ','))
+                  {
+                     *p_job = *ptr;
+                     ptr++; p_job++;
+                  }
+                  *p_job = '\0';
+                  search_jobid[ii_jobids] = (unsigned int)strtoul(str_search_jobid, NULL, 16);
+                  if (*ptr == ',')
+                  {
+                     ptr++;
+                     ii_jobids++;
+                  }
+                  else
+                  {
+                     break;
+                  }
+               } /* for (;;) */
+               free(str_search_jobid);
+            }
+         }
+         reset_message(statusbox_w);
+         if (type == JOB_ID)
          {
             XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
          }

@@ -18,7 +18,7 @@
 
 MAINTAINERCLEANFILES = Makefile.in
 CLEANFILES           = gmon.out core core.*
-noinst_HEADERS       = show_olog.h
+noinst_HEADERS       = show_olog.h p_str.h
 AM_CPPFLAGS          = @AFD_MOTIF_INCLUDES@ -I../../.. -I../../common\
                        -I../common -I../../../init_afd -I../../../log\
                        -I../../../fd -I../../../amg -I../mafd_ctrl
@@ -30,6 +30,7 @@ show_olog_SOURCES    = calculate_summary.c\
                        get_info.c\
                        print_data.c\
                        resend_files.c\
+		       select_protocol.c\
                        send_files.c\
                        show_olog.c\
                        view_files.c

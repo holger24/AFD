@@ -1,6 +1,6 @@
 /*
  *  create_url_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2007 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -113,6 +113,10 @@ create_url_file(void)
            {
               length = sprintf(buffer, "%s://", LOC_SHEME);
            }
+      else if (db->protocol == SFTP)
+           {
+              length = sprintf(buffer, "%s://", SFTP_SHEME);
+           }
 #ifdef _WITH_SCP_SUPPORT
       else if (db->protocol == SCP)
            {
@@ -123,12 +127,6 @@ create_url_file(void)
       else if (db->protocol == WMO)
            {
               length = sprintf(buffer, "%s://", WMO_SHEME);
-           }
-#endif
-#ifdef _WITH_MAP_SUPPORT
-      else if (db->protocol == MAP)
-           {
-              length = sprintf(buffer, "%s://", MAP_SHEME);
            }
 #endif
            else

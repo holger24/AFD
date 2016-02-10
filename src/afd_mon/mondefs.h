@@ -1,6 +1,6 @@
 /*
  *  mondefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -116,8 +116,8 @@
 #define LOG_STALE                2
 
 /* Error return values for mon process. */
-#define SYNTAX_ERROR             1
-#define SELECT_ERROR             2
+#define MON_SYNTAX_ERROR         1
+#define MON_SELECT_ERROR         2
 
 /* Return values of log sub process of afd_mon. */
 #define MISSED_PACKET            5
@@ -634,7 +634,9 @@ struct mon_status_area
                                                  /*+------+-------------+*/
                                                  /*|Bit(s)|   Meaning   |*/
                                                  /*+------+-------------+*/
-                                                 /*| 17-32| Not used.   |*/
+                                                 /*| 18-32| Not used.   |*/
+                                                 /*| 17   | Confirmation|*/
+                                                 /*|      | Log.        |*/
                                                  /*| 16   | Distribution|*/
                                                  /*|      | Log.        |*/
                                                  /*| 15   | Event Log   |*/

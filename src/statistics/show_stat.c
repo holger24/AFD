@@ -1,6 +1,6 @@
 /*
  *  show_stat.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -71,7 +71,7 @@ DESCR__S_M1
 DESCR__E_M1
 
 #include <stdio.h>                  /* fprintf(), stderr                 */
-#include <string.h>                 /* strcpy(), strerror(), strcmp()    */
+#include <string.h>                 /* strcpy(), strerror()              */
 #include <time.h>                   /* time()                            */
 #include <ctype.h>                  /* isdigit()                         */
 #ifdef TM_IN_SYS_TIME
@@ -151,7 +151,7 @@ main(int argc, char *argv[])
    now = time(NULL);
    p_ts = localtime(&now);
    current_year = p_ts->tm_year + 1900;
-   if (strcmp(statistic_file_name, STATISTIC_FILE) == 0)
+   if (my_strcmp(statistic_file_name, STATISTIC_FILE) == 0)
    {
       if (show_day > 0)
       {
@@ -374,40 +374,67 @@ main(int argc, char *argv[])
             }
             else
             {
-               /* Make a summary of everything. */
-               for (i = 0; i < no_of_hosts; i++)
+               if (show_day_summary == 0)
                {
-                  nfs = nbs = nc = ne = 0.0;
-                  if (show_numeric_total_only == NO)
-                  {
-                     (void)fprintf(stdout, "%-*s", MAX_HOSTNAME_LENGTH + 4,
-                                   afd_stat[i].hostname);
-                  }
                   for (j = 0; j < DAYS_PER_YEAR; j++)
                   {
-                     nfs += (double)afd_stat[i].year[j].nfs;
-                     nbs +=         afd_stat[i].year[j].nbs;
-                     nc  += (double)afd_stat[i].year[j].nc;
-                     ne  += (double)afd_stat[i].year[j].ne;
+                     if (show_numeric_total_only == NO)
+                     {
+                        (void)fprintf(stdout, "%*d:", MAX_HOSTNAME_LENGTH + 4, j);
+                     }
+                     nfs = nbs = nc = ne = 0.0;
+                     for (i = 0; i < no_of_hosts; i++)
+                     {
+                        nfs += (double)afd_stat[i].year[j].nfs;
+                        nbs +=         afd_stat[i].year[j].nbs;
+                        nc  += (double)afd_stat[i].year[j].nc;
+                        ne  += (double)afd_stat[i].year[j].ne;
+                     }
+                     if (show_numeric_total_only == NO)
+                     {
+                        display_data(nfs, nbs, nc, ne);
+                     }
+                     tmp_nfs += nfs; tmp_nbs += nbs;
+                     tmp_nc  += nc; tmp_ne  += ne;
                   }
-                  if (show_numeric_total_only == NO)
-                  {
-                     display_data(nfs, nbs, nc, ne);
-                  }
-                  tmp_nfs += nfs; tmp_nbs += nbs;
-                  tmp_nc += nc; tmp_ne += ne;
                }
-            }
-            if (show_numeric_total_only == NO)
-            {
-               (void)fprintf(stdout, "----------------------------------------------------------------------\n");
-               (void)fprintf(stdout, "Total       ");
-               display_data(tmp_nfs, tmp_nbs, tmp_nc, tmp_ne);
-               (void)fprintf(stdout, "======================================================================\n");
-            }
-            else
-            {
-               display_data(tmp_nfs, tmp_nbs, tmp_nc, tmp_ne);
+               else
+               {
+                  /* Make a summary of everything. */
+                  for (i = 0; i < no_of_hosts; i++)
+                  {
+                     nfs = nbs = nc = ne = 0.0;
+                     if (show_numeric_total_only == NO)
+                     {
+                        (void)fprintf(stdout, "%-*s", MAX_HOSTNAME_LENGTH + 4,
+                                      afd_stat[i].hostname);
+                     }
+                     for (j = 0; j < DAYS_PER_YEAR; j++)
+                     {
+                        nfs += (double)afd_stat[i].year[j].nfs;
+                        nbs +=         afd_stat[i].year[j].nbs;
+                        nc  += (double)afd_stat[i].year[j].nc;
+                        ne  += (double)afd_stat[i].year[j].ne;
+                     }
+                     if (show_numeric_total_only == NO)
+                     {
+                        display_data(nfs, nbs, nc, ne);
+                     }
+                     tmp_nfs += nfs; tmp_nbs += nbs;
+                     tmp_nc += nc; tmp_ne += ne;
+                  }
+               }
+               if (show_numeric_total_only == NO)
+               {
+                  (void)fprintf(stdout, "----------------------------------------------------------------------\n");
+                  (void)fprintf(stdout, "Total       ");
+                  display_data(tmp_nfs, tmp_nbs, tmp_nc, tmp_ne);
+                  (void)fprintf(stdout, "======================================================================\n");
+               }
+               else
+               {
+                  display_data(tmp_nfs, tmp_nbs, tmp_nc, tmp_ne);
+               }
             }
          }
          else

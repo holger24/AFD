@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2014 Holger Kiehl
+## Copyright (C) 2001 - 2015 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -49,8 +49,8 @@ EXTRA_PROGRAMS               = afdconvert $(AFDIPDBCMD) bfc binfc byte_order\
                                get_file_size gts2tiff linger reset_fsa rdu\
                                sysconf tiff_sniffer watch_dir fra_version\
                                view_error_queue
-MAINTAINERCLEANFILES         = Makefile.in $(EXTRA_PROGRAMS)
-CLEANFILES                   = gmon.out core core.*
+MAINTAINERCLEANFILES         = Makefile.in
+CLEANFILES                   = gmon.out core core.* $(EXTRA_PROGRAMS)
 afdcfg_SOURCES               = afdcfg.c
 afdcfg_LDADD                 = ../common/libafd.a
 afdcmd_SOURCES               = afdcmd.c
@@ -146,6 +146,7 @@ udc_LDADD                    = ../common/libafd.a
 view_error_queue_SOURCES     = view_error_queue.c
 view_error_queue_LDADD       = ../common/libafd.a
 view_ls_data_SOURCES         = view_ls_data.c
+view_ls_data_LDADD           = ../common/libafd.a
 watch_dir_SOURCES            = watch_dir.c
 watch_dir_LDADD              = ../common/libafd.a
 

@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -70,12 +70,16 @@ extern int              button_flag,
                         cmd_fd;
 extern Display          *display;
 extern Widget           active_passive_w,
+                        address_w,
+                        address_label_w,
                         ap_radio_box_w,
-                        attach_file_w,
+                        ca_button_w,
                         cmd_output,
-                        create_target_dir_w,
-                        hostname_label_w,
-                        hostname_w,
+                        create_attach_w,
+                        dir_subject_label_w,
+                        dir_subject_w,
+                        hs_label_w,
+                        hs_w,
                         lock_box_w,
                         mode_box_w,
                         option_menu_w,
@@ -87,9 +91,9 @@ extern Widget           active_passive_w,
                         proxy_label_w,
                         proxy_w,
                         recipientbox_w,
+                        server_w,
+                        server_label_w,
                         statusbox_w,
-                        target_dir_label_w,
-                        target_dir_w,
                         timeout_label_w,
                         timeout_w,
                         user_name_label_w,
@@ -148,17 +152,31 @@ lock_radio(Widget w, XtPointer client_data, XtPointer call_data)
 }
 
 
-/*####################### create_target_toggle() ########################*/
+/*####################### create_attach_toggle() ########################*/
 void
-create_target_toggle(Widget w, XtPointer client_data, XtPointer call_data)
+create_attach_toggle(Widget w, XtPointer client_data, XtPointer call_data)
 {
-   if (db->create_target_dir == NO)
+   if ((XT_PTR_TYPE)client_data == CREATE_DIR_TOGGLE)
    {
-      db->create_target_dir = YES;
+      if (db->create_target_dir == NO)
+      {
+         db->create_target_dir = YES;
+      }
+      else
+      {
+         db->create_target_dir = NO;
+      }
    }
    else
    {
-      db->create_target_dir = NO;
+      if (db->attach_file_flag == NO)
+      {
+         db->attach_file_flag = YES;
+      }
+      else
+      {
+         db->attach_file_flag = NO;
+      }
    }
 
    return;
@@ -176,23 +194,6 @@ extended_toggle(Widget w, XtPointer client_data, XtPointer call_data)
    else
    {
       db->mode_flag |= EXTENDED_MODE;
-   }
-
-   return;
-}
-
-
-/*######################## attach_file_toggle() #########################*/
-void
-attach_file_toggle(Widget w, XtPointer client_data, XtPointer call_data)
-{
-   if (db->attach_file_flag == NO)
-   {
-      db->attach_file_flag = YES;
-   }
-   else
-   {
-      db->attach_file_flag = NO;
    }
 
    return;
@@ -242,6 +243,7 @@ send_button(Widget w, XtPointer client_data, XtPointer call_data)
       switch (db->protocol)
       {
          case FTP :
+         case SFTP :
          case SMTP :
 #ifdef _WITH_SCP_SUPPORT
          case SCP :
@@ -255,7 +257,7 @@ send_button(Widget w, XtPointer client_data, XtPointer call_data)
             if (db->hostname[0] == '\0')
             {
                show_message(statusbox_w, "No hostname given!");
-               XmProcessTraversal(hostname_w, XmTRAVERSE_CURRENT);
+               XmProcessTraversal(hs_w, XmTRAVERSE_CURRENT);
                return;
             }
             break;
@@ -268,7 +270,7 @@ send_button(Widget w, XtPointer client_data, XtPointer call_data)
             if (db->hostname[0] == '\0')
             {
                show_message(statusbox_w, "No hostname given!");
-               XmProcessTraversal(hostname_w, XmTRAVERSE_CURRENT);
+               XmProcessTraversal(hs_w, XmTRAVERSE_CURRENT);
                return;
             }
             if (db->port == -1)
@@ -277,11 +279,6 @@ send_button(Widget w, XtPointer client_data, XtPointer call_data)
                XmProcessTraversal(port_w, XmTRAVERSE_CURRENT);
                return;
             }
-            break;
-#endif
-
-#ifdef _WITH_MAP_SUPPORT
-         case MAP :
             break;
 #endif
 
@@ -366,144 +363,57 @@ protocol_toggled(Widget w, XtPointer client_data, XtPointer call_data)
    switch ((XT_PTR_TYPE)client_data)
    {
       case FTP :
+         if (address_label_w != NULL)
+         {
+            XtDestroyWidget(address_label_w);
+            address_label_w = NULL;
+         }
+         if (address_w != NULL)
+         {
+            XtRemoveCallback(address_w, XmNmodifyVerifyCallback, send_save_input,
+                             (XtPointer)USER_NO_ENTER);
+            XtRemoveCallback(address_w, XmNactivateCallback, send_save_input,
+                             (XtPointer)USER_ENTER);
+            XtDestroyWidget(address_w);
+            address_w = NULL;
+
+            /* Change callback when we press Create Dir/Attach file button. */
+            XtRemoveCallback(ca_button_w, XmNvalueChangedCallback,
+                             (XtCallbackProc)create_attach_toggle,
+                             (XtPointer)ATTACH_FILE_TOGGLE);
+            XtAddCallback(ca_button_w, XmNvalueChangedCallback,
+                          (XtCallbackProc)create_attach_toggle,
+                          (XtPointer)CREATE_DIR_TOGGLE);
+
+            /* Change some labels. */
+            xstr = XmStringCreateLtoR("Directory :", XmFONTLIST_DEFAULT_TAG);
+            XtVaSetValues(dir_subject_label_w, XmNlabelString, xstr, NULL);
+            XmStringFree(xstr);
+            xstr =  XmStringCreateLocalized("Create Dir  ");
+            XtVaSetValues(ca_button_w, XmNlabelString, xstr, NULL);
+            XmStringFree(xstr);
+
+            if (my_strcmp(db->hostname, SMTP_HOST_NAME) == 0)
+            {
+               db->hostname[0] = '\0';
+            }
+         }
+
+         if (user_name_label_w == NULL)
+         {
+            CREATE_USER_FIELD();
+            XmTextSetString(user_name_w, db->user);
+         }
+         else
+         {
+            XtSetSensitive(user_name_label_w, True);
+            XtSetSensitive(user_name_w, True);
+         }
+
          if (password_label_w == NULL)
          {
-            XtDestroyWidget(user_name_label_w);
-            XtRemoveCallback(user_name_w, XmNlosingFocusCallback,
-                             send_save_input, (XtPointer)USER_NO_ENTER);
-            XtRemoveCallback(user_name_w, XmNactivateCallback,
-                             send_save_input, (XtPointer)USER_ENTER);
-            XtDestroyWidget(user_name_w);
-            XtDestroyWidget(hostname_label_w);
-            XtRemoveCallback(hostname_w, XmNmodifyVerifyCallback, send_save_input,
-                             (XtPointer)HOSTNAME_NO_ENTER);
-            XtRemoveCallback(hostname_w, XmNactivateCallback, send_save_input,
-                             (XtPointer)HOSTNAME_ENTER);
-            XtDestroyWidget(hostname_w);
-            XtDestroyWidget(proxy_label_w);
-            XtRemoveCallback(proxy_w, XmNmodifyVerifyCallback, send_save_input,
-                             (XtPointer)PROXY_NO_ENTER);
-            XtRemoveCallback(proxy_w, XmNactivateCallback, send_save_input,
-                             (XtPointer)PROXY_ENTER);
-            XtDestroyWidget(proxy_w);
-            user_name_label_w = XtVaCreateManagedWidget("User :",
-                              xmLabelGadgetClass,  recipientbox_w,
-                              XmNfontList,         fontlist,
-                              XmNtopAttachment,    XmATTACH_FORM,
-                              XmNbottomAttachment, XmATTACH_FORM,
-                              XmNleftAttachment,   XmATTACH_WIDGET,
-                              XmNleftWidget,       option_menu_w,
-                              XmNalignment,        XmALIGNMENT_END,
-                              NULL);
-            user_name_w = XtVaCreateManagedWidget("",
-                              xmTextWidgetClass,   recipientbox_w,
-                              XmNfontList,         fontlist,
-                              XmNmarginHeight,     1,
-                              XmNmarginWidth,      1,
-                              XmNshadowThickness,  1,
-                              XmNrows,             1,
-                              XmNcolumns,          10,
-                              XmNmaxLength,        MAX_USER_NAME_LENGTH,
-                              XmNtopAttachment,    XmATTACH_FORM,
-                              XmNtopOffset,        6,
-                              XmNleftAttachment,   XmATTACH_WIDGET,
-                              XmNleftWidget,       user_name_label_w,
-                              NULL);
-            XtAddCallback(user_name_w, XmNlosingFocusCallback, send_save_input,
-                          (XtPointer)USER_NO_ENTER);
-            XtAddCallback(user_name_w, XmNactivateCallback, send_save_input,
-                          (XtPointer)USER_ENTER);
-
             /* Password. */
-            password_label_w = XtVaCreateManagedWidget("Password :",
-                              xmLabelGadgetClass,  recipientbox_w,
-                              XmNfontList,         fontlist,
-                              XmNtopAttachment,    XmATTACH_FORM,
-                              XmNbottomAttachment, XmATTACH_FORM,
-                              XmNleftAttachment,   XmATTACH_WIDGET,
-                              XmNleftWidget,       user_name_w,
-                              XmNalignment,        XmALIGNMENT_END,
-                              NULL);
-            password_w = XtVaCreateManagedWidget("",
-                              xmTextWidgetClass,   recipientbox_w,
-                              XmNfontList,         fontlist,
-                              XmNmarginHeight,     1,
-                              XmNmarginWidth,      1,
-                              XmNshadowThickness,  1,
-                              XmNrows,             1,
-                              XmNcolumns,          8,
-                              XmNmaxLength,        MAX_FILENAME_LENGTH - 1,
-                              XmNtopAttachment,    XmATTACH_FORM,
-                              XmNtopOffset,        6,
-                              XmNleftAttachment,   XmATTACH_WIDGET,
-                              XmNleftWidget,       password_label_w,
-                              NULL);
-            XtAddCallback(password_w, XmNmodifyVerifyCallback, enter_passwd,
-                          (XtPointer)PASSWORD_NO_ENTER);
-            XtAddCallback(password_w, XmNactivateCallback, enter_passwd,
-                          (XtPointer)PASSWORD_ENTER);
-
-            /* Hostname. */
-            hostname_label_w = XtVaCreateManagedWidget("Hostname :",
-                              xmLabelGadgetClass,  recipientbox_w,
-                              XmNfontList,         fontlist,
-                              XmNtopAttachment,    XmATTACH_FORM,
-                              XmNbottomAttachment, XmATTACH_FORM,
-                              XmNleftAttachment,   XmATTACH_WIDGET,
-                              XmNleftWidget,       password_w,
-                              XmNalignment,        XmALIGNMENT_END,
-                              NULL);
-            hostname_w = XtVaCreateManagedWidget("",
-                              xmTextWidgetClass,   recipientbox_w,
-                              XmNfontList,         fontlist,
-                              XmNmarginHeight,     1,
-                              XmNmarginWidth,      1,
-                              XmNshadowThickness,  1,
-                              XmNrows,             1,
-                              XmNcolumns,          12,
-                              XmNmaxLength,        MAX_FILENAME_LENGTH - 1,
-                              XmNtopAttachment,    XmATTACH_FORM,
-                              XmNtopOffset,        6,
-                              XmNleftAttachment,   XmATTACH_WIDGET,
-                              XmNleftWidget,       hostname_label_w,
-                              NULL);
-            XtAddCallback(hostname_w, XmNlosingFocusCallback, send_save_input,
-                          (XtPointer)HOSTNAME_NO_ENTER);
-            XtAddCallback(hostname_w, XmNactivateCallback, send_save_input,
-                          (XtPointer)HOSTNAME_ENTER);
-
-            /* Proxy. */
-            proxy_label_w = XtVaCreateManagedWidget("Proxy :",
-                              xmLabelGadgetClass,  recipientbox_w,
-                              XmNfontList,         fontlist,
-                              XmNtopAttachment,    XmATTACH_FORM,
-                              XmNbottomAttachment, XmATTACH_FORM,
-                              XmNleftAttachment,   XmATTACH_WIDGET,
-                              XmNleftWidget,       hostname_w,
-                              XmNalignment,        XmALIGNMENT_END,
-                              NULL);
-            proxy_w = XtVaCreateManagedWidget("",
-                              xmTextWidgetClass,   recipientbox_w,
-                              XmNfontList,         fontlist,
-                              XmNmarginHeight,     1,
-                              XmNmarginWidth,      1,
-                              XmNshadowThickness,  1,
-                              XmNrows,             1,
-                              XmNcolumns,          12,
-                              XmNmaxLength,        MAX_FILENAME_LENGTH - 1,
-                              XmNtopAttachment,    XmATTACH_FORM,
-                              XmNtopOffset,        6,
-                              XmNleftAttachment,   XmATTACH_WIDGET,
-                              XmNleftWidget,       proxy_label_w,
-                              NULL);
-            XtAddCallback(proxy_w, XmNlosingFocusCallback, send_save_input,
-                          (XtPointer)PROXY_NO_ENTER);
-            XtAddCallback(proxy_w, XmNactivateCallback, send_save_input,
-                          (XtPointer)PROXY_ENTER);
-            xstr = XmStringCreateLtoR("Directory :", XmFONTLIST_DEFAULT_TAG);
-            XtVaSetValues(target_dir_label_w, XmNlabelString, xstr, NULL);
-            XmStringFree(xstr);
-            XmTextSetString(user_name_w, db->user);
+            CREATE_PASSWORD_FIELD();
             if ((db->password != NULL) && (db->password[0] != '\0'))
             {
                size_t length;
@@ -524,152 +434,296 @@ protocol_toggled(Widget w, XtPointer client_data, XtPointer call_data)
                   free(password_str);
                }
             }
-            XmTextSetString(hostname_w, db->hostname);
-            XmTextSetString(proxy_w, db->proxy_name);
-            XmTextSetString(target_dir_w, db->target_dir);
+         }
+         else
+         {
+            XtSetSensitive(password_label_w, True);
+            XtSetSensitive(password_w, True);
+         }
+
+         XmTextSetString(hs_w, db->hostname);
+         xstr = XmStringCreateLtoR("Hostname :", XmFONTLIST_DEFAULT_TAG);
+         XtVaSetValues(hs_label_w, XmNlabelString, xstr, NULL);
+         XmStringFree(xstr);
+         XtSetSensitive(hs_label_w, True);
+         XtSetSensitive(hs_w, True);
+
+         if ((db->port == 0) || (db->port == DEFAULT_SMTP_PORT) ||
+             (db->port == DEFAULT_SSH_PORT))
+         {
+            char str_line[MAX_PORT_DIGITS + 1];
+
+            db->port = DEFAULT_FTP_PORT;
+            (void)sprintf(str_line, "%d", db->port);
+            XmTextSetString(port_w, str_line);
+         }
+         XtSetSensitive(port_label_w, True);
+         XtSetSensitive(port_w, True);
+
+         XmTextSetString(dir_subject_w, db->target_dir);
+         XtSetSensitive(dir_subject_label_w, True);
+         XtSetSensitive(dir_subject_w, True);
+
+         XtSetSensitive(create_attach_w, True);
+
+         XtSetSensitive(timeout_label_w, True);
+         XtSetSensitive(timeout_w, True);
+
+         XtSetSensitive(active_passive_w, True);
+         XtSetSensitive(ap_radio_box_w, True);
+         XtSetSensitive(mode_box_w, True);
+         XtSetSensitive(lock_box_w, True);
+         XtSetSensitive(prefix_w, True);
+
+         XmTextSetString(proxy_w, db->proxy_name);
+         XtSetSensitive(proxy_label_w, True);
+         XtSetSensitive(proxy_w, True);
+
+         break;
+
+      case SFTP :
+         if (address_label_w != NULL)
+         {
+            XtDestroyWidget(address_label_w);
+            address_label_w = NULL;
+         }
+         if (address_w != NULL)
+         {
+            XtRemoveCallback(address_w, XmNmodifyVerifyCallback, send_save_input,
+                             (XtPointer)USER_NO_ENTER);
+            XtRemoveCallback(address_w, XmNactivateCallback, send_save_input,
+                             (XtPointer)USER_ENTER);
+            XtDestroyWidget(address_w);
+            address_w = NULL;
+
+            /* Change callback when we press Create Dir/Attach file button. */
+            XtRemoveCallback(ca_button_w, XmNvalueChangedCallback,
+                             (XtCallbackProc)create_attach_toggle,
+                             (XtPointer)ATTACH_FILE_TOGGLE);
+            XtAddCallback(ca_button_w, XmNvalueChangedCallback,
+                          (XtCallbackProc)create_attach_toggle,
+                          (XtPointer)CREATE_DIR_TOGGLE);
+
+            /* Change some labels. */
+            xstr = XmStringCreateLtoR("Directory :", XmFONTLIST_DEFAULT_TAG);
+            XtVaSetValues(dir_subject_label_w, XmNlabelString, xstr, NULL);
+            XmStringFree(xstr);
+            xstr =  XmStringCreateLocalized("Create Dir  ");
+            XtVaSetValues(ca_button_w, XmNlabelString, xstr, NULL);
+            XmStringFree(xstr);
+
+            if (my_strcmp(db->hostname, SMTP_HOST_NAME) == 0)
+            {
+               db->hostname[0] = '\0';
+            }
+         }
+
+         if (user_name_label_w == NULL)
+         {
+            CREATE_USER_FIELD();
+            XmTextSetString(user_name_w, db->user);
          }
          else
          {
             XtSetSensitive(user_name_label_w, True);
             XtSetSensitive(user_name_w, True);
+         }
+
+         if (password_label_w == NULL)
+         {
+            /* Password. */
+            CREATE_PASSWORD_FIELD();
+            if ((db->password != NULL) && (db->password[0] != '\0'))
+            {
+               size_t length;
+               char   *password_str;
+
+               length = strlen(db->password);
+               if ((password_str = malloc(length + 1)) == NULL)
+               {
+                  (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
+                                strerror(errno), __FILE__, __LINE__);
+                  exit(INCORRECT);
+               }
+               else
+               {
+                  (void)memset(password_str, '*', length);
+                  password_str[length] = '\0';
+                  XmTextSetString(password_w, password_str);
+                  free(password_str);
+               }
+            }
+         }
+         else
+         {
             XtSetSensitive(password_label_w, True);
             XtSetSensitive(password_w, True);
-            XtSetSensitive(hostname_label_w, True);
          }
-         XtSetSensitive(hostname_w, True);
-         XtSetSensitive(proxy_label_w, True);
-         XtSetSensitive(proxy_w, True);
-         XtSetSensitive(target_dir_label_w, True);
-         XtSetSensitive(target_dir_w, True);
-         XtSetSensitive(create_target_dir_w, True);
-         XtSetSensitive(port_label_w, True);
-         XtSetSensitive(port_w, True);
-         XtSetSensitive(timeout_label_w, True);
-         XtSetSensitive(timeout_w, True);
-         XtSetSensitive(active_passive_w, True);
-         XtSetSensitive(ap_radio_box_w, True);
-         XtSetSensitive(attach_file_w, False);
-         XtSetSensitive(mode_box_w, True);
-         XtSetSensitive(lock_box_w, True);
-         XtSetSensitive(prefix_w, True);
-         if ((db->port == 0) || (db->port == DEFAULT_SMTP_PORT))
+
+         XmTextSetString(hs_w, db->hostname);
+         xstr = XmStringCreateLtoR("Hostname :", XmFONTLIST_DEFAULT_TAG);
+         XtVaSetValues(hs_label_w, XmNlabelString, xstr, NULL);
+         XmStringFree(xstr);
+         XtSetSensitive(hs_label_w, True);
+         XtSetSensitive(hs_w, True);
+
+         if ((db->port == 0) || (db->port == DEFAULT_SMTP_PORT) ||
+             (db->port == DEFAULT_FTP_PORT))
          {
             char str_line[MAX_PORT_DIGITS + 1];
 
-            db->port = DEFAULT_FTP_PORT;
-            (void)sprintf(str_line, "%*d", MAX_PORT_DIGITS, db->port);
+            db->port = DEFAULT_SSH_PORT;
+            (void)sprintf(str_line, "%d", db->port);
             XmTextSetString(port_w, str_line);
          }
+         XtSetSensitive(port_label_w, True);
+         XtSetSensitive(port_w, True);
+
+         XmTextSetString(dir_subject_w, db->target_dir);
+         XtSetSensitive(dir_subject_label_w, True);
+         XtSetSensitive(dir_subject_w, True);
+
+         XtSetSensitive(create_attach_w, True);
+
+         XtSetSensitive(timeout_label_w, True);
+         XtSetSensitive(timeout_w, True);
+
+         XtSetSensitive(active_passive_w, False);
+         XtSetSensitive(ap_radio_box_w, False);
+         XtSetSensitive(mode_box_w, True);
+         XtSetSensitive(lock_box_w, True);
+         XtSetSensitive(prefix_w, True);
+
+         XtSetSensitive(proxy_label_w, False);
+         XtSetSensitive(proxy_w, False);
+
          break;
 
+
       case SMTP :
-         XtDestroyWidget(user_name_label_w);
-         XtRemoveCallback(user_name_w, XmNlosingFocusCallback, send_save_input,
+         if (user_name_label_w != NULL)
+         {
+            XtDestroyWidget(user_name_label_w);
+            user_name_label_w = NULL;
+         }
+         if (user_name_w != NULL)
+         {
+            XtRemoveCallback(user_name_w, XmNlosingFocusCallback, send_save_input,
+                             (XtPointer)USER_NO_ENTER);
+            XtRemoveCallback(user_name_w, XmNactivateCallback, send_save_input,
+                             (XtPointer)USER_ENTER);
+            XtDestroyWidget(user_name_w);
+            user_name_w = NULL;
+
+            xstr = XmStringCreateLtoR("Subject   :", XmFONTLIST_DEFAULT_TAG);
+            XtVaSetValues(dir_subject_label_w, XmNlabelString, xstr, NULL);
+            XmStringFree(xstr);
+            xstr = XmStringCreateLocalized("Attach file ");
+            XtVaSetValues(ca_button_w, XmNlabelString, xstr, NULL);
+            XmStringFree(xstr);
+         }
+         if (password_label_w != NULL)
+         {
+            XtDestroyWidget(password_label_w);
+            password_label_w = NULL;
+         }
+         if (password_w != NULL)
+         {
+            XtRemoveCallback(password_w, XmNmodifyVerifyCallback, send_save_input,
+                             (XtPointer)PASSWORD_NO_ENTER);
+            XtRemoveCallback(password_w, XmNactivateCallback, send_save_input,
+                             (XtPointer)PASSWORD_ENTER);
+            XtDestroyWidget(password_w);
+            password_w = NULL;
+         }
+
+         if (address_label_w == NULL)
+         {
+            address_label_w = XtVaCreateManagedWidget("Address :",
+                                xmLabelGadgetClass,  recipientbox_w,
+                                XmNfontList,         fontlist,
+                                XmNtopAttachment,    XmATTACH_FORM,
+                                XmNbottomAttachment, XmATTACH_FORM,
+                                XmNleftAttachment,   XmATTACH_WIDGET,
+                                XmNleftWidget,       option_menu_w,
+                                XmNalignment,        XmALIGNMENT_END,
+                                NULL);
+            address_w = XtVaCreateManagedWidget("",
+                                xmTextWidgetClass,   recipientbox_w,
+                                XmNfontList,         fontlist,
+                                XmNmarginHeight,     1,
+                                XmNmarginWidth,      1,
+                                XmNshadowThickness,  1,
+                                XmNrows,             1,
+                                XmNcolumns,          25,
+                                XmNmaxLength,        MAX_USER_NAME_LENGTH,
+                                XmNtopAttachment,    XmATTACH_FORM,
+                                XmNtopOffset,        6,
+                                XmNleftAttachment,   XmATTACH_WIDGET,
+                                XmNleftWidget,       address_label_w,
+                                NULL);
+            XtAddCallback(address_w, XmNlosingFocusCallback, send_save_input,
                           (XtPointer)USER_NO_ENTER);
-         XtRemoveCallback(user_name_w, XmNactivateCallback, send_save_input,
+            XtAddCallback(address_w, XmNactivateCallback, send_save_input,
                           (XtPointer)USER_ENTER);
-         XtDestroyWidget(user_name_w);
-         XtDestroyWidget(password_label_w);
-         password_label_w = NULL;
-         XtRemoveCallback(password_w, XmNmodifyVerifyCallback, send_save_input,
-                          (XtPointer)PASSWORD_NO_ENTER);
-         XtRemoveCallback(password_w, XmNactivateCallback, send_save_input,
-                          (XtPointer)PASSWORD_ENTER);
-         XtDestroyWidget(password_w);
-         password_w = NULL;
-         XtDestroyWidget(hostname_label_w);
-         XtRemoveCallback(hostname_w, XmNmodifyVerifyCallback, send_save_input,
-                          (XtPointer)HOSTNAME_NO_ENTER);
-         XtRemoveCallback(hostname_w, XmNactivateCallback, send_save_input,
-                          (XtPointer)HOSTNAME_ENTER);
-         XtDestroyWidget(hostname_w);
-         user_name_label_w = XtVaCreateManagedWidget("Address :",
-                             xmLabelGadgetClass,  recipientbox_w,
-                             XmNfontList,         fontlist,
-                             XmNtopAttachment,    XmATTACH_FORM,
-                             XmNbottomAttachment, XmATTACH_FORM,
-                             XmNleftAttachment,   XmATTACH_WIDGET,
-                             XmNleftWidget,       option_menu_w,
-                             XmNalignment,        XmALIGNMENT_END,
-                             NULL);
-         user_name_w = XtVaCreateManagedWidget("",
-                             xmTextWidgetClass,   recipientbox_w,
-                             XmNfontList,         fontlist,
-                             XmNmarginHeight,     1,
-                             XmNmarginWidth,      1,
-                             XmNshadowThickness,  1,
-                             XmNrows,             1,
-                             XmNcolumns,          25,
-                             XmNmaxLength,        MAX_USER_NAME_LENGTH,
-                             XmNtopAttachment,    XmATTACH_FORM,
-                             XmNtopOffset,        6,
-                             XmNleftAttachment,   XmATTACH_WIDGET,
-                             XmNleftWidget,       user_name_label_w,
-                             NULL);
-         XtAddCallback(user_name_w, XmNlosingFocusCallback, send_save_input,
-                       (XtPointer)USER_NO_ENTER);
-         XtAddCallback(user_name_w, XmNactivateCallback, send_save_input,
-                       (XtPointer)USER_ENTER);
-         hostname_label_w = XtVaCreateManagedWidget("Server :",
-                             xmLabelGadgetClass,  recipientbox_w,
-                             XmNfontList,         fontlist,
-                             XmNtopAttachment,    XmATTACH_FORM,
-                             XmNbottomAttachment, XmATTACH_FORM,
-                             XmNleftAttachment,   XmATTACH_WIDGET,
-                             XmNleftWidget,       user_name_w,
-                             XmNalignment,        XmALIGNMENT_END,
-                             NULL);
-         hostname_w = XtVaCreateManagedWidget("",
-                             xmTextWidgetClass,   recipientbox_w,
-                             XmNfontList,         fontlist,
-                             XmNmarginHeight,     1,
-                             XmNmarginWidth,      1,
-                             XmNshadowThickness,  1,
-                             XmNrows,             1,
-                             XmNcolumns,          12,
-                             XmNmaxLength,        MAX_FILENAME_LENGTH - 1,
-                             XmNtopAttachment,    XmATTACH_FORM,
-                             XmNtopOffset,        6,
-                             XmNleftAttachment,   XmATTACH_WIDGET,
-                             XmNleftWidget,       hostname_label_w,
-                             NULL);
-         XtAddCallback(hostname_w, XmNlosingFocusCallback, send_save_input,
-                       (XtPointer)HOSTNAME_NO_ENTER);
-         XtAddCallback(hostname_w, XmNactivateCallback, send_save_input,
-                       (XtPointer)HOSTNAME_ENTER);
+            XmTextSetString(address_w, db->user);
+
+            /* Change callback when we press Create Dir/Attach file button. */
+            XtRemoveCallback(ca_button_w, XmNvalueChangedCallback,
+                             (XtCallbackProc)create_attach_toggle,
+                             (XtPointer)CREATE_DIR_TOGGLE);
+            XtAddCallback(ca_button_w, XmNvalueChangedCallback,
+                          (XtCallbackProc)create_attach_toggle,
+                          (XtPointer)ATTACH_FILE_TOGGLE);
+         }
+         else
+         {
+            XtSetSensitive(address_label_w, True);
+            XtSetSensitive(address_w, True);
+         }
+
+
          if ((db->hostname[0] == '\0') || (db->smtp_server[0] == '\0'))
          {
             (void)strcpy(db->hostname, SMTP_HOST_NAME);
             (void)strcpy(db->smtp_server, SMTP_HOST_NAME);
          }
-         XmTextSetString(user_name_w, db->user);
-         XmTextSetString(hostname_w, db->hostname);
-         xstr = XmStringCreateLtoR("Subject   :", XmFONTLIST_DEFAULT_TAG);
-         XtVaSetValues(target_dir_label_w, XmNlabelString, xstr, NULL);
-         XmTextSetString(target_dir_w, db->subject);
+         XmTextSetString(hs_w, db->hostname);
+         xstr = XmStringCreateLtoR("Mailserver", XmFONTLIST_DEFAULT_TAG);
+         XtVaSetValues(hs_label_w, XmNlabelString, xstr, NULL);
          XmStringFree(xstr);
-         XtSetSensitive(target_dir_w, True);
-         XtSetSensitive(proxy_label_w, False);
-         XtSetSensitive(proxy_w, False);
-         XtSetSensitive(create_target_dir_w, False);
-         XtSetSensitive(port_label_w, True);
-         XtSetSensitive(port_w, True);
-         XtSetSensitive(timeout_label_w, True);
-         XtSetSensitive(timeout_w, True);
-         XtSetSensitive(active_passive_w, False);
-         XtSetSensitive(ap_radio_box_w, False);
-         XtSetSensitive(attach_file_w, True);
-         XtSetSensitive(mode_box_w, False);
-         XtSetSensitive(lock_box_w, False);
-         XtSetSensitive(prefix_w, False);
-         if ((db->port == 0) || (db->port == DEFAULT_FTP_PORT))
+         XtSetSensitive(hs_label_w, True);
+         XtSetSensitive(hs_w, True);
+
+         if ((db->port == 0) || (db->port == DEFAULT_FTP_PORT) ||
+             (db->port == DEFAULT_SSH_PORT))
          {
             char str_line[MAX_PORT_DIGITS + 1];
 
             db->port = DEFAULT_SMTP_PORT;
-            (void)sprintf(str_line, "%*d", MAX_PORT_DIGITS, db->port);
+            (void)sprintf(str_line, "%d", db->port);
             XmTextSetString(port_w, str_line);
          }
+         XtSetSensitive(port_label_w, True);
+         XtSetSensitive(port_w, True);
+
+         XmTextSetString(dir_subject_w, db->target_dir);
+         XtSetSensitive(dir_subject_label_w, True);
+         XtSetSensitive(dir_subject_w, True);
+
+         XtSetSensitive(create_attach_w, True);
+
+         XtSetSensitive(timeout_label_w, True);
+         XtSetSensitive(timeout_w, True);
+
+         XtSetSensitive(active_passive_w, False);
+         XtSetSensitive(ap_radio_box_w, False);
+         XtSetSensitive(mode_box_w, False);
+         XtSetSensitive(lock_box_w, False);
+         XtSetSensitive(prefix_w, False);
+
+         XtSetSensitive(proxy_label_w, False);
+         XtSetSensitive(proxy_w, False);
          break;
 
       case LOC :
@@ -677,20 +731,19 @@ protocol_toggled(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(user_name_w, False);
          XtSetSensitive(password_label_w, False);
          XtSetSensitive(password_w, False);
-         XtSetSensitive(hostname_label_w, False);
-         XtSetSensitive(hostname_w, False);
+         XtSetSensitive(hs_label_w, False);
+         XtSetSensitive(hs_w, False);
          XtSetSensitive(proxy_label_w, False);
          XtSetSensitive(proxy_w, False);
-         XtSetSensitive(target_dir_label_w, True);
-         XtSetSensitive(target_dir_w, True);
-         XtSetSensitive(create_target_dir_w, True);
+         XtSetSensitive(dir_subject_label_w, True);
+         XtSetSensitive(dir_subject_w, True);
+         XtSetSensitive(create_attach_w, True);
          XtSetSensitive(port_label_w, False);
          XtSetSensitive(port_w, False);
          XtSetSensitive(timeout_label_w, False);
          XtSetSensitive(timeout_w, False);
          XtSetSensitive(active_passive_w, False);
          XtSetSensitive(ap_radio_box_w, False);
-         XtSetSensitive(attach_file_w, False);
          XtSetSensitive(mode_box_w, False);
          XtSetSensitive(lock_box_w, True);
          XtSetSensitive(prefix_w, True);
@@ -702,20 +755,19 @@ protocol_toggled(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(user_name_w, True);
          XtSetSensitive(password_label_w, True);
          XtSetSensitive(password_w, True);
-         XtSetSensitive(hostname_label_w, True);
-         XtSetSensitive(hostname_w, True);
+         XtSetSensitive(hs_label_w, True);
+         XtSetSensitive(hs_w, True);
          XtSetSensitive(proxy_label_w, False);
          XtSetSensitive(proxy_w, False);
-         XtSetSensitive(target_dir_label_w, True);
-         XtSetSensitive(target_dir_w, True);
-         XtSetSensitive(create_target_dir_w, False);
+         XtSetSensitive(dir_subject_label_w, True);
+         XtSetSensitive(dir_subject_w, True);
+         XtSetSensitive(create_attach_w, False);
          XtSetSensitive(port_label_w, True);
          XtSetSensitive(port_w, True);
          XtSetSensitive(timeout_label_w, True);
          XtSetSensitive(timeout_w, True);
          XtSetSensitive(active_passive_w, False);
          XtSetSensitive(ap_radio_box_w, False);
-         XtSetSensitive(attach_file_w, False);
          XtSetSensitive(mode_box_w, False);
          XtSetSensitive(lock_box_w, True);
          XtSetSensitive(prefix_w, True);
@@ -724,7 +776,7 @@ protocol_toggled(Widget w, XtPointer client_data, XtPointer call_data)
             char str_line[MAX_PORT_DIGITS + 1];
 
             db->port = DEFAULT_SSH_PORT;
-            (void)sprintf(str_line, "%*d", MAX_PORT_DIGITS, db->port);
+            (void)sprintf(str_line, "%d", db->port);
             XmTextSetString(port_w, str_line);
          }
          break;
@@ -732,63 +784,75 @@ protocol_toggled(Widget w, XtPointer client_data, XtPointer call_data)
 
 #ifdef _WITH_WMO_SUPPORT
       case WMO :
-         XtSetSensitive(user_name_label_w, False);
-         XtSetSensitive(user_name_w, False);
-         XtSetSensitive(password_label_w, False);
-         XtSetSensitive(password_w, False);
-         XtSetSensitive(hostname_label_w, True);
-         XtSetSensitive(hostname_w, True);
-         XtSetSensitive(proxy_label_w, False);
-         XtSetSensitive(proxy_w, False);
-         XtSetSensitive(target_dir_label_w, False);
-         XtSetSensitive(target_dir_w, False);
-         XtSetSensitive(create_target_dir_w, False);
-         XtSetSensitive(port_label_w, True);
-         XtSetSensitive(port_w, True);
-         XtSetSensitive(timeout_label_w, True);
-         XtSetSensitive(timeout_w, True);
-         XtSetSensitive(active_passive_w, False);
-         XtSetSensitive(ap_radio_box_w, False);
-         XtSetSensitive(attach_file_w, False);
-         XtSetSensitive(mode_box_w, False);
-         XtSetSensitive(lock_box_w, False);
-         XtSetSensitive(prefix_w, False);
-         if (db->port == 0)
+         if (address_label_w != NULL)
+         {
+            XtSetSensitive(address_label_w, False);
+         }
+         if (address_w != NULL)
+         {
+            XtSetSensitive(address_w, False);
+
+            if (my_strcmp(db->hostname, SMTP_HOST_NAME) == 0)
+            {
+               db->hostname[0] = '\0';
+            }
+         }
+         if (user_name_label_w != NULL)
+         {
+            XtSetSensitive(user_name_label_w, False);
+         }
+         if (user_name_w != NULL)
+         {
+            XtSetSensitive(user_name_w, False);
+         }
+         if (password_label_w != NULL)
+         {
+            XtSetSensitive(password_label_w, False);
+         }
+         if (password_w != NULL)
+         {
+            XtSetSensitive(password_w, False);
+         }
+
+         XmTextSetString(hs_w, db->hostname);
+         xstr = XmStringCreateLtoR("Hostname :", XmFONTLIST_DEFAULT_TAG);
+         XtVaSetValues(hs_label_w, XmNlabelString, xstr, NULL);
+         XmStringFree(xstr);
+         XtSetSensitive(hs_label_w, True);
+         XtSetSensitive(hs_w, True);
+
+         if ((db->port == DEFAULT_FTP_PORT) ||
+             (db->port == DEFAULT_SMTP_PORT) ||
+             (db->port == DEFAULT_SSH_PORT))
          {
             char str_line[MAX_PORT_DIGITS + 1];
 
             db->port = 0;
-            (void)sprintf(str_line, "%*s", MAX_PORT_DIGITS - 1, " ");
+            str_line[0] = '0';
+            str_line[1] = '\0';
             XmTextSetString(port_w, str_line);
          }
-         break;
-#endif /* _WITH_WMO_SUPPORT */
+         XtSetSensitive(port_label_w, True);
+         XtSetSensitive(port_w, True);
 
-#ifdef _WITH_MAP_SUPPORT
-      case MAP :
-         XtSetSensitive(user_name_label_w, True);
-         XtSetSensitive(user_name_w, True);
-         XtSetSensitive(password_label_w, False);
-         XtSetSensitive(password_w, False);
-         XtSetSensitive(hostname_label_w, True);
-         XtSetSensitive(hostname_w, True);
-         XtSetSensitive(proxy_label_w, False);
-         XtSetSensitive(proxy_w, False);
-         XtSetSensitive(target_dir_label_w, False);
-         XtSetSensitive(target_dir_w, False);
-         XtSetSensitive(create_target_dir_w, False);
-         XtSetSensitive(port_label_w, False);
-         XtSetSensitive(port_w, False);
-         XtSetSensitive(timeout_label_w, False);
-         XtSetSensitive(timeout_w, False);
+         XtSetSensitive(dir_subject_label_w, False);
+         XtSetSensitive(dir_subject_w, False);
+
+         XtSetSensitive(create_attach_w, False);
+
+         XtSetSensitive(timeout_label_w, True);
+         XtSetSensitive(timeout_w, True);
+
          XtSetSensitive(active_passive_w, False);
          XtSetSensitive(ap_radio_box_w, False);
-         XtSetSensitive(attach_file_w, False);
          XtSetSensitive(mode_box_w, False);
          XtSetSensitive(lock_box_w, False);
          XtSetSensitive(prefix_w, False);
+
+         XtSetSensitive(proxy_label_w, False);
+         XtSetSensitive(proxy_w, False);
          break;
-#endif /* _WITH_MAP_SUPPORT */
+#endif /* _WITH_WMO_SUPPORT */
 
       default : /* Should never get here! */
          (void)fprintf(stderr, "Junk programmer!\n");

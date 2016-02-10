@@ -1,6 +1,6 @@
 /*
  *  mon_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ DESCR__S_M1
 DESCR__E_M1
 
 #include <stdio.h>               /* fopen(), NULL                        */
-#include <string.h>              /* strcpy(), strcat(), strcmp()         */
+#include <string.h>              /* strcpy(), strcat()                   */
 #include <time.h>                /* strftime(), localtime()              */
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -675,7 +675,7 @@ init_mon_info(int *argc, char *argv[])
    }
    for (i = 0; i < no_of_afds; i++)
    {
-      if (strcmp(msa[i].afd_alias, afd_name) == 0)
+      if (my_strcmp(msa[i].afd_alias, afd_name) == 0)
       {
          afd_position = i;
          break;

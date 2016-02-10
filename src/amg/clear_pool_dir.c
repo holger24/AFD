@@ -1,6 +1,6 @@
 /*
  *  clear_pool_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -149,19 +149,27 @@ clear_pool_dir(void)
             }
 
             (void)strcpy(work_ptr, p_dir->d_name);
-            if (get_source_dir(p_dir->d_name, orig_dir, &dir_id) == INCORRECT)
+#ifdef MULTI_FS_SUPPORT
+            if ((stat(pool_dir, &stat_buf) != -1) &&
+                (S_ISLNK(stat_buf.st_mode)))
             {
-               /* Remove it, no matter what it is. */
-#ifdef _DELETE_LOG
-               remove_pool_directory(pool_dir, dir_id);
-#else
-               (void)rec_rmdir(pool_dir);
 #endif
+               if (get_source_dir(p_dir->d_name, orig_dir, &dir_id) == INCORRECT)
+               {
+                  /* Remove it, no matter what it is. */
+#ifdef _DELETE_LOG
+                  remove_pool_directory(pool_dir, dir_id);
+#else
+                  (void)rec_rmdir(pool_dir);
+#endif
+               }
+               else
+               {
+                  move_files_back(pool_dir, orig_dir);
+               }
+#ifdef MULTI_FS_SUPPORT
             }
-            else
-            {
-               move_files_back(pool_dir, orig_dir);
-            }
+#endif
             errno = 0;
          }
 

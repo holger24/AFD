@@ -160,7 +160,22 @@ off_t                      *ol_file_size;
 size_t                     ol_size,
                            ol_real_size;
 clock_t                    *ol_transfer_time;
-#endif
+#endif /* _OUTPUT_LOG */
+#ifdef _WITH_DE_MAIL_SUPPORT
+int                        demcd_fd = -2;
+# ifdef WITHOUT_FIFO_RW_SUPPORT
+int                        demcd_readfd = -2;
+# endif
+unsigned int               *demcd_job_number;
+char                       *demcd_data = NULL,
+                           *demcd_file_name;
+unsigned char              *demcd_confirmation_type;
+unsigned short             *demcd_file_name_length,
+                           *demcd_unl;
+off_t                      *demcd_file_size;
+size_t                     demcd_size,
+                           demcd_real_size;
+#endif /* _WITH_DE_MAIL_SUPPORT */
 #ifdef _WITH_BURST_2
 unsigned int               burst_2_counter = 0;
 #endif
@@ -194,6 +209,9 @@ static off_t               local_file_size,
                            *p_file_size_buffer;
 
 /* Local function prototypes. */
+#ifdef _WITH_DE_MAIL_SUPPORT
+static void                gen_privat_id(char *);
+#endif
 static void                sf_smtp_exit(void),
                            sig_bus(int),
                            sig_segv(int),
@@ -224,11 +242,14 @@ main(int argc, char *argv[])
    off_t            no_of_bytes;
    clock_t          clktck;
    time_t           connected,
+#ifdef _WITH_BURST_2
+                    diff_time,
+#endif
                     end_transfer_time_file,
                     start_transfer_time_file,
                     last_update_time,
                     now;
-#ifdef _WITH_BURST_2       
+#ifdef _WITH_BURST_2
    int              cb2_ret;
    unsigned int     values_changed = 0;
 #endif
@@ -401,15 +422,20 @@ main(int argc, char *argv[])
    if (db.output_log == YES)
    {
 # ifdef WITHOUT_FIFO_RW_SUPPORT
-      output_log_fd(&ol_fd, &ol_readfd);
+      output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
 # else
-      output_log_fd(&ol_fd);
+      output_log_fd(&ol_fd, &db.output_log);
 # endif
       output_log_ptrs(&ol_retries, &ol_job_number, &ol_data, &ol_file_name,
                       &ol_file_name_length, &ol_archive_name_length,
                       &ol_file_size, &ol_unl, &ol_size, &ol_transfer_time,
                       &ol_output_type, db.host_alias, (current_toggle - 1),
-                      SMTP);
+#  ifdef _WITH_DE_MAIL_SUPPORT
+                      (db.protocol & DE_MAIL_FLAG) ? DE_MAIL : SMTP,
+#  else
+                      SMTP,
+#  endif
+                      &db.output_log);
    }
 #endif
 
@@ -571,7 +597,7 @@ main(int argc, char *argv[])
 
 #ifdef WITH_SSL
          /* Try negotiate SMARTTLS. */
-         if ((status = smtp_smarttls()) == SUCCESS)
+         if ((status = smtp_smarttls((fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO)) == SUCCESS)
          {
             if (fsa->debug > NORMAL_MODE)
             {
@@ -767,14 +793,14 @@ main(int argc, char *argv[])
 #endif
       if ((db.special_flag & ATTACH_FILE) && (encode_buffer == NULL))
       {
-         if ((encode_buffer = malloc(2 * (blocksize + 1))) == NULL)
+         encode_buffer_size = (2 * (blocksize + 1)) + 1;
+         if ((encode_buffer = malloc(encode_buffer_size)) == NULL)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        "Failed to malloc() %d bytes : %s",
-                       2 * (blocksize + 1),  strerror(errno));
+                       encode_buffer_size,  strerror(errno));
             exit(ALLOC_ERROR);
          }
-         encode_buffer_size = 2 * (blocksize + 1);
 
          /*
           * When encoding in base64 is done the blocksize must be
@@ -1075,8 +1101,7 @@ main(int argc, char *argv[])
                    * the remote SMTP server.
                    */
                   if ((status == 550) &&
-                      (lposi(msg_str, "Recipient address rejected",
-                             26) != NULL))
+                      (lposi(msg_str, "Recipient address rejected", 26) != NULL))
                   {
                      (void)smtp_quit();
 
@@ -1086,9 +1111,9 @@ main(int argc, char *argv[])
                         if (ol_fd == -2)
                         {
 #  ifdef WITHOUT_FIFO_RW_SUPPORT
-                           output_log_fd(&ol_fd, &ol_readfd);
+                           output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
 #  else                                                      
-                           output_log_fd(&ol_fd);
+                           output_log_fd(&ol_fd, &db.output_log);
 #  endif
                         }
                         if (ol_fd > -1)
@@ -1108,7 +1133,12 @@ main(int argc, char *argv[])
                                               &ol_output_type,
                                               db.host_alias,
                                               (current_toggle - 1),
-                                              SMTP);
+#  ifdef _WITH_DE_MAIL_SUPPORT
+                                              (db.protocol & DE_MAIL_FLAG) ? DE_MAIL : SMTP,
+#  else
+                                              SMTP,
+#  endif
+                                              &db.output_log);
                            }
                            (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
                            (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
@@ -1371,6 +1401,94 @@ main(int argc, char *argv[])
                }
                no_of_bytes += length;
             }
+
+#ifdef _WITH_DE_MAIL_SUPPORT
+            if (db.protocol & DE_MAIL_FLAG)
+            {
+               gen_privat_id(host_name);
+               length = snprintf(buffer, buffer_size,
+                                 "X-de-mail-message-type:normal\r\nX-de-mail-privat-id:%s\r\nX-de-mail-sender:%s\r\nX-de-mail-version:1.1\r\n",
+                                 db.de_mail_privat_id, db.de_mail_sender);
+               if (length >= buffer_size)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "Buffer length for de-mail header to small!");
+                  (void)smtp_quit();
+                  exit(ALLOC_ERROR);
+               }
+               if (smtp_write(buffer, NULL, length) < 0)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "Failed to write de-mail header to SMTP-server.");
+                  (void)smtp_quit();
+                  exit(eval_timeout(WRITE_REMOTE_ERROR));
+               }
+               no_of_bytes += length;
+
+               if (db.de_mail_options & CONF_OF_DISPATCH)
+               {
+                  length = snprintf(buffer, buffer_size,
+                                    "X-de-mail-confirmation-of-dispatch:yes\r\n");
+                  if (length >= buffer_size)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Buffer length for de-mail header to small!");
+                     (void)smtp_quit();
+                     exit(ALLOC_ERROR);
+                  }
+                  if (smtp_write(buffer, NULL, length) < 0)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Failed to write de-mail header to SMTP-server.");
+                     (void)smtp_quit();
+                     exit(eval_timeout(WRITE_REMOTE_ERROR));
+                  }
+                  no_of_bytes += length;
+               }
+
+               if (db.de_mail_options & CONF_OF_RECEIPT)
+               {
+                  length = snprintf(buffer, buffer_size,
+                                    "X-de-mail-confirmation-of-receipt:yes\r\n");
+                  if (length >= buffer_size)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Buffer length for de-mail confirmation-of-receipt to small!");
+                     (void)smtp_quit();
+                     exit(ALLOC_ERROR);
+                  }
+                  if (smtp_write(buffer, NULL, length) < 0)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Failed to write de-mail confirmation-of-receipt to SMTP-server.");
+                     (void)smtp_quit();
+                     exit(eval_timeout(WRITE_REMOTE_ERROR));
+                  }
+                  no_of_bytes += length;
+               }
+
+               if (db.de_mail_options & CONF_OF_RETRIEVE)
+               {
+                  length = snprintf(buffer, buffer_size,
+                                    "X-de-mail-confirmation-of-retrieve:yes\r\n");
+                  if (length >= buffer_size)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Buffer length for de-mail confirmation-of-retrieve to small!");
+                     (void)smtp_quit();
+                     exit(ALLOC_ERROR);
+                  }
+                  if (smtp_write(buffer, NULL, length) < 0)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Failed to write de-mail confirmation-of-retrieve to SMTP-server.");
+                     (void)smtp_quit();
+                     exit(eval_timeout(WRITE_REMOTE_ERROR));
+                  }
+                  no_of_bytes += length;
+               }
+            }
+#endif
 
             /* Send file name as subject if wanted. */
             if (db.special_flag & MAIL_SUBJECT)
@@ -2487,9 +2605,9 @@ main(int argc, char *argv[])
             if (ol_fd == -2)
             {               
 # ifdef WITHOUT_FIFO_RW_SUPPORT
-               output_log_fd(&ol_fd, &ol_readfd);
+               output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
 # else
-               output_log_fd(&ol_fd);
+               output_log_fd(&ol_fd, &db.output_log);
 # endif
             }
             if ((ol_fd > -1) && (ol_data == NULL))
@@ -2507,7 +2625,12 @@ main(int argc, char *argv[])
                                &ol_output_type,  
                                db.host_alias,
                                (current_toggle - 1),
-                               SMTP);
+# ifdef _WITH_DE_MAIL_SUPPORT
+                               (db.protocol & DE_MAIL_FLAG) ? DE_MAIL : SMTP,
+# else
+                               SMTP,
+# endif
+                               &db.output_log);
             }
          }
 #endif
@@ -2676,6 +2799,50 @@ try_again_unlink:
             }
 #endif
          }
+
+#ifdef _WITH_DE_MAIL_SUPPORT
+         if ((db.protocol & DE_MAIL_FLAG) &&
+             ((db.de_mail_options & CONF_OF_DISPATCH) ||
+              (db.de_mail_options & CONF_OF_RECEIPT) ||
+              (db.de_mail_options & CONF_OF_RETRIEVE)))
+         {
+            if (demcd_fd == -2)
+            {
+# ifdef WITHOUT_FIFO_RW_SUPPORT
+               demcd_log_fd(&demcd_fd, &demcd_readfd);
+# else
+               demcd_log_fd(&demcd_fd);
+# endif
+               if ((demcd_fd > -1) && (demcd_data == NULL))
+               {
+                  demcd_log_ptrs(&demcd_job_number,
+                                 &demcd_data,              /* Pointer to buffer. */
+                                 &demcd_file_name,
+                                 &demcd_file_name_length,
+                                 &demcd_file_size,
+                                 &demcd_unl,
+                                 &demcd_size,
+                                 &demcd_confirmation_type,  
+                                 db.host_alias);
+               }
+            }
+            (void)memcpy(demcd_file_name, db.de_mail_privat_id, db.de_mail_privat_id_length);
+            *demcd_unl = db.de_mail_privat_id_length;
+            (void)strcpy(demcd_file_name + *demcd_unl, p_file_name_buffer);
+            *demcd_file_name_length = (unsigned short)strlen(demcd_file_name);
+            demcd_file_name[*demcd_file_name_length] = '\0';
+            (*demcd_file_name_length)++;
+            *demcd_file_size = *p_file_size_buffer;
+            *demcd_job_number = fsa->job_status[(int)db.job_no].job_id;
+            *demcd_confirmation_type = db.de_mail_options;
+            demcd_real_size = *demcd_file_name_length + demcd_size;
+            if (write(demcd_fd, demcd_data, demcd_real_size) != demcd_real_size)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "write() error : %s", strerror(errno));
+            }
+         }
+#endif
 
          /*
           * After each successful transfer set error
@@ -2854,9 +3021,10 @@ try_again_unlink:
       }
 #ifdef _WITH_BURST_2
       burst_2_counter++;
-      if ((fsa->protocol_options & KEEP_CONNECTED_DISCONNECT) &&
-          (db.keep_connected > 0) &&
-          ((time(NULL) - connected)  > db.keep_connected))
+      diff_time = time(NULL) - connected;
+      if (((fsa->protocol_options & KEEP_CONNECTED_DISCONNECT) &&
+           (db.keep_connected > 0) && (diff_time > db.keep_connected)) ||
+          ((db.disconnect > 0) && (diff_time > db.disconnect)))
       {
          cb2_ret = NO;
          break;
@@ -2908,6 +3076,48 @@ try_again_unlink:
    exitflag = 0;
    exit(exit_status);
 }
+
+
+#ifdef _WITH_DE_MAIL_SUPPORT
+/*+++++++++++++++++++++++++++ gen_privat_id() #++++++++++++++++++++++++++*/
+static void
+gen_privat_id(char *host_name)
+{
+   int length;
+
+   if (db.de_mail_privat_id == NULL)
+   {
+      if ((db.de_mail_privat_id = malloc(MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1 + 1 + MAX_MSG_NAME_LENGTH + 1)) == NULL)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "malloc() error : %s", strerror(errno));
+         exit(ALLOC_ERROR);
+      }
+   }
+   length = snprintf(db.de_mail_privat_id,
+                     MAX_INT_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1 + 1,
+                     "%x-%x-",
+                     get_checksum_crc32c(INITIAL_CRC,
+                                         p_work_dir,
+#ifdef HAVE_HW_CRC32
+                                         (int)strlen(p_work_dir), have_hw_crc32),
+#else
+                                         (int)strlen(p_work_dir)),
+#endif
+                     get_checksum_crc32c(INITIAL_CRC,
+                                         host_name,
+#ifdef HAVE_HW_CRC32
+                                         (int)strlen(host_name), have_hw_crc32));
+#else
+                                         (int)strlen(host_name)));
+#endif
+    (void)memcpy(db.de_mail_privat_id + length, db.p_unique_name, db.unl);
+    db.de_mail_privat_id_length = length + db.unl;
+    db.de_mail_privat_id[length + db.unl] = '\0';
+
+    return;
+}
+#endif
 
 
 /*++++++++++++++++++++++++++++ sf_smtp_exit() +++++++++++++++++++++++++++*/

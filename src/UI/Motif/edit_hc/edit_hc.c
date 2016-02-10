@@ -212,6 +212,9 @@ Widget                     active_mode_w,
                            ssl_ccc_w,
                            start_drag_w,
                            statusbox_w,
+#ifdef WITH_SSL
+                           strict_tls_w,
+#endif
                            successful_retries_label_w,
                            successful_retries_w,
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
@@ -1998,8 +2001,7 @@ main(int argc, char *argv[])
                            XmNbottomAttachment,       XmATTACH_FORM,
                            NULL);
    XtAddCallback(use_list_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggle_button2,
-                 (XtPointer)USE_LIST_CHANGED);
+                 (XtCallbackProc)toggle_button2, (XtPointer)USE_LIST_CHANGED);
    disable_mlst_w = XtVaCreateManagedWidget("Disable MLST",
                            xmToggleButtonGadgetClass, box_w,
                            XmNfontList,               fontlist,
@@ -2244,6 +2246,20 @@ main(int argc, char *argv[])
                        NULL);
    XtAddCallback(match_size_w, XmNvalueChangedCallback,
                  (XtCallbackProc)toggle_button2, (XtPointer)CHECK_SIZE_CHANGED);
+#ifdef WITH_SSL
+   strict_tls_w = XtVaCreateManagedWidget("Strict TLS",
+                       xmToggleButtonGadgetClass, box_w,
+                       XmNfontList,               fontlist,
+                       XmNset,                    False,
+                       XmNtopAttachment,          XmATTACH_FORM,
+                       XmNtopOffset,              SIDE_OFFSET,
+                       XmNleftAttachment,         XmATTACH_WIDGET,
+                       XmNleftWidget,             match_size_w,
+                       XmNbottomAttachment,       XmATTACH_FORM,
+                       NULL);
+   XtAddCallback(strict_tls_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)toggle_button2, (XtPointer)STRICT_TLS_CHANGED);
+#endif /* WITH_SSL */
    XtManageChild(box_w);
    XtManageChild(form_w);
 

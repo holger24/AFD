@@ -1,6 +1,6 @@
 /*
  *  aftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,10 @@ DESCR__S_M1
  **     -a <file size offset>           - offset of file name when doing a
  **                                       list command on the remote side.
  **     -b <block size>                 - FTP block size in bytes.
+ **     -C[ <mode>]                     - If target directory does not exist
+ **                                       create it. The optional mode can be
+ **                                       used to set the permission of this
+ **                                       directory.
  **     -c <config file>                - Use this configuration file instead
  **                                       of the -dpmu options.
  **     -d <remote directory>           - Directory where file(s) are to be
@@ -54,8 +58,11 @@ DESCR__S_M1
  **     -t <timout>                     - FTP timeout in seconds.
  **     -v                              - Verbose. Shows all FTP commands
  **                                       and the reply from the remote server.
+ **     -X                              - Use extended mode active or passive
+ **                                       (-x) mode.
  **     -x                              - Use passive mode instead of active
  **                                       mode.
+ **     -Y                              - Use strict SSL/TLS verification.
  **     -z                              - With SSL/TLS authentification for
  **                                       control connection.
  **     -Z                              - With SSL/TLS authentification for
@@ -241,7 +248,7 @@ main(int argc, char *argv[])
             (void)rec(sys_log_fd, DEBUG_SIGN,
                       _("malloc() error : %s (%s %d)\n"),
                       strerror(errno), __FILE__, __LINE__);
-         }                                                     
+         }
          else
          {
             created_path[0] = '\0';
@@ -252,7 +259,7 @@ main(int argc, char *argv[])
 #ifdef WITH_SSL
    if ((db.auth == YES) || (db.auth == BOTH))
    {
-      if (ftp_ssl_auth() == INCORRECT)
+      if (ftp_ssl_auth(db.strict) == INCORRECT)
       {
          trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                    _("SSL/TSL connection to server `%s' failed."), db.hostname);
@@ -549,8 +556,8 @@ main(int argc, char *argv[])
    /* Change directory if necessary. */
    if (db.remote_dir[0] != '\0')
    {
-      if ((status = ftp_cd(db.remote_dir, db.create_target_dir, db.dir_mode_str,
-                           created_path)) != SUCCESS)
+      if ((status = ftp_cd(db.remote_dir, db.create_target_dir,
+                           db.dir_mode_str, created_path)) != SUCCESS)
       {
          if (db.create_target_dir == YES)
          {
@@ -593,7 +600,7 @@ main(int argc, char *argv[])
 
    if (db.exec_mode == RETRIEVE_MODE)
    {
-      if (get_remote_file_names(&file_size_to_retrieve) > 0)
+      if (get_remote_file_names_ftp_cmd(&file_size_to_retrieve) > 0)
       {
          int   i;
          off_t offset;
@@ -959,7 +966,7 @@ main(int argc, char *argv[])
             {
                if (db.verbose == YES)
                {
-                  trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                             _("Failed to fstat() local file %s"),
                             db.filename[files_send]);
                }
@@ -988,7 +995,12 @@ main(int argc, char *argv[])
             if (db.verbose == YES)
             {
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                         _("Open local file %s"), db.filename[files_send]);
+#if SIZEOF_OFF_T == 4
+                         _("Opened local file %s with %ld byte."),
+#else
+                         _("Opened local file %s with %lld byte."),
+#endif
+                         db.filename[files_send], (pri_off_t)local_file_size);
             }
 
             /*

@@ -2053,7 +2053,7 @@ do {                                                                           \
 		for (j = 0; j == 0 || val[j - TEST_NILS] != 0; j++) {          \
 			r1 = sprintf(buf1, fmt[i], val[j]);                    \
 			r2 = snprintf(buf2, sizeof(buf2), fmt[i], val[j]);     \
-			if (strcmp(buf1, buf2) != 0 || r1 != r2) {             \
+			if (my_strcmp(buf1, buf2) != 0 || r1 != r2) {          \
 				(void)printf("Results don't match, "           \
 				    "format string: %s\n"                      \
 				    "\t sprintf(3): [%s] (%d)\n"               \
@@ -2085,7 +2085,7 @@ do {                                                                           \
 		value = pow(10, i) * digits;
 		(void)sprintf(buf1, "%.1f", value);
 		(void)snprintf(buf2, sizeof(buf2), "%.1f", value);
-		if (strcmp(buf1, buf2) != 0) {
+		if (my_strcmp(buf1, buf2) != 0) {
 			(void)printf("apparently %d.\n", i);
 			break;
 		}

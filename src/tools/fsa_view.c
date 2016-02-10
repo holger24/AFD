@@ -209,9 +209,11 @@ main(int argc, char *argv[])
 
    ptr =(char *)fsa;
    ptr -= AFD_WORD_OFFSET;
-   (void)fprintf(stdout, _("    Number of hosts: %d   FSA ID: %d  Struct Version: %d  Pagesize: %d\n\n"),
+   (void)fprintf(stdout, _("    Number of hosts: %d   FSA ID: %d  Struct Version: %d  Pagesize: %d\n"),
                  no_of_hosts, fsa_id, (int)(*(ptr + SIZEOF_INT + 1 + 1 + 1)),
                  *(int *)(ptr + SIZEOF_INT + 4));
+   (void)fprintf(stdout, _("    First errors offline: %d\n\n"),
+                 *(unsigned char *)((char *)ptr + AFD_START_ERROR_OFFSET_START));
    for (j = position; j < last; j++)
    {
       (void)fprintf(stdout, "=============================> %s (%d) <=============================\n",
@@ -355,10 +357,22 @@ main(int argc, char *argv[])
       {
          (void)fprintf(stdout, "SMTP ");
       }
+#ifdef _WITH_DE_MAIL_SUPPORT
+      if (fsa[j].protocol & DE_MAIL_FLAG)
+      {
+         (void)fprintf(stdout, "DEMAIL ");
+      }
+#endif
 #ifdef _WITH_MAP_SUPPORT
       if (fsa[j].protocol & MAP_FLAG)
       {
          (void)fprintf(stdout, "MAP ");
+      }
+#endif
+#ifdef _WITH_DFAX_SUPPORT
+      if (fsa[j].protocol & DFAX_FLAG)
+      {
+         (void)fprintf(stdout, "DFAX ");
       }
 #endif
 #ifdef _WITH_SCP_SUPPORT
@@ -382,6 +396,10 @@ main(int argc, char *argv[])
       if (fsa[j].protocol & SSL_FLAG)
       {
          (void)fprintf(stdout, "SSL ");
+      }
+      if (fsa[j].protocol_options & TLS_STRICT_VERIFY)
+      {
+         (void)fprintf(stdout, "tls_strict_verify ");
       }
 #endif
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL

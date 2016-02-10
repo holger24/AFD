@@ -1,7 +1,7 @@
 /*
  *  handle_setup_file.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ DESCR__S_M3
 DESCR__E_M3
 
 #include <stdio.h>
-#include <string.h>                  /* strcpy(), strcat(), strcmp()     */
+#include <string.h>                  /* strcpy(), strcat()               */
 #include <stdlib.h>                  /* getenv()                         */
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -281,7 +281,7 @@ read_setup(char *file_name,
       }
       tmp_buffer[i] = '\0';
       line_style = atoi(tmp_buffer);
-      if (strcmp(file_name, AFD_CTRL) == 0)
+      if (my_strcmp(file_name, AFD_CTRL) == 0)
       {
          if (line_style <= CHARACTERS_AND_BARS)
          {
@@ -458,7 +458,7 @@ read_setup(char *file_name,
          {
             for (j = 0; j < (no_of_short_lines - 1); j++)
             {
-               if (strcmp(hosts[no_of_short_lines], hosts[j]) == 0)
+               if (my_strcmp(hosts[no_of_short_lines], hosts[j]) == 0)
                {
                   gotcha = YES;
                   break;

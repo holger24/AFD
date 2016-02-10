@@ -1,6 +1,6 @@
 /*
  *  show_istat.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -65,7 +65,7 @@ DESCR__S_M1
 DESCR__E_M1
 
 #include <stdio.h>                  /* fprintf(), stderr                 */
-#include <string.h>                 /* strcpy(), strerror(), strcmp()    */
+#include <string.h>                 /* strcpy(), strerror()              */
 #include <time.h>                   /* time()                            */
 #include <ctype.h>                  /* isdigit()                         */
 #ifdef TM_IN_SYS_TIME
@@ -145,7 +145,7 @@ main(int argc, char *argv[])
    now = time(NULL);
    p_ts = localtime(&now);
    current_year = p_ts->tm_year + 1900;
-   if (strcmp(statistic_file_name, ISTATISTIC_FILE) == 0)
+   if (my_strcmp(statistic_file_name, ISTATISTIC_FILE) == 0)
    {
       if (show_day > 0)
       {
@@ -357,18 +357,36 @@ main(int argc, char *argv[])
             }
             else
             {
-               /* Make a summary of everything */
-               for (i = 0; i < no_of_dirs; i++)
+               if (show_day_summary == 0)
                {
-                  nfr = nbr = 0.0;
                   for (j = 0; j < DAYS_PER_YEAR; j++)
                   {
-                     nfr += (double)afd_istat[i].year[j].nfr;
-                     nbr +=         afd_istat[i].year[j].nbr;
+                     nfr = nbr = 0.0;
+                     for (i = 0; i < no_of_dirs; i++)
+                     {
+                        nfr += (double)afd_istat[i].year[j].nfr;
+                        nbr +=         afd_istat[i].year[j].nbr;
+                     }
+                     display_data(" ", -1, ' ', j, nfr, nbr);
+                     tmp_nfr += nfr;
+                     tmp_nbr += nbr;
                   }
-                  display_data(afd_istat[i].dir_alias,
-                               -1, ' ', -1, nfr, nbr);
-                  tmp_nfr += nfr; tmp_nbr += nbr;
+               }
+               else
+               {
+                  /* Make a summary of everything */
+                  for (i = 0; i < no_of_dirs; i++)
+                  {
+                     nfr = nbr = 0.0;
+                     for (j = 0; j < DAYS_PER_YEAR; j++)
+                     {
+                        nfr += (double)afd_istat[i].year[j].nfr;
+                        nbr +=         afd_istat[i].year[j].nbr;
+                     }
+                     display_data(afd_istat[i].dir_alias,
+                                  -1, ' ', -1, nfr, nbr);
+                     tmp_nfr += nfr; tmp_nbr += nbr;
+                  }
                }
             }
 

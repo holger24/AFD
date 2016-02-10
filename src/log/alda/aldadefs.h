@@ -1,6 +1,6 @@
 /*
  *  aldadefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -97,6 +97,14 @@
 #define ALDA_EXEC_FLAG                      1024
 #define ALDA_EXEC_SHEME                     "exec" /* Check init_afd/afddefs.h */
 #define ALDA_EXEC_SHEME_LENGTH              (sizeof(ALDA_EXEC_SHEME) - 1)
+#define ALDA_DFAX                           12    /* Check init_afd/afddefs.h */
+#define ALDA_DFAX_FLAG                      2048
+#define ALDA_DFAX_SHEME                     "dfax" /* Check init_afd/afddefs.h */
+#define ALDA_DFAX_SHEME_LENGTH              (sizeof(ALDA_DFAX_SHEME) - 1)
+#define ALDA_DE_MAIL                        13    /* Check init_afd/afddefs.h */
+#define ALDA_DE_MAIL_FLAG                   4096
+#define ALDA_DEMAIL_SHEME                   "demail" /* Check init_afd/afddefs.h */
+#define ALDA_DEMAIL_SHEME_LENGTH            (sizeof(ALDA_DEMAIL_SHEME) - 1)
 #define ALDA_UNKNOWN_SHEME                  "unknown"
 #define ALDA_UNKNOWN_SHEME_LENGTH           (sizeof(ALDA_UNKNOWN_SHEME) - 1)
 

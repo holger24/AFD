@@ -1,6 +1,6 @@
 /*
  *  send_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2007 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -289,7 +289,7 @@ send_files(int no_selected, int *select_list)
    }
    if (to_do > 0)
    {
-      char progname[20];
+      char progname[XSEND_FILE_LENGTH + 1];
 
       (void)strcpy(progname, XSEND_FILE);
       args[0] = progname;

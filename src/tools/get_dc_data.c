@@ -1,6 +1,6 @@
 /*
  *  get_dc_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ DESCR__S_M3
  **   13.09.2012 H.Kiehl Added --only_list_target_dirs option.
  **   08.10.2014 H.Kiehl Expand file filters if they are expandable
  **                      as a comment.
+ **   06.02.2016 H.Kiehl Added -H option.
  **
  */
 DESCR__E_M3
@@ -105,16 +106,18 @@ static struct passwd_buf      *pwb = NULL;
 
 /* Local function prototypes. */
 static void                   check_dir_options(int),
-                              get_dc_data(char *, char *, unsigned int),
+                              get_dc_data(char *, char *, unsigned int, int,
+                                          char **),
                               show_data(struct job_id_data *, char *, char *,
                                         int, struct passwd_buf *, int),
-                              show_dir_data(int, int),
+                              show_dir_data(int, int, int, char **),
                               show_target_dir_only(char *),
                               usage(FILE *, char *);
-static int                    same_directory(int *, unsigned int),
+static int                    same_directory(int *, unsigned int, int, char **),
                               same_file_filter(int *, unsigned int,
-                                               unsigned int),
-                              same_options(int *, unsigned int, unsigned int);
+                                               unsigned int, int, char **),
+                              same_options(int *, unsigned int, unsigned int,
+                                           int, char **);
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
@@ -122,12 +125,14 @@ int
 main(int argc, char *argv[])
 {
    unsigned int dir_id;
-   int          ret;
+   int          no_of_search_host_alias = 0,
+                ret;
    char         dir_alias[MAX_DIR_ALIAS_LENGTH + 1],
                 fake_user[MAX_FULL_USER_ID_LENGTH],
                 host_name[MAX_HOSTNAME_LENGTH + 1],
                 *perm_buffer,
                 profile[MAX_PROFILE_NAME_LENGTH + 1],
+                **search_host_alias = NULL,
                 str_dir_id[MAX_INT_HEX_LENGTH + 1],
                 work_dir[MAX_PATH_LENGTH];
 
@@ -142,7 +147,9 @@ main(int argc, char *argv[])
       exit(INCORRECT);
    }
 
-   if (get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS)
+   if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "--help", NULL, 0) == SUCCESS) ||
+       ((argc == 2) && (get_arg(&argc, argv, "-h", NULL, 0) == SUCCESS)))
    {
       usage(stdout, argv[0]);
       exit(0);
@@ -155,28 +162,43 @@ main(int argc, char *argv[])
 
    if (get_arg(&argc, argv, "-h", host_name, MAX_HOSTNAME_LENGTH) != SUCCESS)
    {
-      if (get_arg(&argc, argv, "-d", dir_alias, MAX_DIR_ALIAS_LENGTH) != SUCCESS)
+      if (get_arg(&argc, argv, "-d", dir_alias,
+                  MAX_DIR_ALIAS_LENGTH) != SUCCESS)
       {
-         if (get_arg(&argc, argv, "-D", str_dir_id, MAX_INT_HEX_LENGTH) != SUCCESS)
+         if (get_arg(&argc, argv, "-D", str_dir_id,
+                     MAX_INT_HEX_LENGTH) != SUCCESS)
          {
-            dir_id = 0;
-            dir_alias[0] = '\0';
-            if (argc == 2)
+            if (get_arg_array(&argc, argv, "-H", &search_host_alias,
+                              &no_of_search_host_alias) == INCORRECT)
             {
-               if (my_strncpy(host_name, argv[1], MAX_HOSTNAME_LENGTH + 1) == -1)
+               dir_id = 0;
+               dir_alias[0] = '\0';
+               no_of_search_host_alias = 0;
+               search_host_alias = NULL;
+               if (argc == 2)
                {
-                  usage(stderr, argv[0]);
-                  if (strlen(argv[1]) >= MAX_HOSTNAME_LENGTH)
+                  if (my_strncpy(host_name, argv[1],
+                                 MAX_HOSTNAME_LENGTH + 1) == -1)
                   {
-                     (void)fprintf(stderr,
-                                   _("Given host_alias `%s' is to long (> %d)\n"),
-                                   argv[1], MAX_HOSTNAME_LENGTH);
+                     usage(stderr, argv[0]);
+                     if (strlen(argv[1]) >= MAX_HOSTNAME_LENGTH)
+                     {
+                        (void)fprintf(stderr,
+                                      _("Given host_alias `%s' is to long (> %d)\n"),
+                                      argv[1], MAX_HOSTNAME_LENGTH);
+                     }
+                     exit(INCORRECT);
                   }
-                  exit(INCORRECT);
+               }
+               else
+               {
+                  host_name[0] = '\0';
                }
             }
             else
             {
+               dir_id = 0;
+               dir_alias[0] = '\0';
                host_name[0] = '\0';
             }
          }
@@ -185,12 +207,16 @@ main(int argc, char *argv[])
             dir_id = (unsigned int)strtoul(str_dir_id, NULL, 16);
             dir_alias[0] = '\0';
             host_name[0] = '\0';
+            no_of_search_host_alias = 0;
+            search_host_alias = NULL;
          }
       }
       else
       {
          dir_id = 0;
          host_name[0] = '\0';
+         no_of_search_host_alias = 0;
+         search_host_alias = NULL;
       }
    }
    else
@@ -286,8 +312,14 @@ main(int argc, char *argv[])
       }
       exit(INCORRECT);
    }
-   get_dc_data(host_name, dir_alias, dir_id);
+   get_dc_data(host_name, dir_alias, dir_id, no_of_search_host_alias,
+               search_host_alias);
    (void)fsa_detach(NO);
+
+   if (no_of_search_host_alias > 0)
+   {
+      FREE_RT_ARRAY(search_host_alias);
+   }
 
    exit(SUCCESS);
 }
@@ -295,7 +327,11 @@ main(int argc, char *argv[])
 
 /*############################ get_dc_data() ############################*/
 static void
-get_dc_data(char *host_name, char *dir_alias, unsigned int dir_id)
+get_dc_data(char         *host_name,
+            char         *dir_alias,
+            unsigned int dir_id,
+            int          no_of_search_host_alias,
+            char         **search_host_alias)
 {
    int         dcl_fd,
                dnb_fd,
@@ -650,7 +686,7 @@ get_dc_data(char *host_name, char *dir_alias, unsigned int dir_id)
       {
          for (i = 0; i < no_of_dirs_in_dnb; i++)
          {
-            show_dir_data(i, -1);
+            show_dir_data(i, -1, no_of_search_host_alias, search_host_alias);
          }
       }
       else
@@ -659,13 +695,14 @@ get_dc_data(char *host_name, char *dir_alias, unsigned int dir_id)
          {
             for (i = 0; i < no_of_dirs; i++)
             {
-               if (strcmp(dir_alias, fra[i].dir_alias) == 0)
+               if (my_strcmp(dir_alias, fra[i].dir_alias) == 0)
                {
                   for (j = 0; j < no_of_dirs_in_dnb; j++)
                   {
                      if (dnb[j].dir_id == fra[i].dir_id)
                      {
-                        show_dir_data(j, i);
+                        show_dir_data(j, i, no_of_search_host_alias,
+                                      search_host_alias);
                         break;
                      }
                   }
@@ -683,7 +720,8 @@ get_dc_data(char *host_name, char *dir_alias, unsigned int dir_id)
                   {
                      if (dnb[j].dir_id == dir_id)
                      {
-                        show_dir_data(j, i);
+                        show_dir_data(j, i, no_of_search_host_alias,
+                                      search_host_alias);
                         break;
                      }
                   }
@@ -704,13 +742,14 @@ get_dc_data(char *host_name, char *dir_alias, unsigned int dir_id)
       {
          for (i = 0; i < no_of_dirs; i++)
          {
-            if (strcmp(fra[i].host_alias, host_name) == 0)
+            if (my_strcmp(fra[i].host_alias, host_name) == 0)
             {
                for (j = 0; j < no_of_dirs_in_dnb; j++)
                {
                   if (dnb[j].dir_id == fra[i].dir_id)
                   {
-                     show_dir_data(j, i);
+                     show_dir_data(j, i, no_of_search_host_alias,
+                                   search_host_alias);
                      break;
                   }
                }
@@ -725,7 +764,7 @@ get_dc_data(char *host_name, char *dir_alias, unsigned int dir_id)
             {
                if (jd[j].job_id == current_jid_list[i])
                {
-                  if (strcmp(jd[j].host_alias, host_name) == 0)
+                  if (my_strcmp(jd[j].host_alias, host_name) == 0)
                   {
                      if (only_list_target_dirs == YES)
                      {
@@ -1017,10 +1056,13 @@ show_target_dir_only(char *recipient)
 
 /*++++++++++++++++++++++++++ show_dir_data() ++++++++++++++++++++++++++++*/
 static void
-show_dir_data(int dir_pos, int fra_pos)
+show_dir_data(int  dir_pos,
+              int  fra_pos,
+              int  no_of_search_host_alias,
+              char **search_host_alias)
 {
    int  fml_offset,
-        i, j,
+        i, j, k,
         job_pos = -1,
         mask_offset,
         show_all_dirs;
@@ -1034,9 +1076,25 @@ show_dir_data(int dir_pos, int fra_pos)
          {
             if (jd[i].job_id == current_jid_list[j])
             {
-               job_pos = i;
-               i = no_of_job_ids;
-               break;
+               if (no_of_search_host_alias == 0)
+               {
+                  job_pos = i;
+                  i = no_of_job_ids;
+                  break;
+               }
+               else
+               {
+                  for (k = 0; k < no_of_search_host_alias; k++)
+                  {
+                     if (strcmp(jd[i].host_alias, search_host_alias[k]) == 0)
+                     {
+                        job_pos = i;
+                        i = no_of_job_ids;
+                        j = no_of_current_jobs;
+                        break;
+                     }
+                  }
+               }
             }
          }
       }
@@ -1183,7 +1241,9 @@ show_dir_data(int dir_pos, int fra_pos)
             (void)strcpy(value, jd[job_pos].recipient);
             url_insert_password(value, (view_passwd == YES) ? NULL : "XXXXX");
             (void)fprintf(stdout, "         %s\n", value);
-         } while (same_options(&job_pos, jd[job_pos].dir_id, jd[job_pos].file_mask_id));
+         } while (same_options(&job_pos, jd[job_pos].dir_id,
+                               jd[job_pos].file_mask_id,
+                               no_of_search_host_alias, search_host_alias));
 
          /* Show all options. */
          (void)fprintf(stdout, "\n         %s\n         %s %c\n",
@@ -1225,8 +1285,11 @@ show_dir_data(int dir_pos, int fra_pos)
             }
          }
          (void)fprintf(stdout, "\n");
-      } while (same_file_filter(&job_pos, jd[job_pos].file_mask_id, jd[job_pos].dir_id));
-   } while (same_directory(&job_pos, jd[job_pos].dir_id));
+      } while (same_file_filter(&job_pos, jd[job_pos].file_mask_id,
+                                jd[job_pos].dir_id, no_of_search_host_alias,
+                                search_host_alias));
+   } while (same_directory(&job_pos, jd[job_pos].dir_id,
+                           no_of_search_host_alias, search_host_alias));
 
    free(gl);
 
@@ -1236,11 +1299,15 @@ show_dir_data(int dir_pos, int fra_pos)
 
 /*++++++++++++++++++++++++++++ same_directory() +++++++++++++++++++++++++*/
 static int
-same_directory(int *jd_pos, unsigned int dir_id)
+same_directory(int          *jd_pos,
+               unsigned int dir_id,
+               int          no_of_search_host_alias,
+               char         **search_host_alias)
 {
    int i,
        in_gotcha_list,
-       j;
+       j,
+       k;
 
    for (i = 0; i < no_of_job_ids; i++)
    {
@@ -1261,8 +1328,22 @@ same_directory(int *jd_pos, unsigned int dir_id)
             {
                if (jd[i].job_id == current_jid_list[j])
                {
-                  *jd_pos = i;
-                  return(1);
+                  if (no_of_search_host_alias == 0)
+                  {
+                     *jd_pos = i;
+                     return(1);
+                  }
+                  else
+                  {
+                     for (k = 0; k < no_of_search_host_alias; k++)
+                     {
+                        if (strcmp(jd[i].host_alias, search_host_alias[k]) == 0)
+                        {
+                           *jd_pos = i;
+                           return(1);
+                        }
+                     }
+                  }
                }
             }
          }
@@ -1274,11 +1355,16 @@ same_directory(int *jd_pos, unsigned int dir_id)
 
 /*++++++++++++++++++++++++++ same_file_filter() +++++++++++++++++++++++++*/
 static int
-same_file_filter(int *jd_pos, unsigned int file_mask_id, unsigned int dir_id)
+same_file_filter(int          *jd_pos,
+                 unsigned int file_mask_id,
+                 unsigned int dir_id,
+                 int          no_of_search_host_alias,
+                 char         **search_host_alias)
 {
    int i,
        in_gotcha_list,
-       j;
+       j,
+       k;
 
    for (i = (*jd_pos + 1); i < no_of_job_ids; i++)
    {
@@ -1299,8 +1385,22 @@ same_file_filter(int *jd_pos, unsigned int file_mask_id, unsigned int dir_id)
             {
                if (jd[i].job_id == current_jid_list[j])
                {
-                  *jd_pos = i;
-                  return(1);
+                  if (no_of_search_host_alias == 0)
+                  {
+                     *jd_pos = i;
+                     return(1);
+                  }
+                  else
+                  {
+                     for (k = 0; k < no_of_search_host_alias; k++)
+                     {
+                        if (strcmp(jd[i].host_alias, search_host_alias[k]) == 0)
+                        {
+                           *jd_pos = i;
+                           return(1);
+                        }
+                     }
+                  }
                }
             }
          }
@@ -1312,10 +1412,14 @@ same_file_filter(int *jd_pos, unsigned int file_mask_id, unsigned int dir_id)
 
 /*+++++++++++++++++++++++++++++ same_options() ++++++++++++++++++++++++++*/
 static int
-same_options(int *jd_pos, unsigned int dir_id, unsigned int file_mask_id)
+same_options(int          *jd_pos,
+             unsigned int dir_id,
+             unsigned int file_mask_id,
+             int          no_of_search_host_alias,
+             char         **search_host_alias)
 {
    int current_jd_pos,
-       i, j;
+       i, j, k;
 
    gl[no_of_gotchas] = jd[*jd_pos].job_id;
    no_of_gotchas++;
@@ -1361,8 +1465,22 @@ same_options(int *jd_pos, unsigned int dir_id, unsigned int file_mask_id)
          {
             if (jd[i].job_id == current_jid_list[j])
             {
-               *jd_pos = i;
-               return(1);
+               if (no_of_search_host_alias == 0)
+               {
+                  *jd_pos = i;
+                  return(1);
+               }
+               else
+               {
+                  for (k = 0; k < no_of_search_host_alias; k++)
+                  {
+                     if (strcmp(jd[i].host_alias, search_host_alias[k]) == 0)
+                     {
+                        *jd_pos = i;
+                        return(1);
+                     }
+                  }
+               }
             }
          }
       }
@@ -1399,7 +1517,7 @@ static void
 usage(FILE *stream, char *progname)
 {
    (void)fprintf(stream,
-                 _("Usage: %s [-d <dir alias>] [-h <host alias> [--only_list_target_dirs]] [-D <dir hex id>]\n"),
+                 _("Usage: %s [-d <dir alias>] [-h <host alias> [--only_list_target_dirs]] [-H <host alias 0> [.. <host alias n>]] [-D <dir hex id>]\n"),
                  progname);
    return;
 }

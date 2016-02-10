@@ -1,6 +1,6 @@
 /*
  *  init_sf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -97,7 +97,11 @@ init_sf(int argc, char *argv[], char *file_path, int protocol)
    {
       db.port = DEFAULT_FTP_PORT;
    }
+#ifdef _WITH_DE_MAIL_SUPPORT
+   else if ((protocol & SMTP_FLAG) || (protocol & DE_MAIL_FLAG))
+#else
    else if (protocol & SMTP_FLAG)
+#endif
         {
            db.port = DEFAULT_SMTP_PORT;
         }
@@ -126,6 +130,7 @@ init_sf(int argc, char *argv[], char *file_path, int protocol)
         {
            db.port = -1;
         }
+/* db.disconnect = 0; */
    db.reply_to = NULL;
    db.default_from = NULL;
    db.from = NULL;
@@ -145,54 +150,61 @@ init_sf(int argc, char *argv[], char *file_path, int protocol)
    db.trans_exec_timeout = DEFAULT_EXEC_TIMEOUT;
    db.set_trans_exec_lock = NO;
 # ifdef HAVE_SETPRIORITY
-   db.afd_config_mtime = 0L;
+/* db.afd_config_mtime = 0L; */
 # endif
 #endif
-   db.special_flag = 0;
-   db.mode_flag = 0;
+/* db.special_flag = 0; */
+/* db.mode_flag = 0; */
    db.archive_time = DEFAULT_ARCHIVE_TIME;
    db.age_limit = DEFAULT_AGE_LIMIT;
-   db.archive_offset = 0;
+/* db.archive_offset = 0; */
 #ifdef _OUTPUT_LOG
    db.output_log = YES;
 #endif
    db.lock = DEFAULT_LOCK;
-   db.smtp_server[0] = '\0';
-   db.http_proxy[0] = '\0';
-   db.chmod_str[0] = '\0';
-   db.dir_mode = 0;
-   db.dir_mode_str[0] = '\0';
-   db.trans_rename_rule[0] = '\0';
+/* db.smtp_server[0] = '\0'; */
+/* db.http_proxy[0] = '\0'; */
+/* db.chmod_str[0] = '\0'; */
+/* db.dir_mode = 0; */
+/* db.dir_mode_str[0] = '\0'; */
+/* db.trans_rename_rule[0] = '\0'; */
    db.user_home_dir = NULL;
-   db.password[0] = '\0';
-   db.user_rename_rule[0] = '\0';
+/* db.password[0] = '\0'; */
+/* db.user_rename_rule[0] = '\0'; */
    db.lock_file_name = NULL;
-   db.rename_file_busy = '\0';
+/* db.rename_file_busy = '\0'; */
    db.group_list = NULL;
-   db.no_of_restart_files = 0;
+/* db.no_of_restart_files = 0; */
    db.restart_file = NULL;
    db.user_id = -1;
    db.group_id = -1;
    db.filename_pos_subject = -1;
-   db.subject_rename_rule[0] = '\0';
+/* db.subject_rename_rule[0] = '\0'; */
 #ifdef WITH_SSL
    db.auth = NO;
 #endif
-   db.ssh_protocol = 0;
+/* db.ssh_protocol = 0; */
 #ifdef WITH_SSH_FINGERPRINT
-   db.ssh_fingerprint[0] = '\0';
-   db.key_type = 0;
+/* db.ssh_fingerprint[0] = '\0'; */
+/* db.key_type = 0; */
 #endif
    (void)strcpy(db.lock_notation, DOT_NOTATION);
-   db.sndbuf_size = 0;
-   db.rcvbuf_size = 0;
+/* db.sndbuf_size = 0; */
+/* db.rcvbuf_size = 0; */
 #ifdef _DELETE_LOG
    dl.fd = -1;
 #endif
 #ifdef WITH_DUP_CHECK
-   db.crc_id = 0;
-   db.trans_dup_check_timeout = 0L;
-   db.trans_dup_check_flag = 0;
+/* db.crc_id = 0; */
+/* db.trans_dup_check_timeout = 0L; */
+/* db.trans_dup_check_flag = 0; */
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+   db.de_mail_options = DEFAULT_CONFIRMATION;
+   db.de_mail_privat_id_length = 0;
+   db.de_mail_privat_id = NULL;
+   db.de_mail_sender = NULL;
+   db.demcd_log = YES;
 #endif
    db.my_pid = getpid();
 

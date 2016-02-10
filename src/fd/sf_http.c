@@ -206,6 +206,9 @@ main(int argc, char *argv[])
    struct tms       tmsdummy;
 #endif
    time_t           connected,
+#ifdef _WITH_BURST_2
+                    diff_time,
+#endif
                     end_transfer_time_file,
                     start_transfer_time_file,
                     last_update_time,
@@ -341,6 +344,7 @@ main(int argc, char *argv[])
                          db.port, db.user, db.password,
 #ifdef WITH_SSL
                          db.auth,
+                         (fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO,
 #endif
                          db.sndbuf_size, db.rcvbuf_size);
 #ifdef WITH_IP_DB
@@ -928,9 +932,9 @@ main(int argc, char *argv[])
             if (ol_fd == -2)
             {
 # ifdef WITHOUT_FIFO_RW_SUPPORT
-               output_log_fd(&ol_fd, &ol_readfd);
+               output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
 # else
-               output_log_fd(&ol_fd);
+               output_log_fd(&ol_fd, &db.output_log);
 # endif
             }
             if ((ol_fd > -1) && (ol_data == NULL))
@@ -949,10 +953,11 @@ main(int argc, char *argv[])
                                db.host_alias,
                                (current_toggle - 1),
 # ifdef WITH_SSL
-                               (db.auth == NO) ? HTTP : HTTPS);
+                               (db.auth == NO) ? HTTP : HTTPS,
 # else
-                               HTTP);
+                               HTTP,
 # endif
+                               &db.output_log);
             }
          }
 #endif
@@ -1280,9 +1285,10 @@ try_again_unlink:
 
 #ifdef _WITH_BURST_2
       burst_2_counter++;
-      if ((fsa->protocol_options & KEEP_CONNECTED_DISCONNECT) &&
-          (db.keep_connected > 0) &&
-          ((time(NULL) - connected) > db.keep_connected))
+      diff_time = time(NULL) - connected;
+      if (((fsa->protocol_options & KEEP_CONNECTED_DISCONNECT) &&
+           (db.keep_connected > 0) && (diff_time > db.keep_connected)) ||
+          ((db.disconnect > 0) && (diff_time > db.disconnect)))
       {
          cb2_ret = NO;
          break;
@@ -1304,7 +1310,7 @@ try_again_unlink:
    {
       exit_status = STILL_FILES_TO_SEND;
    }
-#endif
+#endif /* _WITH_BURST_2 */
 
    free(buffer);
 

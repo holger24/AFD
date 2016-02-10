@@ -163,7 +163,7 @@ check_burst_sf(char         *file_path,
             return(NO);
          }
          if ((db.protocol != LOC_FLAG) && (db.protocol != EXEC_FLAG) &&
-             (strcmp(db.hostname, fsa->real_hostname[(int)(fsa->host_toggle - 1)]) != 0))
+             (my_strcmp(db.hostname, fsa->real_hostname[(int)(fsa->host_toggle - 1)]) != 0))
          {
             /*
              * Hostname changed, either a switch host or the real
@@ -258,13 +258,31 @@ check_burst_sf(char         *file_path,
                        how[3] = 'l'; how[4] = 'e'; how[5] = 'd';
                        how[6] = '\0';
                     }
+#ifdef _WITH_DE_MAIL_SUPPORT
+               else if (db.protocol & DE_MAIL_FLAG)
+                    {
+                       /* de-mailed */
+                       how[0] = 'd'; how[1] = 'e'; how[2] = '-';
+                       how[3] = 'm'; how[4] = 'a'; how[5] = 'i';
+                       how[6] = 'l'; how[7] = 'e'; how[8] = 'd';
+                       how[9] = '\0';
+                    }
+#endif
                else if (db.protocol & EXEC_FLAG)
                     {
-                       /* execd */
+                       /* execed */
                        how[0] = 'e'; how[1] = 'x'; how[2] = 'e';
                        how[3] = 'c'; how[4] = 'e'; how[5] = 'd';
                        how[6] = '\0';
                     }
+#ifdef _WITH_DFAX_SUPPORT
+               else if (db.protocol & DFAX_FLAG)
+                    {
+                       /* faxed */
+                       how[0] = 'f'; how[1] = 'a'; how[2] = 'e';
+                       how[3] = 'd'; how[4] = '\0';
+                    }
+#endif
                     else
                     {
                        /* sent */
@@ -604,6 +622,7 @@ check_burst_sf(char         *file_path,
              (fsa->job_status[(int)db.job_no].unique_name[0] != '\0') &&
              (fsa->job_status[(int)db.job_no].unique_name[2] != '\0'))
          {
+#ifdef RETRIEVE_JOB_HACK
             /*
              * This is only a hack! Somehow FD sends retrieve jobs
              * to sf_xxx!. If the bug is found remove this.
@@ -630,6 +649,7 @@ check_burst_sf(char         *file_path,
             /*
              * End of hack!
              */
+#endif /* RETRIEVE_JOB_HACK */
 
             (void)memcpy(db.msg_name, 
                          fsa->job_status[(int)db.job_no].unique_name,
@@ -648,30 +668,37 @@ check_burst_sf(char         *file_path,
 
                if (fsa->protocol_options & FTP_IGNORE_BIN)
                {
-                  p_new_db->transfer_mode       = 'N';
+                  p_new_db->transfer_mode         = 'N';
                }
                else
                {
-                  p_new_db->transfer_mode       = DEFAULT_TRANSFER_MODE;
+                  p_new_db->transfer_mode         = DEFAULT_TRANSFER_MODE;
                }
-               p_new_db->special_ptr            = NULL;
-               p_new_db->subject                = NULL;
-               p_new_db->from                   = NULL;
-               p_new_db->reply_to               = NULL;
-               p_new_db->charset                = NULL;
-               p_new_db->lock_file_name         = NULL;
-#ifdef _WITH_TRANS_EXEC
-               p_new_db->trans_exec_cmd         = NULL;
-               p_new_db->trans_exec_timeout     = DEFAULT_EXEC_TIMEOUT;
-               p_new_db->set_trans_exec_lock    = NO;
+               p_new_db->special_ptr              = NULL;
+               p_new_db->subject                  = NULL;
+               p_new_db->from                     = NULL;
+               p_new_db->reply_to                 = NULL;
+#ifdef _WITH_DE_MAIL_SUPPORT
+               p_new_db->de_mail_options          = DEFAULT_CONFIRMATION;
+               p_new_db->de_mail_privat_id        = NULL;
+               p_new_db->de_mail_privat_id_length = 0;
+               p_new_db->de_mail_sender           = NULL;
+               p_new_db->demcd_log                = YES;
 #endif
-               p_new_db->special_flag           = 0;
-               p_new_db->mode_flag              = 0;
-               p_new_db->archive_time           = DEFAULT_ARCHIVE_TIME;
+               p_new_db->charset                  = NULL;
+               p_new_db->lock_file_name           = NULL;
+#ifdef _WITH_TRANS_EXEC
+               p_new_db->trans_exec_cmd           = NULL;
+               p_new_db->trans_exec_timeout       = DEFAULT_EXEC_TIMEOUT;
+               p_new_db->set_trans_exec_lock      = NO;
+#endif
+               p_new_db->special_flag             = 0;
+               p_new_db->mode_flag                = 0;
+               p_new_db->archive_time             = DEFAULT_ARCHIVE_TIME;
                if ((fsa->job_status[(int)db.job_no].file_name_in_use[0] == '\0') &&
                    (fsa->job_status[(int)db.job_no].file_name_in_use[1] == 1))
                {
-                  p_new_db->retries             = (unsigned int)atoi(&fsa->job_status[(int)db.job_no].file_name_in_use[2]);
+                  p_new_db->retries               = (unsigned int)atoi(&fsa->job_status[(int)db.job_no].file_name_in_use[2]);
                   if (p_new_db->retries > 0)
                   {
                      p_new_db->special_flag |= OLD_ERROR_JOB;
@@ -679,39 +706,38 @@ check_burst_sf(char         *file_path,
                }
                else
                {
-                  p_new_db->retries             = 0;
+                  p_new_db->retries               = 0;
                }
-               p_new_db->age_limit              = DEFAULT_AGE_LIMIT;
+               p_new_db->age_limit                = DEFAULT_AGE_LIMIT;
 #ifdef _OUTPUT_LOG
-               p_new_db->output_log             = YES;
+               p_new_db->output_log               = YES;
 #endif
-               p_new_db->lock                   = DEFAULT_LOCK;
-               p_new_db->http_proxy[0]          = '\0';
-               p_new_db->smtp_server[0]         = '\0';
-               p_new_db->chmod_str[0]           = '\0';
-               p_new_db->dir_mode               = 0;
-               p_new_db->dir_mode_str[0]        = '\0';
-               p_new_db->trans_rename_rule[0]   = '\0';
-               p_new_db->user_rename_rule[0]    = '\0';
-               p_new_db->rename_file_busy       = '\0';
-               p_new_db->group_list             = NULL;
-               p_new_db->no_of_restart_files    = 0;
-               p_new_db->restart_file           = NULL;
-               p_new_db->user_id                = -1;
-               p_new_db->group_id               = -1;
-               p_new_db->filename_pos_subject   = -1;
-               p_new_db->subject_rename_rule[0] = '\0';
-               p_new_db->recipient              = db.recipient;
+               p_new_db->lock                     = DEFAULT_LOCK;
+               p_new_db->http_proxy[0]            = '\0';
+               p_new_db->smtp_server[0]           = '\0';
+               p_new_db->chmod_str[0]             = '\0';
+               p_new_db->dir_mode                 = 0;
+               p_new_db->dir_mode_str[0]          = '\0';
+               p_new_db->trans_rename_rule[0]     = '\0';
+               p_new_db->user_rename_rule[0]      = '\0';
+               p_new_db->rename_file_busy         = '\0';
+               p_new_db->group_list               = NULL;
+               p_new_db->no_of_restart_files      = 0;
+               p_new_db->restart_file             = NULL;
+               p_new_db->user_id                  = -1;
+               p_new_db->group_id                 = -1;
+               p_new_db->filename_pos_subject     = -1;
+               p_new_db->subject_rename_rule[0]   = '\0';
+               p_new_db->recipient                = db.recipient;
 #ifdef WITH_DUP_CHECK
-               p_new_db->dup_check_flag         = fsa->dup_check_flag;
-               p_new_db->dup_check_timeout      = fsa->dup_check_timeout;
-               p_new_db->trans_dup_check_flag   = 0;
-               p_new_db->trans_dup_check_timeout = 0L;
+               p_new_db->dup_check_flag           = fsa->dup_check_flag;
+               p_new_db->dup_check_timeout        = fsa->dup_check_timeout;
+               p_new_db->trans_dup_check_flag     = 0;
+               p_new_db->trans_dup_check_timeout  = 0L;
 #endif
 #ifdef WITH_SSL
-               p_new_db->auth                   = NO;
+               p_new_db->auth                     = NO;
 #endif
-               p_new_db->ssh_protocol           = 0;
                if (db.protocol & FTP_FLAG)
                {
                   p_new_db->port = DEFAULT_FTP_PORT;
@@ -733,7 +759,12 @@ check_burst_sf(char         *file_path,
                        p_new_db->port = DEFAULT_WMO_PORT;
                     }
 #endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+               else if ((db.protocol & SMTP_FLAG) ||
+                        (db.protocol & DE_MAIL_FLAG))
+#else
                else if (db.protocol & SMTP_FLAG)
+#endif
                     {
                        p_new_db->port = DEFAULT_SMTP_PORT;
                     }
@@ -956,6 +987,9 @@ check_burst_sf(char         *file_path,
                        }
                     }
                     if ((db.protocol & FTP_FLAG) || (db.protocol & SFTP_FLAG) ||
+#ifdef _WITH_DE_MAIL_SUPPORT
+                        (db.protocol & DE_MAIL_FLAG) ||
+#endif
                         (db.protocol & SMTP_FLAG))
                     {
                        if (noop_wrapper() == SUCCESS)

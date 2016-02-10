@@ -1,6 +1,6 @@
 /*
  *  remove_time_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ DESCR__S_M3
  **
  ** SYNOPSIS
  **   void remove_time_dir(char         *host_name,
+ **                        char         *time_dir,
  **                        int          warn_delete,
  **                        unsigned int job_id,
  **                        unsigned int dir_id,
@@ -59,7 +60,6 @@ DESCR__E_M3
 #include "amgdefs.h"
 
 /* External global variables. */
-extern char              time_dir[];
 #ifdef _DELETE_LOG
 extern struct delete_log dl;
 #endif
@@ -71,6 +71,7 @@ extern struct delete_log dl;
 void
 #ifdef _DELETE_LOG
 remove_time_dir(char         *host_name,
+                char         *time_dir,
                 int          warn_delete,
                 unsigned int job_id,
                 unsigned int dir_id,
@@ -78,7 +79,10 @@ remove_time_dir(char         *host_name,
                 char         *cfile,
                 int          cfile_pos)
 #else
-remove_time_dir(char *host_name, int warn_delete, unsigned int job_id)
+remove_time_dir(char         *host_name,
+                char         *time_dir,
+                int          warn_delete,
+                unsigned int job_id)
 #endif
 {
 #ifdef _CHECK_TIME_DIR_DEBUG

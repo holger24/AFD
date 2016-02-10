@@ -316,7 +316,7 @@ exec_cmd(char   *cmd,
                            if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
                            {
                               /* There is nothing to read! */
-                              buffer[0] = '\0';
+                              *buffer[0] = '\0';
                               n = 0;
                            }
                            else
@@ -328,7 +328,7 @@ exec_cmd(char   *cmd,
                         }
                         if (n > 0)
                         {
-                           buffer[n] = '\0';
+                           *buffer[n] = '\0';
                         }
                      }
                      else

@@ -141,10 +141,17 @@ each item:
 </tr>
 <tr>
    <td>A</td>
-   <td>Archive flag. If there is a Y it means that this file has been
-       archived. When the archive time is reached this file will be deleted
-       and will then have the status D. If it was not archived you will
-       find an N here.</td>
+   <td>Archive/type flag. The meaning of this flag is as follows:
+       <pre>
+           Y - Is archived and is still in archive.
+           D - Is archived, however it has already been deleted.
+           N - Is not archived.
+           * - Receive job.
+           d - Confirmation of dispatch.
+           r - Confirmation of receipt.
+           R - Confirmation of retrieve.
+           t - Confirmation deleteted due to timeup.
+       </pre></td>
 </tr>
 </table>
 </center>
@@ -277,9 +284,9 @@ which have the following meaning:
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1997 - 2009 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2015 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 25.11.2009
+   Last updated: 26.09.2015
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

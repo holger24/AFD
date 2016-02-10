@@ -1,6 +1,6 @@
 /*
  *  ea_str.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -90,7 +90,8 @@ static const char *eastr[] = /* Event action string. */
                      "Enable simulate send",            /* 65 */
                      "Disable simulate send",           /* 66 */
                      "Enable simulate host",            /* 67 */
-                     "Disable simulate host"            /* 68 */
+                     "Disable simulate host",           /* 68 */
+                     "Modify errors offline"            /* 69 */
                   };
 
 /* NOTE: If the maximum length changes, don't forget to change */

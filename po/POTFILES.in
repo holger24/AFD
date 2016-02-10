@@ -1,12 +1,12 @@
 # List of source files which contain translatable strings.
-src/afdd/afdd.c
-src/afdd/check_changes.c
-src/afdd/check_logs.c
-src/afdd/display_file.c
-src/afdd/get_display_data.c
-src/afdd/handle_request.c
-src/afdd/show_dir_list.c
-src/afdd/show_job_list.c
+src/servers/afdd/afdd.c
+src/servers/afdd/check_changes.c
+src/servers/afdd/check_logs.c
+src/servers/afdd/display_file.c
+src/servers/afdd/get_display_data.c
+src/servers/afdd/handle_request.c
+src/servers/afdd/show_dir_list.c
+src/servers/afdd/show_job_list.c
 src/amg/amg.c
 src/amg/amg_zombie_check.c
 src/amg/check_files.c
@@ -126,7 +126,7 @@ src/cmdline/aftp.c
 src/cmdline/asmtp.c
 src/cmdline/cmdline.h
 src/cmdline/eval_files.c
-src/cmdline/get_remote_file_names.c
+src/cmdline/get_remote_file_names_ftp_cmd.c
 src/cmdline/init_aftp.c
 src/cmdline/init_asmtp.c
 src/cmdline/trans_log.c

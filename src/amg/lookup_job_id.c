@@ -1,6 +1,6 @@
 /*
  *  lookup_job_id.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,8 @@ DESCR__S_M3
  **   lookup_job_id - searches for a job ID
  **
  ** SYNOPSIS
- **   void lookup_job_id(struct instant_db *p_db, int *jid_number)
+ **   void lookup_job_id(struct instant_db *p_db, int *jid_number,
+ **                      char *outgoing_file_dir, int outgoing_file_dir_length)
  **
  ** DESCRIPTION
  **   The function lookup_job_id() searches for the job ID of the
@@ -71,7 +72,6 @@ extern char                msg_dir[],
 #ifdef WITH_GOTCHA_LIST
                            *gotcha,
 #endif
-                           outgoing_file_dir[],
                            *p_msg_dir;
 extern struct file_mask    *fml;
 extern struct job_id_data  *jd;
@@ -82,7 +82,10 @@ extern struct dir_name_buf *dnb;
 
 /*########################### lookup_job_id() ###########################*/
 void
-lookup_job_id(struct instant_db *p_db, unsigned int *jid_number)
+lookup_job_id(struct instant_db *p_db,
+              unsigned int      *jid_number,
+              char              *outgoing_file_dir,
+              int               outgoing_file_dir_length)
 {
    register int i;
    int          buf_size,
@@ -284,6 +287,10 @@ lookup_job_id(struct instant_db *p_db, unsigned int *jid_number)
    jd[*no_of_job_ids].dir_config_id = p_db->dir_config_id;
    jd[*no_of_job_ids].file_mask_id = p_db->file_mask_id;
    jd[*no_of_job_ids].recipient_id = p_db->recipient_id; /* Not used for CRC. */
+#ifdef _NEW_JID
+   jd[*no_of_job_ids].creation_time = time(NULL); /* Not used for CRC. */
+   jd[*no_of_job_ids].special_flag = 0;           /* Not used for CRC. */
+#endif
 
    /*
     * NOTE: p_db->recipient is NOT MAX_RECIPIENT_LENGTH, it has the
@@ -463,7 +470,7 @@ lookup_job_id(struct instant_db *p_db, unsigned int *jid_number)
    /*
     * Create the outgoing directory for this job.
     */
-   p_outgoing_file_dir = outgoing_file_dir + strlen(outgoing_file_dir);
+   p_outgoing_file_dir = outgoing_file_dir + outgoing_file_dir_length;
    *p_outgoing_file_dir = '/';
    (void)strcpy(p_outgoing_file_dir + 1, p_db->str_job_id);
    if ((mkdir(outgoing_file_dir, DIR_MODE) == -1) && (errno != EEXIST))

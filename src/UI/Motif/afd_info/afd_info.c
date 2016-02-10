@@ -387,6 +387,9 @@ main(int argc, char *argv[])
        (fsa[host_position].protocol & MAP_FLAG) ||
 #endif
        (fsa[host_position].protocol & HTTP_FLAG) ||
+#ifdef _WITH_DE_MAIL_SUPPORT
+       (fsa[host_position].protocol & DE_MAIL_FLAG) ||
+#endif
        (fsa[host_position].protocol & SMTP_FLAG))
    {
       get_ip_no(fsa[host_position].real_hostname[0], tmp_str_line);
@@ -531,6 +534,9 @@ main(int argc, char *argv[])
           (fsa[host_position].protocol & MAP_FLAG) ||
 #endif
           (fsa[host_position].protocol & HTTP_FLAG) ||
+#ifdef _WITH_DE_MAIL_SUPPORT
+          (fsa[host_position].protocol & DE_MAIL_FLAG) ||
+#endif
           (fsa[host_position].protocol & SMTP_FLAG))
       {
          get_ip_no(fsa[host_position].real_hostname[1], tmp_str_line);
@@ -597,6 +603,12 @@ main(int argc, char *argv[])
    {
       length += sprintf(&protocol_label_str[length], "SMTP ");
    }
+#ifdef _WITH_DE_MAIL_SUPPORT
+   if (fsa[host_position].protocol & DE_MAIL_FLAG)
+   {
+      length += sprintf(&protocol_label_str[length], "DEMAIL ");
+   }
+#endif
    if (fsa[host_position].protocol & HTTP_FLAG)
    {
       length += sprintf(&protocol_label_str[length], "HTTP ");
@@ -617,6 +629,12 @@ main(int argc, char *argv[])
    if (fsa[host_position].protocol & MAP_FLAG)
    {
       length += sprintf(&protocol_label_str[length], "MAP ");
+   }
+#endif
+#ifdef _WITH_DFAX_SUPPORT
+   if (fsa[host_position].protocol & DFAX_FLAG)
+   {
+      length += sprintf(&protocol_label_str[length], "DFAX ");
    }
 #endif
 #ifdef WITH_SSL

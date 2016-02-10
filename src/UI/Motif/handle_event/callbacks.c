@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,6 +39,8 @@ DESCR__S_M3
  **
  ** HISTORY
  **   24.06.2007 H.Kiehl Created
+ **   18.02.2015 H.Kiehl Use statusbox for information instead of popups
+ **                      which have to be acknowledged.
  **
  */
 DESCR__E_M3
@@ -181,7 +183,8 @@ set_button(Widget w, XtPointer client_data, XtPointer call_data)
                 not_enough_errors,
                 pos;
    unsigned int event_action;
-   char         *reason_str = NULL,
+   char         buffer[256],
+                *reason_str = NULL,
                 *text;
 
    if ((text = XmTextGetString(text_w)))
@@ -536,15 +539,15 @@ set_button(Widget w, XtPointer client_data, XtPointer call_data)
       {
          if (flags_unchangeable > 0)
          {
-            (void)xrec(INFO_DIALOG,
-                       "Unset acknowledge/offline for %d instances, %d already unset.",
-                       flags_changed, flags_unchangeable);
+            (void)snprintf(buffer, 256,
+                           "Unset acknowledge/offline for %d instances, %d already unset.",
+                           flags_changed, flags_unchangeable);
          }
          else
          {
-            (void)xrec(INFO_DIALOG,
-                       "Unset acknowledge/offline for %d instances.",
-                       flags_changed);
+            (void)snprintf(buffer, 256,
+                          "Unset acknowledge/offline for %d instances.",
+                          flags_changed);
          }
       }
       else
@@ -553,69 +556,75 @@ set_button(Widget w, XtPointer client_data, XtPointer call_data)
          {
             if (not_enough_errors > 0)
             {
-               (void)xrec(INFO_DIALOG,
-                          "Set acknowledge/offline for %d instances, %d already set. For %d there are not enough errors.",
-                          flags_changed, flags_unchangeable, not_enough_errors);
+               (void)snprintf(buffer, 256,
+                              "Set acknowledge/offline for %d instances, %d already set. For %d there are not enough errors.",
+                              flags_changed, flags_unchangeable, not_enough_errors);
             }
             else
             {
-               (void)xrec(INFO_DIALOG,
-                          "Set acknowledge/offline for %d instances, %d already set.",
-                          flags_changed, flags_unchangeable);
+               (void)snprintf(buffer, 256,
+                              "Set acknowledge/offline for %d instances, %d already set.",
+                              flags_changed, flags_unchangeable);
             }
          }
          else
          {
             if (not_enough_errors > 0)
             {
-               (void)xrec(INFO_DIALOG,
-                          "Set acknowledge/offline for %d instances. For %d there are not enough errors.",
-                          flags_changed, not_enough_errors);
+               (void)snprintf(buffer, 256,
+                              "Set acknowledge/offline for %d instances. For %d there are not enough errors.",
+                              flags_changed, not_enough_errors);
             }
             else
             {
-               (void)xrec(INFO_DIALOG,
-                          "Set acknowledge/offline for %d instances.",
-                          flags_changed);
+               (void)snprintf(buffer, 256,
+                              "Set acknowledge/offline for %d instances.",
+                              flags_changed);
             }
          }
       }
+      show_message(statusbox_w, buffer);
    }
    else if (flags_unchangeable > 0)
         {
            if (acknowledge_type == UNSET_SELECT)
            {
-              (void)xrec(INFO_DIALOG,
-                         "Acknowledge/offline for %d instances already unset.",
-                         flags_unchangeable);
+              (void)snprintf(buffer, 256,
+                             "Acknowledge/offline for %d instances already unset.",
+                             flags_unchangeable);
+              show_message(statusbox_w, buffer);
            }
            else
            {
               if (not_enough_errors > 0)
               {
-                 (void)xrec(INFO_DIALOG,
-                            "Acknowledge/offline for %d instances already set. For %d there are not enough errors.",
-                            flags_unchangeable, not_enough_errors);
+                 (void)snprintf(buffer, 256,
+                                "Acknowledge/offline for %d instances already set. For %d there are not enough errors.",
+                                flags_unchangeable, not_enough_errors);
+                 show_message(statusbox_w, buffer);
               }
               else
               {
                  if (reason_str == NULL)
                  {
-                    (void)xrec(INFO_DIALOG,
-                               "Acknowledge/offline for %d instances already set.",
-                               flags_unchangeable);
+                    (void)snprintf(buffer, 256,
+                                   "Acknowledge/offline for %d instances already set.",
+                                   flags_unchangeable);
+                    show_message(statusbox_w, buffer);
                  }
               }
            }
         }
    else if (not_enough_errors > 0)
         {
-           (void)xrec(INFO_DIALOG,
-                      "Not enough errors for %d instances.", not_enough_errors);
+           (void)snprintf(buffer, 256,
+                          "Not enough errors for %d instances.",
+                          not_enough_errors);
+           show_message(statusbox_w, buffer);
         }
    else if ((reason_str == NULL) || (acknowledge_type == UNSET_SELECT))
         {
-           (void)xrec(INFO_DIALOG, "No changes.");
+           show_message(statusbox_w, "No changes.");
         }
 
    free(reason_str);

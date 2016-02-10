@@ -1,6 +1,6 @@
 /*
  *  start_all.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2007 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -88,7 +88,7 @@ start_all(void)
    {
       pl[i].log_pid = 0;
       pl[i].next_retry_time_log = 0L;
-      if (msa[i].connect_status == DISABLED)
+      if ((msa[i].connect_status == DISABLED) || (msa[i].rcmd[0] == '\0'))
       {
          pl[i].mon_pid = 0;
          pl[i].start_time = 0L;

@@ -1,6 +1,6 @@
 /*
  *  httpdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -60,6 +60,9 @@ struct http_message_reply
           int          port;
           int          header_length;
           int          http_version;
+#ifdef WITH_SSL
+          int          strict;
+#endif
           int          www_authenticate;
           int          bytes_buffered;
           int          bytes_read;
@@ -76,7 +79,7 @@ struct http_message_reply
 
 /* Function prototypes. */
 #ifdef WITH_SSL
-extern int  http_connect(char *, char *, int, char *, char *, int, int, int),
+extern int  http_connect(char *, char *, int, char *, char *, int, int, int, int),
 #else
 extern int  http_connect(char *, char *, int, char *, char *, int, int),
 #endif

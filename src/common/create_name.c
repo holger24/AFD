@@ -1,6 +1,6 @@
 /*
  *  create_name.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -28,6 +28,7 @@ DESCR__S_M3
  ** SYNOPSIS
  **   int create_name(char           *p_path,   - the path where the job
  **                                               can be found by the FD.
+ **                   int            p_path_length,
  **                   signed char    priority,  - the priority of the job
  **                   time_t         time_val,  - Date value in seconds
  **                   unsigned int   id,        - job or dir ID
@@ -98,6 +99,7 @@ DESCR__E_M3
 int
 create_name(char           *p_path,     /* Path where the new directory  */
                                         /* is to be created.             */
+            int            p_path_length,
             signed char    priority,    /* Priority of the job.          */
             time_t         time_val,    /* Date value in seconds.        */
             unsigned int   id,          /* Job or dir ID.                */
@@ -115,13 +117,13 @@ create_name(char           *p_path,     /* Path where the new directory  */
    {
       if (next_counter(counter_fd, unique_number, MAX_MSG_PER_SEC) < 0)
       {
-         return(INCORRECT);
+         return(-1);
       }
    }
 
    /* Now try to create directory. */
    (void)strcpy(tmpname, p_path);
-   ptr = tmpname + strlen(tmpname);
+   ptr = tmpname + p_path_length;
    if (*(ptr - 1) != '/')
    {
       *(ptr++) = '/';
@@ -146,7 +148,7 @@ create_name(char           *p_path,     /* Path where the new directory  */
          if ((dir_no = get_dir_number(p_path, id, &dirs_left)) == INCORRECT)
          {
             *msg_name = '\0';
-            return(INCORRECT);
+            return(-2);
          }
          (void)snprintf(msg_name, max_msg_name_length,
 #if SIZEOF_TIME_T == 4
@@ -163,7 +165,7 @@ create_name(char           *p_path,     /* Path where the new directory  */
          if ((errno == EMLINK) || (errno == ENOSPC))
          {
             *msg_name = '\0';
-            return(INCORRECT);
+            return(-3);
          }
          (*split_job_counter)++;
          if (*split_job_counter == (unsigned int)dirs_left)
@@ -173,8 +175,9 @@ create_name(char           *p_path,     /* Path where the new directory  */
              * successful. So we don't end up in an endless loop
              * lets return here.
              */
+system_log(DEBUG_SIGN, __FILE__, __LINE__, "tmpname=%s", tmpname);
             *msg_name = '\0';
-            return(INCORRECT);
+            return(-4);
          }
       }
       else

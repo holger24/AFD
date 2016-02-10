@@ -1,6 +1,6 @@
 /*
  *  eval_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2012 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2000 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -64,7 +64,7 @@ eval_config_file(char *file_name, struct data *p_db)
    off_t length;
    char  *buffer;
 
-   if ((length = read_file_no_cr(file_name, &buffer, __FILE__, __LINE__)) != INCORRECT)
+   if ((length = read_file_no_cr(file_name, &buffer, NO, __FILE__, __LINE__)) != INCORRECT)
    {
       char *ptr = buffer;
 
@@ -103,19 +103,19 @@ eval_config_file(char *file_name, struct data *p_db)
                ptr++; i++;
             }
             if (*ptr == '\0')
-            {      
+            {
                (void)rec(sys_log_fd, ERROR_SIGN,
                          _("Hmm. This does NOT look like URL for me!? (%s %d)\n"),
                          __FILE__, __LINE__);
                exit(INCORRECT);  
-            }      
+            }
             if (i == MAX_USER_NAME_LENGTH)
-            {      
+            {
                (void)rec(sys_log_fd, ERROR_SIGN,
                          _("Unable to store user name. It is longer than %d bytes! (%s %d)\n"),
                          MAX_USER_NAME_LENGTH, __FILE__, __LINE__);
                exit(INCORRECT);  
-            }      
+            }
             p_db->user[i] = '\0';
          }
          else
@@ -316,7 +316,7 @@ eval_config_file(char *file_name, struct data *p_db)
                                     _("Unable to store server name. It is longer than %d bytes! (%s %d)\n"),
                                     MAX_USER_NAME_LENGTH, __FILE__, __LINE__);
                           exit(INCORRECT);
-            }
+                       }
                        p_db->smtp_server[i] = '\0';
                     }
             }
@@ -339,7 +339,7 @@ eval_filename_file(char *file_name, struct data *p_db)
    int  ret;
    char *buffer;
 
-   if (read_file_no_cr(file_name, &buffer, __FILE__, __LINE__) == INCORRECT)
+   if (read_file_no_cr(file_name, &buffer, NO, __FILE__, __LINE__) == INCORRECT)
    {
       ret = INCORRECT;
    }
@@ -355,6 +355,7 @@ eval_filename_file(char *file_name, struct data *p_db)
       /* allocate the memory we need.                           */
       max_length = 0;
       max_rename_length = 0;
+      p_db->no_of_files = 0;
       do
       {
          p_start = ptr;
@@ -455,6 +456,10 @@ eval_filename_file(char *file_name, struct data *p_db)
 
       free(buffer);
    }
+#ifdef _DEBUG
+   (void)rec(sys_log_fd, DEBUG_SIGN,
+             "Found %d files in %s\n", p_db->no_of_files, file_name);
+#endif
 
    return(ret);
 }

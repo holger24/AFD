@@ -143,7 +143,7 @@ eval_host_config(int              *hosts_found,
    }
 
    /* Read the contents of the HOST_CONFIG file into a buffer. */
-   if (read_file_no_cr(host_config_file, &hostbase, __FILE__, __LINE__) == INCORRECT)
+   if (read_file_no_cr(host_config_file, &hostbase, YES, __FILE__, __LINE__) == INCORRECT)
    {
       exit(INCORRECT);
    }
@@ -1773,7 +1773,7 @@ eval_host_config(int              *hosts_found,
                     _("Unknown protocol option <%d> for host %s, largest value is %d and smallest %d."),
                     (*hl)[host_counter].protocol_options,
                     (*hl)[host_counter].host_alias,
-                    (KEEP_CONNECTED_DISCONNECT |
+                    (KEEP_CONNECTED_DISCONNECT|
                      FTP_DISABLE_MLST |
                      TLS_STRICT_VERIFY |
                      FTP_USE_LIST |

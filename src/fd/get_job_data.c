@@ -1,6 +1,6 @@
 /*
  *  get_job_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -249,6 +249,18 @@ retry:
            protocol = MAP;
         }
 #endif
+#ifdef _WITH_DFAX_SUPPORT
+   else if (scheme & DFAX_FLAG)
+        {
+           protocol = DFAX;
+        }
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+   else if (scheme & DE_MAIL_FLAG)
+        {
+           protocol = DE_MAIL;
+        }
+#endif
         else
         {
            system_log(WARN_SIGN, __FILE__, __LINE__,
@@ -277,7 +289,12 @@ retry:
          real_hostname[fd] = '\0';
       }
    }
+#ifdef _WITH_DE_MAIL_SUPPORT
+   if (((scheme & SMTP_FLAG) || (scheme & DE_MAIL_FLAG)) &&
+       (smtp_server[0] != '\0'))
+#else
    if ((scheme & SMTP_FLAG) && (smtp_server[0] != '\0'))
+#endif
    {
       fd = 0;
       while (smtp_server[fd] != '\0')

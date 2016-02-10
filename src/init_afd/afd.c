@@ -1,6 +1,6 @@
 /*
  *  afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -312,7 +312,7 @@ main(int argc, char *argv[])
              (argv[1][2] == '\0')) ||
             ((argv[1][1] == 'i') && (isdigit((int)argv[1][2]))))))
       {
-         if (strcmp(argv[1], "-a") == 0) /* Start AFD. */
+         if (my_strcmp(argv[1], "-a") == 0) /* Start AFD. */
          {
             if (startup_perm != YES)
             {
@@ -323,7 +323,7 @@ main(int argc, char *argv[])
             start_up = AFD_ONLY;
          }
 #ifdef AFDBENCH_CONFIG
-         else if (strcmp(argv[1], "-A") == 0) /* Start AFD but no dir scans. */
+         else if (my_strcmp(argv[1], "-A") == 0) /* Start AFD but no dir scans. */
               {
                  if (startup_perm != YES)
                  {
@@ -335,11 +335,11 @@ main(int argc, char *argv[])
                  start_up = AFD_ONLY;
               }
 #endif
-         else if (strcmp(argv[1], "-b") == 0) /* Block auto restart. */
+         else if (my_strcmp(argv[1], "-b") == 0) /* Block auto restart. */
               {
                  start_up = MAKE_BLOCK_FILE;
               }
-         else if (strcmp(argv[1], "-c") == 0) /* Only check if AFD is active. */
+         else if (my_strcmp(argv[1], "-c") == 0) /* Only check if AFD is active. */
               {
                  start_up = AFD_CHECK_ONLY;
                  if (argc == 3)
@@ -351,7 +351,7 @@ main(int argc, char *argv[])
                     default_heartbeat_timeout = DEFAULT_HEARTBEAT_TIMEOUT;
                  }
               }
-         else if (strcmp(argv[1], "-C") == 0) /* Only check if AFD is active. */
+         else if (my_strcmp(argv[1], "-C") == 0) /* Only check if AFD is active. */
               {
                  if (startup_perm != YES)
                  {
@@ -369,7 +369,7 @@ main(int argc, char *argv[])
                     default_heartbeat_timeout = DEFAULT_HEARTBEAT_TIMEOUT;
                  }
               }
-         else if (strcmp(argv[1], "-d") == 0) /* Start afd_ctrl. */
+         else if (my_strcmp(argv[1], "-d") == 0) /* Start afd_ctrl. */
               {
                  if (afd_ctrl_perm != YES)
                  {
@@ -379,7 +379,7 @@ main(int argc, char *argv[])
                  }
                  start_up = AFD_CTRL_ONLY;
               }
-         else if (strcmp(argv[1], "-h") == 0) /* Only check for heartbeat. */
+         else if (my_strcmp(argv[1], "-h") == 0) /* Only check for heartbeat. */
               {
                  start_up = AFD_HEARTBEAT_CHECK_ONLY;
                  if (argc == 3)
@@ -391,7 +391,7 @@ main(int argc, char *argv[])
                     default_heartbeat_timeout = DEFAULT_HEARTBEAT_TIMEOUT;
                  }
               }
-         else if (strcmp(argv[1], "-H") == 0) /* If there is no heartbeat start AFD. */
+         else if (my_strcmp(argv[1], "-H") == 0) /* If there is no heartbeat start AFD. */
               {
                  if (startup_perm != YES)
                  {
@@ -409,7 +409,7 @@ main(int argc, char *argv[])
                     default_heartbeat_timeout = DEFAULT_HEARTBEAT_TIMEOUT;
                  }
               }
-         else if (strcmp(argv[1], "-i") == 0) /* Initialize AFD. */
+         else if (my_strcmp(argv[1], "-i") == 0) /* Initialize AFD. */
               {
                  if (initialize_perm != YES)
                  {
@@ -421,7 +421,7 @@ main(int argc, char *argv[])
                  start_up = AFD_INITIALIZE;
                  if (argc == 3)
                  {
-                    if (strcmp(argv[2], "-n") == 0) /* Just print, do not execute. */
+                    if (my_strcmp(argv[2], "-n") == 0) /* Just print, do not execute. */
                     {
                        dry_run = YES;
                     }
@@ -445,7 +445,7 @@ main(int argc, char *argv[])
                  start_up = AFD_INITIALIZE;
                  if (argc == 3)
                  {
-                    if (strcmp(argv[2], "-n") == 0) /* Just print, do not execute. */
+                    if (my_strcmp(argv[2], "-n") == 0) /* Just print, do not execute. */
                     {
                        dry_run = YES;
                     }
@@ -456,7 +456,7 @@ main(int argc, char *argv[])
                     }
                  }
               }
-         else if (strcmp(argv[1], "-I") == 0) /* Full Initialization of AFD. */
+         else if (my_strcmp(argv[1], "-I") == 0) /* Full Initialization of AFD. */
               {
                  if (initialize_perm != YES)
                  {
@@ -468,7 +468,7 @@ main(int argc, char *argv[])
                  start_up = AFD_INITIALIZE;
                  if (argc == 3)
                  {
-                    if (strcmp(argv[2], "-n") == 0) /* Just print, do not execute. */
+                    if (my_strcmp(argv[2], "-n") == 0) /* Just print, do not execute. */
                     {
                        dry_run = YES;
                     }
@@ -479,7 +479,7 @@ main(int argc, char *argv[])
                     }
                  }
               }
-         else if (strcmp(argv[1], "-s") == 0) /* Shutdown AFD. */
+         else if (my_strcmp(argv[1], "-s") == 0) /* Shutdown AFD. */
               {
                  if (shutdown_perm != YES)
                  {
@@ -490,7 +490,7 @@ main(int argc, char *argv[])
                  }
                  start_up = SHUTDOWN_ONLY;
               }
-         else if (strcmp(argv[1], "-S") == 0) /* Silent AFD shutdown. */
+         else if (my_strcmp(argv[1], "-S") == 0) /* Silent AFD shutdown. */
               {
                  if (shutdown_perm != YES)
                  {
@@ -501,11 +501,11 @@ main(int argc, char *argv[])
                  }
                  start_up = SILENT_SHUTDOWN_ONLY;
               }
-         else if (strcmp(argv[1], "-r") == 0) /* Removes blocking file. */
+         else if (my_strcmp(argv[1], "-r") == 0) /* Removes blocking file. */
               {
                  start_up = REMOVE_BLOCK_FILE;
               }
-         else if (strcmp(argv[1], "-T") == 0) /* Check if data types match */
+         else if (my_strcmp(argv[1], "-T") == 0) /* Check if data types match */
                                               /* current binary.           */
               {
                  int changes;
@@ -537,7 +537,7 @@ main(int argc, char *argv[])
 
                  exit(changes);
               }
-         else if (strcmp(argv[1], "-z") == 0) /* Set shutdown bit. */
+         else if (my_strcmp(argv[1], "-z") == 0) /* Set shutdown bit. */
               {
                  if (shutdown_perm != YES)
                  {
@@ -548,8 +548,8 @@ main(int argc, char *argv[])
                  }
                  start_up = SET_SHUTDOWN_BIT;
               }
-         else if ((strcmp(argv[1], "--help") == 0) ||
-                  (strcmp(argv[1], "-?") == 0)) /* Show usage. */
+         else if ((my_strcmp(argv[1], "--help") == 0) ||
+                  (my_strcmp(argv[1], "-?") == 0)) /* Show usage. */
               {
                  usage(argv[0]);
                  exit(SUCCESS);
@@ -640,7 +640,7 @@ main(int argc, char *argv[])
 
             if (gethostname(hostname, MAX_REAL_HOSTNAME_LENGTH) == 0)
             {
-               if (strcmp(hostname, p_afd_status->hostname) != 0)
+               if (my_strcmp(hostname, p_afd_status->hostname) != 0)
                {
                   if (start_up == SHUTDOWN_ONLY)
                   {
@@ -879,7 +879,7 @@ main(int argc, char *argv[])
 
                     if (gethostname(hostname, MAX_REAL_HOSTNAME_LENGTH) == 0)
                     {
-                       if (strcmp(p_afd_status->hostname, hostname) == 0)
+                       if (my_strcmp(p_afd_status->hostname, hostname) == 0)
                        {
                           (void)fprintf(stdout,
                                         _("AFD is active on %s in %s\n"),
@@ -956,7 +956,7 @@ main(int argc, char *argv[])
 
                     if (gethostname(hostname, MAX_REAL_HOSTNAME_LENGTH) == 0)
                     {
-                       if (strcmp(p_afd_status->hostname, hostname) == 0)
+                       if (my_strcmp(p_afd_status->hostname, hostname) == 0)
                        {
                           (void)fprintf(stdout,
                                         _("AFD is active on %s in %s\n"),
@@ -1233,7 +1233,7 @@ check_database(void)
            config_file[MAX_PATH_LENGTH];
 
       ret = -1;
-      if (read_file_no_cr(db_file, &buffer, __FILE__, __LINE__) != INCORRECT)
+      if (read_file_no_cr(db_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT)
       {
          char *ptr;
 

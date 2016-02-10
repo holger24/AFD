@@ -74,23 +74,24 @@ data. Otherwise both AFD's will retrieve the data and that can be quit
 annoying. The syntax of afdcfg is as follows:
 </p>
 <pre>
-   SYNTAX  : afdcfg [-w working directory] [-u [<user>]] options
-             -a      enable archive
-             -A      disable archive
-             -b      enable create source dir
-             -B      disable create source dir
-             -c      enable create target dir
-             -C      disable create target dir
-             -d      enable dir warn time
-             -du     enable + update directory warn time
-             -D      disable dir warn time
-             -h      enable host warn time
-             -H      disable host warn time
-             -i      enable simulate send mode
-             -I      disable simulate send mode
-             -r      enable retrieving of files
-             -R      disable retrieving of files
-             -s      status of the above flags
+   SYNTAX  : afdcfg [-w working directory] [-p <user profile>] [-u [<fake user>]] options
+             -a                    enable archive
+             -A                    disable archive
+             -b                    enable create source dir
+             -B                    disable create source dir
+             -c                    enable create target dir
+             -C                    disable create target dir
+             -d                    enable directory warn time
+             -du                   enable + update directory warn time
+             -D                    disable directory warn time
+             -h                    enable host warn time
+             -H                    disable host warn time
+             -i                    enable simulate send mode
+             -I                    disable simulate send mode
+             -o &lt;errors offline&gt;   modify first errors offline
+             -r                    enable retrieving of files
+             -R                    disable retrieving of files
+             -s                    status of the above flags
 </pre>
 <h3 align=center><a name="fsa_view"><u>View FSA (fsa_view)</u></a></h3>
 <p>
@@ -100,6 +101,7 @@ program called fsa_view. An example output might look as follows:
 <pre>
 afd@r2d2:~$ fsa_view fiau_
     Number of hosts: 34   FSA ID: 1  Struct Version: 3  Pagesize: 4096
+    First errors offline: 0
 
 =============================&gt; fiau_ &lt;=============================
 Host alias CRC       : e831dc61
@@ -787,9 +789,9 @@ user interaction, so it can be used from any shell scripts or programs such as
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 2001 - 2014 by H.Kiehl<br>
+   Copyright &copy; 2001 - 2015 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 07.11.2014
+   Last updated: 23.03.2015
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

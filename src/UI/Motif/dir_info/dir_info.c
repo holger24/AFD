@@ -1,6 +1,6 @@
 /*
  *  dir_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ DESCR__S_M1
 DESCR__E_M1
 
 #include <stdio.h>               /* fopen(), NULL                        */
-#include <string.h>              /* strcpy(), strcat(), strcmp()         */
+#include <string.h>              /* strcpy(), strcat()                   */
 #include <time.h>                /* strftime(), localtime()              */
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1007,7 +1007,7 @@ init_dir_info(int *argc, char *argv[])
    }
    for (i = 0; i < no_of_dirs; i++)
    {
-      if (strcmp(fra[i].dir_alias, dir_alias) == 0)
+      if (my_strcmp(fra[i].dir_alias, dir_alias) == 0)
       {
          fra_pos = i;
          break;

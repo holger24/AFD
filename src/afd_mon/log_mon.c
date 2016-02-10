@@ -1,6 +1,6 @@
 /*
  *  log_mon.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2012 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2007 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -185,7 +185,7 @@ main(int argc, char *argv[])
             (void)fprintf(stderr,
                           "Usage: %s [-w working directory] AFD-number Log-capabilities\n",
                           argv[0]);
-            exit(SYNTAX_ERROR);
+            exit(MON_SYNTAX_ERROR);
          }
          ptr++;
       }
@@ -199,7 +199,7 @@ main(int argc, char *argv[])
             (void)fprintf(stderr,
                           "Usage: %s [-w working directory] AFD-number Log-capabilities\n",
                           argv[0]);
-            exit(SYNTAX_ERROR);
+            exit(MON_SYNTAX_ERROR);
          }
          ptr++;
       }

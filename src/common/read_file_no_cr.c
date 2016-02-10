@@ -1,6 +1,6 @@
 /*
  *  read_file_no_cr.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2013 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,8 @@ DESCR__S_M3
  **                     and remove any CR
  **
  ** SYNOPSIS
- **   off_t read_file_no_cr(char *filename, char **buffer, char *sfile, int sline)
+ **   off_t read_file_no_cr(char *filename, char **buffer, int add_new_line,
+ **                         char *sfile, int sline)
  **
  ** DESCRIPTION
  **   The function reads the contents of the file filename into a
@@ -61,7 +62,11 @@ DESCR__E_M3
 
 /*########################## read_file_no_cr() ##########################*/
 off_t
-read_file_no_cr(char *filename, char **buffer, char *sfile, int sline)
+read_file_no_cr(char *filename,
+                char **buffer,
+                int  add_new_line,
+                char *sfile,
+                int  sline)
 {
    int         fd;
    off_t       bytes_buffered;
@@ -95,7 +100,7 @@ read_file_no_cr(char *filename, char **buffer, char *sfile, int sline)
    }
 
    /* Allocate enough memory for the contents of the file. */
-   if ((*buffer = malloc(stat_buf.st_size + 1)) == NULL)
+   if ((*buffer = malloc(1 + stat_buf.st_size + 1)) == NULL)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  _("Could not malloc() memory : %s [%s %d]"),
@@ -113,8 +118,17 @@ read_file_no_cr(char *filename, char **buffer, char *sfile, int sline)
       *buffer = NULL;
       return(INCORRECT);
    }
-   bytes_buffered = 0;
    read_ptr = *buffer;
+   if (add_new_line == YES)
+   {
+      *read_ptr = '\n';
+      read_ptr++;
+      bytes_buffered = 1;
+   }
+   else
+   {
+      bytes_buffered = 0;
+   }
 
    /* Read file into buffer. */
 #ifdef HAVE_GETLINE

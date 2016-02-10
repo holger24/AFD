@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2013 Holger Kiehl
+## Copyright (C) 2001 - 2015 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@
 ##
 
 MAINTAINERCLEANFILES         = Makefile.in
-CLEANFILES                   = gmon.out core core.*
 noinst_HEADERS               = eumetsat_header_defs.h mmap_emu.h
 AM_CPPFLAGS                  = -I.. -I../init_afd -I../amg
 lib_LIBRARIES                = libmisc.a
@@ -44,3 +43,4 @@ endif
 EXTRA_PROGRAMS               = create_eumetsat_name todos
 create_eumetsat_name_SOURCES = create_eumetsat_name.c
 todos_SOURCES                = todos.c
+CLEANFILES                   = gmon.out core core.* $(EXTRA_PROGRAMS)

@@ -1,6 +1,6 @@
 /*
  *  link_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ DESCR__S_M3
  ** SYNOPSIS
  **   int link_files(char                   *src_file_path,
  **                  char                   *dest_file_path,
+ **                  int                    dest_file_path_length,
  **                  time_t                 current_time,
  **                  struct directory_entry *p_de,
  **                  struct instant_db      *p_db,
@@ -105,6 +106,7 @@ extern struct filetransfer_status *fsa;
 int
 link_files(char                   *src_file_path,
            char                   *dest_file_path,
+           int                    dest_file_path_length,
            time_t                 current_time,
 #ifdef _WITH_PTHREAD
            off_t                  *file_size_pool,
@@ -219,7 +221,8 @@ link_files(char                   *src_file_path,
                   if (p_db->loptions != NULL)
                   {
                      /* Create a new message name and directory. */
-                     if (create_name(dest_file_path, p_db->priority,
+                     if (create_name(dest_file_path, dest_file_path_length,
+                                     p_db->priority,
                                      current_time, p_db->job_id,
                                      split_job_counter, &unique_number,
                                      unique_name, MAX_FILENAME_LENGTH - 1, -1) < 0)
@@ -234,7 +237,9 @@ link_files(char                   *src_file_path,
                            {
                               (void)sleep(DISK_FULL_RESCAN_TIME);
                               errno = 0;
-                              if (create_name(dest_file_path, p_db->priority,
+                              if (create_name(dest_file_path,
+                                              dest_file_path_length,
+                                              p_db->priority,
                                               current_time, p_db->job_id,
                                               split_job_counter, &unique_number,
                                               unique_name,

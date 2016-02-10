@@ -1,6 +1,6 @@
 /*
  *  isdup.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -142,8 +142,21 @@ isdup(char         *fullname,
    if (crc == 0)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to get a CRC value for %s [id=%x]",
-                 fullname, id);
+#if SIZEOF_OFF_T == 4
+# if SIZEOF_TIME_T == 4
+                 "Failed to get a CRC value for %s [id=%x filename=%s size=%ld timeout=%ld stay_attached=%d lock=%d flag=%d]",
+# else
+                 "Failed to get a CRC value for %s [id=%x filename=%s size=%ld timeout=%lld stay_attached=%d lock=%d flag=%d]",
+# endif
+#else
+# if SIZEOF_TIME_T == 4
+                 "Failed to get a CRC value for %s [id=%x filename=%s size=%lld timeout=%ld stay_attached=%d lock=%d flag=%d]",
+# else
+                 "Failed to get a CRC value for %s [id=%x filename=%s size=%lld timeout=%lld stay_attached=%d lock=%d flag=%d]",
+# endif
+#endif
+                 fullname, id, filename, (pri_off_t)size, (pri_time_t)timeout,
+                 stay_attached, lock, flag);
       return(NO);
    }
 #if defined (DEBUG_ISDUP) && defined (_MAINTAINER_LOG)

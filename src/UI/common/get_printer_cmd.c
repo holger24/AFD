@@ -1,6 +1,6 @@
 /*
  *  get_printer_cmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -62,7 +62,7 @@ get_printer_cmd(char *printer_cmd, char *default_printer)
    (void)snprintf(config_file, MAX_PATH_LENGTH, "%s%s%s",
                   p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(config_file, F_OK) == 0) &&
-       (read_file_no_cr(config_file, &buffer, __FILE__, __LINE__) != INCORRECT))
+       (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {
       if (get_definition(buffer, DEFAULT_PRINTER_CMD_DEF,
                          printer_cmd, PRINTER_INFO_LENGTH) == NULL)

@@ -248,7 +248,11 @@ input log file</a> as shown below:
    |           |    | |                                                                               6 - HTTP
    |           |    | |                                                                               7 - FTPS
    |           |    | |                                                                               8 - HTTPS
+   |           |    | |                                                                               9 - SMTPS
    |           |    | |                                                                               a - SFTP
+   |           |    | |                                                                               b - EXEC
+   |           |    | |                                                                               c - DFAX
+   |           |    | |                                                                               d - DEMAIL
    |           |    | +------------------------------------------------------------------------&gt; Alternate Host Number.
    |           |    +--------------------------------------------------------------------------&gt; Output Typ
    |           |                                                                                      0 - Normal (delivered)
@@ -257,6 +261,14 @@ input log file</a> as shown below:
    |           |                                                                                      3 - Duplicate (del)
    |           |                                                                                      4 - Other process (del)
    |           |                                                                                      5 - Address rejected (del)
+   |           |                                                                                      6 - Host disabled (del)
+   |           |                                                                                      7 - Duplicate
+   |           |                                                                                      8 - Unknown
+   |           |                                                                                      9 - Normal (received)
+   |           |                                                                                      : - Confirmation dispatch
+   |           |                                                                                      ; - Confirmation receipt
+   |           |                                                                                      &lt; - Confirmation retrieve
+   |           |                                                                                      = - Confirmation time up
    |           +-----------------------------------------------------------------------------&gt; Remote Host Name.
    +-----------------------------------------------------------------------------------------&gt; Unix Time.
 </pre>
@@ -329,9 +341,9 @@ To view these log files, use <a href="show_dlog.html">show_dlog</a>.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1997 - 2012 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2015 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 15.03.2012
+   Last updated: 27.09.2015
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

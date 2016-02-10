@@ -1,6 +1,6 @@
 /*
  *  check_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -164,6 +164,9 @@ extern struct fileretrieve_status *fra;
 #ifdef _DELETE_LOG
 extern struct delete_log          dl;
 #endif
+#ifdef MULTI_FS_SUPPORT
+extern struct extra_work_dirs     *ewl;
+#endif
 #ifdef _DISTRIBUTION_LOG
 extern unsigned int               max_jobs_per_file;
 # ifndef _WITH_PTHREAD
@@ -286,7 +289,8 @@ check_files(struct directory_entry *p_de,
    if ((dp = opendir(fullname)) == NULL)
    {
       receive_log(ERROR_SIGN, __FILE__, __LINE__, current_time,
-                  _("Failed to opendir() `%s' : %s"), fullname, strerror(errno));
+                  _("Failed to opendir() `%s' : %s @%x"),
+                  fullname, strerror(errno), p_de->dir_id);
       if (fra[p_de->fra_pos].fsa_pos == -1)
       {
          lock_region_w(fra_fd,
@@ -825,22 +829,35 @@ check_files(struct directory_entry *p_de,
 
                            if (tmp_file_dir[0] == '\0')
                            {
+#ifdef MULTI_FS_SUPPORT
+                              (void)strcpy(tmp_file_dir, ewl[p_de->ewl_pos].afd_file_dir);
+                              (void)strcpy(tmp_file_dir + ewl[p_de->ewl_pos].afd_file_dir_length,
+                                           AFD_TMP_DIR);
+                              ptr = tmp_file_dir + ewl[p_de->ewl_pos].afd_file_dir_length + AFD_TMP_DIR_LENGTH;
+#else
                               (void)strcpy(tmp_file_dir, afd_file_dir);
                               (void)strcpy(tmp_file_dir + afd_file_dir_length,
                                            AFD_TMP_DIR);
                               ptr = tmp_file_dir + afd_file_dir_length + AFD_TMP_DIR_LENGTH;
+#endif
                               *(ptr++) = '/';
                               *ptr = '\0';
 
                               /* Create a unique name. */
                               next_counter_no_lock(amg_counter, MAX_MSG_PER_SEC);
                               *unique_number = *amg_counter;
-                              if (create_name(tmp_file_dir, NO_PRIORITY,
-                                              current_time, p_de->dir_id,
-                                              &split_job_counter,
-                                              unique_number, ptr,
-                                              MAX_PATH_LENGTH - (ptr - tmp_file_dir),
-                                              -1) < 0)
+                              if ((ret = create_name(tmp_file_dir,
+#ifdef MULTI_FS_SUPPORT
+                                                     ewl[p_de->ewl_pos].afd_file_dir_length + AFD_TMP_DIR_LENGTH,
+#else
+                                                     afd_file_dir_length + AFD_TMP_DIR_LENGTH,
+#endif
+                                                     NO_PRIORITY,
+                                                     current_time, p_de->dir_id,
+                                                     &split_job_counter,
+                                                     unique_number, ptr,
+                                                     MAX_PATH_LENGTH - (ptr - tmp_file_dir),
+                                                     -1)) < 0)
                               {
                                  if (errno == ENOSPC)
                                  {
@@ -854,20 +871,25 @@ check_files(struct directory_entry *p_de,
                                        errno = 0;
                                        next_counter_no_lock(amg_counter, MAX_MSG_PER_SEC);
                                        *unique_number = *amg_counter;
-                                       if (create_name(tmp_file_dir,
-                                                       NO_PRIORITY,
-                                                       current_time,
-                                                       p_de->dir_id,
-                                                       &split_job_counter,
-                                                       unique_number, ptr,
-                                                       MAX_PATH_LENGTH - (ptr - tmp_file_dir),
-                                                       -1) < 0)
+                                       if ((ret = create_name(tmp_file_dir,
+#ifdef MULTI_FS_SUPPORT
+                                                              ewl[p_de->ewl_pos].afd_file_dir_length + AFD_TMP_DIR_LENGTH,
+#else
+                                                              afd_file_dir_length + AFD_TMP_DIR_LENGTH,
+#endif
+                                                              NO_PRIORITY,
+                                                              current_time,
+                                                              p_de->dir_id,
+                                                              &split_job_counter,
+                                                              unique_number, ptr,
+                                                              MAX_PATH_LENGTH - (ptr - tmp_file_dir),
+                                                              -1)) < 0)
                                        {
                                           if (errno != ENOSPC)
                                           {
                                              system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                                        _("Failed to create a unique name in %s : %s"),
-                                                        tmp_file_dir, strerror(errno));
+                                                        _("Failed to create a unique name in %s [%d] : %s"),
+                                                        tmp_file_dir, ret, strerror(errno));
                                              exit(INCORRECT);
                                           }
                                        }
@@ -886,8 +908,8 @@ check_files(struct directory_entry *p_de,
                                  else
                                  {
                                     system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                               _("Failed to create a unique name : %s"),
-                                               strerror(errno));
+                                               _("Failed to create a unique name in %s [%d] : %s"),
+                                               tmp_file_dir, ret, strerror(errno));
                                     exit(INCORRECT);
                                  }
                               }
@@ -980,11 +1002,11 @@ check_files(struct directory_entry *p_de,
                                  reason_str[0] = '\0';
                               }
                               receive_log(ERROR_SIGN, __FILE__, __LINE__, current_time,
-                                          _("Failed (%d) to %s file `%s' to `%s' %s: %s"),
+                                          _("Failed (%d) to %s file `%s' to `%s' %s: %s @%x"),
                                           ret,
                                           (what_done == DATA_MOVED) ? "move" : "copy",
                                           fullname, tmp_file_dir, reason_str,
-                                          strerror(errno));
+                                          strerror(errno), p_de->dir_id);
                               lock_region_w(fra_fd,
 #ifdef LOCK_DEBUG
                                             (char *)&fra[p_de->fra_pos].error_counter - (char *)fra, __FILE__, __LINE__);

@@ -164,7 +164,7 @@ get_rename_rules(int verbose)
          last_read_times = 0;
 
          if ((eaccess(config_file, F_OK) == 0) &&
-             (read_file_no_cr(config_file, &buffer, __FILE__, __LINE__) != INCORRECT))
+             (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
          {
             int  length;
             char *ptr,

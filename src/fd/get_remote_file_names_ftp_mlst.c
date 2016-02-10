@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_ftp_mlst.c - Part of AFD, an automatic file
  *                                     distribution program.
- *  Copyright (c) 2013, 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -544,7 +544,11 @@ get_remote_file_names_ftp_mlst(off_t *file_size_to_retrieve,
                {
                   if (fra[db.fra_pos].dir_flag == ALL_DISABLED)
                   {
-                     delete_remote_file(FTP, file_name, i, file_size);
+                     delete_remote_file(FTP, file_name, i,
+#ifdef _DELETE_LOG
+                                        DEL_UNREADABLE_FILE,
+#endif
+                                        file_size);
                   }
                   else
                   {
@@ -606,7 +610,11 @@ get_remote_file_names_ftp_mlst(off_t *file_size_to_retrieve,
                             ((diff_time > fra[db.fra_pos].unknown_file_time) &&
                              (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
                         {
-                           delete_remote_file(FTP, file_name, i, file_size);
+                           delete_remote_file(FTP, file_name, i,
+#ifdef _DELETE_LOG
+                                              DEL_UNREADABLE_FILE,
+#endif
+                                              file_size);
                         }
                      }
                   }

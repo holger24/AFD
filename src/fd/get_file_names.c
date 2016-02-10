@@ -150,76 +150,94 @@ get_file_names(char *file_path, off_t *file_size_to_send)
    (void)strcat(file_path, "/");
    (void)strcat(file_path, db.msg_name);
    db.p_unique_name = db.msg_name;
+#ifdef MULTI_FS_SUPPORT
    while ((*db.p_unique_name != '/') && (*db.p_unique_name != '\0'))
    {
-      db.p_unique_name++; /* Away with the job ID. */
+      db.p_unique_name++; /* Away with the filesystem ID. */
    }
    if (*db.p_unique_name == '/')
    {
       db.p_unique_name++;
+#endif
       while ((*db.p_unique_name != '/') && (*db.p_unique_name != '\0'))
       {
-         db.p_unique_name++; /* Away with the dir number. */
+         db.p_unique_name++; /* Away with the job ID. */
       }
       if (*db.p_unique_name == '/')
       {
-         int  i;
-         char str_num[MAX_INT_HEX_LENGTH + 1];
-
          db.p_unique_name++;
-         i = 0;
-         while ((*(db.p_unique_name + i) != '_') &&
-                (*(db.p_unique_name + i) != '\0') && (i < MAX_INT_HEX_LENGTH))
+         while ((*db.p_unique_name != '/') && (*db.p_unique_name != '\0'))
          {
-            str_num[i] = *(db.p_unique_name + i);
-            i++;
+            db.p_unique_name++; /* Away with the dir number. */
          }
-         if ((*(db.p_unique_name + i) != '_') || (i == 0))
+         if (*db.p_unique_name == '/')
          {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "Could not determine message name from `%s'. #%x",
-                       db.msg_name, db.id.job);
-            exit(SYNTAX_ERROR);
+            int  i;
+            char str_num[MAX_INT_HEX_LENGTH + 1];
+
+            db.p_unique_name++;
+            i = 0;
+            while ((*(db.p_unique_name + i) != '_') &&
+                   (*(db.p_unique_name + i) != '\0') &&
+                   (i < MAX_INT_HEX_LENGTH))
+            {
+               str_num[i] = *(db.p_unique_name + i);
+               i++;
+            }
+            if ((*(db.p_unique_name + i) != '_') || (i == 0))
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "Could not determine message name from `%s'. #%x",
+                          db.msg_name, db.id.job);
+               exit(SYNTAX_ERROR);
+            }
+            str_num[i] = '\0';
+            db.creation_time = (time_t)str2timet(str_num, NULL, 16);
+            db.unl = i + 1;
+            i = 0;
+            while ((*(db.p_unique_name + db.unl + i) != '_') &&
+                   (*(db.p_unique_name + db.unl + i) != '\0') &&
+                   (i < MAX_INT_HEX_LENGTH))
+            {
+               str_num[i] = *(db.p_unique_name + db.unl + i);
+               i++;
+            }
+            if ((*(db.p_unique_name + db.unl + i) != '_') || (i == 0))
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "Could not determine message name from `%s'. #%x",
+                          db.msg_name, db.id.job);
+               exit(SYNTAX_ERROR);
+            }
+            str_num[i] = '\0';
+            db.unique_number = (unsigned int)strtoul(str_num, NULL, 16);
+            db.unl = db.unl + i + 1;
+            i = 0;
+            while ((*(db.p_unique_name + db.unl + i) != '\0') &&
+                   (i < MAX_INT_HEX_LENGTH))
+            {
+               str_num[i] = *(db.p_unique_name + db.unl + i);
+               i++;
+            }
+            if (i == 0)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "Could not determine message name from `%s'. #%x",
+                          db.msg_name, db.id.job);
+               exit(SYNTAX_ERROR);
+            }
+            str_num[i] = '\0';
+            db.split_job_counter = (unsigned int)strtoul(str_num, NULL, 16);
+            db.unl = db.unl + i;
+            if (db.unl == 0)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "Could not determine message name from `%s'. #%x",
+                          db.msg_name, db.id.job);
+               exit(SYNTAX_ERROR);
+            }
          }
-         str_num[i] = '\0';
-         db.creation_time = (time_t)str2timet(str_num, NULL, 16);
-         db.unl = i + 1;
-         i = 0;
-         while ((*(db.p_unique_name + db.unl + i) != '_') &&
-                (*(db.p_unique_name + db.unl + i) != '\0') &&
-                (i < MAX_INT_HEX_LENGTH))
-         {
-            str_num[i] = *(db.p_unique_name + db.unl + i);
-            i++;
-         }
-         if ((*(db.p_unique_name + db.unl + i) != '_') || (i == 0))
-         {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "Could not determine message name from `%s'. #%x",
-                       db.msg_name, db.id.job);
-            exit(SYNTAX_ERROR);
-         }
-         str_num[i] = '\0';
-         db.unique_number = (unsigned int)strtoul(str_num, NULL, 16);
-         db.unl = db.unl + i + 1;
-         i = 0;
-         while ((*(db.p_unique_name + db.unl + i) != '\0') &&
-                (i < MAX_INT_HEX_LENGTH))
-         {
-            str_num[i] = *(db.p_unique_name + db.unl + i);
-            i++;
-         }
-         if (i == 0)
-         {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "Could not determine message name from `%s'. #%x",
-                       db.msg_name, db.id.job);
-            exit(SYNTAX_ERROR);
-         }
-         str_num[i] = '\0';
-         db.split_job_counter = (unsigned int)strtoul(str_num, NULL, 16);
-         db.unl = db.unl + i;
-         if (db.unl == 0)
+         else
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        "Could not determine message name from `%s'. #%x",
@@ -234,6 +252,7 @@ get_file_names(char *file_path, off_t *file_size_to_send)
                     db.msg_name, db.id.job);
          exit(SYNTAX_ERROR);
       }
+#ifdef MULTI_FS_SUPPORT
    }
    else
    {
@@ -242,6 +261,7 @@ get_file_names(char *file_path, off_t *file_size_to_send)
                  db.msg_name, db.id.job);
       exit(SYNTAX_ERROR);
    }
+#endif
 
    if ((dp = opendir(file_path)) == NULL)
    {
@@ -858,9 +878,9 @@ log_data(char        *d_name,
       if (ol_fd == -2)
       {
 #  ifdef WITHOUT_FIFO_RW_SUPPORT
-         output_log_fd(&ol_fd, &ol_readfd);
+         output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
 #  else
-         output_log_fd(&ol_fd);
+         output_log_fd(&ol_fd, &db.output_log);
 #  endif
       }
       if (ol_fd > -1)
@@ -930,10 +950,22 @@ log_data(char        *d_name,
                     protocol = MAP;
                  }
 #  endif
+#  ifdef _WITH_DFAX_SUPPORT
+            else if (db.protocol & DFAX_FLAG)
+                 {
+                    protocol = DFAX;
+                 }
+#  endif
             else if (db.protocol & SMTP_FLAG)
                  {
                     protocol = SMTP;
                  }
+#  ifdef _WITH_DE_MAIL_SUPPORT
+            else if (db.protocol & DE_MAIL_FLAG)
+                 {
+                    protocol = DE_MAIL;
+                 }
+#  endif
                  else
                  {
                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
@@ -978,7 +1010,8 @@ log_data(char        *d_name,
                             &ol_output_type,
                             db.host_alias,
                             (current_toggle - 1),
-                            protocol);
+                            protocol,
+                            &db.output_log);
          }
          (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
          (void)strcpy(ol_file_name + db.unl, d_name);
@@ -1145,7 +1178,19 @@ log_data(char        *d_name,
                                        "%s%s", SEND_FILE_MAP, str_diff_time);
         }
 #  endif
+#  ifdef _WITH_DFAX_SUPPORT
+   else if (db.protocol & DFAX_FLAG)
+        {
+           prog_name_length = snprintf((dl.file_name + *dl.file_name_length + 1),
+                                       MAX_FILENAME_LENGTH + 1,
+                                       "%s%s", SEND_FILE_DFAX, str_diff_time);
+        }
+#  endif
+#  ifdef _WITH_DE_MAIL_SUPPORT
+   else if ((db.protocol & SMTP_FLAG) || (db.protocol & DE_MAIL_FLAG))
+#  else
    else if (db.protocol & SMTP_FLAG)
+#  endif
         {
            prog_name_length = snprintf((dl.file_name + *dl.file_name_length + 1),
                                        MAX_FILENAME_LENGTH + 1,

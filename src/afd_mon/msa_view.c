@@ -1,6 +1,6 @@
 /*
  *  msa_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2012 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1999 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,8 @@ DESCR__S_M1
  **   13.09.2000 H.Kiehl Addition of top number of transfers.
  **   03.12.2003 H.Kiehl Added connection and disconnection time.
  **   27.02.2005 H.Kiehl Option to switch between two AFD's.
+ **   29.09.2015 H.Kiehl If error_host_counter is greater 0 show which
+ **                      host have what errors.
  **
  */
 DESCR__E_M1
@@ -57,6 +59,7 @@ DESCR__E_M1
 #include <unistd.h>                      /* STDERR_FILENO                */
 #include <errno.h>
 #include "mondefs.h"
+#include "fddefs.h"
 #include "sumdefs.h"
 #include "version.h"
 
@@ -78,12 +81,14 @@ static void usage(void);
 int
 main(int argc, char *argv[])
 {
-   int  i, j,
-        last = 0,
-        position = -1;
-   char afdname[MAX_AFDNAME_LENGTH + 1],
-        *ptr,
-        work_dir[MAX_PATH_LENGTH];
+   int                  i, j, k,
+                        last = 0,
+                        position = -1;
+   char                 afdname[MAX_AFDNAME_LENGTH + 1],
+                        ahl_file[MAX_PATH_LENGTH],
+                        *ptr,
+                        work_dir[MAX_PATH_LENGTH];
+   struct afd_host_list *ahl;
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -135,7 +140,7 @@ main(int argc, char *argv[])
    {
       for (i = 0; i < no_of_afds; i++)
       {
-         if (strcmp(msa[i].afd_alias, afdname) == 0)
+         if (my_strcmp(msa[i].afd_alias, afdname) == 0)
          {
             position = i;
             break;
@@ -476,6 +481,32 @@ main(int argc, char *argv[])
       }
       (void)fprintf(stdout, "\n");
       (void)fprintf(stdout, "Host error counter : %d\n", msa[j].host_error_counter);
+      if (msa[j].host_error_counter > 0)
+      {
+         (void)sprintf(ahl_file, "%s%s%s%s",
+                       p_work_dir, FIFO_DIR, AHL_FILE_NAME, msa[j].afd_alias);
+         (void)read_file(ahl_file, (char **)&ahl);
+         for (i = 0; i < msa[j].no_of_hosts; i++)
+         {
+            if ((ahl[i].error_history[0] != TRANSFER_SUCCESS) &&
+                (ahl[i].error_history[0] != OPEN_FILE_DIR_ERROR) &&
+                ((msa[j].ec > 0) || (msa[j].host_error_counter > 0)))
+            {
+               (void)fprintf(stdout, "Error host(s)      : %-*s [%d] %s\n",
+                             MAX_HOSTNAME_LENGTH, ahl[i].host_alias,
+                             (int)ahl[i].error_history[0],
+                             get_error_str(ahl[i].error_history[0]));
+               for (k = 1; k < ERROR_HISTORY_LENGTH && ahl[i].error_history[k] != TRANSFER_SUCCESS; k++)
+               {
+                  (void)fprintf(stdout, "                     %-*s [%d] %s\n",
+                                MAX_HOSTNAME_LENGTH, "",
+                                (int)ahl[i].error_history[k],
+                                get_error_str(ahl[i].error_history[k]));
+               }
+            }
+         }
+         free((char *)ahl);
+      }
       (void)fprintf(stdout, "Number of hosts    : %d\n", msa[j].no_of_hosts);
       (void)fprintf(stdout, "Number of dirs     : %d\n", msa[j].no_of_dirs);
       (void)fprintf(stdout, "Number of jobs     : %d\n", msa[j].no_of_jobs);

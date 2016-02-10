@@ -1,6 +1,6 @@
 /*
  *  handle_ip.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014, 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -85,8 +85,8 @@ static struct ip_db *ipdb = NULL;
 
 /* Local function prototypes. */
 static void         check_ip_db_space(void);
-static char *       convert_ip_db(int, char *, size_t *, char *,
-                                  unsigned char, unsigned char);
+static char         *convert_ip_db(int, char *, size_t *, char *,
+                                   unsigned char, unsigned char);
 
 
 /*########################## attach_ip_db() #############################*/

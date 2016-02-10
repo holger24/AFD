@@ -1,6 +1,6 @@
 /*
  *  get_real_hostname.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2013 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ DESCR__S_M1
 DESCR__E_M1
 
 #include <stdio.h>         /* fprintf()                                  */
-#include <string.h>        /* strcmp(), strcpy()                         */
+#include <string.h>        /* strcpy()                                   */
 #include "aldadefs.h"
 #ifdef WITH_AFD_MON
 # include "mondefs.h"
@@ -95,7 +95,7 @@ get_real_hostname(char *host_alias, int current_toggle, char *real_hostname)
 
          for (i = 0; i < no_of_hosts; i++)
          {
-            if (strcmp(host_alias, fsa[i].host_alias) == 0)
+            if (my_strcmp(host_alias, fsa[i].host_alias) == 0)
             {
                if (current_toggle == -1)
                {
@@ -124,7 +124,7 @@ get_real_hostname(char *host_alias, int current_toggle, char *real_hostname)
 
       for (i = 0; i < ahl_entries; i++)
       {
-         if (strcmp(host_alias, ahl[i].host_alias) == 0)
+         if (my_strcmp(host_alias, ahl[i].host_alias) == 0)
          {
             if (current_toggle == -1)
             {

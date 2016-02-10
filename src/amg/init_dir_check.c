@@ -1,6 +1,6 @@
 /*
  *  init_dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -98,6 +98,8 @@ extern int                        afd_file_dir_length,
                                   max_process,
 #ifdef MULTI_FS_SUPPORT
                                   no_of_extra_work_dirs,
+#else
+                                  outgoing_file_dir_length,
 #endif
                                   *no_of_process,
 #ifndef _WITH_PTHREAD
@@ -155,11 +157,11 @@ extern char                       *afd_file_dir,
 #endif
 #ifndef MULTI_FS_SUPPORT
                                   outgoing_file_dir[],
+                                  *p_time_dir_id,
+                                  time_dir[],
 #endif
-                                  *p_time_dir,
                                   *p_work_dir,
-                                  *rep_file,
-                                  time_dir[];
+                                  *rep_file;
 #ifndef _WITH_PTHREAD
 extern unsigned char              *file_length_pool;
 #endif
@@ -320,14 +322,13 @@ init_dir_check(int    argc,
 #ifndef MULTI_FS_SUPPORT
    (void)strcpy(outgoing_file_dir, afd_file_dir);
    (void)strcpy(outgoing_file_dir + afd_file_dir_length, OUTGOING_DIR);
-   outgoing_file_dir[afd_file_dir_length + OUTGOING_DIR_LENGTH] = '/';
-   outgoing_file_dir[afd_file_dir_length + OUTGOING_DIR_LENGTH + 1] = '\0';
-#endif
+   outgoing_file_dir_length = afd_file_dir_length + OUTGOING_DIR_LENGTH;
    (void)strcpy(time_dir, afd_file_dir);
    (void)strcpy(time_dir + afd_file_dir_length, AFD_TIME_DIR);
    time_dir[afd_file_dir_length + AFD_TIME_DIR_LENGTH] = '/';
    time_dir[afd_file_dir_length + AFD_TIME_DIR_LENGTH + 1] = '\0';
-   p_time_dir = time_dir + afd_file_dir_length + AFD_TIME_DIR_LENGTH + 1;
+   p_time_dir_id = time_dir + afd_file_dir_length + AFD_TIME_DIR_LENGTH + 1;
+#endif
    (void)strcpy(dc_cmd_fifo, p_work_dir);
    (void)strcat(dc_cmd_fifo, FIFO_DIR);
    (void)strcpy(other_fifo, dc_cmd_fifo);
@@ -866,7 +867,8 @@ init_dir_check(int    argc,
          if (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) ||
               (fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) ||
               (fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE)) &&
-             (fra[de[i].fra_pos].no_of_time_entries == 0) &&
+             ((fra[de[i].fra_pos].no_of_time_entries == 0) ||
+              (fra[de[i].fra_pos].host_alias[0] != '\0')) &&
              (fra[de[i].fra_pos].force_reread == NO))
          {
             no_of_inotify_dirs++;
@@ -899,7 +901,8 @@ init_dir_check(int    argc,
             if (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) ||
                  (fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) ||
                  (fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE)) &&
-                (fra[de[i].fra_pos].no_of_time_entries == 0) &&
+                ((fra[de[i].fra_pos].no_of_time_entries == 0) ||
+                 (fra[de[i].fra_pos].host_alias[0] != '\0')) &&
                 (fra[de[i].fra_pos].force_reread == NO))
             {
                mask = 0;
@@ -1034,12 +1037,13 @@ static void
 get_afd_config_value(void)
 {
    char *buffer,
-        config_file[MAX_PATH_LENGTH];
+        config_file[MAX_PATH_LENGTH],
+        *ptr;
 
    (void)snprintf(config_file, MAX_PATH_LENGTH, "%s%s%s",
                   p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(config_file, F_OK) == 0) &&
-       (read_file_no_cr(config_file, &buffer, __FILE__, __LINE__) != INCORRECT))
+       (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {
       char value[MAX_ADD_LOCKED_FILES_LENGTH];
 
@@ -1131,9 +1135,9 @@ get_afd_config_value(void)
       if (get_definition(buffer, ADDITIONAL_LOCKED_FILES_DEF,
                          value, MAX_ADD_LOCKED_FILES_LENGTH) != NULL)
       {
-         int  length = 0;
-         char *ptr = value;
+         int length = 0;
 
+         ptr = value;
          alfc = 0;
          while (*ptr != '\0')
          {
@@ -1282,135 +1286,7 @@ get_afd_config_value(void)
          }
       }
 #ifdef MULTI_FS_SUPPORT
-      ptr = buffer;
-      no_of_extra_work_dirs = 0;
-      max_length = 0;
-      while ((ptr = get_definition(ptr, EXTRA_WORK_DIR_DEF,
-                                   value, MAX_PATH_LENGTH)) != NULL)
-      {
-         length = strlen(value) + 1;
-         if (length > max_length)
-         {
-            max_length = length;
-         }
-         no_of_extra_work_dirs++;
-      }
-      if ((no_of_extra_work_dirs > 0) && (max_length > 0))
-      {
-         int         i;
-         struct stat stat_buf;
-
-         if ((ewl = malloc(no_of_extra_work_dirs * sizeof(struct extra_work_dirs))) == NULL)
-         {
-            system_log(FATAL_SIGN, __FILE__, __LINE__,
-                       _("Failed to malloc() %d bytes : %s"),
-                       no_of_extra_work_dirs * sizeof(struct extra_work_dirs),
-                       strerror(errno));
-            exit(INCORRECT);
-         }
-         ptr = buffer;
-         for (i = 0; i < no_of_extra_work_dirs; i++)
-         {
-            ptr = get_definition(ptr, EXTRA_WORK_DIR_DEF, value,
-                                 MAX_PATH_LENGTH);
-            if (value[0] != '/')
-            {
-               char *p_path,
-                    user[MAX_USER_NAME_LENGTH + 1];
-
-               if (value[0] == '~')
-               {
-                  if (value[1] == '/')
-                  {
-                     p_path = &value[2];
-                     user[0] = '\0';
-                  }
-                  else
-                  {
-                     int j = 0;
-
-                     p_path = &value[1];
-                     while ((*(p_path + j) != '/') && (*(p_path + j) != '\0') &&
-                            (j < MAX_USER_NAME_LENGTH))
-                     {
-                        user[j] = *(p_path + j);
-                        j++;
-                     }
-                     if (j >= MAX_USER_NAME_LENGTH)
-                     {
-                        system_log(WARN_SIGN, __FILE__, __LINE__,
-                                   _("User name to long for %s definition %s. User name may be %d bytes long."),
-                                   EXTRA_WORK_DIR_DEF, value,
-                                   MAX_USER_NAME_LENGTH);
-                     }
-                     user[j] = '\0';
-                  }
-                  (void)expand_path(user, p_path);
-                  length = strlen(p_path) + 1;
-                  (void)memmove(value, p_path, length);
-               }
-               else
-               {
-                  char tmp_config_file[MAX_PATH_LENGTH];
-
-                  (void)strcpy(tmp_config_file, value);
-                  length = snprintf(value, MAX_PATH_LENGTH, "%s%s/%s",
-                                    p_work_dir, AFD_FILE_DIR, tmp_config_file) + 1;
-               }
-            }
-            else
-            {
-               length = strlen(value) + 1;
-            }
-            if (stat(value, &stat_buf) == -1)
-            {
-               system_log(WARN_SIGN, __FILE__, __LINE__,
-                          "Unable to stat() `%s' : %s. Will ignore this directory.",
-                          value, strerror(errno));
-               ewl[i].dir_name = NULL;
-               ewl[i].dir_name_length = 0;
-               ewl[i].dev = 0;
-            }
-            else
-            {
-               char new_path[MAX_PATH_LENGTH];
-
-               (void)my_strncpy(new_path, value, MAX_PATH_LENGTH);
-               ptr = new_path + length;
-               (void)strcpy(ptr, OUTGOING_DIR);
-               if (((ret = check_create_path(new_path,
-# ifdef GROUP_CAN_WRITE
-# else
-# endif
-                   )) == SUCCESS) ||
-                   (ret == CREATED_DIR))
-               {
-               }
-               if (access(value, R_OK | W_OK | X_OK) == -1)
-               {
-                  system_log(WARN_SIGN, __FILE__, __LINE__,
-                             "Unable to access() `%s' : %s. Will ignore this directory.",
-                             value, strerror(errno));
-                  ewl[i].dir_name = NULL;
-                  ewl[i].dir_name_length = 0;
-                  ewl[i].dev = 0;
-               }
-               else
-               {
-                  if ((ewl[i].dir_name = malloc(length)) == NULL)
-                  {
-                     system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                _("Failed to malloc() %d bytes : %s"),
-                                length, strerror(errno));
-                     exit(INCORRECT);
-                  }
-                  (void)memcpy(ewl[i].dir_name, value, length);
-                  ewl[i].dir_name_length = length;
-                  ewl[i].dev = stat_buf.st_dev;
-               }
-            }
-         }
-      }
+      get_extra_work_dirs(&no_of_extra_work_dirs, &ewl, YES);
 #endif
 
       free(buffer);

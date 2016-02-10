@@ -1,6 +1,6 @@
 /*
  *  evaluate_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1547,7 +1547,7 @@ evaluate_message(int *bytes_done)
            (void)fprintf(stderr, "%s\n", ptr);
 #endif
         }
-   else if (strcmp(ptr, AFDD_SHUTDOWN_MESSAGE) == 0)
+   else if (my_strcmp(ptr, AFDD_SHUTDOWN_MESSAGE) == 0)
         {
 #ifdef _DEBUG_PRINT
            (void)fprintf(stderr, "%s\n", ptr);

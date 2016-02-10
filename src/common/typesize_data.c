@@ -1,6 +1,6 @@
 /*
  *  typesize_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -231,7 +231,7 @@ check_typesize_data(int *old_value_list, FILE *output_fp)
                         var_str[i] = '\0';
                         for (j = 0; j < (sizeof(varlist) / sizeof(*varlist)); j++)
                         {
-                           if (strcmp(var_str, varlist[j]) == 0)
+                           if (my_strcmp(var_str, varlist[j]) == 0)
                            {
                               ptr++;
                               k = 0;

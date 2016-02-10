@@ -175,7 +175,7 @@ main(int argc, char *argv[])
       if (db.verbose == YES)
       {
          trans_log(INFO_SIGN, NULL, 0, NULL, msg_str,
-                    _("Connected to port %d."), db.port);
+                    _("Connected to %s at port %d."), db.hostname, db.port);
       }
    }
 
@@ -191,7 +191,7 @@ main(int argc, char *argv[])
       int    end_length,
              fd = -1,
              files_send = 0,
-             header_length,
+             header_length = 0,
              j,
              length_type_indicator,
              local_file_not_found = 0,
@@ -356,7 +356,7 @@ main(int argc, char *argv[])
             {
                if (db.verbose == YES)
                {
-                  trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                             _("Failed to fstat() local file %s"),
                             db.filename[files_send]);
                }
@@ -385,7 +385,12 @@ main(int argc, char *argv[])
             if (db.verbose == YES)
             {
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                         _("Open local file %s"), db.filename[files_send]);
+#if SIZEOF_OFF_T == 4
+                         _("Opened local file %s with %ld byte."),
+#else
+                         _("Opened local file %s with %lld byte."),
+#endif
+                         db.filename[files_send], local_file_size);
             }
          }
 

@@ -1429,21 +1429,34 @@ remove_jobs(int jd_fd, off_t *jid_struct_size, char *job_id_data_file)
                                         NULL, NO, real_hostname, NULL, NULL,
                                         NULL, NULL, NULL, NULL, NULL)) < 4)
          {
-            if (((scheme & SMTP_FLAG) && (smtp_auth == SMTP_AUTH_NONE)) ||
+            if ((scheme & LOC_FLAG) ||
+#ifdef _WITH_DE_MAIL_SUPPORT
+                (((scheme & SMTP_FLAG) || (scheme & DE_MAIL_FLAG)) &&
+                  (smtp_auth == SMTP_AUTH_NONE)) ||
+#else
+                ((scheme & SMTP_FLAG) && (smtp_auth == SMTP_AUTH_NONE)) ||
+#endif
 #ifdef _WITH_WMO_SUPPORT
                 (scheme & WMO_FLAG) ||
 #endif
 #ifdef _WITH_MAP_SUPPORT
                 (scheme & MAP_FLAG) ||
 #endif
-                (scheme & LOC_FLAG) ||
+#ifdef _WITH_DFAX_SUPPORT
+                (scheme & DFAX_FLAG) ||
+#endif
                 (scheme & EXEC_FLAG))
             {
                /* These do not have passwords. */;
             }
             else
             {
+#ifdef _WITH_DE_MAIL_SUPPORT
+               if (((scheme & SMTP_FLAG) || (scheme & DE_MAIL_FLAG)) &&
+                    (smtp_auth != SMTP_AUTH_NONE))
+#else
                if ((scheme & SMTP_FLAG) && (smtp_auth != SMTP_AUTH_NONE))
+#endif
                {
                   (void)strcpy(rpl[pwb_to_remove], smtp_user);
                   t_hostname(real_hostname,
@@ -1559,21 +1572,34 @@ remove_jobs(int jd_fd, off_t *jid_struct_size, char *job_id_data_file)
                                         NULL, NO, real_hostname, NULL, NULL,
                                         NULL, NULL, NULL, NULL, NULL)) < 4)
          {
-            if (((scheme & SMTP_FLAG) && (smtp_auth == SMTP_AUTH_NONE)) ||
+            if ((scheme & LOC_FLAG) ||
+#ifdef _WITH_DE_MAIL_SUPPORT
+                (((scheme & SMTP_FLAG) || (scheme & DE_MAIL_FLAG)) &&
+                  (smtp_auth == SMTP_AUTH_NONE)) ||
+#else
+                ((scheme & SMTP_FLAG) && (smtp_auth == SMTP_AUTH_NONE)) ||
+#endif
 #ifdef _WITH_WMO_SUPPORT
                 (scheme & WMO_FLAG) ||
 #endif
 #ifdef _WITH_MAP_SUPPORT
                 (scheme & MAP_FLAG) ||
 #endif
-                (scheme & LOC_FLAG) ||
+#ifdef _WITH_DFAX_SUPPORT
+                (scheme & DFAX_FLAG) ||
+#endif
                 (scheme & EXEC_FLAG))
             {
                /* These do not have passwords. */;
             }
             else
             {
+#ifdef _WITH_DE_MAIL_SUPPORT
+               if (((scheme & SMTP_FLAG) || (scheme & DE_MAIL_FLAG)) &&
+                    (smtp_auth != SMTP_AUTH_NONE))
+#else
                if ((scheme & SMTP_FLAG) && (smtp_auth != SMTP_AUTH_NONE))
+#endif
                {
                   (void)strcpy(uh_name, smtp_user);
                   t_hostname(real_hostname, &uh_name[strlen(uh_name)]);

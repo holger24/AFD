@@ -1,6 +1,6 @@
 /*
  *  locate_host.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2007 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -50,7 +50,6 @@ DESCR__S_M3
  */
 DESCR__E_M3
 
-#include <string.h>                 /* strcmp()                          */
 #include "statdefs.h"
 
 
@@ -64,7 +63,7 @@ locate_host(struct afdstat *ptr,
 
    for (position = 0; position < no_of_hosts; position++)
    {
-      if (strcmp(ptr[position].hostname, host) == 0)
+      if (my_strcmp(ptr[position].hostname, host) == 0)
       {
          return(position);
       }
@@ -85,7 +84,7 @@ locate_host_year(struct afd_year_stat *ptr,
 
    for (position = 0; position < no_of_hosts; position++)
    {
-      if (strcmp(ptr[position].hostname, host) == 0)
+      if (my_strcmp(ptr[position].hostname, host) == 0)
       {
          return(position);
       }

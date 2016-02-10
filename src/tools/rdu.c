@@ -1,6 +1,6 @@
 /*
  *  rdu.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 /************************************************************************/
 
 #include <stdio.h>                /* printf()                           */
-#include <string.h>               /* strcmp(), strerror()               */
+#include <string.h>               /* strerror()                         */
 #include <stdlib.h>               /* exit()                             */
 #include <sys/types.h>
 #include <sys/stat.h>             /* lstat(), S_ISDIR()                 */
@@ -71,7 +71,7 @@ rdu(char *dirname)
 
    while ((p_struct_dir = readdir(p_dir)) != NULL)
    {
-      if (strcmp(p_struct_dir->d_name, "..") == 0)
+      if (my_strcmp(p_struct_dir->d_name, "..") == 0)
          continue;
 
       (void)sprintf(filename, "%s/%s", dirname, p_struct_dir->d_name);
@@ -84,7 +84,7 @@ rdu(char *dirname)
 
       if (S_ISDIR(statbuf.st_mode))
       {
-         if (strcmp(p_struct_dir->d_name, ".") != 0)
+         if (my_strcmp(p_struct_dir->d_name, ".") != 0)
             byte_size += rdu(filename);
 
          continue;

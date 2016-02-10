@@ -1,6 +1,6 @@
 /*
  *  sf_map.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -272,9 +272,9 @@ main(int argc, char *argv[])
    if (db.output_log == YES)
    {
 # ifdef WITHOUT_FIFO_RW_SUPPORT
-      output_log_fd(&ol_fd, &ol_readfd);
+      output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
 # else
-      output_log_fd(&ol_fd);
+      output_log_fd(&ol_fd, &db.output_log);
 # endif
       output_log_ptrs(&ol_retries,
                       &ol_job_number,
@@ -289,7 +289,8 @@ main(int argc, char *argv[])
                       &ol_output_type,
                       db.host_alias,
                       (current_toggle - 1),
-                      MAP);
+                      MAP,
+                      &db.output_log);
    }
 #endif
 

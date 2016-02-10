@@ -1,6 +1,6 @@
 /*
  *  dir_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ DESCR__S_M1
 DESCR__E_M1
 
 #include <stdio.h>            /* fprintf(), stderr                       */
-#include <string.h>           /* strcpy(), strcmp()                      */
+#include <string.h>           /* strcpy()                                */
 #include <ctype.h>            /* toupper()                               */
 #include <unistd.h>           /* gethostname(), getcwd(), STDERR_FILENO  */
 #include <stdlib.h>           /* getenv(), calloc()                      */
@@ -1358,7 +1358,7 @@ create_pullright_font(Widget pullright_font)
 
    for (i = 0; i < NO_OF_FONTS; i++)
    {
-      if ((current_font == -1) && (strcmp(font_name, font[i]) == 0))
+      if ((current_font == -1) && (my_strcmp(font_name, font[i]) == 0))
       {
          current_font = i;
       }
@@ -1401,7 +1401,7 @@ create_pullright_row(Widget pullright_row)
                {
                   ROW_0, ROW_1, ROW_2, ROW_3, ROW_4, ROW_5, ROW_6,
                   ROW_7, ROW_8, ROW_9, ROW_10, ROW_11, ROW_12, ROW_13,
-                  ROW_14, ROW_15, ROW_16
+                  ROW_14, ROW_15, ROW_16, ROW_17, ROW_18, ROW_19
                };
    XmString    x_string;
    Arg         args[3];

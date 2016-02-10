@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2014 Holger Kiehl
+## Copyright (C) 2001 - 2015 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -58,6 +58,13 @@ else
    PRODUCTION_LOG =
    EXTRA_PRODUCTION_LOG = production_log.c
 endif
+if WITH_OUTPUT_LOG
+   OUTPUT_LOG_PTRS       = output_log_fd.c output_log_ptrs.c
+   EXTRA_OUTPUT_PTRS     =
+else
+   OUTPUT_LOG_PTRS       =
+   EXTRA_OUTPUT_PTRS     = output_log_fd.c output_log_ptrs.c
+endif
 if WITH_DELETE_LOG
    DELETE_LOG_PTRS = delete_log_ptrs.c
    EXTRA_DELETE_LOG_PTRS =
@@ -93,11 +100,19 @@ else
    MAINTAINER_LOG =
    EXTRA_MAINTAINER_LOG = maintainer_log.c
 endif
+if WITH_MULTI_FS_SUPPORT
+   HANDLE_EXTRA_WORK_DIRS = handle_extra_workdirs.c
+   EXTRA_HANDLE_EXTRA_WORK_DIRS =
+else
+   HANDLE_EXTRA_WORK_DIRS =
+   EXTRA_HANDLE_EXTRA_WORK_DIRS = handle_extra_workdirs.c
+endif
 EXTRA_DIST = $(EXTRA_MAPPER) $(EXTRA_AFD_MON) $(EXTRA_EACCESS)\
              $(EXTRA_DUPCHECK) $(EXTRA_SET_AFD_EUID) $(EXTRA_PRODUCTION_LOG)\
              $(EXTRA_DELETE_LOG_PTRS) $(EXTRA_OPEN_FIFO_RW)\
-             $(EXTRA_HANDLE_ERROR_QUEUE) $(EXTRA_HANDLE_IP)\
-             $(EXTRA_MAINTAINER_LOG) pmatch_old.c
+	     $(EXTRA_OUTPUT_PTRS) $(EXTRA_HANDLE_ERROR_QUEUE)\
+	     $(EXTRA_HANDLE_IP) $(EXTRA_MAINTAINER_LOG)\
+	     $(EXTRA_HANDLE_EXTRA_WORK_DIRS) pmatch_old.c
 
 MAINTAINERCLEANFILES = Makefile.in
 AM_CPPFLAGS          = -I.. -I../init_afd -I../amg -I../fd -I../misc\
@@ -167,7 +182,9 @@ libafd_a_SOURCES     = attach_afd_status.c\
                        get_user.c\
                        handle_counter.c\
                        $(HANDLE_ERROR_QUEUE)\
+                       $(HANDLE_EXTRA_WORK_DIRS)\
                        $(HANDLE_IP)\
+		       handle_jis.c\
                        handle_xor_crypt.c\
                        inform_fd_about_fsa_change.c\
                        $(DUPCHECK)\
@@ -184,9 +201,11 @@ libafd_a_SOURCES     = attach_afd_status.c\
                        $(AFD_MON_PROGS)\
                        move_file.c\
                        my_power.c\
+                       my_strcmp.c\
                        my_strncpy.c\
                        my_usleep.c\
                        $(OPEN_FIFO_RW)\
+		       $(OUTPUT_LOG_PTRS)\
                        posi.c\
                        pmatch.c\
                        $(PRODUCTION_LOG)\
@@ -208,6 +227,7 @@ libafd_a_SOURCES     = attach_afd_status.c\
                        set_fl.c\
                        show_fifo_data.c\
                        store_real_hostname.c\
+                       str2mode_t.c\
                        system_data.c\
                        system_log.c\
                        t_hostname.c\

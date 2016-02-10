@@ -1,6 +1,6 @@
 /*
  *  afd_mon.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -77,6 +77,8 @@ DESCR__S_M1
  ** HISTORY
  **   11.09.1997 H.Kiehl Created
  **   08.06.2005 H.Kiehl Added afd_mon_status structure.
+ **   14.02.2015 H.Kiehl In system log show total no_of_hosts, no_of_dirs
+ **                      and no_of_jobs.
  **
  */
 DESCR__E_M1
@@ -170,6 +172,12 @@ main(int argc, char *argv[])
                   new_year,
                   old_afd_mon_stat,
                   status;
+   unsigned int   new_total_no_of_hosts,
+                  new_total_no_of_dirs,
+                  new_total_no_of_jobs,
+                  total_no_of_hosts = 0,
+                  total_no_of_dirs = 0,
+                  total_no_of_jobs = 0;
    time_t         new_day_sum_time,
                   new_hour_sum_time,
                   now,
@@ -488,6 +496,7 @@ main(int argc, char *argv[])
                current_year = new_year;
             }
          }
+
          new_hour_sum_time = ((new_hour_sum_time / 3600) * 3600) + 3600;
       }
 
@@ -503,6 +512,8 @@ main(int argc, char *argv[])
       }
       else if (status == 0)
            {
+              int i;
+
               if (stat(afd_mon_db_file, &stat_buf) == -1)
               {
                  system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -536,6 +547,29 @@ main(int argc, char *argv[])
                  start_all();
 
                  mon_active();
+              }
+
+              /* Check if total number directories, hosts and/or no_of_jobs */
+              /* has changed.                                               */
+              new_total_no_of_hosts = new_total_no_of_dirs = new_total_no_of_jobs = 0;
+              for (i = 0; i < no_of_afds; i++)
+              {
+                 new_total_no_of_hosts += msa[i].no_of_hosts;
+                 new_total_no_of_dirs += msa[i].no_of_dirs;
+                 new_total_no_of_jobs += msa[i].no_of_jobs;
+              }
+              if ((new_total_no_of_hosts != total_no_of_hosts) ||
+                  (new_total_no_of_dirs != total_no_of_dirs) ||
+                  (new_total_no_of_jobs != total_no_of_jobs))
+              {
+                 system_log(INFO_SIGN, NULL, 0,
+                            "Totals : no_of_hosts = %u, no_of_dirs = %u, no_of_jobs = %u",
+                            new_total_no_of_hosts, new_total_no_of_dirs,
+                            new_total_no_of_jobs);
+                 total_no_of_hosts = new_total_no_of_hosts;
+                 total_no_of_dirs = new_total_no_of_dirs;
+                 total_no_of_jobs = new_total_no_of_jobs;
+                 new_total_no_of_hosts = new_total_no_of_dirs = new_total_no_of_jobs = 0;
               }
 
               /* Check if any process terminated for whatever reason. */

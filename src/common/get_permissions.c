@@ -180,7 +180,7 @@ get_permissions(char **perm_buffer, char *fake_user, char *profile)
                   system_log(ERROR_SIGN, __FILE__, __LINE__,
                              _("Failed to read() `%s'. Permission control deactivated!!! : %s"),
                              afd_user_file, strerror(errno));
-                  free(buffer); free(*perm_buffer);
+                  free(buffer); free(*perm_buffer); free(user); free(user_profile);
                   return(INCORRECT);
                }
                bytes_buffered = 0;

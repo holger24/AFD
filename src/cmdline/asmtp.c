@@ -46,6 +46,7 @@ DESCR__S_M1
  **       -v                      - Verbose. Shows all SMTP commands
  **                                 and the reply from the remote server.
  **       -y                      - File name is user.
+ **       -Y                      - Use strict SSL/TLS verification.
  **       -?                      - Display some help.
  **
  ** DESCRIPTION
@@ -246,7 +247,7 @@ main(int argc, char *argv[])
 
 #ifdef WITH_SSL
    /* Try negotiate SMARTTLS. */
-   if ((status = smtp_smarttls()) == SUCCESS)
+   if ((status = smtp_smarttls(db.strict)) == SUCCESS)
    {
       if (db.verbose == YES)
       {

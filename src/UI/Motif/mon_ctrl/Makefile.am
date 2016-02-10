@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2013 Holger Kiehl
+## Copyright (C) 2001 - 2015 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ CLEANFILES           = gmon.out core core.*
 noinst_HEADERS       = mon_ctrl.h
 AM_CPPFLAGS          = @AFD_MOTIF_INCLUDES@ -I../../.. -I../../common\
                        -I../common -I../mshow_log -I../../../afd_mon\
-                       -I../../../init_afd
+                       -I../../../fd -I../../../init_afd
 bin_PROGRAMS         = mon_ctrl
 mon_ctrl_SOURCES     = calc_mon_but_coord.c\
                        check_afd_status.c\

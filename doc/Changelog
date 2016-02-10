@@ -1637,3 +1637,134 @@
            - Correct some errors when drawing detailed selection and
              the line style in afd_ctrl dialog is of type compact.
 ------------------------> Released: 01.12.2014 <---------------------------
+
+
+
+----------------------------> Version 1.4.8 <------------------------------
+                             ---------------
+04.12.2014 - In asmtp if we specify the from address, send this to
+             the mail server.
+12.12.2014 - Alda did not consider shorter output log lines for
+             retrieve jobs and always showed error messages. Fixed.
+           - Function url_evaluate() did under certain conditions
+             report that the scheme was wrong. Fixed.
+23.12.2014 - Added support for group list entries for directories.
+19.01.2015 - In handle_event when set an error for directory offline,
+             do not consider the number of errors if one specifies
+             a time frame.
+23.01.2015 - When queue is stopped automatically it is activated far
+             to fast again. So wait a bit longer before it is activated
+             again.
+30.01.2015 - When using the send button in show_olog and/or show_queue
+             dialog and AFD_WORK_DIR environment variable is not set
+             it did not work. Fixed by parsing this via the -w parameter.
+             Thanks, to Alexander Maul for fixing this.
+31.01.2015 - Fix error in redrawing compact detailed selection when
+             number of process where modified and resulted in redrawing
+             everything.
+07.02.2015 - Changing the font could crash afd_ctrl dialog. Thanks
+             to INMET for reporting this error and helping to debug
+             the problem.
+14.02.2015 - In AFD Monitor system log show total no_of_hosts,
+             no_of_dirs and no_of_jobs.
+18.02.2015 - In dialog handle_event use statusbox for information instead
+             of popups which have to be acknowledged.
+           - When using MLSD in FTP for a remote file listing of a
+             directory, also handle FTP servers that just send a LF
+             at the end of each elment listed.
+19.02.2015 - If using 'Search Information' in afd_ctrl dialog and the
+             system supports the strcasestr() function, the search
+             will now by default be case insensitive.
+27.02.2015 - Added parameter -r to pexec option, to allow user to force
+             the execution in the target directory. Otherwise it is
+             executed in some internal AFD directory. This only works
+             with scheme file, ie. when the directory is local.
+03.03.2015 - Fix an error when view_dc is called via afd_ctrl dialog.
+             It would sometimes show configuration data of all hosts
+             and not the selected one. Thanks to David Bridgman for
+             reporting this error and testing the fix.
+11.03.2015 - Fix error in sftp_open_dir() when we do it in the home
+             directory, ie. no directory supplied.
+12.03.2015 - The function change_name() could cause a buffer overflow
+             if in the original part there are no wildcards.
+14.03.2015 - Make SFTP trace output more readable.
+           - Function sftp_connect() would sometimes not get the
+             extensions correctly.
+20.03.2015 - Function get_rename_rules() should not exit with an error
+             when it fails to open a rename rule file.
+23.03.2015 - If one changes the alias order and one has set
+             IGNORE_FIRST_ERRORS in AFD_CONFIG, this value was set
+             to zero. Fixed.
+           - Made the value for IGNORE_FIRST_ERRORS configureable
+             via afdcfg. The value can now be viewed via afdcfg -s
+             or fsa_view.
+01.04.2015 - Added support for file group entries in DIR_CONFIG.
+15.04.2015 - Function url_insert_password() fails to insert the
+             password when username and alias host name are longer.
+             Fixed.
+           - It was possible to insert a real hostname in the edit_hc
+             dialog that is longer then MAX_REAL_HOSTNAME_LENGTH.
+             Thanks to David Bridgman for reporting these errors!
+04.05.2015 - Added confirmation log.
+           - Added option in HOST_CONFIG for strict verification for TLS.
+20.06.2015 - Added sf_dfax to send FAX via the Diva API.
+03.07.2015 - Event log now proberly reports what was done when DIR_CONFIG
+             and HOST_CONFIG have been updated.
+19.07.2015 - Added support to sent DE mail.
+20.07.2015 - When in create mode the function ftp_cd() could create
+             some arbitrary extra directories. Fixed.
+30.07.2015 - During a burst it could happen that the filename is not
+             shown via the %s option in the subject. Thanks to
+             Elisabeth Krauthan for reporting this.
+03.08.2015 - Make afd_ctrl, dir_ctrl and mon_ctrl dialogs full usable
+             for 4k resolutions, by extending the choice of number of
+	     rows.
+19.08.2015 - When starting many SFTP sessions at the same time it could
+             happen that some of them close unexpectedly. We now catch
+	     this case correctly.
+09.09.2015 - When a job gets removed from DIR_CONFIG and there is currently
+             a process distributing data and that process is removed,
+	     the function init_msg_buffer() could still write to a position
+	     in FSA that no longer exist. Fixed.
+15.09.2015 - Function extract can now handle variable length NNN values.
+26.09.2015 - Added possibility to enter job ID as a search option when
+             searching in show_olog dialog.
+	   - In show_olog hide all protocols behind a button that
+             opens a seperate window where one con choose the protocol(s).
+	   - Added option in show_olog dialog to make confirmations
+	     visible.
+29.09.2015 - When 'Keep connected' is set we can now specify that it
+             may stay connected as a maximum of the specified time.
+	   - msa_view now also shows the error hosts and their errors.
+30.09.2015 - When IGNORE_FIRST_ERRORS is set in AFD_CONFIG, process fd
+             now ignores that value of errors when deciding to start
+	     a new process.
+02.10.2015 - Under certain conditions FD would try to rerun a job
+             that was just done. Fixed.
+11.10.2015 - Replaced strcmp() with my_strcmp().
+           - Fix possible possible deadlock when process FD reaches
+             maximum number of parallel process that it may fork to
+             send the data and many process are waiting to burst.
+21.10.2015 - When remote files are deleted, while fetching, the
+             wrong job ID and file size was written to DELETE_LOG.
+	     Fixed.
+	   - Added a new delete log type for when files are deleted
+	     because they are unreadable.
+27.10.2015 - The option 'file name is header' now works correctly for
+             scheme file.
+05.11.2015 - When getting directory listing gf_http under certain
+             conditions tries to read more bytes then available.
+	     Fixed.
+12.11.2015 - With inotify it can happen that files are not colleted
+             immediatly if process was sleeping exactly AMG_DIR_RESCAN_TIME
+	     seconds. Fixed.
+20.11.2015 - Sometimes when fetching files via HTTP and an error occurs
+             the answer of the remote server was incorrectly displayed.
+	     Fixed.
+28.01.2016 - When setting 'ignore size 0' and inotify it would do exactly
+             the opposite (just let through files with size equal zero).
+	     Fixed.
+07.02.2016 - Added parameter -H to get_dc_data to extract the given host
+             or host list into a separate DIR_CONFIG.
+08.02.2016 - Use inotify when scanning local remote directories.
+------------------------> Released: ??.??.201? <---------------------------

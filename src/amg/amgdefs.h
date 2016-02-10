@@ -92,6 +92,8 @@
 #ifdef WITH_INOTIFY
 # define INOTIFY_FL_STEP_SIZE      80
 #endif
+#define RECIPIENT_STEP_SIZE        10
+#define FILE_MASK_STEP_SIZE       256
 
 /* Definitions of identifiers in options. */
 #define TIME_NO_COLLECT_ID         "time no collect"
@@ -577,6 +579,9 @@ struct dir_data
 /* Structure that holds a single job for process dir_check. */
 struct instant_db
        {
+#ifdef MULTI_FS_SUPPORT
+          int           ewl_pos;       /* Position in extra work dir.    */
+#endif
           unsigned int  job_id;        /* Since each host can have       */
                                        /* different type of jobs (other  */
                                        /* user, different directory,     */
@@ -667,6 +672,7 @@ struct directory_entry
                                              /* directory and it is      */
                                              /* still the same second.   */
 #ifdef MULTI_FS_SUPPORT
+          int                    ewl_pos;    /* Position in extra work dir.*/
           dev_t                  dev;        /* Device number of file-   */
                                              /* system.                  */
 #endif
@@ -685,12 +691,6 @@ struct directory_entry
                                              /* name.                    */
           char                   *paused_dir;/* Holds the full paused    */
                                              /* REMOTE directory.        */
-#ifdef MULTI_FS_SUPPORT
-          char                   *afd_file_dir;/* Full path where files  */
-                                             /* are to be stored. (pool  */
-                                             /* directory)               */
-          char                   *outgoing_file_dir;
-#endif
        };
 
 struct message_buf
@@ -818,7 +818,7 @@ extern int    amg_zombie_check(pid_t *, int),
                           unsigned char *, off_t *),
               count_pool_files(int *, char *, off_t *, time_t *, char **,
                                unsigned char *),
-              link_files(char *, char *, time_t, off_t *, char **,
+              link_files(char *, char *, int, time_t, off_t *, char **,
                          struct directory_entry *, struct instant_db *,
                          time_t *, unsigned int *, int, int, int, char *,
                          off_t *),
@@ -833,7 +833,7 @@ extern int    amg_zombie_check(pid_t *, int),
               check_files(struct directory_entry *, char *, int, char *,
                           int, int *, time_t, int *, off_t *),
               count_pool_files(int *, char *),
-              link_files(char *, char *, time_t, struct directory_entry *,
+              link_files(char *, char *, int, time_t, struct directory_entry *,
                          struct instant_db *, unsigned int *, int, int, int,
                          char *, off_t *),
               save_files(char *, char *, time_t, unsigned int,
@@ -862,8 +862,9 @@ extern int    amg_zombie_check(pid_t *, int),
               in_time(time_t, unsigned int, struct bd_time_entry *),
               lookup_dir_id(char *, char *),
               lookup_fra_pos(char *),
-              rename_files(char *, char *, int, struct instant_db *, time_t,
-                           int, unsigned int *, char *, off_t *),
+              next_dir_group_name(char *, char *),
+              rename_files(char *, char *, int, int, struct instant_db *,
+                           time_t, int, unsigned int *, char *, off_t *),
               reread_dir_config(int, off_t, time_t *, int, int, size_t,
                                 int, int, unsigned int *, struct host_list *),
               reread_host_config(time_t *, int *, int *, size_t *,
@@ -878,9 +879,14 @@ extern char   *check_paused_dir(struct directory_entry *, int *, int *, int *),
               *convert_jid(int, char *, size_t *, int, unsigned char,
                            unsigned char),
               *next(char *);
+
 extern void   add_file_mask(char *, struct dir_group *),
-              check_file_dir(time_t),
-              check_old_time_jobs(int),
+#ifdef MULTI_FS_SUPPORT
+              check_file_dir(time_t, dev_t, char *, int),
+#else
+              check_file_dir(time_t, char *, int),
+#endif
+              check_old_time_jobs(int, char *),
               clear_msg_buffer(void),
               clear_pool_dir(void),
               create_fsa(void),
@@ -897,6 +903,8 @@ extern void   add_file_mask(char *, struct dir_group *),
               enter_time_job(int),
               eval_bul_rep_config(char *, char *, int),
               eval_dir_options(int, char *),
+              free_dir_group_name(void),
+              get_file_group(char *, int, struct dir_group *, int *),
               get_full_dc_names(char *, off_t *),
               handle_time_jobs(time_t),
               init_dir_check(int, char **, time_t *,
@@ -910,25 +918,30 @@ extern void   add_file_mask(char *, struct dir_group *),
                              int *,
 #endif
                              int *, int *, int *),
+              init_dir_group_name(char *, char *, int),
               init_dis_log(void),
               init_job_data(void),
               init_msg_buffer(void),
               lookup_dc_id(struct dir_config_buf **, int),
               lookup_file_mask_id(struct instant_db *, int),
-              lookup_job_id(struct instant_db *, unsigned int *),
+              lookup_job_id(struct instant_db *, unsigned int *, char *, int),
               receive_log(char *, char *, int, time_t, char *, ...),
               release_dis_log(void),
               remove_old_ls_data_files(void),
               remove_pool_directory(char *, unsigned int),
 #ifdef _DELETE_LOG
-              remove_time_dir(char *, int, unsigned int, unsigned int,
+              remove_time_dir(char *, char *, int, unsigned int, unsigned int,
                               int, char *, int),
 #else
-              remove_time_dir(char *, int, unsigned int),
+              remove_time_dir(char *, char *, int, unsigned int),
 #endif
               rm_removed_files(struct directory_entry *, int, char *),
               search_old_files(time_t),
-              send_message(char *, char *, unsigned int, unsigned int,
+              send_message(char *,
+#ifdef MULTI_FS_SUPPORT
+                           dev_t,
+#endif
+                           char *, unsigned int, unsigned int,
                            time_t, int,
 #ifdef _WITH_PTHREAD
 # if defined (_DELETE_LOG) || defined (_PRODUCTION_LOG)

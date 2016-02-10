@@ -78,8 +78,8 @@ get_dir_number(char *directory, unsigned int id, long *dirs_left)
          link_max = _POSIX_LINK_MAX;
 #endif
          system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                    _("pathconf() error for _PC_LINK_MAX : %s"),
-                    strerror(errno));
+                    _("pathconf() error for _PC_LINK_MAX in %s : %s"),
+                    directory, strerror(errno));
       }
    }
    length = strlen(directory);

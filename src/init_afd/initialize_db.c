@@ -1,6 +1,6 @@
 /*
  *  initialize_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -63,67 +63,76 @@ DESCR__E_M3
 #ifdef WITH_ERROR_QUEUE
 # define ERROR_QUEUE_FILE_NO        9
 #endif
-#define FILE_MASK_FILE_NO           10
-#define DC_LIST_FILE_NO             11
-#define DIR_NAME_FILE_NO            12
-#define JOB_ID_DATA_FILE_NO         13
-#define DCPL_FILE_NAME_NO           14
-#define PWB_DATA_FILE_NO            15
-#define CURRENT_MSG_LIST_FILE_NO    16
-#define AMG_DATA_FILE_NO            17
-#define AMG_DATA_FILE_TMP_NO        18
-#define LOCK_PROC_FILE_NO           19
-#define AFD_ACTIVE_FILE_NO          20
-#define WINDOW_ID_FILE_NO           21
-#define SYSTEM_LOG_FIFO_NO          22
-#define EVENT_LOG_FIFO_NO           23
-#define RECEIVE_LOG_FIFO_NO         24
-#define TRANSFER_LOG_FIFO_NO        25
-#define TRANS_DEBUG_LOG_FIFO_NO     26
-#define AFD_CMD_FIFO_NO             27
-#define AFD_RESP_FIFO_NO            28
-#define AMG_CMD_FIFO_NO             29
-#define DB_UPDATE_FIFO_NO           30
-#define FD_CMD_FIFO_NO              31
-#define AW_CMD_FIFO_NO              32
-#define IP_FIN_FIFO_NO              33
-#ifdef WITH_ONETIME
-# define OT_FIN_FIFO_NO             34
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define DEMCD_QUEUE_FILE_NO        10
 #endif
-#define SF_FIN_FIFO_NO              35
-#define RETRY_FD_FIFO_NO            36
-#define FD_DELETE_FIFO_NO           37
-#define FD_WAKE_UP_FIFO_NO          38
-#define TRL_CALC_FIFO_NO            39
-#define QUEUE_LIST_READY_FIFO_NO    40
-#define QUEUE_LIST_DONE_FIFO_NO     41
-#define PROBE_ONLY_FIFO_NO          42
+#define FILE_MASK_FILE_NO           11
+#define DC_LIST_FILE_NO             12
+#define DIR_NAME_FILE_NO            13
+#define JOB_ID_DATA_FILE_NO         14
+#define DCPL_FILE_NAME_NO           15
+#define PWB_DATA_FILE_NO            16
+#define CURRENT_MSG_LIST_FILE_NO    17
+#define AMG_DATA_FILE_NO            18
+#define AMG_DATA_FILE_TMP_NO        19
+#define LOCK_PROC_FILE_NO           20
+#define AFD_ACTIVE_FILE_NO          21
+#define WINDOW_ID_FILE_NO           22
+#define SYSTEM_LOG_FIFO_NO          23
+#define EVENT_LOG_FIFO_NO           24
+#define RECEIVE_LOG_FIFO_NO         25
+#define TRANSFER_LOG_FIFO_NO        26
+#define TRANS_DEBUG_LOG_FIFO_NO     27
+#define AFD_CMD_FIFO_NO             28
+#define AFD_RESP_FIFO_NO            29
+#define AMG_CMD_FIFO_NO             30
+#define DB_UPDATE_FIFO_NO           31
+#define FD_CMD_FIFO_NO              32
+#define AW_CMD_FIFO_NO              33
+#define IP_FIN_FIFO_NO              34
+#ifdef WITH_ONETIME
+# define OT_FIN_FIFO_NO             35
+#endif
+#define SF_FIN_FIFO_NO              36
+#define RETRY_FD_FIFO_NO            37
+#define FD_DELETE_FIFO_NO           38
+#define FD_WAKE_UP_FIFO_NO          39
+#define TRL_CALC_FIFO_NO            40
+#define QUEUE_LIST_READY_FIFO_NO    41
+#define QUEUE_LIST_DONE_FIFO_NO     42
+#define PROBE_ONLY_FIFO_NO          43
 #ifdef _INPUT_LOG
-# define INPUT_LOG_FIFO_NO          43
+# define INPUT_LOG_FIFO_NO          44
 #endif
 #ifdef _DISTRIBUTION_LOG
-# define DISTRIBUTION_LOG_FIFO_NO   44
+# define DISTRIBUTION_LOG_FIFO_NO   45
 #endif
 #ifdef _OUTPUT_LOG
-# define OUTPUT_LOG_FIFO_NO         45
+# define OUTPUT_LOG_FIFO_NO         46
+#endif
+#ifdef _CONFIRMATION_LOG
+# define CONFIRMATION_LOG_FIFO_NO   47
 #endif
 #ifdef _DELETE_LOG
-# define DELETE_LOG_FIFO_NO         46
+# define DELETE_LOG_FIFO_NO         48
 #endif
 #ifdef _PRODUCTION_LOG
-# define PRODUCTION_LOG_FIFO_NO     47
+# define PRODUCTION_LOG_FIFO_NO     49
 #endif
-#define DEL_TIME_JOB_FIFO_NO        48
-#define MSG_FIFO_NO                 49
-#define DC_CMD_FIFO_NO              50
-#define DC_RESP_FIFO_NO             51
-#define AFDD_LOG_FIFO_NO            52
-#define TYPESIZE_DATA_FILE_NO       53
-#define SYSTEM_DATA_FILE_NO         54
+#define DEL_TIME_JOB_FIFO_NO        50
+#define MSG_FIFO_NO                 51
+#define DC_CMD_FIFO_NO              52
+#define DC_RESP_FIFO_NO             53
+#define AFDD_LOG_FIFO_NO            54
+#define TYPESIZE_DATA_FILE_NO       55
+#define SYSTEM_DATA_FILE_NO         56
 #ifdef _MAINTAINER_LOG
-# define MAINTAINER_LOG_FIFO_NO     55
+# define MAINTAINER_LOG_FIFO_NO     57
 #endif
-#define MAX_FILE_LIST_LENGTH        56
+#ifdef _WITH_DE_MAIL_SUPPORT
+# define DEMCD_FIFO_NO              58
+#endif
+#define MAX_FILE_LIST_LENGTH        59
 
 #define FSA_STAT_FILE_ALL_NO        0
 #define FRA_STAT_FILE_ALL_NO        1
@@ -168,11 +177,17 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
          filelistflag[FSA_ID_FILE_NO] = YES;
          mfilelistflag[FSA_STAT_FILE_ALL_NO] = YES;
          filelistflag[MSG_QUEUE_FILE_NO] = YES;
+#ifdef _WITH_DE_MAIL_SUPPORT
+         filelistflag[DEMCD_QUEUE_FILE_NO] = YES;
+#endif
       }
       if (old_value_list[0] & MAX_FILENAME_LENGTH_NR)
       {
          filelistflag[FSA_ID_FILE_NO] = YES;
          mfilelistflag[FSA_STAT_FILE_ALL_NO] = YES;
+#ifdef _WITH_DE_MAIL_SUPPORT
+         filelistflag[DEMCD_QUEUE_FILE_NO] = YES;
+#endif
          delete_dir |= LS_DATA_DIR_FLAG;
       }
       if (old_value_list[0] & MAX_HOSTNAME_LENGTH_NR)
@@ -182,6 +197,9 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
          filelistflag[FRA_ID_FILE_NO] = YES;
          mfilelistflag[FRA_STAT_FILE_ALL_NO] = YES;
          filelistflag[JOB_ID_DATA_FILE_NO] = YES;
+#ifdef _WITH_DE_MAIL_SUPPORT
+         filelistflag[DEMCD_QUEUE_FILE_NO] = YES;
+#endif
       }
       if (old_value_list[0] & MAX_REAL_HOSTNAME_LENGTH_NR)
       {
@@ -259,6 +277,9 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
 #ifdef WITH_ERROR_QUEUE
          filelistflag[ERROR_QUEUE_FILE_NO] = YES;
 #endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+         filelistflag[DEMCD_QUEUE_FILE_NO] = YES;
+#endif
          filelistflag[FILE_MASK_FILE_NO] = YES;
          filelistflag[DC_LIST_FILE_NO] = YES;
          filelistflag[DIR_NAME_FILE_NO] = YES;
@@ -282,6 +303,9 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
          filelistflag[FSA_ID_FILE_NO] = YES;
          mfilelistflag[FSA_STAT_FILE_ALL_NO] = YES;
          filelistflag[MSG_QUEUE_FILE_NO] = YES;
+#ifdef _WITH_DE_MAIL_SUPPORT
+         filelistflag[DEMCD_QUEUE_FILE_NO] = YES;
+#endif
          delete_dir |= LS_DATA_DIR_FLAG;
       }
       if (old_value_list[0] & TIME_T_NR)
@@ -289,6 +313,9 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
          filelistflag[FSA_ID_FILE_NO] = YES;
          mfilelistflag[FSA_STAT_FILE_ALL_NO] = YES;
          filelistflag[MSG_QUEUE_FILE_NO] = YES;
+#ifdef _WITH_DE_MAIL_SUPPORT
+         filelistflag[DEMCD_QUEUE_FILE_NO] = YES;
+#endif
          delete_dir |= LS_DATA_DIR_FLAG;
       }
       if (old_value_list[0] & SHORT_NR)
@@ -350,11 +377,17 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
 #ifdef _OUTPUT_LOG
          filelistflag[OUTPUT_LOG_FIFO_NO] = YES;
 #endif
+#ifdef _CONFIRMATION_LOG
+         filelistflag[CONFIRMATION_LOG_FIFO_NO] = YES;
+#endif
 #ifdef _DELETE_LOG
          filelistflag[DELETE_LOG_FIFO_NO] = YES;
 #endif
 #ifdef _PRODUCTION_LOG
          filelistflag[PRODUCTION_LOG_FIFO_NO] = YES;
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+         filelistflag[DEMCD_FIFO_NO] = YES;
 #endif
          filelistflag[DEL_TIME_JOB_FIFO_NO] = YES;
          filelistflag[MSG_FIFO_NO] = YES;
@@ -388,6 +421,9 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
          filelistflag[MSG_QUEUE_FILE_NO] = YES;
 #ifdef WITH_ERROR_QUEUE
          filelistflag[ERROR_QUEUE_FILE_NO] = YES;
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+         filelistflag[DEMCD_QUEUE_FILE_NO] = YES;
 #endif
          filelistflag[CURRENT_MSG_LIST_FILE_NO] = YES;
       }
@@ -498,6 +534,48 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
    }
    if (init_level > 8)
    {
+#ifdef MULTI_FS_SUPPORT
+      int                    i,
+                             no_of_extra_work_dirs;
+      char                   archive_dir[MAX_PATH_LENGTH];
+      struct extra_work_dirs *ewl;
+
+      get_extra_work_dirs(&no_of_extra_work_dirs, &ewl, NO);
+      for (i = 0; i < no_of_extra_work_dirs; i++)
+      {
+         if (dry_run == YES)
+         {
+            (void)fprintf(stdout, "rm -rf %s\n", ewl[i].afd_file_dir);
+         }
+         else
+         {
+            if (rec_rmdir(ewl[i].afd_file_dir) == INCORRECT)
+            {
+               (void)fprintf(stderr,
+                             _("WARNING : Failed to delete everything in %s.\n"),
+                             ewl[i].afd_file_dir);
+            }
+         }
+         (void)memcpy(archive_dir, ewl[i].dir_name, ewl[i].dir_name_length);
+         (void)memcpy(archive_dir + ewl[i].dir_name_length, AFD_ARCHIVE_DIR,
+                      AFD_ARCHIVE_DIR_LENGTH);
+         *(archive_dir + ewl[i].dir_name_length + AFD_ARCHIVE_DIR_LENGTH) = '\0';
+         if (dry_run == YES)
+         {
+            (void)fprintf(stdout, "rm -rf %s\n", archive_dir);
+         }
+         else
+         {
+            if (rec_rmdir(archive_dir) == INCORRECT)
+            {
+               (void)fprintf(stderr,
+                             _("WARNING : Failed to delete everything in %s.\n"),
+                             archive_dir);
+            }
+         }
+      }
+      free_extra_work_dirs(no_of_extra_work_dirs, &ewl);
+#else
       (void)snprintf(dirs, MAX_PATH_LENGTH, "%s%s", p_work_dir, AFD_FILE_DIR);
       if (dry_run == YES)
       {
@@ -526,6 +604,7 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
                           dirs);
          }
       }
+#endif
       offset = snprintf(dirs, MAX_PATH_LENGTH, "%s%s", p_work_dir, LOG_DIR);
       delete_log_files(dirs, offset, dry_run);
    }
@@ -558,6 +637,11 @@ delete_fifodir_files(char *fifodir,
            MSG_QUEUE_FILE,
 #ifdef WITH_ERROR_QUEUE
            ERROR_QUEUE_FILE,
+#else
+           "",
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+           DEMCD_QUEUE_FILE,
 #else
            "",
 #endif
@@ -618,6 +702,11 @@ delete_fifodir_files(char *fifodir,
 #else
            "",
 #endif
+#ifdef _CONFIRMATION_LOG
+           CONFIRMATION_LOG_FIFO,
+#else
+           "",
+#endif
 #ifdef _DELETE_LOG
            DELETE_LOG_FIFO,
 #else
@@ -625,6 +714,11 @@ delete_fifodir_files(char *fifodir,
 #endif
 #ifdef _PRODUCTION_LOG
            PRODUCTION_LOG_FIFO,
+#else
+           "",
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+           DEMCD_FIFO,
 #else
            "",
 #endif
@@ -732,6 +826,9 @@ delete_log_files(char *logdir, int offset, int dry_run)
 #endif
 #ifdef _OUTPUT_LOG
            OUTPUT_BUFFER_FILE_ALL,
+#endif
+#ifdef _CONFIRMATION_LOG
+           CONFIRMATION_BUFFER_FILE_ALL,
 #endif
 #ifdef _DELETE_LOG
            DELETE_BUFFER_FILE_ALL,

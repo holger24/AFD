@@ -1,6 +1,6 @@
 /*
  *  jid_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ DESCR__E_M1
 #include <stdlib.h>                 /* atoi()                            */
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <time.h>                   /* time()                            */
+#include <time.h>                   /* time(), strftime()                */
 #include <fcntl.h>                  /* open()                            */
 #include <unistd.h>                 /* fstat(), lseek(), write()         */
 #include <sys/mman.h>               /* mmap()                            */
@@ -418,8 +418,11 @@ main(int argc, char *argv[])
 
    if (no_of_job_ids > 0)
    {
-      int j,
-          lines_drawn = 0;
+      int  j,
+           lines_drawn = 0;
+#ifdef _NEW_JID
+      char time_str[25];
+#endif
 
       for (i = 0; i < no_of_job_ids; i++)
       {
@@ -440,6 +443,10 @@ main(int argc, char *argv[])
          if ((job_id == NULL) || (job_id[j] == jd[i].job_id))
          {
             (void)fprintf(stdout, "Job-ID          : %x\n", jd[i].job_id);
+#ifdef _NEW_JID
+            (void)strftime(time_str, 25, "%c", localtime(&jd[i].creation_time));
+            (void)fprintf(stdout, "Creation time   : %s\n", time_str);
+#endif
             if (dcl != NULL)
             {
                for (j = 0; j < no_of_dc_ids; j++)

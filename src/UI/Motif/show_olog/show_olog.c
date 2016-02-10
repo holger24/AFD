@@ -1,6 +1,6 @@
 /*
  *  show_olog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,6 +47,7 @@ DESCR__S_M1
  **   10.04.2004 H.Kiehl Added TLS/SSL support.
  **   31.01.2006 H.Kiehl Added SFTP support.
  **   04.04.2007 H.Kiehl Added button to view data.
+ **   26.09.2015 H.Kiehl Added Job ID and hide protocols behind a button.
  **
  */
 DESCR__E_M1
@@ -112,7 +113,6 @@ Widget                     cont_togglebox_w,
                            summarybox_w,
                            scrollbar_w,
                            special_button_w,
-                           togglebox_w,
                            view_button_w;
 Window                     main_window;
 XmFontList                 fontlist;
@@ -134,15 +134,20 @@ int                        acd_counter = 0,
                            no_of_search_hosts,
                            no_of_search_dirs,
                            no_of_search_dirids,
+                           no_of_search_jobids,
                            no_of_view_modes,
                            *search_dir_length = NULL,
                            special_button_flag,
                            sum_line_length,
                            sys_log_fd = STDERR_FILENO,
+#ifdef _WITH_DE_MAIL_SUPPORT
+                           view_confirmation = NO,
+#endif
                            view_archived_only = NO,
                            view_mode;
 unsigned int               all_list_items = 0,
-                           *search_dirid = NULL;
+                           *search_dirid = NULL,
+                           *search_jobid = NULL;
 XT_PTR_TYPE                toggles_set = 0;
 #ifdef HAVE_MMAP
 off_t                      fra_size;
@@ -207,6 +212,9 @@ main(int argc, char *argv[])
                       ".show_olog.Print Data.main_form.buttonbox*background : PaleVioletRed2",
                       ".show_olog.Print Data.main_form.buttonbox*foreground : Black",
                       ".show_olog.Print Data.main_form.buttonbox*highlightColor : Black",
+                      ".show_olog.Select Protocol.main_form.buttonbox*background : PaleVioletRed2",
+                      ".show_olog.Select Protocol.main_form.buttonbox*foreground : Black",
+                      ".show_olog.Select Protocol.main_form.buttonbox*highlightColor : Black",
                       NULL
                    };
    Widget          block_w,
@@ -508,7 +516,7 @@ main(int argc, char *argv[])
    argcount++;
    XtSetArg(args[argcount], XmNrightAttachment, XmATTACH_FORM);
    argcount++;
-   XtSetArg(args[argcount], XmNfractionBase,    104);
+   XtSetArg(args[argcount], XmNfractionBase,    156);
    argcount++;
    criteriabox_w = XmCreateForm(mainform_w, "criteriabox", args, argcount);
 
@@ -522,7 +530,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     0,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    15,
+                           XmNrightPosition,    22,
                            XmNalignment,        XmALIGNMENT_END,
                            NULL);
    file_name_w = XtVaCreateManagedWidget("",
@@ -538,7 +546,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_WIDGET,
                            XmNleftWidget,       label_w,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    61,
+                           XmNrightPosition,    91,
                            NULL);
    XtAddCallback(file_name_w, XmNlosingFocusCallback, save_input,
                  (XtPointer)FILE_NAME_NO_ENTER);
@@ -556,7 +564,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     0,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    15,
+                           XmNrightPosition,    22,
                            NULL);
    directory_w = XtVaCreateManagedWidget("",
                            xmTextWidgetClass,   criteriabox_w,
@@ -571,12 +579,45 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_WIDGET,
                            XmNleftWidget,       label_w,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    61,
+                           XmNrightPosition,    91,
                            NULL);
    XtAddCallback(directory_w, XmNlosingFocusCallback, save_input,
                  (XtPointer)DIRECTORY_NAME_NO_ENTER);
    XtAddCallback(directory_w, XmNactivateCallback, save_input,
                  (XtPointer)DIRECTORY_NAME);
+
+   label_w = XtVaCreateManagedWidget("Job ID    :",
+                           xmLabelGadgetClass,  criteriabox_w,
+                           XmNfontList,         fontlist,
+                           XmNalignment,        XmALIGNMENT_END,
+                           XmNtopAttachment,    XmATTACH_POSITION,
+                           XmNtopPosition,      105,
+                           XmNbottomAttachment, XmATTACH_POSITION,
+                           XmNbottomPosition,   155,
+                           XmNleftAttachment,   XmATTACH_POSITION,
+                           XmNleftPosition,     0,
+                           XmNrightAttachment,  XmATTACH_POSITION,
+                           XmNrightPosition,    22,
+                           NULL);
+   directory_w = XtVaCreateManagedWidget("",
+                           xmTextWidgetClass,   criteriabox_w,
+                           XmNfontList,         fontlist,
+                           XmNmarginHeight,     1,
+                           XmNmarginWidth,      1,
+                           XmNshadowThickness,  1,
+                           XmNtopAttachment,    XmATTACH_POSITION,
+                           XmNtopPosition,      105,
+                           XmNbottomAttachment, XmATTACH_POSITION,
+                           XmNbottomPosition,   155,
+                           XmNleftAttachment,   XmATTACH_WIDGET,
+                           XmNleftWidget,       label_w,
+                           XmNrightAttachment,  XmATTACH_POSITION,
+                           XmNrightPosition,    91,
+                           NULL);
+   XtAddCallback(directory_w, XmNlosingFocusCallback, save_input,
+                 (XtPointer)JOB_ID_NO_ENTER);
+   XtAddCallback(directory_w, XmNactivateCallback, save_input,
+                 (XtPointer)JOB_ID);
 
    label_w = XtVaCreateManagedWidget("Length :",
                            xmLabelGadgetClass,  criteriabox_w,
@@ -587,9 +628,9 @@ main(int argc, char *argv[])
                            XmNbottomAttachment, XmATTACH_POSITION,
                            XmNbottomPosition,   51,
                            XmNleftAttachment,   XmATTACH_POSITION,
-                           XmNleftPosition,     62,
+                           XmNleftPosition,     92,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    77,
+                           XmNrightPosition,    115,
                            NULL);
    file_length_w = XtVaCreateManagedWidget("",
                            xmTextWidgetClass,   criteriabox_w,
@@ -604,7 +645,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_WIDGET,
                            XmNleftWidget,       label_w,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    103,
+                           XmNrightPosition,    155,
                            NULL);
    XtAddCallback(file_length_w, XmNlosingFocusCallback, save_input,
                  (XtPointer)FILE_LENGTH_NO_ENTER);
@@ -620,9 +661,9 @@ main(int argc, char *argv[])
                            XmNbottomAttachment, XmATTACH_POSITION,
                            XmNbottomPosition,   103,
                            XmNleftAttachment,   XmATTACH_POSITION,
-                           XmNleftPosition,     62,
+                           XmNleftPosition,     92,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    77,
+                           XmNrightPosition,    115,
                            NULL);
    recipient_w = XtVaCreateManagedWidget("",
                            xmTextWidgetClass,   criteriabox_w,
@@ -637,7 +678,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_WIDGET,
                            XmNleftWidget,       label_w,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    103,
+                           XmNrightPosition,    155,
                            NULL);
    XtAddCallback(recipient_w, XmNlosingFocusCallback, save_input,
                  (XtPointer)RECIPIENT_NAME_NO_ENTER);
@@ -687,137 +728,18 @@ main(int argc, char *argv[])
 /* Let user select the distribution type: FTP, MAIL and/or FILE. Default */
 /* is FTP, MAIL and FILE.                                                */
 /*-----------------------------------------------------------------------*/
-   label_w = XtVaCreateManagedWidget("Protocol",
-                           xmLabelGadgetClass,  selectionbox_w,
-                           XmNfontList,         fontlist,
-                           XmNalignment,        XmALIGNMENT_END,
-                           XmNtopAttachment,    XmATTACH_FORM,
-                           XmNleftAttachment,   XmATTACH_FORM,
-                           XmNleftOffset,       4,
-                           XmNbottomAttachment, XmATTACH_FORM,
-                           NULL);
-   togglebox_w = XtVaCreateWidget("togglebox",
-                                xmRowColumnWidgetClass, selectionbox_w,
-                                XmNorientation,         XmHORIZONTAL,
-                                XmNpacking,             XmPACK_TIGHT,
-                                XmNspacing,             0,
-                                XmNnumColumns,          1,
-                                XmNtopAttachment,       XmATTACH_FORM,
-                                XmNleftAttachment,      XmATTACH_WIDGET,
-                                XmNleftWidget,          label_w,
-                                XmNbottomAttachment,    XmATTACH_FORM,
-                                XmNresizable,           False,
-                                NULL);
-#ifdef _WITH_FTP_SUPPORT
-   toggle_w = XtVaCreateManagedWidget("FTP",
-                                xmToggleButtonGadgetClass, togglebox_w,
-                                XmNfontList,               fontlist,
-                                XmNset,                    True,
-                                NULL);
-   XtAddCallback(toggle_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggled, (XtPointer)SHOW_FTP);
-# ifdef WITH_SSL
-   toggle_w = XtVaCreateManagedWidget("FTPS",
-                                xmToggleButtonGadgetClass, togglebox_w,
-                                XmNfontList,               fontlist,
-                                XmNset,                    True,
-                                NULL);
-   XtAddCallback(toggle_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggled, (XtPointer)SHOW_FTPS);
-# endif
-#endif
-#ifdef _WITH_HTTP_SUPPORT
-   toggle_w = XtVaCreateManagedWidget("HTTP",
-                                xmToggleButtonGadgetClass, togglebox_w,
-                                XmNfontList,               fontlist,
-                                XmNset,                    True,
-                                NULL);
-   XtAddCallback(toggle_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggled, (XtPointer)SHOW_HTTP);
-# ifdef WITH_SSL
-   toggle_w = XtVaCreateManagedWidget("HTTPS",
-                                xmToggleButtonGadgetClass, togglebox_w,
-                                XmNfontList,               fontlist,
-                                XmNset,                    True,
-                                NULL);
-   XtAddCallback(toggle_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggled, (XtPointer)SHOW_HTTPS);
-# endif
-#endif
-#ifdef _WITH_SMTP_SUPPORT
-   toggle_w = XtVaCreateManagedWidget("SMTP",
-                                xmToggleButtonGadgetClass, togglebox_w,
-                                XmNfontList,               fontlist,
-                                XmNset,                    True,
-                                NULL);
-   XtAddCallback(toggle_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggled, (XtPointer)SHOW_SMTP);
-# ifdef WITH_SSL
-   toggle_w = XtVaCreateManagedWidget("SMTPS",
-                                xmToggleButtonGadgetClass, togglebox_w,
-                                XmNfontList,               fontlist,
-                                XmNset,                    True,
-                                NULL);
-   XtAddCallback(toggle_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggled, (XtPointer)SHOW_SMTPS);
-# endif
-#endif
-#ifdef _WITH_LOC_SUPPORT
-   toggle_w = XtVaCreateManagedWidget("FILE",
-                                xmToggleButtonGadgetClass, togglebox_w,
-                                XmNfontList,               fontlist,
-                                XmNset,                    True,
-                                NULL);
-   XtAddCallback(toggle_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggled, (XtPointer)SHOW_FILE);
-#endif
-#ifdef _WITH_FD_EXEC_SUPPORT
-   toggle_w = XtVaCreateManagedWidget("EXEC",
-                                xmToggleButtonGadgetClass, togglebox_w,
-                                XmNfontList,               fontlist,
-                                XmNset,                    True,
-                                NULL);
-   XtAddCallback(toggle_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggled, (XtPointer)SHOW_EXEC);
-#endif
-#ifdef _WITH_SFTP_SUPPORT
-   toggle_w = XtVaCreateManagedWidget("SFTP",
-                                xmToggleButtonGadgetClass, togglebox_w,
-                                XmNfontList,               fontlist,
-                                XmNset,                    True,
-                                NULL);
-   XtAddCallback(toggle_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggled, (XtPointer)SHOW_SFTP);
-#endif
-#ifdef _WITH_SCP_SUPPORT
-   toggle_w = XtVaCreateManagedWidget("SCP",
-                                xmToggleButtonGadgetClass, togglebox_w,
-                                XmNfontList,               fontlist,
-                                XmNset,                    True,
-                                NULL);
-   XtAddCallback(toggle_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggled, (XtPointer)SHOW_SCP);
-#endif
-#ifdef _WITH_WMO_SUPPORT
-   toggle_w = XtVaCreateManagedWidget("WMO",
-                                xmToggleButtonGadgetClass, togglebox_w,
-                                XmNfontList,               fontlist,
-                                XmNset,                    True,
-                                NULL);
-   XtAddCallback(toggle_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggled, (XtPointer)SHOW_WMO);
-#endif
-#ifdef _WITH_MAP_SUPPORT
-   toggle_w = XtVaCreateManagedWidget("MAP",
-                                xmToggleButtonGadgetClass, togglebox_w,
-                                XmNfontList,               fontlist,
-                                XmNset,                    True,
-                                NULL);
-   XtAddCallback(toggle_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggled, (XtPointer)SHOW_MAP);
-#endif
-   XtManageChild(togglebox_w);
+   button_w = XtVaCreateManagedWidget("Protocol",
+                        xmPushButtonWidgetClass, selectionbox_w,
+                        XmNfontList,             fontlist,
+                        XmNtopAttachment,        XmATTACH_FORM,
+                        XmNleftAttachment,       XmATTACH_FORM,
+                        XmNleftOffset,           10,
+                        XmNbottomAttachment,     XmATTACH_FORM,
+                        NULL);
+   XtAddCallback(button_w, XmNactivateCallback,
+                 (XtCallbackProc)select_protocol, (XtPointer)0);
 
+   toggles_set = 0;
 #ifdef _WITH_FTP_SUPPORT
    toggles_set |= SHOW_FTP;
 #endif
@@ -826,6 +748,9 @@ main(int argc, char *argv[])
 #endif
 #ifdef _WITH_SMTP_SUPPORT
    toggles_set |= SHOW_SMTP;
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+   toggles_set |= SHOW_DEMAIL;
 #endif
 #ifdef _WITH_SFTP_SUPPORT
    toggles_set |= SHOW_SFTP;
@@ -838,6 +763,9 @@ main(int argc, char *argv[])
 #endif
 #ifdef _WITH_MAP_SUPPORT
    toggles_set |= SHOW_MAP;
+#endif
+#ifdef _WITH_DFAX_SUPPORT
+   toggles_set |= SHOW_DFAX;
 #endif
 #ifdef WITH_SSL
 # ifdef _WITH_FTP_SUPPORT
@@ -857,6 +785,102 @@ main(int argc, char *argv[])
    toggles_set |= SHOW_EXEC;
 #endif
    XtManageChild(selectionbox_w);
+
+/*-----------------------------------------------------------------------*/
+/*                          Vertical Separator                           */
+/*-----------------------------------------------------------------------*/
+   argcount = 0;
+   XtSetArg(args[argcount], XmNorientation,      XmVERTICAL);
+   argcount++;
+   XtSetArg(args[argcount], XmNtopAttachment,    XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNbottomAttachment, XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftWidget,       button_w);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftOffset,       10);
+   argcount++;
+   separator_w = XmCreateSeparator(selectionbox_w, "separator",
+                                   args, argcount);
+   XtManageChild(separator_w);
+
+   /* Only archived toggle box */
+   xx_togglebox_w = XtVaCreateWidget("oa_togglebox",
+                                xmRowColumnWidgetClass, selectionbox_w,
+                                XmNorientation,      XmHORIZONTAL,
+                                XmNpacking,          XmPACK_TIGHT,
+                                XmNnumColumns,       1,
+                                XmNtopAttachment,    XmATTACH_FORM,
+                                XmNleftAttachment,   XmATTACH_WIDGET,
+                                XmNleftWidget,       separator_w,
+                                XmNbottomAttachment, XmATTACH_FORM,
+                                XmNresizable,        False,
+                                NULL);
+
+   toggle_w = XtVaCreateManagedWidget("Only archived",
+                                xmToggleButtonGadgetClass, xx_togglebox_w,
+                                XmNfontList,               fontlist,
+                                XmNset,                    False,
+                                NULL);
+   XtAddCallback(toggle_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)only_archived_toggle, NULL);
+   XtManageChild(xx_togglebox_w);
+
+   /* Vertical Separator */
+   argcount = 0;
+   XtSetArg(args[argcount], XmNorientation,      XmVERTICAL);
+   argcount++;
+   XtSetArg(args[argcount], XmNtopAttachment,    XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNbottomAttachment, XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftWidget,       xx_togglebox_w);
+   argcount++;
+   separator_w = XmCreateSeparator(selectionbox_w, "separator", args, argcount);
+   XtManageChild(separator_w);
+
+#ifdef _WITH_DE_MAIL_SUPPORT
+   /* Only archived toggle box */
+   xx_togglebox_w = XtVaCreateWidget("con_togglebox",
+                                xmRowColumnWidgetClass, selectionbox_w,
+                                XmNorientation,      XmHORIZONTAL,
+                                XmNpacking,          XmPACK_TIGHT,
+                                XmNnumColumns,       1,
+                                XmNtopAttachment,    XmATTACH_FORM,
+                                XmNleftAttachment,   XmATTACH_WIDGET,
+                                XmNleftWidget,       separator_w,
+                                XmNbottomAttachment, XmATTACH_FORM,
+                                XmNresizable,        False,
+                                NULL);
+
+   toggle_w = XtVaCreateManagedWidget("Confirmation",
+                                xmToggleButtonGadgetClass, xx_togglebox_w,
+                                XmNfontList,               fontlist,
+                                XmNset,                    False,
+                                NULL);
+   XtAddCallback(toggle_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)confirmation_toggle, NULL);
+   XtManageChild(xx_togglebox_w);
+
+   /* Vertical Separator */
+   argcount = 0;
+   XtSetArg(args[argcount], XmNorientation,      XmVERTICAL);
+   argcount++;
+   XtSetArg(args[argcount], XmNtopAttachment,    XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNbottomAttachment, XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftWidget,       xx_togglebox_w);
+   argcount++;
+   separator_w = XmCreateSeparator(selectionbox_w, "separator", args, argcount);
+   XtManageChild(separator_w);
+#endif /* _WITH_DE_MAIL_SUPPORT */
 
 
 /*-----------------------------------------------------------------------*/
@@ -902,49 +926,11 @@ main(int argc, char *argv[])
 /* format. Default is short, since this is the fastest form.             */
 /*-----------------------------------------------------------------------*/
 
-   /* Only archived toggle box */
-   xx_togglebox_w = XtVaCreateWidget("oa_togglebox",
-                                xmRowColumnWidgetClass, selectionbox_w,
-                                XmNorientation,      XmHORIZONTAL,
-                                XmNpacking,          XmPACK_TIGHT,
-                                XmNnumColumns,       1,
-                                XmNtopAttachment,    XmATTACH_FORM,
-                                XmNleftAttachment,   XmATTACH_FORM,
-                                XmNbottomAttachment, XmATTACH_FORM,
-                                XmNresizable,        False,
-                                NULL);
-
-   toggle_w = XtVaCreateManagedWidget("Only archived",
-                                xmToggleButtonGadgetClass, xx_togglebox_w,
-                                XmNfontList,               fontlist,
-                                XmNset,                    False,
-                                NULL);
-   XtAddCallback(toggle_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)only_archived_toggle, NULL);
-   XtManageChild(xx_togglebox_w);
-
-   /* Vertical Separator */
-   argcount = 0;
-   XtSetArg(args[argcount], XmNorientation,      XmVERTICAL);
-   argcount++;
-   XtSetArg(args[argcount], XmNtopAttachment,    XmATTACH_FORM);
-   argcount++;
-   XtSetArg(args[argcount], XmNbottomAttachment, XmATTACH_FORM);
-   argcount++;
-   XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
-   argcount++;
-   XtSetArg(args[argcount], XmNleftWidget,       xx_togglebox_w);
-   argcount++;
-   separator_w = XmCreateSeparator(selectionbox_w, "separator", args, argcount);
-   XtManageChild(separator_w);
-
    /* Option menu for view mode. */
    argcount = 0;
    XtSetArg(args[argcount], XmNtopAttachment,    XmATTACH_FORM);
    argcount++;
-   XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
-   argcount++;
-   XtSetArg(args[argcount], XmNleftWidget,       separator_w);
+   XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_FORM);
    argcount++;
    XtSetArg(args[argcount], XmNbottomAttachment, XmATTACH_FORM);
    argcount++;
@@ -955,7 +941,7 @@ main(int argc, char *argv[])
    argcount++;
    pane_w = XmCreatePulldownMenu(xx_togglebox_w, "pane", args, argcount);
 
-   label = XmStringCreateLocalized("View mode");
+   label = XmStringCreateLocalized("View content mode");
    argcount = 0;
    XtSetArg(args[argcount], XmNsubMenuId,        pane_w);
    argcount++;
@@ -1013,7 +999,7 @@ main(int argc, char *argv[])
    XtManageChild(separator_w);
 
    /* Label radiobox_w */
-   label_w = XtVaCreateManagedWidget("File name length :",
+   label_w = XtVaCreateManagedWidget("File name length:",
                            xmLabelGadgetClass,  selectionbox_w,
                            XmNfontList,         fontlist,
                            XmNalignment,        XmALIGNMENT_END,
@@ -2110,7 +2096,7 @@ get_afd_config_value(void)
    (void)snprintf(config_file, MAX_PATH_LENGTH, "%s%s%s",
                   p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(config_file, F_OK) == 0) &&
-       (read_file_no_cr(config_file, &buffer, __FILE__, __LINE__) != INCORRECT))
+       (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {
       char *ptr,
            value[MAX_INT_LENGTH],

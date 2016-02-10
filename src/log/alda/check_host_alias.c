@@ -1,6 +1,6 @@
 /*
  *  check_host_alias.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2013 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -119,7 +119,7 @@ check_host_alias(char *host_alias, char *real_hostname, int current_toggle)
 
                for (i = 0; i < no_of_hosts; i++)
                {
-                  if (strcmp(host_alias, fsa[i].host_alias) == 0)
+                  if (my_strcmp(host_alias, fsa[i].host_alias) == 0)
                   {
                      for (j = 0; j < search_host_id_counter; j++)
                      {
@@ -236,7 +236,7 @@ check_host_alias(char *host_alias, char *real_hostname, int current_toggle)
 
             for (i = 0; i < no_of_hosts; i++)
             {
-               if (strcmp(host_alias, ahl[i].host_alias) == 0)
+               if (my_strcmp(host_alias, ahl[i].host_alias) == 0)
                {
                   for (j = 0; j < start_id_counter; j++)
                   {

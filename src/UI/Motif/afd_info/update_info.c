@@ -137,6 +137,12 @@ update_info(Widget w)
       {
          length += sprintf(&protocol_label_str[length], "SMTP ");
       }
+#ifdef _WITH_DE_MAIL_SUPPORT
+      if (fsa[host_position].protocol & DE_MAIL_FLAG)
+      {
+         length += sprintf(&protocol_label_str[length], "DEMAIL ");
+      }
+#endif
       if (fsa[host_position].protocol & HTTP_FLAG)
       {
          length += sprintf(&protocol_label_str[length], "HTTP ");
@@ -159,6 +165,12 @@ update_info(Widget w)
          length += sprintf(&protocol_label_str[length], "MAP ");
       }
 #endif
+#ifdef _WITH_DFAX_SUPPORT
+      if (fsa[host_position].protocol & DFAX_FLAG)
+      {
+         length += sprintf(&protocol_label_str[length], "DFAX ");
+      }
+#endif
 #ifdef WITH_SSL
       if (fsa[host_position].protocol & SSL_FLAG)
       {
@@ -170,7 +182,7 @@ update_info(Widget w)
       XmStringFree(text);
    }
 
-   if (strcmp(prev.real_hostname[0], fsa[host_position].real_hostname[0]) != 0)
+   if (my_strcmp(prev.real_hostname[0], fsa[host_position].real_hostname[0]) != 0)
    {
       (void)strcpy(prev.real_hostname[0], fsa[host_position].real_hostname[0]);
       (void)sprintf(str_line, "%*s", AFD_INFO_STR_LENGTH, prev.real_hostname[0]);
@@ -178,7 +190,7 @@ update_info(Widget w)
       flush = YES;
    }
 
-   if (strcmp(prev.real_hostname[1], fsa[host_position].real_hostname[1]) != 0)
+   if (my_strcmp(prev.real_hostname[1], fsa[host_position].real_hostname[1]) != 0)
    {
       (void)strcpy(prev.real_hostname[1], fsa[host_position].real_hostname[1]);
       (void)sprintf(str_line, "%*s", AFD_INFO_STR_LENGTH, prev.real_hostname[1]);
@@ -300,6 +312,9 @@ update_info(Widget w)
              (fsa[host_position].protocol & MAP_FLAG) ||
 #endif
              (fsa[host_position].protocol & HTTP_FLAG) ||
+#ifdef _WITH_DE_MAIL_SUPPORT
+             (fsa[host_position].protocol & DE_MAIL_FLAG) ||
+#endif
              (fsa[host_position].protocol & SMTP_FLAG))
          {
             get_ip_no(fsa[host_position].real_hostname[0], tmp_str_line);
@@ -391,6 +406,9 @@ update_info(Widget w)
              (fsa[host_position].protocol & MAP_FLAG) ||
 #endif
              (fsa[host_position].protocol & HTTP_FLAG) ||
+#ifdef _WITH_DE_MAIL_SUPPORT
+             (fsa[host_position].protocol & DE_MAIL_FLAG) ||
+#endif
              (fsa[host_position].protocol & SMTP_FLAG))
          {
             get_ip_no(fsa[host_position].real_hostname[0], tmp_str_line);
@@ -470,6 +488,9 @@ update_info(Widget w)
              (fsa[host_position].protocol & MAP_FLAG) ||
 #endif
              (fsa[host_position].protocol & HTTP_FLAG) ||
+#ifdef _WITH_DE_MAIL_SUPPORT
+             (fsa[host_position].protocol & DE_MAIL_FLAG) ||
+#endif
              (fsa[host_position].protocol & SMTP_FLAG))
          {
             get_ip_no(fsa[host_position].real_hostname[1], tmp_str_line);

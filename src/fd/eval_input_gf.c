@@ -1,6 +1,6 @@
 /*
  *  eval_input_gf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ DESCR__S_M3
  **        OPTIONS
  **          -c                        Enable support for hardware CRC-32.
  **          -d                        Distributed helper job.
+ **          -e <seconds>              Disconnect after given time.
  **          -h <HTTP proxy>[:<port>]  Proxy where to send the HTTP requests.
  **          -i <interval>             Interval at which we should retry.
  **          -m <mode>                 Create source dir mode.
@@ -54,12 +55,13 @@ DESCR__S_M3
  **   28.12.2011 H.Kiehl Added -h to specify HTTP proxy.
  **   25.01.2013 H.Kiehl Added -c for hardware CRC-32 support.
  **   16.08.2014 H.Kiehl Added -m for creating remote source directories.
+ **   01.07.2015 H.Kiehl Added -e for disconnect time.
  **
  */
 DESCR__E_M3
 
 #include <stdio.h>                 /* stderr, fprintf()                  */
-#include <stdlib.h>                /* exit(), atoi()                     */
+#include <stdlib.h>                /* exit(), atoi(), strtoul()          */
 #include <string.h>                /* strcpy(), strerror(), strcmp()     */
 #include <ctype.h>                 /* isdigit()                          */
 #include <errno.h>
@@ -173,6 +175,20 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
 #endif
                               case 'd' : /* Distribution helper job. */
                                  p_db->special_flag |= DISTRIBUTED_HELPER_JOB;
+                                 break;
+                              case 'e' : /* Disconnect after given time. */
+                                 if (((i + 1) < argc) &&
+                                     (argv[i + 1][0] != '-'))
+                                 {
+                                    p_db->disconnect = (unsigned int)strtoul(argv[i + 1], (char **)NULL, 10);
+                                 }
+                                 else
+                                 {
+                                    (void)fprintf(stderr,
+                                                  "ERROR   : No disconnect time specified for -d option.\n");
+                                    usage(argv[0]);
+                                    ret = SYNTAX_ERROR;
+                                 }
                                  break;
                               case 'h' : /* Default HTTP proxy. */
                                  if (((i + 1) < argc) &&
@@ -398,6 +414,7 @@ usage(char *name)
    (void)fprintf(stderr, "  -c                        - Enable support for hardware CRC-32.\n");
 #endif
    (void)fprintf(stderr, "  -d                        - this is a distributed helper job\n");
+   (void)fprintf(stderr, "  -e <seconds>              - Disconnect after the given amount of time.\n");
    (void)fprintf(stderr, "  -h <HTTP proxy>[:<port>]  - Proxy where to send the HTTP request.\n");
    (void)fprintf(stderr, "  -i <interval>             - interval at which we should retry\n");
    (void)fprintf(stderr, "  -o <retries>              - old/error message\n");

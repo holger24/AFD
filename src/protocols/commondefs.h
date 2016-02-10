@@ -1,6 +1,6 @@
 /*
  *  commondefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
 extern int     command(int, char *, ...),
                connect_with_timeout(int, const struct sockaddr *, socklen_t);
 #ifdef WITH_SSL
-extern int     ssl_connect(int, char *);
+extern int     ssl_connect(int, char *, int);
 extern ssize_t ssl_write(SSL *, const char *, size_t);
 extern char    *ssl_error_msg(char *, SSL *, int *, int, char *);
 #endif

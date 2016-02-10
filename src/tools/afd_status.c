@@ -113,8 +113,14 @@ main(int argc, char *argv[])
    (void)fprintf(stdout, "Archive watch        : %d\n", p_afd_status->archive_watch);
    (void)fprintf(stdout, "afd_stat             : %d\n", p_afd_status->afd_stat);
    (void)fprintf(stdout, "afdd                 : %d\n", p_afd_status->afdd);
-#ifdef _WITH_SERVER_SUPPORT
-   (void)fprintf(stdout, "afds                 : %d\n", p_afd_status->afds);
+#ifdef _WITH_ATPD_SUPPORT
+   (void)fprintf(stdout, "atpd                 : %d\n", p_afd_status->atpd);
+#endif
+#ifdef _WITH_WMOD_SUPPORT
+   (void)fprintf(stdout, "wmod                 : %d\n", p_afd_status->wmod);
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+   (void)fprintf(stdout, "demcd                : %d\n", p_afd_status->demcd);
 #endif
 #ifndef HAVE_MMAP
    (void)fprintf(stdout, "mapper               : %d\n", p_afd_status->mapper);

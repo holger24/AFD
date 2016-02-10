@@ -1,6 +1,6 @@
 /*
  *  check_fake_user.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -140,7 +140,7 @@ check_fake_user(int *argc, char *argv[], char *config_file, char *fake_user)
          (void)snprintf(full_config_name, MAX_PATH_LENGTH, "%s%s%s",
                         p_work_dir, ETC_DIR, config_file);
          if ((eaccess(full_config_name, F_OK) == 0) &&
-             (read_file_no_cr(full_config_name, &buffer, __FILE__, __LINE__) != INCORRECT))
+             (read_file_no_cr(full_config_name, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
          {
             char fake_user_list[MAX_PATH_LENGTH];
 

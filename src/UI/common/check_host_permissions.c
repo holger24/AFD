@@ -1,7 +1,7 @@
 /*
  *  check_host_permissions.c - Part of AFD, an automatic file distribution
  *                             program.
- *  Copyright (c) 2005 - 2007 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ check_host_permissions(char *host, char **list, int no_in_list)
 
       for (i = 0; i < no_in_list; i++)
       {
-         if (strcmp(host, list[i]) == 0)
+         if (my_strcmp(host, list[i]) == 0)
          {
             ret = SUCCESS;
             break;

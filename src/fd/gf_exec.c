@@ -1,7 +1,7 @@
 /*
  *  gf_exec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013, 2014 Deutscher Wetterdienst (DWD),
- *                           Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2015 Deutscher Wetterdienst (DWD),
+ *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -258,7 +258,7 @@ main(int argc, char *argv[])
          reset_values(files_retrieved, file_size_retrieved,
                       files_to_retrieve, file_size_to_retrieve,
                       (struct job *)&db);
-         return(SUCCESS);
+         exit(TRANSFER_SUCCESS);
       }
 
 #ifdef HAVE_SETPRIORITY
