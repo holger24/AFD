@@ -1,6 +1,6 @@
 /*
  *  amgdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -862,7 +862,7 @@ extern int    amg_zombie_check(pid_t *, int),
               in_time(time_t, unsigned int, struct bd_time_entry *),
               lookup_dir_id(char *, char *),
               lookup_fra_pos(char *),
-              next_dir_group_name(char *, char *),
+              next_dir_group_name(char *, int *, char *),
               rename_files(char *, char *, int, int, struct instant_db *,
                            time_t, int, unsigned int *, char *, off_t *),
               reread_dir_config(int, off_t, time_t *, int, int, size_t,
@@ -918,7 +918,7 @@ extern void   add_file_mask(char *, struct dir_group *),
                              int *,
 #endif
                              int *, int *, int *),
-              init_dir_group_name(char *, char *, int),
+              init_dir_group_name(char *, int *, char *, int),
               init_dis_log(void),
               init_job_data(void),
               init_msg_buffer(void),

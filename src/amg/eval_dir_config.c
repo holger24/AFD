@@ -670,7 +670,8 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
          dir_group_loop_ptr = ptr;
          if (group_name[0] != '\0')
          {
-            init_dir_group_name(dir->location, group_name, dir_group_type);
+            init_dir_group_name(dir->location, &dir->location_length,
+                                group_name, dir_group_type);
          }
 
          do
@@ -2309,7 +2310,8 @@ check_dummy_line:
                free(dir->file);
                dir->file = NULL;
             }
-         } while (next_dir_group_name(dir->location, dir->alias) == 1);
+         } while (next_dir_group_name(dir->location, &dir->location_length,
+                                      dir->alias) == 1);
 
          if (group_name[0] != '\0')
          {

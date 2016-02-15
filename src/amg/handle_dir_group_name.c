@@ -1,7 +1,7 @@
 /*
  *  handle_dir_group_name.c - Part of AFD, an automatic file distribution
  *                            program.
- *  Copyright (c) 2014, 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,8 +28,8 @@ DESCR__S_M3
  **   free_dir_group_name - free all resources
  **
  ** SYNOPSIS
- **   void init_dir_group_name(char *location, char *group_name,
- **                            int dir_group_type)
+ **   void init_dir_group_name(char *location, int *location_length,
+ **                            char *group_name, int dir_group_type)
  **   int  next_dir_group_name(char *location)
  **   void free_dir_group_name(void)
  **
@@ -67,15 +67,19 @@ extern char *p_work_dir;
 
 /* Local global variables. */
 static int  next_group_pos,
-            no_listed;
+            no_listed,
+            start_group_pos;
 static char **group_list = NULL,
             last_part[MAX_PATH_LENGTH],
-            *p_start_group;
+            orig_dir[MAX_PATH_LENGTH];
 
 
 /*####################### init_dir_group_name() #########################*/
 void
-init_dir_group_name(char *location, char *group_name, int dir_group_type)
+init_dir_group_name(char *location,
+                    int  *location_length,
+                    char *group_name,
+                    int  dir_group_type)
 {
    off_t file_size;
    char  *buffer = NULL,
@@ -143,26 +147,22 @@ init_dir_group_name(char *location, char *group_name, int dir_group_type)
             do
             {
                ptr++;
-               if (*ptr == '\\')
+               if (*ptr == '#')
                {
-                  ptr++;
+                  while ((*ptr != '\n') && (*ptr != '\0'))
+                  {
+                     ptr++;
+                  }
+                  if (length > 0)
+                  {
+                     if (length > max_length)
+                     {
+                        max_length = length;
+                     }
+                     length = 0;
+                     no_listed++;
+                  }
                }
-               else if (*ptr == '#')
-                    {
-                       while ((*ptr != '\n') && (*ptr != '\0'))
-                       {
-                          ptr++;
-                       }
-                       if (length > 0)
-                       {
-                          if (length > max_length)
-                          {
-                             max_length = length;
-                          }
-                          length = 0;
-                          no_listed++;
-                       }
-                    }
                else if ((*ptr == ' ') || (*ptr == '\t'))
                     {
                        /* Ignore spaces! */;
@@ -198,23 +198,19 @@ init_dir_group_name(char *location, char *group_name, int dir_group_type)
                do
                {
                   ptr++;
-                  if (*ptr == '\\')
+                  if (*ptr == '#')
                   {
-                     ptr++;
+                     while ((*ptr != '\n') && (*ptr != '\0'))
+                     {
+                        ptr++;
+                     }
+                     if (length > 0)
+                     {
+                        group_list[counter][length] = '\0';
+                        length = 0;
+                        counter++;
+                     }
                   }
-                  else if (*ptr == '#')
-                       {
-                          while ((*ptr != '\n') && (*ptr != '\0'))
-                          {
-                             ptr++;
-                          }
-                          if (length > 0)
-                          {
-                             group_list[counter][length] = '\0';
-                             length = 0;
-                             counter++;
-                          }
-                       }
                   else if ((*ptr == ' ') || (*ptr == '\t'))
                        {
                           /* Ignore spaces! */;
@@ -259,12 +255,15 @@ init_dir_group_name(char *location, char *group_name, int dir_group_type)
 
       /* Now lets prepare the first element. */
       ptr = location;
+      length = 0;
 continue_search:
       while ((*ptr != GROUP_SIGN) && (*ptr != '\0'))
       {
-         ptr++;
+         orig_dir[length] = *ptr;
+         ptr++; length++;
       }
-      p_start_group = ptr;
+      orig_dir[length] = '\0';
+      start_group_pos = length;
       if (*ptr == '\0')
       {
          /* Oops, no group sign? */
@@ -324,8 +323,9 @@ continue_search:
             ptr++;
             goto continue_search;
          }
-         (void)strcpy(p_start_group, group_list[0]);
-         (void)strcat(p_start_group, last_part);
+         (void)strcpy(location + start_group_pos, group_list[0]);
+         (void)strcat(location + start_group_pos, last_part);
+         *location_length = strlen(location);
          next_group_pos = 1;
       }
    }
@@ -336,12 +336,14 @@ continue_search:
 
 /*####################### next_dir_group_name() #########################*/
 int
-next_dir_group_name(char *location, char *alias)
+next_dir_group_name(char *location, int *location_length, char *alias)
 {
    if ((no_listed > 0) && (next_group_pos < no_listed))
    {
-      (void)strcpy(p_start_group, group_list[next_group_pos]);
-      (void)strcat(p_start_group, last_part);
+      (void)strcpy(location, orig_dir);
+      (void)strcpy(location + start_group_pos, group_list[next_group_pos]);
+      (void)strcat(location + start_group_pos, last_part);
+      *location_length = strlen(location);
       next_group_pos++;
 
       /* We need a new alias for this directory. */
