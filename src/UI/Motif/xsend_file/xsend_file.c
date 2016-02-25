@@ -1,6 +1,6 @@
 /*
  *  xsend_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1136,9 +1136,9 @@ init_xsend_file(int  *argc,
 
    /* Prepare title for window. */
    (void)strcpy(title_name, "xsend_file ");
-   if (gethostname(&title_name[11], 29) != 0)
+   if (get_afd_name(&title_name[11]) == INCORRECT)
    {
-      title_name[10] = '\0';
+      (void)gethostname(&title_name[11], 29);
    }
 
    if ((db = malloc(sizeof(struct send_data))) == NULL)
