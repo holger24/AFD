@@ -1,6 +1,6 @@
 /*
  *  handle_options.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -158,6 +158,7 @@ DESCR__S_M3
  **   18.01.2011 H.Kiehl Added lchmod option, to do local chmod.
  **   17.03.2012 H.Kiehl Added %T time modifier for assembling file names.
  **   15.02.2013 H.Kiehl Added extract option WMO+CHK.
+ **   25.02.2016 H.Kiehl Added option srename (simple rename).
  **
  */
 DESCR__E_M3
@@ -482,6 +483,235 @@ handle_options(int          position,
 
                   free(file_name_buffer);
 #endif
+               }
+            }
+         }
+
+         NEXT(options);
+         continue;
+      }
+
+      if ((db[position].loptions_flag & SRENAME_ID_FLAG) &&
+          (CHECK_STRNCMP(options, SRENAME_ID, SRENAME_ID_LENGTH) == 0))
+      {
+         char *p_rule;
+
+#ifdef _PRODUCTION_LOG
+         p_option = options;
+#endif
+
+         /* Extract rule from local options. */
+         p_rule = options + SRENAME_ID_LENGTH;
+         while ((*p_rule == ' ') || (*p_rule == '\t'))
+         {
+            p_rule++;
+         }
+         if (*p_rule == '\0')
+         {
+            receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
+                        "No rule specified for simple renaming. Ignoring this option. #%x",
+                        db[position].job_id);
+         }
+         else
+         {
+            register int k;
+            char         filter[MAX_FILENAME_LENGTH];
+
+            k = 0;
+            while ((*p_rule != ' ') && (*p_rule != '\t') && (*p_rule != '\n') &&
+                   (*p_rule != '\0') && (k < MAX_FILENAME_LENGTH))
+            {
+               if ((*p_rule == '\\') &&
+                   ((*(p_rule + 1) == ' ') || (*(p_rule + 1) == '#')))
+               {
+                  p_rule++;
+               }
+               filter[k] = *p_rule;
+               p_rule++; k++;
+            }
+            if ((*p_rule != ' ') && (*p_rule != '\t'))
+            {
+               if (k == MAX_FILENAME_LENGTH)
+               {
+                  receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
+                              "The filter for option %s is to long (%d). Ignoring this option. #%x",
+                              SRENAME_ID, MAX_FILENAME_LENGTH,
+                              db[position].job_id);
+               }
+               else
+               {
+                  receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
+                              "No 'rename to' part specified for option %s. Ignoring this option. #%x",
+                              SRENAME_ID, db[position].job_id);
+               }
+            }
+            else
+            {
+               while ((*p_rule == ' ') || (*p_rule == '\t'))
+               {
+                  p_rule++;
+               }
+               if (*p_rule == '\0')
+               {
+                  receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
+                              "No 'rename to' part specified for simple renaming. Ignoring this option. #%x",
+                              db[position].job_id);
+               }
+               else
+               {
+                  char rename_to[MAX_FILENAME_LENGTH];
+
+                  filter[k] = '\0';
+                  k = 0;
+                  while ((*p_rule != ' ') && (*p_rule != '\t') &&
+                         (*p_rule != '\n') && (*p_rule != '\0') &&
+                         (k < MAX_FILENAME_LENGTH))
+                  {
+                     if ((*p_rule == '\\') &&
+                         ((*(p_rule + 1) == ' ') || (*(p_rule + 1) == '#')))
+                     {
+                        p_rule++;
+                     }
+                     rename_to[k] = *p_rule;
+                     p_rule++; k++;
+                  }
+
+                  if (k == MAX_FILENAME_LENGTH)
+                  {
+                     receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
+                                 "The 'rename to' for option %s is to long (%d). Ignoring this option. #%x",
+                                 SRENAME_ID, MAX_FILENAME_LENGTH,
+                                 db[position].job_id);
+                  }
+                  else
+                  {
+#ifndef _WITH_PTHREAD
+                     int file_counter = *files_to_send;
+#else
+                     int file_counter;
+
+                     file_counter = get_file_names(file_path, &file_name_buffer,
+                                                   &p_file_name);
+#endif
+                     if (file_counter > 0)
+                     {
+                        register int overwrite,
+                                     ret;
+                        char         changed_name[MAX_FILENAME_LENGTH],
+                                     *new_name_buffer,
+                                     *p_overwrite;
+
+                        rename_to[k] = '\0';
+
+                        /*
+                         * Check if we want to overwrite the file
+                         * if rename would lead to an overwrite.
+                         */
+                        p_overwrite = p_rule;
+                        while ((*p_overwrite != '\0') && (*p_overwrite != ' ') &&
+                               (*p_overwrite != '\t'))
+                        {
+                           p_overwrite++;
+                        }
+                        if ((*p_overwrite == ' ') || (*p_overwrite == '\t'))
+                        {
+                           while ((*p_overwrite == ' ') || (*p_overwrite == '\t'))
+                           {
+                              p_overwrite++;
+                           }
+                           if (((*p_overwrite == 'o') || (*p_overwrite == 'O')) &&
+                               (*(p_overwrite + 1) == 'v') &&
+                               (*(p_overwrite + 2) == 'e') &&
+                               (*(p_overwrite + 3) == 'r') &&
+                               (*(p_overwrite + 4) == 'w') &&
+                               (*(p_overwrite + 5) == 'r') &&
+                               (*(p_overwrite + 6) == 'i') &&
+                               (*(p_overwrite + 7) == 't') &&
+                               (*(p_overwrite + 8) == 'e') &&
+                               ((*(p_overwrite + 9) == '\0') ||
+                                (*(p_overwrite + 9) == ' ') ||
+                                (*(p_overwrite + 9) == '\t')))
+                           {
+                              overwrite = YES;
+                           }
+                           else
+                           {
+                              overwrite = NO;
+                           }
+                        }                     
+                        else
+                        {
+                           overwrite = NO;
+                        }
+
+                        (void)strcpy(newname, file_path);
+                        p_newname = newname + strlen(newname);
+                        *p_newname++ = '/';
+                        (void)strcpy(fullname, file_path);
+                        ptr = fullname + strlen(fullname);
+                        *ptr++ = '/';
+
+                        prepare_rename_ow(file_counter, &new_name_buffer);
+
+                        for (j = 0; j < file_counter; j++)
+                        {
+                           if ((ret = pmatch(filter, p_file_name, NULL)) == 0)
+                           {
+                              /* We found a rule, what more do you want? */
+                              /* Now lets get the new name.              */
+                              change_name(p_file_name, filter, rename_to,
+                                          changed_name, MAX_FILENAME_LENGTH,
+                                          &counter_fd, &unique_counter,
+                                          db[position].job_id);
+                              (void)strcpy(ptr, p_file_name);
+                              (void)strcpy(p_newname, changed_name);
+
+                              /*
+                               * Could be that we overwrite an existing
+                               * file. If thats the case, we need to
+                               * redo the file_name_buffer. But
+                               * the changed name may not be the same
+                               * name as the new one, else we get the
+                               * counters wrong in afd_ctrl. Worth, when
+                               * we only have one file to send, we will
+                               * loose it!
+                               */
+                              rename_ow(overwrite, file_counter,
+                                        new_name_buffer, file_size,
+#ifdef _DELETE_LOG
+                                        creation_time, unique_number,
+                                        split_job_counter,
+#endif
+                                        position, newname, p_newname, fullname,
+                                        p_file_name);
+                              break;
+                           }
+                           else if (ret == 1)
+                                {
+                                   /*
+                                    * This file is definitely NOT wanted.
+                                    */
+                                   break;
+                                }
+
+                           p_file_name += MAX_FILENAME_LENGTH;
+                        } /* for (j = 0; j < file_counter; j++) */
+
+                        *files_to_send = cleanup_rename_ow(file_counter,
+#ifdef _PRODUCTION_LOG
+                                                           position, creation_time,
+                                                           unique_number,
+                                                           split_job_counter,
+                                                           p_option,
+#endif
+                                                           &new_name_buffer);
+
+                     }
+#ifdef _WITH_PTHREAD
+
+                     free(file_name_buffer);
+#endif
+                  }
                }
             }
          }

@@ -1320,6 +1320,26 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
+   <td><a name="srename">srename &lt;filter&gt; &lt;rename to&gt;[overwrite]</a></td>
+   <td>Rename files as defined by the filter and 'rename to' part.
+       The pattern possible here are as those specified in the
+       <a href="rename_rules.html">etc/rename.rule</a> file. If the
+       overwrite option is NOT set, multiple files with the same
+       name will not be overwritten. This is done by appending a
+       ; and a number to the file name that is renamed. The filter
+       and 'rename to' part may not be longer then 256 (MAX_FILENAME_LENGTH)
+       characters.
+   </td>
+   <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
+</tr>
+<tr>
    <td><a name="rename">rename &lt;rule&gt; [overwrite]</a></td>
    <td>Rename files as defined in the 'rule'-section of the 
        <a href="rename_rules.html">etc/rename.rule</a> file. If the
@@ -1327,7 +1347,7 @@ section. Valid options can be taken from the following table:
        name will not be overwritten. This is done by appending a
        ; and a number to the file name that is renamed. The rule
        name itself may not be longer then 80 (MAX_RULE_HEADER_LENGTH)
-       characters long.
+       characters.
    </td>
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
@@ -1348,7 +1368,7 @@ section. Valid options can be taken from the following table:
        and the system has a secondary host specified, the renaming will only
        occur on the primary system. When secondary_only is set, the renaming
        will only happen on the secondary node. The rule name itself may not
-       be longer then 80 (MAX_RULE_HEADER_LENGTH) characters long. If dupcheck
+       be longer then 80 (MAX_RULE_HEADER_LENGTH) characters. If dupcheck
        is specified it will perform a duplicate check on the renamed file.
    </td>
    <td><pre>&nbsp;</pre></td>
@@ -2754,7 +2774,7 @@ section. Valid options can be taken from the following table:
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2016 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 18.02.2016
+   Last updated: 25.02.2016
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

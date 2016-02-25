@@ -2666,6 +2666,7 @@ copy_job(int file_no, int dest_no, struct dir_group *dir)
                   loption_length[LOCAL_OPTION_POOL_SIZE] =
                   {
                      RENAME_ID_LENGTH,
+                     SRENAME_ID_LENGTH,
                      EXEC_ID_LENGTH,
                      TIME_NO_COLLECT_ID_LENGTH,
                      TIME_ID_LENGTH,
@@ -2692,6 +2693,7 @@ copy_job(int file_no, int dest_no, struct dir_group *dir)
    unsigned int   loptions_flag[LOCAL_OPTION_POOL_SIZE] =
                   {
                      RENAME_ID_FLAG,
+                     SRENAME_ID_FLAG,
                      EXEC_ID_FLAG,
                      TIME_NO_COLLECT_ID_FLAG,
                      TIME_ID_FLAG,
@@ -2725,6 +2727,7 @@ copy_job(int file_no, int dest_no, struct dir_group *dir)
                   *p_loption[LOCAL_OPTION_POOL_SIZE] =
                   {
                      RENAME_ID,
+                     SRENAME_ID,
                      EXEC_ID,
                      TIME_NO_COLLECT_ID,
                      TIME_ID,
@@ -2847,6 +2850,7 @@ copy_job(int file_no, int dest_no, struct dir_group *dir)
    /* has to handle. They are:                             */
    /*        - priority       (special option)             */
    /*        - rename                                      */
+   /*        - srename                                      */
    /*        - exec, execd and execD                       */
    /*        - basename                                    */
    /*        - prefix                                      */

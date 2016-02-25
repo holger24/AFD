@@ -1,6 +1,6 @@
 /*
  *  check_option.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -170,6 +170,85 @@ check_option(char *option)
            if (check_rule(ptr) == INCORRECT)
            {
               return(INCORRECT);
+           }
+        }
+   else if ((CHECK_STRNCMP(option, SRENAME_ID, SRENAME_ID_LENGTH) == 0) &&
+            ((*(option + SRENAME_ID_LENGTH) == ' ') ||
+             (*(option + SRENAME_ID_LENGTH) == '\t')))
+        {
+           int k = 0;
+
+           ptr += SRENAME_ID_LENGTH + 1;
+           while ((*ptr == ' ') || (*ptr == '\t'))
+           {
+              ptr++;
+           }
+           if (*ptr == '\0')
+           {
+              system_log(WARN_SIGN, __FILE__, __LINE__,
+                         "No filter and 'rename to' specified for %s",
+                         SRENAME_ID);
+              return(INCORRECT);
+           }
+           while ((*ptr != ' ') && (*ptr != '\t') && (*ptr != '\n') &&
+                  (*ptr != '\0') && (k < MAX_FILENAME_LENGTH))
+           {
+              if ((*ptr == '\\') &&
+                  ((*(ptr + 1) == ' ') || (*(ptr + 1) == '#')))
+              {
+                 ptr++;
+              }
+              ptr++; k++;
+           }
+           if ((*ptr != ' ') && (*ptr != '\t'))
+           {
+              if (k == MAX_FILENAME_LENGTH)
+              {
+                 system_log(WARN_SIGN, __FILE__, __LINE__,
+                            "The filter for option %s is to long (%d)",
+                            SRENAME_ID, MAX_FILENAME_LENGTH);
+              }
+              else
+              {
+                 system_log(WARN_SIGN, __FILE__, __LINE__,
+                            "No filter specified for %s", SRENAME_ID);
+              }
+              return(INCORRECT);
+           }
+           else
+           {
+              while ((*ptr == ' ') || (*ptr == '\t'))
+              {
+                 ptr++;
+              }
+              if (*ptr == '\0')
+              {
+                 system_log(WARN_SIGN, __FILE__, __LINE__,
+                            "No 'rename to' part specified for option %s.",
+                            SRENAME_ID);
+                 return(INCORRECT);
+              }
+              else
+              {
+                 k = 0;
+                 while ((*ptr != ' ') && (*ptr != '\t') && (*ptr != '\n') &&
+                        (*ptr != '\0') && (k < MAX_FILENAME_LENGTH))
+                 {
+                    if ((*ptr == '\\') &&
+                        ((*(ptr + 1) == ' ') || (*(ptr + 1) == '#')))
+                    {
+                       ptr++;
+                    }
+                    ptr++; k++;
+                 }
+                 if (k == MAX_FILENAME_LENGTH)
+                 {
+                    system_log(WARN_SIGN, __FILE__, __LINE__,
+                               "The 'rename to' part for option %s is to long (%d)",
+                               SRENAME_ID, MAX_FILENAME_LENGTH);
+                    return(INCORRECT);
+                 }
+              }
            }
         }
    else if ((CHECK_STRNCMP(option, AGE_LIMIT_ID, AGE_LIMIT_ID_LENGTH) == 0) &&

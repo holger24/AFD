@@ -1767,4 +1767,7 @@
 07.02.2016 - Added parameter -H to get_dc_data to extract the given host
              or host list into a separate DIR_CONFIG.
 08.02.2016 - Use inotify when scanning local remote directories.
+25.02.2016 - Added new option srename (simple rename) for DIR_CONFIG.
+             This allows one to add renaming directly without having
+	     to specify a rule in rename.rule.
 ------------------------> Released: ??.??.201? <---------------------------

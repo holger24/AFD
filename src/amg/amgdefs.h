@@ -98,74 +98,77 @@
 /* Definitions of identifiers in options. */
 #define TIME_NO_COLLECT_ID         "time no collect"
 #define TIME_NO_COLLECT_ID_LENGTH  (sizeof(TIME_NO_COLLECT_ID) - 1)
-#define TIME_NO_COLLECT_ID_FLAG    8
+#define TIME_NO_COLLECT_ID_FLAG    16
 /* NOTE: TIME_ID has already been defined in afddefs.h for [dir options]. */
-#define TIME_ID_FLAG               4
+#define TIME_ID_FLAG               8
 #define PRIORITY_ID                "priority"
 #define PRIORITY_ID_LENGTH         (sizeof(PRIORITY_ID) - 1)
 #define RENAME_ID                  "rename"
 #define RENAME_ID_LENGTH           (sizeof(RENAME_ID) - 1)
 #define RENAME_ID_FLAG             1
+#define SRENAME_ID                 "srename"
+#define SRENAME_ID_LENGTH          (sizeof(SRENAME_ID) - 1)
+#define SRENAME_ID_FLAG            2
 #define EXEC_ID                    "exec"
 #define EXEC_ID_LENGTH             (sizeof(EXEC_ID) - 1)
-#define EXEC_ID_FLAG               2
+#define EXEC_ID_FLAG               4
 #define BASENAME_ID                "basename" /* If we want to send only */
                                               /* the basename of the     */
                                               /* file.                   */
 #define BASENAME_ID_LENGTH         (sizeof(BASENAME_ID) - 1)
-#define BASENAME_ID_FLAG           16
+#define BASENAME_ID_FLAG           32
 #define EXTENSION_ID               "extension"/* If we want to send      */
                                               /* files without extension.*/
 #define EXTENSION_ID_LENGTH        (sizeof(EXTENSION_ID) - 1)
-#define EXTENSION_ID_FLAG          32
+#define EXTENSION_ID_FLAG          64
 #define ADD_PREFIX_ID              "prefix add"
 #define ADD_PREFIX_ID_LENGTH       (sizeof(ADD_PREFIX_ID) - 1)
-#define ADD_PREFIX_ID_FLAG         64
+#define ADD_PREFIX_ID_FLAG         128
 #define DEL_PREFIX_ID              "prefix del"
 #define DEL_PREFIX_ID_LENGTH       (sizeof(DEL_PREFIX_ID) - 1)
-#define DEL_PREFIX_ID_FLAG         128
+#define DEL_PREFIX_ID_FLAG         256
 #define TOUPPER_ID                 "toupper"
 #define TOUPPER_ID_LENGTH          (sizeof(TOUPPER_ID) - 1)
-#define TOUPPER_ID_FLAG            256
+#define TOUPPER_ID_FLAG            512
 #define TOLOWER_ID                 "tolower"
 #define TOLOWER_ID_LENGTH          (sizeof(TOLOWER_ID) - 1)
-#define TOLOWER_ID_FLAG            512
+#define TOLOWER_ID_FLAG            1024
 #define FAX2GTS_ID                 "fax2gts"
 #define FAX2GTS_ID_LENGTH          (sizeof(FAX2GTS_ID) - 1)
-#define FAX2GTS_ID_FLAG            1024
+#define FAX2GTS_ID_FLAG            2048
 /* NOTE: TIFF2GTS_ID defined in afddefs.h */
 #define TIFF2GTS_ID_LENGTH         (sizeof(TIFF2GTS_ID) - 1)
-#define TIFF2GTS_ID_FLAG           2048
+#define TIFF2GTS_ID_FLAG           4096
 #define GTS2TIFF_ID                "gts2tiff"
 #define GTS2TIFF_ID_LENGTH         (sizeof(GTS2TIFF_ID) - 1)
-#define GTS2TIFF_ID_FLAG           4096
+#define GTS2TIFF_ID_FLAG           8192
 #define GRIB2WMO_ID                "grib2wmo"
 #define GRIB2WMO_ID_LENGTH         (sizeof(GRIB2WMO_ID) - 1)
-#define GRIB2WMO_ID_FLAG           8192
+#define GRIB2WMO_ID_FLAG           16384
 #define EXTRACT_ID                 "extract"
 #define EXTRACT_ID_LENGTH          (sizeof(EXTRACT_ID) - 1)
-#define EXTRACT_ID_FLAG            16384
+#define EXTRACT_ID_FLAG            32768
 #define ASSEMBLE_ID                "assemble"
 #define ASSEMBLE_ID_LENGTH         (sizeof(ASSEMBLE_ID) - 1)
-#define ASSEMBLE_ID_FLAG           32768
+#define ASSEMBLE_ID_FLAG           65536
 #define WMO2ASCII_ID               "wmo2ascii"
 #define WMO2ASCII_ID_LENGTH        (sizeof(WMO2ASCII_ID) - 1)
-#define WMO2ASCII_ID_FLAG          65536
+#define WMO2ASCII_ID_FLAG          131072
 /* NOTE: DELETE_ID and DELETE_ID_LENGTH defined in afddefs.h */
-#define DELETE_ID_FLAG             131072
+#define DELETE_ID_FLAG             262144
 #define CONVERT_ID                 "convert"
 #define CONVERT_ID_LENGTH          (sizeof(CONVERT_ID) - 1)
-#define CONVERT_ID_FLAG            262144
+#define CONVERT_ID_FLAG            524288
 #define LCHMOD_ID                  "lchmod"
 #define LCHMOD_ID_LENGTH           (sizeof(LCHMOD_ID) - 1)
-#define LCHMOD_ID_FLAG             524288
+#define LCHMOD_ID_FLAG             1048576
 #ifdef _WITH_AFW2WMO
 # define AFW2WMO_ID                "afw2wmo"
 # define AFW2WMO_ID_LENGTH         (sizeof(AFW2WMO_ID) - 1)
-# define AFW2WMO_ID_FLAG           1048576
-# define LOCAL_OPTION_POOL_SIZE    21
+# define AFW2WMO_ID_FLAG           2097152
+# define LOCAL_OPTION_POOL_SIZE    22
 #else
-# define LOCAL_OPTION_POOL_SIZE    20
+# define LOCAL_OPTION_POOL_SIZE    21
 #endif
 
 /* Definitions for types of time options. */
