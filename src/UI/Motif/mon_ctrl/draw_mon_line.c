@@ -1,6 +1,6 @@
 /*
  *  draw_mon_line.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -303,14 +303,7 @@ draw_line_status(int pos, signed char delta)
    }
    else
    {
-      if (connect_data[pos].rcmd != '\0')
-      {
-         tmp_gc = default_bg_gc;
-      }
-      else
-      {
-         tmp_gc = label_bg_gc;
-      }
+      tmp_gc = default_bg_gc;
    }
    XFillRectangle(display, line_window, tmp_gc, x, y, line_length, line_height);
    XFillRectangle(display, line_pixmap, tmp_gc, x, y, line_length, line_height);
@@ -449,7 +442,6 @@ draw_plus_minus(int pos, int x, int y)
 {
    char      plus_minus_str[] = { '[', '-', ']', '\0' };
    XGCValues gc_values;
-
 
    gc_values.foreground = color_pool[FG];
    gc_values.background = color_pool[DEFAULT_BG];

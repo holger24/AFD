@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -153,7 +153,8 @@ extern struct apps_list        *apps_list;
 static int                     in_window = NO;
 
 /* Local function prototypes. */
-static int                     in_ec_area(int, XEvent *);
+static int                     in_ec_area(int, XEvent *),
+                               in_pm_area(int, XEvent *);
 
 
 /*############################ mon_focus() ##############################*/
@@ -371,6 +372,24 @@ mon_input(Widget w, XtPointer client_data, XEvent *event)
                          popup_error_history(event->xbutton.x_root,
                                              event->xbutton.y_root, select_no);
                       }
+                 else if ((connect_data[select_no].rcmd == '\0') &&
+                          (in_pm_area(select_no, event)))
+                      {
+                         int x = 0,
+                             y = 0;
+
+                         if (connect_data[select_no].plus_minus == PM_CLOSE_STATE)
+                         {
+                            connect_data[select_no].plus_minus = PM_OPEN_STATE;
+                         }
+                         else
+                         {
+                            connect_data[select_no].plus_minus = PM_CLOSE_STATE;
+                         }
+                         locate_xy(select_no, &x, &y);
+                         draw_plus_minus(select_no, x, y);
+                         XFlush(display);
+                      }
                       else
                       {
                          destroy_error_history();
@@ -489,6 +508,37 @@ in_ec_area(int select_no, XEvent *event)
          (msa[select_no].host_error_counter > 0))) &&
        ((y_offset > SPACE_ABOVE_LINE) &&
         (y_offset < (line_height - SPACE_BELOW_LINE))))
+   {
+      return(YES);
+   }
+
+   return(NO);
+}
+
+
+/*+++++++++++++++++++++++++++++ in_pm_area() ++++++++++++++++++++++++++++*/
+static int
+in_pm_area(int select_no, XEvent *event)
+{
+   int x_offset,
+       y_offset;
+
+    x_offset = event->xbutton.x - ((event->xbutton.x / line_length) *
+               line_length);
+    y_offset = event->xbutton.y - ((event->xbutton.y / line_height) *
+               line_height);
+
+#ifdef _DEBUG
+   (void)fprintf(stderr,
+                 "x_offset=%d y_offset=%d X:%d-%d Y:%d-%d\n",
+                 x_offset, y_offset,
+                 DEFAULT_FRAME_SPACE, (DEFAULT_FRAME_SPACE + (3 * glyph_width)),
+                 SPACE_ABOVE_LINE, (line_height - SPACE_BELOW_LINE));
+#endif
+   if ((x_offset > DEFAULT_FRAME_SPACE) &&
+       (x_offset < (DEFAULT_FRAME_SPACE + (3 * glyph_width))) &&
+       (y_offset > SPACE_ABOVE_LINE) &&
+       (y_offset < (line_height - SPACE_BELOW_LINE)))
    {
       return(YES);
    }
