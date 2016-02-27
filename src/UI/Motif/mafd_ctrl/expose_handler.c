@@ -1,6 +1,6 @@
 /*
  *  expose_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,8 +30,6 @@ DESCR__S_M3
  **                             XmDrawingAreaCallbackStruct *call_data)
  **   void expose_handler_line(Widget w, XtPointer client_data,
  **                            XmDrawingAreaCallbackStruct *call_data)
- **   void expose_handler_short_line(Widget w, XtPointer client_data,
- **                                  XmDrawingAreaCallbackStruct *call_data)
  **   void expose_handler_button(Widget w, XtPointer client_data,
  **                              XmDrawingAreaCallbackStruct *call_data)
  **   void expose_handler_tv_line(Widget w, XtPointer client_data,
@@ -73,13 +71,11 @@ extern XtAppContext            app;
 extern XtIntervalId            interval_id_tv;
 extern Pixmap                  button_pixmap,
                                label_pixmap,
-                               line_pixmap,
-                               short_line_pixmap;
+                               line_pixmap;
 extern Window                  button_window,
                                detailed_window,
                                label_window,
                                line_window,
-                               short_line_window,
                                tv_label_window;
 extern Widget                  appshell,
                                detailed_window_w,
@@ -88,8 +84,7 @@ extern Widget                  appshell,
 extern GC                      color_letter_gc,
                                default_bg_gc,
                                label_bg_gc;
-extern int                     ft_exposure_short_line,
-                               ft_exposure_tv_line,
+extern int                     ft_exposure_tv_line,
                                magic_value,
                                no_input,
                                no_of_hosts,
@@ -98,12 +93,8 @@ extern int                     ft_exposure_short_line,
                                tv_line_length,
                                line_height,
                                no_of_columns,
-                               no_of_long_lines,
-                               no_of_short_lines,
-                               short_line_length,
                                tv_no_of_columns,
                                no_of_rows,
-                               no_of_short_rows,
                                tv_no_of_rows,
                                window_width;
 extern unsigned long           redraw_time_host,
@@ -167,146 +158,101 @@ expose_handler_line(Widget                      w,
 {
    static int ft_exposure_line = 0; /* First time exposure line. */
 
-   if (no_of_long_lines > 0)
+   /*
+    * To ensure that widgets are realized before calling XtAppAddTimeOut()
+    * we wait for the widget to get its first expose event. This should
+    * take care of the nasty BadDrawable error on slow connections.
+    */
+   if (ft_exposure_line == 0)
    {
-      /*
-       * To ensure that widgets are realized before calling XtAppAddTimeOut()
-       * we wait for the widget to get its first expose event. This should
-       * take care of the nasty BadDrawable error on slow connections.
-       */
-      if (ft_exposure_line == 0)
+      int       bs_attribute,
+                i;
+      Dimension height;
+      Screen    *c_screen = ScreenOfDisplay(display, DefaultScreen(display));
+
+      XFillRectangle(display, line_pixmap, default_bg_gc, 0, 0,
+                     window_width, (line_height * no_of_rows));
+      for (i = 0; i < no_of_hosts; i++)
       {
-         int       bs_attribute,
-                   i;
-         Dimension height;
-         Screen    *c_screen = ScreenOfDisplay(display, DefaultScreen(display));
+         draw_line_status(i, 1);
+      }
 
-         XFillRectangle(display, line_pixmap, default_bg_gc, 0, 0,
-                        window_width, (line_height * no_of_rows));
-         for (i = 0; i < no_of_hosts; i++)
+      (void)XtAppAddTimeOut(app, redraw_time_host,
+                            (XtTimerCallbackProc)check_host_status, w);
+      ft_exposure_line = 1;
+
+      if ((bs_attribute = DoesBackingStore(c_screen)) != NotUseful)
+      {
+         XSetWindowAttributes attr;
+
+         attr.backing_store = bs_attribute;
+         attr.save_under = DoesSaveUnders(c_screen);
+         XChangeWindowAttributes(display, line_window,
+                                 CWBackingStore | CWSaveUnder, &attr);
+         XChangeWindowAttributes(display, button_window,
+                                 CWBackingStore, &attr);
+         XChangeWindowAttributes(display, label_window,
+                                 CWBackingStore, &attr);
+         if (no_input == False)
          {
-            draw_line_status(i, 1);
-         }
-
-         (void)XtAppAddTimeOut(app, redraw_time_host,
-                               (XtTimerCallbackProc)check_host_status, w);
-         ft_exposure_line = 1;
-
-         if ((bs_attribute = DoesBackingStore(c_screen)) != NotUseful)
-         {
-            XSetWindowAttributes attr;
-
-            attr.backing_store = bs_attribute;
-            attr.save_under = DoesSaveUnders(c_screen);
-            XChangeWindowAttributes(display, line_window,
-                                    CWBackingStore | CWSaveUnder, &attr);
-            XChangeWindowAttributes(display, short_line_window,
-                                    CWBackingStore | CWSaveUnder, &attr);
-            XChangeWindowAttributes(display, button_window,
+            XChangeWindowAttributes(display, XtWindow(mw[HOST_W]),
                                     CWBackingStore, &attr);
-            XChangeWindowAttributes(display, label_window,
-                                    CWBackingStore, &attr);
-            if (no_input == False)
+
+            if ((acp.show_slog != NO_PERMISSION) ||
+                (acp.show_mlog != NO_PERMISSION) ||
+                (acp.show_rlog != NO_PERMISSION) ||
+                (acp.show_tlog != NO_PERMISSION) ||
+                (acp.show_dlog != NO_PERMISSION) ||
+                (acp.show_ilog != NO_PERMISSION) ||
+                (acp.show_olog != NO_PERMISSION) ||
+                (acp.show_queue != NO_PERMISSION) ||
+                (acp.show_elog != NO_PERMISSION) ||
+                (acp.view_jobs != NO_PERMISSION))
             {
-               XChangeWindowAttributes(display, XtWindow(mw[HOST_W]),
+               XChangeWindowAttributes(display, XtWindow(mw[LOG_W]),
                                        CWBackingStore, &attr);
+            }
 
-               if ((acp.show_slog != NO_PERMISSION) ||
-                   (acp.show_mlog != NO_PERMISSION) ||
-                   (acp.show_rlog != NO_PERMISSION) ||
-                   (acp.show_tlog != NO_PERMISSION) ||
-                   (acp.show_dlog != NO_PERMISSION) ||
-                   (acp.show_ilog != NO_PERMISSION) ||
-                   (acp.show_olog != NO_PERMISSION) ||
-                   (acp.show_queue != NO_PERMISSION) ||
-                   (acp.show_elog != NO_PERMISSION) ||
-                   (acp.view_jobs != NO_PERMISSION))
-               {
-                  XChangeWindowAttributes(display, XtWindow(mw[LOG_W]),
-                                          CWBackingStore, &attr);
-               }
-
-               if ((acp.amg_ctrl != NO_PERMISSION) ||
-                   (acp.fd_ctrl != NO_PERMISSION) ||
-                   (acp.rr_dc != NO_PERMISSION) ||
-                   (acp.rr_hc != NO_PERMISSION) ||
-                   (acp.edit_hc != NO_PERMISSION) ||
-                   (acp.startup_afd != NO_PERMISSION) ||
-                   (acp.shutdown_afd != NO_PERMISSION) ||
-                   (acp.dir_ctrl != NO_PERMISSION))
-               {
-                  XChangeWindowAttributes(display, XtWindow(mw[CONTROL_W]),
-                                          CWBackingStore, &attr);
-               }
-
-               XChangeWindowAttributes(display, XtWindow(mw[CONFIG_W]),
+            if ((acp.amg_ctrl != NO_PERMISSION) ||
+                (acp.fd_ctrl != NO_PERMISSION) ||
+                (acp.rr_dc != NO_PERMISSION) ||
+                (acp.rr_hc != NO_PERMISSION) ||
+                (acp.edit_hc != NO_PERMISSION) ||
+                (acp.startup_afd != NO_PERMISSION) ||
+                (acp.shutdown_afd != NO_PERMISSION) ||
+                (acp.dir_ctrl != NO_PERMISSION))
+            {
+               XChangeWindowAttributes(display, XtWindow(mw[CONTROL_W]),
                                        CWBackingStore, &attr);
+            }
+
+            XChangeWindowAttributes(display, XtWindow(mw[CONFIG_W]),
+                                    CWBackingStore, &attr);
 #ifdef _WITH_HELP_PULLDOWN
-               XChangeWindowAttributes(display, XtWindow(mw[HELP_W]),
-                                       CWBackingStore, &attr);
+            XChangeWindowAttributes(display, XtWindow(mw[HELP_W]),
+                                    CWBackingStore, &attr);
 #endif
-            } /* if (no_input == False) */
-         }
-
-         /*
-          * Calculate the magic unkown height factor we need to add to the
-          * height of the widget when it is being resized.
-          */
-         XtVaGetValues(appshell, XmNheight, &height, NULL);                  
-         magic_value = height - (window_height + line_height +
-                       line_height + glyph_height);
+         } /* if (no_input == False) */
       }
-      else
-      {
-         XEvent *p_event = call_data->event;
 
-         XCopyArea(display, line_pixmap, line_window, color_letter_gc,
-                   p_event->xexpose.x, p_event->xexpose.y,
-                   p_event->xexpose.width, p_event->xexpose.height,
-                   p_event->xexpose.x, p_event->xexpose.y);
-      }
-      XFlush(display);
+      /*
+       * Calculate the magic unkown height factor we need to add to the
+       * height of the widget when it is being resized.
+       */
+      XtVaGetValues(appshell, XmNheight, &height, NULL);                  
+      magic_value = height - (window_height + line_height +
+                    line_height + glyph_height);
    }
-
-   return;
-}
-
-
-/*##################### expose_handler_short_line() #####################*/
-void
-expose_handler_short_line(Widget                      w,
-                          XtPointer                   client_data,
-                          XmDrawingAreaCallbackStruct *call_data)
-{
-   /* Now see if there are still expose events. If so, */
-   /* do NOT redraw.                                   */
-   if (no_of_short_lines > 0)
+   else
    {
-      if ((ft_exposure_short_line == 0) ||
-          (ft_exposure_short_line != no_of_short_rows))
-      {
-         int i;
+      XEvent *p_event = call_data->event;
 
-         XFillRectangle(display, short_line_pixmap, default_bg_gc,
-                        0, 0, window_width, (no_of_short_rows * line_height));
-         for (i = 0; i < no_of_hosts; i++)
-         {
-            draw_line_status(i, 1);
-         }
-         ft_exposure_short_line = no_of_short_rows;
-      }
-      else
-      {
-         XEvent *p_event = call_data->event;
-
-         XCopyArea(display, short_line_pixmap, short_line_window,
-                   color_letter_gc, p_event->xexpose.x, p_event->xexpose.y,
-                   p_event->xexpose.width, p_event->xexpose.height,
-                   p_event->xexpose.x, p_event->xexpose.y);
-      }
-
-      XFlush(display);
+      XCopyArea(display, line_pixmap, line_window, color_letter_gc,
+                p_event->xexpose.x, p_event->xexpose.y,
+                p_event->xexpose.width, p_event->xexpose.height,
+                p_event->xexpose.x, p_event->xexpose.y);
    }
+   XFlush(display);
 
    return;
 }

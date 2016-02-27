@@ -1,6 +1,6 @@
 /*
  *  setup_window.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -98,7 +98,6 @@ extern int                        no_of_hosts,
                                   bar_thickness_3,
                                   button_width,
                                   even_height,
-                                  short_line_length,
                                   x_offset_led,
                                   x_offset_debug_led,
                                   x_offset_proc,
@@ -246,7 +245,6 @@ setup_window(char *font_name, int redraw_mainmenu)
             }
          }
          XtVaSetValues(ow[SELECT_W], XmNfontList, fontlist, NULL);
-         XtVaSetValues(ow[LONG_SHORT_W], XmNfontList, fontlist, NULL);
          XtVaSetValues(ow[EXIT_W], XmNfontList, fontlist, NULL);
 
          /* Set the font for the View pulldown. */
@@ -510,7 +508,6 @@ setup_window(char *font_name, int redraw_mainmenu)
    led_width       = glyph_height / 3;
    max_line_length = DEFAULT_FRAME_SPACE + (hostname_display_length * glyph_width) +
                      DEFAULT_FRAME_SPACE;
-   short_line_length = max_line_length;
 
    x_offset_proc = x_offset_characters = x_offset_bars = max_line_length;
    if (line_style & SHOW_LEDS)

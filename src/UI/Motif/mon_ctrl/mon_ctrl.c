@@ -158,7 +158,6 @@ int                     bar_thickness_3,
                         no_of_rows_set,
                         no_of_afds,
                         no_of_jobs_selected,
-			no_of_short_lines, /* Not yet used. */
                         sys_log_fd = STDERR_FILENO,
 #ifdef WITHOUT_FIFO_RW_SUPPORT
                         mon_log_readfd,
@@ -810,7 +809,7 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
    line_style = CHARACTERS_AND_BARS;
    no_of_rows_set = DEFAULT_NO_OF_ROWS;
    his_log_set = DEFAULT_NO_OF_HISTORY_LOGS;
-   read_setup(MON_CTRL, profile, NULL, NULL, &his_log_set, NULL, 0);
+   read_setup(MON_CTRL, profile, NULL, NULL, &his_log_set);
 
    /* Determine the default bar length. */
    max_bar_length  = 6 * BAR_LENGTH_MODIFIER;

@@ -46,19 +46,19 @@ DESCR__E_M3
 #include "mon_ctrl.h"
 
 /* External global variables. */
-extern Window       button_window,
-                    label_window,
-                    line_window;
-extern Pixmap       button_pixmap,
-                    label_pixmap,
-                    line_pixmap;
-extern Display      *display;
-extern GC           default_bg_gc;
-extern int          depth,
-                    line_height,
-                    no_of_afds,
-                    no_of_rows,
-                    window_width;
+extern Window  button_window,
+               label_window,
+               line_window;
+extern Pixmap  button_pixmap,
+               label_pixmap,
+               line_pixmap;
+extern Display *display;
+extern GC      default_bg_gc;
+extern int     depth,
+               line_height,
+               no_of_afds,
+               no_of_rows,
+               window_width;
 
 
 /*############################# redraw_all() ############################*/

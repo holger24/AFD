@@ -1,7 +1,7 @@
 /*
  *  handle_setup_file.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,15 +30,10 @@ DESCR__S_M3
  **                   char *profile,
  **                   int  *hostname_display_length,
  **                   int  *filename_display_length,
- **                   int  *his_log_set,
- **                   char **hosts,
- **                   int  max_hostname_length)
+ **                   int  *his_log_set)
  **   void write_setup(int  hostname_display_length,
  **                    int  filename_display_length,
- **                    int  his_log_set,
- **                    char **hosts,
- **                    int  max_no_hosts,
- **                    int  max_hostname_length)
+ **                    int  his_log_set)
  **
  ** DESCRIPTION
  **   read_setup() looks in the home directory for the file
@@ -82,8 +77,7 @@ DESCR__E_M3
 #define WITH_HOSTNAME_LENGTH_CORRECTION 1
 
 /* External global variables. */
-extern int  no_of_rows_set,
-            no_of_short_lines;
+extern int  no_of_rows_set;
 extern char font_name[],
             line_style,
             other_options,
@@ -99,9 +93,7 @@ read_setup(char *file_name,
            char *profile,
            int  *hostname_display_length,
            int  *filename_display_length,
-           int  *his_log_set,
-           char **hosts,
-           int  max_hostname_length)
+           int  *his_log_set)
 {
    int         fd;
    uid_t       euid, /* Effective user ID. */
@@ -432,45 +424,6 @@ read_setup(char *file_name,
          *his_log_set = DEFAULT_NO_OF_HISTORY_LOGS;
       }
    }
-
-   /* Get the list of unimportant host's/AFD's. */
-   if (hosts != NULL)
-   {
-      int i, j, gotcha;
-
-      ptr = buffer;
-      while ((ptr = posi(ptr, UNIMPORTANT_ID)) != NULL)
-      {
-         i = 0;
-         gotcha = NO;
-         ptr--;
-         while ((*ptr == ' ') || (*ptr == '\t'))
-         {
-            ptr++;
-         }
-         while ((*ptr != '\n') && (*ptr != '\0') && (i < max_hostname_length))
-         {
-            hosts[no_of_short_lines][i] = *ptr;
-            i++; ptr++;
-         }
-         hosts[no_of_short_lines][i] = '\0';
-         if (i > 0)
-         {
-            for (j = 0; j < (no_of_short_lines - 1); j++)
-            {
-               if (my_strcmp(hosts[no_of_short_lines], hosts[j]) == 0)
-               {
-                  gotcha = YES;
-                  break;
-               }
-            }
-            if (gotcha == NO)
-            {
-               no_of_short_lines++;
-            }
-         }
-      }
-   }
    free(buffer);
 
    return;
@@ -481,10 +434,7 @@ read_setup(char *file_name,
 void
 write_setup(int  hostname_display_length,
             int  filename_display_length,
-            int  his_log_set,
-            char **hosts,
-            int  max_no_hosts,
-            int  max_hostname_length)
+            int  his_log_set)
 {
    int         buf_length,
                fd = -1,
@@ -560,11 +510,6 @@ write_setup(int  hostname_display_length,
    if (his_log_set != -1)
    {
       buf_length += strlen(NO_OF_HISTORY_LENGTH_ID) + 1 + MAX_INT_LENGTH + 1;
-   }
-   if (hosts != NULL)
-   {
-      buf_length += ((strlen(UNIMPORTANT_ID) + 1 + max_hostname_length + 1) *
-                     max_no_hosts);
    }
    if ((buffer = malloc(buf_length)) == NULL)
    {
@@ -651,23 +596,6 @@ write_setup(int  hostname_display_length,
                length = buf_length;
             }
          }
-         if (hosts != NULL)
-         {
-            int i;
-
-            for (i = 0; i < max_no_hosts; i++)
-            {
-               length += snprintf(&buffer[length], buf_length - length,
-                                  "%s %s\n", UNIMPORTANT_ID, hosts[i]);
-               if (length > buf_length)
-               {
-                  (void)fprintf(stderr, "Buffer to small %d > %d (%s %d)",
-                                length, buf_length, __FILE__, __LINE__);
-                  length = buf_length;
-                  i = max_no_hosts;
-               }
-            }
-         }
       }
       if (write(fd, buffer, length) != length)
       {
@@ -743,23 +671,6 @@ write_setup(int  hostname_display_length,
                (void)fprintf(stderr, "Buffer to small %d > %d (%s %d)",
                              length, buf_length, __FILE__, __LINE__);
                length = buf_length;
-            }
-         }
-         if (hosts != NULL)
-         {
-            int i;
-
-            for (i = 0; i < max_no_hosts; i++)
-            {
-               length += snprintf(&buffer[length], buf_length - length,
-                                  "%s %s\n", UNIMPORTANT_ID, hosts[i]);
-               if (length > buf_length)
-               {
-                  (void)fprintf(stderr, "Buffer to small %d > %d (%s %d)",
-                                length, buf_length, __FILE__, __LINE__);
-                  length = buf_length;
-                  i = max_no_hosts;
-               }
             }
          }
       }

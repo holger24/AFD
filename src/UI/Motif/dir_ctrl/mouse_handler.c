@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -472,7 +472,7 @@ save_dir_setup_cb(Widget    w,
                   XtPointer client_data,
                   XtPointer call_data)
 {
-   write_setup(-1, -1, -1, NULL, 0, 0);
+   write_setup(-1, -1, -1);
 
    return;
 }
@@ -1667,6 +1667,18 @@ change_dir_rows_cb(Widget    w,
 
       case 16  :
          no_of_rows_set = atoi(ROW_16);
+         break;
+
+      case 17  :
+         no_of_rows_set = atoi(ROW_17);
+         break;
+
+      case 18  :
+         no_of_rows_set = atoi(ROW_18);
+         break;
+
+      case 19  :
+         no_of_rows_set = atoi(ROW_19);
          break;
 
       default  :

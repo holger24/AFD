@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2013 Holger Kiehl
+## Copyright (C) 2001 - 2016 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -36,10 +36,8 @@ mafd_ctrl_SOURCES    = mafd_ctrl.c\
                        expose_handler.c\
                        find_host_dialog.c\
                        get_job_priority.c\
-		       get_line_pos.c\
                        init_jd_structure.c\
                        locate_xy_column.c\
-                       locate_xy_short.c\
                        mouse_handler.c\
                        redraw_all.c\
                        resize_tv_window.c\

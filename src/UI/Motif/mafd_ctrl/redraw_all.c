@@ -1,6 +1,6 @@
 /*
  *  redraw_all.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,24 +46,19 @@ DESCR__E_M3
 #include "mafd_ctrl.h"
 
 /* External global variables. */
-extern Window       button_window,
-                    label_window,
-                    line_window,
-                    short_line_window;
-extern Pixmap       button_pixmap,
-                    label_pixmap,
-                    line_pixmap,
-                    short_line_pixmap;
-extern Display      *display;
-extern GC           default_bg_gc;
-extern int          depth,
-                    line_height,
-                    no_of_hosts,
-                    no_of_long_lines,
-                    no_of_rows,
-                    no_of_short_lines,
-                    no_of_short_rows,
-                    window_width;
+extern Window  button_window,
+               label_window,
+               line_window;
+extern Pixmap  button_pixmap,
+               label_pixmap,
+               line_pixmap;
+extern Display *display;
+extern GC      default_bg_gc;
+extern int     depth,
+               line_height,
+               no_of_hosts,
+               no_of_rows,
+               window_width;
 
 
 /*############################# redraw_all() ############################*/
@@ -74,52 +69,19 @@ redraw_all(void)
    int          i;
 
    /* Clear everything. */
-   if (no_of_long_lines > 0)
-   {
-      XClearWindow(display, line_window);
-   }
-   if (no_of_short_lines > 0)
-   {
-      XClearWindow(display, short_line_window);
-   }
+   XClearWindow(display, line_window);
    XFreePixmap(display, label_pixmap);
    label_pixmap = XCreatePixmap(display, label_window, window_width,
                                 line_height, depth);
    XFreePixmap(display, line_pixmap);
-   if (no_of_long_lines > 0)
-   {
-      height = line_height * no_of_rows;
-   }
-   else
-   {
-      height = 1;
-   }
+   height = line_height * no_of_rows;
    line_pixmap = XCreatePixmap(display, line_window, window_width,
                                height, depth);
-   if (height != 1)
-   {
-      XFillRectangle(display, line_pixmap, default_bg_gc, 0, 0,
-                     window_width, height);
-   }
+   XFillRectangle(display, line_pixmap, default_bg_gc, 0, 0,
+                  window_width, height);
    XFreePixmap(display, button_pixmap);
    button_pixmap = XCreatePixmap(display, button_window, window_width,
                                  line_height, depth);
-   XFreePixmap(display, short_line_pixmap);
-   if (no_of_short_rows > 0)
-   {
-      height = line_height * no_of_short_rows;
-   }
-   else
-   {
-      height = 1;
-   }
-   short_line_pixmap = XCreatePixmap(display, short_line_window,
-                                     window_width, height, depth);
-   if (height != 1)
-   {
-      XFillRectangle(display, short_line_pixmap, default_bg_gc, 0, 0,
-                     window_width, height);
-   }
 
    /* Redraw everything. */
    draw_label_line();

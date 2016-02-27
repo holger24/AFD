@@ -1,6 +1,6 @@
 /*
  *  dir_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -146,7 +146,6 @@ int                        bar_thickness_3,
                            no_of_rows_set,
                            no_of_dirs,
                            no_of_jobs_selected,
-			   no_of_short_lines, /* Not yet used. */
                            redraw_time_line,
                            sys_log_fd = STDERR_FILENO,
 #ifdef WITHOUT_FIFO_RW_SUPPORT
@@ -669,7 +668,7 @@ init_dir_ctrl(int *argc, char *argv[], char *window_title)
    other_options = DEFAULT_OTHER_OPTIONS;
    line_style = CHARACTERS_AND_BARS;
    no_of_rows_set = DEFAULT_NO_OF_ROWS;
-   read_setup(DIR_CTRL, profile, NULL, NULL, NULL, NULL, 0);
+   read_setup(DIR_CTRL, profile, NULL, NULL, NULL);
 
    /* Determine the default bar length. */
    max_bar_length  = 6 * BAR_LENGTH_MODIFIER;

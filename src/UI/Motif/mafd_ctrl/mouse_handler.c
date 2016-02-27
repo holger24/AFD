@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -105,10 +105,8 @@ extern Widget                     fw[],
                                   line_window_w,
                                   transviewshell;
 extern Window                     detailed_window,
-                                  line_window,
-                                  short_line_window;
-extern Pixmap                     line_pixmap,
-                                  short_line_pixmap;
+                                  line_window;
+extern Pixmap                     line_pixmap;
 extern XFontStruct                *font_struct;
 extern GC                         letter_gc,
                                   normal_letter_gc,
@@ -128,7 +126,6 @@ extern int                        bar_thickness_3,
                                   button_width,
                                   depth,
                                   fsa_fd,
-                                  ft_exposure_short_line,
                                   ft_exposure_tv_line,
                                   filename_display_length,
                                   hostname_display_length,
@@ -141,13 +138,8 @@ extern int                        bar_thickness_3,
                                   no_of_jobs_selected,
                                   no_selected,
                                   no_selected_static,
-                                  no_of_long_lines,
-                                  no_of_short_lines,
-				  no_of_short_columns,
-				  no_of_short_rows,
                                   no_of_rows,
                                   no_of_rows_set,
-                                  short_line_length,
                                   tv_no_of_columns,
                                   tv_no_of_rows,
                                   window_width,
@@ -205,16 +197,12 @@ static struct job_id_data         *jid = NULL;
 /* Local function prototypes. */
 static int                        in_ec_area(int, XEvent *),
                                   in_host_area(int, XEvent *),
-                                  insert_dir_ids_input(int),
-                                  to_long(int, int, int),
-                                  to_short(int, int, int);
+                                  insert_dir_ids_input(int);
 static void                       add_tv_line(Widget, int, int),
                                   cleanup_did_data(void),
                                   handle_tv_line(Widget, int, int),
                                   insert_dir_ids_recieve(int),
-                                  read_reply(XtPointer, int *, XtInputId *),
-                                  redraw_long(int),
-                                  redraw_short(void);
+                                  read_reply(XtPointer, int *, XtInputId *);
 
 
 /*############################## focus() ################################*/
@@ -260,50 +248,44 @@ input(Widget w, XtPointer client_data, XEvent *event)
       column--;
       select_no = (event->xbutton.y / line_height) + (column * no_of_rows);
 
-      if ((select_no < no_of_long_lines) && (last_motion_pos != select_no) &&
+      if ((select_no < no_of_hosts) && (last_motion_pos != select_no) &&
           (select_no > -1))
       {
-         int pos;
-
-         if ((pos = get_long_pos(select_no, YES)) == -1)
-         {
-            return;
-         }
          if (event->xkey.state & ControlMask)
          {
-            if (connect_data[pos].inverse == STATIC)
+            if (connect_data[select_no].inverse == STATIC)
             {
-               connect_data[pos].inverse = OFF;
+               connect_data[select_no].inverse = OFF;
                ABS_REDUCE_GLOBAL(no_selected_static);
             }
             else
             {
-               connect_data[pos].inverse = STATIC;
+               connect_data[select_no].inverse = STATIC;
                no_selected_static++;
             }
 
-            draw_line_status(pos, 1);
+            draw_line_status(select_no, 1);
             XFlush(display);
          }
          else if (event->xkey.state & ShiftMask)
               {
-                 if (connect_data[pos].inverse == ON)
+                 if (connect_data[select_no].inverse == ON)
                  {
-                    connect_data[pos].inverse = OFF;
+                    connect_data[select_no].inverse = OFF;
                     ABS_REDUCE_GLOBAL(no_selected);
                  }
-                 else if (connect_data[pos].inverse == STATIC)
+                 else if (connect_data[select_no].inverse == STATIC)
                       {
-                         connect_data[pos].inverse = OFF;
+                         connect_data[select_no].inverse = OFF;
                          ABS_REDUCE_GLOBAL(no_selected_static);
                       }
                       else
                       {
-                         connect_data[pos].inverse = ON;
+                         connect_data[select_no].inverse = ON;
                          no_selected++;
                       }
 
-                 draw_line_status(pos, 1);
+                 draw_line_status(select_no, 1);
                  XFlush(display);
               }
       }
@@ -327,14 +309,8 @@ input(Widget w, XtPointer client_data, XEvent *event)
       select_no = (event->xbutton.y / line_height) + (column * no_of_rows);
 
       /* Make sure that this field does contain a channel. */
-      if ((select_no < no_of_long_lines) && (select_no > -1))
+      if ((select_no < no_of_hosts) && (select_no > -1))
       {
-         int pos;
-
-         if ((pos = get_long_pos(select_no, YES)) == -1)
-         {
-            return;
-         }
          if (((event->xkey.state & Mod1Mask) ||
              (event->xkey.state & Mod4Mask)) &&
              (event->xany.type == ButtonPress))
@@ -367,7 +343,7 @@ input(Widget w, XtPointer client_data, XEvent *event)
                args[3] = "-f";
                args[4] = font_name;
                args[5] = "-h";
-               args[6] = fsa[pos].host_alias;
+               args[6] = fsa[select_no].host_alias;
                if (fake_user[0] != '\0')
                {
                   args[7] = "-u";
@@ -392,29 +368,29 @@ input(Widget w, XtPointer client_data, XEvent *event)
               {
                  if (event->xkey.state & ControlMask)
                  {
-                    if (connect_data[pos].inverse == STATIC)
+                    if (connect_data[select_no].inverse == STATIC)
                     {
-                       connect_data[pos].inverse = OFF;
+                       connect_data[select_no].inverse = OFF;
                        ABS_REDUCE_GLOBAL(no_selected_static);
                     }
                     else
                     {
-                       connect_data[pos].inverse = STATIC;
+                       connect_data[select_no].inverse = STATIC;
                        no_selected_static++;
                     }
 
-                    draw_line_status(pos, 1);
+                    draw_line_status(select_no, 1);
                     XFlush(display);
                  }
                  else if (event->xkey.state & ShiftMask)
                       {
-                         if (connect_data[pos].inverse == OFF)
+                         if (connect_data[select_no].inverse == OFF)
                          {
                             int i;
 
-                            if (pos > 0)
+                            if (select_no > 0)
                             {
-                               for (i = pos - 1; i > 0; i--)
+                               for (i = select_no - 1; i > 0; i--)
                                {
                                   if (connect_data[i].inverse != OFF)
                                   {
@@ -430,7 +406,7 @@ input(Widget w, XtPointer client_data, XEvent *event)
                             {
                                int j;
 
-                               for (j = i + 1; j <= pos; j++)
+                               for (j = i + 1; j <= select_no; j++)
                                {
                                   connect_data[j].inverse = connect_data[i].inverse;
                                   draw_line_status(j, 1);
@@ -438,24 +414,24 @@ input(Widget w, XtPointer client_data, XEvent *event)
                             }
                             else
                             {
-                               connect_data[pos].inverse = ON;
+                               connect_data[select_no].inverse = ON;
                                no_selected++;
-                               draw_line_status(pos, 1);
+                               draw_line_status(select_no, 1);
                             }
                          }
                          else
                          {
-                            if (connect_data[pos].inverse == ON)
+                            if (connect_data[select_no].inverse == ON)
                             {
-                               connect_data[pos].inverse = OFF;
+                               connect_data[select_no].inverse = OFF;
                                ABS_REDUCE_GLOBAL(no_selected);
                             }
                             else
                             {
-                               connect_data[pos].inverse = OFF;
+                               connect_data[select_no].inverse = OFF;
                                ABS_REDUCE_GLOBAL(no_selected_static);
                             }
-                            draw_line_status(pos, 1);
+                            draw_line_status(select_no, 1);
                          }
                          XFlush(display);
                       }
@@ -483,23 +459,23 @@ input(Widget w, XtPointer client_data, XEvent *event)
                          destroy_error_history();
                          if ((other_options & FORCE_SHIFT_SELECT) == 0)
                          {
-                            if (connect_data[pos].inverse == ON)
+                            if (connect_data[select_no].inverse == ON)
                             {
-                               connect_data[pos].inverse = OFF;
+                               connect_data[select_no].inverse = OFF;
                                ABS_REDUCE_GLOBAL(no_selected);
                             }
-                            else if (connect_data[pos].inverse == STATIC)
+                            else if (connect_data[select_no].inverse == STATIC)
                                  {
-                                    connect_data[pos].inverse = OFF;
+                                    connect_data[select_no].inverse = OFF;
                                     ABS_REDUCE_GLOBAL(no_selected_static);
                                  }
                                  else
                                  {
-                                    connect_data[pos].inverse = ON;
+                                    connect_data[select_no].inverse = ON;
                                     no_selected++;
                                  }
 
-                            draw_line_status(pos, 1);
+                            draw_line_status(select_no, 1);
                             XFlush(display);
                          }
                       }
@@ -583,16 +559,11 @@ input(Widget w, XtPointer client_data, XEvent *event)
       select_no = (event->xbutton.y / line_height) + (column * no_of_rows);
 
       /* Make sure that this field does contain a channel. */
-      if ((select_no < no_of_long_lines) && (select_no > -1))
+      if ((select_no < no_of_hosts) && (select_no > -1))
       {
-         int pos,
-             x_pos,
+         int x_pos,
              min_length = x_offset_proc;
 
-         if ((pos = get_long_pos(select_no, YES)) == -1)
-         {
-            return;
-         }
          if (dummy_length < 0)
          {
             x_pos = dummy_length + line_length[column];
@@ -606,18 +577,18 @@ input(Widget w, XtPointer client_data, XEvent *event)
          {
             /* See if this is a proc_stat area. */
             if ((x_pos > min_length) &&
-                (x_pos < (min_length + (fsa[pos].allowed_transfers * (button_width + BUTTON_SPACING)) - BUTTON_SPACING)))
+                (x_pos < (min_length + (fsa[select_no].allowed_transfers * (button_width + BUTTON_SPACING)) - BUTTON_SPACING)))
             {
                int job_no;
 
                x_pos -= min_length;
-               for (job_no = 0; job_no < fsa[pos].allowed_transfers; job_no++)
+               for (job_no = 0; job_no < fsa[select_no].allowed_transfers; job_no++)
                {
                   x_pos -= button_width;
                   if (x_pos <= 0)
                   {
-                     handle_tv_line(w, pos, job_no);
-                     draw_detailed_selection(pos, job_no);
+                     handle_tv_line(w, select_no, job_no);
+                     draw_detailed_selection(select_no, job_no);
                      break;
                   }
                   x_pos -= BUTTON_SPACING;
@@ -632,52 +603,29 @@ input(Widget w, XtPointer client_data, XEvent *event)
               {
                  int proc_width;
 
-                 if (fsa[pos].allowed_transfers % 3)
+                 if (fsa[select_no].allowed_transfers % 3)
                  {
-                    proc_width = ((fsa[pos].allowed_transfers / 3) + 1) * bar_thickness_3;
+                    proc_width = ((fsa[select_no].allowed_transfers / 3) + 1) * bar_thickness_3;
                  }
                  else
                  {
-                    proc_width = (fsa[pos].allowed_transfers / 3) * bar_thickness_3;
+                    proc_width = (fsa[select_no].allowed_transfers / 3) * bar_thickness_3;
                  }
                  if ((x_pos > min_length) &&
                      (x_pos < (min_length + proc_width)))
                  {
                     int job_no;
 
-                    for (job_no = 0; job_no < fsa[pos].allowed_transfers; job_no++)
+                    for (job_no = 0; job_no < fsa[select_no].allowed_transfers; job_no++)
                     {
-                       handle_tv_line(w, pos, job_no);
+                       handle_tv_line(w, select_no, job_no);
                     }
-                    draw_detailed_selection(pos, fsa[pos].allowed_transfers);
+                    draw_detailed_selection(select_no, fsa[select_no].allowed_transfers);
                  }
               }
       }
 
       return;
-   }
-
-   /* Convert long line to short line. */
-   if ((event->xbutton.button == 2) &&
-       (((event->xkey.state & Mod1Mask) || (event->xkey.state & Mod4Mask)) &&
-        (event->xany.type == ButtonPress)))
-   {
-      int column = 0,
-          dummy_length = event->xbutton.x;
-
-      do
-      {
-         dummy_length -= line_length[column];
-         column++;
-      } while (dummy_length > 0);
-      column--;
-      select_no = (event->xbutton.y / line_height) + (column * no_of_rows);
-
-      /* Make sure that this field does contain a channel. */
-      if ((select_no < no_of_long_lines) && (select_no > -1))
-      {
-         (void)to_short(-1, select_no, YES);
-      }
    }
 
    return;
@@ -884,281 +832,6 @@ add_tv_line(Widget w, int pos, int job_no)
 }
 
 
-/*########################### short_input() #############################*/
-void
-short_input(Widget w, XtPointer client_data, XEvent *event)
-{
-   if ((event->xbutton.x < (no_of_short_columns * short_line_length)) &&
-       (event->xbutton.y < (no_of_short_rows * line_height)))
-   {
-      int        select_no;
-      static int last_motion_pos = -1;
-
-      /* Handle any motion event. */
-      if ((event->xany.type == MotionNotify) && (in_window == YES))
-      {
-         select_no = ((event->xbutton.y / line_height) * no_of_short_columns) +
-                      (event->xbutton.x / short_line_length);
-         if ((select_no < no_of_short_lines) && (last_motion_pos != select_no) &&
-             (select_no > -1))
-         {
-            int pos;
-
-            if ((pos = get_short_pos(select_no, YES)) == -1)
-            {
-               return;
-            }
-            if (event->xkey.state & ControlMask)
-            {
-               if (connect_data[pos].inverse == STATIC)
-               {
-                  connect_data[pos].inverse = OFF;
-                  ABS_REDUCE_GLOBAL(no_selected_static);
-               }
-               else
-               {
-                  connect_data[pos].inverse = STATIC;
-                  no_selected_static++;
-               }
-
-               draw_line_status(pos, 1);
-               XFlush(display);
-            }
-            else if (event->xkey.state & ShiftMask)
-                 {
-                    if (connect_data[pos].inverse == ON)
-                    {
-                       connect_data[pos].inverse = OFF;
-                       ABS_REDUCE_GLOBAL(no_selected);
-                    }
-                    else if (connect_data[pos].inverse == STATIC)
-                         {
-                            connect_data[pos].inverse = OFF;
-                            ABS_REDUCE_GLOBAL(no_selected_static);
-                         }
-                         else
-                         {
-                            connect_data[pos].inverse = ON;
-                            no_selected++;
-                         }
-
-                    draw_line_status(pos, 1);
-                    XFlush(display);
-                 }
-         }
-         last_motion_pos = select_no;
-
-         return;
-      }
-
-      /* Handle button one press event. */
-      if (event->xbutton.button == 1)
-      {
-         select_no = ((event->xbutton.y / line_height) * no_of_short_columns) +
-                      (event->xbutton.x / short_line_length);
-
-         /* Make sure that this field does contain a channel. */
-         if ((select_no < no_of_short_lines) && (select_no > -1))
-         {
-            int pos;
-
-            if ((pos = get_short_pos(select_no, YES)) == -1)
-            {
-               return;
-            }
-            if (((event->xkey.state & Mod1Mask) ||
-                (event->xkey.state & Mod4Mask)) &&
-                (event->xany.type == ButtonPress))
-            {
-               int    gotcha = NO,
-                      i;
-               Window window_id;
-
-               for (i = 0; i < no_of_active_process; i++)
-               {
-                  if ((apps_list[i].position == select_no) &&
-                      (CHECK_STRCMP(apps_list[i].progname, AFD_INFO) == 0))
-                  {
-                     if ((window_id = get_window_id(apps_list[i].pid,
-                                                    AFD_CTRL)) != 0L)
-                     {
-                        gotcha = YES;
-                     }
-                     break;
-                  }
-               }
-               if (gotcha == NO)
-               {
-                  char *args[8],
-                       progname[AFD_INFO_LENGTH + 1];
-
-                  args[0] = progname;
-                  args[1] = "-f";
-                  args[2] = font_name;
-                  args[3] = "-h";
-                  args[4] = fsa[pos].host_alias;
-                  if (fake_user[0] != '\0')
-                  {
-                     args[5] = "-u";
-                     args[6] = fake_user;
-                     args[7] = NULL;
-                  }
-                  else
-                  {
-                     args[5] = NULL;
-                  }
-                  (void)strcpy(progname, AFD_INFO);
-
-                  make_xprocess(progname, progname, args, select_no);
-               }
-               else
-               {
-                  XRaiseWindow(display, window_id);
-                  XSetInputFocus(display, window_id, RevertToParent,
-                                 CurrentTime);
-               }
-            }
-            else if (event->xany.type == ButtonPress)
-                 {
-                    if (event->xkey.state & ControlMask)
-                    {
-                       if (connect_data[pos].inverse == STATIC)
-                       {
-                          connect_data[pos].inverse = OFF;
-                          ABS_REDUCE_GLOBAL(no_selected_static);
-                       }
-                       else
-                       {
-                          connect_data[pos].inverse = STATIC;
-                          no_selected_static++;
-                       }
-
-                       draw_line_status(pos, 1);
-                       XFlush(display);
-                    }
-                    else if (event->xkey.state & ShiftMask)
-                         {
-                            if (connect_data[pos].inverse == OFF)
-                            {
-                               int i;
-
-                               if (pos > 0)
-                               {
-                                  for (i = pos - 1; i > 0; i--)
-                                  {
-                                     if (connect_data[i].inverse != OFF)
-                                     {
-                                        break;
-                                     }
-                                  }
-                               }
-                               else
-                               {
-                                  i = 0;
-                               }
-                               if (connect_data[i].inverse != OFF)
-                               {
-                                  int j;
-
-                                  for (j = i + 1; j <= pos; j++)
-                                  {
-                                     connect_data[j].inverse = connect_data[i].inverse;
-                                     draw_line_status(j, 1);
-                                  }
-                               }
-                               else
-                               {
-                                  connect_data[pos].inverse = ON;
-                                  no_selected++;
-                                  draw_line_status(pos, 1);
-                               }
-                            }
-                            else
-                            {
-                               if (connect_data[pos].inverse == ON)
-                               {
-                                  connect_data[pos].inverse = OFF;
-                                  ABS_REDUCE_GLOBAL(no_selected);
-                               }
-                               else
-                               {
-                                  connect_data[pos].inverse = OFF;
-                                  ABS_REDUCE_GLOBAL(no_selected_static);
-                               }
-                               draw_line_status(pos, 1);
-                            }
-                            XFlush(display);
-                         }
-                    else if (((fsa[pos].host_status & HOST_ERROR_ACKNOWLEDGED) ||
-                              (fsa[pos].host_status & HOST_ERROR_OFFLINE) ||
-                              (fsa[pos].host_status & HOST_ERROR_ACKNOWLEDGED_T) ||
-                              (fsa[pos].host_status & HOST_ERROR_OFFLINE_T) ||
-                              ((fsa[pos].host_status & HOST_ERROR_OFFLINE_STATIC) &&
-                               (fsa[pos].error_counter > fsa[pos].max_errors))) &&
-                              (in_host_area(-1, event)))
-                         {
-                            popup_event_reason(event->xbutton.x_root,
-                                               event->xbutton.y_root, pos);
-                         }
-                         else
-                         {
-                            destroy_event_reason();
-                            if ((other_options & FORCE_SHIFT_SELECT) == 0)
-                            {
-                               if (connect_data[pos].inverse == ON)
-                               {
-                                  connect_data[pos].inverse = OFF;
-                                  ABS_REDUCE_GLOBAL(no_selected);
-                               }
-                               else if (connect_data[pos].inverse == STATIC)
-                                    {
-                                       connect_data[pos].inverse = OFF;
-                                       ABS_REDUCE_GLOBAL(no_selected_static);
-                                    }
-                                    else
-                                    {
-                                       connect_data[pos].inverse = ON;
-                                       no_selected++;
-                                    }
-
-                               draw_line_status(pos, 1);
-                               XFlush(display);
-                            }
-                         }
-
-                    last_motion_pos = select_no;
-                 }
-#ifdef _DEBUG
-            (void)fprintf(stderr, "short_input(): no_selected = %d    select_no = %d\n",
-                          no_selected, select_no);
-            (void)fprintf(stderr, "short_input(): xbutton.x     = %d\n",
-                          event->xbutton.x);
-            (void)fprintf(stderr, "short_input(): xbutton.y     = %d\n",
-                          event->xbutton.y);
-#endif
-         }
-      }
-
-      /* Convert short line to long. */
-      if ((event->xbutton.button == 2) &&
-          (((event->xkey.state & Mod1Mask) || (event->xkey.state & Mod4Mask)) &&
-           (event->xany.type == ButtonPress)))
-      {
-         select_no = ((event->xbutton.y / line_height) * no_of_short_columns) +
-                      (event->xbutton.x / short_line_length);
-
-         /* Make sure that this field does contain a channel. */
-         if ((select_no < no_of_short_lines) && (select_no > -1))
-         {
-            (void)to_long(-1, select_no, YES);
-         }
-      }
-   }
-
-   return;
-}
-
-
 /*############################ popup_menu_cb() ##########################*/
 void
 popup_menu_cb(Widget w, XtPointer client_data, XEvent *event)
@@ -1184,29 +857,7 @@ popup_menu_cb(Widget w, XtPointer client_data, XEvent *event)
 void
 save_setup_cb(Widget w, XtPointer client_data, XtPointer call_data)
 {
-   char **hosts = NULL;
-
-   if (no_of_short_lines > 0)
-   {
-      int i, j = 0;
-
-      RT_ARRAY(hosts, no_of_short_lines, (MAX_REAL_HOSTNAME_LENGTH + 4 + 1),
-               char);
-      for (i = 0; i < no_of_hosts; i++)
-      {
-         if (connect_data[i].short_pos > -1)
-         {
-            (void)strcpy(hosts[j], connect_data[i].hostname);
-            j++;
-         }
-      }
-   }
-   write_setup(hostname_display_length, filename_display_length, -1, hosts,
-               no_of_short_lines, MAX_REAL_HOSTNAME_LENGTH);
-   if (no_of_short_lines > 0)
-   {
-      FREE_RT_ARRAY(hosts);
-   }
+   write_setup(hostname_display_length, filename_display_length, -1);
 
    return;
 }
@@ -1219,8 +870,6 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
    int              change_host_config = NO,
                     ehc = YES,
                     offset,
-                    to_long_counter = 0,
-                    to_short_counter = 0,
                     hosts_found,
                     i,
 #ifdef _DEBUG
@@ -1250,8 +899,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
         (sel_typ == RETRY_SEL) || (sel_typ == DEBUG_SEL) ||
         (sel_typ == TRACE_SEL) || (sel_typ == FULL_TRACE_SEL) ||
         (sel_typ == SIMULATION_SEL) || (sel_typ == INFO_SEL) ||
-        (sel_typ == PING_SEL) || (sel_typ == TRACEROUTE_SEL) ||
-        (sel_typ == LONG_SHORT_SEL)))
+        (sel_typ == PING_SEL) || (sel_typ == TRACEROUTE_SEL)))
    {
       (void)xrec(INFO_DIALOG,
                  "You must first select a host!\nUse mouse button 1 to do the selection.");
@@ -1326,7 +974,6 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
       case TRACE_SEL:
       case FULL_TRACE_SEL:
       case SIMULATION_SEL:
-      case LONG_SHORT_SEL:
          break;
 
       case PING_SEL : /* Ping test. */
@@ -2769,23 +2416,6 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                }
                break;
 
-            case LONG_SHORT_SEL :
-               if (connect_data[i].short_pos == -1)
-               {
-                  if (to_short(i, -1, NO) == SUCCESS)
-                  {
-                     to_short_counter++;
-                  }
-               }
-               else
-               {
-                  if (to_long(i, -1, NO) == SUCCESS)
-                  {
-                     to_long_counter++;
-                  }
-               }
-               break;
-
             case EVENT_SEL :
                {
                   int    gotcha = NO,
@@ -3123,26 +2753,6 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
         {
            (void)write_host_config(no_of_hosts, host_config_file, hl);
            free(hl);
-        }
-   else if (sel_typ == LONG_SHORT_SEL)
-        {
-           if ((to_long_counter != 0) && (to_short_counter != 0))
-           {
-              (void)resize_window();
-              redraw_all();
-              XFlush(display);
-           }
-           else
-           {
-              if (to_long_counter != 0)
-              {
-                 redraw_long(-1);
-              }
-              else if (to_short_counter != 0)
-                   {
-                      redraw_short();
-                   }
-           }
         }
 
 #ifdef SHOW_CALLS
@@ -3966,6 +3576,18 @@ change_rows_cb(Widget w, XtPointer client_data, XtPointer call_data)
          no_of_rows_set = atoi(ROW_16);
          break;
 
+      case 17  :
+         no_of_rows_set = atoi(ROW_17);
+         break;
+
+      case 18  :
+         no_of_rows_set = atoi(ROW_18);
+         break;
+
+      case 19  :
+         no_of_rows_set = atoi(ROW_19);
+         break;
+
       default  :
          (void)xrec(WARN_DIALOG, "Impossible row selection (%d).", item_no);
          return;
@@ -4282,200 +3904,6 @@ in_ec_area(int column, XEvent *event)
    }
 
    return(NO);
-}
-
-
-/*+++++++++++++++++++++++++++++ to_long() +++++++++++++++++++++++++++++++*/
-static int
-to_long(int pos, int select_no, int apply)
-{
-   if ((pos > -1) ||
-       ((pos = get_short_pos(select_no, YES)) != -1))
-   {
-      int i,
-          long_pos = -1,
-          short_delete_pos = connect_data[pos].short_pos;
-
-      connect_data[pos].short_pos = -1;
-      for (i = 0; i < pos; i++)
-      {
-         if (connect_data[i].long_pos > long_pos)
-         {
-            long_pos = connect_data[i].long_pos;
-         }
-         if (connect_data[i].short_pos > short_delete_pos)
-         {
-            connect_data[i].short_pos--;
-         }
-      }
-      connect_data[pos].long_pos = long_pos + 1;
-      for (i = (pos + 1); i < no_of_hosts; i++)
-      {
-         if (connect_data[i].short_pos > short_delete_pos)
-         {
-            connect_data[i].short_pos--;
-         }
-         if (connect_data[i].long_pos > -1)
-         {
-            connect_data[i].long_pos++;
-         }
-      }
-      no_of_short_lines--;
-      if (no_of_short_lines == 0)
-      {
-         ft_exposure_short_line = 0;
-      }
-      no_of_long_lines++;
-
-      if (apply == YES)
-      {
-         redraw_long(pos);
-      }
-      return(SUCCESS);
-   }
-   else
-   {
-      return(INCORRECT);
-   }
-}
-
-
-/*+++++++++++++++++++++++++++++ to_short() ++++++++++++++++++++++++++++++*/
-static int
-to_short(int pos, int select_no, int apply)
-{
-   if ((pos > -1) ||
-       ((pos = get_long_pos(select_no, YES)) != -1))
-   {
-      int i,
-          short_pos = -1;
-
-      for (i = 0; i < pos; i++)
-      {
-         if (connect_data[i].short_pos > short_pos)
-         {
-            short_pos = connect_data[i].short_pos;
-         }
-      }
-      connect_data[pos].short_pos = short_pos + 1;
-      for (i = 0; i < pos; i++)
-      {
-         if (connect_data[i].short_pos >= connect_data[pos].short_pos)
-         {
-            connect_data[i].short_pos++;
-         }
-      }
-      for (i = (pos + 1); i < no_of_hosts; i++)
-      {
-         if (connect_data[i].short_pos >= connect_data[pos].short_pos)
-         {
-            connect_data[i].short_pos++;
-         }
-         if (connect_data[i].long_pos > -1)
-         {
-            connect_data[i].long_pos--;
-         }
-      }
-      connect_data[pos].long_pos = -1;
-      no_of_short_lines++;
-      no_of_long_lines--;
-      if (apply == YES)
-      {
-         redraw_short();
-      }
-      return(SUCCESS);
-   }
-   else
-   {
-      return(INCORRECT);
-   }
-}
-
-
-/*---------------------------- redraw_long() ----------------------------*/
-static void
-redraw_long(int pos)
-{
-   if ((no_of_short_lines == 0) &&
-       ((pos == -1) || (connect_data[pos].inverse > OFF)))
-   {
-      XClearWindow(display, short_line_window);
-   }
-   if (resize_window() == YES)
-   {
-      redraw_all();
-   }
-   else
-   {
-      int i;
-
-      if (no_of_short_lines == 0)
-      {
-         draw_label_line();
-      }
-      else
-      {
-         XClearWindow(display, short_line_window);
-         XFillRectangle(display, short_line_pixmap, default_bg_gc,
-                        0, 0, window_width, (no_of_short_rows * line_height));
-/*
-         XFreePixmap(display, short_line_pixmap);
-         short_line_pixmap = XCreatePixmap(display, short_line_window,
-                                           window_width,
-                                           (line_height * no_of_short_rows),
-                                           depth);
-*/
-      }
-
-      /* Redraw all status lines. */
-      for (i = 0; i < no_of_hosts; i++)
-      {
-         draw_line_status(i, 1);
-      }
-   }
-   XFlush(display);
-
-   return;
-}
-
-
-/*--------------------------- redraw_short() ----------------------------*/
-static void
-redraw_short(void)
-{
-   if (resize_window() == YES)
-   {
-      redraw_all();
-   }
-   else
-   {
-      int i;
-
-      if (no_of_long_lines == 0)
-      {
-         draw_label_line();
-      }
-      else
-      {
-         XClearWindow(display, line_window);
-         XFillRectangle(display, line_pixmap, default_bg_gc,
-                        0, 0, window_width, (no_of_rows * line_height));
-/*
-         XFreePixmap(display, line_pixmap);
-         line_pixmap = XCreatePixmap(display, line_window, window_width,
-                                     (line_height * no_of_rows), depth);
-*/
-      }
-
-      /* Redraw all status lines. */
-      for (i = 0; i < no_of_hosts; i++)
-      {
-         draw_line_status(i, 1);
-      }
-   }
-   XFlush(display);
-
-   return;
 }
 
 

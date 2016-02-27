@@ -576,7 +576,7 @@ save_mon_setup_cb(Widget    w,
                   XtPointer client_data,
                   XtPointer call_data)
 {
-   write_setup(-1, -1, his_log_set, NULL, 0, 0);
+   write_setup(-1, -1, his_log_set);
 
    return;
 }
@@ -2262,6 +2262,18 @@ change_mon_rows_cb(Widget    w,
 
       case 16  :
          no_of_rows_set = atoi(ROW_16);
+         break;
+
+      case 17  :
+         no_of_rows_set = atoi(ROW_17);
+         break;
+
+      case 18  :
+         no_of_rows_set = atoi(ROW_18);
+         break;
+
+      case 19  :
+         no_of_rows_set = atoi(ROW_19);
          break;
 
       default  :

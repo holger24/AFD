@@ -1,6 +1,6 @@
 /*
  *  mafd_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -53,6 +53,7 @@ DESCR__S_M1
  **                      pixmap.
  **   15.09.2014 H.Kiehl Added option for simulated send mode.
  **   05.12.2014 H.Kiehl Added parameter -t to supply window title.
+ **   27.02.2016 H.Kiehl Remove long/short line code.
  **
  */
 DESCR__E_M1
@@ -126,7 +127,7 @@ Colormap                   default_cmap;
 XFontStruct                *font_struct = NULL;
 XmFontList                 fontlist = NULL;
 Widget                     mw[5],          /* Main menu */
-                           ow[14],         /* Host menu */
+                           ow[13],         /* Host menu */
                            vw[13],         /* View menu */
                            cw[8],          /* Control menu */
                            sw[5],          /* Setup menu */
@@ -145,19 +146,16 @@ Widget                     mw[5],          /* Main menu */
                            detailed_window_w,
                            label_window_w,
                            line_window_w,
-                           short_line_window_w,
                            transviewshell = NULL,
                            tv_label_window_w;
 Window                     button_window,
                            detailed_window,
                            label_window,
                            line_window,
-                           short_line_window,
                            tv_label_window;
 Pixmap                     button_pixmap,
                            label_pixmap,
-                           line_pixmap,
-                           short_line_pixmap;
+                           line_pixmap;
 float                      max_bar_length;
 int                        amg_flag = NO,
                            bar_thickness_2,
@@ -171,7 +169,6 @@ int                        amg_flag = NO,
                            fra_id,
                            fsa_fd = -1,
                            fsa_id,
-                           ft_exposure_short_line = 0,
                            ft_exposure_tv_line = 0,
                            hostname_display_length,
                            led_width,
@@ -188,15 +185,10 @@ int                        amg_flag = NO,
                            no_selected_static,
                            no_of_active_process = 0,
                            no_of_columns,
-                           no_of_short_columns,
                            no_of_rows,
                            no_of_rows_set,
-                           no_of_short_rows,
                            no_of_hosts,
                            no_of_jobs_selected,
-                           no_of_long_lines = 0,
-                           no_of_short_lines = 0,
-                           short_line_length,
                            sys_log_fd = STDERR_FILENO,
 #ifdef WITHOUT_FIFO_RW_SUPPORT
                            sys_log_readfd,
@@ -461,33 +453,6 @@ main(int argc, char *argv[])
                                        argcount);
    XtManageChild(line_window_w);
 
-   /* Create the short_line_window_w. */
-   argcount = 0;
-   if (no_of_short_rows > 0)
-   {
-      XtSetArg(args[argcount], XmNheight, (Dimension)((line_height * no_of_short_rows) + 1));
-   }
-   else
-   {
-      XtSetArg(args[argcount], XmNheight, (Dimension)(line_height * no_of_short_rows));
-   }
-   argcount++;
-   XtSetArg(args[argcount], XmNwidth, (Dimension)window_width);
-   argcount++;
-   XtSetArg(args[argcount], XmNbackground, color_pool[DEFAULT_BG]);
-   argcount++;
-   XtSetArg(args[argcount], XmNtopAttachment, XmATTACH_WIDGET);
-   argcount++;
-   XtSetArg(args[argcount], XmNtopWidget, line_window_w);
-   argcount++;
-   XtSetArg(args[argcount], XmNleftAttachment, XmATTACH_FORM);
-   argcount++;
-   XtSetArg(args[argcount], XmNrightAttachment, XmATTACH_FORM);
-   argcount++;
-   short_line_window_w = XmCreateDrawingArea(mainform_w, "short_line_window_w",
-                                             args, argcount);
-   XtManageChild(short_line_window_w);
-
    /* Initialise the GC's. */
    init_gcs();
 
@@ -506,7 +471,7 @@ main(int argc, char *argv[])
    argcount++;
    XtSetArg(args[argcount], XmNtopAttachment, XmATTACH_WIDGET);
    argcount++;
-   XtSetArg(args[argcount], XmNtopWidget, short_line_window_w);
+   XtSetArg(args[argcount], XmNtopWidget, line_window_w);
    argcount++;
    XtSetArg(args[argcount], XmNleftAttachment, XmATTACH_FORM);
    argcount++;
@@ -529,8 +494,6 @@ main(int argc, char *argv[])
                  (XtCallbackProc)expose_handler_label, (XtPointer)0);
    XtAddCallback(line_window_w, XmNexposeCallback,
                  (XtCallbackProc)expose_handler_line, NULL);
-   XtAddCallback(short_line_window_w, XmNexposeCallback,
-                 (XtCallbackProc)expose_handler_short_line, NULL);
    XtAddCallback(button_window_w, XmNexposeCallback,
                  (XtCallbackProc)expose_handler_button, NULL);
 
@@ -540,9 +503,6 @@ main(int argc, char *argv[])
                         EnterWindowMask | KeyPressMask | ButtonPressMask |
                         Button1MotionMask,
                         False, (XtEventHandler)input, NULL);
-      XtAddEventHandler(short_line_window_w,
-                        ButtonPressMask | ButtonReleaseMask | Button1MotionMask,
-                        False, (XtEventHandler)short_input, NULL);
 
       /* Set toggle button for font|row|style. */
       XtVaSetValues(fw[current_font], XmNset, True, NULL);
@@ -584,11 +544,8 @@ main(int argc, char *argv[])
 
       /* Setup popup menu. */
       init_popup_menu(line_window_w);
-      init_popup_menu(short_line_window_w);
 
       XtAddEventHandler(line_window_w, EnterWindowMask | LeaveWindowMask,
-                        False, (XtEventHandler)focus, NULL);
-      XtAddEventHandler(short_line_window_w, EnterWindowMask | LeaveWindowMask,
                         False, (XtEventHandler)focus, NULL);
    }
 
@@ -621,7 +578,6 @@ main(int argc, char *argv[])
    /* Get window ID of four main windows. */
    label_window = XtWindow(label_window_w);
    line_window = XtWindow(line_window_w);
-   short_line_window = XtWindow(short_line_window_w);
    button_window = XtWindow(button_window_w);
 
    /* Create off-screen pixmaps. */
@@ -629,29 +585,10 @@ main(int argc, char *argv[])
    depth = DefaultDepthOfScreen(screen);
    label_pixmap = XCreatePixmap(display, label_window, window_width,
                                 line_height, depth);
-   if (no_of_long_lines > 0)
-   {
-      line_pixmap = XCreatePixmap(display, line_window, window_width,
-                                  (line_height * no_of_rows), depth);
-   }
-   else
-   {
-      line_pixmap = XCreatePixmap(display, line_window, 1, 1, depth);
-   }
+   line_pixmap = XCreatePixmap(display, line_window, window_width,
+                               (line_height * no_of_rows), depth);
    button_pixmap = XCreatePixmap(display, button_window, window_width,
                                  line_height, depth);
-   if (no_of_short_rows > 0)
-   {
-      short_line_pixmap = XCreatePixmap(display, short_line_window,
-                                        window_width,
-                                        (line_height * no_of_short_rows),
-                                        depth);
-   }
-   else
-   {
-      short_line_pixmap = XCreatePixmap(display, short_line_window,
-                                        1, 1, depth);
-   }
 
    /* Start the main event-handling loop. */
    XtAppMainLoop(app);
@@ -1008,7 +945,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
    hostname_display_length = DEFAULT_HOSTNAME_DISPLAY_LENGTH;
    RT_ARRAY(hosts, no_of_hosts, (MAX_REAL_HOSTNAME_LENGTH + 4 + 1), char);
    read_setup(AFD_CTRL, profile, &hostname_display_length,
-              &filename_display_length, NULL, hosts, MAX_REAL_HOSTNAME_LENGTH);
+              &filename_display_length, NULL);
 
    /* Determine the default bar length. */
    max_bar_length  = 6 * BAR_LENGTH_MODIFIER;
@@ -1189,155 +1126,8 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
          connect_data[i].connect_status[j] = fsa[i].job_status[j].connect_status;
          connect_data[i].detailed_selection[j] = NO;
       }
-      connect_data[i].short_pos = -1;
-   }
-
-   /* Locate positions for long and short version of line in dialog. */
-   if (no_of_short_lines > 0)
-   {
-      int gotcha,
-          stale_short_lines = NO;
-
-      /*
-       * We must first make sure that all hosts in our short host list
-       * are still in the FSA. It could be that they have been removed.
-       * In that case we must remove those hosts from the list.
-       */
-      for (i = 0; i < no_of_short_lines; i++)
-      {
-         gotcha = NO;
-         for (j = 0; j < no_of_hosts; j++)
-         {
-            if (my_strcmp(connect_data[j].hostname, hosts[i]) == 0)
-            {
-               gotcha = YES;
-               break;
-            }
-         }
-         if (gotcha == NO)
-         {
-            if (no_of_short_lines > 1)
-            {
-               for (j = i; j < (no_of_short_lines - 1); j++)
-               {
-                  memcpy(hosts[j], hosts[j + 1], MAX_HOSTNAME_LENGTH + 1);
-               }
-            }
-            no_of_short_lines--;
-            stale_short_lines = YES;
-            i--;
-         }
-      }
-      if (stale_short_lines == YES)
-      {
-         /* We must update the setup file or else these stale */
-         /* entries always remain there.                      */
-         write_setup(hostname_display_length, filename_display_length,
-                     -1, hosts, no_of_short_lines, MAX_REAL_HOSTNAME_LENGTH);
-      }
-
-      if (no_of_short_lines > 0)
-      {
-         int  k,
-              *short_pos_list,
-              tmp_short_pos_list;
-         char tmp_host[MAX_REAL_HOSTNAME_LENGTH + 4 + 1];
-
-         /*
-          * Next we have to adapt the order of host to what it is currently
-          * in FSA.
-          */
-         if ((short_pos_list = malloc(no_of_short_lines * sizeof(int))) == NULL)
-         {
-            (void)fprintf(stderr,
-                          "Failed to malloc() %d bytes : %s (%s %d)\n",
-                          (no_of_short_lines * (int)sizeof(int)),
-                          strerror(errno), __FILE__, __LINE__);
-            exit(INCORRECT);
-         }
-         for (i = 0; i < no_of_short_lines; i++)
-         {
-            for (j = 0; j < no_of_hosts; j++)
-            {
-               if (my_strcmp(connect_data[j].hostname, hosts[i]) == 0)
-               {
-                  short_pos_list[i] = j;
-                  break;
-               }
-            }
-         }
-         for (i = 1; i < no_of_short_lines; i++)
-         {
-            j = i;
-            tmp_short_pos_list = short_pos_list[j];
-            (void)memcpy(tmp_host, hosts[j], MAX_REAL_HOSTNAME_LENGTH);
-            while ((j > 0) &&
-                   (tmp_short_pos_list > short_pos_list[(j - 1) / 2]))
-            {
-                short_pos_list[j] = short_pos_list[(j - 1) / 2];
-                (void)memcpy(hosts[j], hosts[(j - 1) / 2],
-                             MAX_REAL_HOSTNAME_LENGTH);
-                j = (j - 1) / 2;
-            }
-            short_pos_list[j] = tmp_short_pos_list;
-            (void)memcpy(hosts[j], tmp_host, MAX_REAL_HOSTNAME_LENGTH);
-         }
-         for (i = (no_of_short_lines - 1); i > 0; i--)
-         {
-            j = 0;
-            k = 1;
-            tmp_short_pos_list = short_pos_list[i];
-            (void)memcpy(tmp_host, hosts[i], MAX_REAL_HOSTNAME_LENGTH);
-            short_pos_list[i] = short_pos_list[0];
-            (void)memcpy(hosts[i], hosts[0], MAX_REAL_HOSTNAME_LENGTH);
-            while ((k < i) &&
-                   ((tmp_short_pos_list < short_pos_list[k]) ||
-                     (((k + 1) < i) &&
-                      (tmp_short_pos_list < short_pos_list[k + 1]))))
-            {
-               k += (((k + 1) < i) && (short_pos_list[k + 1] > short_pos_list[k]));
-               short_pos_list[j] = short_pos_list[k];
-               (void)memcpy(hosts[j], hosts[k], MAX_REAL_HOSTNAME_LENGTH);
-               j = k;
-               k = 2 * j + 1;
-            }
-            short_pos_list[j] = tmp_short_pos_list;
-            (void)memcpy(hosts[j], tmp_host, MAX_REAL_HOSTNAME_LENGTH);
-         }
-         free(short_pos_list);
-
-         /*
-          * Now we can set the short positions.
-          */
-         for (i = 0; i < no_of_short_lines; i++)
-         {
-            for (j = 0; j < no_of_hosts; j++)
-            {
-               if ((connect_data[j].short_pos == -1) &&
-                   (my_strcmp(connect_data[j].hostname, hosts[i]) == 0))
-               {
-                  connect_data[j].short_pos = i;
-                  connect_data[j].long_pos = -1;
-                  break;
-               }
-            }
-         }
-      }
    }
    FREE_RT_ARRAY(hosts);
-   for (i = 0; i < no_of_hosts; i++)
-   {
-      if (connect_data[i].short_pos == -1)
-      {
-         connect_data[i].long_pos = no_of_long_lines;
-         no_of_long_lines++;
-      }
-   }
-   if ((no_of_long_lines + no_of_short_lines) != no_of_hosts)
-   {
-      no_of_short_lines -= ((no_of_long_lines + no_of_short_lines) -
-                            no_of_hosts);
-   }
 
    /*
     * Initialise all data for AFD status area.
@@ -1615,24 +1405,6 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                                  NULL);
       XtAddCallback(ow[SELECT_W], XmNactivateCallback, select_host_dialog,
                     (XtPointer)0);
-#ifdef WITH_CTRL_ACCELERATOR
-      ow[LONG_SHORT_W] = XtVaCreateManagedWidget("Long/Short line      (Ctrl+l)",
-#else
-      ow[LONG_SHORT_W] = XtVaCreateManagedWidget("Long/Short line      (Alt+l)",
-#endif
-                                 xmPushButtonWidgetClass, pull_down_w,
-                                 XmNfontList,             fontlist,
-#ifdef WHEN_WE_KNOW_HOW_TO_FIX_THIS
-                                 XmNmnemonic,             'L',
-#endif
-#ifdef WITH_CTRL_ACCELERATOR
-                                 XmNaccelerator,          "Ctrl<Key>L",
-#else
-                                 XmNaccelerator,          "Alt<Key>L",
-#endif
-                                 NULL);
-      XtAddCallback(ow[LONG_SHORT_W], XmNactivateCallback, popup_cb,
-                    (XtPointer)LONG_SHORT_SEL);
       if ((traceroute_cmd != NULL) || (ping_cmd != NULL))
       {
          Widget pullright_test;

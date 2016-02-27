@@ -1,6 +1,6 @@
 /*
  *  mafd_ctrl.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -58,10 +58,9 @@
 #define DEBUG_W                         7
 #define SIMULATION_W                    8
 #define SELECT_W                        9
-#define LONG_SHORT_W                    10
-#define TEST_W                          11
-#define VIEW_LOAD_W                     12
-#define EXIT_W                          13
+#define TEST_W                          10
+#define VIEW_LOAD_W                     11
+#define EXIT_W                          12
 
 /* Definitions for View pulldown. */
 #define SYSTEM_W                        0
@@ -105,10 +104,9 @@
 #define SIMULATION_SEL                  8
 #define INFO_SEL                        9
 #define DISABLE_SEL                     10
-#define LONG_SHORT_SEL                  11
-#define VIEW_JOB_SEL                    12
-#define SWITCH_SEL                      13
-#define VIEW_DC_SEL                     14
+#define VIEW_JOB_SEL                    11
+#define SWITCH_SEL                      12
+#define VIEW_DC_SEL                     13
 /* NOTE: Since some of these are used by more then one */
 /*       program each may define only a certain range: */
 /*         mafd_ctrl.h       0 - 39                    */
@@ -191,10 +189,6 @@ struct line
                                              /* number.                  */
           int            max_errors;
           int            allowed_transfers;
-          int            long_pos;           /* Position in full details */
-                                             /* portion of dialog.       */
-          int            short_pos;          /* Position in hostname     */
-                                             /* only portion of dialog.  */
           float          scale;
           unsigned int   host_id;
           unsigned int   host_status;
@@ -315,14 +309,12 @@ extern void        calc_but_coord(int),
                    expose_handler_button(Widget, XtPointer, XmDrawingAreaCallbackStruct *),
                    expose_handler_label(Widget, XtPointer, XmDrawingAreaCallbackStruct *),
                    expose_handler_line(Widget, XtPointer, XmDrawingAreaCallbackStruct *),
-                   expose_handler_short_line(Widget, XtPointer, XmDrawingAreaCallbackStruct *),
                    expose_handler_tv_line(Widget, XtPointer, XmDrawingAreaCallbackStruct *),
                    draw_file_name(int, int, int),
                    draw_label_line(void),
                    draw_line_status(int, signed char),
                    draw_button_line(void),
                    draw_blank_line(int),
-                   draw_long_blank_line(int),
                    draw_proc_stat(int, int, int, int),
                    draw_detailed_line(int),
                    draw_detailed_selection(int, int),
@@ -348,7 +340,6 @@ extern void        calc_but_coord(int),
                    init_jd_structure(struct job_data *, int, int),
                    input(Widget, XtPointer, XEvent *),
                    locate_xy_column(int, int *, int *, int *),
-                   locate_xy_short(int, int *, int *),
                    popup_cb(Widget, XtPointer, XtPointer),
                    popup_error_history(int, int, int),
                    popup_event_reason(int, int, int),
@@ -358,11 +349,8 @@ extern void        calc_but_coord(int),
                    select_host_dialog(Widget, XtPointer, XtPointer),
                    setup_tv_window(void),
                    setup_window(char *, int),
-                   short_input(Widget, XtPointer, XEvent *),
                    tv_locate_xy(int, int *, int *);
-extern int         get_job_priority(unsigned int),
-                   get_long_pos(int, int),
-                   get_short_pos(int, int);
+extern int         get_job_priority(unsigned int);
 extern signed char resize_tv_window(void),
                    resize_window(void),
                    tv_window_size(Dimension *, Dimension *),
