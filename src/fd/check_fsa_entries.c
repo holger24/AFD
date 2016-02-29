@@ -173,11 +173,7 @@ check_fsa_entries(void)
                        fsa[i].host_dsp_name, fsa[i].total_file_size);
             fsa[i].total_file_size = 0;
          }
-#ifdef _DO_NOT_RESET_RETRIEVE_JOB
-         if ((fsa[i].error_counter != 0) && ((fsa[i].protocol & GET_FTP) == 0))
-#else
          if (fsa[i].error_counter != 0)
-#endif
          {
             system_log(DEBUG_SIGN, __FILE__, __LINE__,
                        "Error counter for host %s is %d. It should be 0. Correcting.",

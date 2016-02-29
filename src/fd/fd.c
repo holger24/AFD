@@ -101,6 +101,9 @@ DESCR__E_M1
 #include "logdefs.h"
 #include "version.h"
 
+#define FD_CHECK_FSA_INTERVAL        600 /* 10 minutes. */
+#define ABNORMAL_TERM_CHECK_INTERVAL 45  /* seconds */
+
 /* #define WITH_MULTI_FSA_CHECKS */
 /* #define _MACRO_DEBUG */
 /* #define _FDQUEUE_ */
@@ -722,7 +725,11 @@ main(int argc, char *argv[])
                  "FD configuration: Default SMTP reply to         %s",
                  default_smtp_reply_to);
    }
-   abnormal_term_check_time = ((time(&now) / 45) * 45) + 45;
+   abnormal_term_check_time = ((time(&now) / ABNORMAL_TERM_CHECK_INTERVAL) *
+                               ABNORMAL_TERM_CHECK_INTERVAL) +
+                              ABNORMAL_TERM_CHECK_INTERVAL;
+   fsa_check_time = ((now / FD_CHECK_FSA_INTERVAL) *
+                     FD_CHECK_FSA_INTERVAL) + FD_CHECK_FSA_INTERVAL;
    remote_file_check_time = ((now / remote_file_check_interval) *
                              remote_file_check_interval) +
                             remote_file_check_interval;
@@ -772,8 +779,8 @@ main(int argc, char *argv[])
       }
 
       /*
-       * Always check in 45 second intervals if a process has
-       * terminated abnormally, ie where we do not get a
+       * Always check in 45 (ABNORMAL_TERM_CHECK_INTERVAL) second intervals
+       * if a process has terminated abnormally, ie where we do not get a
        * message via the READ_FIN_FIFO (eg. someone killed it with
        * a kill -9). Also check if the content of any message has
        * changed since the last check.
@@ -871,7 +878,9 @@ main(int argc, char *argv[])
 
          check_trl_file();
 
-         abnormal_term_check_time = ((now / 45) * 45) + 45;
+         abnormal_term_check_time = ((now / ABNORMAL_TERM_CHECK_INTERVAL) *
+                                     ABNORMAL_TERM_CHECK_INTERVAL) +
+                                    ABNORMAL_TERM_CHECK_INTERVAL;
          max_threshold = (double)now * 10000.0 * 20.0;
 
          if (get_free_disp_pos_lc > 0)
@@ -882,6 +891,17 @@ main(int argc, char *argv[])
                loop_start_time = 0L;
             }
          }
+      }
+
+      /*
+       * Always check in 10 minute intervals if the FSA enties are still
+       * correct.
+       */
+      if (now > fsa_check_time)
+      {
+         check_fsa_entries();
+         fsa_check_time = ((now / FD_CHECK_FSA_INTERVAL) *
+                           FD_CHECK_FSA_INTERVAL) + FD_CHECK_FSA_INTERVAL;
       }
 
 #ifdef _WITH_INTERRUPT_JOB
@@ -966,7 +986,7 @@ system_log(DEBUG_SIGN, NULL, 0,
             }
          }
          interrupt_check_time = ((now / PRIORITY_INTERRUPT_CHECK_TIME) *
-                                PRIORITY_INTERRUPT_CHECK_TIME) +
+                                 PRIORITY_INTERRUPT_CHECK_TIME) +
                                 PRIORITY_INTERRUPT_CHECK_TIME;
       }
 #endif /* _WITH_INTERRUPT_JOB */
