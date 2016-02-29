@@ -1188,7 +1188,7 @@ init_show_elog(int *argc, char *argv[])
    /* to zero.                                             */
    umask(0);
 
-   (void)sprintf(heading_line, "Date       Time     C T %-*s %-*s %-*s",
+   (void)sprintf(heading_line, "dd.mm.yyyy HH:MM:SS C T %-*s %-*s %-*s",
                  MAX_ALIAS_LENGTH, "Alias",
                  (int)MAX_EVENT_ACTION_LENGTH, "Action",
                  ADDITIONAL_INFO_LENGTH,
