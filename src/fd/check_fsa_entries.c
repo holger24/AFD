@@ -1,6 +1,6 @@
 /*
  *  check_fsa_entries.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -183,6 +183,9 @@ check_fsa_entries(void)
                        "Error counter for host %s is %d. It should be 0. Correcting.",
                        fsa[i].host_dsp_name, fsa[i].error_counter);
             fsa[i].error_counter = 0;
+         }
+         if (fsa[i].error_history[0] != 0)
+         {
             fsa[i].error_history[0] = 0;
             fsa[i].error_history[1] = 0;
          }
