@@ -1,7 +1,7 @@
 /*
  *  eval_dir_options.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 2000 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -664,7 +664,7 @@ eval_dir_options(int  dir_pos, char *dir_options)
            {
               used |= STORE_RETRIEVE_LIST_FLAG;
               ptr += STORE_RETRIEVE_LIST_ID_LENGTH;
-              while (*ptr == ' ')
+              while ((*ptr == ' ') || (*ptr == '\t'))
               {
                  ptr++;
               }
@@ -689,7 +689,7 @@ eval_dir_options(int  dir_pos, char *dir_options)
            {
               used |= STORE_RETRIEVE_LIST_FLAG;
               ptr += STORE_REMOTE_LIST_LENGTH;
-              while (*ptr == ' ')
+              while ((*ptr == ' ') || (*ptr == '\t'))
               {
                  ptr++;
               }
@@ -1308,7 +1308,7 @@ eval_dir_options(int  dir_pos, char *dir_options)
                  ptr++;
               }
               while ((*ptr != '\n') && (*ptr != '\0') && (*ptr != ' ') &&
-                     (length < MAX_WAIT_FOR_LENGTH))
+                     (*ptr != '\t') && (length < MAX_WAIT_FOR_LENGTH))
               {
                  if (*ptr == '\\')
                  {

@@ -522,7 +522,8 @@ handle_options(int          position,
                    (*p_rule != '\0') && (k < MAX_FILENAME_LENGTH))
             {
                if ((*p_rule == '\\') &&
-                   ((*(p_rule + 1) == ' ') || (*(p_rule + 1) == '#')))
+                   ((*(p_rule + 1) == ' ') || (*(p_rule + 1) == '#') ||
+                    (*(p_rule + 1) == '\t')))
                {
                   p_rule++;
                }
@@ -568,7 +569,8 @@ handle_options(int          position,
                          (k < MAX_FILENAME_LENGTH))
                   {
                      if ((*p_rule == '\\') &&
-                         ((*(p_rule + 1) == ' ') || (*(p_rule + 1) == '#')))
+                         ((*(p_rule + 1) == ' ') || (*(p_rule + 1) == '#') ||
+                          (*(p_rule + 1) == '\t')))
                      {
                         p_rule++;
                      }
@@ -608,14 +610,16 @@ handle_options(int          position,
                          * if rename would lead to an overwrite.
                          */
                         p_overwrite = p_rule;
-                        while ((*p_overwrite != '\0') && (*p_overwrite != ' ') &&
+                        while ((*p_overwrite != '\0') &&
+                               (*p_overwrite != ' ') &&
                                (*p_overwrite != '\t'))
                         {
                            p_overwrite++;
                         }
                         if ((*p_overwrite == ' ') || (*p_overwrite == '\t'))
                         {
-                           while ((*p_overwrite == ' ') || (*p_overwrite == '\t'))
+                           while ((*p_overwrite == ' ') ||
+                                  (*p_overwrite == '\t'))
                            {
                               p_overwrite++;
                            }
@@ -3051,7 +3055,7 @@ handle_options(int          position,
                      break;
                }
                p_extract_id += 2;
-               while (*p_extract_id == ' ')
+               while ((*p_extract_id == ' ') || (*p_extract_id == '\t'))
                {
                   p_extract_id++;
                }
@@ -3059,35 +3063,44 @@ handle_options(int          position,
          }
          if ((*p_extract_id == 'V') && (*(p_extract_id + 1) == 'A') &&
              (*(p_extract_id + 2) == 'X') &&
-             ((*(p_extract_id + 3) == ' ') || (*(p_extract_id + 3) == '\0')))
+             ((*(p_extract_id + 3) == ' ') || (*(p_extract_id + 3) == '\0') ||
+              (*(p_extract_id + 3) == '\t')))
          {
             extract_typ = TWO_BYTE;
             p_extract_id += 3;
          }
          else if ((*p_extract_id == 'L') && (*(p_extract_id + 1) == 'B') &&
                   (*(p_extract_id + 2) == 'F') &&
-                  ((*(p_extract_id + 3) == ' ') || (*(p_extract_id + 3) == '\0')))
+                  ((*(p_extract_id + 3) == ' ') ||
+                   (*(p_extract_id + 3) == '\0') ||
+                   (*(p_extract_id + 3) == '\t')))
               {
                  extract_typ = FOUR_BYTE_LBF;
                  p_extract_id += 3;
               }
          else if ((*p_extract_id == 'H') && (*(p_extract_id + 1) == 'B') &&
                   (*(p_extract_id + 2) == 'F') &&
-                  ((*(p_extract_id + 3) == ' ') || (*(p_extract_id + 3) == '\0')))
+                  ((*(p_extract_id + 3) == ' ') ||
+                   (*(p_extract_id + 3) == '\0') ||
+                   (*(p_extract_id + 3) == '\t')))
               {
                  extract_typ = FOUR_BYTE_HBF;
                  p_extract_id += 3;
               }
          else if ((*p_extract_id == 'M') && (*(p_extract_id + 1) == 'S') &&
                   (*(p_extract_id + 2) == 'S') &&
-                  ((*(p_extract_id + 3) == ' ') || (*(p_extract_id + 3) == '\0')))
+                  ((*(p_extract_id + 3) == ' ') ||
+                   (*(p_extract_id + 3) == '\0') ||
+                   (*(p_extract_id + 3) == '\t')))
               {
                  extract_typ = FOUR_BYTE_MSS;
                  p_extract_id += 3;
               }
          else if ((*p_extract_id == 'M') && (*(p_extract_id + 1) == 'R') &&
                   (*(p_extract_id + 2) == 'Z') &&
-                  ((*(p_extract_id + 3) == ' ') || (*(p_extract_id + 3) == '\0')))
+                  ((*(p_extract_id + 3) == ' ') ||
+                   (*(p_extract_id + 3) == '\0') ||
+                   (*(p_extract_id + 3) == '\t')))
               {
                  extract_typ = FOUR_BYTE_MRZ;
                  p_extract_id += 3;
@@ -3095,23 +3108,31 @@ handle_options(int          position,
          else if ((*p_extract_id == 'G') && (*(p_extract_id + 1) == 'R') &&
                   (*(p_extract_id + 2) == 'I') &&
                   (*(p_extract_id + 3) == 'B') &&
-                  ((*(p_extract_id + 4) == ' ') || (*(p_extract_id + 4) == '\0')))
+                  ((*(p_extract_id + 4) == ' ') ||
+                   (*(p_extract_id + 4) == '\0') ||
+                   (*(p_extract_id + 4) == '\t')))
               {
                  extract_typ = FOUR_BYTE_GRIB;
                  p_extract_id += 4;
               }
          else if ((*p_extract_id == 'W') && (*(p_extract_id + 1) == 'M') &&
                   (*(p_extract_id + 2) == 'O') &&
-                  ((*(p_extract_id + 3) == ' ') || (*(p_extract_id + 3) == '\0')))
+                  ((*(p_extract_id + 3) == ' ') ||
+                   (*(p_extract_id + 3) == '\0') ||
+                   (*(p_extract_id + 3) == '\t')))
               {
                  extract_typ = WMO_STANDARD;
                  p_extract_id += 3;
               }
          else if ((*p_extract_id == 'W') && (*(p_extract_id + 1) == 'M') &&
-                  (*(p_extract_id + 2) == 'O') && (*(p_extract_id + 3) == '+') &&
-                  (*(p_extract_id + 4) == 'C') && (*(p_extract_id + 5) == 'H') && 
+                  (*(p_extract_id + 2) == 'O') &&
+                  (*(p_extract_id + 3) == '+') &&
+                  (*(p_extract_id + 4) == 'C') &&
+                  (*(p_extract_id + 5) == 'H') && 
                   (*(p_extract_id + 6) == 'K') &&
-                  ((*(p_extract_id + 7) == ' ') || (*(p_extract_id + 7) == '\0')))
+                  ((*(p_extract_id + 7) == ' ') ||
+                   (*(p_extract_id + 7) == '\0') ||
+                   (*(p_extract_id + 7) == '\t')))
               {
                  extract_typ = WMO_STANDARD_CHK;
                  p_extract_id += 7;
@@ -3120,7 +3141,9 @@ handle_options(int          position,
                   (*(p_extract_id + 2) == 'C') &&
                   (*(p_extract_id + 3) == 'I') &&
                   (*(p_extract_id + 4) == 'I') &&
-                  ((*(p_extract_id + 5) == ' ') || (*(p_extract_id + 5) == '\0')))
+                  ((*(p_extract_id + 5) == ' ') ||
+                   (*(p_extract_id + 5) == '\0') ||
+                   (*(p_extract_id + 5) == '\t')))
               {
                  extract_typ = ASCII_STANDARD;
                  p_extract_id += 5;
@@ -3130,7 +3153,9 @@ handle_options(int          position,
                   (*(p_extract_id + 3) == 'A') &&
                   (*(p_extract_id + 4) == 'R') &&
                   (*(p_extract_id + 5) == 'Y') &&
-                  ((*(p_extract_id + 6) == ' ') || (*(p_extract_id + 6) == '\0')))
+                  ((*(p_extract_id + 6) == ' ') ||
+                   (*(p_extract_id + 6) == '\0') ||
+                   (*(p_extract_id + 6) == '\t')))
               {
                  extract_typ = BINARY_STANDARD;
                  p_extract_id += 6;
@@ -3138,7 +3163,9 @@ handle_options(int          position,
          else if ((*p_extract_id == 'Z') && (*(p_extract_id + 1) == 'C') &&
                   (*(p_extract_id + 2) == 'Z') &&
                   (*(p_extract_id + 3) == 'C') &&
-                  ((*(p_extract_id + 4) == ' ') || (*(p_extract_id + 4) == '\0')))
+                  ((*(p_extract_id + 4) == ' ') ||
+                   (*(p_extract_id + 4) == '\0') ||
+                   (*(p_extract_id + 4) == '\t')))
               {
                  extract_typ = ZCZC_NNNN;
                  p_extract_id += 4;
@@ -3158,7 +3185,7 @@ handle_options(int          position,
                  continue;
               }
 
-          while (*p_extract_id == ' ')
+          while ((*p_extract_id == ' ') || (*p_extract_id == '\t'))
           {
              p_extract_id++;
           }

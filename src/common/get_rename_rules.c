@@ -1,6 +1,6 @@
 /*
  *  get_rename_rules.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -482,7 +482,8 @@ get_rename_rules(int verbose)
                         {
                            if ((*search_ptr == '\\') &&
                                ((*(search_ptr + 1) == ' ') ||
-                                 (*(search_ptr + 1) == '#')))
+                                 (*(search_ptr + 1) == '#') ||
+                                 (*(search_ptr + 1) == '\t')))
                            {
                               count++; search_ptr++;
                            }
@@ -588,7 +589,8 @@ get_rename_rules(int verbose)
                                  {
                                     if ((*end_ptr == '\\') &&
                                         ((*(end_ptr + 1) == ' ') ||
-                                         (*(end_ptr + 1) == '#')))
+                                         (*(end_ptr + 1) == '#') ||
+                                         (*(end_ptr + 1) == '\t')))
                                     {
                                        end_ptr++;
                                     }
@@ -617,7 +619,8 @@ get_rename_rules(int verbose)
                                     {
                                        if ((*end_ptr == '\\') &&
                                            ((*(end_ptr + 1) == ' ') ||
-                                            (*(end_ptr + 1) == '#')))
+                                            (*(end_ptr + 1) == '#') ||
+                                            (*(end_ptr + 1) == '\t')))
                                        {
                                           end_ptr++;
                                        }

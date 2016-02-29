@@ -577,7 +577,8 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
          while ((*ptr != '\n') && (*ptr != '\0') && (i < (MAX_PATH_LENGTH - 2)))
          {
             if ((*ptr == '\\') && ((*(ptr + 1) == '#') ||
-                (*(ptr + 1) == GROUP_SIGN) || (*(ptr + 1) == ' ')))
+                (*(ptr + 1) == GROUP_SIGN) || (*(ptr + 1) == ' ') ||
+                (*(ptr + 1) == '\t')))
             {
                dir->location[i] = *(ptr + 1);
                i++;

@@ -194,7 +194,8 @@ check_option(char *option)
                   (*ptr != '\0') && (k < MAX_FILENAME_LENGTH))
            {
               if ((*ptr == '\\') &&
-                  ((*(ptr + 1) == ' ') || (*(ptr + 1) == '#')))
+                  ((*(ptr + 1) == ' ') || (*(ptr + 1) == '#') ||
+                   (*(ptr + 1) == '\t')))
               {
                  ptr++;
               }
@@ -235,7 +236,8 @@ check_option(char *option)
                         (*ptr != '\0') && (k < MAX_FILENAME_LENGTH))
                  {
                     if ((*ptr == '\\') &&
-                        ((*(ptr + 1) == ' ') || (*(ptr + 1) == '#')))
+                        ((*(ptr + 1) == ' ') || (*(ptr + 1) == '#') ||
+                         (*(ptr + 1) == '\t')))
                     {
                        ptr++;
                     }
