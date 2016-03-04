@@ -1,7 +1,7 @@
 /*
  *  setup_mon_window.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 1998 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -165,8 +165,8 @@ setup_mon_window(char *font_name)
       /* Set the font for the monitor pulldown. */
       XtVaSetValues(mw[MON_W], XmNfontList, fontlist, NULL);
       if ((mcp.show_ms_log != NO_PERMISSION) ||
-          (mcp.show_mm_log != NO_PERMISSION) ||
-          (mcp.info != NO_PERMISSION) ||
+          (mcp.show_mon_log != NO_PERMISSION) ||
+          (mcp.mon_info != NO_PERMISSION) ||
           (mcp.retry != NO_PERMISSION) ||
           (mcp.switch_afd != NO_PERMISSION) ||
           (mcp.disable != NO_PERMISSION))
@@ -176,12 +176,12 @@ setup_mon_window(char *font_name)
             XtVaSetValues(ow[MON_SYS_LOG_W], XmNfontList, fontlist, NULL);
             XtVaSetValues(pw[0], XmNfontList, fontlist, NULL);
          }
-         if (mcp.show_mm_log != NO_PERMISSION)
+         if (mcp.show_mon_log != NO_PERMISSION)
          {
             XtVaSetValues(ow[MON_LOG_W], XmNfontList, fontlist, NULL);
             XtVaSetValues(pw[1], XmNfontList, fontlist, NULL);
          }
-         if (mcp.info != NO_PERMISSION)
+         if (mcp.mon_info != NO_PERMISSION)
          {
             XtVaSetValues(ow[MON_INFO_W], XmNfontList, fontlist, NULL);
             XtVaSetValues(pw[4], XmNfontList, fontlist, NULL);

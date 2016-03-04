@@ -297,6 +297,7 @@ main(int argc, char *argv[])
    long             fd_rescan_time;
    time_t           *creation_time,
                     abnormal_term_check_time,
+                    fsa_check_time,
 #ifdef _WITH_INTERRUPT_JOB
                     interrupt_check_time,
 #endif

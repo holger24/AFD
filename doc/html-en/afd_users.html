@@ -40,7 +40,7 @@ are available.
    <td>Initialize AFD</td>
 </tr>
 <tr>
-   <td><a name="resend">resend</a></td>
+   <td><a name="resend">resend [host1 .. hostn]</a></td>
    <td>Resend files.</td>
 </tr>
 <tr>
@@ -59,42 +59,42 @@ are available.
    <td>Set the password for a certain host and user.</td>
 </tr>
 <tr>
-   <td><a name="">list_limit x</a></td>
+   <td><a name="list_limit">list_limit x</a></td>
    <td>Limit the number of files in the show_xlog dialog to x. Otherwise
        these process might consume to much memory since they use the
        list widget.</td>
 </tr>
 <tr>
-   <td><a name="show_slog">show_slog</a></td>
+   <td><a name="show_slog">show_slog [host1 .. hostn]</a></td>
    <td>View the <a href="show_log.html">system log</a> dialog.</td>
 </tr>
 <tr>
-   <td><a name="show_mlog">show_mlog</a></td>
+   <td><a name="show_mlog">show_mlog [host1 .. hostn]</a></td>
    <td>View the <a href="show_log.html">maintainer log</a> dialog.</td>
 </tr>
 <tr>
-   <td><a name="show_elog">show_elog</a></td>
+   <td><a name="show_elog">show_elog [host1 .. hostn]</a></td>
    <td>View the <a href="show_elog.html">event log</a> dialog.</td>
 </tr>
 <tr>
-   <td><a name="show_tlog">show_tlog</a></td>
+   <td><a name="show_tlog">show_tlog [host1 .. hostn]</a></td>
    <td>View the <a href="show_log.html">transfer log</a> dialog.</td>
 </tr>
 <tr>
-   <td><a name="show_tdlog">show_tdlog</a></td>
+   <td><a name="show_tdlog">show_tdlog [host1 .. hostn]</a></td>
    <td>View the <a href="show_log.html">transfer debug log</a>
        dialog.</td>
 </tr>
 <tr>
-   <td><a name="show_rlog">show_rlog</a></td>
+   <td><a name="show_rlog">show_rlog [host1 .. hostn]</a></td>
    <td>View the <a href="show_log.html">receive log</a> dialog.</td>
 </tr>
 <tr>
-   <td><a name="show_ilog">show_ilog</a></td>
+   <td><a name="show_ilog">show_ilog [host1 .. hostn]</a></td>
    <td>View the <a href="show_ilog.html">input log</a> dialog.</td>
 </tr>
 <tr>
-   <td><a name="show_olog">show_olog</a></td>
+   <td><a name="show_olog">show_olog [host1 .. hostn]</a></td>
    <td>View the <a href="show_olog.html">output log</a> dialog.</td>
 </tr>
 <tr>
@@ -103,7 +103,7 @@ are available.
        dialog.</td>
 </tr>
 <tr>
-   <td><a name="show_dlog">show_dlog</a></td>
+   <td><a name="show_dlog">show_dlog [host1 .. hostn]</a></td>
    <td>View the <a href="show_dlog.html">delete log</a> dialog.</td>
 </tr>
 <tr>
@@ -117,9 +117,18 @@ are available.
        then you must also set the above option show_queue.</td>
 </tr>
 <tr>
-   <td><a name="edit_afd_info">edit_afd_info</a></td>
-   <td>Allow to edit the information in the <a href="afd_info.html">
-       afd_info</a> dialog.</td>
+   <td><a name="mon_sys_log">mon_sys_log</a></td>
+   <td>View the <a href="show_log.html">system log of <a href="afd_mon.html">
+       afd_mon</a>.</td>
+</tr>
+<tr>
+   <td><a name="mon_log">mon_log</a></td>
+   <td>View the <a href="show_log.html">monitor log of <a href="afd_mon.html">
+       afd_mon</a>.</td>
+</tr>
+<tr>
+   <td><a name="mon_info">mon_info [afd1 .. afdn]</a></td>
+   <td>Information about each AFD.</td>
 </tr>
 <tr>
    <td><a name="edit_mon_info">edit_mon_info</a></td>
@@ -161,6 +170,11 @@ are available.
    <td>View the <a href="dir_info.html">dir_info</a> dialog.</td>
 </tr>
 <tr>
+   <td><a name="edit_dir_info">edit_dir_info</a></td>
+   <td>Allow to edit the information in the <a href="dir_info.html">
+       dir_info</a> dialog.</td>
+</tr>
+<tr>
    <td><a name="AMG_control">AMG_control</a></td>
    <td>Start or stop process AMG, which is responsible for scanning local
        directories.</td>
@@ -176,52 +190,57 @@ are available.
        dialog.</td>
 </tr>
 <tr>
-   <td><a name="control_queue">control_queue</a></td>
+   <td><a name="control_queue">control_queue [host1 .. hostn]</a></td>
    <td><a href="afd_ctrl.html#start_stop_input_queue">Start/Stop input
        queue.</a> Stopping the queue means that AFD internally will not
        generate any messages, but no data is lost either. All current jobs
        that have a message will still be transmitted.</td>
 </tr>
 <tr>
-   <td><a name="control_transfer">control_transfer</a></td>
+   <td><a name="control_transfer">control_transfer [host1 .. hostn]</a></td>
    <td><a href="afd_ctrl.html#start_stop_transfer">Start/Stop transfer</a></td>
 </tr>
 <tr>
-   <td><a name="control_host">control_host</a></td>
+   <td><a name="control_host">control_host [host1 .. hostn]</a></td>
    <td><a href="afd_ctrl.html#start_stop_host">Start/Stop host</a>. Stopping
        a host has the same effect as stopping transfer and queue.</td>
 </tr>
 <tr>
-   <td><a name="switch_host">switch_host</a></td>
+   <td><a name="switch_host">switch_host [host1 .. hostn]</a></td>
    <td><a href="afd_ctrl.html#Switch_host">Switch host</a> if there is a
        secondary host.</td>
 </tr>
 <tr>
-   <td><a name="disable">disable</a></td>
+   <td><a name="disable">disable [host1 .. hostn]</a></td>
    <td><a href="afd_ctrl.html#Disable_host">Enable/Disable host</a></td>
 </tr>
 <tr>
-   <td><a name="info">info</a></td>
+   <td><a name="info">info [host1 .. hostn]</a></td>
    <td>Information about each host or AFD.</td>
+</tr>
+<tr>
+   <td><a name="edit_afd_info">edit_afd_info</a></td>
+   <td>Allow to edit the information in the <a href="afd_info.html">
+       afd_info</a> dialog.</td>
 </tr>
 <tr>
    <td><a name="view_dir_config">view_dir_config</a></td>
    <td>View how this host is configured in the DIR_CONFIG.</td>
 </tr>
 <tr>
-   <td><a name="debug">debug</a></td>
+   <td><a name="debug">debug [host1 .. hostn]</a></td>
    <td>Enable/Disable debug</td>
 </tr>
 <tr>
-   <td><a name="trace">trace</a></td>
+   <td><a name="trace">trace [host1 .. hostn]</a></td>
    <td>Enable/Disable trace</td>
 </tr>
 <tr>
-   <td><a name="full_trace">full_trace</a></td>
+   <td><a name="full_trace">full_trace [host1 .. hostn]</a></td>
    <td>Enable/Disable full trace</td>
 </tr>
 <tr>
-   <td><a name="simulate_mode">simulate_mode</a></td>
+   <td><a name="simulate_mode">simulate_mode [host1 .. hostn]</a></td>
    <td>Enable/Disable simulation mode for a destination</td>
 </tr>
 <tr>
@@ -247,7 +266,7 @@ are available.
        exec/fork statistics.</td>
 </tr>
 <tr>
-   <td><a name="retry">retry</a></td>
+   <td><a name="retry">retry [host1 .. hostn]</a></td>
    <td>Send retry command for a host.</td>
 </tr>
 <tr>
@@ -306,9 +325,9 @@ are available.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1999 - 2015 by H.Kiehl<br>
+   Copyright &copy; 1999 - 2016 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 17.09.2015
+   Last updated: 04.03.2016
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

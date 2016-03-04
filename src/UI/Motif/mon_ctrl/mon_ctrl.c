@@ -1,6 +1,6 @@
 /*
  *  mon_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -620,14 +620,15 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
                       /* be able to disable permission checking let    */
                       /* the user have all permissions.                */
          mcp.mon_ctrl_list      = NULL;
+         mcp.show_ms_log        = YES;
+         mcp.show_mon_log       = YES;
          mcp.amg_ctrl           = YES; /* Start/Stop the AMG    */
          mcp.fd_ctrl            = YES; /* Start/Stop the FD     */
          mcp.rr_dc              = YES; /* Reread DIR_CONFIG     */
          mcp.rr_hc              = YES; /* Reread HOST_CONFIG    */
          mcp.startup_afd        = YES; /* Startup the AFD       */
          mcp.shutdown_afd       = YES; /* Shutdown the AFD      */
-         mcp.info               = YES;
-         mcp.info_list          = NULL;
+         mcp.mon_info           = YES;
          mcp.retry              = YES;
          mcp.retry_list         = NULL;
          mcp.switch_afd         = YES;
@@ -1075,7 +1076,7 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
       XtAddCallback(ow[MON_SYS_LOG_W], XmNactivateCallback, mon_popup_cb,
                     (XtPointer)MON_SYS_LOG_SEL);
    }
-   if (mcp.show_mm_log != NO_PERMISSION)
+   if (mcp.show_mon_log != NO_PERMISSION)
    {
       ow[MON_LOG_W] = XtVaCreateManagedWidget("Monitor Log",
                            xmPushButtonWidgetClass, pull_down_w,
@@ -1158,7 +1159,7 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                            NULL);
       create_pullright_test(pullright_test);
    }
-   if (mcp.info != NO_PERMISSION)
+   if (mcp.mon_info != NO_PERMISSION)
    {
          ow[MON_INFO_W] = XtVaCreateManagedWidget("Info",
                            xmPushButtonWidgetClass, pull_down_w,
@@ -1602,10 +1603,10 @@ init_popup_menu(Widget line_window_w)
    popupmenu = XmCreateSimplePopupMenu(line_window_w, "popup", args, argcount);
 
    if ((mcp.show_ms_log != NO_PERMISSION) ||
-       (mcp.show_mm_log != NO_PERMISSION) ||
+       (mcp.show_mon_log != NO_PERMISSION) ||
        (mcp.retry != NO_PERMISSION) ||
        (mcp.switch_afd != NO_PERMISSION) ||
-       (mcp.info != NO_PERMISSION) ||
+       (mcp.mon_info != NO_PERMISSION) ||
        (mcp.disable != NO_PERMISSION))
    {
       if (mcp.show_ms_log != NO_PERMISSION)
@@ -1620,7 +1621,7 @@ init_popup_menu(Widget line_window_w)
          XtManageChild(pw[0]);
          XmStringFree(x_string);
       }
-      if (mcp.show_mm_log != NO_PERMISSION)
+      if (mcp.show_mon_log != NO_PERMISSION)
       {
          argcount = 0;
          x_string = XmStringCreateLocalized("Monitor Log");
@@ -1672,7 +1673,7 @@ init_popup_menu(Widget line_window_w)
          XtManageChild(pw[3]);
          XmStringFree(x_string);
       }
-      if (mcp.info != NO_PERMISSION)
+      if (mcp.mon_info != NO_PERMISSION)
       {
          argcount = 0;
          x_string = XmStringCreateLocalized("Info");
@@ -2052,14 +2053,15 @@ eval_permissions(char *perm_buffer)
         (perm_buffer[3] == ' ') || (perm_buffer[3] == '\t')))
    {
       mcp.mon_ctrl_list      = NULL;
+      mcp.show_ms_log        = YES;
+      mcp.show_mon_log       = YES;
       mcp.amg_ctrl           = YES;   /* Start/Stop the AMG    */
       mcp.fd_ctrl            = YES;   /* Start/Stop the FD     */
       mcp.rr_dc              = YES;   /* Reread DIR_CONFIG     */
       mcp.rr_hc              = YES;   /* Reread HOST_CONFIG    */
       mcp.startup_afd        = YES;   /* Startup AFD           */
       mcp.shutdown_afd       = YES;   /* Shutdown AFD          */
-      mcp.info               = YES;
-      mcp.info_list          = NULL;
+      mcp.mon_info           = YES;
       mcp.retry              = YES;
       mcp.retry_list         = NULL;
       mcp.switch_afd         = YES;
@@ -2112,6 +2114,39 @@ eval_permissions(char *perm_buffer)
          {
             mcp.mon_ctrl_list = NULL;
          }
+      }
+
+      /* May the user use the monitor system log? */
+      if ((ptr = posi(perm_buffer, MON_SYS_LOG_PERM)) == NULL)
+      {
+         /* The user may NOT use the retry button. */
+         mcp.show_ms_log = NO_PERMISSION;
+      }
+      else
+      {
+         mcp.show_ms_log = NO_LIMIT;
+      }
+
+      /* May the user use the monitor log? */
+      if ((ptr = posi(perm_buffer, MON_LOG_PERM)) == NULL)
+      {
+         /* The user may NOT use the retry button. */
+         mcp.show_mon_log = NO_PERMISSION;
+      }
+      else
+      {
+         mcp.show_mon_log = NO_LIMIT;
+      }
+
+      /* May the user use the monitor info? */
+      if ((ptr = posi(perm_buffer, MON_INFO_PERM)) == NULL)
+      {
+         /* The user may NOT use the retry button. */
+         mcp.mon_info = NO_PERMISSION;
+      }
+      else
+      {
+         mcp.mon_info = NO_LIMIT;
       }
 
       /* May the user start/stop the AMG? */
@@ -2189,26 +2224,6 @@ eval_permissions(char *perm_buffer)
       else
       {
          mcp.shutdown_afd = NO_LIMIT;
-      }
-
-      /* May the user view the information of a AFD? */
-      if ((ptr = posi(perm_buffer, INFO_PERM)) == NULL)
-      {
-         /* The user may NOT view any information. */
-         mcp.info = NO_PERMISSION;
-      }
-      else
-      {
-         ptr--;
-         if ((*ptr == ' ') || (*ptr == '\t'))
-         {
-            mcp.info = store_host_names(&mcp.info_list, ptr + 1);
-         }
-         else
-         {
-            mcp.info = NO_LIMIT;
-            mcp.info_list = NULL;
-         }
       }
 
       /* May the user use the retry button for a particular AFD? */

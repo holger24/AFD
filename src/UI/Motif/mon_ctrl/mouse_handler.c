@@ -811,10 +811,6 @@ mon_popup_cb(Widget    w,
          {
             FREE_RT_ARRAY(mcp.mon_ctrl_list);
          }
-         if (mcp.info_list != NULL)
-         {
-            FREE_RT_ARRAY(mcp.info_list);
-         }
          if (mcp.retry_list != NULL)
          {
             FREE_RT_ARRAY(mcp.retry_list);

@@ -1,6 +1,6 @@
 /*
  *  mon_ctrl.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -182,7 +182,6 @@ struct mon_line
 struct mon_control_perm
        {
           char        **mon_ctrl_list;
-          char        **info_list;
           char        **retry_list;
           char        **switch_list;
           char        **disable_list;
@@ -197,18 +196,18 @@ struct mon_control_perm
           char        **show_dlog_list;
           char        **afd_load_list;
           char        **edit_hc_list;
+          signed char show_ms_log;           /* Show Monitor System Log  */
+          signed char show_mon_log;          /* Show Monitor Log         */
           signed char amg_ctrl;              /* Start/Stop the AMG       */
           signed char fd_ctrl;               /* Start/Stop the FD        */
           signed char rr_dc;                 /* Reread DIR_CONFIG        */
           signed char rr_hc;                 /* Reread HOST_CONFIG       */
           signed char startup_afd;           /* Startup AFD              */
           signed char shutdown_afd;          /* Shutdown AFD             */
-          signed char info;                  /* Info about AFD           */
+          signed char mon_info;              /* Info about AFD           */
           signed char retry;                 /* Retry connecting to AFD  */
           signed char switch_afd;            /* Switch AFD               */
           signed char disable;               /* Enable/Disable AFD       */
-          signed char show_ms_log;           /* Show Monitor System Log  */
-          signed char show_mm_log;           /* Show Monitor Log         */
           signed char afd_ctrl;              /* Show AFD Control Dialog  */
           signed char show_slog;             /* Show System Log          */
           signed char show_elog;             /* Show Event Log           */
