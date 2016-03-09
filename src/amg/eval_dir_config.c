@@ -516,7 +516,8 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                           if (i == MAX_DIR_ALIAS_LENGTH)
                           {
                              /* No more space left, so ignore rest. */
-                             while ((*search_ptr != '\n') && (*search_ptr != '\0'))
+                             while ((*search_ptr != '\n') &&
+                                    (*search_ptr != '\0'))
                              {
                                 search_ptr++;
                              }
@@ -525,7 +526,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                     }
             }
             dir->alias[i] = '\0';
-            search_ptr++;
+            if (*search_ptr == '\n')
+            {
+               search_ptr++;
+            }
          }
          ptr = search_ptr;
 
@@ -1020,7 +1024,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                   {
                      search_ptr++;
                   }
-                  search_ptr++;
+                  if (*search_ptr == '\n')
+                  {
+                     search_ptr++;
+                  }
                }
                while (*search_ptr == '#')
                {
@@ -1028,7 +1035,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                   {
                      search_ptr++;
                   }
-                  search_ptr++;
+                  if (*search_ptr == '\n')
+                  {
+                     search_ptr++;
+                  }
                }
                ptr = search_ptr;
 
@@ -1297,7 +1307,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                            dir->file[dir->fgc].fc++;
                         }
                      }
-                     ptr++;
+                     if (*ptr == '\n')
+                     {
+                        ptr++;
+                     }
 
                      /* Check for a dummy empty line. */
                      if (*ptr != '\n')
@@ -1413,7 +1426,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                                     "DEST_%d", unique_dest_counter);
                      unique_dest_counter++;
                   }
-                  ptr++;
+                  if (*ptr == '\n')
+                  {
+                     ptr++;
+                  }
 
                   /* Before we go on, we have to search for the beginning of */
                   /* the next destination entry so we can mark the end for   */
@@ -1453,7 +1469,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                         {
                            search_ptr++;
                         }
-                        search_ptr++;
+                        if (*search_ptr == '\n')
+                        {
+                           search_ptr++;
+                        }
                      }
                      while (*search_ptr == '#')
                      {
@@ -1461,7 +1480,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                         {
                            search_ptr++;
                         }
-                        search_ptr++;
+                        if (*search_ptr == '\n')
+                        {
+                           search_ptr++;
+                        }
                      }
                      ptr = search_ptr;
 
@@ -1492,7 +1514,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                            {
                               ptr++;
                            }
-                           ptr++;
+                           if (*ptr == '\n')
+                           {
+                              ptr++;
+                           }
 
                            goto check_dummy_line;
                         }
@@ -1551,7 +1576,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                                 rec[dir->file[dir->fgc].\
                                 dest[dir->file[dir->fgc].dgc].rc].\
                                 recipient[i] = '\0';
-                        ptr++;
+                        if (*ptr == '\n')
+                        {
+                           ptr++;
+                        }
 
                         /* Make sure that we did read a line. */
                         if (i != 0)
@@ -1734,7 +1762,10 @@ check_dummy_line:
                         {
                            search_ptr++;
                         }
-                        search_ptr++;
+                        if (*search_ptr == '\n')
+                        {
+                           search_ptr++;
+                        }
                      }
                      ptr = search_ptr;
 
@@ -1803,7 +1834,10 @@ check_dummy_line:
                               }
                            }
                         }
-                        ptr++;
+                        if (*ptr == '\n')
+                        {
+                           ptr++;
+                        }
 
                         /* Check for a dummy empty line. */
                         if (*ptr != '\n')
