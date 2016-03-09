@@ -214,7 +214,8 @@ check_fake_user(int *argc, char *argv[], char *config_file, char *fake_user)
             }
          }
          free(buffer);
-         (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+         (void)fprintf(stderr, "%s (%s %d)\n",
+                       PERMISSION_DENIED_STR, __FILE__, __LINE__);
          exit(INCORRECT);
       }
    }

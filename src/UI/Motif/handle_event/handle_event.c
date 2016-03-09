@@ -1,6 +1,6 @@
 /*
  *  handle_event.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -696,7 +696,8 @@ init_handle_event(int *argc, char *argv[])
          exit(INCORRECT);
 
       case NONE :
-         (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+         (void)fprintf(stderr, "%s (%s %d)\n",
+                       PERMISSION_DENIED_STR, __FILE__, __LINE__);
          exit(INCORRECT);
 
       case SUCCESS :
@@ -712,7 +713,8 @@ init_handle_event(int *argc, char *argv[])
          }
          else if (posi(perm_buffer, VIEW_DIR_CONFIG_PERM) == NULL)
               {
-                 (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+                 (void)fprintf(stderr, "%s (%s %d)\n",
+                               PERMISSION_DENIED_STR, __FILE__, __LINE__);
                  exit(INCORRECT);
               }
          free(perm_buffer);

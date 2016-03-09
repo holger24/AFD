@@ -1,6 +1,6 @@
 /*
  *  show_queue.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1723,7 +1723,8 @@ init_show_queue(int *argc, char *argv[])
          exit(INCORRECT);
 
       case NONE :
-         (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+         (void)fprintf(stderr, "%s (%s %d)\n",
+                       PERMISSION_DENIED_STR, __FILE__, __LINE__);
          exit(INCORRECT);
 
       case SUCCESS : /* Lets evaluate the permissions and see what */
@@ -1848,7 +1849,8 @@ eval_permissions(char *perm_buffer)
        */
       if ((ptr = posi(perm_buffer, SHOW_QUEUE_PERM)) == NULL)
       {
-         (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+         (void)fprintf(stderr, "%s (%s %d)\n",
+                       PERMISSION_DENIED_STR, __FILE__, __LINE__);
          free(perm_buffer);
          exit(INCORRECT);
       }

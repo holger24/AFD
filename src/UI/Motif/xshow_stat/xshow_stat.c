@@ -1,6 +1,6 @@
 /*
  *  xshow_stat.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -437,7 +437,8 @@ init_show_stat(int *argc, char *argv[], char *font_name, char *window_title)
             }
             else
             {
-               (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+               (void)fprintf(stderr, "%s (%s %d)\n",
+                             PERMISSION_DENIED_STR, __FILE__, __LINE__);
             }
          }
          exit(INCORRECT);
@@ -454,7 +455,8 @@ init_show_stat(int *argc, char *argv[], char *font_name, char *window_title)
          }
          else if (posi(perm_buffer, XSHOW_STAT_PERM) == NULL)
               {
-                 (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+                 (void)fprintf(stderr, "%s (%s %d)\n",
+                               PERMISSION_DENIED_STR, __FILE__, __LINE__);
                  exit(INCORRECT);
               }
          free(perm_buffer);

@@ -1,6 +1,6 @@
 /*
  *  jid_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -165,7 +165,8 @@ main(int argc, char *argv[])
          exit(INCORRECT);
 
       case NONE :
-         (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+         (void)fprintf(stderr, "%s (%s %d)\n",
+                       PERMISSION_DENIED_STR, __FILE__, __LINE__);
          exit(INCORRECT);
 
       case SUCCESS :
@@ -188,7 +189,8 @@ main(int argc, char *argv[])
             if (lposi(perm_buffer, VIEW_DIR_CONFIG_PERM,
                       VIEW_DIR_CONFIG_PERM_LENGTH) == NULL)
             {
-               (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+               (void)fprintf(stderr, "%s (%s %d)\n",
+                             PERMISSION_DENIED_STR, __FILE__, __LINE__);
                exit(INCORRECT);
             }
             if (lposi(perm_buffer, VIEW_PASSWD_PERM,

@@ -1,6 +1,6 @@
 /*
  *  afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -236,7 +236,8 @@ main(int argc, char *argv[])
          exit(INCORRECT);
 
       case NONE :
-         (void)fprintf(stderr, "%s [%s]\n", PERMISSION_DENIED_STR, user);
+         (void)fprintf(stderr, "%s [%s] (%s %d)\n",
+                       PERMISSION_DENIED_STR, user, __FILE__, __LINE__);
          exit(INCORRECT);
 
       case SUCCESS  : /* Lets evaluate the permissions and see what */

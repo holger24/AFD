@@ -248,7 +248,8 @@ main(int argc, char *argv[])
          exit(INCORRECT);
 
       case NONE :
-         (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+         (void)fprintf(stderr, "%s (%s %d)\n",
+                       PERMISSION_DENIED_STR, __FILE__, __LINE__);
          exit(INCORRECT);
 
       case SUCCESS :
@@ -271,7 +272,8 @@ main(int argc, char *argv[])
             if (lposi(perm_buffer, VIEW_DIR_CONFIG_PERM,
                       VIEW_DIR_CONFIG_PERM_LENGTH) == NULL)
             {
-               (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+               (void)fprintf(stderr, "%s (%s %d)\n",
+                             PERMISSION_DENIED_STR, __FILE__, __LINE__);
                exit(INCORRECT);
             }
             if (lposi(perm_buffer, VIEW_PASSWD_PERM,

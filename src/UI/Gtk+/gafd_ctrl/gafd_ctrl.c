@@ -1,6 +1,6 @@
 /*
  *  gafd_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -545,7 +545,8 @@ init_afd_ctrl(int *argc, char *argv[], char *window_title)
             }
             else
             {
-               (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+               (void)fprintf(stderr, "%s (%s %d)\n",
+                             PERMISSION_DENIED_STR, __FILE__, __LINE__);
             }
          }
          exit(INCORRECT);
@@ -2083,7 +2084,8 @@ eval_permissions(char *perm_buffer)
        */
       if ((ptr = posi(perm_buffer, AFD_CTRL_PERM)) == NULL)
       {
-         (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+         (void)fprintf(stderr, "%s (%s %d)\n",
+                       PERMISSION_DENIED_STR, __FILE__, __LINE__);
          free(perm_buffer);
          exit(INCORRECT);
       }

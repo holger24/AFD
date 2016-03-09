@@ -1,6 +1,6 @@
 /*
  *  set_pw.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -262,7 +262,8 @@ main(int argc, char *argv[])
          exit(INCORRECT);
 
       case NONE :
-         (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+         (void)fprintf(stderr, "%s (%s %d)\n",
+                       PERMISSION_DENIED_STR, __FILE__, __LINE__);
          exit(INCORRECT);
 
       case SUCCESS  : /* Lets evaluate the permissions and see what */
@@ -288,7 +289,8 @@ main(int argc, char *argv[])
             free(perm_buffer);
             if (permission != YES)
             {
-               (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+               (void)fprintf(stderr, "%s (%s %d)\n",
+                             PERMISSION_DENIED_STR, __FILE__, __LINE__);
                exit(INCORRECT);
             }
          }

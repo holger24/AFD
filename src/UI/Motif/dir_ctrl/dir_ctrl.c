@@ -554,8 +554,8 @@ init_dir_ctrl(int *argc, char *argv[], char *window_title)
             }
             else
             {
-               (void)fprintf(stderr, "%s\n",
-                             PERMISSION_DENIED_STR);
+               (void)fprintf(stderr, "%s (%s %d)\n",
+                             PERMISSION_DENIED_STR, __FILE__, __LINE__);
             }
          }
          exit(INCORRECT);
@@ -1552,7 +1552,8 @@ eval_permissions(char *perm_buffer)
        */
       if ((ptr = posi(perm_buffer, DIR_CTRL_PERM)) == NULL)
       {
-         (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+         (void)fprintf(stderr, "%s (%s %d)\n",
+                       PERMISSION_DENIED_STR, __FILE__, __LINE__);
          free(perm_buffer);
          exit(INCORRECT);
       }

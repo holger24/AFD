@@ -1,6 +1,6 @@
 /*
  *  edit_hc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -2365,7 +2365,8 @@ init_edit_hc(int *argc, char *argv[], char *window_title)
          }
          exit(INCORRECT);
 
-      case NONE     : (void)fprintf(stderr, "%s\n", PERMISSION_DENIED_STR);
+      case NONE     : (void)fprintf(stderr, "%s (%s %d)\n",
+                                    PERMISSION_DENIED_STR, __FILE__, __LINE__);
                       exit(INCORRECT);
 
       case SUCCESS  : /* Lets evaluate the permissions and see what */
@@ -2383,8 +2384,9 @@ init_edit_hc(int *argc, char *argv[], char *window_title)
                       }
                       else if (posi(perm_buffer, EDIT_HC_PERM) == NULL)
                            {
-                              (void)fprintf(stderr,
-                                            "%s\n", PERMISSION_DENIED_STR);
+                              (void)fprintf(stderr, "%s (%s %d)\n",
+                                           PERMISSION_DENIED_STR,
+                                           __FILE__, __LINE__);
                               exit(INCORRECT);
                            }
                       free(perm_buffer);
