@@ -1426,10 +1426,7 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                                     "DEST_%d", unique_dest_counter);
                      unique_dest_counter++;
                   }
-                  if (*ptr == '\n')
-                  {
-                     ptr++;
-                  }
+                  ptr++;
 
                   /* Before we go on, we have to search for the beginning of */
                   /* the next destination entry so we can mark the end for   */
