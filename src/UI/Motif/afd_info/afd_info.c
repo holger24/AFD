@@ -1,6 +1,6 @@
 /*
  *  afd_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -721,8 +721,6 @@ main(int argc, char *argv[])
                                        XmNrightAttachment,  XmATTACH_POSITION,
                                        XmNrightPosition,    20,
                                        NULL);
-      XtAddCallback(button, XmNactivateCallback,
-                    (XtCallbackProc)close_button, (XtPointer)0);
    }
    else
    {
@@ -738,9 +736,9 @@ main(int argc, char *argv[])
                                        XmNrightAttachment,  XmATTACH_POSITION,
                                        XmNrightPosition,    20,
                                        NULL);
-      XtAddCallback(button, XmNactivateCallback,
-                    (XtCallbackProc)close_button, (XtPointer)0);
    }
+   XtAddCallback(button, XmNactivateCallback,
+                 (XtCallbackProc)close_button, (XtPointer)0);
    XtManageChild(buttonbox);
 
    /* Create log_text as a ScrolledText window. */
@@ -1041,10 +1039,8 @@ eval_permissions(char *perm_buffer)
    }
    else
    {
-      char *ptr;
-
       /* May the user change the information? */
-      if ((ptr = posi(perm_buffer, EDIT_AFD_INFO_PERM)) == NULL)
+      if (posi(perm_buffer, EDIT_AFD_INFO_PERM) == NULL)
       {
          /* The user may NOT change the information. */
          editable = NO;

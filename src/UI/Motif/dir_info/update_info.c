@@ -1,6 +1,6 @@
 /*
  *  update_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -58,7 +58,9 @@ DESCR__E_M3
 extern int                        fra_pos,
                                   no_of_dirs,
                                   view_passwd;
-extern char                       label_l[NO_OF_LABELS_PER_ROW][22],
+extern char                       dir_alias[],
+                                  *info_data,
+                                  label_l[NO_OF_LABELS_PER_ROW][22],
                                   label_r[NO_OF_LABELS_PER_ROW][22],
 #ifdef WITH_DUP_CHECK
                                   dupcheck_label_str[],
@@ -71,6 +73,7 @@ extern Widget                     dirname_text_w,
 #ifdef WITH_DUP_CHECK
                                   dup_check_w,
 #endif
+                                  info_w,
                                   label_l_widget[],
                                   label_r_widget[],
                                   text_wl[],
@@ -84,6 +87,7 @@ extern struct prev_values         prev;
 void
 update_info(Widget w)
 {
+   static int  interval = 0;
    signed char flush = NO;
    char        str_line[MAX_PATH_LENGTH + 1],
                tmp_str_line[MAX_PATH_LENGTH + 1];
@@ -523,6 +527,19 @@ update_info(Widget w)
       flush = YES;
    }
 #endif /* WITH_DUP_CHECK */
+
+   if (interval++ == FILE_UPDATE_INTERVAL)
+   {
+      interval = 0;
+
+      /* Check if the information file for this directory has changed. */
+      if (check_info_file(dir_alias, DIR_INFO_FILE, YES) == YES)
+      {
+         flush = YES;
+         XmTextSetString(info_w, NULL);  /* Clears old entry. */
+         XmTextSetString(info_w, info_data);
+      }
+   }
 
    if (flush == YES)
    {

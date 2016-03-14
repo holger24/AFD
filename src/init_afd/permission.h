@@ -107,6 +107,9 @@
 #define EDIT_AFD_INFO_PERM       "edit_afd_info"   /* Allow to edit the    */
                                                    /* information about a  */
                                                    /* host.                */
+#define EDIT_DIR_INFO_PERM       "edit_dir_info"   /* Allow to edit the    */
+                                                   /* information about a  */
+                                                   /* directory.           */
 #define EDIT_MON_INFO_PERM       "edit_mon_info"   /* Allow to edit the    */
                                                    /* information about an */
                                                    /* AFD.                 */

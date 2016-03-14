@@ -39,6 +39,7 @@ DESCR__S_M1
  **   20.07.2001 H.Kiehl Show if queued and/or unknown files are deleted.
  **   22.05.2002 H.Kiehl Separate old file times for unknown and queued files.
  **   27.09.2005 H.Kiehl Updated info to 1.3.x.
+ **   14.03.2016 H.Kiehl Added information dialog.
  **
  */
 DESCR__E_M1
@@ -86,12 +87,15 @@ Widget                     appshell,
 #ifdef WITH_DUP_CHECK
                            dup_check_w,
 #endif
+                           info_w,
                            text_wl[NO_OF_LABELS_PER_ROW],
                            text_wr[NO_OF_LABELS_PER_ROW],
                            label_l_widget[NO_OF_LABELS_PER_ROW],
                            label_r_widget[NO_OF_LABELS_PER_ROW],
                            url_text_w;
-int                        fra_pos = -1,
+int                        editable = NO,
+                           event_log_fd = STDERR_FILENO,
+                           fra_pos = -1,
                            fra_id,
                            fra_fd = -1,
                            no_of_dirs,
@@ -103,6 +107,7 @@ char                       dir_alias[MAX_DIR_ALIAS_LENGTH + 1],
                            dupcheck_label_str[72 + MAX_INT_LENGTH],
 #endif
                            font_name[40],
+                           *info_data = NULL,
                            *p_work_dir,
                            label_l[NO_OF_LABELS_PER_ROW][22] =
                            {
@@ -129,13 +134,15 @@ char                       dir_alias[MAX_DIR_ALIAS_LENGTH + 1],
                               "Max copied files    :",
                               "Files received      :",
                               "Next check time     :"
-                           };
+                           },
+                           user[MAX_FULL_USER_ID_LENGTH];
 struct fileretrieve_status *fra;
 struct prev_values         prev;
 const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 
 /* Local function prototypes. */
 static void                dir_info_exit(void),
+                           eval_permissions(char *),
                            init_dir_info(int *, char **),
                            usage(char *);
 
@@ -176,6 +183,7 @@ main(int argc, char *argv[])
                    rowcol1_w,
                    rowcol2_w,
                    h_separator1_w,
+                   h_separator2_w,
                    v_separator_w;
    XmFontListEntry entry;
    XmFontList      fontlist;
@@ -798,29 +806,126 @@ main(int argc, char *argv[])
    argcount++;
    XtSetArg(args[argcount], XmNbottomAttachment, XmATTACH_FORM);
    argcount++;
-   XtSetArg(args[argcount], XmNtopAttachment,    XmATTACH_WIDGET);
-   argcount++;
-   XtSetArg(args[argcount], XmNtopWidget,        h_separator1_w);
-   argcount++;
    XtSetArg(args[argcount], XmNfractionBase,     21);
    argcount++;
    buttonbox_w = XmCreateForm(form_w, "buttonbox", args, argcount);
 
-   button_w = XtVaCreateManagedWidget("Close",
-                                      xmPushButtonWidgetClass, buttonbox_w,
-                                      XmNfontList,         fontlist,
-                                      XmNtopAttachment,    XmATTACH_POSITION,
-                                      XmNtopPosition,      2,
-                                      XmNbottomAttachment, XmATTACH_POSITION,
-                                      XmNbottomPosition,   19,
-                                      XmNleftAttachment,   XmATTACH_POSITION,
-                                      XmNleftPosition,     1,
-                                      XmNrightAttachment,  XmATTACH_POSITION,
-                                      XmNrightPosition,    20,
-                                      NULL);
+   /* Create the horizontal separator. */
+   argcount = 0;
+   XtSetArg(args[argcount], XmNorientation,           XmHORIZONTAL);
+   argcount++;
+   XtSetArg(args[argcount], XmNbottomAttachment,      XmATTACH_WIDGET);
+   argcount++;
+   XtSetArg(args[argcount], XmNbottomWidget,          buttonbox_w);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftAttachment,        XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNrightAttachment,       XmATTACH_FORM);
+   argcount++;
+   h_separator2_w = XmCreateSeparator(form_w, "h_separator2_w", args, argcount);
+   XtManageChild(h_separator2_w);
+
+   if (editable == YES)
+   {
+      button_w = XtVaCreateManagedWidget("Save",
+                                         xmPushButtonWidgetClass, buttonbox_w,
+                                         XmNfontList,         fontlist,
+                                         XmNtopAttachment,    XmATTACH_POSITION,
+                                         XmNtopPosition,      2,
+                                         XmNbottomAttachment, XmATTACH_POSITION,
+                                         XmNbottomPosition,   19,
+                                         XmNleftAttachment,   XmATTACH_POSITION,
+                                         XmNleftPosition,     1,
+                                         XmNrightAttachment,  XmATTACH_POSITION,
+                                         XmNrightPosition,    9,
+                                         NULL);
+      XtAddCallback(button_w, XmNactivateCallback, 
+                    (XtCallbackProc)save_button, (XtPointer)0);
+      button_w = XtVaCreateManagedWidget("Close",
+                                         xmPushButtonWidgetClass, buttonbox_w,
+                                         XmNfontList,         fontlist,
+                                         XmNtopAttachment,    XmATTACH_POSITION,
+                                         XmNtopPosition,      2,
+                                         XmNbottomAttachment, XmATTACH_POSITION,
+                                         XmNbottomPosition,   19,
+                                         XmNleftAttachment,   XmATTACH_POSITION,
+                                         XmNleftPosition,     10,
+                                         XmNrightAttachment,  XmATTACH_POSITION,
+                                         XmNrightPosition,    20,
+                                         NULL);
+   }
+   else
+   {
+      button_w = XtVaCreateManagedWidget("Close",
+                                         xmPushButtonWidgetClass, buttonbox_w,
+                                         XmNfontList,         fontlist,
+                                         XmNtopAttachment,    XmATTACH_POSITION,
+                                         XmNtopPosition,      2,
+                                         XmNbottomAttachment, XmATTACH_POSITION,
+                                         XmNbottomPosition,   19,
+                                         XmNleftAttachment,   XmATTACH_POSITION,
+                                         XmNleftPosition,     1,
+                                         XmNrightAttachment,  XmATTACH_POSITION,
+                                         XmNrightPosition,    20,
+                                         NULL);
+   }
    XtAddCallback(button_w, XmNactivateCallback,
                  (XtCallbackProc)close_button, (XtPointer)0);
    XtManageChild(buttonbox_w);
+
+   /* Create log_text as a ScrolledText window. */
+   argcount = 0;
+   XtSetArg(args[argcount], XmNfontList,               fontlist);
+   argcount++;
+   XtSetArg(args[argcount], XmNrows,                   10);
+   argcount++;
+   XtSetArg(args[argcount], XmNcolumns,                80);
+   argcount++;
+   if (editable == YES)
+   {  
+      XtSetArg(args[argcount], XmNeditable,               True);
+      argcount++;
+      XtSetArg(args[argcount], XmNcursorPositionVisible,  True);
+      argcount++;
+      XtSetArg(args[argcount], XmNautoShowCursorPosition, True);
+   }
+   else
+   {  
+      XtSetArg(args[argcount], XmNeditable,               False);
+      argcount++;
+      XtSetArg(args[argcount], XmNcursorPositionVisible,  False);
+      argcount++;
+      XtSetArg(args[argcount], XmNautoShowCursorPosition, False);
+   }
+   argcount++;
+   XtSetArg(args[argcount], XmNeditMode,               XmMULTI_LINE_EDIT);
+   argcount++;
+   XtSetArg(args[argcount], XmNwordWrap,               False);
+   argcount++;
+   XtSetArg(args[argcount], XmNscrollHorizontal,       False);
+   argcount++;
+   XtSetArg(args[argcount], XmNtopAttachment,          XmATTACH_WIDGET);
+   argcount++;
+   XtSetArg(args[argcount], XmNtopWidget,              h_separator1_w);
+   argcount++;
+   XtSetArg(args[argcount], XmNtopOffset,              3);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftAttachment,         XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftOffset,             3);
+   argcount++;
+   XtSetArg(args[argcount], XmNrightAttachment,        XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNrightOffset,            3);
+   argcount++;
+   XtSetArg(args[argcount], XmNbottomAttachment,       XmATTACH_WIDGET);
+   argcount++;
+   XtSetArg(args[argcount], XmNbottomWidget,           h_separator2_w);
+   argcount++;
+   XtSetArg(args[argcount], XmNbottomOffset,           3);
+   argcount++;
+   info_w = XmCreateScrolledText(form_w, "host_info", args, argcount);
+   XtManageChild(info_w);
    XtManageChild(form_w);
 
    /* Free font list. */
@@ -834,6 +939,11 @@ main(int argc, char *argv[])
    /* Realize all widgets. */
    XtRealizeWidget(appshell);
    wait_visible(appshell);
+
+   /* Read and display the information file. */
+   (void)check_info_file(dir_alias, DIR_INFO_FILE, YES);
+   XmTextSetString(info_w, NULL);  /* Clears old entry. */
+   XmTextSetString(info_w, info_data);
 
    /* Call update_info() after UPDATE_INTERVAL ms. */
    interval_id_dir = XtAppAddTimeOut(app, UPDATE_INTERVAL,
@@ -860,7 +970,8 @@ init_dir_info(int *argc, char *argv[])
    int                 count = 0,
                        dnb_fd,
                        i,
-                       no_of_dir_names;
+                       no_of_dir_names,
+                       user_offset;
    char                dir_name_file[MAX_PATH_LENGTH],
                        fake_user[MAX_FULL_USER_ID_LENGTH],
                        *perm_buffer,
@@ -885,7 +996,13 @@ init_dir_info(int *argc, char *argv[])
    }
    if (get_arg(argc, argv, "-p", profile, MAX_PROFILE_NAME_LENGTH) == INCORRECT)
    {
+      user_offset = 0;
       profile[0] = '\0';
+   }
+   else
+   {
+      (void)my_strncpy(user, profile, MAX_FULL_USER_ID_LENGTH);
+      user_offset = strlen(profile);
    }
    if (get_arg(argc, argv, "-f", font_name, 40) == INCORRECT)
    {
@@ -937,45 +1054,15 @@ init_dir_info(int *argc, char *argv[])
 
       case SUCCESS : /* Lets evaluate the permissions and see what */
                      /* the user may do.                           */
-         if ((perm_buffer[0] == 'a') && (perm_buffer[1] == 'l') &&
-             (perm_buffer[2] == 'l') &&
-             ((perm_buffer[3] == '\0') || (perm_buffer[3] == ',') ||
-              (perm_buffer[3] == ' ') || (perm_buffer[3] == '\t')))
-         {
-            view_passwd = YES;
-         }
-         else
-         {
-            /*
-             * First of all check if the user may use this program
-             * at all.
-             */
-            if (posi(perm_buffer, DIR_INFO_PERM) == NULL)
-            {
-               (void)fprintf(stderr, "%s (%s %d)\n",
-                             PERMISSION_DENIED_STR, __FILE__, __LINE__);
-               free(perm_buffer);
-               exit(INCORRECT);
-            }
-
-            /* May he see the password? */
-            if (posi(perm_buffer, VIEW_PASSWD_PERM) == NULL)
-            {
-               /* The user may NOT view the password. */
-               view_passwd = NO;
-            }
-            else
-            {
-               view_passwd = YES;
-            }
-         }
+         eval_permissions(perm_buffer);
          free(perm_buffer);
          break;
 
       case INCORRECT: /* Hmm. Something did go wrong. Since we want to */
                       /* be able to disable permission checking let    */
                       /* the user have all permissions.                */
-         view_passwd  = NO;                            
+         view_passwd  = NO;
+         editable = NO;
          break;
 
       default :
@@ -983,6 +1070,8 @@ init_dir_info(int *argc, char *argv[])
                        "Impossible!! Remove the programmer!\n");
          exit(INCORRECT);
    }
+
+   get_user(user, fake_user, user_offset);
 
    /* Attach to the FRA. */
    if ((i = fra_attach_passive()) != SUCCESS)
@@ -1141,6 +1230,63 @@ usage(char *progname)
    (void)fprintf(stderr, "           -f <font name>\n");
    (void)fprintf(stderr, "           -u[ <user>]\n");
    (void)fprintf(stderr, "           -w <working directory>\n");
+   return;
+}
+
+/*-------------------------- eval_permissions() -------------------------*/
+static void
+eval_permissions(char *perm_buffer)
+{
+   /*
+    * If we find 'all' right at the beginning, no further evaluation
+    * is needed, since the user has all permissions.
+    */
+   if ((perm_buffer[0] == 'a') && (perm_buffer[1] == 'l') &&
+       (perm_buffer[2] == 'l') &&
+       ((perm_buffer[3] == '\0') || (perm_buffer[3] == ',') ||
+        (perm_buffer[3] == ' ') || (perm_buffer[3] == '\t')))
+   {
+      view_passwd = YES;
+      editable = YES;
+   }
+   else
+   {
+      /*
+       * First of all check if the user may use this program
+       * at all.
+       */
+      if (posi(perm_buffer, DIR_INFO_PERM) == NULL)
+      {
+         (void)fprintf(stderr, "%s (%s %d)\n",
+                       PERMISSION_DENIED_STR, __FILE__, __LINE__);
+         free(perm_buffer);
+         exit(INCORRECT);
+      }
+
+      /* May he see the password? */
+      if (posi(perm_buffer, VIEW_PASSWD_PERM) == NULL)
+      {
+         /* The user may NOT view the password. */
+         view_passwd = NO;
+      }
+      else
+      {
+         view_passwd = YES;
+      }
+
+      /* May the user change the information? */
+      if (posi(perm_buffer, EDIT_DIR_INFO_PERM) == NULL)
+      {
+         /* The user may NOT change the information. */
+         editable = NO;
+      }
+      else
+      {
+         /* The user may change the information. */
+         editable = YES;
+      }
+   }
+
    return;
 }
 

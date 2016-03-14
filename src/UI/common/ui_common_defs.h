@@ -237,8 +237,9 @@
 #define INFO_IDENTIFIER                  "INFO-"
 #define AFD_INFO_FILE                    "afd.info"
 #define HOST_INFO_FILE                   "host.info"
+#define DIR_INFO_FILE                    "dir.info"
 
-#define NO_INFO_AVAILABLE                "No information available for this host."
+#define NO_INFO_AVAILABLE                "No information available."
 
 /* Different line styles. */
 #define BARS_ONLY                        0
