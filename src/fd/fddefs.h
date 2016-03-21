@@ -1,6 +1,6 @@
 /*
  *  fddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -847,7 +847,11 @@ extern void  calc_trl_per_process(int),
              check_queue_space(void),
              check_trl_file(void),
              compare_dir_local(void),
+#ifdef _DELETE_LOG
              delete_remote_file(int, char *, int, int, off_t),
+#else
+             delete_remote_file(int, char *, int, off_t),
+#endif
 #ifdef _WITH_DE_MAIL_SUPPORT
 # ifdef WITHOUT_FIFO_RW_SUPPORT
              demcd_log_fd(int *, int *),

@@ -1,6 +1,6 @@
 /*
  *  afd_status.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -140,7 +140,7 @@ main(int argc, char *argv[])
 #ifdef _DISTRIBUTION_LOG
    (void)fprintf(stdout, "distribution_log     : %d\n", p_afd_status->distribution_log);
 #endif
-#ifdef ALDAD_OFFSET
+#if ALDAD_OFFSET != 0
    (void)fprintf(stdout, "ALDA daemon          : %d\n", p_afd_status->aldad);
 #endif
    (void)fprintf(stdout, "Receivelog indicator : %u <",

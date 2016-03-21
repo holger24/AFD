@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2015 Holger Kiehl
+## Copyright (C) 2001 - 2016 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 if WITH_INPUT_LOG
    AFD_INPUT_LOG          = input_log
    EXTRA_INPUT_LOG        =
+   SUBDIRS                = alda
 else
    AFD_INPUT_LOG          =
    EXTRA_INPUT_LOG        = input_log
@@ -26,6 +27,7 @@ endif
 if WITH_DISTRIBUTION_LOG
    AFD_DISTRIBUTION_LOG   = distribution_log
    EXTRA_DISTRIBUTION_LOG =
+   SUBDIRS                = alda
 else
    AFD_DISTRIBUTION_LOG   =
    EXTRA_DISTRIBUTION_LOG = distribution_log
@@ -33,6 +35,7 @@ endif
 if WITH_OUTPUT_LOG
    AFD_OUTPUT_LOG         = output_log
    EXTRA_OUTPUT_LOG       =
+   SUBDIRS                = alda
 else
    AFD_OUTPUT_LOG         =
    EXTRA_OUTPUT_LOG       = output_log
@@ -40,6 +43,7 @@ endif
 if WITH_CONFIRMATION_LOG
    AFD_CONFIRMATION_LOG   = confirmation_log
    EXTRA_CONFIRMATION_LOG =
+   SUBDIRS                = alda
 else
    AFD_CONFIRMATION_LOG   =
    EXTRA_CONFIRMATION_LOG = confirmation_log
@@ -47,6 +51,7 @@ endif
 if WITH_DELETE_LOG
    AFD_DELETE_LOG         = delete_log
    EXTRA_DELETE_LOG       =
+   SUBDIRS                = alda
 else
    AFD_DELETE_LOG         =
    EXTRA_DELETE_LOG       = delete_log
@@ -54,6 +59,7 @@ endif
 if WITH_PRODUCTION_LOG
    AFD_PRODUCTION_LOG     = production_log
    EXTRA_PRODUCTION_LOG   =
+   SUBDIRS                = alda
 else
    AFD_PRODUCTION_LOG     =
    EXTRA_PRODUCTION_LOG   = production_log
@@ -80,7 +86,6 @@ EXTRA_PROGRAMS           = $(EXTRA_INPUT_LOG) $(EXTRA_DISTRIBUTION_LOG)\
                            $(EXTRA_DELETE_LOG) $(EXTRA_PRODUCTION_LOG)\
                            $(EXTRA_MON_PROGS) $(EXTRA_MAINTAINER_LOG)
 MAINTAINERCLEANFILES     = Makefile.in
-SUBDIRS                  = alda
 CLEANFILES               = gmon.out core core.* $(EXTRA_PROGRAMS)
 noinst_HEADERS           = logdefs.h
 if WITH_AFD_MON_ONLY

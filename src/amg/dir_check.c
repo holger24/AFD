@@ -900,8 +900,12 @@ main(int argc, char *argv[])
                                       if ((iwl[j].fnl = realloc(iwl[j].fnl, new_size)) == NULL)
                                       {
                                          system_log(FATAL_SIGN, __FILE__, __LINE__,
+# if SIZEOF_SIZE_T == 4
                                                     "Could not reallocate memory [%d bytes] for file name length list : %s",
-                                                    new_size, strerror(errno));
+# else
+                                                    "Could not reallocate memory [%lld bytes] for file name length list : %s",
+# endif
+                                                    (pri_size_t)new_size, strerror(errno));
                                          exit(INCORRECT);
                                       }
                                    }
@@ -940,8 +944,20 @@ main(int argc, char *argv[])
                                  ((fra[de[iwl[i].de_pos].fra_pos].remove == YES) ||
                                   (fra[de[iwl[i].de_pos].fra_pos].stupid_mode != YES)))
                              {
-                                full_dir[fdc] = iwl[i].de_pos;
-                                fdc++;
+                                /* Ensure that this directory is not already */
+                                /* in the list.                              */
+                                for (j = 0; j < fdc; j++)
+                                {
+                                   if (full_dir[j] == iwl[i].de_pos)
+                                   {
+                                      break;
+                                   }
+                                }
+                                if ((j == fdc) && (fdc < no_of_local_dirs))
+                                {
+                                   full_dir[fdc] = iwl[i].de_pos;
+                                   fdc++;
+                                }
                              }
                           }
                        }

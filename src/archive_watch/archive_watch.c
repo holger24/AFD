@@ -1,6 +1,6 @@
 /*
  *  archive_watch.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -209,9 +209,11 @@ main(int argc, char *argv[])
       status = select(aw_cmd_fd + 1, &rset, NULL, NULL, &timeout);
 
       /* Report every hour how many archives have been deleted. */
+#ifdef AFDBENCH_CONFIG
       if ((now + diff_time) >= next_report_time)
       {
          next_report_time = ((now + diff_time) / 3600) * 3600 + 3600;
+#endif
 #ifdef _NO_ZERO_DELETION_REPORT
          if ((removed_archives > 0) || (removed_files > 0))
          {
@@ -225,7 +227,9 @@ main(int argc, char *argv[])
                    removed_archives, removed_files);
 #endif
          removed_archives = removed_files = 0;
+#ifdef AFDBENCH_CONFIG
       }
+#endif
 
       /* Huh? Did we just sleep? */
       if (status == 0)

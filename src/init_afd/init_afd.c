@@ -1,6 +1,6 @@
 /*
  *  init_afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -591,7 +591,7 @@ main(int argc, char *argv[])
             (void)strcpy(proc_table[i].proc_name, DISTRIBUTION_LOG_PROCESS);
             break;
 #endif
-#ifdef ALDAD_OFFSET
+#if ALDAD_OFFSET != 0
          case ALDAD_NO :
             proc_table[i].status = &p_afd_status->aldad;
             (void)strcpy(proc_table[i].proc_name, ALDAD);
@@ -786,7 +786,7 @@ main(int argc, char *argv[])
    *proc_table[DEMCD_NO].status = ON;
 #endif
 
-#ifdef ALDAD_OFFSET
+#if ALDAD_OFFSET != 0
    /* Start ALDA daemon of AFD. */
    proc_table[ALDAD_NO].pid = make_process(ALDAD, work_dir, NULL);
    *(pid_t *)(pid_list + ((ALDAD_NO + 1) * sizeof(pid_t))) = proc_table[ALDAD_NO].pid;
@@ -2436,7 +2436,7 @@ zombie_check(void)
 #ifdef _WITH_DE_MAIL_SUPPORT
                          (i == DEMCD_NO) ||
 #endif
-#ifdef ALDAD_OFFSET
+#if ALDAD_OFFSET != 0
                          (i == ALDAD_NO) ||
 #endif
                          (i == TDBLOG_NO) || (i == AW_NO) ||
