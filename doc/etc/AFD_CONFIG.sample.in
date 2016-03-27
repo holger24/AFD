@@ -159,8 +159,9 @@ MIN_NICE_VALUE                   19
 # inotify in the DIR_CONFIG. The value given is an integer bit mask,     #
 # with the following meaning:                                            #
 #                                                                        #
-#    1 (1)      - File moved into or renamed in directory                #
+#    1 (1)      - File moved into or renamed in directory.               #
 #    2 (2)      - File that is closed after being written to.            #
+#    3 (4)      - File created/linked.                                   #
 #                                                                        #
 # Default:  0 (Disabled)                                                 #
 ##########################################################################

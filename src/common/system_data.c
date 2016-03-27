@@ -1,6 +1,6 @@
 /*
  *  system_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -73,6 +73,7 @@ DESCR__E_M3
 #define FD_CHILD_SYSTEM_TIME_NAME   "FD_CHILD_SYSTEM_TIME"
 #define MAX_FD_QUEUE_LENGTH_NAME    "MAX_FD_QUEUE_LENGTH"
 #define DIRS_SCANNED_NAME           "DIRS_SCANNED"
+#define INOTIFY_EVENTS_NAME         "INOTIFY_EVENTS"
 #define RECEIVE_LOG_INDICATOR_NAME  "RECEIVE_LOG_INDICATOR"
 #define RECEIVE_LOG_HISTORY_NAME    "RECEIVE_LOG_HISTORY"
 #define SYSTEM_LOG_INDICATOR_NAME   "SYSTEM_LOG_INDICATOR"
@@ -153,19 +154,20 @@ get_system_data(struct system_data *sd)
                        BURST2_COUNTER_NAME,         /*  4 */
                        MAX_FD_QUEUE_LENGTH_NAME,    /*  5 */
                        DIRS_SCANNED_NAME,           /*  6 */
-                       RECEIVE_LOG_INDICATOR_NAME,  /*  7 */
-                       RECEIVE_LOG_HISTORY_NAME,    /*  8 */
-                       SYSTEM_LOG_INDICATOR_NAME,   /*  9 */
-                       SYSTEM_LOG_HISTORY_NAME,     /* 10 */
-                       TRANSFER_LOG_INDICATOR_NAME, /* 11 */
+                       INOTIFY_EVENTS_NAME,         /*  7 */
+                       RECEIVE_LOG_INDICATOR_NAME,  /*  8 */
+                       RECEIVE_LOG_HISTORY_NAME,    /*  9 */
+                       SYSTEM_LOG_INDICATOR_NAME,   /* 10 */
+                       SYSTEM_LOG_HISTORY_NAME,     /* 11 */
+                       TRANSFER_LOG_INDICATOR_NAME, /* 12 */
 #ifdef HAVE_WAIT4
-                       TRANSFER_LOG_HISTORY_NAME,   /* 12 */
-                       AMG_CHILD_USER_TIME_NAME,    /* 13 */
-                       AMG_CHILD_SYSTEM_TIME_NAME,  /* 14 */
-                       FD_CHILD_USER_TIME_NAME,     /* 15 */
-                       FD_CHILD_SYSTEM_TIME_NAME    /* 16 */
+                       TRANSFER_LOG_HISTORY_NAME,   /* 13 */
+                       AMG_CHILD_USER_TIME_NAME,    /* 14 */
+                       AMG_CHILD_SYSTEM_TIME_NAME,  /* 15 */
+                       FD_CHILD_USER_TIME_NAME,     /* 16 */
+                       FD_CHILD_SYSTEM_TIME_NAME    /* 17 */
 #else
-                       TRANSFER_LOG_HISTORY_NAME    /* 12 */
+                       TRANSFER_LOG_HISTORY_NAME    /* 13 */
 #endif
                     },
                     var_str[MAX_VAR_STR_LENGTH + 1];
@@ -251,7 +253,13 @@ get_system_data(struct system_data *sd)
                                           sd->dir_scans = (unsigned int)atoi(val_str);
                                           break;
 
-                                       case  7 : /* RECEIVE_LOG_INDICATOR */
+                                       case  7 : /* INOTIFY_EVENTS */
+#ifdef WITH_INOTIFY
+                                          sd->inotify_events = (unsigned int)atoi(val_str);
+#endif
+                                          break;
+
+                                       case  8 : /* RECEIVE_LOG_INDICATOR */
                                           sd->receive_log_ec = (unsigned int)atoi(val_str);
                                           if (*ptr == '|')
                                           {
@@ -294,7 +302,7 @@ get_system_data(struct system_data *sd)
                                           }
                                           break;
 
-                                       case  8 : /* RECEIVE_LOG_HISTORY */
+                                       case  9 : /* RECEIVE_LOG_HISTORY */
                                           i = 0;
                                           while (i < k)
                                           {
@@ -313,7 +321,7 @@ get_system_data(struct system_data *sd)
                                           }
                                           break;
 
-                                       case  9 : /* SYSTEM_LOG_INDICATOR */
+                                       case 10 : /* SYSTEM_LOG_INDICATOR */
                                           sd->sys_log_ec = (unsigned int)atoi(val_str);
                                           if (*ptr == '|')
                                           {
@@ -359,7 +367,7 @@ get_system_data(struct system_data *sd)
                                           }
                                           break;
 
-                                       case 10 : /* SYSTEM_LOG_HISTORY */
+                                       case 11 : /* SYSTEM_LOG_HISTORY */
                                           i = 0;
                                           while (i < k)
                                           {
@@ -378,7 +386,7 @@ get_system_data(struct system_data *sd)
                                           }
                                           break;
 
-                                       case 11 : /* TRANSFER_LOG_INDICATOR */
+                                       case 12 : /* TRANSFER_LOG_INDICATOR */
                                           sd->trans_log_ec = (unsigned int)atoi(val_str);
                                           if (*ptr == '|')
                                           {
@@ -424,7 +432,7 @@ get_system_data(struct system_data *sd)
                                           }
                                           break;
 
-                                       case 12 : /* TRANSFER_LOG_HISTORY */
+                                       case 13 : /* TRANSFER_LOG_HISTORY */
                                           i = 0;
                                           while (i < k)
                                           {
@@ -443,16 +451,17 @@ get_system_data(struct system_data *sd)
                                           }
                                           break;
 
-                                       case 13 : /* AMG_CHILD_USER_TIME */
-#ifdef HAVE_STRTOULL
-# if SIZEOF_TIME_T == 4
+                                       case 14 : /* AMG_CHILD_USER_TIME */
+#ifdef HAVE_WAIT4
+# ifdef HAVE_STRTOULL
+#  if SIZEOF_TIME_T == 4
                                           if ((sd->amg_child_utime.tv_sec = (time_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-# else
+#  else
                                           if ((sd->amg_child_utime.tv_sec = (time_t)strtoull(val_str, NULL, 10)) == ULLONG_MAX)
-# endif
-#else
+#  endif
+# else
                                           if ((sd->amg_child_utime.tv_sec = (time_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-#endif
+# endif
                                           {
                                              system_log(DEBUG_SIGN, __FILE__, __LINE__,
                                                         _("Value to large for %s, setting 0"),
@@ -476,15 +485,15 @@ get_system_data(struct system_data *sd)
                                                 if (k > 0)
                                                 {
                                                    val_str[k] = '\0';
-#ifdef HAVE_STRTOULL
-# if SIZEOF_SUSECONDS_T == 4
+# ifdef HAVE_STRTOULL
+#  if SIZEOF_SUSECONDS_T == 4
                                                    if ((sd->amg_child_utime.tv_usec = (suseconds_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-# else
+#  else
                                                    if ((sd->amg_child_utime.tv_usec = (suseconds_t)strtoull(val_str, NULL, 10)) == ULLONG_MAX)
-# endif
-#else
+#  endif
+# else
                                                    if ((sd->amg_child_utime.tv_usec = (suseconds_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-#endif
+# endif
                                                    {
                                                       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                                                                  _("Value to large for %s, setting 0"),
@@ -513,18 +522,20 @@ get_system_data(struct system_data *sd)
                                                 ptr++;
                                              }
                                           }
+#endif
                                           break;
 
-                                       case 14 : /* AMG_CHILD_SYSTEM_TIME */
-#ifdef HAVE_STRTOULL
-# if SIZEOF_TIME_T == 4
+                                       case 15 : /* AMG_CHILD_SYSTEM_TIME */
+#ifdef HAVE_WAIT4
+# ifdef HAVE_STRTOULL
+#  if SIZEOF_TIME_T == 4
                                           if ((sd->amg_child_stime.tv_sec = (time_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-# else
+#  else
                                           if ((sd->amg_child_stime.tv_sec = (time_t)strtoull(val_str, NULL, 10)) == ULLONG_MAX)
-# endif
-#else
+#  endif
+# else
                                           if ((sd->amg_child_stime.tv_sec = (time_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-#endif
+# endif
                                           {
                                              system_log(DEBUG_SIGN, __FILE__, __LINE__,
                                                         _("Value to large for %s, setting 0"),
@@ -548,15 +559,15 @@ get_system_data(struct system_data *sd)
                                                 if (k > 0)
                                                 {
                                                    val_str[k] = '\0';
-#ifdef HAVE_STRTOULL
-# if SIZEOF_SUSECONDS_T == 4
+# ifdef HAVE_STRTOULL
+#  if SIZEOF_SUSECONDS_T == 4
                                                    if ((sd->amg_child_stime.tv_usec = (suseconds_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-# else
+#  else
                                                    if ((sd->amg_child_stime.tv_usec = (suseconds_t)strtoull(val_str, NULL, 10)) == ULLONG_MAX)
-# endif
-#else
+#  endif
+# else
                                                    if ((sd->amg_child_stime.tv_usec = (suseconds_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-#endif
+# endif
                                                    {
                                                       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                                                                  _("Value to large for %s, setting 0"),
@@ -585,18 +596,20 @@ get_system_data(struct system_data *sd)
                                                 ptr++;
                                              }
                                           }
+#endif
                                           break;
 
-                                       case 15 : /* FD_CHILD_USER_TIME */
-#ifdef HAVE_STRTOULL
-# if SIZEOF_TIME_T == 4
+                                       case 16 : /* FD_CHILD_USER_TIME */
+#ifdef HAVE_WAIT4
+# ifdef HAVE_STRTOULL
+#  if SIZEOF_TIME_T == 4
                                           if ((sd->fd_child_utime.tv_sec = (time_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-# else
+#  else
                                           if ((sd->fd_child_utime.tv_sec = (time_t)strtoull(val_str, NULL, 10)) == ULLONG_MAX)
-# endif
-#else
+#  endif
+# else
                                           if ((sd->fd_child_utime.tv_sec = (time_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-#endif
+# endif
                                           {
                                              system_log(DEBUG_SIGN, __FILE__, __LINE__,
                                                         _("Value to large for %s, setting 0"),
@@ -620,15 +633,15 @@ get_system_data(struct system_data *sd)
                                                 if (k > 0)
                                                 {
                                                    val_str[k] = '\0';
-#ifdef HAVE_STRTOULL
-# if SIZEOF_SUSECONDS_T == 4
+# ifdef HAVE_STRTOULL
+#  if SIZEOF_SUSECONDS_T == 4
                                                    if ((sd->fd_child_utime.tv_usec = (suseconds_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-# else
+#  else
                                                    if ((sd->fd_child_utime.tv_usec = (suseconds_t)strtoull(val_str, NULL, 10)) == ULLONG_MAX)
-# endif
-#else
+#  endif
+# else
                                                    if ((sd->fd_child_utime.tv_usec = (suseconds_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-#endif
+# endif
                                                    {
                                                       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                                                                  _("Value to large for %s, setting 0"),
@@ -657,18 +670,20 @@ get_system_data(struct system_data *sd)
                                                 ptr++;
                                              }
                                           }
+#endif
                                           break;
 
-                                       case 16 : /* FD_CHILD_SYSTEM_TIME */
-#ifdef HAVE_STRTOULL
-# if SIZEOF_TIME_T == 4
+                                       case 17 : /* FD_CHILD_SYSTEM_TIME */
+#ifdef HAVE_WAIT4
+# ifdef HAVE_STRTOULL
+#  if SIZEOF_TIME_T == 4
                                           if ((sd->fd_child_stime.tv_sec = (time_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-# else
+#  else
                                           if ((sd->fd_child_stime.tv_sec = (time_t)strtoull(val_str, NULL, 10)) == ULLONG_MAX)
-# endif
-#else
+#  endif
+# else
                                           if ((sd->fd_child_stime.tv_sec = (time_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-#endif
+# endif
                                           {
                                              system_log(DEBUG_SIGN, __FILE__, __LINE__,
                                                         _("Value to large for %s, setting 0"),
@@ -692,15 +707,15 @@ get_system_data(struct system_data *sd)
                                                 if (k > 0)
                                                 {
                                                    val_str[k] = '\0';
-#ifdef HAVE_STRTOULL
-# if SIZEOF_SUSECONDS_T == 4
+# ifdef HAVE_STRTOULL
+#  if SIZEOF_SUSECONDS_T == 4
                                                    if ((sd->fd_child_stime.tv_usec = (suseconds_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-# else
+#  else
                                                    if ((sd->fd_child_stime.tv_usec = (suseconds_t)strtoull(val_str, NULL, 10)) == ULLONG_MAX)
-# endif
-#else
+#  endif
+# else
                                                    if ((sd->fd_child_stime.tv_usec = (suseconds_t)strtoul(val_str, NULL, 10)) == ULONG_MAX)
-#endif
+# endif
                                                    {
                                                       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                                                                  _("Value to large for %s, setting 0"),
@@ -729,6 +744,7 @@ get_system_data(struct system_data *sd)
                                                 ptr++;
                                              }
                                           }
+#endif
                                           break;
 
                                        default : /* Not known. */
@@ -862,6 +878,10 @@ write_system_data(struct afd_status *p_afd_status,
    (void)fprintf(fp, "%s|%u\n",
                  MAX_FD_QUEUE_LENGTH_NAME, p_afd_status->max_queue_length);
    (void)fprintf(fp, "%s|%u\n", DIRS_SCANNED_NAME, p_afd_status->dir_scans);
+#ifdef WITH_INOTIFY
+   (void)fprintf(fp, "%s|%u\n",
+                 INOTIFY_EVENTS_NAME, p_afd_status->inotify_events);
+#endif
    (void)fprintf(fp, "%s|%u|",
                  RECEIVE_LOG_INDICATOR_NAME, p_afd_status->receive_log_ec);
    for (i = 0; i < LOG_FIFO_SIZE; i++)

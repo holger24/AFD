@@ -2245,6 +2245,7 @@ handle_dir(int                       dir_pos,
                }
                else
                {
+                  p_afd_status->inotify_events++;
                   files_moved = check_inotify_files(p_iwl, &de[p_iwl->de_pos],
                                                     orig_file_path,
                                                     &unique_number,

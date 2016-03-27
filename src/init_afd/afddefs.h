@@ -1,6 +1,6 @@
 /*
  *  afddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -3021,6 +3021,9 @@ struct afd_status
                                              /* FD.                       */
           unsigned int   max_queue_length;   /* Max. FD queue length.     */
           unsigned int   dir_scans;          /* Number of directory scans.*/
+#ifdef WITH_INOTIFY
+          unsigned int   inotify_events;     /* Inotify events handled.   */
+#endif
 #ifdef HAVE_WAIT4
           struct timeval amg_child_utime;    /* AMG child user CPU time.  */
           struct timeval amg_child_stime;    /* AMG child system CPU time.*/
@@ -3050,6 +3053,9 @@ struct system_data
                                              /* FD.                       */
           unsigned int   max_queue_length;   /* Max. FD queue length.     */
           unsigned int   dir_scans;          /* Number of directory scans.*/
+#ifdef WITH_INOTIFY
+          unsigned int   inotify_events;     /* Inotify events handled.   */
+#endif
 #ifdef HAVE_WAIT4
           struct timeval amg_child_utime;    /* AMG child user CPU time.  */
           struct timeval amg_child_stime;    /* AMG child system CPU time.*/

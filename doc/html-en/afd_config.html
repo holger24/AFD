@@ -230,6 +230,21 @@ the new value:
    <td valign=top>amg</td>
 </tr>
 <tr>
+   <td valign=top><a name="default_inotify_flag">DEFAULT_INOTIFY_FLAG</a></td>
+   <td>This flag determines the default inotify flag for all directories.
+       It can be overruled with the directory option inotify in the
+       DIR_CONFIG. The value given is an integer bit mask, with the
+       following meaning:
+       <pre>
+    1 (1)      - File moved into or renamed in directory.
+    2 (2)      - File that is closed after being written to.
+    3 (4)      - File created/linked.
+       </pre>
+       If set to zero, no inotify is used and directories are scanned.</td>
+   <td valign=top>0</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
    <td valign=top><a name="max_process_per_dir">MAX_PROCESS_PER_DIR</a></td>
    <td>The maximum number of process that may be forked for one
        directory.</td>
@@ -720,9 +735,9 @@ restarted.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1999 - 2015 by H.Kiehl<br>
+   Copyright &copy; 1999 - 2016 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 14.08.2015
+   Last updated: 27.03.2016
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

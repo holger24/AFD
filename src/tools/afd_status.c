@@ -82,68 +82,68 @@ main(int argc, char *argv[])
       exit(INCORRECT);
    }
 
-   (void)fprintf(stdout, "Hostname             : %s\n", p_afd_status->hostname);
-   (void)fprintf(stdout, "Working directory    : %s\n", p_afd_status->work_dir);
+   (void)fprintf(stdout, "Hostname              : %s\n", p_afd_status->hostname);
+   (void)fprintf(stdout, "Working directory     : %s\n", p_afd_status->work_dir);
    if ((pwd = getpwuid(p_afd_status->user_id)) == NULL)
    {
 #if SIZEOF_UID_T == 4
-      (void)fprintf(stdout, "User ID              : %d\n", p_afd_status->user_id);
+      (void)fprintf(stdout, "User ID               : %d\n", p_afd_status->user_id);
 #else
-      (void)fprintf(stdout, "User ID              : %lld\n", (pri_uid_t)p_afd_status->user_id);
+      (void)fprintf(stdout, "User ID               : %lld\n", (pri_uid_t)p_afd_status->user_id);
 #endif
    }
    else
    {
 #if SIZEOF_UID_T == 4
-      (void)fprintf(stdout, "User name + ID       : %s (%d)\n", pwd->pw_name, p_afd_status->user_id);
+      (void)fprintf(stdout, "User name + ID        : %s (%d)\n", pwd->pw_name, p_afd_status->user_id);
 #else
-      (void)fprintf(stdout, "User name + ID       : %s (%lld)\n", pwd->pw_name, (pri_uid_t)p_afd_status->user_id);
+      (void)fprintf(stdout, "User name + ID        : %s (%lld)\n", pwd->pw_name, (pri_uid_t)p_afd_status->user_id);
 #endif
    }
-   (void)fprintf(stdout, "AMG                  : %d\n", p_afd_status->amg);
-   (void)fprintf(stdout, "AMG jobs status flag : %d\n", p_afd_status->amg_jobs);
-   (void)fprintf(stdout, "FD                   : %d\n", p_afd_status->fd);
-   (void)fprintf(stdout, "System log           : %d\n", p_afd_status->sys_log);
+   (void)fprintf(stdout, "AMG                   : %d\n", p_afd_status->amg);
+   (void)fprintf(stdout, "AMG jobs status flag  : %d\n", p_afd_status->amg_jobs);
+   (void)fprintf(stdout, "FD                    : %d\n", p_afd_status->fd);
+   (void)fprintf(stdout, "System log            : %d\n", p_afd_status->sys_log);
 #ifdef _MAINTAINER_LOG
-   (void)fprintf(stdout, "Maintainer log       : %d\n", p_afd_status->maintainer_log);
+   (void)fprintf(stdout, "Maintainer log        : %d\n", p_afd_status->maintainer_log);
 #endif
-   (void)fprintf(stdout, "Event log            : %d\n", p_afd_status->event_log);
-   (void)fprintf(stdout, "Transfer log         : %d\n", p_afd_status->trans_log);
-   (void)fprintf(stdout, "Trans debug log      : %d\n", p_afd_status->trans_db_log);
-   (void)fprintf(stdout, "Archive watch        : %d\n", p_afd_status->archive_watch);
-   (void)fprintf(stdout, "afd_stat             : %d\n", p_afd_status->afd_stat);
-   (void)fprintf(stdout, "afdd                 : %d\n", p_afd_status->afdd);
+   (void)fprintf(stdout, "Event log             : %d\n", p_afd_status->event_log);
+   (void)fprintf(stdout, "Transfer log          : %d\n", p_afd_status->trans_log);
+   (void)fprintf(stdout, "Trans debug log       : %d\n", p_afd_status->trans_db_log);
+   (void)fprintf(stdout, "Archive watch         : %d\n", p_afd_status->archive_watch);
+   (void)fprintf(stdout, "afd_stat              : %d\n", p_afd_status->afd_stat);
+   (void)fprintf(stdout, "afdd                  : %d\n", p_afd_status->afdd);
 #ifdef _WITH_ATPD_SUPPORT
-   (void)fprintf(stdout, "atpd                 : %d\n", p_afd_status->atpd);
+   (void)fprintf(stdout, "atpd                  : %d\n", p_afd_status->atpd);
 #endif
 #ifdef _WITH_WMOD_SUPPORT
-   (void)fprintf(stdout, "wmod                 : %d\n", p_afd_status->wmod);
+   (void)fprintf(stdout, "wmod                  : %d\n", p_afd_status->wmod);
 #endif
 #ifdef _WITH_DE_MAIL_SUPPORT
-   (void)fprintf(stdout, "demcd                : %d\n", p_afd_status->demcd);
+   (void)fprintf(stdout, "demcd                 : %d\n", p_afd_status->demcd);
 #endif
 #ifndef HAVE_MMAP
-   (void)fprintf(stdout, "mapper               : %d\n", p_afd_status->mapper);
+   (void)fprintf(stdout, "mapper                : %d\n", p_afd_status->mapper);
 #endif
 #ifdef _INPUT_LOG
-   (void)fprintf(stdout, "input_log            : %d\n", p_afd_status->input_log);
+   (void)fprintf(stdout, "input_log             : %d\n", p_afd_status->input_log);
 #endif
 #ifdef _OUTPUT_LOG
-   (void)fprintf(stdout, "output_log           : %d\n", p_afd_status->output_log);
+   (void)fprintf(stdout, "output_log            : %d\n", p_afd_status->output_log);
 #endif
 #ifdef _DELETE_LOG
-   (void)fprintf(stdout, "delete_log           : %d\n", p_afd_status->delete_log);
+   (void)fprintf(stdout, "delete_log            : %d\n", p_afd_status->delete_log);
 #endif
 #ifdef _PRODUCTION_LOG
-   (void)fprintf(stdout, "production_log       : %d\n", p_afd_status->production_log);
+   (void)fprintf(stdout, "production_log        : %d\n", p_afd_status->production_log);
 #endif
 #ifdef _DISTRIBUTION_LOG
-   (void)fprintf(stdout, "distribution_log     : %d\n", p_afd_status->distribution_log);
+   (void)fprintf(stdout, "distribution_log      : %d\n", p_afd_status->distribution_log);
 #endif
 #if ALDAD_OFFSET != 0
-   (void)fprintf(stdout, "ALDA daemon          : %d\n", p_afd_status->aldad);
+   (void)fprintf(stdout, "ALDA daemon           : %d\n", p_afd_status->aldad);
 #endif
-   (void)fprintf(stdout, "Receivelog indicator : %u <",
+   (void)fprintf(stdout, "Receivelog indicator  : %u <",
                  p_afd_status->receive_log_ec);
    for (i = 0; i < LOG_FIFO_SIZE; i++)
    {
@@ -167,7 +167,7 @@ main(int argc, char *argv[])
       }
    }
    (void)fprintf(stdout, " >\n");
-   (void)fprintf(stdout, "Receive log history  :");
+   (void)fprintf(stdout, "Receive log history   :");
    for (i = 0; i < MAX_LOG_HISTORY; i++)
    {
       switch (p_afd_status->receive_log_history[i])
@@ -190,7 +190,7 @@ main(int argc, char *argv[])
       }
    }
    (void)fprintf(stdout, "\n");
-   (void)fprintf(stdout, "Syslog indicator     : %u <",
+   (void)fprintf(stdout, "Syslog indicator      : %u <",
                  p_afd_status->sys_log_ec);
    for (i = 0; i < LOG_FIFO_SIZE; i++)
    {
@@ -217,7 +217,7 @@ main(int argc, char *argv[])
       }
    }
    (void)fprintf(stdout, " >\n");
-   (void)fprintf(stdout, "System log history   :");
+   (void)fprintf(stdout, "System log history    :");
    for (i = 0; i < MAX_LOG_HISTORY; i++)
    {
       switch (p_afd_status->sys_log_history[i])
@@ -243,7 +243,7 @@ main(int argc, char *argv[])
       }
    }
    (void)fprintf(stdout, "\n");
-   (void)fprintf(stdout, "Translog indicator   : %u <",
+   (void)fprintf(stdout, "Translog indicator    : %u <",
                  p_afd_status->trans_log_ec);
    for (i = 0; i < LOG_FIFO_SIZE; i++)
    {
@@ -270,7 +270,7 @@ main(int argc, char *argv[])
       }
    }
    (void)fprintf(stdout, " >\n");
-   (void)fprintf(stdout, "Transfer log history :");
+   (void)fprintf(stdout, "Transfer log history  :");
    for (i = 0; i < MAX_LOG_HISTORY; i++)
    {
       switch (p_afd_status->trans_log_history[i])
@@ -296,23 +296,26 @@ main(int argc, char *argv[])
       }
    }
    (void)fprintf(stdout, "\n");
-   (void)fprintf(stdout, "Number of transfers  : %d\n", p_afd_status->no_of_transfers);
-   (void)fprintf(stdout, "Number of retrieves  : %d\n", p_afd_status->no_of_retrieves);
+   (void)fprintf(stdout, "Number of transfers   : %d\n", p_afd_status->no_of_transfers);
+   (void)fprintf(stdout, "Number of retrieves   : %d\n", p_afd_status->no_of_retrieves);
 #if SIZEOF_NLINK_T > 4
-   (void)fprintf(stdout, "Jobs in queue        : %lld\n", (pri_nlink_t)p_afd_status->jobs_in_queue);
+   (void)fprintf(stdout, "Jobs in queue         : %lld\n", (pri_nlink_t)p_afd_status->jobs_in_queue);
 #else
-   (void)fprintf(stdout, "Jobs in queue        : %d\n", (pri_nlink_t)p_afd_status->jobs_in_queue);
+   (void)fprintf(stdout, "Jobs in queue         : %d\n", (pri_nlink_t)p_afd_status->jobs_in_queue);
 #endif
-   (void)fprintf(stdout, "AMG fork() counter   : %u\n", p_afd_status->amg_fork_counter);
-   (void)fprintf(stdout, "FD fork() counter    : %u\n", p_afd_status->fd_fork_counter);
-   (void)fprintf(stdout, "Burst2 counter       : %u\n", p_afd_status->burst2_counter);
-   (void)fprintf(stdout, "AMG child user time  : %ld.%ld\n", p_afd_status->amg_child_utime.tv_sec, p_afd_status->amg_child_utime.tv_usec);
-   (void)fprintf(stdout, "AMG child system time: %ld.%ld\n", p_afd_status->amg_child_stime.tv_sec, p_afd_status->amg_child_stime.tv_usec);
-   (void)fprintf(stdout, "FD child user time   : %ld.%ld\n", p_afd_status->fd_child_utime.tv_sec, p_afd_status->fd_child_utime.tv_usec);
-   (void)fprintf(stdout, "FD child system time : %ld.%ld\n", p_afd_status->fd_child_stime.tv_sec, p_afd_status->fd_child_stime.tv_usec);
-   (void)fprintf(stdout, "Max. FD queue length : %u\n", p_afd_status->max_queue_length);
-   (void)fprintf(stdout, "Directories scanned  : %u\n", p_afd_status->dir_scans);
-   (void)fprintf(stdout, "AFD start time       : %s", ctime(&p_afd_status->start_time));
+   (void)fprintf(stdout, "AMG fork() counter    : %u\n", p_afd_status->amg_fork_counter);
+   (void)fprintf(stdout, "FD fork() counter     : %u\n", p_afd_status->fd_fork_counter);
+   (void)fprintf(stdout, "Burst2 counter        : %u\n", p_afd_status->burst2_counter);
+   (void)fprintf(stdout, "AMG child user time   : %ld.%ld\n", p_afd_status->amg_child_utime.tv_sec, p_afd_status->amg_child_utime.tv_usec);
+   (void)fprintf(stdout, "AMG child system time : %ld.%ld\n", p_afd_status->amg_child_stime.tv_sec, p_afd_status->amg_child_stime.tv_usec);
+   (void)fprintf(stdout, "FD child user time    : %ld.%ld\n", p_afd_status->fd_child_utime.tv_sec, p_afd_status->fd_child_utime.tv_usec);
+   (void)fprintf(stdout, "FD child system time  : %ld.%ld\n", p_afd_status->fd_child_stime.tv_sec, p_afd_status->fd_child_stime.tv_usec);
+   (void)fprintf(stdout, "Max. FD queue length  : %u\n", p_afd_status->max_queue_length);
+   (void)fprintf(stdout, "Directories scanned   : %u\n", p_afd_status->dir_scans);
+#ifdef WITH_INOTIFY
+   (void)fprintf(stdout, "Inotify events handled: %u\n", p_afd_status->inotify_events);
+#endif
+   (void)fprintf(stdout, "AFD start time        : %s", ctime(&p_afd_status->start_time));
 
    exit(SUCCESS);
 }

@@ -597,7 +597,13 @@ dnl
 AC_ARG_WITH(max-no-of-parallel-jobs,
             AS_HELP_STRING([--with-max-no-of-parallel-jobs=N],
                            [max number of parallel transfers per host (default=5)]),
-            , with_max_no_of_parallel_jobs=5)
+            [],
+            if test "$ac_cv_with_afdbench_settings" = "yes"
+            then
+               with_max_no_of_parallel_jobs=10
+            else
+               with_max_no_of_parallel_jobs=5
+            fi)
 AC_DEFINE_UNQUOTED([MAX_NO_PARALLEL_JOBS], [$with_max_no_of_parallel_jobs], [
   The value of MAX_NO_PARALLEL_JOBS determines the number of parallel
   transfers per host. The default is 5, which should be enough in most
@@ -613,7 +619,13 @@ AC_DEFINE_UNQUOTED([DEFAULT_NO_PARALLEL_JOBS], [$with_default_no_of_parallel_job
 AC_ARG_WITH(default-archive-unit,
             AS_HELP_STRING([--with-default-archive-unit=N],
                            [default archive unit in seconds (default=86400)]),
-            , with_default_archive_unit=86400)
+            [],
+            if test "$ac_cv_with_afdbench_settings" = "yes"
+            then
+               with_default_archive_unit=600
+            else
+               with_default_archive_unit=86400
+            fi)
 AC_DEFINE_UNQUOTED([DEFAULT_ARCHIVE_UNIT], [$with_default_archive_unit], [
   The value of DEFAULT_ARCHIVE_UNIT determines the default archive unit
   in seconds. Best is to leave this at it default for one day (86400 seconds).])
