@@ -789,7 +789,10 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
    (void)strcat(afd_active_file, AFD_ACTIVE_FILE);
 
    /* Prepare title for mafd_ctrl window. */
-   (void)snprintf(window_title, 100, "AFD %s ", PACKAGE_VERSION);
+   window_title[0] = 'A'; window_title[1] = 'F'; window_title[2] = 'D';
+   window_title[3] = '_'; window_title[4] = 'C'; window_title[5] = 'T';
+   window_title[6] = 'R'; window_title[7] = 'L'; window_title[8] = ' ';
+   window_title[9] = '\0';
    if (get_arg(argc, argv, "-t", hostname, MAX_AFD_NAME_LENGTH) == INCORRECT)
    {
       if (get_afd_name(hostname) == INCORRECT)
@@ -802,6 +805,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
       }
       else
       {
+         (void)strcat(window_title, hostname);
       }
    }
    else

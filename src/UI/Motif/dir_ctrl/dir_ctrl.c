@@ -31,6 +31,7 @@ DESCR__S_M1
  **            [-u[ <user>]]
  **            [-no_input]
  **            [-f <numeric font>]
+ **            [-t <title>]
  **
  ** DESCRIPTION
  **
@@ -474,7 +475,7 @@ init_dir_ctrl(int *argc, char *argv[], char *window_title)
        (get_arg(argc, argv, "--help", NULL, 0) == SUCCESS))
    {
       (void)fprintf(stdout,
-                    "Usage: %s [-w <work_dir>] [-p <profile>] [-u[ <user>]] [-no_input] [-f <font name>]\n",
+                    "Usage: %s [-w <work_dir>] [-p <profile>] [-u[ <user>]] [-no_input] [-f <font name>] [-t <title>]\n",
                     argv[0]);
       exit(SUCCESS);
    }
@@ -606,12 +607,22 @@ init_dir_ctrl(int *argc, char *argv[], char *window_title)
    (void)strcat(afd_active_file, AFD_ACTIVE_FILE);
 
    /* Prepare title for dir_ctrl window. */
-   (void)sprintf(window_title, "DIR_CTRL %s ", PACKAGE_VERSION);
-   if (get_afd_name(hostname) == INCORRECT)
+   window_title[0] = 'D'; window_title[1] = 'I'; window_title[2] = 'R';
+   window_title[3] = '_'; window_title[4] = 'C'; window_title[5] = 'T';
+   window_title[6] = 'R'; window_title[7] = 'L'; window_title[8] = ' ';
+   window_title[9] = '\0';
+   if (get_arg(argc, argv, "-t", hostname, MAX_AFD_NAME_LENGTH) == INCORRECT)
    {
-      if (gethostname(hostname, MAX_AFD_NAME_LENGTH) == 0)
+      if (get_afd_name(hostname) == INCORRECT)
       {
-         hostname[0] = toupper((int)hostname[0]);
+         if (gethostname(hostname, MAX_AFD_NAME_LENGTH) == 0)
+         {
+            hostname[0] = toupper((int)hostname[0]);
+            (void)strcat(window_title, hostname);
+         }
+      }
+      else
+      {
          (void)strcat(window_title, hostname);
       }
    }
