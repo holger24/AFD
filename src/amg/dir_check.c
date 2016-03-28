@@ -716,7 +716,7 @@ main(int argc, char *argv[])
          FD_SET(inotify_fd, &rset);
       }
 #endif
-      timeout.tv_usec = 0;
+      timeout.tv_usec = 50000L;
       timeout.tv_sec = sleep_time;
 
       /* Wait for message x seconds and then continue. */

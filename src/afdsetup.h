@@ -81,6 +81,7 @@
 #  undef _WITH_AFW2WMO
 # endif
 # define DO_NOT_INFORM_ABOUT_OVERWRITE
+# define DO_NOT_ARCHIVE_UNIQUE_PART
 #endif
 
 /*-----------------------------------------------------------------------*
@@ -262,7 +263,7 @@
  *                            DEFAULT: 30L
  *-----------------------------------------------------------------------*/
 #ifdef AFDBENCH_CONFIG
-# define REPORT_DIR_TIME_INTERVAL 300
+# define REPORT_DIR_TIME_INTERVAL 240
 # define MAX_DIFF_TIME            20L
 #else
 # define REPORT_DIR_TIME_INTERVAL 3600
@@ -309,7 +310,7 @@
  * ONE_DIR_COPY_TIMEOUT - When AMG has collected MAX_COPIED_FILES, it
  *                        will try to continue to copy from this directory
  *                        until it reaches ONE_DIR_COPY_TIMEOUT timeout.
- *                        DEFAULT: 10 (seconds)
+ *                        DEFAULT: 5 (seconds)
  * FULL_SCAN_TIMEOUT    - The timeout for scanning all directories. If
  *                        set to 0 this is diasbled. When this is set
  *                        it will only take effect if during a scan there
@@ -329,7 +330,7 @@
  *                        NOTE: This is only a quick hack until a better
  *                              solution is found.
  *-----------------------------------------------------------------------*/
-#define ONE_DIR_COPY_TIMEOUT 10
+#define ONE_DIR_COPY_TIMEOUT 5
 #define FULL_SCAN_TIMEOUT    0
 #ifndef _WITH_PTHREAD
 # define DIR_CHECK_TIMEOUT   60

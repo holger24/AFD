@@ -359,9 +359,9 @@ MAX_CONNECTIONS                  80
 # When AMG has collected MAX_COPIED_FILES, it will try to continue to    #
 # copy from this directory until it reaches ONE_DIR_COPY_TIMEOUT timeout.#
 # The unit is seconds.                                                   #
-# Default: 10                                                            #
+# Default: 5                                                            #
 ##########################################################################
-ONE_DIR_COPY_TIMEOUT             10
+ONE_DIR_COPY_TIMEOUT             5
 
 ##########################################################################
 # The timeout for scanning all directories. If set to 0 this is diasbled.#

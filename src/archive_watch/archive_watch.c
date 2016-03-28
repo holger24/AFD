@@ -209,7 +209,7 @@ main(int argc, char *argv[])
       status = select(aw_cmd_fd + 1, &rset, NULL, NULL, &timeout);
 
       /* Report every hour how many archives have been deleted. */
-#ifdef AFDBENCH_CONFIG
+#ifndef AFDBENCH_CONFIG
       if ((now + diff_time) >= next_report_time)
       {
          next_report_time = ((now + diff_time) / 3600) * 3600 + 3600;
@@ -227,7 +227,7 @@ main(int argc, char *argv[])
                    removed_archives, removed_files);
 #endif
          removed_archives = removed_files = 0;
-#ifdef AFDBENCH_CONFIG
+#ifndef AFDBENCH_CONFIG
       }
 #endif
 
