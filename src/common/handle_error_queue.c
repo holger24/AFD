@@ -529,12 +529,14 @@ remove_from_error_queue(unsigned int               job_id,
                event_log(0L, EC_HOST, ET_EXT, EA_STOP_ERROR_QUEUE, "%s%c%x",
                          fsa->host_alias, SEPARATOR_CHAR, job_id);
             }
+#ifdef WITH_REPORT_RM_ERROR_JOBS
             else
             {
                system_log(DEBUG_SIGN, NULL, 0,
                           _("%s: Removed job #%x from error queue."),
                           fsa->host_dsp_name, job_id);
             }
+#endif
          }
 
          check_error_queue_space();
