@@ -3094,19 +3094,19 @@ get_one_zombie(pid_t cpid, time_t now)
 #ifdef HAVE_WAIT4
                      /* User CPU time. */
                      p_afd_status->amg_child_utime.tv_usec += ru.ru_utime.tv_usec;
-                     if (p_afd_status->amg_child_utime.tv_usec > 1000000000L)
+                     if (p_afd_status->amg_child_utime.tv_usec > 1000000L)
                      {
                         p_afd_status->amg_child_utime.tv_sec++;
-                        p_afd_status->amg_child_utime.tv_usec -= 1000000000L;
+                        p_afd_status->amg_child_utime.tv_usec -= 1000000L;
                      }
                      p_afd_status->amg_child_utime.tv_sec += ru.ru_utime.tv_sec;
 
                      /* System CPU time. */
                      p_afd_status->amg_child_stime.tv_usec += ru.ru_stime.tv_usec;
-                     if (p_afd_status->amg_child_stime.tv_usec > 1000000000L)
+                     if (p_afd_status->amg_child_stime.tv_usec > 1000000L)
                      {
                         p_afd_status->amg_child_stime.tv_sec++;
-                        p_afd_status->amg_child_stime.tv_usec -= 1000000000L;
+                        p_afd_status->amg_child_stime.tv_usec -= 1000000L;
                      }
                      p_afd_status->amg_child_stime.tv_sec += ru.ru_stime.tv_sec;
 #endif

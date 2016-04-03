@@ -4029,19 +4029,19 @@ zombie_check(struct connection *p_con,
 
 #ifdef HAVE_WAIT4
             p_afd_status->fd_child_utime.tv_usec += ru.ru_utime.tv_usec;
-            if (p_afd_status->fd_child_utime.tv_usec > 1000000000L)
+            if (p_afd_status->fd_child_utime.tv_usec > 1000000L)
             {
                p_afd_status->fd_child_utime.tv_sec++;
-               p_afd_status->fd_child_utime.tv_usec -= 1000000000L;
+               p_afd_status->fd_child_utime.tv_usec -= 1000000L;
             }
             p_afd_status->fd_child_utime.tv_sec += ru.ru_utime.tv_sec;
 
             /* System CPU time. */
             p_afd_status->fd_child_stime.tv_usec += ru.ru_stime.tv_usec;
-            if (p_afd_status->fd_child_stime.tv_usec > 1000000000L)
+            if (p_afd_status->fd_child_stime.tv_usec > 1000000L)
             {
                p_afd_status->fd_child_stime.tv_sec++;
-               p_afd_status->fd_child_stime.tv_usec -= 1000000000L;
+               p_afd_status->fd_child_stime.tv_usec -= 1000000L;
             }
             p_afd_status->fd_child_stime.tv_sec += ru.ru_stime.tv_sec;
 #endif

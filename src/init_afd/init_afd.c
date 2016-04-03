@@ -920,7 +920,7 @@ main(int argc, char *argv[])
       if (time(&now) > month_check_time)
       {
          system_log(DEBUG_SIGN, NULL, 0,
-                    _("fork() syscalls AMG       : %20u FD : %20u => %u"),
+                    _("fork() syscalls AMG       : %18u FD : %18u => %u"),
                     p_afd_status->amg_fork_counter,
                     p_afd_status->fd_fork_counter,
                     p_afd_status->amg_fork_counter +
@@ -929,7 +929,7 @@ main(int argc, char *argv[])
          p_afd_status->fd_fork_counter = 0;
 #ifdef HAVE_WAIT4
          system_log(DEBUG_SIGN, NULL, 0,
-                    _("child CPU user time AMG   : %11ld.%09ld FD : %11ld.%09ld"),
+                    _("child CPU user time AMG   : %11ld.%06ld FD : %11ld.%06ld"),
                     p_afd_status->amg_child_utime.tv_sec,
                     p_afd_status->amg_child_utime.tv_usec,
                     p_afd_status->fd_child_utime.tv_sec,
@@ -939,7 +939,7 @@ main(int argc, char *argv[])
          p_afd_status->fd_child_utime.tv_sec = 0L;
          p_afd_status->fd_child_utime.tv_usec = 0L;
          system_log(DEBUG_SIGN, NULL, 0,
-                    _("child CPU system time AMG : %11ld.09%ld FD : %11ld.09%ld"),
+                    _("child CPU system time AMG : %11ld.06%ld FD : %11ld.06%ld"),
                     p_afd_status->amg_child_stime.tv_sec,
                     p_afd_status->amg_child_stime.tv_usec,
                     p_afd_status->fd_child_stime.tv_sec,
@@ -949,7 +949,7 @@ main(int argc, char *argv[])
          p_afd_status->fd_child_stime.tv_sec = 0L;
          p_afd_status->fd_child_stime.tv_usec = 0L;
 #endif
-         system_log(DEBUG_SIGN, NULL, 0, "Burst2 counter              : %u",
+         system_log(DEBUG_SIGN, NULL, 0, _("Burst2 counter            : %u"),
                     p_afd_status->burst2_counter);
          p_afd_status->burst2_counter = 0;
          system_log(DEBUG_SIGN, NULL, 0, _("Max FD queue length       : %u"),
