@@ -620,12 +620,7 @@ AC_ARG_WITH(default-archive-unit,
             AS_HELP_STRING([--with-default-archive-unit=N],
                            [default archive unit in seconds (default=86400)]),
             [],
-            if test "$ac_cv_with_afdbench_settings" = "yes"
-            then
-               with_default_archive_unit=600
-            else
-               with_default_archive_unit=86400
-            fi)
+            with_default_archive_unit=86400)
 AC_DEFINE_UNQUOTED([DEFAULT_ARCHIVE_UNIT], [$with_default_archive_unit], [
   The value of DEFAULT_ARCHIVE_UNIT determines the default archive unit
   in seconds. Best is to leave this at it default for one day (86400 seconds).])

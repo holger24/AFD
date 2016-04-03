@@ -1465,11 +1465,7 @@ typedef unsigned long       u_long_64;
                                           /*       least 2!               */
 #define ERROR_HISTORY_LENGTH_STR   "ERROR_HISTORY_LENGTH"
 #ifndef DEFAULT_ARCHIVE_UNIT
-# ifdef AFDBENCH_CONFIG
-#  define DEFAULT_ARCHIVE_UNIT     600
-# else
-#  define DEFAULT_ARCHIVE_UNIT     86400  /* Seconds => 1 day             */
-# endif
+# define DEFAULT_ARCHIVE_UNIT      86400  /* Seconds => 1 day             */
 #endif
 #define WD_ENV_NAME                "AFD_WORK_DIR"   /* The working dir-   */
                                                     /* ectory environment */
