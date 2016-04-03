@@ -25,12 +25,12 @@
 
 #define COPYRIGHT_0 "\n\n   Copyright (C) 1995 - 2016 Deutscher Wetterdienst, Holger Kiehl.\n\n"
 #define COPYRIGHT_1 "   This program is free software;  you can redistribute  it and/or\n"
-#define COPYRIGHT_2 "   modify it under the terms set out in the  COPYING  file,  which\n"
+#define COPYRIGHT_2 "   modify it under the terms set out in the  LICENSE  file,  which\n"
 #define COPYRIGHT_3 "   is included in the AFD source distribution.\n\n"
 #define COPYRIGHT_4 "   This program is distributed in the hope that it will be useful,\n"
 #define COPYRIGHT_5 "   but WITHOUT ANY WARRANTY;  without even the implied warranty of\n"
 #define COPYRIGHT_6 "   MERCHANTABILITY  or  FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-#define COPYRIGHT_7 "   COPYING  file for more details.\n\n"
+#define COPYRIGHT_7 "   LICENSE  file for more details.\n\n"
 
 /* Print current version and compilation time. */
 #define PRINT_VERSION(prog)                                                  \

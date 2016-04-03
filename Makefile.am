@@ -15,7 +15,7 @@ CLEANFILES           = core core.* typescript configmake.h configmake.h-t\
                        $(PACKAGE)-$(VERSION).tar.bz2
 BUILT_SOURCES        = configmake.h
 SUBDIRS              = po src scripts doc
-DISTDOCS             = COPYING CREDITS INSTALL KNOWN-BUGS README.configure\
+DISTDOCS             = LICENSE CREDITS INSTALL KNOWN-BUGS README.configure\
                        THANKS TODO changes-1.2.x-1.3.x
 EXTRA_DIST           = ac-tools scripts afd.spec.in $(DISTDOCS)
 doc_DATA             = $(DISTDOCS)
