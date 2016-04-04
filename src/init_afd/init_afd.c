@@ -1418,7 +1418,7 @@ main(int argc, char *argv[])
                }
                else if ((fsa[i].host_status & DANGER_PAUSE_QUEUE_STAT) &&
                         ((fsa[i].total_file_counter < (danger_no_of_files / 2)) ||
-                         (p_afd_status->jobs_in_queue < (3 * (link_max / 4)))))
+                         (p_afd_status->jobs_in_queue < (link_max / 4))))
                     {
                        if (lock_set == NO)
                        {
