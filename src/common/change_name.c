@@ -1,6 +1,6 @@
 /*
  *  change_name.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
  *                            Tobias Freyberg <>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -71,6 +71,7 @@ DESCR__S_M3
  **            |     +--------> Time modifier
  **            +--------------> How time modifier should be applied.
  **     %h    - insert the hostname
+ **     %H    - insert the hostname without domain
  **     %%    - the '%' sign   
  **     \     - are ignored
  **
@@ -103,6 +104,7 @@ DESCR__S_M3
  **                         Bill Welch reporting this.
  **   12.03.2015 H.Kiehl    Catch the case when there are no * and ? in
  **                         the filter.
+ **   10.04.2016 H.Kiehl    Added %H to insert hostname without domain.
  **
  */
 DESCR__E_M3
@@ -554,6 +556,7 @@ change_name(char         *orig_file_name,
                   break;
 
                case 'h' : /* Insert local hostname. */
+               case 'H' : /* Insert local hostname. */
                   {
                      char hostname[40];
 
@@ -564,7 +567,22 @@ change_name(char         *orig_file_name,
 
                         if ((p_hostname = getenv("HOSTNAME")) != NULL)
                         {
-                           i = strlen(p_hostname);
+                           if (*ptr_rule == 'H')
+                           {
+                              i = 0;
+                              while ((hostname[i] != '\0') && (hostname[i] != '.'))
+                              {
+                                 i++;
+                              }
+                              if (hostname[i] == '.')
+                              {
+                                 hostname[i] = '\0';
+                              }
+                           }
+                           else
+                           {
+                              i = strlen(p_hostname);
+                           }
                            if (((ptr_newname + i + 1) - new_name) < max_new_name_length)
                            {
                               (void)strcpy(ptr_newname, p_hostname);
@@ -581,7 +599,22 @@ change_name(char         *orig_file_name,
                      }
                      else
                      {
-                        i = strlen(hostname);
+                        if (*ptr_rule == 'H')
+                        {
+                           i = 0;
+                           while ((hostname[i] != '\0') && (hostname[i] != '.'))
+                           {
+                              i++;
+                           }
+                           if (hostname[i] == '.')
+                           {
+                              hostname[i] = '\0';
+                           }
+                        }
+                        else
+                        {
+                           i = strlen(hostname);
+                        }
                         if (((ptr_newname + i + 1) - new_name) < max_new_name_length)
                         {
                            (void)strcpy(ptr_newname, hostname);
