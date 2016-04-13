@@ -1,6 +1,6 @@
 /*
  *  create_fra.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -379,6 +379,9 @@ create_fra(int no_of_dirs)
          (void)strcpy(fra[i].host_alias, dd[i].host_alias);
          (void)strcpy(fra[i].url, dd[i].url);
          (void)strcpy(fra[i].wait_for_filename, dd[i].wait_for_filename);
+#ifdef NEW_FRA
+         (void)strcpy(fra[i].timezone, dd[i].timezone);
+#endif
          fra[i].fsa_pos                = dd[i].fsa_pos;
          fra[i].protocol               = dd[i].protocol;
          fra[i].priority               = dd[i].priority;
@@ -486,6 +489,13 @@ create_fra(int no_of_dirs)
                          (fra[i].no_of_time_entries * sizeof(struct bd_time_entry)));
             fra[i].next_check_time = calc_next_time_array(fra[i].no_of_time_entries,
                                                           &fra[i].te[0],
+#ifdef WITH_TIMEZONE
+# ifdef NEW_FRA
+                                                          fra[i].timezone,
+# else
+                                                          "",
+# endif
+#endif
                                                           current_time,
                                                           __FILE__, __LINE__);
          }
@@ -511,6 +521,9 @@ create_fra(int no_of_dirs)
          (void)strcpy(fra[i].host_alias, dd[i].host_alias);
          (void)strcpy(fra[i].url, dd[i].url);
          (void)strcpy(fra[i].wait_for_filename, dd[i].wait_for_filename);
+#ifdef NEW_FRA
+         (void)strcpy(fra[i].timezone, dd[i].timezone);
+#endif
          fra[i].fsa_pos                = dd[i].fsa_pos;
          fra[i].protocol               = dd[i].protocol;
          fra[i].priority               = dd[i].priority;
@@ -556,6 +569,13 @@ create_fra(int no_of_dirs)
                          (fra[i].no_of_time_entries * sizeof(struct bd_time_entry)));
             fra[i].next_check_time = calc_next_time_array(fra[i].no_of_time_entries,
                                                           &fra[i].te[0],
+#ifdef WITH_TIMEZONE
+# ifdef NEW_FRA
+                                                          fra[i].timezone,
+# else
+                                                          "",
+# endif
+#endif
                                                           current_time,
                                                           __FILE__, __LINE__);
          }

@@ -101,6 +101,8 @@
 #define TIME_NO_COLLECT_ID_FLAG    16
 /* NOTE: TIME_ID has already been defined in afddefs.h for [dir options]. */
 #define TIME_ID_FLAG               8
+/* NOTE: TIMEZONE_ID has already been defined in afddefs.h for [dir options]. */
+#define TIMEZONE_ID_FLAG           32
 #define PRIORITY_ID                "priority"
 #define PRIORITY_ID_LENGTH         (sizeof(PRIORITY_ID) - 1)
 #define RENAME_ID                  "rename"
@@ -116,59 +118,59 @@
                                               /* the basename of the     */
                                               /* file.                   */
 #define BASENAME_ID_LENGTH         (sizeof(BASENAME_ID) - 1)
-#define BASENAME_ID_FLAG           32
+#define BASENAME_ID_FLAG           64
 #define EXTENSION_ID               "extension"/* If we want to send      */
                                               /* files without extension.*/
 #define EXTENSION_ID_LENGTH        (sizeof(EXTENSION_ID) - 1)
-#define EXTENSION_ID_FLAG          64
+#define EXTENSION_ID_FLAG          128
 #define ADD_PREFIX_ID              "prefix add"
 #define ADD_PREFIX_ID_LENGTH       (sizeof(ADD_PREFIX_ID) - 1)
-#define ADD_PREFIX_ID_FLAG         128
+#define ADD_PREFIX_ID_FLAG         256
 #define DEL_PREFIX_ID              "prefix del"
 #define DEL_PREFIX_ID_LENGTH       (sizeof(DEL_PREFIX_ID) - 1)
-#define DEL_PREFIX_ID_FLAG         256
+#define DEL_PREFIX_ID_FLAG         512
 #define TOUPPER_ID                 "toupper"
 #define TOUPPER_ID_LENGTH          (sizeof(TOUPPER_ID) - 1)
-#define TOUPPER_ID_FLAG            512
+#define TOUPPER_ID_FLAG            1024
 #define TOLOWER_ID                 "tolower"
 #define TOLOWER_ID_LENGTH          (sizeof(TOLOWER_ID) - 1)
-#define TOLOWER_ID_FLAG            1024
+#define TOLOWER_ID_FLAG            2048
 #define FAX2GTS_ID                 "fax2gts"
 #define FAX2GTS_ID_LENGTH          (sizeof(FAX2GTS_ID) - 1)
-#define FAX2GTS_ID_FLAG            2048
+#define FAX2GTS_ID_FLAG            4096
 /* NOTE: TIFF2GTS_ID defined in afddefs.h */
 #define TIFF2GTS_ID_LENGTH         (sizeof(TIFF2GTS_ID) - 1)
-#define TIFF2GTS_ID_FLAG           4096
+#define TIFF2GTS_ID_FLAG           8192
 #define GTS2TIFF_ID                "gts2tiff"
 #define GTS2TIFF_ID_LENGTH         (sizeof(GTS2TIFF_ID) - 1)
-#define GTS2TIFF_ID_FLAG           8192
+#define GTS2TIFF_ID_FLAG           16384
 #define GRIB2WMO_ID                "grib2wmo"
 #define GRIB2WMO_ID_LENGTH         (sizeof(GRIB2WMO_ID) - 1)
-#define GRIB2WMO_ID_FLAG           16384
+#define GRIB2WMO_ID_FLAG           32768
 #define EXTRACT_ID                 "extract"
 #define EXTRACT_ID_LENGTH          (sizeof(EXTRACT_ID) - 1)
-#define EXTRACT_ID_FLAG            32768
+#define EXTRACT_ID_FLAG            65536
 #define ASSEMBLE_ID                "assemble"
 #define ASSEMBLE_ID_LENGTH         (sizeof(ASSEMBLE_ID) - 1)
-#define ASSEMBLE_ID_FLAG           65536
+#define ASSEMBLE_ID_FLAG           131072
 #define WMO2ASCII_ID               "wmo2ascii"
 #define WMO2ASCII_ID_LENGTH        (sizeof(WMO2ASCII_ID) - 1)
-#define WMO2ASCII_ID_FLAG          131072
+#define WMO2ASCII_ID_FLAG          262144
 /* NOTE: DELETE_ID and DELETE_ID_LENGTH defined in afddefs.h */
-#define DELETE_ID_FLAG             262144
+#define DELETE_ID_FLAG             524288
 #define CONVERT_ID                 "convert"
 #define CONVERT_ID_LENGTH          (sizeof(CONVERT_ID) - 1)
-#define CONVERT_ID_FLAG            524288
+#define CONVERT_ID_FLAG            1048576
 #define LCHMOD_ID                  "lchmod"
 #define LCHMOD_ID_LENGTH           (sizeof(LCHMOD_ID) - 1)
-#define LCHMOD_ID_FLAG             1048576
+#define LCHMOD_ID_FLAG             2097152
 #ifdef _WITH_AFW2WMO
 # define AFW2WMO_ID                "afw2wmo"
 # define AFW2WMO_ID_LENGTH         (sizeof(AFW2WMO_ID) - 1)
-# define AFW2WMO_ID_FLAG           2097152
-# define LOCAL_OPTION_POOL_SIZE    22
+# define AFW2WMO_ID_FLAG           4194304
+# define LOCAL_OPTION_POOL_SIZE    23
 #else
-# define LOCAL_OPTION_POOL_SIZE    21
+# define LOCAL_OPTION_POOL_SIZE    22
 #endif
 
 /* Definitions for types of time options. */
@@ -410,6 +412,11 @@ struct dir_data
                                             /* for the given file name|  */
                                             /* pattern before we take    */
                                             /* files from this directory.*/
+#ifdef NEW_FRA
+          char          timezone[MAX_TIMEZONE_LENGTH + 1];
+                                            /* The name of the timezone  */
+                                            /* is stored here when set.  */
+#endif
           struct bd_time_entry te[MAX_FRA_TIME_ENTRIES];
           unsigned char no_of_time_entries;
           unsigned char remove;             /* Should the files be       */
@@ -555,6 +562,11 @@ struct dir_data
                                             /* longer valid. Value is in */
                                             /* seconds.                  */
 #endif
+#ifdef NEW_FRA
+          time_t        info_time;          /* Time when to inform that  */
+                                            /* the directory has not     */
+                                            /* received any data.        */
+#endif
           time_t        warn_time;          /* Time when to warn that the*/
                                             /* directory has not received*/
                                             /* any data.                 */
@@ -613,6 +625,9 @@ struct instant_db
           time_t        next_start_time;
           struct bd_time_entry *te;
           unsigned int  no_of_time_entries;
+          char          timezone[MAX_TIMEZONE_LENGTH + 1];
+                                       /* The name of the timezone is    */
+                                       /* stored here when set.          */
           unsigned int  file_mask_id;  /* CRC-32 checksum of file masks. */
           int           no_of_files;   /* Number of files to be send.    */
           int           fbl;           /* File mask buffer length.       */

@@ -995,6 +995,8 @@ typedef unsigned long       u_long_64;
 #define MAX_ERRORS_ID_LENGTH             (sizeof(MAX_ERRORS_ID) - 1)
 #define DO_NOT_PARALLELIZE_ID            "do not parallelize"
 #define DO_NOT_PARALLELIZE_ID_LENGTH     (sizeof(DO_NOT_PARALLELIZE_ID) - 1)
+#define TIMEZONE_ID                      "timezone"
+#define TIMEZONE_ID_LENGTH               (sizeof(TIMEZONE_ID) - 1)
 #define UNKNOWN_FILES                    1
 #define QUEUED_FILES                     2
 #define OLD_LOCKED_FILES                 4
@@ -1432,6 +1434,11 @@ typedef unsigned long       u_long_64;
                                             /* in AFD_CONFIG.               */
 #define MAX_TTAAii_HEADER_LENGTH     22     /* The maximum WMO header length*/
                                             /* TTAAii_CCCC_YYGGgg[_BBB].    */
+#define MAX_TIMEZONE_LENGTH          32     /* The maximum length of a time */
+                                            /* zone entry.                  */
+#ifdef NEW_FRA
+# define MAX_TIMEZONE_LENGTH_STR     "MAX_TIMEZONE_LENGTH"
+#endif
 
 /* String names for certain definitions. */
 #define MAX_HOSTNAME_LENGTH_STR      "MAX_HOSTNAME_LENGTH"
@@ -2100,7 +2107,12 @@ typedef unsigned long       u_long_64;
 #define SHORT_NR                    1048576
 #define LONG_LONG_NR                2097152
 #define PID_T_NR                    4194304
+#ifdef NEW_FRA
+# define MAX_TIMEZONE_LENGTH_NR     8388608
+#define MAX_CHANGEABLE_VARS         1 + 24 /* First is used as flag*/
+#else
 #define MAX_CHANGEABLE_VARS         1 + 23 /* First is used as flag*/
+#endif
                                        /* which of the below values*/
                                        /* are set.                 */
                                        /* MAX_MSG_NAME_LENGTH      */
@@ -2125,7 +2137,7 @@ typedef unsigned long       u_long_64;
                                        /* TIME_T                   */
                                        /* SHORT                    */
                                        /* LONG_LONG                */
-                                       /* PID_T                    */
+                                       /* MAX_TIMEZONE_LENGTH      */
 
 /* Definitions for the different lock positions in the FSA. */
 #define LOCK_FIU                   3   /* File name in use (job_status) */
@@ -2603,6 +2615,15 @@ struct extra_work_dirs
 #define TIME_EXTERNAL SHRT_MAX
 struct bd_time_entry
        {
+#ifdef TIME_WITH_SECOND
+# ifdef HAVE_LONG_LONG
+          unsigned long long continuous_second;
+          unsigned long long second;
+# else
+          unsigned char      continuous_second[8];
+          unsigned char      second[8];
+# endif
+#endif
 #ifdef HAVE_LONG_LONG
           unsigned long long continuous_minute;
           unsigned long long minute;
@@ -2643,6 +2664,9 @@ struct fileretrieve_status
                                             /* for the given file name|  */
                                             /* pattern before we take    */
                                             /* files from this directory.*/
+#ifdef NEW_FRA
+          char          timezone[MAX_TIMEZONE_LENGTH + 1];
+#endif
           struct bd_time_entry te[MAX_FRA_TIME_ENTRIES]; /* Time entry,  */
                                             /* when files are to be      */
                                             /* searched for.             */
@@ -3980,8 +4004,11 @@ extern time_t       calc_next_time(struct bd_time_entry *, char *, time_t, char 
 #else
 extern time_t       calc_next_time(struct bd_time_entry *, time_t, char *, int),
 #endif
-                    calc_next_time_array(int, struct bd_time_entry *, time_t,
-                                         char *, int),
+                    calc_next_time_array(int, struct bd_time_entry *,
+#ifdef WITH_TIMEZONE
+                                         char *,
+#endif
+                                         time_t, char *, int),
                     datestr2unixtime(char *),
                     write_host_config(int, char *, struct host_list *);
 #ifdef WITH_ERROR_QUEUE

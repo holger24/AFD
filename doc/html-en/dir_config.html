@@ -409,6 +409,14 @@ defaults is shown in the table below:
    <td align=center>&nbsp;</td>
 </tr>
 <tr>
+   <td width="30%"><a name="dir_timezone">timezone &lt;zone&gt;</a></td>
+   <td>Here one can set the timezone for the above time option. When
+       not set it will take the default timezone from the system.</td>
+   <td align=center>X</td>
+   <td align=center>X</td>
+   <td align=center>&nbsp;</td>
+</tr>
+<tr>
    <td width="30%"><a name="dir_options_time_external">time external</a></td>
    <td>Setting this will allow one to trigger the scan event externally
        via the command 'afdcmd -R'.</td>
@@ -1184,6 +1192,19 @@ section. Valid options can be taken from the following table:
    <td>This option is the same as the above time option only that no files
        will be collected (these will be deleted) outside the given time
        frames. The number of time no collect option is not limited.</td>
+   <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
+</tr>
+<tr>
+   <td><a name="timezone">timezone &lt;zone&gt;</a></td>
+   <td>Here one can set the timezone for the above two time options. When
+       not set it will take the default timezone from the system.</td>
    <td align=center>X</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
@@ -2774,7 +2795,7 @@ section. Valid options can be taken from the following table:
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2016 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 25.02.2016
+   Last updated: 13.04.2016
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

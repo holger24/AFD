@@ -45,6 +45,7 @@ DESCR__S_M3
  **        ignore file time [=|>|<] <decimal number>
  **        important dir
  **        time * * * * *
+ **        timezone <zone name>
  **        keep connected <value in seconds>
  **        create source dir[ <mode>]
  **        do not create source dir
@@ -95,6 +96,7 @@ DESCR__S_M3
  **   14.02.2013 H.Kiehl Remove support for old style directory options,
  **                      directly behind the directory name itself.
  **   15.12.2013 H.Kiehl Added "max errors" and "do not parallelize" option.
+ **   11.04.2016 H.Kiehl Added timezone option.
  **
  */
 DESCR__E_M3
@@ -167,6 +169,9 @@ extern struct dir_data *dd;
 #define DO_NOT_PARALLELIZE_FLAG          2147483648
 #define DO_NOT_MOVE_FLAG                 1
 #define DEL_UNREADABLE_FILES_FLAG        2
+#ifdef NEW_FRA
+#define TIMEZONE_FLAG                    4
+#endif
 
 
 /*########################## eval_dir_options() #########################*/
@@ -227,6 +232,7 @@ eval_dir_options(int  dir_pos, char *dir_options)
    dd[dir_pos].max_errors = 10;
 #ifdef NEW_FRA
    dd[dir_pos].info_time = default_info_time;
+   dd[dir_pos].timezone[0] = '\0';
 #endif
    dd[dir_pos].warn_time = default_warn_time;
    dd[dir_pos].keep_connected = DEFAULT_KEEP_CONNECTED_TIME;
@@ -1115,6 +1121,40 @@ eval_dir_options(int  dir_pos, char *dir_options)
               dd[dir_pos].create_source_dir = YES;
            }
 #ifdef NEW_FRA
+      else if (((used2 & TIMEZONE_FLAG) == 0) &&
+               (strncmp(ptr, TIMEZONE_ID, TIMEZONE_ID_LENGTH) == 0))
+           {
+              int  length = 0;
+
+              used2 |= TIMEZONE_FLAG;
+              ptr += TIMEZONE_ID_LENGTH;
+              while ((*ptr == ' ') || (*ptr == '\t'))
+              {
+                 ptr++;
+              }
+              while ((length < MAX_TIMEZONE_LENGTH) && (*ptr != '\n') &&
+                     (*ptr != '\0'))
+              {
+                 dd[dir_pos].timezone[length] = *ptr;
+                 ptr++; length++;
+              }
+              if ((length > 0) && (length != MAX_TIMEZONE_LENGTH))
+              {
+                 dd[dir_pos].timezone[length] = '\0';
+              }
+              else
+              {
+                 dd[dir_pos].timezone[0] = '\0';
+                 system_log(WARN_SIGN, __FILE__, __LINE__,
+                           "For directory option `%s' for directory %s, the value is to long. May only be %d bytes long. Please contact maintainer (%s) if this is a valid timezone.",
+                           TIMEZONE_ID, dd[dir_pos].dir_name,
+                           MAX_TIMEZONE_LENGTH, AFD_MAINTAINER);
+              }
+              while ((*ptr != '\n') && (*ptr != '\0'))
+              {
+                 ptr++;
+              }
+           }
       else if (((used & DIR_INFO_TIME_FLAG) == 0) &&
                (strncmp(ptr, DIR_INFO_TIME_ID, DIR_INFO_TIME_ID_LENGTH) == 0))
            {

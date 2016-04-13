@@ -421,6 +421,7 @@ struct job
                                          /* HTTP proxy.                  */
           char          smtp_server[MAX_REAL_HOSTNAME_LENGTH];
                                          /* SMTP server name.            */
+          char          timezone[MAX_TIMEZONE_LENGTH + 1];
           int           no_of_restart_files;
           int           subject_rule_pos;
           int           trans_rule_pos;

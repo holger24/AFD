@@ -1,6 +1,6 @@
 /*
  *  fra_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -753,6 +753,17 @@ main(int argc, char *argv[])
          {
             int j;
 
+#ifdef NEW_FRA
+            if (fra[i].timezone[0] == '\0')
+            {
+               (void)fprintf(stdout, "Timezone             : Not set, taking system default\n");
+            }
+            else
+            {
+               (void)fprintf(stdout, "Timezone             : %s\n",
+                             fra[i].timezone);
+            }
+#endif
             (void)fprintf(stdout, "Time option          : %d\n",
                           (int)fra[i].no_of_time_entries);
 

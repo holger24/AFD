@@ -190,10 +190,16 @@ init_gf(int argc, char *argv[], int protocol)
                     "Failed to evaluate time string [* * * * *].");
          exit(INCORRECT);
       }
+      db.timezone[0] = '\0';
    }
    else
    {
       db.te = &fra[db.fra_pos].te[0];
+#ifdef NEW_FRA
+      (void)strcpy(db.timezone, fra[db.fra_pos].timezone);
+#else
+      db.timezone[0] = '\0';
+#endif
    }
 #ifdef WITH_SSL
    if ((fsa->protocol & HTTP_FLAG) && (fsa->protocol & SSL_FLAG) &&

@@ -1,6 +1,6 @@
 /*
  *  create_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -84,6 +84,7 @@ DESCR__E_M3
 #include <unistd.h>                /* fork(), rmdir(), fstat()           */
 #include <errno.h>
 #include "amgdefs.h"
+#include "version.h"
 
 /* External global variables. */
 extern int                        fsa_fd,
@@ -815,6 +816,7 @@ create_db(void)
           * by setting the lfs flag to GO_PARALLEL.
           */
          p_loptions = db[i].loptions;
+         db[i].timezone[0] = '\0';
          for (j = 0; j < db[i].no_of_loptions; j++)
          {
             if (db[i].loptions_flag & DELETE_ID_FLAG)
@@ -897,11 +899,6 @@ create_db(void)
                           (void)memcpy(&db[i].te[db[i].no_of_time_entries],
                                        &te, sizeof(struct bd_time_entry));
                           db[i].no_of_time_entries++;
-                          db[i].next_start_time = calc_next_time_array(db[i].no_of_time_entries,
-                                                                       db[i].te,
-                                                                       time(NULL),
-                                                                       __FILE__,
-                                                                       __LINE__);
                           db[i].time_option_type = SEND_COLLECT_TIME;
                        }
                     }
@@ -910,6 +907,37 @@ create_db(void)
                        system_log(ERROR_SIGN, __FILE__, __LINE__, "%s", ptr);
                     }
                  }
+#ifdef WITH_TIMEZONE
+            else if ((db[i].loptions_flag & TIMEZONE_ID_FLAG) &&
+                     (CHECK_STRNCMP(p_loptions, TIMEZONE_ID, TIMEZONE_ID_LENGTH) == 0))
+                 {
+                    int  length = 0;
+                    char *ptr = p_loptions + TIMEZONE_ID_LENGTH;
+
+                    while ((*ptr == ' ') || (*ptr == '\t'))
+                    {
+                       ptr++;
+                    }
+                    while ((length < MAX_TIMEZONE_LENGTH) && (*ptr != '\n') &&
+                           (*ptr != '\0'))
+                    {
+                       db[i].timezone[length] = *ptr;
+                       ptr++; length++;
+                    }
+                    if ((length > 0) && (length != MAX_TIMEZONE_LENGTH))
+                    {
+                       db[i].timezone[length] = '\0';
+                       system_log(WARN_SIGN, __FILE__, __LINE__,
+                                  "Unable to store the timezone `%s', since we can only store %d bytes. Please contact maintainer (%s) if this is a valid timezone.",
+                                  p_loptions + TIMEZONE_ID_LENGTH + 1,
+                                  TIMEZONE_ID_LENGTH, AFD_MAINTAINER);
+                    }
+                    else
+                    {
+                       db[i].timezone[0] = '\0';
+                    }
+                 }
+#endif
             else if ((db[i].loptions_flag & GTS2TIFF_ID_FLAG) &&
                      (CHECK_STRNCMP(p_loptions, GTS2TIFF_ID,
                                     GTS2TIFF_ID_LENGTH) == 0))
@@ -938,6 +966,17 @@ create_db(void)
                     db[i].lfs |= SPLIT_FILE_LIST;
                  }
             NEXT(p_loptions);
+         }
+         if ((db[i].no_of_time_entries > 0) &&
+             (db[i].time_option_type == SEND_COLLECT_TIME))
+         {
+            db[i].next_start_time = calc_next_time_array(db[i].no_of_time_entries,
+                                                         db[i].te,
+#ifdef WITH_TIMEZONE
+                                                         db[i].timezone,
+#endif
+                                                         time(NULL),
+                                                         __FILE__, __LINE__);
          }
       }
       else

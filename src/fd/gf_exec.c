@@ -1,6 +1,6 @@
 /*
  *  gf_exec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2013 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -468,7 +468,11 @@ exec_timeup(void)
    else
    {
       fra[db.fra_pos].next_check_time = calc_next_time_array(db.no_of_time_entries,
-                                                             db.te, now,
+                                                             db.te,
+#ifdef WITH_TIMEZONE
+                                                             db.timezone,
+#endif
+                                                             now,
                                                              __FILE__, __LINE__);
    }
    if (fra[db.fra_pos].next_check_time > timeup)

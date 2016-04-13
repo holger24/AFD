@@ -1,6 +1,6 @@
 /*
  *  typesize_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -161,7 +161,12 @@ check_typesize_data(int *old_value_list, FILE *output_fp)
 #ifdef HAVE_LONG_LONG
                        SIZEOF_LONG_LONG,
 #endif
+#ifdef NEW_FRA
+                       SIZEOF_PID_T,
+                       MAX_TIMEZONE_LENGTH
+#else
                        SIZEOF_PID_T
+#endif
                     };
                char *p_start = ptr,
                     val_str[MAX_INT_LENGTH + 1],
@@ -193,7 +198,12 @@ check_typesize_data(int *old_value_list, FILE *output_fp)
 #ifdef HAVE_LONG_LONG
                        LONG_LONG_STR,               /* LONG_LONG_NR */
 #endif
+#ifdef NEW_FRA
+                       PID_T_STR,                   /* PID_T_NR */
+                       MAX_TIMEZONE_LENGTH_STR      /* MAX_TIMEZONE_LENGTH_NR */
+#else
                        PID_T_STR                    /* PID_T_NR */
+#endif
                     },
                     var_str[MAX_VAR_STR_LENGTH + 1];
 
@@ -318,6 +328,10 @@ check_typesize_data(int *old_value_list, FILE *output_fp)
 #endif
                                              case 22 : old_value_list[0] |= PID_T_NR;
                                                        break;
+#ifdef NEW_FRA
+                                             case 23 : old_value_list[0] |= MAX_TIMEZONE_LENGTH_NR;
+                                                       break;
+#endif
                                              default : /* Not known. */
                                                        system_log(WARN_SIGN, __FILE__, __LINE__,
                                                                   "Programmer needs to extend the code. Please contact maintainer: %s",
@@ -418,22 +432,25 @@ write_typesize_data(void)
    (void)fprintf(fp, "# NOTE: Under no circumstances edit this file!!!!\n");
    (void)fprintf(fp, "#       Please use the header files in the source code\n");
    (void)fprintf(fp, "#       tree and then recompile AFD.\n");
-   (void)fprintf(fp, "MAX_MSG_NAME_LENGTH|%d\n", MAX_MSG_NAME_LENGTH);
-   (void)fprintf(fp, "MAX_FILENAME_LENGTH|%d\n", MAX_FILENAME_LENGTH);
+   (void)fprintf(fp, "%s|%d\n", MAX_MSG_NAME_LENGTH_STR, MAX_MSG_NAME_LENGTH);
+   (void)fprintf(fp, "%s|%d\n", MAX_FILENAME_LENGTH_STR, MAX_FILENAME_LENGTH);
    (void)fprintf(fp, "%s|%d\n", MAX_HOSTNAME_LENGTH_STR, MAX_HOSTNAME_LENGTH);
-   (void)fprintf(fp, "MAX_REAL_HOSTNAME_LENGTH|%d\n", MAX_REAL_HOSTNAME_LENGTH);
+   (void)fprintf(fp, "%s|%d\n", MAX_REAL_HOSTNAME_LENGTH_STR, MAX_REAL_HOSTNAME_LENGTH);
    (void)fprintf(fp, "%s|%d\n", MAX_AFDNAME_LENGTH_STR, MAX_AFDNAME_LENGTH);
-   (void)fprintf(fp, "MAX_PROXY_NAME_LENGTH|%d\n", MAX_PROXY_NAME_LENGTH);
-   (void)fprintf(fp, "MAX_TOGGLE_STR_LENGTH|%d\n", MAX_TOGGLE_STR_LENGTH);
-   (void)fprintf(fp, "ERROR_HISTORY_LENGTH|%d\n", ERROR_HISTORY_LENGTH);
-   (void)fprintf(fp, "MAX_NO_PARALLEL_JOBS|%d\n", MAX_NO_PARALLEL_JOBS);
+   (void)fprintf(fp, "%s|%d\n", MAX_PROXY_NAME_LENGTH_STR, MAX_PROXY_NAME_LENGTH);
+   (void)fprintf(fp, "%s|%d\n", MAX_TOGGLE_STR_LENGTH_STR, MAX_TOGGLE_STR_LENGTH);
+   (void)fprintf(fp, "%s|%d\n", ERROR_HISTORY_LENGTH_STR, ERROR_HISTORY_LENGTH);
+   (void)fprintf(fp, "%s|%d\n", MAX_NO_PARALLEL_JOBS_STR, MAX_NO_PARALLEL_JOBS);
    (void)fprintf(fp, "%s|%d\n", MAX_DIR_ALIAS_LENGTH_STR, MAX_DIR_ALIAS_LENGTH);
    (void)fprintf(fp, "%s|%d\n", MAX_RECIPIENT_LENGTH_STR, MAX_RECIPIENT_LENGTH);
-   (void)fprintf(fp, "MAX_WAIT_FOR_LENGTH|%d\n", MAX_WAIT_FOR_LENGTH);
-   (void)fprintf(fp, "MAX_FRA_TIME_ENTRIES|%d\n", MAX_FRA_TIME_ENTRIES);
+   (void)fprintf(fp, "%s|%d\n", MAX_WAIT_FOR_LENGTH_STR, MAX_WAIT_FOR_LENGTH);
+   (void)fprintf(fp, "%s|%d\n", MAX_FRA_TIME_ENTRIES_STR, MAX_FRA_TIME_ENTRIES);
+#ifdef NEW_FRA
+   (void)fprintf(fp, "%s|%d\n", MAX_TIMEZONE_LENGTH_STR, MAX_TIMEZONE_LENGTH);
+#endif
    (void)fprintf(fp, "%s|%d\n", MAX_OPTION_LENGTH_STR, MAX_OPTION_LENGTH);
    (void)fprintf(fp, "%s|%d\n", MAX_PATH_LENGTH_STR, MAX_PATH_LENGTH);
-   (void)fprintf(fp, "MAX_USER_NAME_LENGTH|%d\n", MAX_USER_NAME_LENGTH);
+   (void)fprintf(fp, "%s|%d\n", MAX_USER_NAME_LENGTH_STR,MAX_USER_NAME_LENGTH);
 
    (void)fprintf(fp, "%s|%d\n", CHAR_STR, SIZEOF_CHAR);
    (void)fprintf(fp, "%s|%d\n", INT_STR, SIZEOF_INT);

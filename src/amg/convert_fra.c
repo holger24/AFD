@@ -1,6 +1,6 @@
 /*
  *  convert_fra.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -480,6 +480,7 @@ struct fileretrieve_status_5
 #define AFD_WORD_OFFSET_6      (SIZEOF_INT + 4 + SIZEOF_INT + 4)
 #define MAX_FRA_TIME_ENTRIES_6 12
 #define MAX_WAIT_FOR_LENGTH_6  64
+#define MAX_TIMEZONE_LENGTH_6  32
 struct bd_time_entry_6
        {
 #ifdef HAVE_LONG_LONG
@@ -500,6 +501,7 @@ struct fileretrieve_status_6
           char                   host_alias[MAX_HOSTNAME_LENGTH_6 + 1];
           char                   url[MAX_RECIPIENT_LENGTH_6];
           char                   wait_for_filename[MAX_WAIT_FOR_LENGTH];
+          char                   timezone[MAX_TIMEZONE_LENGTH + 1];
           struct bd_time_entry_6 te[MAX_FRA_TIME_ENTRIES_6];
           struct bd_time_entry_6 ate;
           unsigned char          dir_status;
@@ -3115,6 +3117,7 @@ convert_fra(int           old_fra_fd,
               (void)strcpy(new_fra[i].dir_alias, old_fra[i].dir_alias);
               (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
               (void)strcpy(new_fra[i].url, old_fra[i].url);
+              new_fra[i].timezone[0] = '\0';
               (void)memset(&new_fra[i].te[0], 0,
                            (MAX_FRA_TIME_ENTRIES_6 * sizeof(struct bd_time_entry_6)));
               new_fra[i].dir_status             = old_fra[i].dir_status;
@@ -3285,6 +3288,7 @@ convert_fra(int           old_fra_fd,
               (void)strcpy(new_fra[i].dir_alias, old_fra[i].dir_alias);
               (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
               (void)strcpy(new_fra[i].url, old_fra[i].url);
+              new_fra[i].timezone[0] = '\0';
               (void)memset(&new_fra[i].te[0], 0,
                            (MAX_FRA_TIME_ENTRIES_6 * sizeof(struct bd_time_entry_6)));
               new_fra[i].dir_status             = old_fra[i].dir_status;
@@ -3455,6 +3459,7 @@ convert_fra(int           old_fra_fd,
               (void)strcpy(new_fra[i].dir_alias, old_fra[i].dir_alias);
               (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
               (void)strcpy(new_fra[i].url, old_fra[i].url);
+              new_fra[i].timezone[0] = '\0';
               (void)memset(&new_fra[i].te[0], 0,
                            (MAX_FRA_TIME_ENTRIES_6 * sizeof(struct bd_time_entry_6)));
               new_fra[i].dir_status             = old_fra[i].dir_status;
@@ -3633,6 +3638,7 @@ convert_fra(int           old_fra_fd,
               (void)strcpy(new_fra[i].dir_alias, old_fra[i].dir_alias);
               (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
               (void)strcpy(new_fra[i].url, old_fra[i].url);
+              new_fra[i].timezone[0] = '\0';
               (void)memset(&new_fra[i].te[0], 0,
                            (MAX_FRA_TIME_ENTRIES_6 * sizeof(struct bd_time_entry_6)));
               new_fra[i].dir_status             = old_fra[i].dir_status;
@@ -3811,6 +3817,7 @@ convert_fra(int           old_fra_fd,
               (void)strcpy(new_fra[i].dir_alias, old_fra[i].dir_alias);
               (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
               (void)strcpy(new_fra[i].url, old_fra[i].url);
+              new_fra[i].timezone[0] = '\0';
               (void)memset(&new_fra[i].te[0], 0,
                            (MAX_FRA_TIME_ENTRIES_6 * sizeof(struct bd_time_entry_6)));
               new_fra[i].dir_status             = old_fra[i].dir_status;
@@ -3983,6 +3990,7 @@ convert_fra(int           old_fra_fd,
               (void)strcpy(new_fra[i].dir_alias, old_fra[i].dir_alias);
               (void)strcpy(new_fra[i].host_alias, old_fra[i].host_alias);
               (void)strcpy(new_fra[i].url, old_fra[i].url);
+              new_fra[i].timezone[0] = '\0';
               (void)memcpy(&new_fra[i].te[0], &old_fra[i].te[0],
                            (MAX_FRA_TIME_ENTRIES_6 * sizeof(struct bd_time_entry_6)));
               new_fra[i].dir_status             = old_fra[i].dir_status;

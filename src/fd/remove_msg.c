@@ -1,6 +1,6 @@
 /*
  *  remove_msg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -109,6 +109,13 @@ remove_msg(int qb_pos)
       {
          fra[qb[qb_pos].pos].next_check_time = calc_next_time_array(fra[qb[qb_pos].pos].no_of_time_entries,
                                                                     &fra[qb[qb_pos].pos].te[0],
+#ifdef WITH_TIMEZONE
+# ifdef NEW_FRA
+                                                                    fra[qb[qb_pos].pos].timezone,
+# else
+                                                                    "",
+# endif
+#endif
                                                                     time(NULL),
                                                                     __FILE__, __LINE__);
       }

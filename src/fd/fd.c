@@ -1124,8 +1124,15 @@ system_log(DEBUG_SIGN, NULL, 0,
                            (fra[retrieve_list[i]].next_check_time <= now))
                        {
                           fra[retrieve_list[i]].next_check_time = calc_next_time_array(fra[retrieve_list[i]].no_of_time_entries,
-                                                                                       &fra[retrieve_list[i]].te[0], now,
-                                                                                       __FILE__, __LINE__);
+                                                                                       &fra[retrieve_list[i]].te[0],
+#ifdef WITH_TIMEZONE
+# ifdef NEW_FRA
+                                                                                       fra[retrieve_list[i]].timezone,
+# else
+                                                                                       "",
+# endif
+#endif
+                                                                                       now, __FILE__, __LINE__);
                        }
                }
                remote_file_check_time = ((now / remote_file_check_interval) *
@@ -1146,8 +1153,15 @@ system_log(DEBUG_SIGN, NULL, 0,
                    (fra[retrieve_list[i]].next_check_time <= now))
                {
                   fra[retrieve_list[i]].next_check_time = calc_next_time_array(fra[retrieve_list[i]].no_of_time_entries,
-                                                                               &fra[retrieve_list[i]].te[0], now,
-                                                                               __FILE__, __LINE__);
+                                                                               &fra[retrieve_list[i]].te[0],
+#ifdef WITH_TIMEZONE
+# ifdef NEW_FRA
+                                                                               fra[retrieve_list[i]].timezone,
+# else
+                                                                               "",
+# endif
+#endif
+                                                                               now, __FILE__, __LINE__);
                }
             }
          }

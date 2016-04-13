@@ -1,6 +1,6 @@
 /*
  *  calc_next_time.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,11 +27,13 @@ DESCR__S_M3
  **
  ** SYNOPSIS
  **   time_t calc_next_time(struct bd_time_entry *te,
+ **                         char                 *timezone,
  **                         time_t               current_time,
  **                         char                 *source_file,
  **                         int                  source_line);
  **   time_t calc_next_time_array(int                  no_of_entries,
  **                               struct bd_time_entry *te,
+ **                               char                 *timezone,
  **                               time_t               current_time,
  **                               char                 *source_file,
  **                               int                  source_line);
@@ -42,6 +44,11 @@ DESCR__S_M3
  **
  **   The function calc_next_time_array() uses calc_next_time() to
  **   calculate the lowest time from an array of time entries.
+ **
+ **   Here some example time zone identifiers: Etc/GMT, Europe/Berlin,
+ **   Asia/Shanghai, Australia/Sydney, CET, Africa/Maputo, Asia/Tehran,
+ **   Asia/Tokyo, Brazil/East, Canada/Central, Cuba, Europe/Dublin,
+ **   Europe/Bratislava, Europe/Moscow, GB, Iceland, Indian/Mauritius, etc.
  **
  ** RETURN VALUES
  **   The function will return the next time as a time_t value
@@ -89,6 +96,9 @@ static void reset_environment(char *, char *, int);
 time_t
 calc_next_time_array(int                  no_of_entries,
                      struct bd_time_entry *te,
+#ifdef WITH_TIMEZONE
+                     char                 *timezone,
+#endif
                      time_t               current_time,
                      char                 *source_file,
                      int                  source_line)
@@ -99,11 +109,11 @@ calc_next_time_array(int                  no_of_entries,
 
    for (i = 0; i < no_of_entries; i++)
    {
+      tmp_time = calc_next_time(&te[i],
 #ifdef WITH_TIMEZONE
-      tmp_time = calc_next_time(&te[i], NULL, current_time, source_file, source_line);
-#else
-      tmp_time = calc_next_time(&te[i], current_time, source_file, source_line);
+                                timezone,
 #endif
+                                current_time, source_file, source_line);
       if ((tmp_time < new_time) || (new_time == 0))
       {
          new_time = tmp_time;
@@ -188,7 +198,7 @@ calc_next_time(struct bd_time_entry *te,
          }
       }
    }
-#endif
+#endif /* WITH_TIMEZONE */
    bd_time = localtime(&current_time);
 
    if (check_month(te, bd_time) == INCORRECT)
@@ -236,6 +246,115 @@ calc_next_time(struct bd_time_entry *te,
 #endif
       return(0);
    }
+
+#ifdef TIME_WITH_SECOND
+   /* Evaluate second (0-59) [0-59] */
+# ifdef HAVE_LONG_LONG
+   if (((ALL_MINUTES & te->second) == ALL_MINUTES) ||
+       ((ALL_MINUTES & te->continuous_second) == ALL_MINUTES))
+   {
+      /* Leave second as is. */;
+   }
+   else
+   {
+      gotcha = NO;
+      for (i = bd_time->tm_sec; i < 60; i++)
+      {
+         if ((te->second & bit_array_long[i]) ||
+             (te->continuous_second & bit_array_long[i]))
+         {
+            gotcha = YES;
+            break;
+         }
+      }
+      if (gotcha == NO)
+      {
+         for (i = 0; i < bd_time->tm_sec; i++)
+         {
+            if ((te->second & bit_array_long[i]) ||
+                (te->continuous_second & bit_array_long[i]))
+            {
+               bd_time->tm_min++;
+               gotcha = YES;
+               break;
+            }
+         }
+      }
+      if (gotcha == NO)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("Failed to locate any valid second!?"));
+         system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#  ifdef HAVE_LONG_LONG
+                    "Broken time entry %lld %lld %u %u %d %d called from %s %d",
+                    te->continuous_second, te->second,
+#  else
+                    "Broken time entry %d%d%d%d%d%d%d%d %d%d%d%d%d%d%d%d %u %u %d %d called from %s %d",
+                    (int)te->continuous_second[0], (int)te->continuous_second[1],
+                    (int)te->continuous_second[2], (int)te->continuous_second[3],
+                    (int)te->continuous_second[4], (int)te->continuous_second[5],
+                    (int)te->continuous_second[6], (int)te->continuous_second[7],
+                    (int)te->second[0], (int)te->second[1], (int)te->second[2], (int)te->second[3],
+                    (int)te->second[4], (int)te->second[5], (int)te->second[6], (int)te->second[7],
+#  endif
+                    te->hour, te->day_of_month, (int)(te->month),
+                    (int)(te->day_of_week), source_file, source_line);
+#  ifdef WITH_TIMEZONE
+         reset_environment(timezone, p_env, reset_env);
+#  endif
+         return(0);
+      }
+      bd_time->tm_sec = i;
+   }
+# else
+   gotcha = NO;
+   for (i = bd_time->tm_sec; i < 60; i++)
+   {
+      if (bittest(te->second, i) || bittest(te->continuous_second, i))
+      {
+         gotcha = YES;
+         break;
+      }
+   }
+   if (gotcha == NO)
+   {
+      for (i = 0; i < bd_time->tm_sec; i++)
+      {
+         if (bittest(te->second, i) || bittest(te->continuous_second, i))
+         {
+            bd_time->tm_min++;
+            gotcha = YES;
+            break;
+         }
+      }
+   }
+   if (gotcha == NO)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 _("Failed to locate any valid minute!?"));
+      system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#  ifdef HAVE_LONG_LONG
+                 "Broken time entry %lld %lld %u %u %d %d called from %s %d",
+                 te->continuous_second, te->second,
+#  else
+                 "Broken time entry %d%d%d%d%d%d%d%d %d%d%d%d%d%d%d%d %u %u %d %d called from %s %d",
+                 (int)te->continuous_second[0], (int)te->continuous_second[1],
+                 (int)te->continuous_second[2], (int)te->continuous_second[3],
+                 (int)te->continuous_second[4], (int)te->continuous_second[5],
+                 (int)te->continuous_second[6], (int)te->continuous_second[7],
+                 (int)te->second[0], (int)te->second[1], (int)te->second[2], (int)te->second[3],
+                 (int)te->second[4], (int)te->second[5], (int)te->second[6], (int)te->second[7],
+#  endif
+                 te->hour, te->day_of_month, (int)(te->month),
+                 (int)(te->day_of_week), source_file, source_line);
+#  ifdef WITH_TIMEZONE
+      reset_environment(timezone, p_env, reset_env);
+#  endif
+      return(0);
+   }
+   bd_time->tm_min = i;
+# endif
+#endif /* TIME_WITH_SECOND */
 
    /* Evaluate minute (0-59) [0-59] */
 #ifdef HAVE_LONG_LONG
@@ -288,9 +407,9 @@ calc_next_time(struct bd_time_entry *te,
 # endif
                     te->hour, te->day_of_month, (int)(te->month),
                     (int)(te->day_of_week), source_file, source_line);
-#ifdef WITH_TIMEZONE
+# ifdef WITH_TIMEZONE
          reset_environment(timezone, p_env, reset_env);
-#endif
+# endif
          return(0);
       }
       bd_time->tm_min = i;
@@ -336,9 +455,9 @@ calc_next_time(struct bd_time_entry *te,
 # endif
                  te->hour, te->day_of_month, (int)(te->month),
                  (int)(te->day_of_week), source_file, source_line);
-#ifdef WITH_TIMEZONE
+# ifdef WITH_TIMEZONE
       reset_environment(timezone, p_env, reset_env);
-#endif
+# endif
       return(0);
    }
    bd_time->tm_min = i;

@@ -1131,6 +1131,13 @@ main(int argc, char *argv[])
                {
                   fra[de[i].fra_pos].next_check_time = calc_next_time_array(fra[de[i].fra_pos].no_of_time_entries,
                                                                             &fra[de[i].fra_pos].te[0],
+#ifdef WITH_TIMEZONE
+# ifdef NEW_FRA
+                                                                            fra[de[i].fra_pos].timezone,
+# else
+                                                                            "",
+# endif
+#endif
                                                                             start_time,
                                                                             __FILE__, __LINE__);
                }
@@ -1367,6 +1374,13 @@ main(int argc, char *argv[])
                {
                   fra[de[i].fra_pos].next_check_time = calc_next_time_array(fra[de[i].fra_pos].no_of_time_entries,
                                                                             &fra[de[i].fra_pos].te[0],
+#ifdef WITH_TIMEZONE
+# ifdef NEW_FRA
+                                                                            fra[de[i].fra_pos].timezone,
+# else
+                                                                            "",
+# endif
+#endif
                                                                             start_time,
                                                                             __FILE__, __LINE__);
                }

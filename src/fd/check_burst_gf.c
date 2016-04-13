@@ -1,6 +1,6 @@
 /*
  *  check_burst_gf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014, 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -780,7 +780,11 @@ check_burst_gf(unsigned int *values_changed)
                  else
                  {
                     fra[db.fra_pos].next_check_time = calc_next_time_array(db.no_of_time_entries,
-                                                                           db.te, start_time,
+                                                                           db.te,
+#ifdef WITH_TIMEZONE
+                                                                           NULL,
+#endif
+                                                                           start_time,
                                                                            __FILE__, __LINE__);
                  }
                  if (fra[db.fra_pos].next_check_time > timeup)
