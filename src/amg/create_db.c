@@ -832,6 +832,37 @@ create_db(void)
                exec_flag = 1;
                exec_flag_dir = 1;
             }
+#ifdef WITH_TIMEZONE
+            else if ((db[i].loptions_flag & TIMEZONE_ID_FLAG) &&
+                     (CHECK_STRNCMP(p_loptions, TIMEZONE_ID, TIMEZONE_ID_LENGTH) == 0))
+                 {
+                    int  length = 0;
+                    char *ptr = p_loptions + TIMEZONE_ID_LENGTH;
+
+                    while ((*ptr == ' ') || (*ptr == '\t'))
+                    {
+                       ptr++;
+                    }
+                    while ((length < MAX_TIMEZONE_LENGTH) && (*ptr != '\n') &&
+                           (*ptr != '\0'))
+                    {
+                       db[i].timezone[length] = *ptr;
+                       ptr++; length++;
+                    }
+                    if ((length > 0) && (length != MAX_TIMEZONE_LENGTH))
+                    {
+                       db[i].timezone[length] = '\0';
+                    }
+                    else
+                    {
+                       db[i].timezone[0] = '\0';
+                       system_log(WARN_SIGN, __FILE__, __LINE__,
+                                  "Unable to store the timezone `%s', since we can only store %d bytes. Please contact maintainer (%s) if this is a valid timezone.",
+                                  p_loptions + TIMEZONE_ID_LENGTH + 1,
+                                  MAX_TIMEZONE_LENGTH, AFD_MAINTAINER);
+                    }
+                 }
+#endif
             else if ((db[i].loptions_flag & TIME_NO_COLLECT_ID_FLAG) &&
                      (CHECK_STRNCMP(p_loptions, TIME_NO_COLLECT_ID,
                                     TIME_NO_COLLECT_ID_LENGTH) == 0))
@@ -907,37 +938,6 @@ create_db(void)
                        system_log(ERROR_SIGN, __FILE__, __LINE__, "%s", ptr);
                     }
                  }
-#ifdef WITH_TIMEZONE
-            else if ((db[i].loptions_flag & TIMEZONE_ID_FLAG) &&
-                     (CHECK_STRNCMP(p_loptions, TIMEZONE_ID, TIMEZONE_ID_LENGTH) == 0))
-                 {
-                    int  length = 0;
-                    char *ptr = p_loptions + TIMEZONE_ID_LENGTH;
-
-                    while ((*ptr == ' ') || (*ptr == '\t'))
-                    {
-                       ptr++;
-                    }
-                    while ((length < MAX_TIMEZONE_LENGTH) && (*ptr != '\n') &&
-                           (*ptr != '\0'))
-                    {
-                       db[i].timezone[length] = *ptr;
-                       ptr++; length++;
-                    }
-                    if ((length > 0) && (length != MAX_TIMEZONE_LENGTH))
-                    {
-                       db[i].timezone[length] = '\0';
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  "Unable to store the timezone `%s', since we can only store %d bytes. Please contact maintainer (%s) if this is a valid timezone.",
-                                  p_loptions + TIMEZONE_ID_LENGTH + 1,
-                                  TIMEZONE_ID_LENGTH, AFD_MAINTAINER);
-                    }
-                    else
-                    {
-                       db[i].timezone[0] = '\0';
-                    }
-                 }
-#endif
             else if ((db[i].loptions_flag & GTS2TIFF_ID_FLAG) &&
                      (CHECK_STRNCMP(p_loptions, GTS2TIFF_ID,
                                     GTS2TIFF_ID_LENGTH) == 0))

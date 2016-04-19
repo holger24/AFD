@@ -2691,18 +2691,19 @@ copy_job(int file_no, int dest_no, struct dir_group *dir)
                   options,       /* Counts no. of local options found.  */
                   priority,
                   /*
-                   * NOTE: TIME_NO_COLLECT_ID option __must__ be checked
-                   *       before TIME_ID. Since both start with time and
-                   *       TIME_ID only consists only of the word time.
+                   * NOTE: TIME_NO_COLLECT_ID and TIMEZONE_ID option __must__
+                   *       be checked before TIME_ID. Since both start with
+                   *       time and TIME_ID only consists only of the word
+                   *       time.
                    */
                   loption_length[LOCAL_OPTION_POOL_SIZE] =
                   {
                      RENAME_ID_LENGTH,
                      SRENAME_ID_LENGTH,
                      EXEC_ID_LENGTH,
+                     TIMEZONE_ID_LENGTH,
                      TIME_NO_COLLECT_ID_LENGTH,
                      TIME_ID_LENGTH,
-                     TIMEZONE_ID_LENGTH,
                      BASENAME_ID_LENGTH,
                      EXTENSION_ID_LENGTH,
                      ADD_PREFIX_ID_LENGTH,
@@ -2728,9 +2729,9 @@ copy_job(int file_no, int dest_no, struct dir_group *dir)
                      RENAME_ID_FLAG,
                      SRENAME_ID_FLAG,
                      EXEC_ID_FLAG,
+                     TIMEZONE_ID_FLAG,
                      TIME_NO_COLLECT_ID_FLAG,
                      TIME_ID_FLAG,
-                     TIMEZONE_ID_FLAG,
                      BASENAME_ID_FLAG,
                      EXTENSION_ID_FLAG,
                      ADD_PREFIX_ID_FLAG,
@@ -2763,9 +2764,9 @@ copy_job(int file_no, int dest_no, struct dir_group *dir)
                      RENAME_ID,
                      SRENAME_ID,
                      EXEC_ID,
+                     TIMEZONE_ID,
                      TIME_NO_COLLECT_ID,
                      TIME_ID,
-                     TIMEZONE_ID,
                      BASENAME_ID,
                      EXTENSION_ID,
                      ADD_PREFIX_ID,

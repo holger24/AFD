@@ -543,6 +543,39 @@ check_option(char *option)
               return(INCORRECT);
            }
         }
+#ifdef WITH_TIMEZONE
+   else if ((CHECK_STRNCMP(option, TIMEZONE_ID, TIMEZONE_ID_LENGTH) == 0) &&
+            ((*(option + TIMEZONE_ID_LENGTH) == ' ') ||
+             (*(option + TIMEZONE_ID_LENGTH) == '\t')))
+        {
+           int i;
+
+           ptr += TIMEZONE_ID_LENGTH + 1;
+           while ((*ptr == ' ') || (*ptr == '\t'))
+           {
+              ptr++;
+           }
+
+           i = 0;
+           while ((*(ptr + i) != '\0') && (isascii((int)(*(ptr + i)))) &&
+                  (i < MAX_TIMEZONE_LENGTH))
+           {
+              i++;
+           }
+           if (i == MAX_TIMEZONE_LENGTH)
+           {
+              system_log(WARN_SIGN, __FILE__, __LINE__,
+                         "Value for %s option to large.", TIMEZONE_ID);
+              return(INCORRECT);
+           }
+           if (i == 0)
+           {
+              system_log(WARN_SIGN, __FILE__, __LINE__,
+                         "Invalid (%s) %s specified.", ptr, TIMEZONE_ID);
+              return(INCORRECT);
+           }
+        }
+#endif
 #ifdef _WITH_TRANS_EXEC
    else if ((CHECK_STRNCMP(option, TRANS_EXEC_ID, TRANS_EXEC_ID_LENGTH) == 0) &&
             ((*(option + TRANS_EXEC_ID_LENGTH) == ' ') ||
