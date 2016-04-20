@@ -399,7 +399,10 @@ main(int argc, char *argv[])
             ((more_files_in_list == YES) ||
              ((db.keep_connected > 0) && (exec_timeup() == SUCCESS))));
 
-   fsa->job_status[(int)db.job_no].connect_status = CLOSING_CONNECTION;
+   if (db.fsa_pos != INCORRECT)
+   {
+      fsa->job_status[(int)db.job_no].connect_status = CLOSING_CONNECTION;
+   }
 
    exitflag = 0;
    exit(TRANSFER_SUCCESS);
@@ -519,12 +522,16 @@ exec_timeup(void)
       {
          (void)sleep(sleeptime);
          (void)gsf_check_fra();
-         if (db.fra_pos == INCORRECT)
+         if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
          {
             return(INCORRECT);
          }
          if (gsf_check_fsa((struct job *)&db) == NEITHER)
          {
+            if (db.fsa_pos == INCORRECT)
+            {
+               return(INCORRECT);
+            }
             break;
          }
          if (fsa->job_status[(int)db.job_no].unique_name[2] == 6)

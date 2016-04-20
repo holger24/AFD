@@ -1,6 +1,6 @@
 /*
  *  gf_sftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -308,7 +308,8 @@ main(int argc, char *argv[])
       {
          trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                    "SFTP as user `%s' connection to `%s' at port %d failed (%d). [%s]",
-                   db.user, db.hostname, db.port, status, fra[db.fra_pos].dir_alias);
+                   db.user, db.hostname, db.port, status,
+                   fra[db.fra_pos].dir_alias);
       }
       exit(eval_timeout(CONNECT_ERROR));
    }
@@ -521,9 +522,11 @@ main(int argc, char *argv[])
             }
 
             (void)gsf_check_fra();
-            if (db.fra_pos == INCORRECT)
+            if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
             {
-               /* Looks as if this directory is no longer in our database. */
+               /*
+                * Looks as if this directory/host is no longer in our database.
+                */
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                          "Database changed, exiting.");
                (void)sftp_quit();
@@ -614,7 +617,8 @@ main(int argc, char *argv[])
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                "Failed to open remote file `%s' in %s (%d).",
-                               rl[i].file_name, fra[db.fra_pos].dir_alias, status);
+                               rl[i].file_name, fra[db.fra_pos].dir_alias,
+                               status);
                      sftp_quit();
                      reset_values(files_retrieved, file_size_retrieved,
                                   files_to_retrieve, file_size_to_retrieve,
@@ -663,7 +667,8 @@ main(int argc, char *argv[])
                         if (fsa->debug > NORMAL_MODE)
                         {
                            trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                        "Opened local file `%s'.", local_tmp_file);
+                                        "Opened local file `%s'.",
+                                        local_tmp_file);
                         }
                      }
 
@@ -680,6 +685,24 @@ main(int argc, char *argv[])
                         (void)strcpy(fsa->job_status[(int)db.job_no].file_name_in_use,
                                      rl[i].file_name);
                      }
+                     else if (db.fsa_pos == INCORRECT)
+                          {
+                             /*
+                              * Looks as if this host is no longer in our
+                              * database. Lets exit.
+                              */
+                             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                       "Database changed, exiting.");
+                             (void)sftp_close_file();
+                             (void)sftp_quit();
+                             (void)close(fd);
+                             (void)unlink(local_tmp_file);
+                             reset_values(files_retrieved, file_size_retrieved,
+                                          files_to_retrieve,
+                                          file_size_to_retrieve,
+                                          (struct job *)&db);
+                             exit(TRANSFER_SUCCESS);
+                          }
 
                      bytes_done = 0;
                      if (fsa->trl_per_process > 0)
@@ -700,15 +723,21 @@ main(int argc, char *argv[])
                                      "Failed to read from remote file `%s' in %s",
                                      rl[i].file_name, fra[db.fra_pos].dir_alias);
                            reset_values(files_retrieved, file_size_retrieved,
-                                        files_to_retrieve, file_size_to_retrieve,
+                                        files_to_retrieve,
+                                        file_size_to_retrieve,
                                         (struct job *)&db);
                            sftp_quit();
+                           if (bytes_done == 0)
+                           {
+                              (void)unlink(local_tmp_file);
+                           }
                            exit(eval_timeout(READ_REMOTE_ERROR));
                         }
 
                         if (fsa->trl_per_process > 0)
                         {
-                           limit_transfer_rate(status, fsa->trl_per_process, clktck);
+                           limit_transfer_rate(status, fsa->trl_per_process,
+                                               clktck);
                         }
                         if (status > 0)
                         {
@@ -719,9 +748,14 @@ main(int argc, char *argv[])
                                         local_tmp_file, strerror(errno));
                               sftp_quit();
                               reset_values(files_retrieved, file_size_retrieved,
-                                           files_to_retrieve, file_size_to_retrieve,
+                                           files_to_retrieve,
+                                           file_size_to_retrieve,
                                            (struct job *)&db);
-                              exit(eval_timeout(WRITE_LOCAL_ERROR));
+                              if (bytes_done == 0)
+                              {
+                                 (void)unlink(local_tmp_file);
+                              }
+                              exit(WRITE_LOCAL_ERROR);
                            }
                            bytes_done += status;
                         }
@@ -757,6 +791,25 @@ main(int argc, char *argv[])
                               }
                            }
                         }
+                        else if (db.fsa_pos == INCORRECT)
+                             {
+                                /*
+                                 * Looks as if this host is no longer in our
+                                 * database. Lets exit.
+                                 */
+                                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                          "Database changed, exiting.");
+                                (void)sftp_close_file();
+                                (void)sftp_quit();
+                                (void)close(fd);
+                                (void)unlink(local_tmp_file);
+                                reset_values(files_retrieved,
+                                             file_size_retrieved,
+                                             files_to_retrieve,
+                                             file_size_to_retrieve,
+                                             (struct job *)&db);
+                                exit(TRANSFER_SUCCESS);
+                             }
                      } while (status != 0);
 
                      /* Close remote file. */
@@ -764,7 +817,8 @@ main(int argc, char *argv[])
                      {
                         trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                   "Failed to close remote file `%s' in %s (%d).",
-                                  rl[i].file_name, fra[db.fra_pos].dir_alias, status);
+                                  rl[i].file_name, fra[db.fra_pos].dir_alias,
+                                  status);
                         sftp_quit();
                         reset_values(files_retrieved, file_size_retrieved,
                                      files_to_retrieve, file_size_to_retrieve,
@@ -776,7 +830,8 @@ main(int argc, char *argv[])
                         if (fsa->debug > NORMAL_MODE)
                         {
                            trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                                        "Closed remote file `%s#.", rl[i].file_name);
+                                        "Closed remote file `%s#.",
+                                        rl[i].file_name);
                         }
                      }
 
@@ -835,8 +890,23 @@ main(int argc, char *argv[])
                         if (fsa->debug > NORMAL_MODE)
                         {
                            trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                        "Closed local file `%s'.", local_tmp_file);
+                                        "Closed local file `%s'.",
+                                        local_tmp_file);
                         }
+                     }
+
+#ifdef WITH_ERROR_QUEUE
+                     if (fsa->host_status & ERROR_QUEUE_SET)
+                     {
+                        remove_from_error_queue(db.id.dir, fsa, db.fsa_pos,
+                                                fsa_fd);
+                     }
+#endif
+
+                     if (fsa->host_status & HOST_ACTION_SUCCESS)
+                     {
+                        error_action(fsa->host_alias, "start",
+                                     HOST_SUCCESS_ACTION);
                      }
 
                      /* Check if remote file is to be deleted. */
@@ -846,7 +916,8 @@ main(int argc, char *argv[])
                         {
                            trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                      "Failed to delete remote file `%s' in %s (%d).",
-                                     rl[i].file_name, fra[db.fra_pos].dir_alias, status);
+                                     rl[i].file_name, fra[db.fra_pos].dir_alias,
+                                     status);
                         }
                         else
                         {
@@ -895,9 +966,10 @@ main(int argc, char *argv[])
                         if ((rl[i].size != -1) && (bytes_done > 0))
                         {
                            /*
-                            * If the file size is not the same as the one when we did
-                            * the remote ls command, give a warning in the transfer
-                            * log so some action can be taken against the originator.
+                            * If the file size is not the same as the one
+                            * when we did the remote ls command, give a
+                            * warning in the transfer log so some action
+                            * can be taken against the originator.
                             */
                            if ((bytes_done + offset) != rl[i].size)
                            {
@@ -1072,8 +1144,8 @@ main(int argc, char *argv[])
 #endif
 
                            /*
-                            * Since we have successfully retrieved a file, no need to
-                            * have the queue stopped anymore.
+                            * Since we have successfully retrieved a file, no
+                            * need to have the queue stopped anymore.
                             */
                            if (fsa->host_status & AUTO_PAUSE_QUEUE_STAT)
                            {
@@ -1122,9 +1194,10 @@ main(int argc, char *argv[])
                      else
                      {
                         /*
-                         * If the file size is not the same as the one when we did
-                         * the remote ls command, give a warning in the transfer log
-                         * so some action can be taken against the originator.
+                         * If the file size is not the same as the one when
+                         * we did the remote ls command, give a warning in
+                         * the transfer log so some action can be taken
+                         * against the originator.
                          */
                         if ((rl[i].size != -1) &&
                             ((bytes_done + offset) != rl[i].size))
@@ -1159,7 +1232,8 @@ main(int argc, char *argv[])
                      }
                      else
                      {
-                        if (fsa->debug > NORMAL_MODE)
+                        if ((db.fsa_pos != INCORRECT) &&
+                            (fsa->debug > NORMAL_MODE))
                         {
                            trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                                         "Renamed local file %s to %s.",
@@ -1220,24 +1294,11 @@ main(int argc, char *argv[])
                         file_size_retrieved += bytes_done;
                      }
 
-#ifdef WITH_ERROR_QUEUE
-                     if (fsa->host_status & ERROR_QUEUE_SET)
+                     if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
                      {
-                        remove_from_error_queue(db.id.dir, fsa, db.fsa_pos,
-                                                fsa_fd);
-                     }
-#endif
-
-                     if (fsa->host_status & HOST_ACTION_SUCCESS)
-                     {
-                        error_action(fsa->host_alias, "start",
-                                     HOST_SUCCESS_ACTION);
-                     }
-
-                     if (db.fra_pos == INCORRECT)
-                     {
-                        /* We must stop here if fra_pos is INCORRECT  */
-                        /* since we try to access this structure FRA! */
+                        /* We must stop here if fra_pos or fsa_pos is */
+                        /* INCORRECT since we try to access these     */
+                        /* structures (FRA/FSA)!                      */
                         trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                                   "Database changed, exiting.");
                         (void)sftp_quit();
@@ -1484,9 +1545,12 @@ main(int argc, char *argv[])
    }
 #endif /* _WITH_BURST_2 */
 
-   fsa->job_status[(int)db.job_no].connect_status = CLOSING_CONNECTION;
+   if (db.fsa_pos != INCORRECT)
+   {
+      fsa->job_status[(int)db.job_no].connect_status = CLOSING_CONNECTION;
+   }
    sftp_quit();
-   if (fsa->debug > NORMAL_MODE)
+   if ((db.fsa_pos != INCORRECT) && (fsa->debug > NORMAL_MODE))
    {
       trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL, "Logged out.");
    }

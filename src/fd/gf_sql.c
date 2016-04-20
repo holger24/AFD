@@ -303,7 +303,7 @@ main(int argc, char *argv[])
          /* will now start to retrieve data.                */
          files_to_retrieve = 1;
          file_size_to_retrieve = 0;
-         if (db.fsa_pos != INCORRECT)
+         if (gsf_check_fsa((struct job *)&db) != NEITHER)
          {
             fsa->job_status[(int)db.job_no].no_of_files += files_to_retrieve;
             fsa->job_status[(int)db.job_no].file_size += file_size_to_retrieve;
@@ -329,9 +329,11 @@ main(int argc, char *argv[])
          }
 
          (void)gsf_check_fra();
-         if (db.fra_pos == INCORRECT)
+         if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
          {
-            /* Looks as if this source is no longer in our database. */
+            /*
+             * Looks as if this source/destination is no longer in our database.
+             */
             (void)sql_quit();
             reset_values(files_retrieved, file_size_retrieved,
                          files_to_retrieve, file_size_to_retrieve,
@@ -437,6 +439,17 @@ main(int argc, char *argv[])
                      (void)strcpy(fsa->job_status[(int)db.job_no].file_name_in_use,
                                   local_tmp_file);
                   }
+                  else if (db.fsa_pos == INCORRECT)
+                       {
+                          /*
+                           * Looks as if this host is no longer in our database.
+                           */
+                          (void)sql_quit();
+                          reset_values(files_retrieved, file_size_retrieved,
+                                       files_to_retrieve, file_size_to_retrieve,
+                                       (struct job *)&db);
+                          return(SUCCESS);
+                       }
 
                   bytes_done = 0;
                   if (fsa->trl_per_process > 0)
@@ -514,6 +527,20 @@ main(int argc, char *argv[])
                               }
                            }
                         }
+                        else if (db.fsa_pos == INCORRECT)
+                             {
+                                /*
+                                 * Looks as if this host is no longer in our
+                                 * database.
+                                 */
+                                (void)sql_quit();
+                                reset_values(files_retrieved,
+                                             file_size_retrieved,
+                                             files_to_retrieve,
+                                             file_size_to_retrieve,
+                                             (struct job *)&db);
+                                return(SUCCESS);
+                             }
                      } while ((status != 0) && (bytes_done < content_length));
                   }
 
@@ -847,7 +874,8 @@ main(int argc, char *argv[])
                   }
                   else
                   {
-                     if (fsa->debug > NORMAL_MODE)
+                     if ((db.fsa_pos != INCORRECT) &&
+                         (fsa->debug > NORMAL_MODE))
                      {
                         trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                                      "Renamed local file %s to %s.",
@@ -993,11 +1021,14 @@ main(int argc, char *argv[])
            }
    } while (((*(unsigned char *)((char *)p_no_of_hosts + AFD_FEATURE_FLAG_OFFSET_START) & DISABLE_RETRIEVE) == 0) &&
             ((more_files_in_list == YES) ||
-             ((db.keep_connected > 0) && (http_timeup() == SUCCESS))));
+             ((db.keep_connected > 0) && (sql_timeup() == SUCCESS))));
 
-   fsa->job_status[(int)db.job_no].connect_status = CLOSING_CONNECTION;
-   http_quit();
-   if (fsa->debug > NORMAL_MODE)
+   if (db.fsa_pos != INCORRECT)
+   {
+      fsa->job_status[(int)db.job_no].connect_status = CLOSING_CONNECTION;
+   }
+   sql_quit();
+   if ((db.fsa_pos != INCORRECT) && (fsa->debug > NORMAL_MODE))
    {
       trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL, "Logged out.");
    }
@@ -1115,12 +1146,16 @@ sql_timeup(void)
       {
          (void)sleep(sleeptime);
          (void)gsf_check_fra();
-         if (db.fra_pos == INCORRECT)
+         if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
          {
             return(INCORRECT);
          }
          if (gsf_check_fsa((struct job *)&db) == NEITHER)
          {
+            if (db.fsa_pos == INCORRECT)
+            {
+               return(INCORRECT);
+            }
             break;
          }
          if (fsa->job_status[(int)db.job_no].unique_name[2] == 6)

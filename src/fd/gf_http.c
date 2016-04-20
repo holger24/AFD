@@ -1,6 +1,6 @@
 /*
  *  gf_http.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -435,7 +435,7 @@ main(int argc, char *argv[])
 
             /* Inform FSA that we have finished connecting and */
             /* will now start to retrieve data.                */
-            if (db.fsa_pos != INCORRECT)
+            if (gsf_check_fsa((struct job *)&db) != NEITHER)
             {
                fsa->job_status[(int)db.job_no].no_of_files += files_to_retrieve;
                fsa->job_status[(int)db.job_no].file_size += file_size_to_retrieve;
@@ -461,9 +461,11 @@ main(int argc, char *argv[])
             }
 
             (void)gsf_check_fra();
-            if (db.fra_pos == INCORRECT)
+            if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
             {
-               /* Looks as if this directory is no longer in our database. */
+               /*
+                * Looks as if this directory/host is no longer in our database.
+                */
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                          "Database changed, exiting.");
                (void)http_quit();
@@ -669,6 +671,20 @@ main(int argc, char *argv[])
                         unlock_region(fsa_fd, db.lock_offset + LOCK_TFC);
 #endif
                      }
+                     else if (db.fsa_pos == INCORRECT)
+                          {
+                             /*
+                              * Looks as if this host is no longer in our
+                              * database.
+                              */
+                             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                       "Database changed, exiting.");
+                             (void)http_quit();
+                             reset_values(files_retrieved, file_size_retrieved,
+                                          files_to_retrieve, file_size_to_retrieve,
+                                          (struct job *)&db);
+                             exit(TRANSFER_SUCCESS);
+                          }
                   }
                   else /* status == SUCCESS | CHUNKED | NOTHING_TO_FETCH */
                   {
@@ -738,6 +754,22 @@ main(int argc, char *argv[])
                         (void)strcpy(fsa->job_status[(int)db.job_no].file_name_in_use,
                                      rl[i].file_name);
                      }
+                     else if (db.fsa_pos == INCORRECT)
+                          {
+                             /*
+                              * Looks as if this host is no longer in our
+                              * database.
+                              */
+                             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                       "Database changed, exiting.");
+                             (void)http_quit();
+                             (void)close(fd);
+                             (void)unlink(local_tmp_file);
+                             reset_values(files_retrieved, file_size_retrieved,
+                                          files_to_retrieve, file_size_to_retrieve,
+                                          (struct job *)&db);
+                             exit(TRANSFER_SUCCESS);
+                          }
 
                      if (status != NOTHING_TO_FETCH)
                      {
@@ -766,7 +798,8 @@ main(int argc, char *argv[])
 # else
                                                  "Reading blocksize %d (bytes_done=%ld).",
 # endif
-                                                 blocksize, (pri_off_t)bytes_done);
+                                                 blocksize,
+                                                 (pri_off_t)bytes_done);
                                  }
 #endif
                                  if ((status = http_read(buffer, blocksize)) <= 0)
@@ -774,16 +807,24 @@ main(int argc, char *argv[])
                                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                               "Failed to read from remote file %s in %s (%d)",
                                               rl[i].file_name,
-                                              fra[db.fra_pos].dir_alias, status);
-                                    reset_values(files_retrieved, file_size_retrieved,
-                                                 files_to_retrieve, file_size_to_retrieve,
+                                              fra[db.fra_pos].dir_alias,
+                                              status);
+                                    reset_values(files_retrieved,
+                                                 file_size_retrieved,
+                                                 files_to_retrieve,
+                                                 file_size_to_retrieve,
                                                  (struct job *)&db);
                                     http_quit();
+                                    if (bytes_done == 0)
+                                    {
+                                       (void)unlink(local_tmp_file);
+                                    }
                                     exit(eval_timeout(READ_REMOTE_ERROR));
                                  }
                                  if (fsa->trl_per_process > 0)
                                  {
-                                    limit_transfer_rate(status, fsa->trl_per_process,
+                                    limit_transfer_rate(status,
+                                                        fsa->trl_per_process,
                                                         clktck);
                                  }
                                  if (status > 0)
@@ -792,12 +833,18 @@ main(int argc, char *argv[])
                                     {
                                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                                  "Failed to write() to file %s : %s",
-                                                 local_tmp_file, strerror(errno));
+                                                 local_tmp_file,
+                                                 strerror(errno));
                                        http_quit();
-                                       reset_values(files_retrieved, file_size_retrieved,
+                                       reset_values(files_retrieved,
+                                                    file_size_retrieved,
                                                     files_to_retrieve,
                                                     file_size_to_retrieve,
                                                     (struct job *)&db);
+                                       if (bytes_done == 0)
+                                       {
+                                          (void)unlink(local_tmp_file);
+                                       }
                                        exit(WRITE_LOCAL_ERROR);
                                     }
                                     bytes_done += status;
@@ -846,6 +893,24 @@ main(int argc, char *argv[])
                                        }
                                     }
                                  }
+                                 else if (db.fsa_pos == INCORRECT)
+                                      {
+                                         /*
+                                          * Looks as if this host is no longer
+                                          * in our database.
+                                          */
+                                         trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                                   "Database changed, exiting.");
+                                         (void)http_quit();
+                                         (void)close(fd);
+                                         (void)unlink(local_tmp_file);
+                                         reset_values(files_retrieved,
+                                                      file_size_retrieved,
+                                                      files_to_retrieve,
+                                                      file_size_to_retrieve,
+                                                      (struct job *)&db);
+                                         exit(TRANSFER_SUCCESS);
+                                      }
                               } while (status != 0);
                            }
                            else
@@ -876,11 +941,18 @@ main(int argc, char *argv[])
                                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                               "Failed to read from remote file %s in %s (%d)",
                                               rl[i].file_name,
-                                              fra[db.fra_pos].dir_alias, status);
-                                    reset_values(files_retrieved, file_size_retrieved,
-                                                 files_to_retrieve, file_size_to_retrieve,
+                                              fra[db.fra_pos].dir_alias,
+                                              status);
+                                    reset_values(files_retrieved,
+                                                 file_size_retrieved,
+                                                 files_to_retrieve,
+                                                 file_size_to_retrieve,
                                                  (struct job *)&db);
                                     http_quit();
+                                    if (bytes_done == 0)
+                                    {
+                                       (void)unlink(local_tmp_file);
+                                    }
                                     exit(eval_timeout(READ_REMOTE_ERROR));
                                  }
                                  if (fsa->trl_per_process > 0)
@@ -894,12 +966,18 @@ main(int argc, char *argv[])
                                     {
                                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                                  "Failed to write() to file %s : %s",
-                                                 local_tmp_file, strerror(errno));
+                                                 local_tmp_file,
+                                                 strerror(errno));
                                        http_quit();
-                                       reset_values(files_retrieved, file_size_retrieved,
+                                       reset_values(files_retrieved,
+                                                    file_size_retrieved,
                                                     files_to_retrieve,
                                                     file_size_to_retrieve,
                                                     (struct job *)&db);
+                                       if (bytes_done == 0)
+                                       {
+                                          (void)unlink(local_tmp_file);
+                                       }
                                        exit(WRITE_LOCAL_ERROR);
                                     }
                                     bytes_done += status;
@@ -948,6 +1026,24 @@ main(int argc, char *argv[])
                                        }
                                     }
                                  }
+                                 else if (db.fsa_pos == INCORRECT)
+                                      {
+                                         /*
+                                          * Looks as if this host is no longer
+                                          * in our database.
+                                          */
+                                         trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                                   "Database changed, exiting.");
+                                         (void)http_quit();
+                                         (void)close(fd);
+                                         (void)unlink(local_tmp_file);
+                                         reset_values(files_retrieved,
+                                                      file_size_retrieved,
+                                                      files_to_retrieve,
+                                                      file_size_to_retrieve,
+                                                      (struct job *)&db);
+                                         exit(TRANSFER_SUCCESS);
+                                      }
                               }
                            }
                         }
@@ -978,7 +1074,10 @@ main(int argc, char *argv[])
                                               files_to_retrieve, file_size_to_retrieve,
                                               (struct job *)&db);
                                  http_quit();
-                                 (void)unlink(local_tmp_file);
+                                 if (bytes_done == 0)
+                                 {
+                                    (void)unlink(local_tmp_file);
+                                 }
                                  exit(eval_timeout(READ_REMOTE_ERROR));
                               }
                               if (fsa->trl_per_process > 0)
@@ -994,11 +1093,14 @@ main(int argc, char *argv[])
                                               "Failed to write() to file %s : %s",
                                               local_tmp_file, strerror(errno));
                                     http_quit();
-                                    (void)unlink(local_tmp_file);
                                     reset_values(files_retrieved, file_size_retrieved,
                                                  files_to_retrieve,
                                                  file_size_to_retrieve,
                                                  (struct job *)&db);
+                                    if (bytes_done == 0)
+                                    {
+                                       (void)unlink(local_tmp_file);
+                                    }
                                     exit(WRITE_LOCAL_ERROR);
                                  }
                                  bytes_done += status;
@@ -1010,6 +1112,24 @@ main(int argc, char *argv[])
                                  fsa->job_status[(int)db.job_no].file_size_done += status;
                                  fsa->job_status[(int)db.job_no].bytes_send += status;
                               }
+                              else if (db.fsa_pos == INCORRECT)
+                                   {
+                                      /*
+                                       * Looks as if this host is no longer
+                                       * in our database.
+                                       */
+                                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                                "Database changed, exiting.");
+                                      (void)http_quit();
+                                      (void)close(fd);
+                                      (void)unlink(local_tmp_file);
+                                      reset_values(files_retrieved,
+                                                   file_size_retrieved,
+                                                   files_to_retrieve,
+                                                   file_size_to_retrieve,
+                                                   (struct job *)&db);
+                                      exit(TRANSFER_SUCCESS);
+                                   }
                            } while (status != HTTP_LAST_CHUNK);
                         }
                      } /* if (status != NOTHING_TO_FETCH) */
@@ -1025,7 +1145,8 @@ main(int argc, char *argv[])
                      if (close(fd) == -1)
                      {
                         trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                  "Failed to close() local file %s.", local_tmp_file);
+                                  "Failed to close() local file %s.",
+                                  local_tmp_file);
                      }
                      else
                      {
@@ -1044,7 +1165,8 @@ main(int argc, char *argv[])
                         {
                            trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                      "Failed to delete remote file %s in %s (%d).",
-                                     rl[i].file_name, fra[db.fra_pos].dir_alias, status);
+                                     rl[i].file_name,
+                                     fra[db.fra_pos].dir_alias, status);
                         }
                         else
                         {
@@ -1336,9 +1458,10 @@ main(int argc, char *argv[])
                      }
 
                      /*
-                      * If the file size is not the same as the one when we did
-                      * the remote ls command, give a warning in the transfer log
-                      * so some action can be taken against the originator.
+                      * If the file size is not the same as the one when we
+                      * did the remote ls command, give a warning in the
+                      * transfer log so some action can be taken against
+                      * the originator.
                       */
                      if ((content_length > 0) &&
                          ((bytes_done + offset) != content_length))
@@ -1372,7 +1495,8 @@ main(int argc, char *argv[])
                      }
                      else
                      {
-                        if (fsa->debug > NORMAL_MODE)
+                        if ((db.fsa_pos != INCORRECT) &&
+                            (fsa->debug > NORMAL_MODE))
                         {
                            trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                                         "Renamed local file %s to %s.",
@@ -1438,10 +1562,11 @@ main(int argc, char *argv[])
                   file_size_retrieved += bytes_done;
                } /* if (rl[i].retrieved == NO) */
 
-               if (db.fra_pos == INCORRECT)
+               if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
                {
-                  /* We must stop here if fra_pos is INCORRECT  */
-                  /* since we try to access this structure FRA! */
+                  /* We must stop here if fra_pos or fsa_pos is */
+                  /* INCORRECT since we try to access these     */
+                  /* structures (FRA/FSA)!                      */
                   trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                             "Database changed, exiting.");
                   (void)http_quit();
@@ -1691,9 +1816,12 @@ main(int argc, char *argv[])
    }
 #endif /* _WITH_BURST_2 */
 
-   fsa->job_status[(int)db.job_no].connect_status = CLOSING_CONNECTION;
+   if (db.fsa_pos != INCORRECT)
+   {
+      fsa->job_status[(int)db.job_no].connect_status = CLOSING_CONNECTION;
+   }
    http_quit();
-   if (fsa->debug > NORMAL_MODE)
+   if ((db.fsa_pos != INCORRECT) && (fsa->debug > NORMAL_MODE))
    {
       trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL, "Logged out.");
    }

@@ -1,6 +1,6 @@
 /*
  *  gf_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -675,7 +675,8 @@ main(int argc, char *argv[])
                if (fsa->debug > NORMAL_MODE)
                {
                   trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                               "Changed transfer mode to %c.", db.transfer_mode);
+                               "Changed transfer mode to %c.",
+                               db.transfer_mode);
                }
             }
          }
@@ -898,9 +899,11 @@ main(int argc, char *argv[])
             }
 
             (void)gsf_check_fra();
-            if (db.fra_pos == INCORRECT)
+            if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
             {
-               /* Looks as if this directory is no longer in our database. */
+               /*
+                * Looks as if this directory/host is no longer in our database.
+                */
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                          "Database changed, exiting.");
                (void)ftp_quit();
@@ -992,7 +995,8 @@ main(int argc, char *argv[])
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                "Failed to open remote file %s in %s (%d).",
-                               rl[i].file_name, fra[db.fra_pos].dir_alias, status);
+                               rl[i].file_name, fra[db.fra_pos].dir_alias,
+                               status);
                      (void)ftp_quit();
                      reset_values(files_retrieved, file_size_retrieved,
                                   files_to_retrieve, file_size_to_retrieve,
@@ -1101,6 +1105,18 @@ main(int argc, char *argv[])
                         unlock_region(fsa_fd, db.lock_offset + LOCK_TFC);
 #endif
                      }
+                     else if (db.fsa_pos == INCORRECT)
+                          {
+                             /* Host is no longer in FSA, so lets exit. */
+                             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                       "Database changed, exiting.");
+                             (void)ftp_quit();
+                             reset_values(files_retrieved, file_size_retrieved,
+                                          files_to_retrieve,
+                                          file_size_to_retrieve,
+                                          (struct job *)&db);
+                             exit(TRANSFER_SUCCESS);
+                          }
                      files_retrieved++;
                      file_size_retrieved += rl[i].size;
 
@@ -1175,7 +1191,8 @@ main(int argc, char *argv[])
                         if (fsa->debug > NORMAL_MODE)
                         {
                            trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                        "Opened local file %s.", local_tmp_file);
+                                        "Opened local file %s.",
+                                        local_tmp_file);
                         }
                      }
 
@@ -1192,6 +1209,20 @@ main(int argc, char *argv[])
                         (void)strcpy(fsa->job_status[(int)db.job_no].file_name_in_use,
                                      rl[i].file_name);
                      }
+                     else if (db.fsa_pos == INCORRECT)
+                          {
+                             /* Host is no longer in FSA, so lets exit. */
+                             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                       "Database changed, exiting.");
+                             (void)ftp_quit(); /* also closes data_fd */
+                             (void)close(fd);
+                             (void)unlink(local_tmp_file);
+                             reset_values(files_retrieved, file_size_retrieved,
+                                          files_to_retrieve,
+                                          file_size_to_retrieve,
+                                          (struct job *)&db);
+                             exit(TRANSFER_SUCCESS);
+                          }
 
                      bytes_done = 0;
                      if (fsa->trl_per_process > 0)
@@ -1217,7 +1248,8 @@ main(int argc, char *argv[])
                                      "Failed to read from remote file %s in %s (%d)",
                                      rl[i].file_name, fra[db.fra_pos].dir_alias, status);
                            reset_values(files_retrieved, file_size_retrieved,
-                                        files_to_retrieve, file_size_to_retrieve,
+                                        files_to_retrieve,
+                                        file_size_to_retrieve,
                                         (struct job *)&db);
                            if (status == EPIPE)
                            {
@@ -1227,6 +1259,10 @@ main(int argc, char *argv[])
                            else
                            {
                               (void)ftp_quit();
+                           }
+                           if (bytes_done == 0)
+                           {
+                              (void)unlink(local_tmp_file);
                            }
                            exit(eval_timeout(READ_REMOTE_ERROR));
                         }
@@ -1248,7 +1284,11 @@ main(int argc, char *argv[])
                                            files_to_retrieve,
                                            file_size_to_retrieve,
                                            (struct job *)&db);
-                              exit(eval_timeout(WRITE_LOCAL_ERROR));
+                              if (bytes_done == 0)
+                              {
+                                 (void)unlink(local_tmp_file);
+                              }
+                              exit(WRITE_LOCAL_ERROR);
                            }
                            bytes_done += status;
                         }
@@ -1284,6 +1324,21 @@ main(int argc, char *argv[])
                               }
                            }
                         }
+                        else if (db.fsa_pos == INCORRECT)
+                             {
+                                /* Host is no longer in FSA, so lets exit. */
+                                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                          "Database changed, exiting.");
+                                (void)ftp_quit(); /* also closes data_fd */
+                                (void)close(fd);
+                                (void)unlink(local_tmp_file);
+                                reset_values(files_retrieved,
+                                             file_size_retrieved,
+                                             files_to_retrieve,
+                                             file_size_to_retrieve,
+                                             (struct job *)&db);
+                                exit(TRANSFER_SUCCESS);
+                             }
                      } while (status != 0);
 
                      /* Close the FTP data connection. */
@@ -1345,7 +1400,8 @@ main(int argc, char *argv[])
                         if (fsa->debug > NORMAL_MODE)
                         {
                            trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                        "Closed local file %s.", local_tmp_file);
+                                        "Closed local file %s.",
+                                        local_tmp_file);
                         }
                      }
 
@@ -1420,10 +1476,10 @@ main(int argc, char *argv[])
                         if ((rl[i].size != -1) && (bytes_done > 0))
                         {
                            /*
-                            * If the file size is not the same as the one when we
-                            * did the remote ls command, give a warning in the
-                            * transfer log so some action can be taken against
-                            * the originator.
+                            * If the file size is not the same as the one when
+                            * we did the remote ls command, give a warning in
+                            * the transfer log so some action can be taken
+                            * against the originator.
                             */
                            if ((bytes_done + offset) != rl[i].size)
                            {
@@ -1648,9 +1704,10 @@ main(int argc, char *argv[])
                      else
                      {
                         /*
-                         * If the file size is not the same as the one when we did
-                         * the remote ls command, give a warning in the transfer
-                         * log so some action can be taken against the originator.
+                         * If the file size is not the same as the one when
+                         * we did the remote ls command, give a warning in
+                         * the transfer log so some action can be taken
+                         * against the originator.
                          */
                         if ((rl[i].size != -1) &&
                             ((bytes_done + offset) != rl[i].size))
@@ -1685,7 +1742,8 @@ main(int argc, char *argv[])
                      }
                      else
                      {
-                        if (fsa->debug > NORMAL_MODE)
+                        if ((db.fsa_pos != INCORRECT) &&
+                            (fsa->debug > NORMAL_MODE))
                         {
                            trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                                         "Renamed local file %s to %s.",
@@ -1750,10 +1808,11 @@ main(int argc, char *argv[])
                         file_size_retrieved += bytes_done;
                      }
 
-                     if (db.fra_pos == INCORRECT)
+                     if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
                      {
-                        /* We must stop here if fra_pos is INCORRECT  */
-                        /* since we try to access this structure FRA! */
+                        /* We must stop here if fra_pos or fsa_pos is */
+                        /* INCORRECT since we try to access these     */
+                        /* structures (FRA/FSA)!                      */
                         trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                                   "Database changed, exiting.");
                         (void)ftp_quit();
@@ -1762,7 +1821,7 @@ main(int argc, char *argv[])
                                      (struct job *)&db);
                         exit(TRANSFER_SUCCESS);
                      }
-                  }
+                  } /* status != 550 */
                } /* if (rl[i].retrieved == NO) */
             } /* for (i = 0; i < *no_of_listed_files; i++) */
 
@@ -2001,7 +2060,10 @@ main(int argc, char *argv[])
    }
 #endif /* _WITH_BURST_2 */
 
-   fsa->job_status[(int)db.job_no].connect_status = CLOSING_CONNECTION;
+   if (db.fsa_pos != INCORRECT)
+   {
+      fsa->job_status[(int)db.job_no].connect_status = CLOSING_CONNECTION;
+   }
    if ((status = ftp_quit()) != SUCCESS)
    {
       trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
@@ -2010,7 +2072,7 @@ main(int argc, char *argv[])
    }
    else
    {
-      if (fsa->debug > NORMAL_MODE)
+      if ((db.fsa_pos != INCORRECT) && (fsa->debug > NORMAL_MODE))
       {
          trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str, "Logged out.");
       }

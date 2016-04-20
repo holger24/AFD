@@ -120,7 +120,7 @@ check_burst_gf(unsigned int *values_changed)
       ret = NO;
 
       /* It could be that the FSA changed. */
-      if ((gsf_check_fsa((struct job *)&db) == YES) &&
+      if ((gsf_check_fsa((struct job *)&db) != NO) &&
           (db.fsa_pos == INCORRECT))
       {
          /*
