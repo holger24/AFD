@@ -196,7 +196,7 @@ main(int argc, char *argv[])
    crc_val = get_str_checksum_crc32c(db.exec_cmd);
 #endif
    (void)snprintf(str_crc_val, MAX_INT_HEX_LENGTH, "%x", crc_val);
-   if (create_remote_dir(NULL, db.user, db.hostname, str_crc_val,
+   if (create_remote_dir(NULL, p_work_dir, db.user, db.hostname, str_crc_val,
                          local_file, &local_file_length) == INCORRECT)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,

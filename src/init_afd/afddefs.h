@@ -997,6 +997,8 @@ typedef unsigned long       u_long_64;
 #define DO_NOT_PARALLELIZE_ID_LENGTH     (sizeof(DO_NOT_PARALLELIZE_ID) - 1)
 #define TIMEZONE_ID                      "timezone"
 #define TIMEZONE_ID_LENGTH               (sizeof(TIMEZONE_ID) - 1)
+#define LOCAL_REMOTE_DIR_ID              "local remote dir"
+#define LOCAL_REMOTE_DIR_ID_LENGTH       (sizeof(LOCAL_REMOTE_DIR_ID) - 1)
 #define UNKNOWN_FILES                    1
 #define QUEUED_FILES                     2
 #define OLD_LOCKED_FILES                 4
@@ -3864,7 +3866,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     create_name(char *, int, signed char, time_t, unsigned int,
                                 unsigned int *, int *, char *, int, int),
                     create_remote_dir(char *, char *, char *, char *, char *,
-                                      int *),
+                                      char *, int *),
                     detach_afd_status(void),
 #ifdef WITH_IP_DB
                     detach_ip_db(void),

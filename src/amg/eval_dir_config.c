@@ -774,17 +774,18 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                     dir->protocol = LOC;
                  }
             /* Assume it is url format. */
-            else if ((error_mask = url_evaluate(dir->location, &dir->scheme, user,
-                                                &smtp_auth, smtp_user,
+            else if ((error_mask = url_evaluate(dir->location, &dir->scheme,
+                                                user, &smtp_auth, smtp_user,
 #ifdef WITH_SSH_FINGERPRINT
                                                 dummy_ssh_fingerprint,
                                                 &dummy_key_type,
 #endif
 #ifdef WITH_PASSWD_IN_MSG
-                                                password, NO, dir->real_hostname,
+                                                password, NO,
 #else
-                                                password, YES, dir->real_hostname,
+                                                password, YES,
 #endif
+                                                dir->real_hostname,
                                                 &dummy_port, directory, NULL,
                                                 NULL, &dummy_transfer_mode,
                                                 &dummy_ssh_protocol, NULL)) < 4)
@@ -800,12 +801,6 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                        t_hostname(dir->real_hostname, dir->host_alias);
                        (void)strcpy(dir->url, dir->location);
                        (void)strcpy(dir->orig_dir_name, dir->url);
-                       if (create_remote_dir(NULL, user, dir->real_hostname,
-                                             directory, dir->location,
-                                             &dir->location_length) == INCORRECT)
-                       {
-                          continue;
-                       }
                     }
                     else if (dir->scheme & LOC_FLAG)
                          {
@@ -906,12 +901,6 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                             t_hostname(dir->real_hostname, dir->host_alias);
                             (void)strcpy(dir->url, dir->location);
                             (void)strcpy(dir->orig_dir_name, dir->url);
-                            if (create_remote_dir(NULL, user, dir->real_hostname,
-                                                  directory, dir->location,
-                                                  &dir->location_length) == INCORRECT)
-                            {
-                               continue;
-                            }
                          }
                     else if (dir->scheme & SFTP_FLAG)
                          {
@@ -924,35 +913,14 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                             t_hostname(dir->real_hostname, dir->host_alias);
                             (void)strcpy(dir->url, dir->location);
                             (void)strcpy(dir->orig_dir_name, dir->url);
-                            if (create_remote_dir(NULL, user, dir->real_hostname,
-                                                  directory, dir->location,
-                                                  &dir->location_length) == INCORRECT)
-                            {
-                               continue;
-                            }
                          }
                     else if (dir->scheme & EXEC_FLAG)
                          {
-                            unsigned int crc_val;
-
                             dir->type = REMOTE_DIR;
                             dir->protocol = EXEC;
                             t_hostname(dir->real_hostname, dir->host_alias);
                             (void)strcpy(dir->url, dir->location);
                             (void)strcpy(dir->orig_dir_name, dir->url);
-#ifdef HAVE_HW_CRC32
-                            crc_val = get_str_checksum_crc32c(directory, have_hw_crc32);
-#else
-                            crc_val = get_str_checksum_crc32c(directory);
-#endif
-                            (void)snprintf(directory, MAX_RECIPIENT_LENGTH,
-                                           "%x", crc_val);
-                            if (create_remote_dir(NULL, user, dir->real_hostname,
-                                                  directory, dir->location,
-                                                  &dir->location_length) == INCORRECT)
-                            {
-                               continue;
-                            }
                          }
                          else
                          {
@@ -1957,6 +1925,62 @@ check_dummy_line:
             {
                int duplicate = NO;
 
+               if ((no_of_local_dirs % 10) == 0)
+               {
+                  size_t new_size = (((no_of_local_dirs / 10) + 1) * 10) *
+                                    sizeof(struct dir_data);
+
+                  if (no_of_local_dirs == 0)
+                  {
+                     if ((dd = malloc(new_size)) == NULL)
+                     {
+                        system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                   "malloc() error : %s", strerror(errno));
+                        exit(INCORRECT);
+                     }
+                  }
+                  else
+                  {
+                     if ((dd = realloc((char *)dd, new_size)) == NULL)
+                     {
+                        system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                   "realloc() error : %s", strerror(errno));
+                        exit(INCORRECT);
+                     }
+                  }
+               }
+
+               /*
+                * Evaluate the directory options.
+                * We need to do this here since under dir option we
+                * can define where a local remote directory is located.
+                */
+               eval_dir_options(no_of_local_dirs, dir->dir_options);
+               if (dir->type == REMOTE_DIR)
+               {
+                  if (dir->protocol == EXEC)
+                  {
+                      unsigned int crc_val;
+
+#ifdef HAVE_HW_CRC32
+                      crc_val = get_str_checksum_crc32c(directory,
+                                                        have_hw_crc32);
+#else
+                      crc_val = get_str_checksum_crc32c(directory);
+#endif
+                      (void)snprintf(directory, MAX_RECIPIENT_LENGTH,
+                                     "%x", crc_val);
+                  }
+                  if (create_remote_dir(NULL,
+                                        dd[no_of_local_dirs].local_work_dir,
+                                        user, dir->real_hostname,
+                                        directory, dir->location,
+                                        &dir->location_length) == INCORRECT)
+                  {
+                     continue;
+                  }
+               }
+
                /* Check if this directory was not already specified. */
                for (j = 0; j < no_of_local_dirs; j++)
                {
@@ -1987,31 +2011,6 @@ check_dummy_line:
                   {
                      int    tmp_create_source_dir;
                      mode_t tmp_create_source_dir_mode;
-
-                     if ((no_of_local_dirs % 10) == 0)
-                     {
-                        size_t new_size = (((no_of_local_dirs / 10) + 1) * 10) *
-                                          sizeof(struct dir_data);
-
-                        if (no_of_local_dirs == 0)
-                        {
-                           if ((dd = malloc(new_size)) == NULL)
-                           {
-                              system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                         "malloc() error : %s", strerror(errno));
-                              exit(INCORRECT);
-                           }
-                        }
-                        else
-                        {
-                           if ((dd = realloc((char *)dd, new_size)) == NULL)
-                           {
-                              system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                         "realloc() error : %s", strerror(errno));
-                              exit(INCORRECT);
-                           }
-                        }
-                     }
 
                      dd[no_of_local_dirs].dir_pos = lookup_dir_id(dir->location,
                                                                   dir->orig_dir_name);
@@ -2097,8 +2096,6 @@ check_dummy_line:
                      dd[no_of_local_dirs].dir_config_id = dcl[dcd].dc_id;
                      dir->dir_config_id = dcl[dcd].dc_id;
 
-                     /* Evaluate the directory options. */
-                     eval_dir_options(no_of_local_dirs, dir->dir_options);
 #if defined (WITH_INOTIFY) && defined (USE_INOTIFY_FOR_REMOTE_DIRS)
                      if (dir->type == REMOTE_DIR)
                      {

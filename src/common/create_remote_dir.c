@@ -1,7 +1,7 @@
 /*
  *  create_remote_dir.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 2000 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ DESCR__S_M3
  **
  ** SYNOPSIS
  **   int create_remote_dir(char *url,
+ **                         char *local_work_dir,
  **                         char *user,
  **                         char *host_alias,
  **                         char *directory,
@@ -60,19 +61,18 @@ DESCR__S_M3
  **   20.04.2008 H.Kiehl Let function url_evaluate() handle the URL.
  **   24.10.2008 H.Kiehl Additional parameter to return the length of
  **                      remote_dir.
+ **   22.04.2016 H.Kiehl Added parameter local_work_dir.
  **
  */
 DESCR__E_M3
 
 #include <stdio.h>           /* snprintf()                               */
 
-/* External global variables. */
-extern char *p_work_dir;
-
 
 /*######################### create_remote_dir() #########################*/
 int
 create_remote_dir(char *url,
+                  char *local_work_dir,
                   char *user,
                   char *host_alias,
                   char *directory,
@@ -86,7 +86,7 @@ create_remote_dir(char *url,
       if (directory[0] == '/')
       {
          *remote_dir_length = snprintf(remote_dir, MAX_PATH_LENGTH,
-                                       "%s%s%s/%s@%s%s", p_work_dir,
+                                       "%s%s%s/%s@%s%s", local_work_dir,
                                        AFD_FILE_DIR, INCOMING_DIR, user,
                                        host_alias, directory) + 1;
       }
@@ -96,14 +96,14 @@ create_remote_dir(char *url,
               {
                  *remote_dir_length = snprintf(remote_dir, MAX_PATH_LENGTH,
                                                "%s%s%s/@%s",
-                                               p_work_dir, AFD_FILE_DIR,
+                                               local_work_dir, AFD_FILE_DIR,
                                                INCOMING_DIR, host_alias) + 1;
               }
               else
               {
                  *remote_dir_length = snprintf(remote_dir, MAX_PATH_LENGTH,
                                                "%s%s%s/%s@%s/%s",
-                                               p_work_dir, AFD_FILE_DIR,
+                                               local_work_dir, AFD_FILE_DIR,
                                                INCOMING_DIR, user, host_alias,
                                                user) + 1;
               }
@@ -114,7 +114,7 @@ create_remote_dir(char *url,
               {
                  *remote_dir_length = snprintf(remote_dir, MAX_PATH_LENGTH,
                                                "%s%s%s/@%s/%s",
-                                               p_work_dir, AFD_FILE_DIR,
+                                               local_work_dir, AFD_FILE_DIR,
                                                INCOMING_DIR, host_alias,
                                                directory) + 1;
               }
@@ -122,7 +122,7 @@ create_remote_dir(char *url,
               {
                  *remote_dir_length = snprintf(remote_dir, MAX_PATH_LENGTH,
                                                "%s%s%s/%s@%s/%s/%s",
-                                               p_work_dir, AFD_FILE_DIR,
+                                               local_work_dir, AFD_FILE_DIR,
                                                INCOMING_DIR, user, host_alias,
                                                user, directory) + 1;
               }
@@ -155,7 +155,7 @@ create_remote_dir(char *url,
          {
             *remote_dir_length = snprintf(remote_dir, MAX_PATH_LENGTH,
                                           "%s%s%s/%s@%s%s",
-                                          p_work_dir, AFD_FILE_DIR,
+                                          local_work_dir, AFD_FILE_DIR,
                                           INCOMING_DIR, user, host_alias,
                                           directory) + 1;
          }
@@ -165,14 +165,14 @@ create_remote_dir(char *url,
                  {
                     *remote_dir_length = snprintf(remote_dir, MAX_PATH_LENGTH,
                                                   "%s%s%s/@%s",
-                                                  p_work_dir, AFD_FILE_DIR,
+                                                  local_work_dir, AFD_FILE_DIR,
                                                   INCOMING_DIR, host_alias) + 1;
                  }
                  else
                  {
                     *remote_dir_length = snprintf(remote_dir, MAX_PATH_LENGTH,
                                                   "%s%s%s/%s@%s/%s",
-                                                  p_work_dir, AFD_FILE_DIR,
+                                                  local_work_dir, AFD_FILE_DIR,
                                                   INCOMING_DIR, user, host_alias,
                                                   user) + 1;
                  }
@@ -183,7 +183,7 @@ create_remote_dir(char *url,
                  {
                     *remote_dir_length = snprintf(remote_dir, MAX_PATH_LENGTH,
                                                   "%s%s%s/@%s/%s",
-                                                  p_work_dir, AFD_FILE_DIR,
+                                                  local_work_dir, AFD_FILE_DIR,
                                                   INCOMING_DIR, host_alias,
                                                   directory) + 1;
                  }
@@ -191,7 +191,7 @@ create_remote_dir(char *url,
                  {
                     *remote_dir_length = snprintf(remote_dir, MAX_PATH_LENGTH,
                                                   "%s%s%s/%s@%s/%s/%s",
-                                                  p_work_dir, AFD_FILE_DIR,
+                                                  local_work_dir, AFD_FILE_DIR,
                                                   INCOMING_DIR, user,
                                                   host_alias, user, directory) + 1;
                  }

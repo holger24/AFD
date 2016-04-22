@@ -343,8 +343,9 @@ main(int argc, char *argv[])
 
          /* Get directory where files are to be stored and */
          /* prepare some pointers for the file names.      */
-         if (create_remote_dir(fra[db.fra_pos].url, NULL, NULL, NULL,
-                               local_file, &local_file_length) == INCORRECT)
+         if (create_remote_dir(fra[db.fra_pos].url, p_work_dir, NULL, NULL,
+                               NULL, local_file,
+                               &local_file_length) == INCORRECT)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        "Failed to determine local incoming directory for <%s>.",

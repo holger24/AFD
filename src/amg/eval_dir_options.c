@@ -97,6 +97,7 @@ DESCR__S_M3
  **                      directly behind the directory name itself.
  **   15.12.2013 H.Kiehl Added "max errors" and "do not parallelize" option.
  **   11.04.2016 H.Kiehl Added timezone option.
+ **   22.04.2016 H.Kiehl Added "local remote dir" option.
  **
  */
 DESCR__E_M3
@@ -115,6 +116,7 @@ DESCR__E_M3
 #include "amgdefs.h"
 
 /* External global variables. */
+extern char            *p_work_dir;
 extern int             default_delete_files_flag,
 #ifdef WITH_INOTIFY
                        default_inotify_flag,
@@ -172,11 +174,12 @@ extern struct dir_data *dd;
 #ifdef NEW_FRA
 #define TIMEZONE_FLAG                    4
 #endif
+#define LOCAL_REMOTE_DIR_FLAG            8
 
 
 /*########################## eval_dir_options() #########################*/
 void
-eval_dir_options(int  dir_pos, char *dir_options)
+eval_dir_options(int dir_pos, char *dir_options)
 {
    int          old_file_time,
                 to_many_time_option_warn = YES;
@@ -244,6 +247,7 @@ eval_dir_options(int  dir_pos, char *dir_options)
    dd[dir_pos].dir_mode = 0;
    dd[dir_pos].do_not_parallelize = NO;
    dd[dir_pos].do_not_move = NO;
+   dd[dir_pos].local_work_dir[0] = '\0';
 
    /*
     * Now for the new directory options.
@@ -1767,6 +1771,54 @@ eval_dir_options(int  dir_pos, char *dir_options)
               dd[dir_pos].important_dir = YES;
            }
 #endif
+      else if (((used2 & LOCAL_REMOTE_DIR_FLAG) == 0) &&
+               (strncmp(ptr, LOCAL_REMOTE_DIR_ID, LOCAL_REMOTE_DIR_ID_LENGTH) == 0))
+           {
+              int length = 0;
+
+              used2 |= LOCAL_REMOTE_DIR_FLAG;
+              ptr += LOCAL_REMOTE_DIR_ID_LENGTH;
+              while ((*ptr == ' ') || (*ptr == '\t'))
+              {
+                 ptr++;
+              }
+              while ((*ptr != '\n') && (*ptr != '\0') && (*ptr != ' ') &&
+                     (*ptr != '\t') && (length < MAX_PATH_LENGTH))
+              {
+                 if (*ptr == '\\')
+                 {
+                    ptr++;
+                 }
+                 dd[dir_pos].local_work_dir[length] = *ptr;
+                 ptr++; length++;
+              }
+              if ((length > 0) && (length != MAX_PATH_LENGTH))
+              {
+                 dd[dir_pos].local_work_dir[length] = '\0';
+              }
+              else
+              {
+                 dd[dir_pos].local_work_dir[0] = '\0';
+                 if (length > 0)
+                 {
+                    system_log(WARN_SIGN, __FILE__, __LINE__,
+                              "Directory option `%s' for directory %s to long.",
+                              LOCAL_REMOTE_DIR_ID, dd[dir_pos].dir_name);
+                    system_log(WARN_SIGN, NULL, 0,
+                              "May only be %d bytes long.", MAX_PATH_LENGTH);
+                 }
+                 else
+                 {
+                    system_log(WARN_SIGN, __FILE__, __LINE__,
+                              "No directory name for directory option `%s' for directory %s.",
+                              LOCAL_REMOTE_DIR_ID, dd[dir_pos].dir_name);
+                 }
+              }
+              while ((*ptr != '\n') && (*ptr != '\0'))
+              {
+                 ptr++;
+              }
+           }
            else
            {
               /* Ignore this option. */
@@ -1801,6 +1853,10 @@ eval_dir_options(int  dir_pos, char *dir_options)
    if (dd[dir_pos].locked_file_time == -1)
    {
       dd[dir_pos].locked_file_time = old_file_time;
+   }
+   if (dd[dir_pos].local_work_dir[0] == '\0')
+   {
+      (void)strcpy(dd[dir_pos].local_work_dir, p_work_dir);
    }
 
    return;

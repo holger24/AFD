@@ -1,6 +1,6 @@
 /*
  *  check_fra_fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -403,8 +403,8 @@ check_fra_fd(void)
                {
                   if (ord[i].fullname[0] == '\0')
                   {
-                     if (create_remote_dir(ord[i].url, NULL, NULL, NULL,
-                                           ord[i].fullname,
+                     if (create_remote_dir(ord[i].url, p_work_dir,
+                                           NULL, NULL, NULL, ord[i].fullname,
                                            &ord[i].fullname_length) == INCORRECT)
                      {
                         ord[i].fullname[0] = 1;
@@ -420,8 +420,9 @@ check_fra_fd(void)
                         {
                            if (ord[j].fullname[0] == '\0')
                            {
-                              if (create_remote_dir(ord[j].url, NULL, NULL,
-                                                    NULL, ord[j].fullname,
+                              if (create_remote_dir(ord[j].url, p_work_dir,
+                                                    NULL, NULL, NULL,
+                                                    ord[j].fullname,
                                                     &ord[j].fullname_length) == INCORRECT)
                               {
                                  ord[j].fullname[0] = 1;
