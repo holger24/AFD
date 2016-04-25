@@ -132,13 +132,48 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
                      p_work_dir, AFD_ARCHIVE_DIR, (unsigned int)(*ewl)[0].dev);
       (void)snprintf((*ewl)[0].afd_file_dir, MAX_PATH_LENGTH, "%s%s",
                      p_work_dir, AFD_ARCHIVE_DIR);
-      if ((symlink((*ewl)[0].afd_file_dir, linkpath) == -1) &&
-          (errno != EEXIST))
+      if (symlink((*ewl)[0].afd_file_dir, linkpath) == -1)
       {
-         system_log(FATAL_SIGN, __FILE__, __LINE__,
-                    _("Failed to symlink() `%s' to `%s' : %s"),
-                    linkpath, (*ewl)[0].afd_file_dir);
-         exit(INCORRECT);
+         if (errno == EEXIST)
+         {
+            char *resolved_path;
+
+            if ((resolved_path = realpath(linkpath, NULL)) == NULL)
+            {
+               system_log(FATAL_SIGN, __FILE__, __LINE__,
+                          _("Failed to get realpath() of `%s' : %s"),
+                          linkpath, strerror(errno));
+               exit(INCORRECT);
+            }
+            if (strcmp((*ewl)[0].afd_file_dir, resolved_path) != 0)
+            {
+               if (unlink(linkpath) != 0)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             _("Failed to unlink() `%s' : %s"),
+                             linkpath, strerror(errno));
+                  exit(INCORRECT);
+               }
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                          "Deleted wrong link `%s' [%s != %s]",
+                          linkpath, (*ewl)[0].afd_file_dir, resolved_path);
+               if (symlink((*ewl)[0].afd_file_dir, linkpath) == -1)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             _("Failed to symlink() `%s' to `%s' : %s"),
+                             linkpath, (*ewl)[0].afd_file_dir);
+                  exit(INCORRECT);
+               }
+            }
+            free(resolved_path);
+         }
+         else
+         {
+            system_log(FATAL_SIGN, __FILE__, __LINE__,
+                       _("Failed to symlink() `%s' to `%s' : %s"),
+                       linkpath, (*ewl)[0].afd_file_dir);
+            exit(INCORRECT);
+         }
       }
       (*ewl)[0].afd_file_dir_length = (*ewl)[0].dir_name_length + AFD_FILE_DIR_LENGTH;
       (void)memcpy((*ewl)[0].afd_file_dir, afd_file_dir,
@@ -163,8 +198,6 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
       (*ewl)[0].time_dir_length = (*ewl)[0].afd_file_dir_length + AFD_TIME_DIR_LENGTH;
       (void)strcpy((*ewl)[0].time_dir, (*ewl)[0].afd_file_dir);
       (void)strcpy((*ewl)[0].time_dir + (*ewl)[0].afd_file_dir_length, AFD_TIME_DIR);
-      *((*ewl)[0].time_dir + (*ewl)[0].time_dir_length) = '/';
-      *((*ewl)[0].time_dir + (*ewl)[0].time_dir_length + 1) = '\0';
       (*ewl)[0].p_time_dir_id = (*ewl)[0].time_dir + (*ewl)[0].time_dir_length + 1;
 
       (void)snprintf(linkpath, MAX_PATH_LENGTH, "%s%s%s/%x",
@@ -172,37 +205,144 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
                      (unsigned int)(*ewl)[0].dev);
       (void)snprintf((*ewl)[0].afd_file_dir + (*ewl)[0].afd_file_dir_length,
                      MAX_INT_HEX_LENGTH, "%s", AFD_TMP_DIR);
-      if ((symlink((*ewl)[0].afd_file_dir, linkpath) == -1) &&
-          (errno != EEXIST))
+      if (symlink((*ewl)[0].afd_file_dir, linkpath) == -1)
       {
-         system_log(FATAL_SIGN, __FILE__, __LINE__,
-                    _("Failed to symlink() `%s' to `%s' : %s"),
-                    linkpath, (*ewl)[0].afd_file_dir);
-         exit(INCORRECT);
+         if (errno == EEXIST)
+         {
+            char *resolved_path;
+
+            if ((resolved_path = realpath(linkpath, NULL)) == NULL)
+            {
+               system_log(FATAL_SIGN, __FILE__, __LINE__,
+                          _("Failed to get realpath() of `%s' : %s"),
+                          linkpath, strerror(errno));
+               exit(INCORRECT);
+            }
+            if (strcmp((*ewl)[0].afd_file_dir, resolved_path) != 0)
+            {
+               if (unlink(linkpath) != 0)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             _("Failed to unlink() `%s' : %s"),
+                             linkpath, strerror(errno));
+                  exit(INCORRECT);
+               }
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                          "Deleted wrong link `%s' [%s != %s]",
+                          linkpath, (*ewl)[0].afd_file_dir, resolved_path);
+               if (symlink((*ewl)[0].afd_file_dir, linkpath) == -1)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             _("Failed to symlink() `%s' to `%s' : %s"),
+                             linkpath, (*ewl)[0].afd_file_dir);
+                  exit(INCORRECT);
+               }
+            }
+            free(resolved_path);
+         }
+         else
+         {
+            system_log(FATAL_SIGN, __FILE__, __LINE__,
+                       _("Failed to symlink() `%s' to `%s' : %s"),
+                       linkpath, (*ewl)[0].afd_file_dir);
+            exit(INCORRECT);
+         }
       }
       (*ewl)[0].afd_file_dir[(*ewl)[0].afd_file_dir_length] = '\0';
       (void)snprintf(linkpath, MAX_PATH_LENGTH, "%s%s%s/%x",
                      p_work_dir, AFD_FILE_DIR, OUTGOING_DIR,
                      (unsigned int)(*ewl)[0].dev);
-      if ((symlink((*ewl)[0].outgoing_file_dir, linkpath) == -1) &&
-          (errno != EEXIST))
+      if (symlink((*ewl)[0].outgoing_file_dir, linkpath) == -1)
       {
-         system_log(FATAL_SIGN, __FILE__, __LINE__,
-                    _("Failed to symlink() `%s' to `%s' : %s"),
-                    linkpath, (*ewl)[0].outgoing_file_dir);
-         exit(INCORRECT);
+         if (errno == EEXIST)
+         {
+            char *resolved_path;
+
+            if ((resolved_path = realpath(linkpath, NULL)) == NULL)
+            {
+               system_log(FATAL_SIGN, __FILE__, __LINE__,
+                          _("Failed to get realpath() of `%s' : %s"),
+                          linkpath, strerror(errno));
+               exit(INCORRECT);
+            }
+            if (strcmp((*ewl)[0].outgoing_file_dir, resolved_path) != 0)
+            {
+               if (unlink(linkpath) != 0)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             _("Failed to unlink() `%s' : %s"),
+                             linkpath, strerror(errno));
+                  exit(INCORRECT);
+               }
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                          "Deleted wrong link `%s' [%s != %s]",
+                          linkpath, (*ewl)[0].outgoing_file_dir, resolved_path);
+               if (symlink((*ewl)[0].outgoing_file_dir, linkpath) == -1)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             _("Failed to symlink() `%s' to `%s' : %s"),
+                             linkpath, (*ewl)[0].outgoing_file_dir);
+                  exit(INCORRECT);
+               }
+            }
+            free(resolved_path);
+         }
+         else
+         {
+            system_log(FATAL_SIGN, __FILE__, __LINE__,
+                       _("Failed to symlink() `%s' to `%s' : %s"),
+                       linkpath, (*ewl)[0].outgoing_file_dir);
+            exit(INCORRECT);
+         }
       }
       (void)snprintf(linkpath, MAX_PATH_LENGTH, "%s%s%s/%x",
                      p_work_dir, AFD_FILE_DIR, AFD_TIME_DIR,
                      (unsigned int)(*ewl)[0].dev);
-      if ((symlink((*ewl)[0].time_dir, linkpath) == -1) &&
-          (errno != EEXIST))
+      if (symlink((*ewl)[0].time_dir, linkpath) == -1)
       {
-         system_log(FATAL_SIGN, __FILE__, __LINE__,
-                    _("Failed to symlink() `%s' to `%s' : %s"),
-                    linkpath, (*ewl)[0].time_dir);
-         exit(INCORRECT);
+         if (errno == EEXIST)
+         {
+            char *resolved_path;
+
+            if ((resolved_path = realpath(linkpath, NULL)) == NULL)
+            {
+               system_log(FATAL_SIGN, __FILE__, __LINE__,
+                          _("Failed to get realpath() of `%s' : %s"),
+                          linkpath, strerror(errno));
+               exit(INCORRECT);
+            }
+            if (strcmp((*ewl)[0].time_dir, resolved_path) != 0)
+            {
+               if (unlink(linkpath) != 0)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             _("Failed to unlink() `%s' : %s"),
+                             linkpath, strerror(errno));
+                  exit(INCORRECT);
+               }
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                          "Deleted wrong link `%s' [%s != %s]",
+                          linkpath, (*ewl)[0].time_dir, resolved_path);
+               if (symlink((*ewl)[0].time_dir, linkpath) == -1)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             _("Failed to symlink() `%s' to `%s' : %s"),
+                             linkpath, (*ewl)[0].time_dir);
+                  exit(INCORRECT);
+               }
+            }
+            free(resolved_path);
+         }
+         else
+         {
+            system_log(FATAL_SIGN, __FILE__, __LINE__,
+                       _("Failed to symlink() `%s' to `%s' : %s"),
+                       linkpath, (*ewl)[0].time_dir);
+            exit(INCORRECT);
+         }
       }
+      *((*ewl)[0].time_dir + (*ewl)[0].time_dir_length) = '/';
+      *((*ewl)[0].time_dir + (*ewl)[0].time_dir_length + 1) = '\0';
 
       if (*no_of_extra_work_dirs > 1)
       {
@@ -397,13 +537,48 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
                      (void)snprintf(linkpath, MAX_PATH_LENGTH, "%s%s/%x",
                                     p_work_dir, AFD_ARCHIVE_DIR,
                                     (unsigned int)(*ewl)[i].dev);
-                     if ((symlink(new_path, linkpath) == -1) &&
-                         (errno != EEXIST))
+                     if (symlink(new_path, linkpath) == -1)
                      {
-                        system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                   _("Failed to symlink() `%s' to `%s' : %s"),
-                                   linkpath, new_path);
-                        exit(INCORRECT);
+                        if (errno == EEXIST)
+                        {
+                           char *resolved_path;
+
+                           if ((resolved_path = realpath(linkpath, NULL)) == NULL)
+                           {
+                              system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                         _("Failed to get realpath() of `%s' : %s"),
+                                         linkpath, strerror(errno));
+                              exit(INCORRECT);
+                           }
+                           if (strcmp(new_path, resolved_path) != 0)
+                           {
+                              if (unlink(linkpath) != 0)
+                              {
+                                 system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                            _("Failed to unlink() `%s' : %s"),
+                                            linkpath, strerror(errno));
+                                 exit(INCORRECT);
+                              }
+                              system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                         "Deleted wrong link `%s' [%s != %s]",
+                                         linkpath, new_path, resolved_path);
+                              if (symlink(new_path, linkpath) == -1)
+                              {
+                                 system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                            _("Failed to symlink() `%s' to `%s' : %s"),
+                                            linkpath, new_path);
+                                 exit(INCORRECT);
+                              }
+                           }
+                           free(resolved_path);
+                        }
+                        else
+                        {
+                           system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                      _("Failed to symlink() `%s' to `%s' : %s"),
+                                      linkpath, new_path);
+                           exit(INCORRECT);
+                        }
                      }
 
                      (void)strcpy(ptr, AFD_FILE_DIR);
@@ -516,13 +691,49 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
                            (void)snprintf(linkpath, MAX_PATH_LENGTH, "%s%s%s/%x",
                                           p_work_dir, AFD_FILE_DIR, AFD_TMP_DIR,
                                           (unsigned int)(*ewl)[i].dev);
-                           if ((symlink(new_path, linkpath) == -1) &&
-                               (errno != EEXIST))
+                           if (symlink(new_path, linkpath) == -1)
                            {
-                              system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                         _("Failed to symlink() `%s' to `%s' : %s"),
-                                         linkpath, new_path);
-                              exit(INCORRECT);
+                              if (errno == EEXIST)
+                              {
+                                 char *resolved_path;
+
+                                 if ((resolved_path = realpath(linkpath, NULL)) == NULL)
+                                 {
+                                    system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                               _("Failed to get realpath() of `%s' : %s"),
+                                               linkpath, strerror(errno));
+                                    exit(INCORRECT);
+                                 }
+                                 if (strcmp(new_path, resolved_path) != 0)
+                                 {
+                                    if (unlink(linkpath) != 0)
+                                    {
+                                       system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                                  _("Failed to unlink() `%s' : %s"),
+                                                  linkpath, strerror(errno));
+                                       exit(INCORRECT);
+                                    }
+                                    system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                               "Deleted wrong link `%s' [%s != %s]",
+                                               linkpath, new_path,
+                                               resolved_path);
+                                    if (symlink(new_path, linkpath) == -1)
+                                    {
+                                       system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                                  _("Failed to symlink() `%s' to `%s' : %s"),
+                                                  linkpath, new_path);
+                                       exit(INCORRECT);
+                                    }
+                                 }
+                                 free(resolved_path);
+                              }
+                              else
+                              {
+                                 system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                            _("Failed to symlink() `%s' to `%s' : %s"),
+                                            linkpath, new_path);
+                                 exit(INCORRECT);
+                              }
                            }
 
                            /* Check create outgoing_file_dir. */
@@ -588,13 +799,54 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
                               (void)snprintf(linkpath, MAX_PATH_LENGTH, "%s%s%s/%x",
                                              p_work_dir, AFD_FILE_DIR, OUTGOING_DIR,
                                              (unsigned int)(*ewl)[i].dev);
-                              if ((symlink((*ewl)[i].outgoing_file_dir, linkpath) == -1) &&
-                                  (errno != EEXIST))
+                              if (symlink((*ewl)[i].outgoing_file_dir, linkpath) == -1)
                               {
-                                 system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                            _("Failed to symlink() `%s' to `%s' : %s"),
-                                            linkpath, (*ewl)[i].outgoing_file_dir);
-                                 exit(INCORRECT);
+                                 if (errno == EEXIST)
+                                 {
+                                    char *resolved_path;
+
+                                    if ((resolved_path = realpath(linkpath,
+                                                                  NULL)) == NULL)
+                                    {
+                                       system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                                  _("Failed to get realpath() of `%s' : %s"),
+                                                  linkpath, strerror(errno));
+                                       exit(INCORRECT);
+                                    }
+                                    if (strcmp((*ewl)[i].outgoing_file_dir,
+                                               resolved_path) != 0)
+                                    {
+                                       if (unlink(linkpath) != 0)
+                                       {
+                                          system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                                     _("Failed to unlink() `%s' : %s"),
+                                                     linkpath, strerror(errno));
+                                          exit(INCORRECT);
+                                       }
+                                       system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                                  "Deleted wrong link `%s' [%s != %s]",
+                                                  linkpath,
+                                                  (*ewl)[i].outgoing_file_dir,
+                                                  resolved_path);
+                                       if (symlink((*ewl)[i].outgoing_file_dir, linkpath) == -1)
+                                       {
+                                          system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                                     _("Failed to symlink() `%s' to `%s' : %s"),
+                                                     linkpath,
+                                                     (*ewl)[i].outgoing_file_dir);
+                                          exit(INCORRECT);
+                                       }
+                                    }
+                                    free(resolved_path);
+                                 }
+                                 else
+                                 {
+                                    system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                               _("Failed to symlink() `%s' to `%s' : %s"),
+                                               linkpath,
+                                               (*ewl)[i].outgoing_file_dir);
+                                    exit(INCORRECT);
+                                 }
                               }
 
                               /* Check create time_dir. */
@@ -662,14 +914,56 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
                                                 p_work_dir, AFD_FILE_DIR,
                                                 AFD_TIME_DIR,
                                                 (unsigned int)(*ewl)[i].dev);
-                                 if ((symlink((*ewl)[i].time_dir, linkpath) == -1) &&
-                                     (errno != EEXIST))
+                                 if (symlink((*ewl)[i].time_dir, linkpath) == -1)
                                  {
-                                    system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                               _("Failed to symlink() `%s' to `%s' : %s"),
-                                               linkpath, (*ewl)[i].time_dir);
-                                    exit(INCORRECT);
+                                    if (errno == EEXIST)
+                                    {
+                                       char *resolved_path;
+
+                                       if ((resolved_path = realpath(linkpath, NULL)) == NULL)
+                                       {
+                                          system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                                     _("Failed to get realpath() of `%s' : %s"),
+                                                     linkpath, strerror(errno));
+                                          exit(INCORRECT);
+                                       }
+                                       if (strcmp((*ewl)[i].time_dir,
+                                                  resolved_path) != 0)
+                                       {
+                                          if (unlink(linkpath) != 0)
+                                          {
+                                             system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                                        _("Failed to unlink() `%s' : %s"),
+                                                        linkpath, strerror(errno));
+                                             exit(INCORRECT);
+                                          }
+                                          system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                                     "Deleted wrong link `%s' [%s != %s]",
+                                                     linkpath,
+                                                     (*ewl)[i].time_dir,
+                                                     resolved_path);
+                                          if (symlink((*ewl)[i].time_dir,
+                                                      linkpath) == -1)
+                                          {
+                                             system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                                        _("Failed to symlink() `%s' to `%s' : %s"),
+                                                        linkpath,
+                                                        (*ewl)[i].time_dir);
+                                             exit(INCORRECT);
+                                          }
+                                       }
+                                       free(resolved_path);
+                                    }
+                                    else
+                                    {
+                                       system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                                  _("Failed to symlink() `%s' to `%s' : %s"),
+                                                  linkpath, (*ewl)[i].time_dir);
+                                       exit(INCORRECT);
+                                    }
                                  }
+                                 *((*ewl)[i].time_dir + (*ewl)[i].time_dir_length) = '/';
+                                 *((*ewl)[i].time_dir + (*ewl)[i].time_dir_length + 1) = '\0';
                               }
                               else
                               {
