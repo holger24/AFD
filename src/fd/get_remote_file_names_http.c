@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_http.c - Part of AFD, an automatic file distribution
  *                                 program.
- *  Copyright (c) 2006 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1110,11 +1110,19 @@ eval_html_dir_list(char  *html_buffer,
          {
             ptr++;
          }
+         while ((*ptr == ' ') || (*ptr == '\t'))
+         {
+            ptr++;
+         }
          if (*ptr == '<')
          {
             /* Table type listing. */
-            if ((*(ptr + 1) == 't') && (*(ptr + 6) == '>'))
+            if ((*(ptr + 1) == 't') && (*(ptr + 2) == 'a') &&
+                (*(ptr + 3) == 'b') && (*(ptr + 4) == 'l') &&
+                (*(ptr + 5) == 'e') && (*(ptr + 6) == '>'))
             {
+               ptr += 7;
+
                /* Ignore the two heading lines. */
                while ((*ptr != '\n') && (*ptr != '\r') && (*ptr != '\0'))
                {
@@ -1131,6 +1139,31 @@ eval_html_dir_list(char  *html_buffer,
                while ((*ptr == '\n') || (*ptr == '\r'))
                {
                   ptr++;
+               }
+               if ((*ptr == ' ') && (*(ptr + 1) == ' ') &&
+                   (*(ptr + 2) == ' ') && (*(ptr + 3) == '<') &&
+                   (*(ptr + 4) == 't') && (*(ptr + 5) == 'r') &&
+                   (*(ptr + 6) == '>'))
+               {
+                  ptr += 7;
+
+                  /* Ignore the two heading lines. */
+                  while ((*ptr != '\n') && (*ptr != '\r') && (*ptr != '\0'))
+                  {
+                     ptr++;
+                  }
+                  while ((*ptr == '\n') || (*ptr == '\r'))
+                  {
+                     ptr++;
+                  }
+                  while ((*ptr != '\n') && (*ptr != '\r') && (*ptr != '\0'))
+                  {
+                     ptr++;
+                  }
+                  while ((*ptr == '\n') || (*ptr == '\r'))
+                  {
+                     ptr++;
+                  }
                }
 
                if ((*ptr == '<') && (*(ptr + 1) == 't') &&
