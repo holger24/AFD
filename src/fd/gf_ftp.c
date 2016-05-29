@@ -858,6 +858,7 @@ main(int argc, char *argv[])
             char        *buffer,
                         local_file[MAX_PATH_LENGTH],
                         local_tmp_file[MAX_PATH_LENGTH],
+                        local_work_dir[MAX_PATH_LENGTH],
                         *p_local_file,
                         *p_local_tmp_file;
             struct stat stat_buf;
@@ -913,10 +914,19 @@ main(int argc, char *argv[])
                exit(TRANSFER_SUCCESS);
             }
 
+            if (fra[db.fra_pos].in_dc_flag & LOCAL_REMOTE_DIR_IDC)
+            {
+               get_local_remote_part(fra[db.fra_pos].dir_id, local_work_dir);
+            }
+            else
+            {
+               (void)strcpy(local_work_dir, p_work_dir);
+            }
+
             /* Get directory where files are to be stored and */
             /* prepare some pointers for the file names.      */
-            if (create_remote_dir(fra[db.fra_pos].url, p_work_dir, NULL, NULL,
-                                  NULL, local_file,
+            if (create_remote_dir(fra[db.fra_pos].url, local_work_dir, NULL,
+                                  NULL, NULL, local_file,
                                   &local_file_length) == INCORRECT)
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,

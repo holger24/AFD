@@ -319,6 +319,7 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                          other_dest_flag,     /* If set, there is another */
                                               /* destination entry.       */
                          created_path[MAX_PATH_LENGTH],
+                         dir_user[MAX_USER_NAME_LENGTH],
                          group_name[MAX_GROUPNAME_LENGTH],
                          prev_user_name[MAX_USER_NAME_LENGTH],
                          prev_user_dir[MAX_PATH_LENGTH],
@@ -775,7 +776,7 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                  }
             /* Assume it is url format. */
             else if ((error_mask = url_evaluate(dir->location, &dir->scheme,
-                                                user, &smtp_auth, smtp_user,
+                                                dir_user, &smtp_auth, smtp_user,
 #ifdef WITH_SSH_FINGERPRINT
                                                 dummy_ssh_fingerprint,
                                                 &dummy_key_type,
@@ -796,7 +797,7 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                        dir->protocol = FTP;
                        if (password[0] != '\0')
                        {
-                          store_passwd(user, dir->real_hostname, password);
+                          store_passwd(dir_user, dir->real_hostname, password);
                        }
                        t_hostname(dir->real_hostname, dir->host_alias);
                        (void)strcpy(dir->url, dir->location);
@@ -817,12 +818,12 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                             if (directory[0] != '/')
                             {
                                if ((prev_user_name[0] == '\0') ||
-                                   (CHECK_STRCMP(user, prev_user_name) != 0))
+                                   (CHECK_STRCMP(dir_user, prev_user_name) != 0))
                                {
                                   char          *p_end;
                                   struct passwd *pwd;
 
-                                  if (user[0] == '\0')
+                                  if (dir_user[0] == '\0')
                                   {
                                      if ((pwd = getpwuid(current_uid)) == NULL)
                                      {
@@ -839,11 +840,11 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                                   }
                                   else
                                   {
-                                     if ((pwd = getpwnam(user)) == NULL)
+                                     if ((pwd = getpwnam(dir_user)) == NULL)
                                      {
                                         system_log(WARN_SIGN, __FILE__, __LINE__,
                                                    "Cannot find users %s working directory in /etc/passwd (ignoring directory from %s) : %s",
-                                                   user, dcl[dcd].dir_config_file,
+                                                   dir_user, dcl[dcd].dir_config_file,
                                                    strerror(errno));
                                         if (warn_counter != NULL)
                                         {
@@ -852,7 +853,7 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                                         continue;
                                      }
                                   }
-                                  (void)strcpy(prev_user_name, user);
+                                  (void)strcpy(prev_user_name, dir_user);
                                   (void)strcpy(prev_user_dir, pwd->pw_dir);
 
                                   /*
@@ -896,7 +897,7 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                             dir->protocol = HTTP;
                             if (password[0] != '\0')
                             {
-                               store_passwd(user, dir->real_hostname, password);
+                               store_passwd(dir_user, dir->real_hostname, password);
                             }
                             t_hostname(dir->real_hostname, dir->host_alias);
                             (void)strcpy(dir->url, dir->location);
@@ -908,7 +909,7 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                             dir->protocol = SFTP;
                             if (password[0] != '\0')
                             {
-                               store_passwd(user, dir->real_hostname, password);
+                               store_passwd(dir_user, dir->real_hostname, password);
                             }
                             t_hostname(dir->real_hostname, dir->host_alias);
                             (void)strcpy(dir->url, dir->location);
@@ -1955,6 +1956,7 @@ check_dummy_line:
                 * We need to do this here since under dir option we
                 * can define where a local remote directory is located.
                 */
+               dd[no_of_local_dirs].in_dc_flag = 0;
                eval_dir_options(no_of_local_dirs, dir->dir_options);
                if (dir->type == REMOTE_DIR)
                {
@@ -1973,7 +1975,7 @@ check_dummy_line:
                   }
                   if (create_remote_dir(NULL,
                                         dd[no_of_local_dirs].local_work_dir,
-                                        user, dir->real_hostname,
+                                        dir_user, dir->real_hostname,
                                         directory, dir->location,
                                         &dir->location_length) == INCORRECT)
                   {
@@ -2015,7 +2017,6 @@ check_dummy_line:
                      dd[no_of_local_dirs].dir_pos = lookup_dir_id(dir->location,
                                                                   dir->orig_dir_name);
                      dd[no_of_local_dirs].dir_id = dnb[dd[no_of_local_dirs].dir_pos].dir_id;
-                     dd[no_of_local_dirs].in_dc_flag = 0;
                      if (dir->alias[0] == '\0')
                      {
                         (void)snprintf(dir->alias, MAX_DIR_ALIAS_LENGTH + 1,

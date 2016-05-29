@@ -140,12 +140,16 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
 
             if ((resolved_path = realpath(linkpath, NULL)) == NULL)
             {
-               system_log(FATAL_SIGN, __FILE__, __LINE__,
-                          _("Failed to get realpath() of `%s' : %s"),
-                          linkpath, strerror(errno));
-               exit(INCORRECT);
+               if (errno != ENOENT)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             _("Failed to get realpath() of `%s' : %s"),
+                             linkpath, strerror(errno));
+                  exit(INCORRECT);
+               }
             }
-            if (strcmp((*ewl)[0].afd_file_dir, resolved_path) != 0)
+            if ((resolved_path == NULL) ||
+                (strcmp((*ewl)[0].afd_file_dir, resolved_path) != 0))
             {
                if (unlink(linkpath) != 0)
                {
@@ -154,9 +158,17 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
                              linkpath, strerror(errno));
                   exit(INCORRECT);
                }
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Deleted wrong link `%s' [%s != %s]",
-                          linkpath, (*ewl)[0].afd_file_dir, resolved_path);
+               if (resolved_path == NULL)
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Deleted wrong link `%s'", linkpath);
+               }
+               else
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Deleted wrong link `%s' [%s != %s]",
+                             linkpath, (*ewl)[0].afd_file_dir, resolved_path);
+               }
                if (symlink((*ewl)[0].afd_file_dir, linkpath) == -1)
                {
                   system_log(FATAL_SIGN, __FILE__, __LINE__,
@@ -213,12 +225,16 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
 
             if ((resolved_path = realpath(linkpath, NULL)) == NULL)
             {
-               system_log(FATAL_SIGN, __FILE__, __LINE__,
-                          _("Failed to get realpath() of `%s' : %s"),
-                          linkpath, strerror(errno));
-               exit(INCORRECT);
+               if (errno != ENOENT)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             _("Failed to get realpath() of `%s' : %s"),
+                             linkpath, strerror(errno));
+                  exit(INCORRECT);
+               }
             }
-            if (strcmp((*ewl)[0].afd_file_dir, resolved_path) != 0)
+            if ((resolved_path == NULL) ||
+                (strcmp((*ewl)[0].afd_file_dir, resolved_path) != 0))
             {
                if (unlink(linkpath) != 0)
                {
@@ -227,9 +243,17 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
                              linkpath, strerror(errno));
                   exit(INCORRECT);
                }
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Deleted wrong link `%s' [%s != %s]",
-                          linkpath, (*ewl)[0].afd_file_dir, resolved_path);
+               if (resolved_path == NULL)
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Deleted wrong link `%s'", linkpath);
+               }
+               else
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Deleted wrong link `%s' [%s != %s]",
+                             linkpath, (*ewl)[0].afd_file_dir, resolved_path);
+               }
                if (symlink((*ewl)[0].afd_file_dir, linkpath) == -1)
                {
                   system_log(FATAL_SIGN, __FILE__, __LINE__,
@@ -260,12 +284,16 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
 
             if ((resolved_path = realpath(linkpath, NULL)) == NULL)
             {
-               system_log(FATAL_SIGN, __FILE__, __LINE__,
-                          _("Failed to get realpath() of `%s' : %s"),
-                          linkpath, strerror(errno));
-               exit(INCORRECT);
+               if (errno != ENOENT)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             _("Failed to get realpath() of `%s' : %s"),
+                             linkpath, strerror(errno));
+                  exit(INCORRECT);
+               }
             }
-            if (strcmp((*ewl)[0].outgoing_file_dir, resolved_path) != 0)
+            if ((resolved_path == NULL) ||
+                (strcmp((*ewl)[0].outgoing_file_dir, resolved_path) != 0))
             {
                if (unlink(linkpath) != 0)
                {
@@ -274,9 +302,18 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
                              linkpath, strerror(errno));
                   exit(INCORRECT);
                }
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Deleted wrong link `%s' [%s != %s]",
-                          linkpath, (*ewl)[0].outgoing_file_dir, resolved_path);
+               if (resolved_path == NULL)
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Deleted wrong link `%s'", linkpath);
+               }
+               else
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Deleted wrong link `%s' [%s != %s]",
+                             linkpath, (*ewl)[0].outgoing_file_dir,
+                             resolved_path);
+               }
                if (symlink((*ewl)[0].outgoing_file_dir, linkpath) == -1)
                {
                   system_log(FATAL_SIGN, __FILE__, __LINE__,
@@ -306,12 +343,16 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
 
             if ((resolved_path = realpath(linkpath, NULL)) == NULL)
             {
-               system_log(FATAL_SIGN, __FILE__, __LINE__,
-                          _("Failed to get realpath() of `%s' : %s"),
-                          linkpath, strerror(errno));
-               exit(INCORRECT);
+               if (errno != ENOENT)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             _("Failed to get realpath() of `%s' : %s"),
+                             linkpath, strerror(errno));
+                  exit(INCORRECT);
+               }
             }
-            if (strcmp((*ewl)[0].time_dir, resolved_path) != 0)
+            if ((resolved_path == NULL) ||
+                (strcmp((*ewl)[0].time_dir, resolved_path) != 0))
             {
                if (unlink(linkpath) != 0)
                {
@@ -320,9 +361,17 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
                              linkpath, strerror(errno));
                   exit(INCORRECT);
                }
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Deleted wrong link `%s' [%s != %s]",
-                          linkpath, (*ewl)[0].time_dir, resolved_path);
+               if (resolved_path == NULL)
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Deleted wrong link `%s'", linkpath);
+               }
+               else
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Deleted wrong link `%s' [%s != %s]",
+                             linkpath, (*ewl)[0].time_dir, resolved_path);
+               }
                if (symlink((*ewl)[0].time_dir, linkpath) == -1)
                {
                   system_log(FATAL_SIGN, __FILE__, __LINE__,
@@ -545,12 +594,16 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
 
                            if ((resolved_path = realpath(linkpath, NULL)) == NULL)
                            {
-                              system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                         _("Failed to get realpath() of `%s' : %s"),
-                                         linkpath, strerror(errno));
-                              exit(INCORRECT);
+                              if (errno != ENOENT)
+                              {
+                                 system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                            _("Failed to get realpath() of `%s' : %s"),
+                                            linkpath, strerror(errno));
+                                 exit(INCORRECT);
+                              }
                            }
-                           if (strcmp(new_path, resolved_path) != 0)
+                           if ((resolved_path == NULL) ||
+                               (strcmp(new_path, resolved_path) != 0))
                            {
                               if (unlink(linkpath) != 0)
                               {
@@ -559,9 +612,18 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
                                             linkpath, strerror(errno));
                                  exit(INCORRECT);
                               }
-                              system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                         "Deleted wrong link `%s' [%s != %s]",
-                                         linkpath, new_path, resolved_path);
+                              if (resolved_path == NULL)
+                              {
+                                 system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                            "Deleted wrong link `%s'",
+                                            linkpath);
+                              }
+                              else
+                              {
+                                 system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                            "Deleted wrong link `%s' [%s != %s]",
+                                            linkpath, new_path, resolved_path);
+                              }
                               if (symlink(new_path, linkpath) == -1)
                               {
                                  system_log(FATAL_SIGN, __FILE__, __LINE__,
@@ -699,12 +761,16 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
 
                                  if ((resolved_path = realpath(linkpath, NULL)) == NULL)
                                  {
-                                    system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                               _("Failed to get realpath() of `%s' : %s"),
-                                               linkpath, strerror(errno));
-                                    exit(INCORRECT);
+                                    if (errno != ENOENT)
+                                    {
+                                       system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                                  _("Failed to get realpath() of `%s' : %s"),
+                                                  linkpath, strerror(errno));
+                                       exit(INCORRECT);
+                                    }
                                  }
-                                 if (strcmp(new_path, resolved_path) != 0)
+                                 if ((resolved_path == NULL) ||
+                                     (strcmp(new_path, resolved_path) != 0))
                                  {
                                     if (unlink(linkpath) != 0)
                                     {
@@ -713,10 +779,19 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
                                                   linkpath, strerror(errno));
                                        exit(INCORRECT);
                                     }
-                                    system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                               "Deleted wrong link `%s' [%s != %s]",
-                                               linkpath, new_path,
-                                               resolved_path);
+                                    if (resolved_path == NULL)
+                                    {
+                                       system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                                  "Deleted wrong link `%s'",
+                                                  linkpath);
+                                    }
+                                    else
+                                    {
+                                       system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                                  "Deleted wrong link `%s' [%s != %s]",
+                                                  linkpath, new_path,
+                                                  resolved_path);
+                                    }
                                     if (symlink(new_path, linkpath) == -1)
                                     {
                                        system_log(FATAL_SIGN, __FILE__, __LINE__,
@@ -808,13 +883,17 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
                                     if ((resolved_path = realpath(linkpath,
                                                                   NULL)) == NULL)
                                     {
-                                       system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                                  _("Failed to get realpath() of `%s' : %s"),
-                                                  linkpath, strerror(errno));
-                                       exit(INCORRECT);
+                                       if (errno != ENOENT)
+                                       {
+                                          system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                                     _("Failed to get realpath() of `%s' : %s"),
+                                                     linkpath, strerror(errno));
+                                          exit(INCORRECT);
+                                       }
                                     }
-                                    if (strcmp((*ewl)[i].outgoing_file_dir,
-                                               resolved_path) != 0)
+                                    if ((resolved_path == NULL) ||
+                                        (strcmp((*ewl)[i].outgoing_file_dir,
+                                                resolved_path) != 0))
                                     {
                                        if (unlink(linkpath) != 0)
                                        {
@@ -823,11 +902,20 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
                                                      linkpath, strerror(errno));
                                           exit(INCORRECT);
                                        }
-                                       system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                                  "Deleted wrong link `%s' [%s != %s]",
-                                                  linkpath,
-                                                  (*ewl)[i].outgoing_file_dir,
-                                                  resolved_path);
+                                       if (resolved_path == NULL)
+                                       {
+                                          system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                                     "Deleted wrong link `%s'",
+                                                     linkpath);
+                                       }
+                                       else
+                                       {
+                                          system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                                     "Deleted wrong link `%s' [%s != %s]",
+                                                     linkpath,
+                                                     (*ewl)[i].outgoing_file_dir,
+                                                     resolved_path);
+                                       }
                                        if (symlink((*ewl)[i].outgoing_file_dir, linkpath) == -1)
                                        {
                                           system_log(FATAL_SIGN, __FILE__, __LINE__,
@@ -922,13 +1010,17 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
 
                                        if ((resolved_path = realpath(linkpath, NULL)) == NULL)
                                        {
-                                          system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                                     _("Failed to get realpath() of `%s' : %s"),
-                                                     linkpath, strerror(errno));
-                                          exit(INCORRECT);
+                                          if (errno != ENOENT)
+                                          {
+                                             system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                                        _("Failed to get realpath() of `%s' : %s"),
+                                                        linkpath, strerror(errno));
+                                             exit(INCORRECT);
+                                          }
                                        }
-                                       if (strcmp((*ewl)[i].time_dir,
-                                                  resolved_path) != 0)
+                                       if ((resolved_path == NULL) ||
+                                           (strcmp((*ewl)[i].time_dir,
+                                                   resolved_path) != 0))
                                        {
                                           if (unlink(linkpath) != 0)
                                           {
@@ -937,11 +1029,20 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
                                                         linkpath, strerror(errno));
                                              exit(INCORRECT);
                                           }
-                                          system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                                     "Deleted wrong link `%s' [%s != %s]",
-                                                     linkpath,
-                                                     (*ewl)[i].time_dir,
-                                                     resolved_path);
+                                          if (resolved_path == NULL)
+                                          {
+                                             system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                                        "Deleted wrong link `%s'",
+                                                        linkpath);
+                                          }
+                                          else
+                                          {
+                                             system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                                        "Deleted wrong link `%s' [%s != %s]",
+                                                        linkpath,
+                                                        (*ewl)[i].time_dir,
+                                                        resolved_path);
+                                          }
                                           if (symlink((*ewl)[i].time_dir,
                                                       linkpath) == -1)
                                           {

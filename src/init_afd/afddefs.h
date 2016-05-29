@@ -1966,6 +1966,7 @@ typedef unsigned long       u_long_64;
 #endif
 #define MAX_ERRORS_IDC             16384
 #define UNREADABLE_FILES_IDC       32768
+#define LOCAL_REMOTE_DIR_IDC       65536
 
 /* In process AFD we have various stop flags. */
 #define STARTUP_ID                 -1
@@ -2776,6 +2777,7 @@ struct fileretrieve_status
                                             /*+---+---------------------+*/
                                             /*|Bit|        Meaning      |*/
                                             /*+---+---------------------+*/
+                                            /*|17 |LOCAL_REMOTE_DIR_IDC |*/
                                             /*|16 |UNREADABLE_FILES_IDC |*/
                                             /*|15 |MAX_ERRORS_IDC       |*/
                                             /*|14 |INFO_TIME_IDC        |*/
@@ -4053,6 +4055,7 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
                     get_dc_result_str(char *, int, int, int *, int *),
                     get_file_mask_list(unsigned int, int *, char **),
                     get_hc_result_str(char *, int, int, int *, int *),
+                    get_local_remote_part(unsigned int, char *),
                     get_log_type_data(char *),
                     get_log_number(int *, int, char *, int, char *),
                     get_max_log_values(int *, char *, int, off_t *, char *,

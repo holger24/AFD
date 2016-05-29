@@ -1457,7 +1457,8 @@ main(int argc, char *argv[])
 
               if ((n = read(afd_cmd_fd, buffer, DEFAULT_BUFFER_SIZE)) > 0)
               {
-                 int count = 0;
+                 int    count = 0;
+                 time_t current_time;
 
                  /* Now evaluate all data read from fifo, byte after byte */
                  while (count < n)
@@ -1632,6 +1633,12 @@ main(int argc, char *argv[])
                                      }
                                   }
                                }
+
+                          current_time = time(NULL);
+                          (void)memset(buffer, '-', 35 + AFD_LENGTH);
+                          buffer[35 + AFD_LENGTH] = '\0';
+                          (void)fprintf(stderr, _("%.24s : Stopped %s\n%s\n"),
+                                        ctime(&current_time), AFD, buffer);
 
                           /* Shutdown of other process is handled by */
                           /* the exit handler.                       */
@@ -1946,6 +1953,7 @@ check_dirs(char *work_dir)
 
    /* First check that the working directory does exist */
    /* and make sure that it is a directory.             */
+   sys_log_fd = STDOUT_FILENO;
 #ifdef MULTI_FS_SUPPORT
    int                    no_of_extra_work_dirs;
    struct extra_work_dirs *ewl;
@@ -2005,7 +2013,6 @@ check_dirs(char *work_dir)
       exit(INCORRECT);
    }
 #endif
-   sys_log_fd = STDERR_FILENO;
 
    /* Now lets check if the fifo directory is there. */
    (void)strcpy(new_dir, work_dir);

@@ -540,6 +540,10 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "UNREADABLE_FILES");
             }
+            if (fra[i].in_dc_flag & LOCAL_REMOTE_DIR_IDC)
+            {
+               (void)fprintf(stdout, "LOCAL_REMOTE_DIR");
+            }
             (void)fprintf(stdout, "\n");
          }
 #ifdef WITH_DUP_CHECK

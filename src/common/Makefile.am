@@ -169,6 +169,7 @@ libafd_a_SOURCES     = attach_afd_status.c\
                        get_dir_options.c\
                        get_error_str.c\
                        get_file_mask_list.c\
+		       get_local_remote_part.c\
                        get_log_type_data.c\
                        get_log_number.c\
                        get_max_log_values.c\

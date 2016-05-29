@@ -108,6 +108,8 @@ struct old_retrieve_data
           unsigned char remove;
           unsigned char stupid_mode;
           signed char   remove_dir;
+          signed char   local_remote_dir_idc;
+          unsigned int  dir_id;
        };
 
 
@@ -181,12 +183,21 @@ check_fra_fd(void)
                for (i = 0; i < no_of_retrieves; i++)
                {
                   (void)strcpy(ord[i].url, fra[retrieve_list[i]].url);
+                  ord[i].dir_id = fra[retrieve_list[i]].dir_id;
                   ord[i].fullname[0] = '\0';
                   (void)strcpy(ord[i].dir_alias,
                                fra[retrieve_list[i]].dir_alias);
                   ord[i].remove = fra[retrieve_list[i]].remove;
                   ord[i].stupid_mode = fra[retrieve_list[i]].stupid_mode;
                   ord[i].remove_dir = NO;
+                  if (fra[retrieve_list[i]].in_dc_flag & LOCAL_REMOTE_DIR_IDC)
+                  {
+                     ord[i].local_remote_dir_idc = YES;
+                  }
+                  else
+                  {
+                     ord[i].local_remote_dir_idc = NO;
+                  }
                }
             }
          }
@@ -403,7 +414,17 @@ check_fra_fd(void)
                {
                   if (ord[i].fullname[0] == '\0')
                   {
-                     if (create_remote_dir(ord[i].url, p_work_dir,
+                     char local_work_dir[MAX_PATH_LENGTH];
+
+                     if (ord[i].local_remote_dir_idc == YES)
+                     {
+                        get_local_remote_part(ord[i].dir_id, local_work_dir);
+                     }
+                     else
+                     {
+                        (void)strcpy(local_work_dir, p_work_dir);
+                     }
+                     if (create_remote_dir(ord[i].url, local_work_dir,
                                            NULL, NULL, NULL, ord[i].fullname,
                                            &ord[i].fullname_length) == INCORRECT)
                      {
@@ -420,7 +441,17 @@ check_fra_fd(void)
                         {
                            if (ord[j].fullname[0] == '\0')
                            {
-                              if (create_remote_dir(ord[j].url, p_work_dir,
+                              char local_work_dir[MAX_PATH_LENGTH];
+
+                              if (ord[j].local_remote_dir_idc == YES)
+                              {
+                                 get_local_remote_part(ord[j].dir_id, local_work_dir);
+                              }
+                              else
+                              {
+                                 (void)strcpy(local_work_dir, p_work_dir);
+                              }
+                              if (create_remote_dir(ord[j].url, local_work_dir,
                                                     NULL, NULL, NULL,
                                                     ord[j].fullname,
                                                     &ord[j].fullname_length) == INCORRECT)

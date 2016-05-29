@@ -1795,6 +1795,7 @@ eval_dir_options(int dir_pos, char *dir_options)
               if ((length > 0) && (length != MAX_PATH_LENGTH))
               {
                  dd[dir_pos].local_work_dir[length] = '\0';
+                 dd[dir_pos].in_dc_flag |= LOCAL_REMOTE_DIR_IDC;
               }
               else
               {

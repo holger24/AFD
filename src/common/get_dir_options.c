@@ -1,6 +1,6 @@
 /*
  *  get_dir_options.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,16 +54,23 @@ DESCR__E_M3
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include "amgdefs.h"
 #include "bit_array.h"
 
 /* External global variables. */
 extern int                        fra_fd,
                                   no_of_dirs;
+extern char                       *p_work_dir;
 extern struct fileretrieve_status *fra;
 
 
-/*+++++++++++++++++++++++++++ get_dir_options() +++++++++++++++++++++++++*/
+
+ /*+++++++++++++++++++++++++++ get_dir_options() +++++++++++++++++++++++++*/
 void                                                                
 get_dir_options(unsigned int dir_id, struct dir_options *d_o)
 {
@@ -591,6 +598,19 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
+#ifdef NEW_FRA
+         if (fra[i].timezone[0] != '\0')
+         {
+            (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],
+                           MAX_OPTION_LENGTH,
+                           "%s %s", TIMEZONE_ID, fra[i].timezone);
+            d_o->no_of_dir_options++;
+            if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
+            {
+               goto done;
+            }
+         }
+#endif
          if (fra[i].no_of_time_entries > 0)
          {
             int           j,
@@ -926,6 +946,21 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
             }
          }
 #endif
+         if (fra[i].in_dc_flag & LOCAL_REMOTE_DIR_IDC)
+         {
+            char local_remote_part[MAX_PATH_LENGTH];
+
+            get_local_remote_part(fra[i].dir_id, local_remote_part);
+            (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],
+                           MAX_OPTION_LENGTH,
+                           "%s %s",
+                           LOCAL_REMOTE_DIR_ID, local_remote_part);
+            d_o->no_of_dir_options++;
+            if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
+            {
+               goto done;
+            }
+         }
          if ((fra[i].protocol == FTP) || (fra[i].protocol == HTTP) ||
              (fra[i].protocol == SFTP))
          {
