@@ -203,6 +203,15 @@ AMG_DIR_RESCAN_TIME              5
 #FORCE_REREAD_INTERVAL           0
 
 ##########################################################################
+# The time when AMG will send an info message in receive log that no data#
+# has been received in the specified directory. directory. This value    #
+# will be overridden by 'info time' value from DIR_CONFIG if set. The    #
+# unit is second.                                                        #
+# Default: 0 (disabled)                                                  #
+##########################################################################
+#DEFAULT_DIR_INFO_TIME            0
+
+##########################################################################
 # The time when AMG will warn in receive log that no data has been       #
 # received in the specified directory. directory. This value will be     #
 # overridden by 'warn time' value from DIR_CONFIG if set. The unit is    #

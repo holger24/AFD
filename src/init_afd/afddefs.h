@@ -27,6 +27,10 @@
 #define DESCR__S_M3             /* Start for Subroutines Man Page.  */
 #define DESCR__E_M3             /* End for Subroutines Man Page.    */
 
+/* #define NEW_FRA */
+/* #define NEW_FSA */    /* Nothing new yet! */
+/* #define NEW_PWB */
+
 #define WITH_TIMEZONE 1
 
 #ifdef HAVE_CONFIG_H
@@ -201,6 +205,8 @@ typedef unsigned long       u_long_64;
  * N O T E : When NEW_FRA, NEW_FSA + NEW_PWB is defined we need to
  *           edit configure.ac and README.configure to correct the
  *           values there too.
+ *           The file common/get_local_remote_part.c can be removed
+ *           when NEW_FRA is set.
  */
 #ifndef MAX_REAL_HOSTNAME_LENGTH
 # if defined NEW_FRA && defined NEW_FSA && defined NEW_PWB
@@ -1194,6 +1200,9 @@ typedef unsigned long       u_long_64;
 #endif
 #define REMOVE_UNUSED_HOSTS_DEF          "REMOVE_UNUSED_HOSTS"
 #define DELETE_STALE_ERROR_JOBS_DEF      "DELETE_STALE_ERROR_JOBS"
+#ifdef NEW_FRA
+# define DEFAULT_DIR_INFO_TIME_DEF       "DEFAULT_DIR_INFO_TIME"
+#endif
 #define DEFAULT_DIR_WARN_TIME_DEF        "DEFAULT_DIR_WARN_TIME"
 #define VIEW_DATA_PROG_DEF               "VIEW_DATA_PROG"
 #define VIEW_DATA_PROG_DEF_LENGTH        (sizeof(VIEW_DATA_PROG_DEF) - 1)

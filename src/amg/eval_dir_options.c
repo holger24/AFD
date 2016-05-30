@@ -114,6 +114,9 @@ DESCR__E_M3
 #endif
 #include <errno.h>
 #include "amgdefs.h"
+#ifdef NEW_FRA
+# include "version.h"
+#endif
 
 /* External global variables. */
 extern char            *p_work_dir;

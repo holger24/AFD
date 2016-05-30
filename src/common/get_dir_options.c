@@ -487,7 +487,7 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                int  length;
                char str_number[MAX_INT_LENGTH];
 
-               length = snprintf(str_number, "%04o", MAX_INT_LENGTH,
+               length = snprintf(str_number, MAX_INT_LENGTH, "%04o",
                                  fra[i].dir_mode);
                (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],
                               MAX_OPTION_LENGTH,

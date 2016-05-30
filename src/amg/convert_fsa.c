@@ -411,6 +411,103 @@ struct filetransfer_status_3
           struct status_3 job_status[MAX_NO_PARALLEL_JOBS_3];
        };
 
+#ifdef NEW_FSA
+/* Version 4 */
+#define MAX_REAL_HOSTNAME_LENGTH_4 MAX_REAL_HOSTNAME_LENGTH
+#define MAX_PROXY_NAME_LENGTH_4    MAX_PROXY_NAME_LENGTH
+#define MAX_TOGGLE_STR_LENGTH_4    MAX_TOGGLE_STR_LENGTH
+#define MAX_HOSTNAME_LENGTH_4      MAX_HOSTNAME_LENGTH
+#define MAX_NO_PARALLEL_JOBS_4     MAX_NO_PARALLEL_JOBS
+#define MAX_MSG_NAME_LENGTH_4      MAX_MSG_NAME_LENGTH /* Changed. */
+#define MAX_FILENAME_LENGTH_4      MAX_FILENAME_LENGTH
+#define AFD_WORD_OFFSET_4          (SIZEOF_INT + 4 + SIZEOF_INT + 4)
+#define ERROR_HISTORY_LENGTH_4     ERROR_HISTORY_LENGTH
+
+#define GET_FTP_FLAG_4             32768
+#ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
+# define STAT_KEEPALIVE_4          4
+#endif
+#define SET_IDLE_TIME_4            2
+#define FTP_PASSIVE_MODE_4         1
+#define RETRIEVE_FLAG_4            2147483648U
+#define SEND_FLAG_4                1073741824
+struct status_4
+       {
+          pid_t           proc_id;
+#ifdef _WITH_BURST_2
+          char            unique_name[MAX_MSG_NAME_LENGTH_4];
+          unsigned int    job_id;
+#endif
+          char            connect_status;
+          int             no_of_files;
+          int             no_of_files_done;
+          off_t           file_size;
+          u_off_t         file_size_done;
+          u_off_t         bytes_send;
+          char            file_name_in_use[MAX_FILENAME_LENGTH_4];
+          off_t           file_size_in_use;
+          off_t           file_size_in_use_done;
+       };
+struct filetransfer_status_4
+       {
+          char            host_alias[MAX_HOSTNAME_LENGTH_4 + 1];
+          char            real_hostname[2][MAX_REAL_HOSTNAME_LENGTH_4];
+          char            host_dsp_name[MAX_HOSTNAME_LENGTH_4 + 2];
+          char            proxy_name[MAX_PROXY_NAME_LENGTH_4 + 1];
+          char            host_toggle_str[MAX_TOGGLE_STR_LENGTH_4];
+          char            toggle_pos;
+          char            original_toggle_pos;
+          char            auto_toggle;
+          signed char     file_size_offset;
+          int             successful_retries;
+          int             max_successful_retries;
+          unsigned char   special_flag;
+          unsigned int    protocol;
+          unsigned int    protocol_options;
+          unsigned int    socksnd_bufsize;
+          unsigned int    sockrcv_bufsize;
+          unsigned int    keep_connected;
+#ifdef WITH_DUP_CHECK
+          unsigned int    dup_check_flag;
+#endif
+          unsigned int    host_id;
+          char            debug;
+          char            host_toggle;
+          int             host_status;
+          int             error_counter;
+          unsigned int    total_errors;
+          int             max_errors;
+          unsigned char   error_history[ERROR_HISTORY_LENGTH_4];
+          int             retry_interval;
+          int             block_size;
+          int             ttl;
+#ifdef WITH_DUP_CHECK
+          time_t          dup_check_timeout;
+#endif
+          time_t          last_retry_time;
+          time_t          last_connection;
+          time_t          first_error_time;
+          time_t          start_event_handle;
+          time_t          end_event_handle;
+          time_t          warn_time;
+          int             total_file_counter;
+          off_t           total_file_size;
+          unsigned int    jobs_queued;
+          unsigned int    file_counter_done;
+          u_off_t         bytes_send;
+          unsigned int    connections;
+          unsigned int    mc_nack_counter;
+          int             active_transfers;
+          int             allowed_transfers;
+          long            transfer_timeout;
+          off_t           transfer_rate_limit;
+          off_t           trl_per_process;
+          off_t           mc_ct_rate_limit;
+          off_t           mc_ctrl_per_process;
+          struct status_4 job_status[MAX_NO_PARALLEL_JOBS_4];
+       };
+#endif
+
 
 /*############################ convert_fsa() ############################*/
 char *
@@ -1858,9 +1955,9 @@ convert_fsa(int           old_fsa_fd,
               new_fsa[i].last_retry_time        = old_fsa[i].last_retry_time;
               new_fsa[i].last_connection        = old_fsa[i].last_connection;
               new_fsa[i].first_error_time       = old_fsa[i].first_error_time;
-              new_fsa[i].start_event_handle     = 0L;
-              new_fsa[i].end_event_handle       = 0L;
-              new_fsa[i].warn_time              = 0L;
+              new_fsa[i].start_event_handle     = old_fsa[i].start_event_handle;
+              new_fsa[i].end_event_handle       = old_fsa[i].end_event_handle;
+              new_fsa[i].warn_time              = old_fsa[i].warn_time;
               new_fsa[i].total_file_counter     = old_fsa[i].total_file_counter;
               new_fsa[i].total_file_size        = old_fsa[i].total_file_size;
               new_fsa[i].jobs_queued            = old_fsa[i].jobs_queued;

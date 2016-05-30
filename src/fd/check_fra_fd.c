@@ -104,7 +104,7 @@ struct old_retrieve_data
           char          dir_alias[MAX_DIR_ALIAS_LENGTH + 1];
           char          url[MAX_RECIPIENT_LENGTH];
 #ifdef NEW_FRA
-          char          retrieve_work_dir[MAX_FILENAME_LENGTH]
+          char          retrieve_work_dir[MAX_FILENAME_LENGTH];
 #endif
           char          fullname[MAX_PATH_LENGTH];
           int           fullname_length;
@@ -427,7 +427,7 @@ check_fra_fd(void)
                   if (ord[i].fullname[0] == '\0')
                   {
 #ifdef NEW_FRA
-                     if (create_remote_dir(ord[i].url, ord[i]retrieve_work_dir,
+                     if (create_remote_dir(ord[i].url, ord[i].retrieve_work_dir,
 #else
                      char local_work_dir[MAX_PATH_LENGTH];
 
