@@ -412,7 +412,7 @@ struct dir_data
                                             /* for the given file name|  */
                                             /* pattern before we take    */
                                             /* files from this directory.*/
-          char          local_work_dir[MAX_PATH_LENGTH];
+          char          retrieve_work_dir[MAX_FILENAME_LENGTH];
                                             /* Storage for the local     */
                                             /* remote directory.         */
 #ifdef NEW_FRA

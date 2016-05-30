@@ -247,7 +247,7 @@ eval_dir_options(int dir_pos, char *dir_options)
    dd[dir_pos].dir_mode = 0;
    dd[dir_pos].do_not_parallelize = NO;
    dd[dir_pos].do_not_move = NO;
-   dd[dir_pos].local_work_dir[0] = '\0';
+   dd[dir_pos].retrieve_work_dir[0] = '\0';
 
    /*
     * Now for the new directory options.
@@ -1783,23 +1783,23 @@ eval_dir_options(int dir_pos, char *dir_options)
                  ptr++;
               }
               while ((*ptr != '\n') && (*ptr != '\0') && (*ptr != ' ') &&
-                     (*ptr != '\t') && (length < MAX_PATH_LENGTH))
+                     (*ptr != '\t') && (length < MAX_FILENAME_LENGTH))
               {
                  if (*ptr == '\\')
                  {
                     ptr++;
                  }
-                 dd[dir_pos].local_work_dir[length] = *ptr;
+                 dd[dir_pos].retrieve_work_dir[length] = *ptr;
                  ptr++; length++;
               }
-              if ((length > 0) && (length != MAX_PATH_LENGTH))
+              if ((length > 0) && (length != MAX_FILENAME_LENGTH))
               {
-                 dd[dir_pos].local_work_dir[length] = '\0';
+                 dd[dir_pos].retrieve_work_dir[length] = '\0';
                  dd[dir_pos].in_dc_flag |= LOCAL_REMOTE_DIR_IDC;
               }
               else
               {
-                 dd[dir_pos].local_work_dir[0] = '\0';
+                 dd[dir_pos].retrieve_work_dir[0] = '\0';
                  if (length > 0)
                  {
                     system_log(WARN_SIGN, __FILE__, __LINE__,
@@ -1855,9 +1855,9 @@ eval_dir_options(int dir_pos, char *dir_options)
    {
       dd[dir_pos].locked_file_time = old_file_time;
    }
-   if (dd[dir_pos].local_work_dir[0] == '\0')
+   if (dd[dir_pos].retrieve_work_dir[0] == '\0')
    {
-      (void)strcpy(dd[dir_pos].local_work_dir, p_work_dir);
+      (void)strcpy(dd[dir_pos].retrieve_work_dir, p_work_dir);
    }
 
    return;

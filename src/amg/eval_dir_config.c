@@ -1974,7 +1974,7 @@ check_dummy_line:
                                      "%x", crc_val);
                   }
                   if (create_remote_dir(NULL,
-                                        dd[no_of_local_dirs].local_work_dir,
+                                        dd[no_of_local_dirs].retrieve_work_dir,
                                         dir_user, dir->real_hostname,
                                         directory, dir->location,
                                         &dir->location_length) == INCORRECT)

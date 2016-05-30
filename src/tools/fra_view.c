@@ -209,6 +209,9 @@ main(int argc, char *argv[])
          (void)fprintf(stdout, "Directory alias      : %s\n", fra[i].dir_alias);
          (void)fprintf(stdout, "Directory ID         : %x\n", fra[i].dir_id);
          (void)fprintf(stdout, "URL                  : %s\n", fra[i].url);
+#ifdef NEW_FRA
+         (void)fprintf(stdout, "Retrieve work dir    : %s\n", fra[i].retrieve_work_dir);
+#endif
          (void)fprintf(stdout, "Host alias           : %s\n", fra[i].host_alias);
          (void)fprintf(stdout, "Wait for             : %s\n", fra[i].wait_for_filename);
          (void)fprintf(stdout, "FSA position         : %d\n", fra[i].fsa_pos);
@@ -245,6 +248,13 @@ main(int argc, char *argv[])
 #endif
          (void)fprintf(stdout, "Max errors           : %d\n", fra[i].max_errors);
          (void)fprintf(stdout, "Error counter        : %u\n", fra[i].error_counter);
+#ifdef NEW_FRA
+# if SIZEOF_TIME_T == 4
+         (void)fprintf(stdout, "Info time            : %ld\n", (pri_time_t)fra[i].info_time);
+# else
+         (void)fprintf(stdout, "Info time            : %lld\n", (pri_time_t)fra[i].info_time);
+# endif
+#endif
 #if SIZEOF_TIME_T == 4
          (void)fprintf(stdout, "Warn time            : %ld\n", (pri_time_t)fra[i].warn_time);
 #else

@@ -65,12 +65,11 @@ DESCR__E_M3
 /* External global variables. */
 extern int                        fra_fd,
                                   no_of_dirs;
-extern char                       *p_work_dir;
 extern struct fileretrieve_status *fra;
 
 
 
- /*+++++++++++++++++++++++++++ get_dir_options() +++++++++++++++++++++++++*/
+/*+++++++++++++++++++++++++++ get_dir_options() +++++++++++++++++++++++++*/
 void                                                                
 get_dir_options(unsigned int dir_id, struct dir_options *d_o)
 {
@@ -948,6 +947,12 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
 #endif
          if (fra[i].in_dc_flag & LOCAL_REMOTE_DIR_IDC)
          {
+#ifdef NEW_FRA
+            (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],
+                           MAX_OPTION_LENGTH,
+                           "%s %s",
+                           LOCAL_REMOTE_DIR_ID, fra[i].retrieve_work_dir);
+#else
             char local_remote_part[MAX_PATH_LENGTH];
 
             get_local_remote_part(fra[i].dir_id, local_remote_part);
@@ -955,6 +960,7 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                            MAX_OPTION_LENGTH,
                            "%s %s",
                            LOCAL_REMOTE_DIR_ID, local_remote_part);
+#endif
             d_o->no_of_dir_options++;
             if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
             {

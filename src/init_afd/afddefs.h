@@ -2663,6 +2663,11 @@ struct fileretrieve_status
                                             /* mrz_mfa + mrz_mfb =>      */
                                             /*       mrz_mf              */
           char          url[MAX_RECIPIENT_LENGTH];
+#ifdef NEW_FRA
+          char          retrieve_work_dir[MAX_FILENAME_LENGTH];
+                                            /* Other work dir for        */
+                                            /* retrieving data.          */
+#endif
           char          wait_for_filename[MAX_WAIT_FOR_LENGTH]; /* Wait  */
                                             /* for the given file name|  */
                                             /* pattern before we take    */

@@ -136,7 +136,7 @@ check_typesize_data(int *old_value_list, FILE *output_fp)
                     vallist[] =
                     {
                        /* NOTE: If this is changed, check mondefs.h and */
-                       /*       src/afdd/handle_request.c!!!            */
+                       /*       src/servers/afdd/handle_request.c!!!    */
                        MAX_MSG_NAME_LENGTH,
                        MAX_FILENAME_LENGTH,
                        MAX_HOSTNAME_LENGTH,
@@ -173,7 +173,7 @@ check_typesize_data(int *old_value_list, FILE *output_fp)
                     *varlist[] =
                     {
                        /* NOTE: If this is changed, check mondefs.h and */
-                       /*       src/afdd/handle_request.c!!!            */
+                       /*       src/servers/afdd/handle_request.c!!!    */
                        MAX_MSG_NAME_LENGTH_STR,     /* MAX_MSG_NAME_LENGTH_NR */
                        MAX_FILENAME_LENGTH_STR,     /* MAX_FILENAME_LENGTH_NR */
                        MAX_HOSTNAME_LENGTH_STR,     /* MAX_HOSTNAME_LENGTH_NR */

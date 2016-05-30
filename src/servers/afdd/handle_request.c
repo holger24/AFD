@@ -1,6 +1,6 @@
 /*
  *  handle_request.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -734,7 +734,12 @@ handle_request(int  sock_sd,
                                     MAX_DIR_ALIAS_LENGTH, MAX_RECIPIENT_LENGTH,
                                     MAX_WAIT_FOR_LENGTH, MAX_FRA_TIME_ENTRIES,
                                     MAX_OPTION_LENGTH, MAX_PATH_LENGTH,
-                                    MAX_USER_NAME_LENGTH);
+#ifdef NEW_FRA
+                                    MAX_USER_NAME_LENGTH, MAX_TIMEZONE_LENGTH,
+#else
+                                    MAX_USER_NAME_LENGTH
+#endif
+                                    );
                       report_changes = YES;
                    }
               else if (strncmp(cmd, NOP_CMD, NOP_CMD_LENGTH) == 0)

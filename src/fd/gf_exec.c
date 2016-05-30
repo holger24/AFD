@@ -132,7 +132,9 @@ main(int argc, char *argv[])
                     job_str[4],
                     local_file[MAX_PATH_LENGTH],
                     local_tmp_file[MAX_PATH_LENGTH],
+#ifndef NEW_FRA
                     local_work_dir[MAX_PATH_LENGTH],
+#endif
                     *p_command,
                     *p_local_file,
                     *p_local_tmp_file,
@@ -196,6 +198,11 @@ main(int argc, char *argv[])
 #else
    crc_val = get_str_checksum_crc32c(db.exec_cmd);
 #endif
+   (void)snprintf(str_crc_val, MAX_INT_HEX_LENGTH, "%x", crc_val);
+#ifdef NEW_FRA
+   if (create_remote_dir(NULL, fra[db.fra_pos].retrieve_work_dir,
+                         db.user, db.hostname,
+#else
    if (fra[db.fra_pos].in_dc_flag & LOCAL_REMOTE_DIR_IDC)
    {
       get_local_remote_part(fra[db.fra_pos].dir_id, local_work_dir);
@@ -204,8 +211,8 @@ main(int argc, char *argv[])
    {
       (void)strcpy(local_work_dir, p_work_dir);
    }
-   (void)snprintf(str_crc_val, MAX_INT_HEX_LENGTH, "%x", crc_val);
    if (create_remote_dir(NULL, local_work_dir, db.user, db.hostname,
+#endif
                          str_crc_val, local_file, &local_file_length) == INCORRECT)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,

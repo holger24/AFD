@@ -378,6 +378,9 @@ create_fra(int no_of_dirs)
          (void)strcpy(fra[i].dir_alias, dd[i].dir_alias);
          (void)strcpy(fra[i].host_alias, dd[i].host_alias);
          (void)strcpy(fra[i].url, dd[i].url);
+#ifdef NEW_FRA
+         (void)strcpy(fra[i].retrieve_work_dir, dd[i].retrieve_work_dir);
+#endif
          (void)strcpy(fra[i].wait_for_filename, dd[i].wait_for_filename);
 #ifdef NEW_FRA
          (void)strcpy(fra[i].timezone, dd[i].timezone);
@@ -520,6 +523,9 @@ create_fra(int no_of_dirs)
          (void)strcpy(fra[i].dir_alias, dd[i].dir_alias);
          (void)strcpy(fra[i].host_alias, dd[i].host_alias);
          (void)strcpy(fra[i].url, dd[i].url);
+#ifdef NEW_FRA
+         (void)strcpy(fra[i].retrieve_work_dir, dd[i].retrieve_work_dir);
+#endif
          (void)strcpy(fra[i].wait_for_filename, dd[i].wait_for_filename);
 #ifdef NEW_FRA
          (void)strcpy(fra[i].timezone, dd[i].timezone);
