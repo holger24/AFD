@@ -1,0 +1,20 @@
+*.o
+*.a
+Makefile
+Makefile.in
+gmon.out
+core
+core.*
+*.exe
+.deps/
+
+# Toplevel Configure files/directories
+/aclocal.m4
+/afd.spec
+/autom4te.cache/
+/config.h
+/config.log
+/config.status
+/configmake.h
+/configure
+/stamp-h1

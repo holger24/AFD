@@ -1,0 +1,14 @@
+confirmation_log
+delete_log
+distribution_log
+event_log
+input_log
+maintainer_log
+mon_sys_log
+monitor_log
+output_log
+production_log
+receive_log
+system_log
+transfer_log
+trans_db_log
