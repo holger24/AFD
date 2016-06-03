@@ -1,6 +1,6 @@
 /*
  *  print_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ DESCR__S_M3
  **   18.03.2000 H.Kiehl Created
  **   11.08.2003 H.Kiehl Added option to send data as mail.
  **   08.08.2007 H.Kiehl For printing write to file first, then print file.
+ **   02.06.2016 H.Kiehl Added mail server when using mail.
  **
  */
 DESCR__E_M3
@@ -97,9 +98,11 @@ static Widget  printer_text_w,
                mail_radio_w,
                subject_label_w,
                subject_w;
-static char    mailto[MAX_RECIPIENT_LENGTH],
+static char    mailserver[MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH + 1],
+               mailto[MAX_RECIPIENT_LENGTH],
                printer_cmd[PRINTER_INFO_LENGTH + 1],
                printer_name[PRINTER_INFO_LENGTH + 1];
+static int     mailserverport;
 
 /* Local function prototypes. */
 static void    cancel_print_button(Widget, XtPointer, XtPointer),
@@ -145,7 +148,7 @@ print_data(Widget w, XtPointer client_data, XtPointer call_data)
       XT_PTR_TYPE     select_all = (XT_PTR_TYPE)client_data;
 
       /* Get default values from AFD_CONFIG file. */
-      get_printer_cmd(printer_cmd, printer_name);
+      get_printer_cmd(printer_cmd, printer_name, mailserver, &mailserverport);
 
       printshell = XtVaCreatePopupShell("Print Data", topLevelShellWidgetClass,
                                         appshell, NULL);
@@ -644,46 +647,60 @@ send_print_cmd(char *message, int max_msg_length)
 void
 send_mail_cmd(char *message, int max_msg_length)
 {
-   int  ret;
-   char *buffer = NULL,
-        cmd[MAX_PATH_LENGTH];
-
-   (void)snprintf(cmd, MAX_PATH_LENGTH, "%s -a %s -s \"%s\" -t 20 %s",
-                  ASMTP, mailto, subject, file_name);
-   if ((ret = exec_cmd(cmd, &buffer, -1, NULL, 0,
-#ifdef HAVE_SETPRIORITY
-                       NO_PRIORITY,
-#endif
-                       "", 0L, YES, YES)) != 0)
+   if (mailto[0] == '\0')
    {
-      if (buffer == NULL)
-      {
-         (void)xrec(ERROR_DIALOG,
-                    "Failed to send mail command `%s' [%d] (%s %d)",
-                    cmd, ret, __FILE__, __LINE__);
-      }
-      else
-      {
-         (void)xrec(ERROR_DIALOG,
-                    "Failed to send mail command `%s' [%d] : %s (%s %d)",
-                    cmd, ret, buffer, __FILE__, __LINE__);
-      }
-      XtPopdown(printshell);
       if (message != NULL)
       {
          (void)snprintf(message, max_msg_length,
-                        "Failed to send mail (%d).", ret);
+                        "ERROR: No mail address specified.");
       }
+      (void)xrec(ERROR_DIALOG, "Please, enter a mail address for `Mailto`");
    }
    else
    {
-      if (message != NULL)
+      int  ret;
+      char *buffer = NULL,
+           cmd[MAX_PATH_LENGTH];
+
+      (void)snprintf(cmd, MAX_PATH_LENGTH,
+                     "%s -m %s -p %d -a %s -s \"%s\" -t 20 %s",
+                     ASMTP, mailserver, mailserverport, mailto, subject,
+                     file_name);
+      if ((ret = exec_cmd(cmd, &buffer, -1, NULL, 0,
+#ifdef HAVE_SETPRIORITY
+                          NO_PRIORITY,
+#endif
+                          "", 0L, YES, YES)) != 0)
       {
-         (void)snprintf(message, max_msg_length, "Send mail to %s.", mailto);
+         if (buffer == NULL)
+         {
+            (void)xrec(ERROR_DIALOG,
+                       "Failed to send mail command `%s' [%d] (%s %d)",
+                       cmd, ret, __FILE__, __LINE__);
+         }
+         else
+         {
+            (void)xrec(ERROR_DIALOG,
+                       "Failed to send mail command `%s' [%d] : %s (%s %d)",
+                       cmd, ret, buffer, __FILE__, __LINE__);
+         }
+         XtPopdown(printshell);
+         if (message != NULL)
+         {
+            (void)snprintf(message, max_msg_length,
+                           "Failed to send mail (%d).", ret);
+         }
       }
+      else
+      {
+         if (message != NULL)
+         {
+            (void)snprintf(message, max_msg_length, "Send mail to %s.", mailto);
+         }
+      }
+      (void)unlink(file_name);
+      free(buffer);
    }
-   (void)unlink(file_name);
-   free(buffer);
 
    return;
 }

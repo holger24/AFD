@@ -1,6 +1,6 @@
 /*
  *  get_printer_cmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -27,7 +27,10 @@ DESCR__S_M3
  **                     name
  **
  ** SYNOPSIS
- **   void get_printer_cmd(char *printer_cmd, char *default_printer)
+ **   void get_printer_cmd(char *printer_cmd,
+ **                        char *default_printer,
+ **                        char *mailserver,
+ **                        int  *port)
  **
  ** DESCRIPTION
  **
@@ -47,6 +50,7 @@ DESCR__E_M3
 #include <string.h>
 #include <unistd.h>
 #include "ui_common_defs.h"
+#include "smtpdefs.h"
 
 /* External global variables. */
 extern char *p_work_dir;
@@ -54,7 +58,10 @@ extern char *p_work_dir;
 
 /*++++++++++++++++++++++++++ get_printer_cmd() ++++++++++++++++++++++++++*/
 void                                                                
-get_printer_cmd(char *printer_cmd, char *default_printer)
+get_printer_cmd(char *printer_cmd,
+                char *default_printer,
+                char *mailserver,
+                int  *port)
 {
    char *buffer,
         config_file[MAX_PATH_LENGTH];
@@ -62,7 +69,8 @@ get_printer_cmd(char *printer_cmd, char *default_printer)
    (void)snprintf(config_file, MAX_PATH_LENGTH, "%s%s%s",
                   p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(config_file, F_OK) == 0) &&
-       (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
+       (read_file_no_cr(config_file, &buffer, YES,
+                        __FILE__, __LINE__) != INCORRECT))
    {
       if (get_definition(buffer, DEFAULT_PRINTER_CMD_DEF,
                          printer_cmd, PRINTER_INFO_LENGTH) == NULL)
@@ -75,12 +83,60 @@ get_printer_cmd(char *printer_cmd, char *default_printer)
       {
          default_printer[0] = '\0';
       }
+      if (get_definition(buffer, DEFAULT_SMTP_SERVER_PRINT_DEF,
+                         mailserver, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH) == NULL)
+      {
+         if (get_definition(buffer, DEFAULT_SMTP_SERVER_DEF,
+                            mailserver, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH) == NULL)
+         {
+            (void)strcpy(mailserver, SMTP_HOST_NAME);
+            *port = DEFAULT_SMTP_PORT;
+         }
+         else
+         {
+            char *ptr = mailserver;
+
+            while ((*ptr != ':') && (*ptr != '\0'))
+            {
+               ptr++;
+            }
+            if (*ptr == ':')
+            {
+               *ptr = '\0';
+               *port = atoi(ptr + 1);
+            }
+            else
+            {
+               *port = DEFAULT_SMTP_PORT;
+            }
+         }
+      }
+      else
+      {
+         char *ptr = mailserver;
+
+         while ((*ptr != ':') && (*ptr != '\0'))
+         {
+            ptr++;
+         }
+         if (*ptr == ':')
+         {
+            *ptr = '\0';
+            *port = atoi(ptr + 1);
+         }
+         else
+         {
+            *port = DEFAULT_SMTP_PORT;
+         }
+      }
       free(buffer);
    }
    else
    {
       (void)strcpy(printer_cmd, "lpr -P");
       default_printer[0] = '\0';
+      (void)strcpy(mailserver, SMTP_HOST_NAME);
+      *port = DEFAULT_SMTP_PORT;
    }
 
    return;
