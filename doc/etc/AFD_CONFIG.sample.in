@@ -113,8 +113,8 @@ MIN_NICE_VALUE                   19
 # you must use it multiple times as shown below.                         #
 # Default: not set                                                       #
 ##########################################################################
-#EXTRA_WORK_DIR                  /drbd/afd/files
-#EXTRA_WORK_DIR                  /ram/afd/files
+#EXTRA_WORK_DIR                  /drbd/afd
+#EXTRA_WORK_DIR                  /ram/afd
 
 ##########################################################################
 # The configuration file from where AFD will read it's configuration.    #
