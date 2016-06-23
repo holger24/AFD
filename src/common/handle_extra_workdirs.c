@@ -28,7 +28,8 @@ DESCR__S_M3
  **                           dirs from AFD_CONFIG
  **
  ** SYNOPSIS
- **   void get_extra_work_dirs(int                    *no_of_extra_work_dirs,
+ **   void get_extra_work_dirs(char                   *afd_config_buffer,
+ **                            int                    *no_of_extra_work_dirs,
  **                            struct extra_work_dirs **ewl,
  **                            int                    create)
  **   void delete_stale_extra_work_dir_links(int                    no_of_extra_work_dirs
@@ -69,23 +70,47 @@ static void scan_old_links(int, struct extra_work_dirs *, char *, int);
 
 /*####################### get_extra_work_dirs() #########################*/
 void
-get_extra_work_dirs(int                    *no_of_extra_work_dirs,
+get_extra_work_dirs(char                   *afd_config_buffer,
+                    int                    *no_of_extra_work_dirs,
                     struct extra_work_dirs **ewl,
                     int                    create)
 {
-   char        *buffer,
-               config_file[MAX_PATH_LENGTH],
-               *ptr;
-   char        linkpath[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   char *buffer = NULL;
 
-   (void)snprintf(config_file, MAX_PATH_LENGTH, "%s%s%s",
-                  p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
-   if ((eaccess(config_file, F_OK) == 0) &&
-       (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
+   if (afd_config_buffer == NULL)
    {
-      char afd_file_dir[MAX_PATH_LENGTH],
-           value[MAX_ADD_LOCKED_FILES_LENGTH];
+      char config_file[MAX_PATH_LENGTH];
+
+      (void)snprintf(config_file, MAX_PATH_LENGTH, "%s%s%s",
+                     p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
+      if (eaccess(config_file, F_OK) == 0)
+      {
+         off_t bytes_read;
+
+         if ((bytes_read = read_file_no_cr(config_file, &buffer, YES,
+                                           __FILE__, __LINE__)) != INCORRECT)
+         {
+            if (bytes_read < 6)
+            {
+               /* Forget it, there is nothing meaningful in it. */
+               free(buffer);
+               buffer = NULL;
+            }
+         }
+      }
+   }
+   else
+   {
+      buffer = afd_config_buffer;
+   }
+
+   if (buffer != NULL)
+   {
+      char        afd_file_dir[MAX_PATH_LENGTH],
+                  linkpath[MAX_PATH_LENGTH],
+                  *ptr,
+                  value[MAX_ADD_LOCKED_FILES_LENGTH];
+      struct stat stat_buf;
 
       ptr = buffer;
       *no_of_extra_work_dirs = 1;
@@ -1129,7 +1154,10 @@ get_extra_work_dirs(int                    *no_of_extra_work_dirs,
          }
       }
 
-      free(buffer);
+      if (afd_config_buffer == NULL)
+      {
+         free(buffer);
+      }
    }
    else
    {

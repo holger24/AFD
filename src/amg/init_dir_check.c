@@ -1286,7 +1286,7 @@ get_afd_config_value(void)
          }
       }
 #ifdef MULTI_FS_SUPPORT
-      get_extra_work_dirs(&no_of_extra_work_dirs, &ewl, YES);
+      get_extra_work_dirs(buffer, &no_of_extra_work_dirs, &ewl, YES);
 #endif
 
       free(buffer);

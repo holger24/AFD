@@ -540,7 +540,7 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
       char                   archive_dir[MAX_PATH_LENGTH];
       struct extra_work_dirs *ewl;
 
-      get_extra_work_dirs(&no_of_extra_work_dirs, &ewl, NO);
+      get_extra_work_dirs(NULL, &no_of_extra_work_dirs, &ewl, NO);
       for (i = 0; i < no_of_extra_work_dirs; i++)
       {
          if (dry_run == YES)

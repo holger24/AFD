@@ -1945,59 +1945,19 @@ get_afd_config_value(int          *afdd_port,
 static void
 check_dirs(char *work_dir)
 {
-   int         tmp_sys_log_fd = sys_log_fd;
-   char        new_dir[MAX_PATH_LENGTH],
-               *ptr2,
-               *ptr;
-   struct stat stat_buf;
+   int                    tmp_sys_log_fd = sys_log_fd;
+   char                   new_dir[MAX_PATH_LENGTH],
+                          *ptr2,
+                          *ptr;
+   struct stat            stat_buf;
+#ifdef MULTI_FS_SUPPORT
+   int                    no_of_extra_work_dirs;
+   struct extra_work_dirs *ewl;
+#endif
 
    /* First check that the working directory does exist */
    /* and make sure that it is a directory.             */
    sys_log_fd = STDOUT_FILENO;
-#ifdef MULTI_FS_SUPPORT
-   int                    no_of_extra_work_dirs;
-   struct extra_work_dirs *ewl;
-
-   get_extra_work_dirs(&no_of_extra_work_dirs, &ewl, YES);
-   if (no_of_extra_work_dirs > 0)
-   {
-      int i;
-
-      for (i = 0; i < no_of_extra_work_dirs; i++)
-      {
-         if (stat(ewl[i].dir_name, &stat_buf) < 0)
-         {
-            (void)fprintf(stderr, _("Could not stat() `%s' : %s (%s %d)\n"),
-                          ewl[i].dir_name, strerror(errno), __FILE__, __LINE__);
-            if (i == 0)
-            {
-               (void)unlink(afd_active_file);
-               exit(INCORRECT);
-            }
-         }
-         if (!S_ISDIR(stat_buf.st_mode))
-         {
-            (void)fprintf(stderr, _("`%s' is not a directory. (%s %d)\n"),
-                          ewl[i].dir_name, __FILE__, __LINE__);
-            if (i == 0)
-            {
-               (void)unlink(afd_active_file);
-               exit(INCORRECT);
-            }
-         }
-      }
-   }
-   else
-   {
-      (void)fprintf(stderr,
-                    _("Failed to locate any valid working directories. (%s %d)\n"),
-                    __FILE__, __LINE__);
-      (void)unlink(afd_active_file);
-      exit(INCORRECT);
-   }
-   delete_stale_extra_work_dir_links(no_of_extra_work_dirs, ewl);
-   free_extra_work_dirs(no_of_extra_work_dirs, &ewl);
-#else
    if (stat(work_dir, &stat_buf) < 0)
    {
       (void)fprintf(stderr, _("Could not stat() `%s' : %s (%s %d)\n"),
@@ -2012,7 +1972,6 @@ check_dirs(char *work_dir)
       (void)unlink(afd_active_file);
       exit(INCORRECT);
    }
-#endif
 
    /* Now lets check if the fifo directory is there. */
    (void)strcpy(new_dir, work_dir);
@@ -2295,6 +2254,48 @@ check_dirs(char *work_dir)
       (void)unlink(afd_active_file);
       exit(INCORRECT);
    }
+
+#ifdef MULTI_FS_SUPPORT
+   get_extra_work_dirs(NULL, &no_of_extra_work_dirs, &ewl, YES);
+   if (no_of_extra_work_dirs > 0)
+   {
+      int i;
+
+      for (i = 0; i < no_of_extra_work_dirs; i++)
+      {
+         if (stat(ewl[i].dir_name, &stat_buf) < 0)
+         {
+            (void)fprintf(stderr, _("Could not stat() `%s' : %s (%s %d)\n"),
+                          ewl[i].dir_name, strerror(errno), __FILE__, __LINE__);
+            if (i == 0)
+            {
+               (void)unlink(afd_active_file);
+               exit(INCORRECT);
+            }
+         }
+         if (!S_ISDIR(stat_buf.st_mode))
+         {
+            (void)fprintf(stderr, _("`%s' is not a directory. (%s %d)\n"),
+                          ewl[i].dir_name, __FILE__, __LINE__);
+            if (i == 0)
+            {
+               (void)unlink(afd_active_file);
+               exit(INCORRECT);
+            }
+         }
+      }
+   }
+   else
+   {
+      (void)fprintf(stderr,
+                    _("Failed to locate any valid working directories. (%s %d)\n"),
+                    __FILE__, __LINE__);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+   delete_stale_extra_work_dir_links(no_of_extra_work_dirs, ewl);
+   free_extra_work_dirs(no_of_extra_work_dirs, &ewl);
+#endif
    sys_log_fd = tmp_sys_log_fd;
 
    return;
