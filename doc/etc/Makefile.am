@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2008 - 2013 Holger Kiehl
+## Copyright (C) 2008 - 2016 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ CLEANFILES           = AFD_CONFIG.sample MON_CONFIG.sample afd.users.sample
 DISTDOCS             = AFD_CONFIG.sample AFD_MON_CONFIG.sample\
                        MON_CONFIG.sample DIR_CONFIG.sample afd.users.sample\
                        INFO-LOOP.sample afd.name.sample host.info.sample\
-                       rename.rule.sample
+                       rename.rule.sample afd.init.sample
 EXTRA_DIST           = $(DISTDOCS) AFD_CONFIG.sample.in MON_CONFIG.sample.in\
                        afd.users.sample.in
 doc_DATA             = $(DISTDOCS)

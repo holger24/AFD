@@ -9,7 +9,7 @@
 #                 04.03.2014 H.Kiehl Do not overwrite $AFD_WORK_DIR/etc/DIR_CONFIG!
 #                 21.04.2014 H.Kiehl Fix DIR_CONFIG_NAME check and add
 #                                    same check for rename.rule.
-#
+#                 23.06.2016 H.Kiehl Added afd.init file.
 #
 
 if [ $# -eq 1 ]
@@ -97,6 +97,17 @@ else
       if [ -f @docdir@/etc/host.info.sample ]
       then
          cp @docdir@/etc/host.info.sample $AFD_WORK_DIR/etc/host.info
+      fi
+   fi
+
+   if [ ! -f "$AFD_WORK_DIR/etc/afd.init" ]
+   then
+      if [ -f @docdir@/etc/afd.init.sample ]
+      then
+         if [ ! -f $AFD_WORK_DIR/etc/afd.init.sample ]
+         then
+            cp @docdir@/etc/afd.init.sample $AFD_WORK_DIR/etc
+         fi
       fi
    fi
 

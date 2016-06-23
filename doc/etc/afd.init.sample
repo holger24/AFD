@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# Description: This script is called by /etc/init.d/afd if it is located
+#              in $AFD_WORK_DIR/etc. With it you can do some stuff before
+#              afd is started by /etc/init.d/afd. Below is just an example.
+#              It always at start deletes all cron entries, disables
+#              retrieving and disables directory warn time.
+#
+
+if [ $# -gt 1 ]
+then
+   AFD_WORK_DIR=$1
+   export AFD_WORK_DIR
+   shift
+fi
+
+case "$1" in
+   start)
+      afdcfg -s > /dev/null 2>&1 # Test if AFD has ever been running.
+      if [ $? -eq 0 ]
+      then
+         afdcfg -R; afdcfg -D; crontab -r > /dev/null 2>&1
+      else
+         crontab -r > /dev/null 2>&1 ; afd -a; afdcfg -R; afdcfg -D ; afd -S
+      fi
+      ;;
+   stop)
+      ;;
+   *)
+      echo "Usage: afd.init [AFD_WORK_DIR] start|stop"
+      exit 1
+      ;;
+esac
+
+exit 0
