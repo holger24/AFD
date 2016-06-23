@@ -1957,7 +1957,24 @@ check_dummy_line:
                 * can define where a local remote directory is located.
                 */
                dd[no_of_local_dirs].in_dc_flag = 0;
-               eval_dir_options(no_of_local_dirs, dir->dir_options);
+               if ((j = eval_dir_options(no_of_local_dirs,
+                                         dir->dir_options)) != 0)
+               {
+                  char *end_ptr;
+
+                  if (search_ptr == NULL)
+                  {
+                     end_ptr = ptr;
+                  }
+                  else
+                  {
+                     end_ptr = search_ptr;
+                  }
+                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                             "%d %s problems in %s at line %d",
+                             j, DIR_OPTION_IDENTIFIER, dcl[dcd].dir_config_file,
+                             count_new_lines(database, end_ptr));
+               }
                if (dir->type == REMOTE_DIR)
                {
                   if (dir->protocol == EXEC)

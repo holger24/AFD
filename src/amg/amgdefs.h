@@ -877,6 +877,7 @@ extern int    amg_zombie_check(pid_t *, int),
 #else
               eval_dir_config(off_t, unsigned int *),
 #endif
+              eval_dir_options(int, char *),
               get_last_char(char *, off_t),
               handle_options(int, time_t, unsigned int, unsigned int,
                              char *, int *, off_t *),
@@ -923,7 +924,6 @@ extern void   add_file_mask(char *, struct dir_group *),
 #endif
               enter_time_job(int),
               eval_bul_rep_config(char *, char *, int),
-              eval_dir_options(int, char *),
               free_dir_group_name(void),
               get_file_group(char *, int, struct dir_group *, int *),
               get_full_dc_names(char *, off_t *),
