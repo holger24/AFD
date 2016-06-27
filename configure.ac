@@ -752,6 +752,8 @@ AC_PROG_INSTALL
 AC_PROG_CC
 AC_PROG_RANLIB
 
+DISTRO=""
+DISTRO_VERSION=0
 case "${host_os}"
 in
    aix*)     if test "${compile_64_bit}" = "true"
@@ -807,6 +809,60 @@ in
                 OS_FLAG="-m64 -DLINUX"
              else
                 OS_FLAG="-DLINUX"
+             fi
+
+             dnl **** Try determine distribution.
+             if test -f /etc/fedora-release
+             then
+                DISTRO="fedora"
+                DISTRO_VERSION=`head -1 /etc/fedora-release | cut -d " " -f 3`
+             else
+                if test -f /etc/redhat-release
+                then
+                   DISTRO="redhat"
+                   DISTRO_VERSION=`head -1 /etc/redhat-release | cut -d " " -f 4 | cut -d "." -f 1`
+                else
+                   if test -f /etc/SuSE-release
+                   then
+                      head -1 /etc/SuSE-release | grep -i enterprise > /dev/null
+                      if test $? -eq 0
+                      then
+                         DISTRO="sles"
+                         DISTRO_VERSION=`grep VERSION /etc/SuSE-release | cut -d " " -f 3`
+                      else
+                         head -1 /etc/SuSE-release | grep -i open > /dev/null
+                         if test $? -eq 0
+                         then
+                            DISTRO="opensuse"
+                            DISTRO_VERSION=`grep VERSION /etc/SuSE-release | cut -d " " -f 3 | cut -d "." -f 1`
+                         else
+                            DISTRO="suse"
+                         fi
+                      fi
+                   else
+                      if test -f /etc/slackware-release
+                      then
+                         DISTRO="slackware"
+                      else
+                         if test -f /etc/debian_release || test -f /etc/os-release
+                         then
+                            DISTRO="debian"
+                         else
+                            if test -f /etc/gentoo-release
+                            then
+                               DISTRO="gentoo"
+                            else
+                               if test -f /etc/yellowdog-release
+                               then
+                                  DISTRO="yellowdog"
+                               else
+                                  DISTRO="unknown"
+                               fi
+                            fi
+                         fi
+                      fi
+                   fi
+                fi
              fi
              ;;
    netbsd*)  OS_FLAG="" ;;
@@ -1179,6 +1235,43 @@ then
          ;;
    esac
    GUIS_STRING="Motif"
+   if test "$DISTRO" = "redhat" && test $DISTRO_VERSION -gt 5
+   then
+      if test "$REQUIRES" = ""
+      then
+         REQUIRES="xorg-x11-fonts-misc"
+      else
+         REQUIRES="`echo $REQUIRES`, xorg-x11-fonts-misc"
+      fi
+   else
+      if test "$DISTRO" = "fedora" && test $DISTRO_VERSION -gt 5
+      then
+         if test "$REQUIRES" = ""
+         then
+            REQUIRES="xorg-x11-fonts-misc"
+         else
+            REQUIRES="`echo $REQUIRES`, xorg-x11-fonts-misc"
+         fi
+      fi
+   fi
+   if test "$ac_cv_new_motif_name" = "motif"
+   then
+      if test "$DISTRO" = "redhat" && test $DISTRO_VERSION -lt 7
+      then
+         ac_cv_new_motif_name = "openmotif"
+      else
+         if test "$DISTRO" = "fedora" && test $DISTRO_VERSION -lt 18
+         then
+            ac_cv_new_motif_name = "openmotif"
+         else
+            if test "$DISTRO" = "sles" && test $DISTRO_VERSION -lt 12
+            then
+               ac_cv_new_motif_name = "openmotif"
+            fi
+         fi
+      fi
+   fi
+
    if test "$REQUIRES" = ""
    then
       REQUIRES="$ac_cv_new_motif_name"
@@ -1556,5 +1649,9 @@ echo "    Max directory alias name length  : ${with_max_dir_alias_length}"
 echo "    Some binaries with setuid flag   : ${ac_cv_setuid_progs}"
 echo "    Automatically create configs     : ${ac_cv_auto_create_config}"
 echo "    Enable Distro-style RPMs         : ${enable_distro_rpm}"
+if test "$DISTRO" != ""
+then
+   echo "    Distribution                     : $DISTRO $DISTRO_VERSION"
+fi
 echo ""
 echo "------------- type make to compile -------------"
