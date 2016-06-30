@@ -1818,9 +1818,10 @@ system_log(DEBUG_SIGN, NULL, 0,
                      *dl.unique_number = *unique_number;
                      *dl.split_job_counter = *split_job_counter;
                      remove_job_files(del_dir, -1, *job_id, FD,
-                                      JID_LOOKUP_FAILURE_DEL, -1);
+                                      JID_LOOKUP_FAILURE_DEL, -1,
+                                      __FILE__, __LINE__);
 #else
-                     remove_job_files(del_dir, -1, -1);
+                     remove_job_files(del_dir, -1, -1, __FILE__, __LINE__);
 #endif
                   }
                   else
@@ -2349,9 +2350,9 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
          extract_cus(qb[qb_pos].msg_name, dl.input_time, dl.split_job_counter,
                      dl.unique_number);
          remove_job_files(del_dir, fsa_pos, mdb[qb[qb_pos].pos].job_id,
-                          FD, AGE_OUTPUT, -1);
+                          FD, AGE_OUTPUT, -1, __FILE__, __LINE__);
 #else
-         remove_job_files(del_dir, fsa_pos, -1);
+         remove_job_files(del_dir, fsa_pos, -1, __FILE__, __LINE__);
 #endif
       }
       ABS_REDUCE(fsa_pos);
@@ -3526,9 +3527,10 @@ zombie_check(struct connection *p_con,
                                  dl.split_job_counter, dl.unique_number);
                      remove_job_files(del_dir, -1,
                                       fsa[p_con->fsa_pos].job_status[p_con->job_no].job_id,
-                                      FD, DELETE_STALE_ERROR_JOBS, -1);
+                                      FD, DELETE_STALE_ERROR_JOBS,
+                                      -1, __FILE__, __LINE__);
 #else
-                     remove_job_files(del_dir, -1, -1);
+                     remove_job_files(del_dir, -1, -1, __FILE__, __LINE__);
 #endif
                   }
                   else
@@ -3583,9 +3585,10 @@ zombie_check(struct connection *p_con,
                                  dl.split_job_counter, dl.unique_number);
                      remove_job_files(del_dir, -1,
                                       fsa[p_con->fsa_pos].job_status[p_con->job_no].job_id,
-                                      FD, NO_MESSAGE_FILE_DEL, -1);
+                                      FD, NO_MESSAGE_FILE_DEL, -1,
+                                      __FILE__, __LINE__);
 #else
-                     remove_job_files(del_dir, -1, -1);
+                     remove_job_files(del_dir, -1, -1, __FILE__, __LINE__);
 #endif
                   }
                   break;
@@ -3608,9 +3611,10 @@ zombie_check(struct connection *p_con,
                                  dl.split_job_counter, dl.unique_number);
                      remove_job_files(del_dir, -1,
                                       fsa[p_con->fsa_pos].job_status[p_con->job_no].job_id,
-                                      FD, DELETE_STALE_ERROR_JOBS, -1);
+                                      FD, DELETE_STALE_ERROR_JOBS, -1,
+                                      __FILE__, __LINE__);
 #else
-                     remove_job_files(del_dir, -1, -1);
+                     remove_job_files(del_dir, -1, -1, __FILE__, __LINE__);
 #endif
                   }
                   else
@@ -3693,9 +3697,10 @@ zombie_check(struct connection *p_con,
                                  dl.split_job_counter, dl.unique_number);
                      remove_job_files(del_dir, -1,
                                       fsa[p_con->fsa_pos].job_status[p_con->job_no].job_id,
-                                      FD, DELETE_STALE_ERROR_JOBS, -1);
+                                      FD, DELETE_STALE_ERROR_JOBS, -1,
+                                      __FILE__, __LINE__);
 #else
-                     remove_job_files(del_dir, -1, -1);
+                     remove_job_files(del_dir, -1, -1, __FILE__, __LINE__);
 #endif
                   }
                   else
@@ -3742,9 +3747,10 @@ zombie_check(struct connection *p_con,
                                  dl.split_job_counter, dl.unique_number);
                      remove_job_files(del_dir, -1,
                                       fsa[p_con->fsa_pos].job_status[p_con->job_no].job_id,
-                                      FD, DELETE_STALE_ERROR_JOBS, -1);
+                                      FD, DELETE_STALE_ERROR_JOBS, -1,
+                                      __FILE__, __LINE__);
 #else
-                     remove_job_files(del_dir, -1, -1);
+                     remove_job_files(del_dir, -1, -1, __FILE__, __LINE__);
 #endif
                   }
                   else

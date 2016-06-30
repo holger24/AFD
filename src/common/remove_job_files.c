@@ -1,6 +1,6 @@
 /*
  *  remove_job_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,7 +30,9 @@ DESCR__S_M3
  **                         unsigned int   job_id,
  **                         char           *proc,
  **                         char           reason,
- **                         off_t          sf_lock_offset)
+ **                         off_t          sf_lock_offset,
+ **                         char           *caller_file,
+ **                         int            caller_line)
  **
  ** DESCRIPTION
  **   Deletes all files from the given AFD job.
@@ -48,6 +50,8 @@ DESCR__S_M3
  **
  ** HISTORY
  **   19.01.1998 H.Kiehl Created
+ **   30.06.2016 H.Kiehl Added file name and line number of caller if we
+ **                      encounter an error.
  **
  */
 DESCR__E_M3
@@ -71,16 +75,16 @@ extern struct delete_log          dl;
 
 /*########################## remove_job_files() #########################*/
 void
-#ifdef _DELETE_LOG
 remove_job_files(char           *del_dir,
                  int            fsa_pos,
+#ifdef _DELETE_LOG
                  unsigned int   job_id,
                  char           *proc,
                  char           reason,
-                 off_t          sf_lock_offset)
-#else
-remove_job_files(char *del_dir, int fsa_pos, off_t sf_lock_offset)
 #endif
+                 off_t          sf_lock_offset,
+                 char           *caller_file,
+                 int            caller_line)
 {
    int                        number_deleted = 0;
    off_t                      file_size_deleted = 0;
@@ -95,8 +99,8 @@ remove_job_files(char *del_dir, int fsa_pos, off_t sf_lock_offset)
       if (errno != ENOENT)
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("Failed to opendir() `%s' : %s"),
-                    del_dir, strerror(errno));
+                    _("Failed to opendir() `%s' : %s [%s %d]"),
+                    del_dir, strerror(errno), caller_file, caller_line);
       }
       return;
    }
@@ -126,13 +130,13 @@ remove_job_files(char *del_dir, int fsa_pos, off_t sf_lock_offset)
          if (errno != ENOENT)
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
-                       _("Failed to stat() `%s' : %s"),
-                       del_dir, strerror(errno));
+                       _("Failed to stat() `%s' : %s [%s %d]"),
+                       del_dir, strerror(errno), caller_file, caller_line);
             if (unlink(del_dir) == -1)
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          _("Failed to unlink() file `%s' : %s"),
-                          del_dir, strerror(errno));
+                          _("Failed to unlink() file `%s' : %s [%s %d]"),
+                          del_dir, strerror(errno), caller_file, caller_line);
             }
          }
       }
@@ -143,8 +147,8 @@ remove_job_files(char *del_dir, int fsa_pos, off_t sf_lock_offset)
             if (unlink(del_dir) == -1)
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          _("Failed to unlink() file `%s' : %s"),
-                          del_dir, strerror(errno));
+                          _("Failed to unlink() file `%s' : %s [%s %d]"),
+                          del_dir, strerror(errno), caller_file, caller_line);
             }
             else
             {
@@ -175,7 +179,8 @@ remove_job_files(char *del_dir, int fsa_pos, off_t sf_lock_offset)
                if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
                {
                   system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             _("write() error : %s"), strerror(errno));
+                             _("write() error : %s [%s %d]"),
+                             strerror(errno), caller_file, caller_line);
                }
 #endif
             }
@@ -183,17 +188,18 @@ remove_job_files(char *del_dir, int fsa_pos, off_t sf_lock_offset)
          else
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
-                       _("UUUPS! A directory [%s]! Whats that doing here? Deleted %d files. [host_alias=%s]"),
+                       _("UUUPS! A directory [%s]! Whats that doing here? Deleted %d files. [host_alias=%s] [%s %d]"),
                        del_dir, number_deleted,
-                       (fsa_pos > -1) ? p_fsa->host_alias : "-");
+                       (fsa_pos > -1) ? p_fsa->host_alias : "-",
+                       caller_file, caller_line);
 
             /* Lets bail out. If del_dir contains garbage we should stop */
             /* the deleting of files.                                    */
             if (closedir(dp) == -1)
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          _("Could not closedir() `%s' : %s"),
-                          del_dir, strerror(errno));
+                          _("Could not closedir() `%s' : %s [%s %d]"),
+                          del_dir, strerror(errno), caller_file, caller_line);
             }
             return;
          }
@@ -205,26 +211,29 @@ remove_job_files(char *del_dir, int fsa_pos, off_t sf_lock_offset)
    if (errno)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 _("Could not readdir() `%s' : %s"), del_dir, strerror(errno));
+                 _("Could not readdir() `%s' : %s [%s %d]"),
+                 del_dir, strerror(errno), caller_file, caller_line);
    }
    if (closedir(dp) == -1)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 _("Could not closedir() `%s' : %s"), del_dir, strerror(errno));
+                 _("Could not closedir() `%s' : %s [%s %d]"),
+                 del_dir, strerror(errno), caller_file, caller_line);
    }
    if (rmdir(del_dir) == -1)
    {
       if ((errno == ENOTEMPTY) || (errno == EEXIST))
       {
          system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                    _("Failed to rmdir() `%s' because there is still data in it, deleting everything in this directory."),
-                    del_dir);
+                    _("Failed to rmdir() `%s' because there is still data in it, deleting everything in this directory. [%s %d]"),
+                    del_dir, caller_file, caller_line);
          (void)rec_rmdir(del_dir);
       }
       else
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("Could not rmdir() `%s' : %s"), del_dir, strerror(errno));
+                    _("Could not rmdir() `%s' : %s [%s %d]"),
+                    del_dir, strerror(errno), caller_file, caller_line);
       }
    }
 
@@ -252,8 +261,8 @@ remove_job_files(char *del_dir, int fsa_pos, off_t sf_lock_offset)
       if (p_fsa->total_file_counter < 0)
       {
          system_log(INFO_SIGN, __FILE__, __LINE__,
-                    _("Total file counter for host `%s' less then zero. Correcting."),
-                    p_fsa->host_dsp_name);
+                    _("Total file counter for host `%s' less then zero. Correcting. [%s %d]"),
+                    p_fsa->host_dsp_name, caller_file, caller_line);
          p_fsa->total_file_counter = 0;
       }
 #endif
@@ -264,16 +273,16 @@ remove_job_files(char *del_dir, int fsa_pos, off_t sf_lock_offset)
       if (p_fsa->total_file_size < 0)
       {
          system_log(INFO_SIGN, __FILE__, __LINE__,
-                    _("Total file size for host `%s' overflowed. Correcting."),
-                    p_fsa->host_dsp_name);
+                    _("Total file size for host `%s' overflowed. Correcting. [%s %d]"),
+                    p_fsa->host_dsp_name, caller_file, caller_line);
          p_fsa->total_file_size = 0;
       }
       else if ((p_fsa->total_file_counter == 0) &&
                (p_fsa->total_file_size > 0))
            {
               system_log(INFO_SIGN, __FILE__, __LINE__,
-                         _("fc for host `%s' is zero but fs is not zero. Correcting."),
-                         p_fsa->host_dsp_name);
+                         _("fc for host `%s' is zero but fs is not zero. Correcting. [%s %d]"),
+                         p_fsa->host_dsp_name, caller_file, caller_line);
               p_fsa->total_file_size = 0;
            }
 #endif

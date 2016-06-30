@@ -247,9 +247,9 @@ handle_delete_fifo(int delete_jobs_fd, size_t fifo_size, char *file_dir)
                                     dl.split_job_counter, dl.unique_number);
                         remove_job_files(file_dir, mdb[qb[i].pos].fsa_pos,
                                          mdb[qb[i].pos].job_id, FD, USER_DEL,
-                                         -1);
+                                         -1, __FILE__, __LINE__);
 #else
-                        remove_job_files(file_dir, -1, -1);
+                        remove_job_files(file_dir, -1, -1, __FILE__, __LINE__);
 #endif
                         *ptr = '\0';
                         fsa_pos = mdb[qb[i].pos].fsa_pos;
@@ -383,9 +383,9 @@ handle_delete_fifo(int delete_jobs_fd, size_t fifo_size, char *file_dir)
                                       dl.split_job_counter, dl.unique_number);
                           remove_job_files(file_dir, mdb[qb[i].pos].fsa_pos,
                                            mdb[qb[i].pos].job_id, FD, USER_DEL,
-                                           -1);
+                                           -1, __FILE__, __LINE__);
 #else
-                          remove_job_files(file_dir, -1, -1);
+                          remove_job_files(file_dir, -1, -1, __FILE__, __LINE__);
 #endif
                           *ptr = '\0';
 

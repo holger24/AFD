@@ -1,6 +1,6 @@
 /*
  *  init_msg_buffer.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -927,9 +927,10 @@ list_job_to_remove(int                cache_pos,
          extract_cus(qb[j].msg_name, dl.input_time, dl.split_job_counter,
                      dl.unique_number);
          remove_job_files(file_dir, mdb[qb[j].pos].fsa_pos,
-                          mdb[qb[j].pos].job_id, FD, CLEAR_STALE_MESSAGES, -1);
+                          mdb[qb[j].pos].job_id, FD, CLEAR_STALE_MESSAGES, -1,
+                          __FILE__, __LINE__);
 #else
-         remove_job_files(file_dir, -1, -1);
+         remove_job_files(file_dir, -1, -1, __FILE__, __LINE__);
 #endif
          *p_file_dir = '\0';
          remove_msg(j);

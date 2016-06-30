@@ -1052,10 +1052,10 @@ add_message_to_queue(char         *dir_name,
       *dl.input_time = creation_time;
       *dl.unique_number = unique_number;
       *dl.split_job_counter = split_job_counter;
-      remove_job_files(missing_file_dir, -1, job_id,
-                       DIR_CHECK, JID_LOOKUP_FAILURE_DEL, -1);
+      remove_job_files(missing_file_dir, -1, job_id, DIR_CHECK,
+                       JID_LOOKUP_FAILURE_DEL, -1, __FILE__, __LINE__);
 #else
-      remove_job_files(missing_file_dir, -1, -1);
+      remove_job_files(missing_file_dir, -1, -1, __FILE__, __LINE__);
 #endif
    }
    else

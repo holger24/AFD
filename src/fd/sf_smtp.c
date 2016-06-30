@@ -1,6 +1,6 @@
 /*
  *  sf_smtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1177,7 +1177,7 @@ main(int argc, char *argv[])
                                       db.id.job,
                                       SEND_FILE_SMTP, RECIPIENT_REJECTED,
 #endif
-                                      db.lock_offset);
+                                      db.lock_offset, __FILE__, __LINE__);
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                "Removed job since recipient is not accepted by SMTP-server %s at port %d.",
                                db.smtp_server, db.port);
@@ -1254,7 +1254,7 @@ main(int argc, char *argv[])
 #ifdef _DELETE_LOG
                                    db.id.job, SEND_FILE_SMTP, RECIPIENT_REJECTED,
 #endif
-                                   db.lock_offset);
+                                   db.lock_offset, __FILE__, __LINE__);
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                             "Removed job since recipients are not accepted by SMTP-server %s at port %d.",
                             db.smtp_server, db.port);

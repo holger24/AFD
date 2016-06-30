@@ -4118,7 +4118,7 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
 #ifdef _DELETE_LOG
                                      unsigned int, char *, char,
 #endif
-                                     off_t),
+                                     off_t, char *, int),
                     remove_nnn_files(unsigned int),
                     reshuffel_log_files(int, char *, char *, int, int),
 #ifdef LOCK_DEBUG
