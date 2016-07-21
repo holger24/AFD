@@ -52,10 +52,7 @@ mafd_ctrl_LDADD      = @AFD_MATH_LIB@ ../common/libmotifafd.a\
 
 if WITH_SETUID_PROGS
 install-exec-local:
-	@if [ "`find $(DESTDIR)$(bindir) -user 0 -name mafd_ctrl -print`" = "" ] ; \
-	then \
-		chmod 4755 $(DESTDIR)$(bindir)/mafd_ctrl ; \
-	fi
+	chmod 4755 $(DESTDIR)$(bindir)/mafd_ctrl
 	cd $(DESTDIR)$(bindir) && rm -f afd_ctrl && ln -s mafd_ctrl afd_ctrl
 else
 install-exec-local:

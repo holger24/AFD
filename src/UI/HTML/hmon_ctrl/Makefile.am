@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2015 Holger Kiehl
+## Copyright (C) 2015, 2016 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -27,10 +27,7 @@ hmon_ctrl_LDADD        = ../../../common/libafd.a
 
 if WITH_SETUID_PROGS
 install-exec-local:
-	@if [ "`find $(DESTDIR)$(bindir) -user 0 -name hmon_ctrl -print`" = "" ] ; \
-	then \
-		chmod 4755 $(DESTDIR)$(bindir)/hmon_ctrl ; \
-	fi
+	chmod 4755 $(DESTDIR)$(bindir)/hmon_ctrl
 else
 install-exec-local:
 endif

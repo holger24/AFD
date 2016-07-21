@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2013 Holger Kiehl
+## Copyright (C) 2001 - 2016 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -35,10 +35,7 @@ edit_hc_LDADD        = ../common/libmotifafd.a\
 
 if WITH_SETUID_PROGS
 install-exec-local:
-	@if [ "`find $(DESTDIR)$(bindir) -user 0 -name edit_hc -print`" = "" ] ; \
-	then \
-		chmod 4755 $(DESTDIR)$(bindir)/edit_hc ; \
-	fi
+	chmod 4755 $(DESTDIR)$(bindir)/edit_hc
 else
 install-exec-local:
 endif

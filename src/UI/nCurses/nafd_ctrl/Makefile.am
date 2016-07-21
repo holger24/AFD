@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2008 - 2013 Holger Kiehl
+## Copyright (C) 2008 - 2016 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -28,10 +28,7 @@ nafd_ctrl_LDADD      = ../../../common/libafd.a @AFD_NCURSES_LIBS@
 
 if WITH_SETUID_PROGS
 install-exec-local:
-	@if [ "`find $(DESTDIR)$(bindir) -user 0 -name nafd_ctrl -print`" = "" ] ; \
-	then \
-		chmod 4755 $(DESTDIR)$(bindir)/nafd_ctrl ; \
-	fi
+	chmod 4755 $(DESTDIR)$(bindir)/nafd_ctrl
 else
 install-exec-local:
 endif

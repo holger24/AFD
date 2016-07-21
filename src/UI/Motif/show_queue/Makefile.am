@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2002 - 2013 Holger Kiehl
+## Copyright (C) 2002 - 2016 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -37,10 +37,7 @@ show_queue_LDADD     = ../common/libmotifafd.a ../../common/libuiafd.a\
 
 if WITH_SETUID_PROGS
 install-exec-local:
-	@if [ "`find $(DESTDIR)$(bindir) -user 0 -name show_queue -print`" = "" ] ; \
-	then \
-		chmod 4755 $(DESTDIR)$(bindir)/show_queue ; \
-	fi
+	chmod 4755 $(DESTDIR)$(bindir)/show_queue
 else
 install-exec-local:
 endif

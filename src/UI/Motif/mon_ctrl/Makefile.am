@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2015 Holger Kiehl
+## Copyright (C) 2001 - 2016 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -42,10 +42,7 @@ mon_ctrl_LDADD       = @AFD_MATH_LIB@ ../common/libmotifafd.a\
 
 if WITH_SETUID_PROGS
 install-exec-local:
-	@if [ "`find $(DESTDIR)$(bindir) -user 0 -name mon_ctrl -print`" = "" ] ; \
-	then \
-		chmod 4755 $(DESTDIR)$(bindir)/mon_ctrl ; \
-	fi
+	chmod 4755 $(DESTDIR)$(bindir)/mon_ctrl
 else
 install-exec-local:
 endif

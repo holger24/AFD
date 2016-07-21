@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2013 Holger Kiehl
+## Copyright (C) 2001 - 2016 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -53,10 +53,7 @@ gafd_ctrl_LDADD      = @AFD_MATH_LIB@ ../common/libgtkafd.a\
 
 if WITH_SETUID_PROGS
 install-exec-local:
-	@if [ "`find $(DESTDIR)$(bindir) -user 0 -name gafd_ctrl -print`" = "" ] ; \
-	then \
-		chmod 4755 $(DESTDIR)$(bindir)/gafd_ctrl ; \
-	fi
+	chmod 4755 $(DESTDIR)$(bindir)/gafd_ctrl
 	cd $(DESTDIR)$(bindir) && rm -f afd_ctrl && ln -s gafd_ctrl afd_ctrl
 else
 install-exec-local:

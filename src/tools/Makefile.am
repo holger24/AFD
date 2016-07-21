@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2015 Holger Kiehl
+## Copyright (C) 2001 - 2016 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -152,12 +152,9 @@ watch_dir_LDADD              = ../common/libafd.a
 
 if WITH_SETUID_PROGS
 install-exec-local:
-	@if [ "`find $(DESTDIR)$(bindir) -user 0 -name afdcmd -print`" = "" ] ; \
-	then \
-		chmod 4755 $(DESTDIR)$(bindir)/afdcmd ; \
-		chmod 4755 $(DESTDIR)$(bindir)/udc ; \
-		chmod 4755 $(DESTDIR)$(bindir)/get_dc_data ; \
-	fi
+	chmod 4755 $(DESTDIR)$(bindir)/afdcmd
+	chmod 4755 $(DESTDIR)$(bindir)/udc
+	chmod 4755 $(DESTDIR)$(bindir)/get_dc_data
 	cd $(DESTDIR)$(bindir) && rm -f uhc
 	cd $(DESTDIR)$(bindir) && ln -s udc uhc
 else
