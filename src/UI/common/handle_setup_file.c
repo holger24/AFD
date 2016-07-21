@@ -166,8 +166,8 @@ read_setup(char *file_name,
    {
       if (seteuid(ruid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       ruid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       ruid, strerror(errno), __FILE__, __LINE__);
       }
    }
 
@@ -181,8 +181,8 @@ read_setup(char *file_name,
       {
          if (seteuid(euid) == -1)
          {
-            (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                          euid, strerror(errno));
+            (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                          euid, strerror(errno), __FILE__, __LINE__);
          }
       }
       return;
@@ -193,8 +193,8 @@ read_setup(char *file_name,
    {
       if (seteuid(euid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       euid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       euid, strerror(errno), __FILE__, __LINE__);
       }
    }
    if (fd < 0)
@@ -459,8 +459,8 @@ write_setup(int  hostname_display_length,
    {
       if (seteuid(ruid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       ruid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       ruid, strerror(errno), __FILE__, __LINE__);
       }
    }
    if (stat(setup_file, &stat_buf) == -1)
@@ -478,8 +478,8 @@ write_setup(int  hostname_display_length,
             {
                if (seteuid(euid) == -1)
                {
-                  (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                                euid, strerror(errno));
+                  (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                                euid, strerror(errno), __FILE__, __LINE__);
                }
             }
             return;
@@ -490,8 +490,8 @@ write_setup(int  hostname_display_length,
    {
       if (seteuid(euid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       euid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       euid, strerror(errno), __FILE__, __LINE__);
       }
    }
 
@@ -527,8 +527,8 @@ write_setup(int  hostname_display_length,
    {
       if (seteuid(ruid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       ruid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       ruid, strerror(errno), __FILE__, __LINE__);
       }
    }
    if (fd == -1)
@@ -538,8 +538,8 @@ write_setup(int  hostname_display_length,
       {
          if (seteuid(euid) == -1)
          {
-            (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                          euid, strerror(errno));
+            (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                          euid, strerror(errno), __FILE__, __LINE__);
          }
       }
       if (fd < 0)
@@ -614,8 +614,8 @@ write_setup(int  hostname_display_length,
       {
          if (seteuid(euid) == -1)
          {
-            (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                          euid, strerror(errno));
+            (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                          euid, strerror(errno), __FILE__, __LINE__);
          }
       }
       if (lock_fd < 0)

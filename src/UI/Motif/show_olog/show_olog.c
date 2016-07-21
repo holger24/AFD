@@ -270,8 +270,8 @@ main(int argc, char *argv[])
    {
       if (seteuid(ruid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       ruid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       ruid, strerror(errno), __FILE__, __LINE__);
       }
    }
 
@@ -284,8 +284,8 @@ main(int argc, char *argv[])
    {
       if (seteuid(euid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       euid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       euid, strerror(errno), __FILE__, __LINE__);
       }
    }
    display = XtDisplay(appshell);

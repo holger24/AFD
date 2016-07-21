@@ -1,6 +1,6 @@
 /*
  *  view_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -511,8 +511,8 @@ view_data(char *fullname, char *file_name)
             {
                if (seteuid(ruid) == -1)
                {
-                  (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                                ruid, strerror(errno));
+                  (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                                ruid, strerror(errno), __FILE__, __LINE__);
                }
             }
 
@@ -522,8 +522,8 @@ view_data(char *fullname, char *file_name)
             {
                if (seteuid(euid) == -1)
                {
-                  (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                                euid, strerror(errno));
+                  (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                                euid, strerror(errno), __FILE__, __LINE__);
                }
             }
 

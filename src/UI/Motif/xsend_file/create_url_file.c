@@ -1,6 +1,6 @@
 /*
  *  create_url_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -69,8 +69,8 @@ create_url_file(void)
    {
       if (seteuid(ruid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       ruid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       ruid, strerror(errno), __FILE__, __LINE__);
       }
    }
 #if SIZEOF_PID_T == 4
@@ -96,8 +96,8 @@ create_url_file(void)
       {
          if (seteuid(euid) == -1)
          {
-            (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                          euid, strerror(errno));
+            (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                          euid, strerror(errno), __FILE__, __LINE__);
          }
       }
 

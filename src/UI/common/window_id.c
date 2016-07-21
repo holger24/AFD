@@ -1,6 +1,6 @@
 /*
  *  window_id.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -112,8 +112,8 @@ write_window_id(Window w, pid_t pid, char *progname)
    {
       if (seteuid(ruid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       ruid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       ruid, strerror(errno), __FILE__, __LINE__);
       }
    }
    tmp_sys_log_fd = sys_log_fd;
@@ -125,8 +125,8 @@ write_window_id(Window w, pid_t pid, char *progname)
    {
       if (seteuid(euid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       euid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       euid, strerror(errno), __FILE__, __LINE__);
       }
    }
    if (ptr == (caddr_t) -1)
@@ -194,8 +194,8 @@ get_window_id(pid_t pid, char *progname)
    {
       if (seteuid(ruid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       ruid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       ruid, strerror(errno), __FILE__, __LINE__);
       }
    }
    tmp_sys_log_fd = sys_log_fd;
@@ -207,8 +207,8 @@ get_window_id(pid_t pid, char *progname)
    {
       if (seteuid(euid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       euid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       euid, strerror(errno), __FILE__, __LINE__);
       }
    }
    if (ptr == (caddr_t) -1)
@@ -292,8 +292,8 @@ remove_window_id(pid_t pid, char *progname)
    {
       if (seteuid(ruid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       ruid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       ruid, strerror(errno), __FILE__, __LINE__);
       }
    }
    tmp_sys_log_fd = sys_log_fd;
@@ -305,8 +305,8 @@ remove_window_id(pid_t pid, char *progname)
    {
       if (seteuid(euid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       euid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       euid, strerror(errno), __FILE__, __LINE__);
       }
    }
    if (ptr == (caddr_t) -1)
@@ -382,8 +382,8 @@ check_window_ids(char *progname)
    {
       if (seteuid(ruid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       ruid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       ruid, strerror(errno), __FILE__, __LINE__);
       }
    }
    tmp_sys_log_fd = sys_log_fd;
@@ -395,8 +395,8 @@ check_window_ids(char *progname)
    {
       if (seteuid(euid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s\n",
-                       euid, strerror(errno));
+         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
+                       euid, strerror(errno), __FILE__, __LINE__);
       }
    }
    if (ptr == (caddr_t) -1)
