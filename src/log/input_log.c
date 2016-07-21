@@ -1,6 +1,6 @@
 /*
  *  input_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -299,8 +299,9 @@ main(int argc, char *argv[])
    p_file_name = (char *)(fifo_buffer + n + n + n + n);
    check_size = n + n + n + n + 1;
 
-   /* Ignore any SIGHUP signal. */
-   if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
+   /* Ignore any SIGTERM + SIGHUP signal. */
+   if ((signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
+       (signal(SIGHUP, SIG_IGN) == SIG_ERR))
    {
       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                  "signal() error : %s", strerror(errno));

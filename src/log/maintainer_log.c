@@ -1,6 +1,6 @@
 /*
  *  maintainer_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -139,6 +139,7 @@ main(int argc, char *argv[])
    /* Initialise signal handlers. */
    if ((signal(SIGSEGV, sig_segv) == SIG_ERR) ||
        (signal(SIGBUS, sig_bus) == SIG_ERR) ||
+       (signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
        (signal(SIGHUP, SIG_IGN) == SIG_ERR))
    {
       (void)rec(sys_log_fd, FATAL_SIGN, "signal() error : %s (%s %d)\n",

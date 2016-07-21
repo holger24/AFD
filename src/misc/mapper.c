@@ -1,6 +1,6 @@
 /*
  *  mapper.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -177,7 +177,7 @@ main(int argc, char *argv[])
 
    if ((signal(SIGINT, saver) == SIG_ERR) ||
        (signal(SIGQUIT, saver) == SIG_ERR) ||
-       (signal(SIGTERM, saver) == SIG_ERR) ||
+       (signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
        (signal(SIGABRT, saver) == SIG_ERR) ||
        (signal(SIGSEGV, saver) == SIG_ERR))
    {

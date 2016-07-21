@@ -1,6 +1,6 @@
 /*
  *  monitor_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -252,8 +252,9 @@ main(int argc, char *argv[])
    monitor_file = open_log_file(current_log_file);
 #endif
 
-   /* Ignore any SIGHUP signal. */
-   if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
+   /* Ignore any SIGTERM + SIGHUP signal. */
+   if ((signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
+       (signal(SIGHUP, SIG_IGN) == SIG_ERR))
    {
       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                  "signal() error : %s", strerror(errno));

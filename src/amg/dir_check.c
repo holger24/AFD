@@ -292,9 +292,8 @@ static void                add_to_proc_stat(unsigned int),
                            check_fifo(int, int),
                            check_orphaned_procs(time_t),
                            check_pool_dir(time_t),
-                           sig_handler(int),
-                           sig_bus(int),
-                           sig_segv(int);
+                           sig_alarm(int),
+                           sig_handler(int);
 static pid_t               get_one_zombie(pid_t, time_t);
 static int                 get_process_pos(pid_t),
 #ifdef _WITH_PTHREAD
@@ -404,8 +403,9 @@ main(int argc, char *argv[])
    }
 #endif
 
-   if ((signal(SIGSEGV, sig_segv) == SIG_ERR) ||
-       (signal(SIGBUS, sig_bus) == SIG_ERR) ||
+   if ((signal(SIGSEGV, sig_handler) == SIG_ERR) ||
+       (signal(SIGBUS, sig_handler) == SIG_ERR) ||
+       (signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
        (signal(SIGHUP, SIG_IGN) == SIG_ERR))
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
@@ -768,7 +768,7 @@ main(int argc, char *argv[])
             int bytes_done = 0,
                 tmp_errno;
 
-            if (signal(SIGALRM, sig_handler) == SIG_ERR)
+            if (signal(SIGALRM, sig_alarm) == SIG_ERR)
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           "Failed to set signal handler : %s", strerror(errno));
@@ -3673,72 +3673,55 @@ check_fifo(int read_fd, int write_fd)
 }
 
 
-/*++++++++++++++++++++++++++++++ sig_segv() +++++++++++++++++++++++++++++*/
-static void
-sig_segv(int signo)
-{
-   if (in_child == YES)
-   {
-      pid_t pid;
-
-      pid = getpid();
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-      if (write(fin_writefd, &pid, sizeof(pid_t)) != sizeof(pid_t))
-#else
-      if (write(fin_fd, &pid, sizeof(pid_t)) != sizeof(pid_t))
-#endif
-      {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "Could not write() to fifo %s : %s",
-                    IP_FIN_FIFO, strerror(errno));
-      }
-   }
-   else
-   {
-      /* Unset flag to indicate that the the dir_check is NOT active. */
-      p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
-   }
-
-   system_log(FATAL_SIGN, __FILE__, __LINE__, "Aaarrrggh! Received SIGSEGV.");
-   abort();
-}
-
-
-/*++++++++++++++++++++++++++++++ sig_bus() ++++++++++++++++++++++++++++++*/
-static void
-sig_bus(int signo)
-{
-   if (in_child == YES)
-   {
-      pid_t pid;
-
-      pid = getpid();
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-      if (write(fin_writefd, &pid, sizeof(pid_t)) != sizeof(pid_t))
-#else
-      if (write(fin_fd, &pid, sizeof(pid_t)) != sizeof(pid_t))
-#endif
-      {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "Could not write() to fifo %s : %s",
-                    IP_FIN_FIFO, strerror(errno));
-      }
-   }
-   else
-   {
-      /* Unset flag to indicate that the the dir_check is NOT active. */
-      p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
-   }
-
-   system_log(FATAL_SIGN, __FILE__, __LINE__,
-              "Uuurrrggh! Received SIGBUS. Dump programmers!");
-   abort();
-}
-
-
 /*++++++++++++++++++++++++++++ sig_handler() ++++++++++++++++++++++++++++*/
 static void
 sig_handler(int signo)
+{
+   if (in_child == YES)
+   {
+      pid_t pid;
+
+      pid = getpid();
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+      if (write(fin_writefd, &pid, sizeof(pid_t)) != sizeof(pid_t))
+#else
+      if (write(fin_fd, &pid, sizeof(pid_t)) != sizeof(pid_t))
+#endif
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Could not write() to fifo %s : %s",
+                    IP_FIN_FIFO, strerror(errno));
+      }
+   }
+   else
+   {
+      /* Unset flag to indicate that the the dir_check is NOT active. */
+      p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
+   }
+
+   if (signo == SIGBUS)
+   {
+      system_log(FATAL_SIGN, __FILE__, __LINE__,
+                 "Uuurrrggh! Received SIGBUS. Dump programmers!");
+   }
+   else if (signo == SIGSEGV)
+        {
+           system_log(FATAL_SIGN, __FILE__, __LINE__,
+                      "Aaarrrggh! Received SIGSEGV.");
+        }
+        else
+        {
+           system_log(FATAL_SIGN, __FILE__, __LINE__,
+                      "Received signal %d.", signo);
+        }
+
+   abort();
+}
+
+
+/*+++++++++++++++++++++++++++++ sig_alarm() +++++++++++++++++++++++++++++*/
+static void
+sig_alarm(int signo)
 {
    siglongjmp(env_alrm, 1);
 }

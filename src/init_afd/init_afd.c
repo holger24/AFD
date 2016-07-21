@@ -621,7 +621,7 @@ main(int argc, char *argv[])
 
    /* Activate some signal handlers, so we know what happened. */
    if ((signal(SIGINT, sig_exit) == SIG_ERR) ||
-       (signal(SIGTERM, sig_exit) == SIG_ERR) ||
+       (signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
        (signal(SIGSEGV, sig_segv) == SIG_ERR) ||
        (signal(SIGBUS, sig_bus) == SIG_ERR) ||
        (signal(SIGHUP, SIG_IGN) == SIG_ERR))
@@ -2890,18 +2890,14 @@ sig_bus(int signo)
 static void
 sig_exit(int signo)
 {
-   if (signo == SIGTERM)
+   if (signo == SIGINT)
    {
-      system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Received SIGTERM!"));
+      system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Received SIGINT!"));
    }
-   else if (signo == SIGINT)
-        {
-           system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Received SIGINT!"));
-        }
-        else
-        {
-           system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Received %d!"), signo);
-        }
+   else
+   {
+      system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Received %d!"), signo);
+   }
 
    exit(INCORRECT);
 }
