@@ -234,8 +234,8 @@ main(int argc, char *argv[])
    {
       if (seteuid(ruid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
-                       ruid, strerror(errno), __FILE__, __LINE__);
+         (void)fprintf(stderr, "Failed to seteuid() to %d (from %d) : %s (%s %d)\n",
+                       ruid, euid, strerror(errno), __FILE__, __LINE__);
       }
    }
 
@@ -248,8 +248,34 @@ main(int argc, char *argv[])
    {
       if (seteuid(euid) == -1)
       {
-         (void)fprintf(stderr, "Failed to seteuid() to %d : %s (%s %d)\n",
-                       euid, strerror(errno), __FILE__, __LINE__);
+#ifdef WITH_SETUID_PROGS
+         if (errno == EPERM)
+         {
+            if (seteuid(0) == -1)
+            {
+               (void)fprintf(stderr,
+                             "Failed to seteuid() to 0 : %s (%s %d)\n",
+                             strerror(errno), __FILE__, __LINE__);
+            }
+            else
+            {
+               if (seteuid(euid) == -1)
+               {
+                  (void)fprintf(stderr,
+                                "Failed to seteuid() to %d (from %d) : %s (%s %d)\n",
+                                euid, ruid, strerror(errno),
+                                __FILE__, __LINE__);
+               }
+            }
+         }
+         else
+         {
+#endif
+            (void)fprintf(stderr, "Failed to seteuid() to %d (from %d) : %s (%s %d)\n",
+                          euid, ruid, strerror(errno), __FILE__, __LINE__);
+#ifdef WITH_SETUID_PROGS
+         }
+#endif
       }
    }
    display = XtDisplay(appshell);
