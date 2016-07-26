@@ -2342,6 +2342,9 @@ init_edit_hc(int *argc, char *argv[], char *window_title)
    {
       exit(INCORRECT);
    }
+#ifdef WITH_SETUID_PROGS
+   set_afd_euid(p_work_dir);
+#endif
 
    /* Do not start if binary dataset matches the one stort on disk. */
    if (check_typesize_data(NULL, NULL) > 0)

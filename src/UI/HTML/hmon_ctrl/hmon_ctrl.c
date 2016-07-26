@@ -129,6 +129,9 @@ main(int argc, char *argv[])
       exit(INCORRECT);
    }
    p_work_dir = work_dir;
+#ifdef WITH_SETUID_PROGS
+   set_afd_euid(work_dir);
+#endif
 
    if (get_arg(&argc, argv, "-d", val, MAX_INT_LENGTH) == SUCCESS)
    {

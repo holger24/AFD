@@ -162,7 +162,9 @@ main(int argc, char *argv[])
       (void)my_strncpy(user, profile, MAX_FULL_USER_ID_LENGTH);
       user_offset = strlen(profile);
    }
-
+#ifdef WITH_SETUID_PROGS
+   set_afd_euid(work_dir);
+#endif
    check_fake_user(&argc, argv, MON_CONFIG_FILE, fake_user);
    get_user(user, fake_user, user_offset);
 

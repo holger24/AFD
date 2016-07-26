@@ -146,6 +146,9 @@ main(int argc, char *argv[])
                     __FILE__, __LINE__);
       exit(INCORRECT);
    }
+#ifdef WITH_SETUID_PROGS
+   set_afd_euid(p_work_dir);
+#endif
 
    if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
        (get_arg(&argc, argv, "--help", NULL, 0) == SUCCESS) ||

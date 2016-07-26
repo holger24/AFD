@@ -1687,6 +1687,9 @@ init_show_queue(int *argc, char *argv[])
                     __FILE__, __LINE__);
       exit(INCORRECT);
    }
+#ifdef WITH_SETUID_PROGS
+   set_afd_euid(p_work_dir);
+#endif
    if (get_arg(argc, argv, "-f", font_name, 256) == INCORRECT)
    {
       (void)strcpy(font_name, DEFAULT_FONT);

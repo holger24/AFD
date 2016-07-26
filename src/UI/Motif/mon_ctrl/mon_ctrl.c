@@ -589,6 +589,9 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
       exit(INCORRECT);
    }
    p_work_dir = work_dir;
+#ifdef WITH_SETUID_PROGS
+   set_afd_euid(work_dir);
+#endif
 
    /* Disable all input? */
    if (get_arg(argc, argv, "-no_input", NULL, 0) == SUCCESS)

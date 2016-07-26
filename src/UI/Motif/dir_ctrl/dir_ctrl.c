@@ -516,6 +516,9 @@ init_dir_ctrl(int *argc, char *argv[], char *window_title)
       exit(INCORRECT);
    }
    p_work_dir = work_dir;
+#ifdef WITH_SETUID_PROGS
+   set_afd_euid(work_dir);
+#endif
 
    /* Do not start if binary dataset matches the one stort on disk. */
    if (check_typesize_data(NULL, stdout) > 0)
