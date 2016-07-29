@@ -542,8 +542,24 @@ main(int argc, char *argv[])
       }
       else
       {
+         char *ptr = qb[i].msg_name;
+
          errno = 0;
-         last_job_id_lookup = (unsigned int)strtoul(qb[i].msg_name, NULL, 16);
+#ifdef MULTI_FS_SUPPORT
+         while ((*ptr != '/') && (*ptr != '\0'))
+         {
+            ptr++; /* Away with the filesystem ID. */
+         }
+         if (*ptr != '/')
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "Failed to locate job ID in message name %s",
+                       qb[i].msg_name);
+            continue;
+         }
+         ptr++; /* Away with the / */
+#endif
+         last_job_id_lookup = (unsigned int)strtoul(ptr, NULL, 16);
          if ((errno == 0) && (mdb[qb[i].pos].job_id != last_job_id_lookup))
          {
             system_log(DEBUG_SIGN, __FILE__, __LINE__,

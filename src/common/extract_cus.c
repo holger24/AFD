@@ -1,6 +1,6 @@
 /*
  *  extract_cus.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2010 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   27.03.2008 H.Kiehl Created
+ **   29.07.2016 H.Kiehl Added support for MULTI_FS_SUPPORT.
  **
  */
 DESCR__E_M3
@@ -62,6 +63,7 @@ extract_cus(char         *msg_name,
 {
    register int i = 0;
 
+#ifdef MULTI_FS_SUPPORT
    while ((msg_name[i] != '/') && (msg_name[i] != '\0'))
    {
       i++;
@@ -69,41 +71,36 @@ extract_cus(char         *msg_name,
    if (msg_name[i] == '/')
    {
       i++;
+#endif
       while ((msg_name[i] != '/') && (msg_name[i] != '\0'))
       {
          i++;
       }
       if (msg_name[i] == '/')
       {
-         register int j = 0;
-         char         str_number[MAX_TIME_T_HEX_LENGTH];
-
          i++;
-         while ((msg_name[i] != '_') && (msg_name[i] != '\0') &&
-                (j < MAX_TIME_T_HEX_LENGTH))
-         {
-            str_number[j] = msg_name[i];
-            i++; j++;
-         }
-         if ((msg_name[i] == '_') && (j > 0) && (j != MAX_TIME_T_HEX_LENGTH))
+         while ((msg_name[i] != '/') && (msg_name[i] != '\0'))
          {
             i++;
-            str_number[j] = '\0';
-            *creation_time = (time_t)str2timet(str_number, (char **)NULL, 16);
+         }
+         if (msg_name[i] == '/')
+         {
+            register int j = 0;
+            char         str_number[MAX_TIME_T_HEX_LENGTH];
 
-            j = 0;
+            i++;
             while ((msg_name[i] != '_') && (msg_name[i] != '\0') &&
-                   (j < MAX_INT_HEX_LENGTH))
+                   (j < MAX_TIME_T_HEX_LENGTH))
             {
                str_number[j] = msg_name[i];
                i++; j++;
             }
-            if ((msg_name[i] == '_') && (j > 0) && (j != MAX_INT_HEX_LENGTH))
+            if ((msg_name[i] == '_') && (j > 0) && (j != MAX_TIME_T_HEX_LENGTH))
             {
                i++;
                str_number[j] = '\0';
-               *unique_number = (unsigned int)strtoul(str_number, (char **)NULL,
-                                                      16);
+               *creation_time = (time_t)str2timet(str_number, (char **)NULL, 16);
+
                j = 0;
                while ((msg_name[i] != '_') && (msg_name[i] != '\0') &&
                       (j < MAX_INT_HEX_LENGTH))
@@ -111,18 +108,34 @@ extract_cus(char         *msg_name,
                   str_number[j] = msg_name[i];
                   i++; j++;
                }
-               if (((msg_name[i] == '\0') || (msg_name[i] == '_')) &&
-                   (j > 0) && (j != MAX_INT_HEX_LENGTH))
+               if ((msg_name[i] == '_') && (j > 0) && (j != MAX_INT_HEX_LENGTH))
                {
+                  i++;
                   str_number[j] = '\0';
-                  *split_job_counter = (unsigned int)strtoul(str_number,
-                                                             (char **)NULL, 16);
-                  return;
+                  *unique_number = (unsigned int)strtoul(str_number, (char **)NULL,
+                                                         16);
+                  j = 0;
+                  while ((msg_name[i] != '_') && (msg_name[i] != '\0') &&
+                         (j < MAX_INT_HEX_LENGTH))
+                  {
+                     str_number[j] = msg_name[i];
+                     i++; j++;
+                  }
+                  if (((msg_name[i] == '\0') || (msg_name[i] == '_')) &&
+                      (j > 0) && (j != MAX_INT_HEX_LENGTH))
+                  {
+                     str_number[j] = '\0';
+                     *split_job_counter = (unsigned int)strtoul(str_number,
+                                                                (char **)NULL, 16);
+                     return;
+                  }
                }
             }
          }
       }
+#ifdef MULTI_FS_SUPPORT
    }
+#endif
    *creation_time = 0L;
    *unique_number = 0;
    *split_job_counter = 0;

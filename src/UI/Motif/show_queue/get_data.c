@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1474,29 +1474,53 @@ get_job_id(char *msg_name, unsigned int *job_id)
 {
    int  ret;
    char *ptr = msg_name;
+#ifdef MULTI_FS_SUPPORT
+   char *p_job_id;
+#endif
 
    *job_id = 0;
+#ifdef MULTI_FS_SUPPORT
    while ((*ptr != '/') && (*ptr != '\0'))
    {
       ptr++;
    }
    if (*ptr == '/')
    {
-      errno = 0;
-      *job_id = (unsigned int)strtoul(msg_name, (char **)NULL, 16);
-      if (errno == ERANGE)
+      ptr++;
+      p_job_id = ptr;
+#endif
+      while ((*ptr != '/') && (*ptr != '\0'))
       {
-         ret = INCORRECT;
+         ptr++;
+      }
+      if (*ptr == '/')
+      {
+         errno = 0;
+#ifdef MULTI_FS_SUPPORT
+         *job_id = (unsigned int)strtoul(p_job_id, (char **)NULL, 16);
+#else
+         *job_id = (unsigned int)strtoul(msg_name, (char **)NULL, 16);
+#endif
+         if (errno == ERANGE)
+         {
+            ret = INCORRECT;
+         }
+         else
+         {
+            ret = SUCCESS;
+         }
       }
       else
       {
-         ret = SUCCESS;
+         ret = INCORRECT;
       }
+#ifdef MULTI_FS_SUPPORT
    }
    else
    {
       ret = INCORRECT;
    }
+#endif
    return(ret);
 }
 
