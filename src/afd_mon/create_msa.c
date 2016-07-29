@@ -1,6 +1,6 @@
 /*
  *  create_msa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -421,7 +421,7 @@ create_msa(void)
          msa[i].fc                 = 0;
          msa[i].fs                 = 0;
          msa[i].tr                 = 0;
-         (void)memset(msa[i].top_tr, 0, (STORAGE_TIME * sizeof(unsigned int)));
+         (void)memset(msa[i].top_tr, 0, (STORAGE_TIME * sizeof(off_t)));
          msa[i].top_tr_time        = 0L;
          msa[i].fr                 = 0;
          (void)memset(msa[i].top_fr, 0, (STORAGE_TIME * sizeof(unsigned int)));
@@ -539,7 +539,7 @@ create_msa(void)
             msa[i].tr                 = old_msa[afd_pos].tr;
             msa[i].top_tr_time        = old_msa[afd_pos].top_tr_time;
             (void)memcpy(msa[i].top_tr, old_msa[afd_pos].top_tr,
-                         (STORAGE_TIME * sizeof(unsigned int)));
+                         (STORAGE_TIME * sizeof(off_t)));
             msa[i].fr                 = old_msa[afd_pos].fr;
             msa[i].top_fr_time        = old_msa[afd_pos].top_fr_time;
             (void)memcpy(msa[i].top_fr, old_msa[afd_pos].top_fr,
@@ -589,7 +589,7 @@ create_msa(void)
             msa[i].tr                 = 0;
             msa[i].top_tr_time        = 0L;
             (void)memset(msa[i].top_tr, 0,
-                         (STORAGE_TIME * sizeof(unsigned int)));
+                         (STORAGE_TIME * sizeof(off_t)));
             msa[i].fr                 = 0;
             msa[i].top_fr_time        = 0L;
             (void)memset(msa[i].top_fr, 0,

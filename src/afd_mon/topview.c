@@ -152,11 +152,23 @@ main(int argc, char *argv[])
                          no_of_afds);
         }
    (void)fprintf(stdout, "%-*s  ", MAX_AFDNAME_LENGTH, "AFD-name");
-   for (j = 0; j < STORAGE_TIME; j++)
+   if (show == 1)
    {
-      (void)fprintf(stdout, " %4d", j);
+      (void)fprintf(stdout, "     0");
+      for (j = 1; j < STORAGE_TIME; j++)
+      {
+         (void)fprintf(stdout, " %6d", j);
+      }
+      (void)fprintf(stdout, "\n==============================================================\n");
    }
-   (void)fprintf(stdout, "\n=================================================\n");
+   else
+   {
+      for (j = 0; j < STORAGE_TIME; j++)
+      {
+         (void)fprintf(stdout, " %4d", j);
+      }
+      (void)fprintf(stdout, "\n=================================================\n");
+   }
 
    if (show_afds > 0)
    {
