@@ -1,7 +1,7 @@
 /*
  *  check_production_line.c - Part of AFD, an automatic file distribution
  *                            program.
- *  Copyright (c) 2008 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -63,7 +63,8 @@ extern unsigned int              file_pattern_counter,
                                  mode,
                                  search_file_size_flag,
                                  search_job_id;
-extern time_t                    start_time_end,
+extern time_t                    start,
+                                 start_time_end,
                                  start_time_start;
 extern off_t                     search_file_size;
 extern char                      **file_pattern;
@@ -418,7 +419,12 @@ check_production_line(char         *line,
 # endif
                                                       if (verbose > 2)
                                                       {
-                                                         (void)printf("DEBUG 3: [PRODUCTION] %s->%s %x %x %x %x\n",
+# if SIZEOF_TIME_T == 4
+                                                         (void)printf("%06ld DEBUG 3: [PRODUCTION] %s->%s %x %x %x %x\n",
+# else
+                                                         (void)printf("%06lld DEBUG 3: [PRODUCTION] %s->%s %x %x %x %x\n",
+# endif
+                                                                      (pri_time_t)(time(NULL) - start),
                                                                       plog.original_filename,
                                                                       plog.new_filename,
                                                                       plog.dir_id,

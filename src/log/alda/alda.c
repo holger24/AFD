@@ -1,6 +1,6 @@
 /*
  *  alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -106,6 +106,7 @@ time_t                     end_time_end,
                            init_time_start,
                            max_diff_time,
                            max_search_time,
+                           start,
                            start_time_end,
                            start_time_start;
 off_t                      log_data_written,
@@ -228,8 +229,7 @@ static void                add_afd_to_list(int),
 int
 main(int argc, char *argv[])
 {
-   time_t end,
-          start;
+   time_t end;
    char   work_dir[MAX_PATH_LENGTH];
 
    /* Evaluate input arguments. */
@@ -783,7 +783,13 @@ search_afd(char *search_afd)
                                          p_prev_unique_number);
             if (verbose > 3)
             {
-               (void)fprintf(stdout, "DEBUG 4: check_distribution_log() returned %d\n", ret);
+               (void)fprintf(stdout,
+# if SIZEOF_TIME_T == 4
+                             "%06ld DEBUG 4: check_distribution_log() returned %d\n",
+# else
+                             "%06lld DEBUG 4: check_distribution_log() returned %d\n",
+# endif
+                             (pri_time_t)(time(NULL) - start), ret);
             }
             if (ret == GOT_DATA)
             {
@@ -2372,9 +2378,10 @@ check_input_log(char         *search_afd,
                 time_t       prev_log_time,
                 unsigned int prev_dir_id)
 {
-   int     ret;
+   int          ret;
+   unsigned int lines_read = 0;
 #ifdef HAVE_GETLINE
-   ssize_t n;
+   ssize_t      n;
 #endif
 
    if (input.fp == NULL)
@@ -2383,6 +2390,17 @@ check_input_log(char         *search_afd,
                      search_afd);
       if (input.no_of_log_files == 0)
       {
+         if (verbose == 3)
+         {
+            (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                          "%06ld DEBUG 3: [INPUT] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#else
+                          "%06lld DEBUG 3: [INPUT] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#endif
+                          (pri_time_t)(time(NULL) - start), lines_read,
+                          NO_LOG_DATA, __LINE__);
+         }
          return(NO_LOG_DATA);
       }
    }
@@ -2440,9 +2458,22 @@ check_input_log(char         *search_afd,
          while (fgets(input.line, MAX_LINE_LENGTH, input.fp) != NULL)
 #endif
          {
-            if (verbose > 3)
+            if (verbose > 2)
             {
-               (void)fprintf(stdout, "DEBUG 4: [INPUT] realine: %s", input.line);
+               if (verbose > 3)
+               {
+                  (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                "%06ld DEBUG 4: [INPUT] readline: %s",
+#else
+                                "%06lld DEBUG 4: [INPUT] readline: %s",
+#endif
+                                (pri_time_t)(time(NULL) - start), input.line);
+               }
+               else
+               {
+                  lines_read++;
+               }
             }
 #ifdef HAVE_GETLINE
             input.bytes_read += n;
@@ -2454,10 +2485,32 @@ check_input_log(char         *search_afd,
                                            prev_log_time,
                                            prev_dir_id)) == SUCCESS)
                {
+                  if (verbose == 3)
+                  {
+                     (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                   "%06ld DEBUG 3: [INPUT] ignored %u lines, returning GOT_DATA (%d) [%d]\n",
+#else
+                                   "%06lld DEBUG 3: [INPUT] ignored %u lines, returning GOT_DATA (%d) [%d]\n",
+#endif
+                                   (pri_time_t)(time(NULL) - start), lines_read,
+                                   GOT_DATA, __LINE__);
+                  }
                   return(GOT_DATA);
                }
                else if (ret == SEARCH_TIME_UP)
                     {
+                       if (verbose == 3)
+                       {
+                          (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                        "%06ld DEBUG 3: [INPUT] ignored %u lines, returning SEARCH_TIME_UP (%d) [%d]\n",
+#else
+                                        "%06lld DEBUG 3: [INPUT] ignored %u lines, returning SEARCH_TIME_UP (%d) [%d]\n",
+#endif
+                                        (pri_time_t)(time(NULL) - start),
+                                        lines_read, SEARCH_TIME_UP, __LINE__);
+                       }
                        return(ret);
                     }
             }
@@ -2476,7 +2529,8 @@ check_input_log(char         *search_afd,
             if (fclose(input.fp) == EOF)
             {
                (void)fprintf(stderr, "Failed to fclose() `%s' : %s (%s %d)\n",
-                             input.log_dir, strerror(errno), __FILE__, __LINE__);
+                             input.log_dir, strerror(errno),
+                             __FILE__, __LINE__);
             }
             input.fp = NULL;
             input.bytes_read = 0;
@@ -2505,6 +2559,17 @@ check_input_log(char         *search_afd,
          input.bytes_read = 0;
       }
    }
+   if (verbose == 3)
+   {
+      (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                    "%06ld DEBUG 3: [INPUT] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#else
+                    "%06lld DEBUG 3: [INPUT] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#endif
+                    (pri_time_t)(time(NULL) - start), lines_read, NO_LOG_DATA,
+                    __LINE__);
+   }
 
    return(NO_LOG_DATA);
 }
@@ -2522,11 +2587,12 @@ check_distribution_log(char         *search_afd,
                        unsigned int *prev_unique_number)
 {
 #ifdef HAVE_GETLINE
-   ssize_t n;
+   ssize_t      n;
 #endif
-   int     end_loop = NO,
-           new_log_file = NO,
-           ret;
+   unsigned int lines_read = 0;
+   int          end_loop = NO,
+                new_log_file = NO,
+                ret;
 
    if (distribution.fp == NULL)
    {
@@ -2538,6 +2604,17 @@ check_distribution_log(char         *search_afd,
                      end_time_end, SEARCH_DISTRIBUTION_LOG, search_afd);
       if (distribution.no_of_log_files == 0)
       {
+         if (verbose == 3)
+         {
+            (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                          "%06ld DEBUG 3: [DISTRIBUTION] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#else
+                          "%06lld DEBUG 3: [DISTRIBUTION] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#endif
+                          (pri_time_t)(time(NULL) - start), lines_read,
+                          NO_LOG_DATA, __LINE__);
+         }
          return(NO_LOG_DATA);
       }
 #ifdef BLUBB
@@ -2830,11 +2907,21 @@ check_distribution_log(char         *search_afd,
                         }
                         (void)fprintf(stdout,
 #if SIZEOF_OFF_T == 4
-                                      "DEBUG 1: [DISTRIBUTION] seeking back %d - %d = %d lines %ld - %ld = %ld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                      "%06ld DEBUG 1: [DISTRIBUTION] seeking back %d - %d = %d lines %ld - %ld = %ld chars in %s\n",
+# else
+                                      "%06lld DEBUG 1: [DISTRIBUTION] seeking back %d - %d = %d lines %ld - %ld = %ld chars in %s\n",
+# endif
 #else
-                                      "DEBUG 1: [DISTRIBUTION] seeking back %d - %d = %d lines %lld - %lld = %lld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                      "%06ld DEBUG 1: [DISTRIBUTION] seeking back %d - %d = %d lines %lld - %lld = %lld chars in %s\n",
+# else
+                                      "%06lld DEBUG 1: [DISTRIBUTION] seeking back %d - %d = %d lines %lld - %lld = %lld chars in %s\n",
+# endif
 #endif
-                                      current_line, ucache[distribution.current_file_no].pc,
+                                      (pri_time_t)(time(NULL) - start),
+                                      current_line,
+                                      ucache[distribution.current_file_no].pc,
                                       current_line - ucache[distribution.current_file_no].pc,
                                       (pri_off_t)upl[distribution.current_file_no][current_line - 1].pos,
                                       (pri_off_t)upl[distribution.current_file_no][ucache[distribution.current_file_no].pc - 1 + j].pos,
@@ -2856,9 +2943,23 @@ check_distribution_log(char         *search_afd,
                          distribution.fp) != NULL)
 #endif
             {
-               if (verbose > 3)
+               if (verbose > 2)
                {
-                  (void)fprintf(stdout, "DEBUG 4: [DISTRIBUTION] realine: %s", distribution.line);
+                  if (verbose > 3)
+                  {
+                     (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                   "%06ld DEBUG 4: [DISTRIBUTION] readline: %s",
+#else
+                                   "%06lld DEBUG 4: [DISTRIBUTION] readline: %s",
+#endif
+                                   (pri_time_t)(time(NULL) - start),
+                                   distribution.line);
+                  }
+                  else
+                  {
+                     lines_read++;
+                  }
                }
                if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
                {
@@ -2914,10 +3015,32 @@ check_distribution_log(char         *search_afd,
                      {
                         upl[distribution.current_file_no][ucache[distribution.current_file_no].pc - 1].gotcha = YES;
                      }
+                     if (verbose == 3)
+                     {
+                        (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                      "%06ld DEBUG 3: [DISTRIBUTION] ignored %u lines, returning GOT_DATA (%d) [%d]\n",
+#else
+                                      "%06lld DEBUG 3: [DISTRIBUTION] ignored %u lines, returning GOT_DATA (%d) [%d]\n",
+#endif
+                                      (pri_time_t)(time(NULL) - start),
+                                      lines_read, GOT_DATA, __LINE__);
+                     }
                      return(GOT_DATA);
                   }
                   else if (ret == SEARCH_TIME_UP)
                        {
+                          if (verbose == 3)
+                          {
+                             (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                           "%06ld DEBUG 3: [DISTRIBUTION] ignored %u lines, returning SEARCH_TIME_UP (%d) [%d]\n",
+#else
+                                           "%06lld DEBUG 3: [DISTRIBUTION] ignored %u lines, returning SEARCH_TIME_UP (%d) [%d]\n",
+#endif
+                                           (pri_time_t)(time(NULL) - start),
+                                           lines_read, SEARCH_TIME_UP, __LINE__);
+                          }
                           return(ret);
                        }
                        else
@@ -2927,6 +3050,18 @@ check_distribution_log(char         *search_afd,
                              if ((prev_log_time > 0) &&
                                  ((ulog.distribution_time - prev_log_time) > max_diff_time))
                              {
+                                if (verbose == 3)
+                                {
+                                   (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                                 "%06ld DEBUG 3: [DISTRIBUTION] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#else
+                                                 "%06lld DEBUG 3: [DISTRIBUTION] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#endif
+                                                 (pri_time_t)(time(NULL) - start),
+                                                 lines_read, NO_LOG_DATA,
+                                                 __LINE__);
+                                }
                                 return(NO_LOG_DATA);
                              }
 
@@ -2961,10 +3096,19 @@ check_distribution_log(char         *search_afd,
                                       {
                                          (void)fprintf(stdout,
 #if SIZEOF_OFF_T == 4
-                                                       "DEBUG 1: [DISTRIBUTION] seeking forward %d - %d = %d lines %ld + %ld = %ld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                                       "%06ld DEBUG 1: [DISTRIBUTION] seeking forward %d - %d = %d lines %ld + %ld = %ld chars in %s\n",
+# else
+                                                       "%06lld DEBUG 1: [DISTRIBUTION] seeking forward %d - %d = %d lines %ld + %ld = %ld chars in %s\n",
+# endif
 #else
-                                                       "DEBUG 1: [DISTRIBUTION] seeking forward %d - %d = %d lines %lld + %lld = %lld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                                       "%06ld DEBUG 1: [DISTRIBUTION] seeking forward %d - %d = %d lines %lld + %lld = %lld chars in %s\n",
+# else
+                                                       "%06lld DEBUG 1: [DISTRIBUTION] seeking forward %d - %d = %d lines %lld + %lld = %lld chars in %s\n",
+# endif
 #endif
+                                                       (pri_time_t)(time(NULL) - start),
                                                        ucache[distribution.current_file_no].pc,
                                                        current_line,
                                                        ucache[distribution.current_file_no].pc - current_line,
@@ -3030,6 +3174,17 @@ fprintf(stderr, "ulog %d: %s\n", distribution.current_file_no, prev_file_name);
          distribution.bytes_read = 0;
       }
    }
+   if (verbose == 3)
+   {
+      (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                    "%06ld DEBUG 3: [DISTRIBUTION] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#else
+                    "%06lld DEBUG 3: [DISTRIBUTION] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#endif
+                    (pri_time_t)(time(NULL) - start), lines_read, NO_LOG_DATA,
+                    __LINE__);
+   }
 
    return(NO_LOG_DATA);
 }
@@ -3050,15 +3205,27 @@ check_production_log(char         *search_afd,
                      unsigned int *prev_split_job_counter)
 {
 #ifdef HAVE_GETLINE
-   ssize_t n;
+   ssize_t      n;
 #endif
-   int     end_loop = NO,
-           new_log_file = NO;
-   off_t   p_prev_filename_length;
-   char    *p_prev_file_name;
+   unsigned int lines_read = 0;
+   int          end_loop = NO,
+                new_log_file = NO;
+   off_t        p_prev_filename_length;
+   char         *p_prev_file_name;
 
    if (prev_proc_cycles == 0)
    {
+      if (verbose == 3)
+      {
+         (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                       "%06ld DEBUG 3: [PRODUCTION] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#else
+                       "%06lld DEBUG 3: [PRODUCTION] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#endif
+                       (pri_time_t)(time(NULL) - start), lines_read,
+                       NO_LOG_DATA, __LINE__);
+      }
       return(NO_LOG_DATA);
    }
 
@@ -3072,6 +3239,17 @@ check_production_log(char         *search_afd,
                      end_time_end, SEARCH_PRODUCTION_LOG, search_afd);
       if (production.no_of_log_files == 0)
       {
+         if (verbose == 3)
+         {
+            (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                          "%06ld DEBUG 3: [PRODUCTION] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#else
+                          "%06lld DEBUG 3: [PRODUCTION] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#endif
+                          (pri_time_t)(time(NULL) - start), lines_read,
+                          NO_LOG_DATA, __LINE__);
+         }
          return(NO_LOG_DATA);
       }
 #ifdef BLUBB
@@ -3366,10 +3544,19 @@ check_production_log(char         *search_afd,
                         }
                         (void)fprintf(stdout,
 #if SIZEOF_OFF_T == 4
-                                      "DEBUG 1: [PRODUCTION] seeking back %d - %d = %d lines %ld - %ld = %ld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                      "%06ld DEBUG 1: [PRODUCTION] seeking back %d - %d = %d lines %ld - %ld = %ld chars in %s\n",
+# else
+                                      "%06lld DEBUG 1: [PRODUCTION] seeking back %d - %d = %d lines %ld - %ld = %ld chars in %s\n",
+# endif
 #else
-                                      "DEBUG 1: [PRODUCTION] seeking back %d - %d = %d lines %lld - %lld = %lld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                      "%06ld DEBUG 1: [PRODUCTION] seeking back %d - %d = %d lines %lld - %lld = %lld chars in %s\n",
+# else
+                                      "%06lld DEBUG 1: [PRODUCTION] seeking back %d - %d = %d lines %lld - %lld = %lld chars in %s\n",
+# endif
 #endif
+                                      (pri_time_t)(time(NULL) - start),
                                       current_line,
                                       pcache[production.current_file_no].pc,
                                       current_line - pcache[production.current_file_no].pc,
@@ -3392,9 +3579,23 @@ check_production_log(char         *search_afd,
             while (fgets(production.line, MAX_LINE_LENGTH, production.fp) != NULL)
 #endif
             {
-               if (verbose > 3)
+               if (verbose > 2)
                {
-                  (void)fprintf(stdout, "DEBUG 4: [PRODUCTION] realine: %s", production.line);
+                  if (verbose > 3)
+                  {
+                     (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                   "%06ld DEBUG 4: [PRODUCTION] readline: %s",
+#else
+                                   "%06lld DEBUG 4: [PRODUCTION] readline: %s",
+#endif
+                                   (pri_time_t)(time(NULL) - start),
+                                   production.line);
+                  }
+                  else
+                  {
+                     lines_read++;
+                  }
                }
                if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
                {
@@ -3462,6 +3663,17 @@ check_production_log(char         *search_afd,
                      prev_proc_cycles--;
                      if (prev_proc_cycles < 1)
                      {
+                        if (verbose == 3)
+                        {
+                           (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                         "%06ld DEBUG 3: [PRODUCTION] ignored %u lines, returning GOT_DATA (%d) [%d]\n",
+#else
+                                         "%06lld DEBUG 3: [PRODUCTION] ignored %u lines, returning GOT_DATA (%d) [%d]\n",
+#endif
+                                         (pri_time_t)(time(NULL) - start),
+                                         lines_read, GOT_DATA, __LINE__);
+                        }
                         return(GOT_DATA);
                      }
                   }
@@ -3472,6 +3684,17 @@ check_production_log(char         *search_afd,
                         if ((prev_log_time > 0) &&
                             ((plog.output_time - prev_log_time) > max_diff_time))
                         {
+                           if (verbose == 3)
+                           {
+                              (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                            "%06ld DEBUG 3: [PRODUCTION] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#else
+                                            "%06lld DEBUG 3: [PRODUCTION] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#endif
+                                            (pri_time_t)(time(NULL) - start),
+                                            lines_read, NO_LOG_DATA, __LINE__);
+                           }
                            return(NO_LOG_DATA);
                         }
                         if (pcache[production.current_file_no].mpc != pcache[production.current_file_no].pc)
@@ -3505,10 +3728,19 @@ check_production_log(char         *search_afd,
                                  {
                                     (void)fprintf(stdout,
 #if SIZEOF_OFF_T == 4
-                                                  "DEBUG 1: [PRODUCTION] seeking forward %d - %d = %d lines %ld - %ld = %ld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                                  "%06ld DEBUG 1: [PRODUCTION] seeking forward %d - %d = %d lines %ld - %ld = %ld chars in %s\n",
+# else
+                                                  "%06lld DEBUG 1: [PRODUCTION] seeking forward %d - %d = %d lines %ld - %ld = %ld chars in %s\n",
+# endif
 #else
-                                                  "DEBUG 1: [PRODUCTION] seeking forward %d - %d = %d lines %lld - %lld = %lld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                                  "%06ld DEBUG 1: [PRODUCTION] seeking forward %d - %d = %d lines %lld - %lld = %lld chars in %s\n",
+# else
+                                                  "%06lld DEBUG 1: [PRODUCTION] seeking forward %d - %d = %d lines %lld - %lld = %lld chars in %s\n",
+# endif
 #endif
+                                                  (pri_time_t)(time(NULL) - start),
                                                   pcache[production.current_file_no].pc,
                                                   current_line,
                                                   pcache[production.current_file_no].pc - current_line,
@@ -3578,8 +3810,30 @@ fprintf(stderr, "prod %d: %s\n", production.current_file_no, prev_file_name);
    if (success_plog.new_filename[0] != '\0')
    {
       (void)memcpy(&plog, &success_plog, sizeof(struct alda_pdata));
+      if (verbose == 3)
+      {
+         (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                       "%06ld DEBUG 3: [PRODUCTION] ignored %u lines, returning GOT_DATA (%d) [%d]\n",
+#else
+                       "%06lld DEBUG 3: [PRODUCTION] ignored %u lines, returning GOT_DATA (%d) [%d]\n",
+#endif
+                       (pri_time_t)(time(NULL) - start), lines_read, GOT_DATA,
+                       __LINE__);
+      }
 
       return(GOT_DATA);
+   }
+   if (verbose == 3)
+   {
+      (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                    "%06ld DEBUG 3: [PRODUCTION] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#else
+                    "%06lld DEBUG 3: [PRODUCTION] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#endif
+                    (pri_time_t)(time(NULL) - start), lines_read, NO_LOG_DATA,
+                    __LINE__);
    }
 
    return(NO_LOG_DATA);
@@ -3599,11 +3853,12 @@ check_output_log(char         *search_afd,
                  unsigned int *prev_split_job_counter)
 {
 #ifdef HAVE_GETLINE
-   ssize_t n;
+   ssize_t      n;
 #endif
-   int     end_loop = NO,
-           new_log_file = NO,
-           ret;
+   unsigned int lines_read = 0;
+   int          end_loop = NO,
+                new_log_file = NO,
+                ret;
 
    if (output.fp == NULL)
    {
@@ -3615,6 +3870,17 @@ check_output_log(char         *search_afd,
                      end_time_end, SEARCH_OUTPUT_LOG, search_afd);
       if (output.no_of_log_files == 0)
       {
+         if (verbose == 3)
+         {
+            (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                          "%06ld DEBUG 3: [OUTPUT] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#else
+                          "%06lld DEBUG 3: [OUTPUT] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#endif
+                          (pri_time_t)(time(NULL) - start), lines_read,
+                          NO_LOG_DATA, __LINE__);
+         }
          return(NO_LOG_DATA);
       }
 #ifdef BLUBB
@@ -3943,11 +4209,21 @@ check_output_log(char         *search_afd,
                         }
                         (void)fprintf(stdout,
 #if SIZEOF_OFF_T == 4
-                                      "DEBUG 1: [OUTPUT] seeking back %d - %d = %d lines %ld - %ld = %ld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                      "%06ld DEBUG 1: [OUTPUT] seeking back %d - %d = %d lines %ld - %ld = %ld chars in %s\n",
+# else
+                                      "%06lld DEBUG 1: [OUTPUT] seeking back %d - %d = %d lines %ld - %ld = %ld chars in %s\n",
+# endif
 #else
-                                      "DEBUG 1: [OUTPUT] seeking back %d - %d = %d lines %lld - %lld = %lld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                      "%06ld DEBUG 1: [OUTPUT] seeking back %d - %d = %d lines %lld - %lld = %lld chars in %s\n",
+# else
+                                      "%06lld DEBUG 1: [OUTPUT] seeking back %d - %d = %d lines %lld - %lld = %lld chars in %s\n",
+# endif
 #endif
-                                      current_line, ocache[output.current_file_no].pc,
+                                      (pri_time_t)(time(NULL) - start),
+                                      current_line,
+                                      ocache[output.current_file_no].pc,
                                       current_line - ocache[output.current_file_no].pc,
                                       (pri_off_t)opl[output.current_file_no][current_line - 1].pos,
                                       (pri_off_t)opl[output.current_file_no][ocache[output.current_file_no].pc - 1 + j].pos,
@@ -3977,9 +4253,23 @@ check_output_log(char         *search_afd,
             while (fgets(output.line, MAX_LINE_LENGTH, output.fp) != NULL)
 #endif
             {
-               if (verbose > 3)
+               if (verbose > 2)
                {
-                  (void)fprintf(stdout, "DEBUG 4: [OUTPUT] realine: %s", output.line);
+                  if (verbose > 3)
+                  {
+                     (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                   "%06ld DEBUG 4: [OUTPUT] readline: %s",
+#else
+                                   "%06lld DEBUG 4: [OUTPUT] readline: %s",
+#endif
+                                   (pri_time_t)(time(NULL) - start),
+                                   output.line);
+                  }
+                  else
+                  {
+                     lines_read++;
+                  }
                }
                if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
                {
@@ -4031,7 +4321,13 @@ check_output_log(char         *search_afd,
                                           prev_split_job_counter);
                   if (verbose > 4)
                   {
-                     (void)fprintf(stdout, "DEBUG 5: [OUTPUT] check_output_line() returns %d\n", ret);
+                     (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                   "%06ld DEBUG 5: [OUTPUT] check_output_line() returns %d\n",
+#else
+                                   "%06lld DEBUG 5: [OUTPUT] check_output_line() returns %d\n",
+#endif
+                                   (pri_time_t)(time(NULL) - start), ret);
                   }
                   if (ret == SUCCESS)
                   {
@@ -4039,10 +4335,32 @@ check_output_log(char         *search_afd,
                      {
                         opl[output.current_file_no][ocache[output.current_file_no].pc - 1].gotcha = YES;
                      }
+                     if (verbose == 3)
+                     {
+                        (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                      "%06ld DEBUG 3: [OUTPUT] ignored %u lines, returning GOT_DATA (%d) [%d]\n",
+#else
+                                      "%06lld DEBUG 3: [OUTPUT] ignored %u lines, returning GOT_DATA (%d) [%d]\n",
+#endif
+                                      (pri_time_t)(time(NULL) - start),
+                                      lines_read, GOT_DATA, __LINE__);
+                     }
                      return(GOT_DATA);
                   }
                   else if (ret == SEARCH_TIME_UP)
                        {
+                          if (verbose == 3)
+                          {
+                             (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                           "%06ld DEBUG 3: [OUTPUT] ignored %u lines, returning SEARCH_TIME_UP (%d) [%d]\n",
+#else
+                                           "%06lld DEBUG 3: [OUTPUT] ignored %u lines, returning SEARCH_TIME_UP (%d) [%d]\n",
+#endif
+                                           (pri_time_t)(time(NULL) - start),
+                                           lines_read, SEARCH_TIME_UP, __LINE__);
+                          }
                           return(ret);
                        }
                        else
@@ -4052,6 +4370,17 @@ check_output_log(char         *search_afd,
                              if ((prev_log_time > 0) &&
                                  ((olog.output_time - prev_log_time) > max_diff_time))
                              {
+                                if (verbose == 3)
+                                {
+                                   (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                                 "%06ld DEBUG 3: [OUTPUT] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#else
+                                                 "%06lld DEBUG 3: [OUTPUT] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#endif
+                                                 (pri_time_t)(time(NULL) - start),
+                                                 lines_read, NO_LOG_DATA, __LINE__);
+                                }
                                 return(NO_LOG_DATA);
                              }
 
@@ -4091,10 +4420,19 @@ check_output_log(char         *search_afd,
                                       {
                                          (void)fprintf(stdout,
 #if SIZEOF_OFF_T == 4
-                                                       "DEBUG 1: [OUTPUT] seeking forward %d - %d = %d lines %ld + %ld = %ld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                                       "%06ld DEBUG 1: [OUTPUT] seeking forward %d - %d = %d lines %ld + %ld = %ld chars in %s\n",
+# else
+                                                       "%06lld DEBUG 1: [OUTPUT] seeking forward %d - %d = %d lines %ld + %ld = %ld chars in %s\n",
+# endif
 #else
-                                                       "DEBUG 1: [OUTPUT] seeking forward %d - %d = %d lines %lld + %lld = %lld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                                       "%06ld DEBUG 1: [OUTPUT] seeking forward %d - %d = %d lines %lld + %lld = %lld chars in %s\n",
+# else
+                                                       "%06lld DEBUG 1: [OUTPUT] seeking forward %d - %d = %d lines %lld + %lld = %lld chars in %s\n",
+# endif
 #endif
+                                                       (pri_time_t)(time(NULL) - start),
                                                        ocache[output.current_file_no].pc,
                                                        current_line,
                                                        ocache[output.current_file_no].pc - current_line,
@@ -4159,6 +4497,17 @@ fprintf(stderr, "olog %d: %s\n", output.current_file_no, prev_file_name);
          output.bytes_read = 0;
       }
    }
+   if (verbose == 3)
+   {
+      (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                    "%06ld DEBUG 3: [OUTPUT] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#else
+                    "%06lld DEBUG 3: [OUTPUT] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#endif
+                    (pri_time_t)(time(NULL) - start), lines_read, NO_LOG_DATA,
+                    __LINE__);
+   }
 
    return(NO_LOG_DATA);
 }
@@ -4177,10 +4526,11 @@ check_delete_log(char         *search_afd,
                  unsigned int *prev_split_job_counter)
 {
 #ifdef HAVE_GETLINE
-   ssize_t n;
+   ssize_t      n;
 #endif
-   int     end_loop = NO,
-           new_log_file = NO;
+   unsigned int lines_read = 0;
+   int          end_loop = NO,
+                new_log_file = NO;
 
    if (delete.fp == NULL)
    {
@@ -4192,6 +4542,17 @@ check_delete_log(char         *search_afd,
                      end_time_end, SEARCH_DELETE_LOG, search_afd);
       if (delete.no_of_log_files == 0)
       {
+         if (verbose == 3)
+         {
+            (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                          "%06ld DEBUG 3: [DELETE] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#else
+                          "%06lld DEBUG 3: [DELETE] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#endif
+                          (pri_time_t)(time(NULL) - start), lines_read,
+                          NO_LOG_DATA, __LINE__);
+         }
          return(NO_LOG_DATA);
       }
 #ifdef BLUBB
@@ -4482,11 +4843,21 @@ check_delete_log(char         *search_afd,
                         }
                         (void)fprintf(stdout,
 #if SIZEOF_OFF_T == 4
-                                      "DEBUG 1: [DELETE] seeking back %d - %d = %d lines %ld - %ld = %ld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                      "%06ld DEBUG 1: [DELETE] seeking back %d - %d = %d lines %ld - %ld = %ld chars in %s\n",
+# else
+                                      "%06lld DEBUG 1: [DELETE] seeking back %d - %d = %d lines %ld - %ld = %ld chars in %s\n",
+# endif
 #else
-                                      "DEBUG 1: [DELETE] seeking back %d - %d = %d lines %lld - %lld = %lld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                      "%06ld DEBUG 1: [DELETE] seeking back %d - %d = %d lines %lld - %lld = %lld chars in %s\n",
+# else
+                                      "%06lld DEBUG 1: [DELETE] seeking back %d - %d = %d lines %lld - %lld = %lld chars in %s\n",
+# endif
 #endif
-                                      current_line, dcache[delete.current_file_no].pc,
+                                      (pri_time_t)(time(NULL) - start),
+                                      current_line,
+                                      dcache[delete.current_file_no].pc,
                                       current_line - dcache[delete.current_file_no].pc,
                                       (pri_off_t)dpl[delete.current_file_no][current_line - 1].pos,
                                       (pri_off_t)dpl[delete.current_file_no][dcache[delete.current_file_no].pc - 1 + j].pos,
@@ -4507,9 +4878,23 @@ check_delete_log(char         *search_afd,
             while (fgets(delete.line, MAX_LINE_LENGTH, delete.fp) != NULL)
 #endif
             {
-               if (verbose > 3)
+               if (verbose > 2)
                {
-                  (void)fprintf(stdout, "DEBUG 4: [DELETE] realine: %s", delete.line);
+                  if (verbose > 3)
+                  {
+                     (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                   "%06ld DEBUG 4: [DELETE] readline: %s",
+#else
+                                   "%06lld DEBUG 4: [DELETE] readline: %s",
+#endif
+                                   (pri_time_t)(time(NULL) - start),
+                                   delete.line);
+                  }
+                  else
+                  {
+                     lines_read++;
+                  }
                }
                if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
                {
@@ -4564,6 +4949,17 @@ check_delete_log(char         *search_afd,
                      {
                         dpl[delete.current_file_no][dcache[delete.current_file_no].pc - 1].gotcha = YES;
                      }
+                     if (verbose == 3)
+                     {
+                        (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                      "%06ld DEBUG 3: [DELETE] ignored %u lines, returning GOT_DATA (%d) [%d]\n",
+#else
+                                      "%06lld DEBUG 3: [DELETE] ignored %u lines, returning GOT_DATA (%d) [%d]\n",
+#endif
+                                      (pri_time_t)(time(NULL) - start),
+                                      lines_read, GOT_DATA, __LINE__);
+                     }
                      return(GOT_DATA);
                   }
                   else
@@ -4573,6 +4969,17 @@ check_delete_log(char         *search_afd,
                         if ((prev_log_time > 0) &&
                             ((dlog.delete_time - prev_log_time) > max_diff_time))
                         {
+                           if (verbose == 3)
+                           {
+                              (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                                            "%06ld DEBUG 3: [DELETE] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#else
+                                            "%06lld DEBUG 3: [DELETE] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#endif
+                                            (pri_time_t)(time(NULL) - start),
+                                            lines_read, NO_LOG_DATA, __LINE__);
+                           }
                            return(NO_LOG_DATA);
                         }
                         if (dcache[delete.current_file_no].mpc != dcache[delete.current_file_no].pc)
@@ -4606,10 +5013,19 @@ check_delete_log(char         *search_afd,
                                  {
                                     (void)fprintf(stdout,
 #if SIZEOF_OFF_T == 4
-                                                  "DEBUG 1: [DELETE] seeking forward %d - %d = %d lines %ld + %ld = %ld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                                  "%06ld DEBUG 1: [DELETE] seeking forward %d - %d = %d lines %ld + %ld = %ld chars in %s\n",
+# else
+                                                  "%06lld DEBUG 1: [DELETE] seeking forward %d - %d = %d lines %ld + %ld = %ld chars in %s\n",
+# endif
 #else
-                                                  "DEBUG 1: [DELETE] seeking forward %d - %d = %d lines %lld + %lld = %lld chars in %s\n",
+# if SIZEOF_TIME_T == 4
+                                                  "%06ld DEBUG 1: [DELETE] seeking forward %d - %d = %d lines %lld + %lld = %lld chars in %s\n",
+# else
+                                                  "%06lld DEBUG 1: [DELETE] seeking forward %d - %d = %d lines %lld + %lld = %lld chars in %s\n",
+# endif
 #endif
+                                                  (pri_time_t)(time(NULL) - start),
                                                   dcache[delete.current_file_no].pc,
                                                   current_line,
                                                   dcache[delete.current_file_no].pc - current_line,
@@ -4674,6 +5090,17 @@ fprintf(stderr, "del %d: %s\n", delete.current_file_no, prev_file_name);
          delete.fp = NULL;
          delete.bytes_read = 0;
       }
+   }
+   if (verbose == 3)
+   {
+      (void)fprintf(stdout,
+#if SIZEOF_TIME_T == 4
+                    "%06ld DEBUG 3: [DELETE] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#else
+                    "%06lld DEBUG 3: [DELETE] ignored %u lines, returning NO_LOG_DATA (%d) [%d]\n",
+#endif
+                    (pri_time_t)(time(NULL) - start), lines_read, NO_LOG_DATA,
+                    __LINE__);
    }
 
    return(NO_LOG_DATA);
