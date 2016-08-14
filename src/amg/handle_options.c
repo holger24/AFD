@@ -159,6 +159,7 @@ DESCR__S_M3
  **   17.03.2012 H.Kiehl Added %T time modifier for assembling file names.
  **   15.02.2013 H.Kiehl Added extract option WMO+CHK.
  **   25.02.2016 H.Kiehl Added option srename (simple rename).
+ **   14.08.2016 H.Kiehl Added with_path option to rename and srename.
  **
  */
 DESCR__E_M3
@@ -357,10 +358,13 @@ handle_options(int          position,
                   {
                      register int k,
                                   overwrite,
+                                  with_path,
                                   ret;
                      char         changed_name[MAX_FILENAME_LENGTH],
                                   *new_name_buffer,
-                                  *p_overwrite;
+                                  *p_overwrite,
+                                  *p_with_path_name,
+                                  with_path_name[MAX_PATH_LENGTH + MAX_FILENAME_LENGTH];
 
                      /*
                       * Check if we want to overwrite the file
@@ -392,15 +396,89 @@ handle_options(int          position,
                              (*(p_overwrite + 9) == '\t')))
                         {
                            overwrite = YES;
+                           if (*(p_overwrite + 9) != '\0')
+                           {
+                              p_overwrite += 9;
+                              while ((*p_overwrite == ' ') ||
+                                     (*p_overwrite == '\t'))
+                              {
+                                 p_overwrite++;
+                              }
+                              if ((*p_overwrite == 'w') &&
+                                  (*(p_overwrite + 1) == 'i') &&
+                                  (*(p_overwrite + 2) == 't') &&
+                                  (*(p_overwrite + 3) == 'h') &&
+                                  (*(p_overwrite + 4) == '_') &&
+                                  (*(p_overwrite + 5) == 'p') &&
+                                  (*(p_overwrite + 6) == 'a') &&
+                                  (*(p_overwrite + 7) == 't') &&
+                                  (*(p_overwrite + 8) == 'h') &&
+                                  ((*(p_overwrite + 9) == '\0') ||
+                                   (*(p_overwrite + 9) == ' ') ||
+                                   (*(p_overwrite + 9) == '\t')))
+                              {
+                                 with_path = YES;
+                              }
+                              else
+                              {
+                                 with_path = NO;
+                              }
+                           }
                         }
-                        else
-                        {
-                           overwrite = NO;
-                        }
+                        else if ((*p_overwrite == 'w') &&
+                                 (*(p_overwrite + 1) == 'i') &&
+                                 (*(p_overwrite + 2) == 't') &&
+                                 (*(p_overwrite + 3) == 'h') &&
+                                 (*(p_overwrite + 4) == '_') &&
+                                 (*(p_overwrite + 5) == 'p') &&
+                                 (*(p_overwrite + 6) == 'a') &&
+                                 (*(p_overwrite + 7) == 't') &&
+                                 (*(p_overwrite + 8) == 'h') &&
+                                 ((*(p_overwrite + 9) == '\0') ||
+                                  (*(p_overwrite + 9) == ' ') ||
+                                  (*(p_overwrite + 9) == '\t')))
+                              {
+                                 with_path = YES;
+                                 if (*(p_overwrite + 9) != '\0')
+                                 {
+                                    p_overwrite += 9;
+                                    while ((*p_overwrite == ' ') ||
+                                           (*p_overwrite == '\t'))
+                                    {
+                                       p_overwrite++;
+                                    }
+                                    if (((*p_overwrite == 'o') ||
+                                         (*p_overwrite == 'O')) &&
+                                        (*(p_overwrite + 1) == 'v') &&
+                                        (*(p_overwrite + 2) == 'e') &&
+                                        (*(p_overwrite + 3) == 'r') &&
+                                        (*(p_overwrite + 4) == 'w') &&
+                                        (*(p_overwrite + 5) == 'r') &&
+                                        (*(p_overwrite + 6) == 'i') &&
+                                        (*(p_overwrite + 7) == 't') &&
+                                        (*(p_overwrite + 8) == 'e') &&
+                                        ((*(p_overwrite + 9) == '\0') ||
+                                         (*(p_overwrite + 9) == ' ') ||
+                                         (*(p_overwrite + 9) == '\t')))
+                                    {
+                                       overwrite = YES;
+                                    }
+                                    else
+                                    {
+                                       overwrite = NO;
+                                    }
+                                 }
+                              }
+                              else
+                              {
+                                 overwrite = NO;
+                                 with_path = NO;
+                              }
                      }                     
                      else
                      {
                         overwrite = NO;
+                        with_path = NO;
                      }
 
                      (void)strcpy(newname, file_path);
@@ -410,10 +488,21 @@ handle_options(int          position,
                      ptr = fullname + strlen(fullname);
                      *ptr++ = '/';
 
+                     if (with_path == YES)
+                     {
+                        (void)strcpy(with_path_name, fra[db[position].fra_pos].url);
+                        p_with_path_name = with_path_name + strlen(with_path_name);
+                        *p_with_path_name++ = '/';
+                     }
+
                      prepare_rename_ow(file_counter, &new_name_buffer);
 
                      for (j = 0; j < file_counter; j++)
                      {
+                        if (with_path == YES)
+                        {
+                           (void)strcpy(p_with_path_name, p_file_name);
+                        }
                         for (k = 0; k < rule[rule_pos].no_of_rules; k++)
                         {
                            /*
@@ -422,11 +511,12 @@ handle_options(int          position,
                             * files.
                             */
                            if ((ret = pmatch(rule[rule_pos].filter[k],
-                                             p_file_name, NULL)) == 0)
+                                             (with_path == YES) ? with_path_name : p_file_name,
+                                             NULL)) == 0)
                            {
                               /* We found a rule, what more do you want? */
                               /* Now lets get the new name.              */
-                              change_name(p_file_name,
+                              change_name((with_path == YES) ? with_path_name : p_file_name,
                                           rule[rule_pos].filter[k],
                                           rule[rule_pos].rename_to[k],
                                           changed_name, MAX_FILENAME_LENGTH,
@@ -598,10 +688,13 @@ handle_options(int          position,
                      if (file_counter > 0)
                      {
                         register int overwrite,
-                                     ret;
+                                     ret,
+                                     with_path;
                         char         changed_name[MAX_FILENAME_LENGTH],
                                      *new_name_buffer,
-                                     *p_overwrite;
+                                     *p_overwrite,
+                                     *p_with_path_name,
+                                     with_path_name[MAX_PATH_LENGTH + MAX_FILENAME_LENGTH];
 
                         rename_to[k] = '\0';
 
@@ -637,15 +730,89 @@ handle_options(int          position,
                                 (*(p_overwrite + 9) == '\t')))
                            {
                               overwrite = YES;
+                              if (*(p_overwrite + 9) != '\0')
+                              {
+                                 p_overwrite += 9;
+                                 while ((*p_overwrite == ' ') ||
+                                        (*p_overwrite == '\t'))
+                                 {
+                                    p_overwrite++;
+                                 }
+                                 if ((*p_overwrite == 'w') &&
+                                     (*(p_overwrite + 1) == 'i') &&
+                                     (*(p_overwrite + 2) == 't') &&
+                                     (*(p_overwrite + 3) == 'h') &&
+                                     (*(p_overwrite + 4) == '_') &&
+                                     (*(p_overwrite + 5) == 'p') &&
+                                     (*(p_overwrite + 6) == 'a') &&
+                                     (*(p_overwrite + 7) == 't') &&
+                                     (*(p_overwrite + 8) == 'h') &&
+                                     ((*(p_overwrite + 9) == '\0') ||
+                                      (*(p_overwrite + 9) == ' ') ||
+                                      (*(p_overwrite + 9) == '\t')))
+                                 {
+                                    with_path = YES;
+                                 }
+                                 else
+                                 {
+                                    with_path = NO;
+                                 }
+                              }
                            }
-                           else
-                           {
-                              overwrite = NO;
-                           }
+                           else if ((*p_overwrite == 'w') &&
+                                    (*(p_overwrite + 1) == 'i') &&
+                                    (*(p_overwrite + 2) == 't') &&
+                                    (*(p_overwrite + 3) == 'h') &&
+                                    (*(p_overwrite + 4) == '_') &&
+                                    (*(p_overwrite + 5) == 'p') &&
+                                    (*(p_overwrite + 6) == 'a') &&
+                                    (*(p_overwrite + 7) == 't') &&
+                                    (*(p_overwrite + 8) == 'h') &&
+                                    ((*(p_overwrite + 9) == '\0') ||
+                                     (*(p_overwrite + 9) == ' ') ||
+                                     (*(p_overwrite + 9) == '\t')))
+                                 {
+                                    with_path = YES;
+                                    if (*(p_overwrite + 9) != '\0')
+                                    {
+                                       p_overwrite += 9;
+                                       while ((*p_overwrite == ' ') ||
+                                              (*p_overwrite == '\t'))
+                                       {
+                                          p_overwrite++;
+                                       }
+                                       if (((*p_overwrite == 'o') ||
+                                            (*p_overwrite == 'O')) &&
+                                           (*(p_overwrite + 1) == 'v') &&
+                                           (*(p_overwrite + 2) == 'e') &&
+                                           (*(p_overwrite + 3) == 'r') &&
+                                           (*(p_overwrite + 4) == 'w') &&
+                                           (*(p_overwrite + 5) == 'r') &&
+                                           (*(p_overwrite + 6) == 'i') &&
+                                           (*(p_overwrite + 7) == 't') &&
+                                           (*(p_overwrite + 8) == 'e') &&
+                                           ((*(p_overwrite + 9) == '\0') ||
+                                            (*(p_overwrite + 9) == ' ') ||
+                                            (*(p_overwrite + 9) == '\t')))
+                                       {
+                                          overwrite = YES;
+                                       }
+                                       else
+                                       {
+                                          overwrite = NO;
+                                       }
+                                    }
+                                 }
+                                 else
+                                 {
+                                    overwrite = NO;
+                                    with_path = NO;
+                                 }
                         }                     
                         else
                         {
                            overwrite = NO;
+                           with_path = NO;
                         }
 
                         (void)strcpy(newname, file_path);
@@ -655,15 +822,25 @@ handle_options(int          position,
                         ptr = fullname + strlen(fullname);
                         *ptr++ = '/';
 
+                        if (with_path == YES)
+                        {
+                           (void)strcpy(with_path_name, fra[db[position].fra_pos].url);
+                           p_with_path_name = with_path_name + strlen(with_path_name);
+                           *p_with_path_name++ = '/';
+                        }
+
                         prepare_rename_ow(file_counter, &new_name_buffer);
 
                         for (j = 0; j < file_counter; j++)
                         {
-                           if ((ret = pmatch(filter, p_file_name, NULL)) == 0)
+                           if ((ret = pmatch(filter,
+                                             (with_path == YES) ? with_path_name : p_file_name,
+                                             NULL)) == 0)
                            {
                               /* We found a rule, what more do you want? */
                               /* Now lets get the new name.              */
-                              change_name(p_file_name, filter, rename_to,
+                              change_name((with_path == YES) ? with_path_name : p_file_name,
+                                          filter, rename_to,
                                           changed_name, MAX_FILENAME_LENGTH,
                                           &counter_fd, &unique_counter,
                                           db[position].job_id);
