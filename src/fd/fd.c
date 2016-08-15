@@ -3980,15 +3980,22 @@ zombie_check(struct connection *p_con,
                         fsa[p_con->fsa_pos].host_status &= ~AUTO_PAUSE_QUEUE_STAT;
                         if (fsa[p_con->fsa_pos].last_connection > fsa[p_con->fsa_pos].first_error_time)
                         {
-                           if (fsa[p_con->fsa_pos].host_status & HOST_ERROR_EA_STATIC)
+                           if (now > fsa[p_con->fsa_pos].end_event_handle)
                            {
-                              fsa[p_con->fsa_pos].host_status &= ~EVENT_STATUS_STATIC_FLAGS;
+                              fsa[p_con->fsa_pos].host_status &= ~EVENT_STATUS_FLAGS;
+                              if (fsa[p_con->fsa_pos].end_event_handle > 0L)
+                              {
+                                 fsa[p_con->fsa_pos].end_event_handle = 0L;
+                              }
+                              if (fsa[p_con->fsa_pos].start_event_handle > 0L)
+                              {
+                                 fsa[p_con->fsa_pos].start_event_handle = 0L;
+                              }
                            }
                            else
                            {
-                              fsa[p_con->fsa_pos].host_status &= ~EVENT_STATUS_FLAGS;
+                              fsa[p_con->fsa_pos].host_status &= ~EVENT_STATUS_STATIC_FLAGS;
                            }
-                           fsa[p_con->fsa_pos].host_status &= ~PENDING_ERRORS;
                            error_action(fsa[p_con->fsa_pos].host_alias, "stop",
                                         HOST_ERROR_ACTION);
                            event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",

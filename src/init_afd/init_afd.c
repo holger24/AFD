@@ -103,6 +103,7 @@ DESCR__E_M1
 #ifdef WITH_IP_DB
 # define IP_DB_RESET_CHECK_INTERVAL 21600 /* Every 6 hours. */
 #endif
+#define WITH_ACKNOWLEDGED_OFFLINE_CHECK
 
 /* Global definitions. */
 int                        sys_log_fd = STDERR_FILENO,
@@ -1269,9 +1270,9 @@ main(int argc, char *argv[])
             {
                (*heartbeat)++;
                if (((fsa[i].error_counter >= fsa[i].max_errors) &&
-                   ((fsa[i].host_status & AUTO_PAUSE_QUEUE_STAT) == 0)) ||
+                    ((fsa[i].host_status & AUTO_PAUSE_QUEUE_STAT) == 0)) ||
                    ((fsa[i].error_counter < fsa[i].max_errors) &&
-                   (fsa[i].host_status & AUTO_PAUSE_QUEUE_STAT)))
+                    (fsa[i].host_status & AUTO_PAUSE_QUEUE_STAT)))
                {
                   char *sign;
 
@@ -1322,13 +1323,21 @@ main(int argc, char *argv[])
                      }
                      if (fsa[i].last_connection > fsa[i].first_error_time)
                      {
-                        if (fsa[i].host_status & HOST_ERROR_EA_STATIC)
+                        if (now > fsa[i].end_event_handle)
                         {
-                           fsa[i].host_status &= ~EVENT_STATUS_STATIC_FLAGS;
+                           fsa[i].host_status &= ~EVENT_STATUS_FLAGS;
+                           if (fsa[i].end_event_handle > 0L)
+                           {
+                              fsa[i].end_event_handle = 0L;
+                           }
+                           if (fsa[i].start_event_handle > 0L)
+                           {
+                              fsa[i].start_event_handle = 0L;
+                           }
                         }
                         else
                         {
-                           fsa[i].host_status &= ~EVENT_STATUS_FLAGS;
+                           fsa[i].host_status &= ~EVENT_STATUS_STATIC_FLAGS;
                         }
                         event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",
                                   fsa[i].host_alias);
@@ -1340,6 +1349,46 @@ main(int argc, char *argv[])
                                fsa[i].host_alias);
                   }
                }
+#ifdef WITH_ACKNOWLEDGED_OFFLINE_CHECK
+               if ((fsa[i].error_counter == 0) &&
+                   (fsa[i].host_status & (HOST_ERROR_OFFLINE | HOST_ERROR_OFFLINE_T | HOST_ERROR_ACKNOWLEDGED | HOST_ERROR_ACKNOWLEDGED_T)))
+               {
+                  if (fsa[i].host_status & HOST_ERROR_OFFLINE)
+                  {
+                     fsa[i].host_status &= ~HOST_ERROR_OFFLINE;
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "Hmm, removing HOST_ERROR_OFFLINE flag from %s",
+                                fsa[i].host_alias);
+                  }
+                  if ((fsa[i].host_status & HOST_ERROR_OFFLINE_T) &&
+                      (now > fsa[i].end_event_handle))
+                  {
+                     fsa[i].host_status &= ~HOST_ERROR_OFFLINE_T;
+                     fsa[i].end_event_handle = 0L;
+                     fsa[i].start_event_handle = 0L;
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "Hmm, removing HOST_ERROR_OFFLINE_T flag from %s",
+                                fsa[i].host_alias);
+                  }
+                  if (fsa[i].host_status & HOST_ERROR_ACKNOWLEDGED)
+                  {
+                     fsa[i].host_status &= ~HOST_ERROR_ACKNOWLEDGED;
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "Hmm, removing HOST_ERROR_ACKNOWLEDGED flag from %s",
+                                fsa[i].host_alias);
+                  }
+                  if ((fsa[i].host_status & HOST_ERROR_ACKNOWLEDGED_T) &&
+                      (now > fsa[i].end_event_handle))
+                  {
+                     fsa[i].host_status &= ~HOST_ERROR_ACKNOWLEDGED_T;
+                     fsa[i].end_event_handle = 0L;
+                     fsa[i].start_event_handle = 0L;
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "Hmm, removing HOST_ERROR_ACKNOWLEDGED_T flag from %s",
+                                fsa[i].host_alias);
+                  }
+               }
+#endif /* WITH_ACKNOWLEDGED_OFFLINE_CHECK */
                if (((*(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) & DISABLE_HOST_WARN_TIME) == 0) &&
                    (fsa[i].warn_time > 0L) &&
                    ((now - fsa[i].last_connection) >= fsa[i].warn_time))

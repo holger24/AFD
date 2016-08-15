@@ -1443,19 +1443,22 @@ main(int argc, char *argv[])
 #else
                   lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
 #endif
-                  if (fsa[position].host_status & HOST_ERROR_EA_STATIC)
+                  if (time(NULL) > fsa[position].end_event_handle)
                   {
-                     fsa[position].host_status &= ~EVENT_STATUS_STATIC_FLAGS;
+                     fsa[position].host_status &= ~(EVENT_STATUS_FLAGS | AUTO_PAUSE_QUEUE_STAT);
+                     if (fsa[position].end_event_handle > 0L)
+                     {
+                        fsa[position].end_event_handle = 0L;
+                     }
+                     if (fsa[position].start_event_handle > 0L)
+                     {
+                        fsa[position].start_event_handle = 0L;
+                     }
                   }
                   else
                   {
-                     fsa[position].host_status &= ~EVENT_STATUS_FLAGS;
+                     fsa[position].host_status &= ~(EVENT_STATUS_STATIC_FLAGS | AUTO_PAUSE_QUEUE_STAT);
                   }
-                  fsa[position].host_status &= ~HOST_ERROR_ACKNOWLEDGED;
-                  fsa[position].host_status &= ~HOST_ERROR_OFFLINE;           
-                  fsa[position].host_status &= ~HOST_ERROR_ACKNOWLEDGED_T;    
-                  fsa[position].host_status &= ~HOST_ERROR_OFFLINE_T;         
-                  fsa[position].host_status &= ~PENDING_ERRORS;
 #ifdef LOCK_DEBUG
                   unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
 #else
@@ -1590,19 +1593,22 @@ main(int argc, char *argv[])
 #else
                   lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
 #endif
-                  if (fsa[position].host_status & HOST_ERROR_EA_STATIC)
+                  if (time(NULL) > fsa[position].end_event_handle)
                   {
-                     fsa[position].host_status &= ~EVENT_STATUS_STATIC_FLAGS;
+                     fsa[position].host_status &= ~(EVENT_STATUS_FLAGS | AUTO_PAUSE_QUEUE_STAT);
+                     if (fsa[position].end_event_handle > 0L)
+                     {
+                        fsa[position].end_event_handle = 0L;
+                     }
+                     if (fsa[position].start_event_handle > 0L)
+                     {
+                        fsa[position].start_event_handle = 0L;
+                     }
                   }
                   else
                   {
-                     fsa[position].host_status &= ~EVENT_STATUS_FLAGS;
+                     fsa[position].host_status &= ~(EVENT_STATUS_STATIC_FLAGS | AUTO_PAUSE_QUEUE_STAT);
                   }
-                  fsa[position].host_status &= ~HOST_ERROR_ACKNOWLEDGED;
-                  fsa[position].host_status &= ~HOST_ERROR_OFFLINE;           
-                  fsa[position].host_status &= ~HOST_ERROR_ACKNOWLEDGED_T;    
-                  fsa[position].host_status &= ~HOST_ERROR_OFFLINE_T;         
-                  fsa[position].host_status &= ~PENDING_ERRORS;
 #ifdef LOCK_DEBUG
                   unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
 #else

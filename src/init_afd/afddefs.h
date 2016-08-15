@@ -1506,7 +1506,7 @@ typedef unsigned long       u_long_64;
 #define HOST_ERROR_OFFLINE         1024
 #define HOST_ERROR_ACKNOWLEDGED_T  2048
 #define HOST_ERROR_OFFLINE_T       4096
-#define HOST_ERROR_EA_STATIC       8192  /* Host error event action static. */
+#define HOST_ERROR_EA_STATIC       8192  /* Host error event action static. Not used! */
 #define HOST_WARN_TIME_REACHED     16384
 #define DO_NOT_DELETE_DATA         32768
 #define HOST_ACTION_SUCCESS        65536
@@ -2445,7 +2445,7 @@ struct filetransfer_status
                                             /*|   17|HOST_ACTION_SUCCESS      |*/
                                             /*|   16|DO_NOT_DELETE_DATA       |*/
                                             /*|   15|HOST_WARN_TIME_REACHED   |*/
-                                            /*|   14|HOST_ERROR_EA_STATIC     |*/
+                                            /*|   14|HOST_ERROR_EA_STATIC (not used!)|*/
                                             /*|   13|HOST_ERROR_OFFLINE_T     |*/
                                             /*|   12|HOST_ERROR_ACKNOWLEDGED_T|*/
                                             /*|   11|HOST_ERROR_OFFLINE       |*/

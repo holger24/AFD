@@ -2053,19 +2053,22 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
 #else
                            lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
 #endif
-                           if (fsa[i].host_status & HOST_ERROR_EA_STATIC)
+                           if (time(NULL) > fsa[i].end_event_handle)
                            {
-                              fsa[i].host_status &= ~EVENT_STATUS_STATIC_FLAGS;
+                              fsa[i].host_status &= ~(EVENT_STATUS_FLAGS | AUTO_PAUSE_QUEUE_STAT);
+                              if (fsa[i].end_event_handle > 0L)
+                              {
+                                 fsa[i].end_event_handle = 0L;
+                              }
+                              if (fsa[i].start_event_handle > 0L)
+                              {
+                                 fsa[i].start_event_handle = 0L;
+                              }
                            }
                            else
                            {
-                              fsa[i].host_status &= ~EVENT_STATUS_FLAGS;
+                              fsa[i].host_status &= ~(EVENT_STATUS_STATIC_FLAGS | AUTO_PAUSE_QUEUE_STAT);
                            }
-                           fsa[i].host_status &= ~HOST_ERROR_ACKNOWLEDGED;
-                           fsa[i].host_status &= ~HOST_ERROR_OFFLINE;
-                           fsa[i].host_status &= ~HOST_ERROR_ACKNOWLEDGED_T;
-                           fsa[i].host_status &= ~HOST_ERROR_OFFLINE_T;
-                           fsa[i].host_status &= ~PENDING_ERRORS;
 #ifdef LOCK_DEBUG
                            unlock_region(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
 #else

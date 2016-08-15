@@ -1908,6 +1908,33 @@ try_again_unlink:
 #else
                unlock_region(fsa_fd, db.lock_offset + LOCK_EC);
 #endif
+#ifdef LOCK_DEBUG
+               lock_region_w(fsa_fd, db.lock_offset + LOCK_HS, __FILE__, __LINE__);
+#else
+               lock_region_w(fsa_fd, db.lock_offset + LOCK_HS);
+#endif
+               now = time(NULL);
+               if (now > fsa->end_event_handle)
+               {
+                  fsa->host_status &= ~(EVENT_STATUS_FLAGS | AUTO_PAUSE_QUEUE_STAT);
+                  if (fsa->end_event_handle > 0L)
+                  {
+                     fsa->end_event_handle = 0L;
+                  }
+                  if (fsa->start_event_handle > 0L)
+                  {
+                     fsa->start_event_handle = 0L;
+                  }
+               }
+               else
+               {
+                  fsa->host_status &= ~(EVENT_STATUS_STATIC_FLAGS | AUTO_PAUSE_QUEUE_STAT);
+               }
+#ifdef LOCK_DEBUG
+               unlock_region(fsa_fd, db.lock_offset + LOCK_HS, __FILE__, __LINE__);
+#else
+               unlock_region(fsa_fd, db.lock_offset + LOCK_HS);
+#endif
 
                /*
                 * Since we have successfully transmitted a file, no need to
@@ -1917,26 +1944,6 @@ try_again_unlink:
                {
                   char *sign;
 
-#ifdef LOCK_DEBUG
-                  lock_region_w(fsa_fd, db.lock_offset + LOCK_HS, __FILE__, __LINE__);
-#else
-                  lock_region_w(fsa_fd, db.lock_offset + LOCK_HS);
-#endif
-                  fsa->host_status &= ~AUTO_PAUSE_QUEUE_STAT;
-                  if (fsa->host_status & HOST_ERROR_EA_STATIC)
-                  {
-                     fsa->host_status &= ~EVENT_STATUS_STATIC_FLAGS;
-                  }
-                  else
-                  {
-                     fsa->host_status &= ~EVENT_STATUS_FLAGS;
-                  }
-                  fsa->host_status &= ~PENDING_ERRORS;
-#ifdef LOCK_DEBUG
-                  unlock_region(fsa_fd, db.lock_offset + LOCK_HS, __FILE__, __LINE__);
-#else
-                  unlock_region(fsa_fd, db.lock_offset + LOCK_HS);
-#endif
                   error_action(fsa->host_alias, "stop", HOST_ERROR_ACTION);
                   event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",
                             fsa->host_alias);
