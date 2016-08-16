@@ -1,6 +1,6 @@
 /*
  *  format_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2013 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ DESCR__S_M3
  **                 form
  **
  ** SYNOPSIS
- **   void format_info(char **text)
+ **   void format_info(char **text, int with_alda_data)
  **
  ** DESCRIPTION
  **   This function formats data from the global structure info_data
@@ -69,6 +69,7 @@ DESCR__S_M3
  **   14.09.2008 H.Kiehl Added directory ID and alias.
  **   11.08.2009 H.Kiehl Added ALDA information for each entry.
  **                      Remove pointer arrays to make code simpler.
+ **   16.08.2016 H.Kiehl Show when file is deleted during production.
  **
  */
 DESCR__E_M3
@@ -494,29 +495,46 @@ format_info(char **text, int with_alda_data)
                        }
                     }
 #endif
+               else if ((id.dbe[j].job_id == acd[k].production_job_id) &&
+                        (acd[k].production_input_name[0] != '\0') &&
+                        (acd[k].production_final_name[0] == '\0'))
+                    {
+                       count = sizeof("File deleted during production.") - 1 + 1;
+                       length += count;
+                       if (count > max_x)
+                       {
+                          max_x = count;
+                       }
+                       max_y++;
+                       gotcha = YES;
+                       break;
+                    }
+            } /* for (k = 0; k < acd_counter; k++) */
 
-            }
             if (gotcha == NO)
             {
-               if ((acd_counter == 1) && (acd[0].delete_time != 0))
+               if ((acd_counter == 1) && acd[0].delete_time != 0)
                {
-                  count = sizeof("Delete time : ") - 1 + strlen(ctime(&acd[k].delete_time));
+                  count = sizeof("Delete time : ") - 1 +
+                          strlen(ctime(&acd[0].delete_time));
                   length += count;
                   if (count > max_x)
                   {
                      max_x = count;
                   }
                   max_y++;
-                  count = sizeof("Del. reason : ") - 1 + strlen(drstr[acd[k].delete_type]) + 1;
+                  count = sizeof("Del. reason : ") - 1 +
+                          strlen(drstr[acd[0].delete_type]) + 1;
                   length += count;
                   if (count > max_x)
                   {
                      max_x = count;
                   }
                   max_y++;
-                  if (acd[k].add_reason[0] != '\0')
+                  if (acd[0].add_reason[0] != '\0')
                   {
-                     count = sizeof("Add. reason : ") - 1 + strlen(acd[k].add_reason) + 1;
+                     count = sizeof("Add. reason : ") - 1 +
+                             strlen(acd[0].add_reason) + 1;
                      length += count;
                      if (count > max_x)
                      {
@@ -524,9 +542,10 @@ format_info(char **text, int with_alda_data)
                      }
                      max_y++;
                   }
-                  if (acd[k].user_process[0] != '\0')
+                  if (acd[0].user_process[0] != '\0')
                   {
-                     count = sizeof("User/process: ") - 1 + strlen(acd[k].user_process) + 1;
+                     count = sizeof("User/process: ") - 1 +
+                             strlen(acd[0].user_process) + 1;
                      length += count;
                      if (count > max_x)
                      {
@@ -546,7 +565,7 @@ format_info(char **text, int with_alda_data)
                   max_y++;
                }
             }
-         }
+         } /* if (with_alda_data == YES) */
       } /* for (j = 0; j < id.count; j++) */
    } /* if (id.dir[0] != '\0') */
    else
@@ -813,24 +832,34 @@ format_info(char **text, int with_alda_data)
                        }
                     }
 #endif
-            }
+               else if ((id.dbe[j].job_id == acd[k].production_job_id) &&
+                        (acd[k].production_input_name[0] != '\0') &&
+                        (acd[k].production_final_name[0] == '\0'))
+                    {
+                       length += sprintf(*text + length,
+                                         "File deleted during production.\n");
+                       gotcha = YES;
+                       break;
+                    }
+            } /* for (k = 0; k < acd_counter; k++) */
+
             if (gotcha == NO)
             {
                if ((acd_counter == 1) && (acd[0].delete_time != 0))
                {
                   length += sprintf(*text + length, "Delete time : %s",
-                                    ctime(&acd[k].delete_time));
+                                    ctime(&acd[0].delete_time));
                   length += sprintf(*text + length, "Del. reason : %s\n",
-                                    drstr[acd[k].delete_type]);
-                  if (acd[k].add_reason[0] != '\0')
+                                    drstr[acd[0].delete_type]);
+                  if (acd[0].add_reason[0] != '\0')
                   {
                      length += sprintf(*text + length, "Add. reason : %s\n",
-                                       acd[k].add_reason);
+                                       acd[0].add_reason);
                   }
-                  if (acd[k].user_process[0] != '\0')
+                  if (acd[0].user_process[0] != '\0')
                   {
                      length += sprintf(*text + length, "User/process: %s\n",
-                                       acd[k].user_process);
+                                       acd[0].user_process);
                   }
                }
                else
@@ -839,7 +868,7 @@ format_info(char **text, int with_alda_data)
                                     "No output/delete data found. See show_queue if it is still queued.\n");
                }
             }
-         }
+         } /* if (with_alda_data == YES) */
          if (j < (id.count - 1))
          {
             (void)memset(*text + length, '=', max_x);

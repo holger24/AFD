@@ -444,6 +444,9 @@ struct alda_call_data
            char          archive_dir[MAX_PATH_LENGTH + 1];
            time_t        delete_time;
            unsigned int  delete_job_id;
+           char          production_input_name[MAX_FILENAME_LENGTH + 1];
+           char          production_final_name[MAX_FILENAME_LENGTH + 1];
+           unsigned int  production_job_id;
            unsigned int  distribution_type;
            unsigned int  no_of_distribution_types;
            unsigned int  *job_id_list;

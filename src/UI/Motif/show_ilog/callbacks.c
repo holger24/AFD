@@ -353,7 +353,7 @@ info_click(Widget w, XtPointer client_data, XEvent *event)
             }
             /* -o Host alias|Realhostname|Finalname|Size|HRsize|Delivery time|Duration|JID|Retries|Split Job Number|Archive Dir|Delete time|Job ID|Disttype|UJID entries|UJID list|Reason ID|User/program|Additional reason */
             (void)sprintf(alda_cmd,
-                          "%s -f -t %s-%s -d \\#%x -SI %s -o '%%OH|%%Oh|%%OE|%%xOSB|%%.3OSA|%%xOTu|%%ODX|%%xOJ|%%xOe|%%xOL|%%OA|%%xDTu|%%xDJ|%%xUY|%%xUn|%%xUj,|%%xDr|%%DW|%%DA' %s",
+                          "%s -f -t %s-%s -d \\#%x -SI %s -o '%%OH|%%Oh|%%OE|%%xOSB|%%.3OSA|%%xOTu|%%ODX|%%xOJ|%%xOe|%%xOL|%%OA|%%xDTu|%%xDJ|%%Pf|%%PF|%%xPJ|%%xUY|%%xUn|%%xUj,|%%xDr|%%DW|%%DA' %s",
                           ALDA_CMD, alda_time_str_start, alda_time_str_end,
                           id.dir_id, id.file_size, id.file_name);
 #ifdef SHOW_ALDA_CMD

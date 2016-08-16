@@ -1,6 +1,6 @@
 /*
  *  eval_alda_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2009 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2009 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   10.08.2009 H.Kiehl Created
+ **   16.08.2016 H.Kiehl Added production log filenames (input + output).
  **
  */
 DESCR__E_M3
@@ -369,6 +370,69 @@ eval_alda_data(char *text)
          ptr++;
       }
       acd[acd_counter].delete_job_id = (unsigned int)strtoul(str_val, NULL, 16);
+
+      /* Production log input file name. */
+      length = 0;
+      while ((*ptr != '|') && (*ptr > '\n') && (length < MAX_FILENAME_LENGTH))
+      {
+         acd[acd_counter].production_input_name[length] = *ptr;
+         length++; ptr++;
+      }
+      acd[acd_counter].production_input_name[length] = '\0';
+      if (*ptr != '|')
+      {
+         while ((*ptr != '|') && (*ptr > '\n'))
+         {
+            ptr++;
+         }
+      }
+      else
+      {
+         ptr++;
+      }
+
+      /* Production log final file name. */
+      length = 0;
+      while ((*ptr != '|') && (*ptr > '\n') && (length < MAX_FILENAME_LENGTH))
+      {
+         acd[acd_counter].production_final_name[length] = *ptr;
+         length++; ptr++;
+      }
+      acd[acd_counter].production_final_name[length] = '\0';
+      if (*ptr != '|')
+      {
+         while ((*ptr != '|') && (*ptr > '\n'))
+         {
+            ptr++;
+         }
+      }
+      else
+      {
+         ptr++;
+      }
+
+      /* Production Job ID. */
+      length = 0;
+      str_val[0] = '0';
+      str_val[1] = 'x';
+      while ((*ptr != '|') && (*ptr > '\n') && (length < MAX_INT_HEX_LENGTH))
+      {
+         str_val[2 + length] = *ptr;
+         length++; ptr++;
+      }
+      str_val[2 + length] = '\0';
+      if (*ptr != '|')
+      {
+         while ((*ptr != '|') && (*ptr > '\n'))
+         {
+            ptr++;
+         }
+      }
+      else
+      {
+         ptr++;
+      }
+      acd[acd_counter].production_job_id = (unsigned int)strtoul(str_val, NULL, 16);
 
       /* Distribution type. */
       length = 0;
