@@ -184,8 +184,6 @@
                                          /* will NOT be stored and will  */
                                          /* be deleted!                  */
 
-#define DATA_MOVED  1
-#define DATA_COPIED 2
 #define LOCALE_DIR  0
 #define REMOTE_DIR  1
 

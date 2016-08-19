@@ -1,6 +1,6 @@
 /*
  *  move_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2009 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -34,8 +34,9 @@ DESCR__S_M3
  **   If this fails it will try to copy the file with copy_file().
  **
  ** RETURN VALUES
- **   SUCCESS   - when moving/copying file succesfully
- **   INCORRECT - when failing to move/copy the file 'to'
+ **   SUCCESS     - when moving file succesfully
+ **   DATA_COPIED - when copying file succesfully
+ **   INCORRECT   - when failing to move/copy the file 'to'
  **
  ** AUTHOR
  **   H.Kiehl
@@ -45,6 +46,7 @@ DESCR__S_M3
  **   05.02.2009 H.Kiehl When we copied the file and we fail to unlink
  **                      the original file we must delete the target
  **                      file. Then it behaves as rename().
+ **   18.08.2016 H.Kiehl Return different value when copying a file.
  **
  */
 DESCR__E_M3
@@ -99,6 +101,8 @@ move_file(char *from, char *to)
 
             return(2);
          }
+
+         return(DATA_COPIED);
       }
       else
       {

@@ -633,6 +633,8 @@ typedef unsigned long       u_long_64;
 #define AUTO_SIZE_DETECT           -2
 #define FILE_IS_DIR                -2     /* Used by remove_dir().        */
 #define GET_ONCE_ONLY              2
+#define DATA_MOVED                 1
+#define DATA_COPIED                3
 
 #define NO_PRIORITY                -100   /* So it knows it does not need */
                                           /* to create the name with      */

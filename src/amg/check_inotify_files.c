@@ -132,6 +132,7 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
    int          current_fnl_pos = 0,
                 files_copied = 0,
                 full_scan = YES,
+                g_what_done = 0,
                 i,
                 ret,
                 set_error_counter = NO; /* Indicator to tell that we */
@@ -447,11 +448,19 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                               if (p_de->flag & IN_SAME_FILESYSTEM)
                               {
                                  ret = move_file(fullname, tmp_file_dir);
-                                 what_done = DATA_MOVED;
+                                 if (ret == DATA_COPIED)
+                                 {
+                                    what_done = g_what_done = DATA_COPIED;
+                                    ret = SUCCESS;
+                                 }
+                                 else
+                                 {
+                                    what_done = DATA_MOVED;
+                                 }
                               }
                               else
                               {
-                                 what_done = DATA_COPIED;
+                                 what_done = g_what_done = DATA_COPIED;
                                  if ((ret = copy_file(fullname, tmp_file_dir,
                                                       &stat_buf)) == SUCCESS)
                                  {
@@ -481,7 +490,7 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                            {
                               /* Leave original files in place. */
                               ret = copy_file(fullname, tmp_file_dir, &stat_buf);
-                              what_done = DATA_COPIED;
+                              what_done = g_what_done = DATA_COPIED;
                            }
                            if (ret != SUCCESS)
                            {
@@ -1047,13 +1056,26 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
          event_log(0L, EC_DIR, ET_AUTO, EA_WARN_TIME_UNSET, "%s",
                    fra[p_de->fra_pos].dir_alias);
       }
-      receive_log(INFO_SIGN, NULL, 0, current_time,
+      if (g_what_done == DATA_COPIED)
+      {
+         receive_log(INFO_SIGN, NULL, 0, current_time,
 #if SIZEOF_OFF_T == 4
-                  _("*Received %d files with %ld bytes. @%x"),
+                     _("*Received %d files with %ld bytes. {C} @%x"),
 #else
-                  _("*Received %d files with %lld bytes. @%x"),
+                     _("*Received %d files with %lld bytes. {C} @%x"),
 #endif
-                  files_copied, (pri_off_t)*total_file_size, p_de->dir_id);
+                     files_copied, (pri_off_t)*total_file_size, p_de->dir_id);
+      }
+      else
+      {
+         receive_log(INFO_SIGN, NULL, 0, current_time,
+#if SIZEOF_OFF_T == 4
+                     _("*Received %d files with %ld bytes. @%x"),
+#else
+                     _("*Received %d files with %lld bytes. @%x"),
+#endif
+                     files_copied, (pri_off_t)*total_file_size, p_de->dir_id);
+      }
    }
    else
    {

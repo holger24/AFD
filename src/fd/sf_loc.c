@@ -203,6 +203,9 @@ main(int argc, char *argv[])
                     fd,
                     lfs,                    /* Local file system. */
                     ret;
+#ifdef WITH_ARCHIVE_COPY_INFO
+   unsigned int     archived_copied = 0;
+#endif
    time_t           connected,
 #ifdef _WITH_BURST_2
                     diff_time,
@@ -1173,6 +1176,10 @@ cross_link_error:
             if ((db.archive_time > 0) &&
                 (p_db->archive_dir[0] != FAILED_TO_CREATE_ARCHIVE_DIR))
             {
+#ifdef WITH_ARCHIVE_COPY_INFO
+               int ret;
+#endif
+
                /*
                 * By telling the function archive_file() that this
                 * is the first time to archive a file for this job
@@ -1181,7 +1188,11 @@ cross_link_error:
                 * we ensure that we do not create duplicate names
                 * when adding db.archive_time to msg_name.
                 */
+#ifdef WITH_ARCHIVE_COPY_INFO
+               if ((ret = archive_file(file_path, p_file_name_buffer, p_db)) < 0)
+#else
                if (archive_file(file_path, p_file_name_buffer, p_db) < 0)
+#endif
                {
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                             "Failed to archive file `%s'", file_name);
@@ -1241,6 +1252,12 @@ cross_link_error:
                      trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                                   "Archived file `%s'.", file_name);
                   }
+#ifdef WITH_ARCHIVE_COPY_INFO
+                  if (ret == DATA_COPIED)
+                  {
+                     archived_copied++;
+                  }
+#endif
 
 #ifdef _OUTPUT_LOG
                   if (db.output_log == YES)
@@ -1498,6 +1515,15 @@ try_again_unlink:
                p_file_mtime_buffer++;
             }
          } /* for (files_send = 0; files_send < files_to_send; files_send++) */
+
+#ifdef WITH_ARCHIVE_COPY_INFO
+         if (archived_copied > 0)
+         {
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                      "Copied %u files to archive.", archived_copied);
+            archived_copied = 0;
+         }
+#endif
 
          if (local_file_counter)
          {

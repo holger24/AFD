@@ -141,6 +141,9 @@
                                        [Default: disabled]
 --enable-statistics_in_fifodir       - Statistics are stored in fifodir.
                                        [Default: log directory]
+--enable-with_archive_copy_info      - Inform when files are being copied
+                                       instead of being moved in TRANSFER_LOG.
+                                       [Default: disabled]
 --enable-setuid_progs                - Enables setting setuid flag for the
                                        programms afdcmd, afd, init_afd, mafd,
                                        afd_ctrl, dir_ctrl, mon_ctrl and

@@ -1,6 +1,6 @@
 /*
  *  archive_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -102,6 +102,7 @@ archive_file(char       *file_path,  /* Original path of file to archive.*/
              struct job *p_db)       /* Holds all data of current        */
                                      /* transferring job.                */
 {
+   int    ret;
    time_t diff_time,
           now;
    char   newname[MAX_PATH_LENGTH],
@@ -398,7 +399,7 @@ archive_file(char       *file_path,  /* Original path of file to archive.*/
    (void)strcat(oldname, "/");
    (void)strcat(oldname, filename);
 
-   if (move_file(oldname, newname) < 0)
+   if (((ret = move_file(oldname, newname)) < 0) || (ret == 2))
    {
 #ifndef DO_NOT_ARCHIVE_UNIQUE_PART
       if (errno == ENAMETOOLONG)
@@ -418,7 +419,7 @@ archive_file(char       *file_path,  /* Original path of file to archive.*/
       {
 #endif
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "move_file() error : %s", strerror(errno));
+                    "move_file() error [%d] : %s", ret, strerror(errno));
 #ifndef DO_NOT_ARCHIVE_UNIQUE_PART
       }
 #endif
@@ -439,7 +440,7 @@ archive_file(char       *file_path,  /* Original path of file to archive.*/
       }
    }
 
-   return(SUCCESS);
+   return(ret);
 }
 
 

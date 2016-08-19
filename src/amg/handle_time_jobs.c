@@ -167,7 +167,8 @@ handle_time_dir(int time_job_no)
    }
    else
    {
-      int            files_moved;
+      int            files_moved,
+                     ret;
       off_t          file_size_moved;
       time_t         creation_time;
       int            unique_number;
@@ -327,7 +328,8 @@ handle_time_dir(int time_job_no)
                }
 
                (void)strcpy(p_dest, p_dir->d_name);
-               if (move_file(time_dir, dest_file_path) < 0)
+               if (((ret = move_file(time_dir, dest_file_path)) < 0) ||
+                   (ret == 2))
                {
                   char reason_str[23];
 

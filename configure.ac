@@ -248,6 +248,12 @@ AC_ARG_ENABLE(with_ctrl_accelerator,
       AC_DEFINE([WITH_CTRL_ACCELERATOR], [], [Use ctrl key as accelerator])
    fi])
 
+AC_ARG_ENABLE(with_archive_copy_info,
+   [  --enable-with_archive_copy_info  inform when files are copied when archived],
+   [if test x$enableval = xyes; then
+      AC_DEFINE([WITH_ARCHIVE_COPY_INFO], [], [Inform when files are copied when archived])
+   fi])
+
 AC_ARG_ENABLE(with_afdbench_settings,
    [  --enable-with_afdbench_settings enables settings for running afdbench],
    [AC_DEFINE([AFDBENCH_CONFIG], [], [Enables settings for running afdbench])

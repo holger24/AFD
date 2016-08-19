@@ -221,6 +221,9 @@ main(int argc, char *argv[])
                     bytes_buffered,
                     append_file_number = -1,
                     blocksize;
+#ifdef WITH_ARCHIVE_COPY_INFO
+   unsigned int     archived_copied = 0;
+#endif
    off_t            no_of_bytes;
    clock_t          clktck;
    time_t           connected,
@@ -2984,6 +2987,10 @@ main(int argc, char *argv[])
          if ((db.archive_time > 0) &&
              (p_db->archive_dir[0] != FAILED_TO_CREATE_ARCHIVE_DIR))
          {
+#ifdef WITH_ARCHIVE_COPY_INFO
+            int ret;
+#endif
+
             /*
              * By telling the function archive_file() that this
              * is the first time to archive a file for this job
@@ -2992,7 +2999,11 @@ main(int argc, char *argv[])
              * we ensure that we do not create duplicate names
              * when adding db.archive_time to msg_name.
              */
+#ifdef WITH_ARCHIVE_COPY_INFO
+            if ((ret = archive_file(file_path, p_file_name_buffer, p_db)) < 0)
+#else
             if (archive_file(file_path, p_file_name_buffer, p_db) < 0)
+#endif
             {
                if (fsa->debug > NORMAL_MODE)
                {
@@ -3060,6 +3071,12 @@ main(int argc, char *argv[])
                   trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                                "Archived file `%s'", p_final_filename);
                }
+#ifdef WITH_ARCHIVE_COPY_INFO
+               if (ret == DATA_COPIED)
+               {
+                  archived_copied++;
+               }
+#endif
 
 #ifdef _OUTPUT_LOG
                if (db.output_log == YES)
@@ -3335,6 +3352,15 @@ try_again_unlink:
             p_file_mtime_buffer++;
          }
       } /* for (files_send = 0; files_send < files_to_send; files_send++) */
+
+#ifdef WITH_ARCHIVE_COPY_INFO
+      if (archived_copied > 0)
+      {
+         trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                   "Copied %u files to archive.", archived_copied);
+         archived_copied = 0;
+      }
+#endif
 
       if (local_file_counter)
       {
