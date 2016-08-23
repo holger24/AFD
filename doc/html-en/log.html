@@ -172,6 +172,50 @@ to convert back to the UNIX time when we show the time in the
 Identifier, File Size and Unix Time are hexa decimal values.
 </p>
 
+<h3 align=center><a name="distribution_log"><u>Distribution Log</u></a></h3>
+<p>
+Here all file names of files that are picked up by the AFD and are
+to be distributed get logged in the DISTRIBUTION_LOG.x file. This log
+is rotated the same way as the INPUT_LOG.x above.
+</p>
+<p>
+An entry might look as follows:
+</p>
+<pre>
+40bae084   0-1|dat.txt|40bae083|e8c13458|ba2366|20b50|556a367_0,4e327a5_3
+   |        |   |        |       |        |      |    |
+   |        |   |        |       |        |      |    +-&gt; Jobs that
+   |        |   |        |       |        |      |        received the
+   |        |   |        |       |        |      |        file. The last
+   |        |   |        |       |        |      |        number says how
+   |        |   |        |       |        |      |        many times it
+   |        |   |        |       |        |      |        appears in
+   |        |   |        |       |        |      |        PRODUCTION_LOG.
+   |        |   |        |       |        |      +------&gt; File size.
+   |        |   |        |       |        +-------------&gt; Unique number.
+   |        |   |        |       +----------------------&gt; Directory
+   |        |   |        |                                Identifier.
+   |        |   |        +------------------------------&gt; Pickup time.
+   |        |   +---------------------------------------&gt; File name.
+   |        +-------------------------------------------&gt; First digit
+   |                                                      Distribution
+   |                                                      type:
+   |                                                       0 - Normal
+   |                                                       1 - Time job
+   |                                                       2 - Queue
+   |                                                           stopped
+   |                                                       3 - Disabled
+   |                                                       4 - Age limit
+   |                                                            delete
+   |                                                       5 - Dupcheck
+   |                                                      Second digit
+   |                                                      is number of
+   |                                                      distribution
+   |                                                      types used.
+   +----------------------------------------------------&gt; Date when
+                                                          logged.
+</pre>
+
 <h3 align=center><a name="production_log"><u>Production Log</u></a></h3>
 <p>
 If something is being done via one of the options it will be logged to
@@ -341,9 +385,9 @@ To view these log files, use <a href="show_dlog.html">show_dlog</a>.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1997 - 2015 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2016 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 27.09.2015
+   Last updated: 23.08.2016
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
