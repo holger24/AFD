@@ -1,6 +1,6 @@
 /*
  *  save_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -85,6 +85,7 @@ DESCR__E_M3
 #include <errno.h>
 #include "amgdefs.h"
 
+
 /* External global variables. */
 extern int                        fra_fd;
 #ifndef _WITH_PTHREAD
@@ -115,6 +116,10 @@ save_files(char                   *src_path,
            time_t                 *file_mtime_pool,
            char                   **file_name_pool,
            unsigned char          *file_length_pool,
+#endif
+#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+           char                   *caller,
+           int                    line,
 #endif
            struct directory_entry *p_de,
            struct instant_db      *p_db,
@@ -292,6 +297,11 @@ save_files(char                   *src_path,
                (void)memcpy(p_dest, file_name_pool[i],
                             (size_t)(file_length_pool[i] + 1));
 
+#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+               maintainer_log(DEBUG_SIGN, NULL, 0,
+                              "save_files() [%s %d]: `%s' -> `%s'",
+                              caller, line, src_path, dest_path);
+#endif
                if (link_flag & IN_SAME_FILESYSTEM)
                {
                   if (p_de->flag & RENAME_ONE_JOB_ONLY)

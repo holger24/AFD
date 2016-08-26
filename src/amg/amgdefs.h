@@ -29,6 +29,9 @@
 # define WITH_GOTCHA_LIST
 #endif
 
+/* Debug definitions. Only turn on when you know. Produces lots of data. */
+/* #define SHOW_FILE_MOVING */
+
 /* Definitions to be read from the AFD_CONFIG file. */
 #define AMG_DIR_RESCAN_TIME_DEF    "AMG_DIR_RESCAN_TIME"
 #define MAX_NO_OF_DIR_CHECKS_DEF   "MAX_NO_OF_DIR_CHECKS"
@@ -834,15 +837,26 @@ extern int    amg_zombie_check(pid_t *, int),
 #ifdef _WITH_PTHREAD
               check_files(struct directory_entry *, char *, int, char *,
                           int, int *, time_t, int *, off_t *, char **,
-                          unsigned char *, off_t *),
+                          unsigned char *,
+# if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                          char *, int,
+# endif
+                          off_t *),
               count_pool_files(int *, char *, off_t *, time_t *, char **,
                                unsigned char *),
               link_files(char *, char *, int, time_t, off_t *, char **,
+# if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                         char *, int,
+# endif
                          struct directory_entry *, struct instant_db *,
                          time_t *, unsigned int *, int, int, int, char *,
                          off_t *),
               save_files(char *, char *, time_t, unsigned int, off_t *,
-                         time_t *, char **, struct directory_entry *,
+                         time_t *, char **,
+# if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                         char *, int,
+# endif
+                         struct directory_entry *,
 # ifdef _DISTRIBUTION_LOG
                          struct instant_db *, int, int, char, int, int),
 # else
@@ -850,12 +864,23 @@ extern int    amg_zombie_check(pid_t *, int),
 # endif
 #else
               check_files(struct directory_entry *, char *, int, char *,
-                          int, int *, time_t, int *, off_t *),
+                          int, int *, time_t, int *,
+# if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                          char *, int,
+# endif
+                          off_t *),
               count_pool_files(int *, char *),
-              link_files(char *, char *, int, time_t, struct directory_entry *,
+              link_files(char *, char *, int, time_t,
+# if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                         char *, int,
+# endif
+                         struct directory_entry *,
                          struct instant_db *, unsigned int *, int, int, int,
                          char *, off_t *),
               save_files(char *, char *, time_t, unsigned int,
+# if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                         char *, int,
+# endif
                          struct directory_entry *, struct instant_db *,
 # ifdef _DISTRIBUTION_LOG
                          int, int, char, int, int),
@@ -866,7 +891,11 @@ extern int    amg_zombie_check(pid_t *, int),
 #ifdef WITH_INOTIFY
               check_inotify_files(struct inotify_watch_list *,
                                   struct directory_entry *, char *, int *,
-                                  time_t, off_t *),
+                                  time_t,
+# if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                                  char *, int,
+# endif
+                                  off_t *),
 #endif
               check_process_list(int),
               create_db(void),
@@ -884,7 +913,11 @@ extern int    amg_zombie_check(pid_t *, int),
               lookup_fra_pos(char *),
               next_dir_group_name(char *, int *, char *),
               rename_files(char *, char *, int, int, struct instant_db *,
-                           time_t, int, unsigned int *, char *, off_t *),
+                           time_t, int, unsigned int *, char *,
+# if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                           char *, int,
+# endif
+                           off_t *),
               reread_dir_config(int, off_t, time_t *, int, int, size_t,
                                 int, int, unsigned int *, struct host_list *),
               reread_host_config(time_t *, int *, int *, size_t *,

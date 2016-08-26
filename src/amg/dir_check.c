@@ -2136,6 +2136,10 @@ handle_dir(int                       dir_pos,
                                       file_name_pool,
                                       file_length_pool,
 #endif
+#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                                      __FILE__,
+                                      __LINE__,
+#endif
                                       &total_file_size);
             if (files_moved > 0)
             {
@@ -2230,6 +2234,10 @@ handle_dir(int                       dir_pos,
                                          file_name_pool,
                                          file_length_pool,
 #endif
+#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                                         __FILE__,
+                                         __LINE__,
+#endif
                                          &total_file_size);
                remove_orig_file_path = NO;
             }
@@ -2254,6 +2262,10 @@ handle_dir(int                       dir_pos,
                                             file_name_pool,
                                             file_length_pool,
 #endif
+#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                                            __FILE__,
+                                            __LINE__,
+#endif
                                             &total_file_size);
 #ifdef WITH_INOTIFY
                }
@@ -2264,6 +2276,10 @@ handle_dir(int                       dir_pos,
                                                     orig_file_path,
                                                     &unique_number,
                                                     current_time,
+# if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                                                    __FILE__,
+                                                    __LINE__,
+# endif
                                                     &total_file_size);
                }
 #endif
@@ -2384,6 +2400,10 @@ handle_dir(int                       dir_pos,
                                                        file_mtime_pool,
                                                        file_name_pool,
                                                        file_length_pool,
+#endif
+#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                                                       __FILE__,
+                                                       __LINE__,
 #endif
                                                        &de[dir_pos],
                                                        &db[de[dir_pos].fme[j].pos[k]],
@@ -2559,6 +2579,10 @@ handle_dir(int                       dir_pos,
                                                                                      unique_number,
                                                                                      &tmp_split_job_counter,
                                                                                      &tmp_unique_name[1],
+#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                                                                                     __FILE__,
+                                                                                     __LINE__,
+#endif
                                                                                      &split_file_size_renamed)) > 0)
                                              {
 #ifdef MULTI_FS_SUPPORT
@@ -2829,6 +2853,10 @@ handle_dir(int                       dir_pos,
                                           file_name_pool,
                                           file_length_pool,
 #endif
+#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                                          __FILE__,
+                                          __LINE__,
+#endif
                                           &de[dir_pos],
                                           &db[de[dir_pos].fme[j].pos[k]],
                                           j,
@@ -2866,6 +2894,10 @@ handle_dir(int                       dir_pos,
                                        file_mtime_pool,
                                        file_name_pool,
                                        file_length_pool,
+#endif
+#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                                       __FILE__,
+                                       __LINE__,
 #endif
                                        &de[dir_pos],
                                        &db[de[dir_pos].fme[j].pos[k]],

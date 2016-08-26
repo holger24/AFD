@@ -1,6 +1,6 @@
 /*
  *  check_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -199,6 +199,10 @@ check_files(struct directory_entry *p_de,
             char                   **file_name_pool,
             unsigned char          *file_length_pool,
             struct file_dist_list  **file_dist_pool,
+#endif
+#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+            char                   *caller,
+            int                    line,
 #endif
             off_t                  *total_file_size)
 {
@@ -926,6 +930,11 @@ check_files(struct directory_entry *p_de,
                            /* Generate name for the new file. */
                            (void)strcpy(ptr, p_dir->d_name);
 
+#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                           maintainer_log(DEBUG_SIGN, NULL, 0,
+                                          "check_files() [%s %d]: `%s' -> `%s'",
+                                          caller, line, fullname, tmp_file_dir);
+#endif
                            if ((fra[p_de->fra_pos].remove == YES) ||
                                (count_files == NO) ||  /* Paused directory. */
                                (fra[p_de->fra_pos].protocol != LOC))

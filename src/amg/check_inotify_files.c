@@ -127,6 +127,10 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                     char                      *tmp_file_dir,
                     int                       *unique_number,
                     time_t                    current_time,
+#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                    char                      *caller,
+                    int                       line,
+#endif
                     off_t                     *total_file_size)
 {
    int          current_fnl_pos = 0,
@@ -441,6 +445,12 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
 
                            /* Generate name for the new file. */
                            (void)strcpy(ptr, &p_iwl->file_name[current_fnl_pos]);
+
+#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+                           maintainer_log(DEBUG_SIGN, NULL, 0,
+                                          "check_inotify_files() [%s %d]: `%s' -> `%s'",
+                                          caller, line, fullname, tmp_file_dir);
+#endif
 
                            if ((fra[p_de->fra_pos].remove == YES) ||
                                (fra[p_de->fra_pos].protocol != LOC))

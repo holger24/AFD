@@ -1,6 +1,6 @@
 /*
  *  rename_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -89,6 +89,10 @@ rename_files(char                   *src_file_path,
              int                    unique_number,
              unsigned int           *split_job_counter,
              char                   *unique_name, /* Storage to return unique name. */
+#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+             char                   *caller,
+             int                    line,
+#endif
              off_t                  *file_size_renamed)
 {
    int          files_renamed = 0;
@@ -172,6 +176,11 @@ rename_files(char                   *src_file_path,
       }
       else
       {
+#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+         maintainer_log(DEBUG_SIGN, NULL, 0,
+                        "rename_files() [%s %d]: `%s' -> `%s'",
+                        caller, line, src_file_path, dest_file_path);
+#endif
          files_renamed++;
          for (j = 0; j < files_moved; j++)
          {
