@@ -2069,7 +2069,6 @@ handle_dir(int                       dir_pos,
          (fra[de[dir_pos].fra_pos].no_of_process < fra[de[dir_pos].fra_pos].max_process))))
    {
       int        files_moved,
-                 remove_orig_file_path = YES,
                  unique_number;
       off_t      file_size_linked,
                  total_file_size;
@@ -2222,7 +2221,7 @@ handle_dir(int                       dir_pos,
                /* Local paused directory. */
                files_moved = check_files(&de[dir_pos],
                                          src_file_dir,
-                                         NO,
+                                         YES,
                                          orig_file_path,
                                          NO,
                                          &unique_number,
@@ -2239,7 +2238,6 @@ handle_dir(int                       dir_pos,
                                          __LINE__,
 #endif
                                          &total_file_size);
-               remove_orig_file_path = NO;
             }
             else
             {
@@ -3002,48 +3000,45 @@ handle_dir(int                       dir_pos,
          }
 #endif
 
-         if (remove_orig_file_path == YES)
+         /* Time to remove all files in orig_file_path. */
+         if ((de[dir_pos].flag & RENAME_ONE_JOB_ONLY) &&
+             ((fsa[db[de[dir_pos].fme[0].pos[0]].position].special_flag & HOST_DISABLED) == 0))
          {
-            /* Time to remove all files in orig_file_path. */
-            if ((de[dir_pos].flag & RENAME_ONE_JOB_ONLY) &&
-                ((fsa[db[de[dir_pos].fme[0].pos[0]].position].special_flag & HOST_DISABLED) == 0))
+            if (rmdir(orig_file_path) == -1)
             {
-               if (rmdir(orig_file_path) == -1)
+               if ((errno == ENOTEMPTY) || (errno == EEXIST))
                {
-                  if ((errno == ENOTEMPTY) || (errno == EEXIST))
-                  {
-                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                "Hmm, strange! The directory %s should be empty!",
-                                orig_file_path);
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Hmm, strange! The directory %s should be empty!",
+                             orig_file_path);
 #ifdef WITH_UNLINK_DELAY
-                     if (remove_dir(orig_file_path, 5) < 0)
+                  if (remove_dir(orig_file_path, 5) < 0)
 #else
-                     if (remove_dir(orig_file_path) < 0)
+                  if (remove_dir(orig_file_path) < 0)
 #endif
-                     {
-                        system_log(WARN_SIGN, __FILE__, __LINE__,
-                                   "Failed to remove %s", orig_file_path);
-                     }
-                  }
-                  else
                   {
                      system_log(WARN_SIGN, __FILE__, __LINE__,
-                                "Failed to rmdir() %s : %s",
-                                orig_file_path, strerror(errno));
+                                "Failed to remove %s", orig_file_path);
                   }
                }
-            }
-            else
-            {
-#ifdef WITH_UNLINK_DELAY
-               if (remove_dir(orig_file_path, 5) < 0)
-#else
-               if (remove_dir(orig_file_path) < 0)
-#endif
+               else
                {
                   system_log(WARN_SIGN, __FILE__, __LINE__,
-                             "Failed to remove %s", orig_file_path);
+                             "Failed to rmdir() %s : %s",
+                             orig_file_path, strerror(errno));
                }
+            }
+         }
+         else
+         {
+#ifdef WITH_UNLINK_DELAY
+            if (remove_dir(orig_file_path, 5) < 0)
+#else
+            if (remove_dir(orig_file_path) < 0)
+#endif
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Failed to remove %s", orig_file_path);
             }
          }
       } /* if (files_moved > 0) */
