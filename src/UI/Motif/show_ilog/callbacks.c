@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2013 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -353,9 +353,10 @@ info_click(Widget w, XtPointer client_data, XEvent *event)
             }
             /* -o Host alias|Realhostname|Finalname|Size|HRsize|Delivery time|Duration|JID|Retries|Split Job Number|Archive Dir|Delete time|Job ID|Disttype|UJID entries|UJID list|Reason ID|User/program|Additional reason */
             (void)sprintf(alda_cmd,
-                          "%s -f -t %s-%s -d \\#%x -SI %s -o '%%OH|%%Oh|%%OE|%%xOSB|%%.3OSA|%%xOTu|%%ODX|%%xOJ|%%xOe|%%xOL|%%OA|%%xDTu|%%xDJ|%%Pf|%%PF|%%xPJ|%%xUY|%%xUn|%%xUj,|%%xDr|%%DW|%%DA' %s",
-                          ALDA_CMD, alda_time_str_start, alda_time_str_end,
-                          id.dir_id, id.file_size, id.file_name);
+                          "%s -f -g %s -t %s-%s -u %x -d \\#%x -SI %s -o '%%OH|%%Oh|%%OE|%%xOSB|%%.3OSA|%%xOTu|%%ODX|%%xOJ|%%xOe|%%xOL|%%OA|%%xDTu|%%xDJ|%%Pf|%%PF|%%xPJ|%%xUY|%%xUn|%%xUj,|%%xDr|%%DW|%%DA' %s",
+                          ALDA_CMD, MAX_ALDA_DIFF_TIME_STR, alda_time_str_start,
+                          alda_time_str_end, id.unique_number, id.dir_id,
+                          id.file_size, id.file_name);
 #ifdef SHOW_ALDA_CMD
             (void)fprintf(stdout, "%s\n", alda_cmd);
 #endif

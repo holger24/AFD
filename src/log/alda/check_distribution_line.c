@@ -62,7 +62,8 @@ extern int                       gt_lt_sign,
                                  verbose;
 extern unsigned int              file_pattern_counter,
                                  mode,
-                                 search_file_size_flag;
+                                 search_file_size_flag,
+                                 search_unique_number;
 extern time_t                    start,
                                  start_time_end,
                                  start_time_start;
@@ -304,8 +305,11 @@ check_distribution_line(char         *line,
                                  *(ptr + i) = '\0';
                                  ulog.unique_number = (unsigned int)strtoul(ptr, NULL, 16);
 
-                                 if ((prev_unique_number == NULL) ||
-                                     (ulog.unique_number == *prev_unique_number))
+                                 if (((prev_unique_number == NULL) ||
+                                      (ulog.unique_number == *prev_unique_number)) &&
+                                     ((search_unique_number == 0) ||
+                                      (search_unique_number == (unsigned int)-1) ||
+                                      (search_unique_number == ulog.unique_number)))
                                  {
                                     ptr += i + 1;
 

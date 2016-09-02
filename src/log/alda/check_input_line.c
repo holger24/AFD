@@ -53,7 +53,8 @@ extern int                  gt_lt_sign,
                             log_date_length,
                             verbose;
 extern unsigned int         file_pattern_counter,
-                            search_file_size_flag;
+                            search_file_size_flag,
+                            search_unique_number;
 extern time_t               start,
                             start_time_end,
                             start_time_start;
@@ -195,19 +196,33 @@ check_input_line(char         *line,
 # ifndef HAVE_GETLINE
                               input.bytes_read += (ptr + i - line);
 # endif
-                              if (verbose > 2)
+                              if ((search_unique_number == 0) ||
+                                  (search_unique_number == ilog.unique_number))
                               {
+                                 if (verbose > 2)
+                                 {
 # if SIZEOF_TIME_T == 4
-                                 (void)printf("%06ld DEBUG 3: [INPUT] %s %x %x\n",
+                                    (void)printf("%06ld DEBUG 3: [INPUT] %s %x %x\n",
 # else
-                                 (void)printf("%06lld DEBUG 3: [INPUT] %s %x %x\n",
+                                    (void)printf("%06lld DEBUG 3: [INPUT] %s %x %x\n",
 # endif
-                                              (pri_time_t)(time(NULL) - start),
-                                              ilog.filename, ilog.dir_id,
-                                              ilog.unique_number);
-                              }
+                                                 (pri_time_t)(time(NULL) - start),
+                                                 ilog.filename, ilog.dir_id,
+                                                 ilog.unique_number);
+                                 }
 
-                              return(SUCCESS);
+                                 return(SUCCESS);
+                              }
+                              else
+                              {
+                                 ilog.dir_id = 0;
+                                 ilog.input_time = -1;
+                                 ilog.filename[0] = '\0';
+                                 ilog.file_size = -1;
+                                 ilog.unique_number = 0;
+
+                                 return(NOT_WANTED);
+                              }
                            }
                            else
                            {

@@ -67,7 +67,8 @@ extern unsigned int              file_pattern_counter,
                                  search_dir_id_counter,
                                  search_dir_name_counter,
                                  search_file_size_flag,
-                                 search_job_id;
+                                 search_job_id,
+                                 search_unique_number;
 extern time_t                    start,
                                  start_time_end,
                                  start_time_start;
@@ -436,8 +437,10 @@ check_output_line(char         *line,
                                              *(ptr + i) = '\0';
                                              olog.unique_number = (unsigned int)strtoul(ptr, NULL, 16);
 
-                                             if ((prev_unique_number == NULL) ||
-                                                 (olog.unique_number == *prev_unique_number))
+                                             if (((prev_unique_number == NULL) ||
+                                                  (olog.unique_number == *prev_unique_number)) &&
+                                                 ((search_unique_number == 0) ||
+                                                  (search_unique_number == olog.unique_number)))
                                              {
                                                 ptr += i + 1;
                                                 i = 0;

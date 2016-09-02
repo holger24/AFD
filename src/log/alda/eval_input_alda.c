@@ -1,6 +1,6 @@
 /*
  *  eval_input_alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -135,7 +135,7 @@ DESCR__S_M3
  **               [Y] -> [-]#
  **               [Z] -> [-][0]#[d|o|x]
  **
- **            (used second chars: AbBcCDeEfFhHIJjLNnpOoPrRStTUWYZ)
+ **            (used second chars: AbBcCDeEfFhHIJjLNnpOoPrRStTuUWYZ)
  **
  **            Time character (t,T):
  **                 a - Abbreviated weekday name: Tue
@@ -210,6 +210,7 @@ DESCR__S_M3
  **           -d <directory name/alias/ID> Directory name, alias or ID.
  **           -h <host name/alias/ID>      Host name, alias or ID.
  **           -j <job ID>                  Job identifier.
+ **           -u <unique number>           Unique number.
  **           -S[I|U|P|O|D] <size>         File size in byte.
  **           -p <protocol>                Protocol used for transport.
  **   Other parameters
@@ -217,7 +218,7 @@ DESCR__S_M3
  **           -R <x>                       Rotate log x times.
  **           -H <file name>               Header to add to output.
  **           -O <file name>               File where to write output.
- **           -v[v[v]]                     Verbose mode.
+ **           -v[v[v[v]]]                  Verbose mode.
  **           -w <work dir>                Working directory of the AFD.
  **
  **   To be able to differentiate between name, alias and ID:
@@ -281,6 +282,7 @@ extern unsigned int end_alias_counter,
                     search_host_id_counter,
                     search_host_name_counter,
                     search_job_id,
+                    search_unique_number,
                     search_log_type,
                     start_alias_counter,
                     *start_id,
@@ -675,6 +677,23 @@ eval_input_alda(int *argc, char *argv[])
                else
                {
                   search_job_id = (unsigned int)strtoul(*(argv + 1), NULL, 16);
+                  (*argc) -= 2;
+                  argv += 2;
+               }
+               break;
+
+            case 'u' : /* Unique number. */
+               if ((*argc == 1) || (*(argv + 1)[0] == '-'))
+               {
+                  (void)fprintf(stderr,
+                                "ERROR  : No unique number specified for parameter -u.\n");
+                  correct = NO;
+                  (*argc) -= 1;
+                  argv += 1;
+               }
+               else
+               {
+                  search_unique_number = (unsigned int)strtoul(*(argv + 1), NULL, 16);
                   (*argc) -= 2;
                   argv += 2;
                }
@@ -2158,6 +2177,7 @@ usage(char *progname)
    (void)fprintf(stderr, "                                            host alias use prefix %%\n");
    (void)fprintf(stderr, "                                            host ID use prefix #\n");
    (void)fprintf(stderr, "            -j <job ID>                  Job identifier.\n");
+   (void)fprintf(stderr, "            -u <unique number>           Unique number.\n");
    (void)fprintf(stderr, "            -S[I|U|P|O|D] <size>         File size in byte.\n");
    (void)fprintf(stderr, "            -p <protocol>                Protocol used for transport:\n");
    (void)fprintf(stderr, "                                          %s\n", ALDA_FTP_SHEME);
@@ -2178,7 +2198,7 @@ usage(char *progname)
    (void)fprintf(stderr, "            -R <x>                       Rotate log x times.\n");
    (void)fprintf(stderr, "            -H <file name>               Header to add to output.\n");
    (void)fprintf(stderr, "            -O <file name>               File where to write output.\n");
-   (void)fprintf(stderr, "            -v[v[v]]                     Verbose mode.\n");
+   (void)fprintf(stderr, "            -v[v[v[v]]]                  Verbose mode.\n");
    (void)fprintf(stderr, "            -w <work dir>                Working directory of the AFD.");
    (void)fprintf(stderr, "\n    To be able to differentiate between name, alias and ID:\n");
    (void)fprintf(stderr, "        alias - must always begin with %%\n");

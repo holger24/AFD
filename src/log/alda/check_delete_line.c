@@ -61,7 +61,8 @@ extern int                       gt_lt_sign,
 extern unsigned int              file_pattern_counter,
                                  mode,
                                  search_file_size_flag,
-                                 search_job_id;
+                                 search_job_id,
+                                 search_unique_number;
 extern time_t                    start,
                                  start_time_end,
                                  start_time_start;
@@ -347,8 +348,10 @@ check_delete_line(char         *line,
                                              *(ptr + i) = '\0';
                                              dlog.unique_number = (unsigned int)strtoul(ptr, NULL, 16);
 
-                                             if ((prev_unique_number == NULL) ||
-                                                 (dlog.unique_number == *prev_unique_number))
+                                             if (((prev_unique_number == NULL) ||
+                                                  (dlog.unique_number == *prev_unique_number)) &&
+                                                 ((search_unique_number == 0) ||
+                                                  (search_unique_number == dlog.unique_number)))
                                              {
                                                 ptr += i + 1;
 

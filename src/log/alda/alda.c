@@ -81,6 +81,7 @@ unsigned int               end_alias_counter,
                            search_host_id_counter,
                            search_host_name_counter,
                            search_job_id = 0,
+                           search_unique_number = 0,
                            search_log_type = SEARCH_ALL_LOGS,
                            start_alias_counter,
                            *start_id,
@@ -726,6 +727,10 @@ search_afd(char *search_afd)
             {
                got_data |= SEARCH_INPUT_LOG;
                init_time_start = ilog.input_time;
+               if (trace_mode == ON)
+               {
+                  start_time_end = 0L;
+               }
             }
             else if (ret == NO_LOG_DATA)
                  {
@@ -764,11 +769,22 @@ search_afd(char *search_afd)
             }
             else
             {
-               p_file_pattern = ilog.filename;
-               prev_filename_length = ilog.filename_length;
-               prev_log_time = ilog.input_time;
-               p_prev_unique_number = &ilog.unique_number;
-               prev_dir_id = ilog.dir_id;
+               if (ulog.job_id_list == NULL)
+               {
+                  p_file_pattern = ilog.filename;
+                  prev_filename_length = ilog.filename_length;
+                  prev_log_time = ilog.input_time;
+                  p_prev_unique_number = &ilog.unique_number;
+                  prev_dir_id = ilog.dir_id;
+               }
+               else
+               {
+                  p_file_pattern = ilog.filename;
+                  prev_filename_length = ilog.filename_length;
+                  prev_log_time = 0L;
+                  p_prev_unique_number = NULL;
+                  prev_dir_id = ilog.dir_id;
+               }
             }
 # else
             p_file_pattern = NULL;
@@ -802,6 +818,16 @@ search_afd(char *search_afd)
                }
                if (trace_mode == ON)
                {
+                  if (search_unique_number == (unsigned int)-1)
+                  {
+                     /*
+                      * Restore the search_unique_number with the new
+                      * changed unique number after the queue was stopped
+                      * and then reopened. This is then the second time
+                      * we have searched in DISTRIBUTION_LOG.
+                      */
+                     search_unique_number = ulog.unique_number;
+                  }
                   if (ulog.proc_cycles[dis_counter] > 0)
                   {
                      search_loop = SEARCH_PRODUCTION_LOG | SEARCH_OUTPUT_LOG |
@@ -865,26 +891,34 @@ search_afd(char *search_afd)
                        }
                   else if (ulog.distribution_type == QUEUE_STOPPED_DIS_TYPE)
                        {
-                          if (trace_mode == ON)
+                          if (search_unique_number != 0)
                           {
-                             if (ulog.proc_cycles[dis_counter] > 0)
-                             {
-                                search_loop = SEARCH_DISTRIBUTION_LOG | SEARCH_PRODUCTION_LOG | SEARCH_OUTPUT_LOG |
-                                              SEARCH_DELETE_LOG;
-                             }
-                             else
-                             {
-                                search_loop = SEARCH_DISTRIBUTION_LOG | SEARCH_OUTPUT_LOG | SEARCH_DELETE_LOG;
+                             /*
+                              * Temporaly unset the search_unique_number
+                              * because when queue stops the it gets a
+                              * new unique number. We then need to store
+                              * the new unique number after we searched
+                              * DISTRIBUTION_LOG again.
+                              */
+                             search_unique_number = (unsigned int)-1;
+                          }
+                          if (ulog.proc_cycles[dis_counter] > 0)
+                          {
+                             search_loop = SEARCH_DISTRIBUTION_LOG | SEARCH_PRODUCTION_LOG | SEARCH_OUTPUT_LOG |
+                                           SEARCH_DELETE_LOG;
+                          }
+                          else
+                          {
+                             search_loop = SEARCH_DISTRIBUTION_LOG | SEARCH_OUTPUT_LOG | SEARCH_DELETE_LOG;
 
 # ifdef _PRODUCTION_LOG
-                                /* We must reset PRODUCTION_LOG data! */
-                                RESET_PLOG();
+                             /* We must reset PRODUCTION_LOG data! */
+                             RESET_PLOG();
 # endif
-                             }
-                             RESET_ULOG_PART();
-                             dis_counter = -1;
-                             continue;
                           }
+                          RESET_ULOG_PART();
+                          dis_counter = -1;
+                          continue;
                        }
                }
             }
@@ -1176,12 +1210,6 @@ search_afd(char *search_afd)
              ((ulog.filename[0] == '\0') ||
               (ulog.distribution_type < QUEUE_STOPPED_DIS_TYPE)) &&
 # endif
-#ifdef WHEN_WE_KNOW
-# ifdef _PRODUCTION_LOG
-             ((search_log_type & SEARCH_PRODUCTION_LOG) &&
-              (plog.new_filename[0] != '\0')) &&
-# endif
-#endif
              ((search_loop == 0) || (search_loop & SEARCH_OUTPUT_LOG)))
          {
 # if defined (_PRODUCTION_LOG) && defined (_DISTRIBUTION_LOG)
@@ -3152,7 +3180,7 @@ fprintf(stderr, "ulog %d: %s\n", distribution.current_file_no, prev_file_name);
       }
       distribution.current_file_no--;
    } while ((distribution.current_file_no >= distribution.end_file_no) &&
-            (end_loop ==NO));
+            (end_loop == NO));
 
    if (distribution.current_file_no < distribution.end_file_no)
    {
@@ -4475,7 +4503,7 @@ fprintf(stderr, "olog %d: %s\n", output.current_file_no, prev_file_name);
          }
       }
       output.current_file_no--;
-   } while ((output.current_file_no >= output.end_file_no) && (end_loop ==NO));
+   } while ((output.current_file_no >= output.end_file_no) && (end_loop == NO));
 
    if (output.current_file_no < output.end_file_no)
    {

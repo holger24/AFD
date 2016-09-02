@@ -22,6 +22,8 @@
 
 #include "motif_common_defs.h"
 
+#define MAX_ALDA_DIFF_TIME_STR  "172800"
+
 #define GOT_JOB_ID_DIR_ONLY     -3
 #define GOT_JOB_ID_DIR_AND_RECIPIENT -5
 
