@@ -1957,6 +1957,7 @@ check_dummy_line:
                 * can define where a local remote directory is located.
                 */
                dd[no_of_local_dirs].in_dc_flag = 0;
+               (void)strcpy(dd[no_of_local_dirs].dir_name, dir->location);
                if ((j = eval_dir_options(no_of_local_dirs,
                                          dir->dir_options)) != 0)
                {
@@ -1975,6 +1976,7 @@ check_dummy_line:
                              j, DIR_OPTION_IDENTIFIER, dcl[dcd].dir_config_file,
                              count_new_lines(database, end_ptr));
                }
+               dd[no_of_local_dirs].dir_name[0] = '\0';
                if (dir->type == REMOTE_DIR)
                {
                   if (dir->protocol == EXEC)
