@@ -733,74 +733,75 @@ format_info(char **text, int with_alda_data)
 
             for (k = 0; k < acd_counter; k++)
             {
-               if (id.dbe[j].job_id == acd[k].output_job_id)
+               if (id.dbe[j].job_id == acd[k].delete_job_id)
                {
                   length += sprintf(*text + length,
-                                    "Dest name   : %s\n", acd[k].final_name);
-                  if (acd[k].final_size > MEGABYTE)
+                                    "Delete time : %s",
+                                    ctime(&acd[k].delete_time));
+                  length += sprintf(*text + length,
+                                    "Del. reason : %s\n",
+                                    drstr[acd[k].delete_type]);
+                  if ((acd[k].add_reason[0] != '\0') &&
+                      (strcmp(acd[k].add_reason, drstr[acd[k].delete_type]) != 0))
                   {
                      length += sprintf(*text + length,
-#if SIZEOF_OFF_T == 4
-                                       "Dest size   : %ld bytes (%s)\n",
-#else
-                                       "Dest size   : %lld bytes (%s)\n",
-#endif
-                                       (pri_off_t)acd[k].final_size,
-                                       acd[k].hr_final_size);
+                                       "Add. reason : %s\n",
+                                       acd[k].add_reason);
                   }
-                  else
+                  if (acd[k].user_process[0] != '\0')
                   {
                      length += sprintf(*text + length,
-#if SIZEOF_OFF_T == 4
-                                       "Dest size   : %ld bytes\n",
-#else
-                                       "Dest size   : %lld bytes\n",
-#endif
-                                       (pri_off_t)acd[k].final_size);
-                  }
-                  length += sprintf(*text + length, "Arrival time: %s",
-                                    ctime(&acd[k].delivery_time));
-                  length += sprintf(*text + length, "Transp. time: %s\n",
-                                    acd[k].transmission_time);
-                  if (acd[k].retries > 0)
-                  {
-                     length += sprintf(*text + length,
-                                       "Retries     : %u\n", acd[k].retries);
-                  }
-                  if (acd[k].archive_dir[0] != '\0')
-                  {
-                     length += sprintf(*text + length,
-#if SIZEOF_TIME_T == 4
-                                       "Archive Dir : %s/%lx_%x_%x_\n",
-#else
-                                       "Archive Dir : %s/%llx_%x_%x_\n",
-#endif
-                                       acd[k].archive_dir,
-                                       (pri_time_t)id.arrival_time,
-                                       id.unique_number,
-                                       acd[k].split_job_counter);
+                                       "User/process: %s\n",
+                                       acd[k].user_process);
                   }
                   gotcha = YES;
                }
-               else if (id.dbe[j].job_id == acd[k].delete_job_id)
+               else if (id.dbe[j].job_id == acd[k].output_job_id)
                     {
                        length += sprintf(*text + length,
-                                         "Delete time : %s",
-                                         ctime(&acd[k].delete_time));
-                       length += sprintf(*text + length,
-                                         "Del. reason : %s\n",
-                                         drstr[acd[k].delete_type]);
-                       if (acd[k].add_reason[0] != '\0')
+                                         "Dest name   : %s\n", acd[k].final_name);
+                       if (acd[k].final_size > MEGABYTE)
                        {
                           length += sprintf(*text + length,
-                                            "Add. reason : %s\n",
-                                            acd[k].add_reason);
+#if SIZEOF_OFF_T == 4
+                                            "Dest size   : %ld bytes (%s)\n",
+#else
+                                            "Dest size   : %lld bytes (%s)\n",
+#endif
+                                            (pri_off_t)acd[k].final_size,
+                                            acd[k].hr_final_size);
                        }
-                       if (acd[k].user_process[0] != '\0')
+                       else
                        {
                           length += sprintf(*text + length,
-                                            "User/process: %s\n",
-                                            acd[k].user_process);
+#if SIZEOF_OFF_T == 4
+                                            "Dest size   : %ld bytes\n",
+#else
+                                            "Dest size   : %lld bytes\n",
+#endif
+                                            (pri_off_t)acd[k].final_size);
+                       }
+                       length += sprintf(*text + length, "Arrival time: %s",
+                                         ctime(&acd[k].delivery_time));
+                       length += sprintf(*text + length, "Transp. time: %s\n",
+                                         acd[k].transmission_time);
+                       if (acd[k].retries > 0)
+                       {
+                          length += sprintf(*text + length,
+                                            "Retries     : %u\n", acd[k].retries);
+                       }
+                       if (acd[k].archive_dir[0] != '\0')
+                       {
+                          length += sprintf(*text + length,
+#if SIZEOF_TIME_T == 4
+                                            "Archive Dir : %s/%lx_%x_%x_\n",
+#else
+                                            "Archive Dir : %s/%llx_%x_%x_\n",
+#endif
+                                            acd[k].archive_dir,
+                                            (pri_time_t)id.arrival_time,
+                                            id.unique_number,
+                                            acd[k].split_job_counter);
                        }
                        gotcha = YES;
                     }
