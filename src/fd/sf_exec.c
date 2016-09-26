@@ -640,24 +640,11 @@ main(int argc, char *argv[])
                if (db.output_log == YES)
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-                  if (db.trans_rename_rule[0] != '\0')
-                  {
-                     *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                     MAX_FILENAME_LENGTH,
-                                                                     "%s%c/%s",
-                                                                     p_file_name_buffer,
-                                                                     SEPARATOR_CHAR,
-                                                                     p_file_name_buffer) +
-                                                                     db.unl;
-                  }
-                  else
-                  {
-                     (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-                     *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                     ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                     ol_file_name[*ol_file_name_length + 1] = '\0';
-                     (*ol_file_name_length)++;
-                  }
+                  (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
+                  *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+                  ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+                  ol_file_name[*ol_file_name_length + 1] = '\0';
+                  (*ol_file_name_length)++;
                   *ol_file_size = *p_file_size_buffer;
                   *ol_job_number = fsa->job_status[(int)db.job_no].job_id;
                   *ol_retries = db.retries;
@@ -692,24 +679,11 @@ main(int argc, char *argv[])
                if (db.output_log == YES)
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-                  if (db.trans_rename_rule[0] != '\0')
-                  {
-                     *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                     MAX_FILENAME_LENGTH,
-                                                                     "%s%c/%s",
-                                                                     p_file_name_buffer,
-                                                                     SEPARATOR_CHAR,
-                                                                     p_file_name_buffer) +
-                                                                     db.unl;
-                  }
-                  else
-                  {
-                     (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-                     *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                     ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                     ol_file_name[*ol_file_name_length + 1] = '\0';
-                     (*ol_file_name_length)++;
-                  }
+                  (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
+                  *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+                  ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+                  ol_file_name[*ol_file_name_length + 1] = '\0';
+                  (*ol_file_name_length)++;
                   (void)strcpy(&ol_file_name[*ol_file_name_length + 1], &db.archive_dir[db.archive_offset]);
                   *ol_file_size = *p_file_size_buffer;
                   *ol_job_number = fsa->job_status[(int)db.job_no].job_id;
@@ -756,24 +730,11 @@ try_again_unlink:
             if (db.output_log == YES)
             {
                (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-               if (db.trans_rename_rule[0] != '\0')
-               {
-                  *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                  MAX_FILENAME_LENGTH,
-                                                                  "%s%c/%s",
-                                                                  p_file_name_buffer,
-                                                                  SEPARATOR_CHAR,
-                                                                  p_file_name_buffer) +
-                                                                  db.unl;
-               }
-               else
-               {
-                  (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-                  *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                  ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                  ol_file_name[*ol_file_name_length + 1] = '\0';
-                  (*ol_file_name_length)++;
-               }
+               (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
+               *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+               ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+               ol_file_name[*ol_file_name_length + 1] = '\0';
+               (*ol_file_name_length)++;
                *ol_file_size = *p_file_size_buffer;
                *ol_job_number = fsa->job_status[(int)db.job_no].job_id;
                *ol_retries = db.retries;

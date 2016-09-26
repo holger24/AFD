@@ -3038,14 +3038,14 @@ main(int argc, char *argv[])
                   else
                   {
                      *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                     MAX_FILENAME_LENGTH,
+                                                                     MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
                                                                      "%s%c%s",
                                                                      p_file_name_buffer,
                                                                      SEPARATOR_CHAR,
                                                                      p_remote_filename) + db.unl;
-                     if (*ol_file_name_length > MAX_FILENAME_LENGTH)
+                     if (*ol_file_name_length >= (MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl))
                      {
-                        *ol_file_name_length = MAX_FILENAME_LENGTH;
+                        *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                      }
                   }
                   *ol_file_size = no_of_bytes + append_offset + additional_length;
@@ -3093,14 +3093,14 @@ main(int argc, char *argv[])
                   else
                   {
                      *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                     MAX_FILENAME_LENGTH,
+                                                                     MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
                                                                      "%s%c%s",
                                                                      p_file_name_buffer,
                                                                      SEPARATOR_CHAR,
                                                                      p_remote_filename) + db.unl;
-                     if (*ol_file_name_length > MAX_FILENAME_LENGTH)
+                     if (*ol_file_name_length >= (MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl))
                      {
-                        *ol_file_name_length = MAX_FILENAME_LENGTH;
+                        *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                      }
                   }
                   (void)strcpy(&ol_file_name[*ol_file_name_length + 1],
@@ -3161,14 +3161,14 @@ try_again_unlink:
                else
                {
                   *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                  MAX_FILENAME_LENGTH,
+                                                                  MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
                                                                   "%s%c%s",
                                                                   p_file_name_buffer,
                                                                   SEPARATOR_CHAR,
                                                                   p_remote_filename) + db.unl;
-                  if (*ol_file_name_length > MAX_FILENAME_LENGTH)
+                  if (*ol_file_name_length >= (MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl))
                   {
-                     *ol_file_name_length = MAX_FILENAME_LENGTH;
+                     *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                   }
                }
                *ol_file_size = no_of_bytes + append_offset + additional_length;

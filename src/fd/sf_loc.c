@@ -1215,11 +1215,15 @@ cross_link_error:
                      if (db.trans_rename_rule[0] != '\0')
                      {
                         *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                        MAX_FILENAME_LENGTH,
+                                                                        MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
                                                                         "%s%c/%s",
                                                                         p_file_name_buffer,
                                                                         SEPARATOR_CHAR,
                                                                         ff_name) + db.unl;
+                        if (*ol_file_name_length >= (MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl))
+                        {
+                           *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
+                        }
                      }
                      else
                      {
@@ -1329,11 +1333,15 @@ try_again_unlink:
                   if (db.trans_rename_rule[0] != '\0')
                   {
                      *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
-                                                                     MAX_FILENAME_LENGTH,
+                                                                     MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
                                                                      "%s%c/%s",
                                                                      p_file_name_buffer,
                                                                      SEPARATOR_CHAR,
                                                                      ff_name) + db.unl;
+                     if (*ol_file_name_length >= (MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl))
+                     {
+                        *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
+                     }
                   }
                   else
                   {
