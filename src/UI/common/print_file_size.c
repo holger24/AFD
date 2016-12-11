@@ -1,6 +1,6 @@
 /*
  *  print_file_size.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -197,9 +197,13 @@ print_file_size(char *buf, off_t file_size)
                 {
                    (void)snprintf(tmp_buf, 11, "%7.2f TB", (double)file_size / TERABYTE);
                 }
-                else
+           else if (file_size < (EXABYTE - 1))
                 {
                    (void)snprintf(tmp_buf, 11, "%7.2f PB", (double)file_size / PETABYTE);
+                }
+                else
+                {
+                   (void)snprintf(tmp_buf, 11, "%7.2f EB", (double)file_size / EXABYTE);
                 }
            (void)memcpy(buf, tmp_buf, 10);
         }
