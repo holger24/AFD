@@ -101,6 +101,7 @@ Widget                     cont_togglebox_w,
                            file_name_w,
                            directory_w,
                            file_length_w,
+                           job_id_w,
                            recipient_w,
                            headingbox_w,
                            listbox_w,
@@ -626,7 +627,7 @@ main(int argc, char *argv[])
                            XmNrightAttachment,  XmATTACH_POSITION,
                            XmNrightPosition,    22,
                            NULL);
-   directory_w = XtVaCreateManagedWidget("",
+   job_id_w = XtVaCreateManagedWidget("",
                            xmTextWidgetClass,   criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNmarginHeight,     1,
@@ -641,9 +642,9 @@ main(int argc, char *argv[])
                            XmNrightAttachment,  XmATTACH_POSITION,
                            XmNrightPosition,    91,
                            NULL);
-   XtAddCallback(directory_w, XmNlosingFocusCallback, save_input,
+   XtAddCallback(job_id_w, XmNlosingFocusCallback, save_input,
                  (XtPointer)JOB_ID_NO_ENTER);
-   XtAddCallback(directory_w, XmNactivateCallback, save_input,
+   XtAddCallback(job_id_w, XmNactivateCallback, save_input,
                  (XtPointer)JOB_ID);
 
    label_w = XtVaCreateManagedWidget("Length :",

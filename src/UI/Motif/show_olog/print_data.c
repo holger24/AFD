@@ -1,6 +1,6 @@
 /*
  *  print_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -77,8 +77,10 @@ extern int          items_selected,
                     no_of_search_dirs,
                     no_of_search_dirids,
                     no_of_search_hosts,
+                    no_of_search_jobids,
                     sum_line_length;
-extern unsigned int *search_dirid;
+extern unsigned int *search_dirid,
+                    *search_jobid;
 extern XT_PTR_TYPE  device_type,
                     range_type,
                     toggles_set;
@@ -399,7 +401,7 @@ write_header(int fd, char *sum_sep_line)
    {
       int i;
 
-      length += snprintf(&buffer[length], 1024 - length, "\tHost name     : %s",
+      length += snprintf(&buffer[length], 1024 - length, "\tRecipient     : %s",
                         search_recipient[0]);
       if (length >= 1024)
       {
@@ -428,12 +430,48 @@ write_header(int fd, char *sum_sep_line)
    }
    else
    {
-      length += snprintf(&buffer[length], 1024 - length, "\tHost name     :\n");
+      length += snprintf(&buffer[length], 1024 - length, "\tRecipient     :\n");
    }
    if (length >= 1024)
    {
       length = 1024;
       goto write_data;
+   }
+
+   if (no_of_search_jobids > 0)
+   {
+      int i;
+
+      length += snprintf(&buffer[length], 1024 - length,
+                         "\tJob ID        : %x", search_jobid[0]);
+      if (length >= 1024)
+      {
+         length = 1024;
+         goto write_data;
+      }
+      for (i = 1; i < no_of_search_jobids; i++)
+      {
+         length += snprintf(&buffer[length], 1024 - length,
+                            ", %x", search_jobid[i]);
+         if (length >= 1024)
+         {
+            length = 1024;
+            goto write_data;
+         }
+      }
+      if (length == 1024)
+      {
+         buffer[1023] = '\n';
+      }
+      else
+      {
+         buffer[length] = '\n';
+         length++;
+      }
+   }     
+   else
+   {
+      length += snprintf(&buffer[length], 1024 - length, "\tJob ID        :\n");
    }
 
    tmp_length = length;
