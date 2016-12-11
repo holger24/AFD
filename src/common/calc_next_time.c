@@ -160,7 +160,7 @@ calc_next_time(struct bd_time_entry *te,
    }
    current_time += 60;
 #ifdef WITH_TIMEZONE
-   if (timezone != NULL)
+   if ((timezone != NULL) && (timezone[0] != '\0'))
    {
       if ((p_env = getenv("TZ")) != NULL)
       {
@@ -197,6 +197,10 @@ calc_next_time(struct bd_time_entry *te,
             tzset();
          }
       }
+   }
+   else
+   {
+      reset_env = NO;
    }
 #endif /* WITH_TIMEZONE */
    bd_time = localtime(&current_time);
