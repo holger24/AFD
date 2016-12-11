@@ -415,6 +415,16 @@ main(int argc, char *argv[])
 #ifdef WITH_INOTIFY
          p_afd_status->inotify_events = sd.inotify_events;
 #endif
+#ifdef HAVE_WAIT4
+         p_afd_status->amg_child_utime.tv_sec = sd.amg_child_utime.tv_sec;
+         p_afd_status->amg_child_utime.tv_usec = sd.amg_child_utime.tv_usec;
+         p_afd_status->amg_child_stime.tv_sec = sd.amg_child_stime.tv_sec;
+         p_afd_status->amg_child_stime.tv_usec = sd.amg_child_stime.tv_usec;
+         p_afd_status->fd_child_utime.tv_sec = sd.fd_child_utime.tv_sec;
+         p_afd_status->fd_child_utime.tv_usec = sd.fd_child_utime.tv_usec;
+         p_afd_status->fd_child_stime.tv_sec = sd.fd_child_stime.tv_sec;
+         p_afd_status->fd_child_stime.tv_usec = sd.fd_child_stime.tv_usec;
+#endif
       }
       else
       {
@@ -931,20 +941,20 @@ main(int argc, char *argv[])
 #ifdef HAVE_WAIT4
          system_log(DEBUG_SIGN, NULL, 0,
                     _("child CPU user time AMG   : %11ld.%06ld FD : %11ld.%06ld"),
-                    p_afd_status->amg_child_utime.tv_sec,
-                    p_afd_status->amg_child_utime.tv_usec,
-                    p_afd_status->fd_child_utime.tv_sec,
-                    p_afd_status->fd_child_utime.tv_usec);
+                    (long int)p_afd_status->amg_child_utime.tv_sec,
+                    (long int)p_afd_status->amg_child_utime.tv_usec,
+                    (long int)p_afd_status->fd_child_utime.tv_sec,
+                    (long int)p_afd_status->fd_child_utime.tv_usec);
          p_afd_status->amg_child_utime.tv_sec = 0L;
          p_afd_status->amg_child_utime.tv_usec = 0L;
          p_afd_status->fd_child_utime.tv_sec = 0L;
          p_afd_status->fd_child_utime.tv_usec = 0L;
          system_log(DEBUG_SIGN, NULL, 0,
-                    _("child CPU system time AMG : %11ld.06%ld FD : %11ld.06%ld"),
-                    p_afd_status->amg_child_stime.tv_sec,
-                    p_afd_status->amg_child_stime.tv_usec,
-                    p_afd_status->fd_child_stime.tv_sec,
-                    p_afd_status->fd_child_stime.tv_usec);
+                    _("child CPU system time AMG : %11ld.%06ld FD : %11ld.%06ld"),
+                    (long int)p_afd_status->amg_child_stime.tv_sec,
+                    (long int)p_afd_status->amg_child_stime.tv_usec,
+                    (long int)p_afd_status->fd_child_stime.tv_sec,
+                    (long int)p_afd_status->fd_child_stime.tv_usec);
          p_afd_status->amg_child_stime.tv_sec = 0L;
          p_afd_status->amg_child_stime.tv_usec = 0L;
          p_afd_status->fd_child_stime.tv_sec = 0L;
