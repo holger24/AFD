@@ -57,7 +57,7 @@ DESCR__S_M3
  **      tools/file_mask_list_spy.c
  **      tools/get_dc_data.c
  **      tools/job_list_spy.c
- **      UI/Motif/common/get_file_mask_list.c
+ **      common/get_file_mask_list.c
  **
  ** RETURN VALUES
  **   None.

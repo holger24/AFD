@@ -216,6 +216,7 @@ main(int argc, char *argv[])
 #ifdef WITH_SETUID_PROGS
    set_afd_euid(work_dir);
 #endif
+
    check_fake_user(&argc, argv, AFD_CONFIG_FILE, fake_user);
    get_user(user, fake_user, user_offset);
 

@@ -277,7 +277,7 @@ main(int argc, char *argv[])
                  _("Could not set signal handler : %s"), strerror(errno));
       exit(INCORRECT);
    }
-   
+
    /* Check syntax if necessary. */
    if (get_afd_path(&argc, argv, work_dir) < 0)
    {
