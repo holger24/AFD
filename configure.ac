@@ -560,6 +560,15 @@ AC_ARG_ENABLE(compiler_security,
      *) AC_MSG_ERROR(bad value ${enableval} for --enable-compiler-security) ;;
    esac],[compiler_security=false])
 
+dnl **** check if user wants to compile with address sanitizer
+AC_ARG_ENABLE(compiler_address_sanitizer,
+   [  --enable-compiler-address-sanitizer Enable compiler address sanitizer],
+   [case "$enableval" in
+     yes) compiler_address_sanitizer=true ;;
+     no)  compiler_address_sanitizer=false;;
+     *) AC_MSG_ERROR(bad value ${enableval} for --enable-compiler-address-sanitizer) ;;
+   esac],[compiler_address_sanitizer=false])
+
 dnl **** check if user wants to compile with profiling information
 AC_ARG_ENABLE(compiler_profiling,
    [  --enable-compiler-profiling     Enable compiler profiling support],
@@ -924,6 +933,14 @@ then
    fi
 fi
 
+if test "${compiler_address_sanitizer}" = "true"
+then
+   if test "x${GCC}" = "xyes"
+   then
+      AX_CHECK_COMPILE_FLAG("-fsanitize=address", [SANITIZER_FLAG="${SANITIZER_FLAG} -fsanitize=address"], [SANITIZER_FLAG="${SANITIZER_FLAG}"])
+   fi
+fi
+
 if test "${compiler_debug}" = "true"
 then
    if test "x${GCC}" = "xyes"
@@ -964,6 +981,10 @@ fi
 if test "${compiler_security}" = "true"
 then
    CFLAGS="$CFLAGS $SECURITY_FLAG"
+fi
+if test "${compiler_address_sanitizer}" = "true"
+then
+   CFLAGS="$CFLAGS $SANITIZER_FLAG"
 fi
 if test "${compiler_profiling}" = "true"
 then

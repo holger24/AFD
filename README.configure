@@ -263,6 +263,10 @@
                                        executables) and -fstack-protector
                                        (check for buffer overflows).
                                        [Default: disabled]
+--enable-compiler-address-sanitizer  - On gcc this will turn on the address
+                                       sanitizer. Notice this will increase
+                                       memory usage considerably.
+                                       [Default: disabled]
 --enable-compile-64-bit              - This forces AFD be compiled as 64 bit
                                        application on system that support both
                                        32 and 64 bit applications. On most 64
