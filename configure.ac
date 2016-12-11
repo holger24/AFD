@@ -1601,6 +1601,7 @@ src/UI/Motif/handle_event/Makefile
 src/UI/Motif/show_cmd/Makefile
 src/UI/Motif/mshow_log/Makefile
 src/UI/Motif/show_olog/Makefile
+src/UI/Motif/show_plog/Makefile
 src/UI/Motif/show_ilog/Makefile
 src/UI/Motif/show_dlog/Makefile
 src/UI/Motif/show_elog/Makefile
