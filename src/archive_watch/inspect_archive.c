@@ -279,12 +279,16 @@ inspect_archive(char *archive_dir)
                   else if (noh == 2)
                        {
                           ptr_filesystemname[-1] = '\0';
-                          if ((rmdir(archive_dir) == -1) &&
-                              (errno != EEXIST))
+                          if ((lstat(archive_dir, &stat_buf) != -1) &&
+                              (S_ISLNK(stat_buf.st_mode) == 0))
                           {
-                             system_log(WARN_SIGN, __FILE__, __LINE__,
-                                        _("Failed to rmdir() `%s' : %s"),
-                                        archive_dir, strerror(errno));
+                             if ((rmdir(archive_dir) == -1) &&
+                                 (errno != EEXIST))
+                             {
+                                system_log(WARN_SIGN, __FILE__, __LINE__,
+                                           _("Failed to rmdir() `%s' : %s"),
+                                           archive_dir, strerror(errno));
+                             }
                           }
                        }
                }
