@@ -1,6 +1,6 @@
 /*
  *  convert.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -131,10 +131,10 @@ DESCR__E_M3
 extern char *p_work_dir;
 
 /* Local function prototypes. */
-static int  crcrlf2lf(char *, char *, off_t *, off_t *),
-            dos2unix(char *, char *, off_t *, off_t *),
-            lf2crcrlf(char *, char *, off_t *, off_t *),
-            unix2dos(char *, char *, off_t *, off_t *);
+static int  crcrlf2lf(char *, char *, off_t *),
+            dos2unix(char *, char *, off_t *),
+            lf2crcrlf(char *, char *, off_t *),
+            unix2dos(char *, char *, off_t *);
 
 
 /*############################### convert() #############################*/
@@ -150,40 +150,36 @@ convert(char         *file_path,
    int   *counter,
          counter_fd,
          no_change = NO;
-   off_t new_length = 0,
-         orig_size = 0;
    char  fullname[MAX_PATH_LENGTH],
          new_name[MAX_PATH_LENGTH];
 
+   *file_size = 0;
    (void)snprintf(fullname, MAX_PATH_LENGTH, "%s/%s", file_path, file_name);
    (void)snprintf(new_name, MAX_PATH_LENGTH, "%s.tmpnewname", fullname);
    if (type == UNIX2DOS)
    {
-      if (unix2dos(fullname, new_name, &new_length, &orig_size) == INCORRECT)
+      if (unix2dos(fullname, new_name, file_size) == INCORRECT)
       {
          return(INCORRECT);
       }
    }
    else if (type == DOS2UNIX)
         {
-           if (dos2unix(fullname, new_name, &new_length,
-                        &orig_size) == INCORRECT)
+           if (dos2unix(fullname, new_name, file_size) == INCORRECT)
            {
               return(INCORRECT);
            }
         }
    else if (type == LF2CRCRLF)
         {
-           if (lf2crcrlf(fullname, new_name, &new_length,
-                         &orig_size) == INCORRECT)
+           if (lf2crcrlf(fullname, new_name, file_size) == INCORRECT)
            {
               return(INCORRECT);
            }
         }
    else if (type == CRCRLF2LF)
         {
-           if (crcrlf2lf(fullname, new_name, &new_length,
-                         &orig_size) == INCORRECT)
+           if (crcrlf2lf(fullname, new_name, file_size) == INCORRECT)
            {
               return(INCORRECT);
            }
@@ -299,7 +295,7 @@ convert(char         *file_path,
                        (void)close(to_fd);
                        return(INCORRECT);
                     }
-                    new_length += 4;
+                    *file_size += 4;
 
                     if (nnn_length > 0)
                     {
@@ -319,7 +315,7 @@ convert(char         *file_path,
                           (void)close(to_fd);
                           return(INCORRECT);
                        }
-                       new_length += add_length;
+                       *file_size += add_length;
                     }
 
                     if (writen(to_fd, src_ptr, stat_buf.st_size,
@@ -332,7 +328,7 @@ convert(char         *file_path,
                        (void)close(to_fd);
                        return(INCORRECT);
                     }
-                    new_length += stat_buf.st_size;
+                    *file_size += stat_buf.st_size;
 
                     buffer[0] = 13;
                     buffer[2] = 10;
@@ -346,7 +342,7 @@ convert(char         *file_path,
                        (void)close(to_fd);
                        return(INCORRECT);
                     }
-                    new_length += 4;
+                    *file_size += 4;
                  }
                  else
                  {
@@ -414,7 +410,7 @@ convert(char         *file_path,
                        (void)close(to_fd);
                        return(INCORRECT);
                     }
-                    new_length += 10;
+                    *file_size += 10;
 
                     if (nnn_length > 0)
                     {
@@ -437,7 +433,7 @@ convert(char         *file_path,
                           (void)close(to_fd);
                           return(INCORRECT);
                        }
-                       new_length += add_length;
+                       *file_size += add_length;
                     }
 
                     if (writen(to_fd, (src_ptr + offset), size,
@@ -450,7 +446,7 @@ convert(char         *file_path,
                        (void)close(to_fd);
                        return(INCORRECT);
                     }
-                    new_length += size;
+                    *file_size += size;
                  }
                  break;
 
@@ -656,7 +652,7 @@ convert(char         *file_path,
                        (void)close(to_fd);
                        return(INCORRECT);
                     }
-                    new_length += length;
+                    *file_size += length;
 
                     if (nnn_length > 0)
                     {
@@ -676,7 +672,7 @@ convert(char         *file_path,
                           (void)close(to_fd);
                           return(INCORRECT);
                        }
-                       new_length += add_length;
+                       *file_size += add_length;
                     }
 
                     write_length = stat_buf.st_size - (front_offset + end_offset);
@@ -690,7 +686,7 @@ convert(char         *file_path,
                        (void)close(to_fd);
                        return(INCORRECT);
                     }
-                    new_length += write_length;
+                    *file_size += write_length;
 
                     if ((*(src_ptr + stat_buf.st_size - 1) != 3) ||
                         (*(src_ptr + stat_buf.st_size - 2) != 10) ||
@@ -709,7 +705,7 @@ convert(char         *file_path,
                           (void)close(to_fd);
                           return(INCORRECT);
                        }
-                       new_length += 4;
+                       *file_size += 4;
                     }
                  }
                  break;
@@ -940,7 +936,7 @@ convert(char         *file_path,
                                    (void)close(to_fd);
                                    return(INCORRECT);
                                 }
-                                new_length += add_length;
+                                *file_size += add_length;
                              }
                              if (writen(to_fd, ptr_start + add_offset,
                                        length - add_offset,
@@ -970,7 +966,7 @@ convert(char         *file_path,
                                    return(INCORRECT);
                                 }
                              }
-                             new_length += (start_length + length + end_length);
+                             *file_size += (start_length + length + end_length);
                           }
                        }
                     } while ((ptr - src_ptr + 1) < stat_buf.st_size);
@@ -993,13 +989,13 @@ convert(char         *file_path,
                     return(INCORRECT);
                  }
 
-                 if ((new_length = bin_file_convert(src_ptr, stat_buf.st_size,
+                 if ((*file_size = bin_file_convert(src_ptr, stat_buf.st_size,
                                                     to_fd)) < 0)
                  {
                     receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                                 _("Failed to convert MRZ file `%s' to WMO-format."),
                                 file_name);
-                    new_length = 0;
+                    *file_size = 0;
                  }
                  break;
 
@@ -1026,18 +1022,18 @@ convert(char         *file_path,
                        (void)close(to_fd);
                        return(INCORRECT);
                     }
-                    if ((new_length = iso8859_2ascii(src_ptr, dst,
+                    if ((*file_size = iso8859_2ascii(src_ptr, dst,
                                                      stat_buf.st_size)) < 0)
                     {
                        receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                                    _("Failed to convert ISO8859 file `%s' to ASCII."),
                                    file_name);
-                       new_length = 0;
+                       *file_size = 0;
                     }
                     else
                     {
-                       if (writen(to_fd, dst, new_length,
-                                  stat_buf.st_blksize) != new_length)
+                       if (writen(to_fd, dst, *file_size,
+                                  stat_buf.st_blksize) != *file_size)
                        {
                           receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                                       _("Failed to writen() to `%s' : %s"),
@@ -1082,7 +1078,6 @@ convert(char         *file_path,
                              _("close() error : `%s'"), strerror(errno));
               }
            }
-           orig_size = stat_buf.st_size;
 
            if (nnn_length > 0)
            {
@@ -1105,22 +1100,12 @@ convert(char         *file_path,
             receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
                         _("Failed to rename() `%s' to `%s' : %s"),
                         new_name, fullname, strerror(errno));
-            *file_size += new_length;
-         }
-         else
-         {
-            *file_size += (new_length - orig_size);
          }
       }
-      if (new_length == 0)
+      if (*file_size == 0)
       {
          receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-#if SIZEOF_OFF_T == 4
-                     _("No data converted in %s (%ld bytes). #%x"),
-#else
-                     _("No data converted in %s (%lld bytes). #%x"),
-#endif
-                     file_name, (pri_off_t)orig_size, job_id);
+                     _("No data converted in %s #%x"), file_name, job_id);
       }
    }
 
@@ -1130,10 +1115,7 @@ convert(char         *file_path,
 
 /*+++++++++++++++++++++++++++++ unix2dos() ++++++++++++++++++++++++++++++*/
 static int
-unix2dos(char  *source_file,
-         char  *dest_file,
-         off_t *new_length,
-         off_t *orig_size)
+unix2dos(char *source_file, char *dest_file, off_t *new_length)
 {
    FILE *rfp;
 
@@ -1159,9 +1141,8 @@ unix2dos(char  *source_file,
       }
       else
       {
-         int   prev_char = 0,
-               tmp_char;
-         off_t extra_chars = 0;
+         int prev_char = 0,
+             tmp_char;
 
          while ((tmp_char = fgetc(rfp)) != EOF)
          {
@@ -1185,7 +1166,6 @@ unix2dos(char  *source_file,
                else
                {
                   (*new_length)++;
-                  extra_chars++;
                }
             }
             if (fputc(tmp_char, wfp) == EOF)
@@ -1208,7 +1188,6 @@ unix2dos(char  *source_file,
             }
             prev_char = tmp_char;
          }
-         *orig_size = *new_length - extra_chars;
 
          if (fclose(wfp) == EOF)
          {
@@ -1232,10 +1211,7 @@ unix2dos(char  *source_file,
 
 /*+++++++++++++++++++++++++++++ dos2unix() ++++++++++++++++++++++++++++++*/
 static int
-dos2unix(char  *source_file,
-         char  *dest_file,
-         off_t *new_length,
-         off_t *orig_size)
+dos2unix(char *source_file, char *dest_file, off_t *new_length)
 {
    FILE *rfp;
 
@@ -1261,9 +1237,8 @@ dos2unix(char  *source_file,
       }
       else
       {
-         int   prev_char = 0,
-               tmp_char;
-         off_t del_chars = 0;
+         int prev_char = 0,
+             tmp_char;
 
          while ((tmp_char = fgetc(rfp)) != EOF)
          {
@@ -1286,7 +1261,6 @@ dos2unix(char  *source_file,
                else
                {
                   (*new_length)++;
-                  del_chars++;
                }
             }
             else
@@ -1335,7 +1309,6 @@ dos2unix(char  *source_file,
                }
             }
             prev_char = tmp_char;
-            *orig_size = *new_length + del_chars;
          }
 
          if (fclose(wfp) == EOF)
@@ -1360,10 +1333,7 @@ dos2unix(char  *source_file,
 
 /*+++++++++++++++++++++++++++++ lf2crcrlf() +++++++++++++++++++++++++++++*/
 static int
-lf2crcrlf(char  *source_file,
-          char  *dest_file,
-          off_t *new_length,
-          off_t *orig_size)
+lf2crcrlf(char *source_file, char *dest_file, off_t *new_length)
 {
    FILE *rfp;
 
@@ -1389,11 +1359,10 @@ lf2crcrlf(char  *source_file,
       }
       else
       {
-         int   prev_char = 0,
-               prev_prev_char = 0,
-               tmp_char,
-               write_char = 13;
-         off_t extra_chars = 0;
+         int prev_char = 0,
+             prev_prev_char = 0,
+             tmp_char,
+             write_char = 13;
 
          while ((tmp_char = fgetc(rfp)) != EOF)
          {
@@ -1416,7 +1385,6 @@ lf2crcrlf(char  *source_file,
                else
                {
                   (*new_length)++;
-                  extra_chars++;
                }
                if (fputc(write_char, wfp) == EOF)
                {
@@ -1435,7 +1403,6 @@ lf2crcrlf(char  *source_file,
                else
                {
                   (*new_length)++;
-                  extra_chars++;
                }
             }
             if ((tmp_char == 10) && (prev_char == 13) && (prev_prev_char != 13))
@@ -1457,7 +1424,6 @@ lf2crcrlf(char  *source_file,
                else
                {
                   (*new_length)++;
-                  extra_chars++;
                }
             }
             if (fputc(tmp_char, wfp) == EOF)
@@ -1481,7 +1447,6 @@ lf2crcrlf(char  *source_file,
             prev_prev_char = prev_char;
             prev_char = tmp_char;
          }
-         *orig_size = *new_length - extra_chars;
 
          if (fclose(wfp) == EOF)
          {
@@ -1505,10 +1470,7 @@ lf2crcrlf(char  *source_file,
 
 /*++++++++++++++++++++++++++++ crcrlf2lf() ++++++++++++++++++++++++++++++*/
 static int
-crcrlf2lf(char  *source_file,
-          char  *dest_file,
-          off_t *new_length,
-          off_t *orig_size)
+crcrlf2lf(char *source_file, char *dest_file, off_t *new_length)
 {
    FILE *rfp;
 
@@ -1534,10 +1496,9 @@ crcrlf2lf(char  *source_file,
       }
       else
       {
-         int   prev_char = 0,
-               prev_prev_char = 0,
-               tmp_char;
-         off_t del_chars = 0;
+         int prev_char = 0,
+             prev_prev_char = 0,
+             tmp_char;
 
          while ((tmp_char = fgetc(rfp)) != EOF)
          {
@@ -1560,7 +1521,6 @@ crcrlf2lf(char  *source_file,
                else
                {
                   (*new_length)++;
-                  del_chars += 2;
                }
             }
             else
@@ -1632,7 +1592,6 @@ crcrlf2lf(char  *source_file,
             prev_prev_char = prev_char;
             prev_char = tmp_char;
          }
-         *orig_size = *new_length + del_chars;
 
          if (fclose(wfp) == EOF)
          {
