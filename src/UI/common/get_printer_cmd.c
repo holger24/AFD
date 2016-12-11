@@ -83,7 +83,7 @@ get_printer_cmd(char *printer_cmd,
       {
          default_printer[0] = '\0';
       }
-      if (get_definition(buffer, DEFAULT_SMTP_SERVER_PRINT_DEF,
+      if (get_definition(buffer, DEFAULT_PRINT_SMTP_SERVER_DEF,
                          mailserver, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH) == NULL)
       {
          if (get_definition(buffer, DEFAULT_SMTP_SERVER_DEF,
