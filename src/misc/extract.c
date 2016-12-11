@@ -1,6 +1,6 @@
 /*
  *  extract.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -127,8 +127,10 @@ DESCR__E_M3
 #define LOG_ENTRY_STEP_SIZE 25
 struct prod_log_db
        {
-          char  file_name[MAX_FILENAME_LENGTH + 1];
-          off_t size;
+          char           file_name[MAX_FILENAME_LENGTH + 1];
+          off_t          size;
+          double         production_time;
+          struct timeval cpu_usage;
        };
 #endif
 
@@ -138,6 +140,9 @@ extern int                        no_of_bc_entries,
                                   receive_log_fd;
 #ifdef HAVE_HW_CRC32
 extern int                        have_hw_crc32;
+#endif
+#ifdef _PRODUCTION_LOG
+extern clock_t                    clktck;
 #endif
 extern struct wmo_bul_list        *bcdb; /* Bulletin Configuration Database */
 extern struct wmo_rep_list        *rcdb; /* Bulletin Configuration Database */
@@ -155,6 +160,9 @@ static char                       *extract_p_filter,
                                   *p_file_name,
                                   *p_orig_name;
 #ifdef _PRODUCTION_LOG
+static struct rusage              ru;
+static clock_t                    start_time;
+static struct tms                 tval;
 static int                        no_of_log_entries = 0;
 static struct prod_log_db         *pld = NULL;
 #endif
@@ -208,12 +216,16 @@ extract(char         *file_name,
         int          *files_to_send,
         off_t        *file_size)
 {
-   int         byte_order = 1,
-               from_fd;
-   char        *src_ptr,
-               fullname[MAX_PATH_LENGTH];
-   struct stat stat_buf;
+   int           byte_order = 1,
+                 from_fd;
+   char          *src_ptr,
+                 fullname[MAX_PATH_LENGTH];
+   struct stat   stat_buf;
 
+#ifdef _PRODUCTION_LOG
+   (void)getrusage(RUSAGE_SELF, &ru);
+   start_time = times(&tval);
+#endif
    (void)snprintf(fullname, MAX_PATH_LENGTH, "%s/%s", dest_dir, file_name);
    if ((from_fd = open(fullname, O_RDONLY)) == -1)
    {
@@ -444,14 +456,19 @@ extract(char         *file_name,
       {
          production_log(creation_time, 1, no_of_log_entries, unique_number,
                         split_job_counter, job_id, dir_id,
+                        pld[byte_order].production_time,
+                        pld[byte_order].cpu_usage.tv_sec,
+                        pld[byte_order].cpu_usage.tv_usec,
 # if SIZEOF_OFF_T == 4
-                        "%s%c%s%c%lx%c0%c%s",
+                        "%s%c%lx%c%s%c%lx%c0%c%s",
 # else
-                        "%s%c%s%c%llx%c0%c%s",
+                        "%s%c%llx%c%s%c%llx%c0%c%s",
 # endif
-                        p_orig_name, SEPARATOR_CHAR, pld[byte_order].file_name,
-                        SEPARATOR_CHAR, (pri_off_t)pld[byte_order].size,
-                        SEPARATOR_CHAR, SEPARATOR_CHAR, full_option);
+                        p_orig_name, SEPARATOR_CHAR,
+                        (pri_off_t)stat_buf.st_size, SEPARATOR_CHAR,
+                        pld[byte_order].file_name, SEPARATOR_CHAR,
+                        (pri_off_t)pld[byte_order].size, SEPARATOR_CHAR,
+                        SEPARATOR_CHAR, full_option);
       }
       free(pld);
       no_of_log_entries = 0;
@@ -1526,6 +1543,9 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
                      if (pld != NULL)
                      {
                         pld[no_of_log_entries].size = size;
+                        pld[no_of_log_entries].production_time = (times(&tval) - start_time) / (double)clktck;
+                        get_sum_cpu_usage(&ru, &pld[no_of_log_entries].cpu_usage);
+                        start_time = times(&tval);
                         (void)strcpy(pld[no_of_log_entries].file_name, p_file_name);
                         no_of_log_entries++;
                      }
@@ -2196,6 +2216,9 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
                   if (pld != NULL)
                   {
                      pld[no_of_log_entries].size = size;
+                     pld[no_of_log_entries].production_time = (times(&tval) - start_time) / (double)clktck;
+                     get_sum_cpu_usage(&ru, &pld[no_of_log_entries].cpu_usage);
+                     start_time = times(&tval);
                      (void)strcpy(pld[no_of_log_entries].file_name, p_file_name);
                      no_of_log_entries++;
                   }
@@ -2353,6 +2376,9 @@ write_file(char *msg, unsigned int length, time_t mtime, int soh_etx)
       if (pld != NULL)
       {
          pld[no_of_log_entries].size = size;
+         pld[no_of_log_entries].production_time = (times(&tval) - start_time) / (double)clktck;
+         get_sum_cpu_usage(&ru, &pld[no_of_log_entries].cpu_usage);
+         start_time = times(&tval);
          (void)strcpy(pld[no_of_log_entries].file_name, p_file_name);
          no_of_log_entries++;
       }

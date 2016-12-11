@@ -48,6 +48,7 @@ DESCR__S_M1
  **   27.03.2003 H.Kiehl Added profile option.
  **   27.02.2005 H.Kiehl Option to switch between two AFD's.
  **   08.06.2005 H.Kiehl Added button line at bottom.
+ **   14.09.2016 H.Kiehl Added production log.
  **
  */
 DESCR__E_M1
@@ -121,7 +122,7 @@ Widget                  appshell,
                         mw[5],          /* Main menu */
                         ow[9],          /* Monitor menu */
                         tw[2],          /* Test (ping, traceroute) */
-                        vw[10],         /* Remote view menu */
+                        vw[11],         /* Remote view menu */
                         cw[8],          /* Remote control menu */
                         sw[6],          /* Setup menu */
                         hw[3],          /* Help menu */
@@ -675,6 +676,8 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
          mcp.show_tlog_list     = NULL;
          mcp.show_ilog          = YES; /* View the input log    */
          mcp.show_ilog_list     = NULL;
+         mcp.show_plog          = YES; /* View the production log */
+         mcp.show_plog_list     = NULL;
          mcp.show_olog          = YES; /* View the output log   */
          mcp.show_olog_list     = NULL;
          mcp.show_elog          = YES; /* View the delete log   */
@@ -1242,6 +1245,7 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
        (mcp.show_rlog != NO_PERMISSION) ||
        (mcp.show_tlog != NO_PERMISSION) ||
        (mcp.show_ilog != NO_PERMISSION) ||
+       (mcp.show_plog != NO_PERMISSION) ||
        (mcp.show_olog != NO_PERMISSION) ||
        (mcp.show_elog != NO_PERMISSION) ||
        (mcp.show_queue != NO_PERMISSION) ||
@@ -1325,10 +1329,11 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
          }
       }
       if ((mcp.show_ilog != NO_PERMISSION) ||
+          (mcp.show_plog != NO_PERMISSION) ||
           (mcp.show_olog != NO_PERMISSION) ||
           (mcp.show_dlog != NO_PERMISSION))
       {
-#if defined (_INPUT_LOG) || defined (_OUTPUT_LOG) || defined (_DELETE_LOG)
+#if defined (_INPUT_LOG) || defined (_PRODUCTION_LOG) || defined (_OUTPUT_LOG) || defined (_DELETE_LOG)
          XtVaCreateManagedWidget("Separator",
                               xmSeparatorWidgetClass, pull_down_w,
                               NULL);
@@ -1342,6 +1347,17 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                               NULL);
             XtAddCallback(vw[MON_INPUT_W], XmNactivateCallback,
                           start_remote_prog, (XtPointer)I_LOG_SEL);
+         }
+#endif
+#ifdef _PRODUCTION_LOG
+         if (mcp.show_plog != NO_PERMISSION)
+         {
+            vw[MON_PRODUCTION_W] = XtVaCreateManagedWidget("Production Log",
+                              xmPushButtonWidgetClass, pull_down_w,
+                              XmNfontList,             fontlist,
+                              NULL);
+            XtAddCallback(vw[MON_PRODUCTION_W], XmNactivateCallback,
+                          start_remote_prog, (XtPointer)P_LOG_SEL);
          }
 #endif
 #ifdef _OUTPUT_LOG
@@ -2108,6 +2124,8 @@ eval_permissions(char *perm_buffer)
       mcp.show_tlog_list     = NULL;
       mcp.show_ilog          = YES;   /* View the input log    */
       mcp.show_ilog_list     = NULL;
+      mcp.show_plog          = YES;   /* View the production log */
+      mcp.show_plog_list     = NULL;
       mcp.show_olog          = YES;   /* View the output log   */
       mcp.show_olog_list     = NULL;
       mcp.show_elog          = YES;   /* View the delete log   */
@@ -2414,6 +2432,26 @@ eval_permissions(char *perm_buffer)
          {
             mcp.show_ilog = NO_LIMIT;
             mcp.show_ilog_list = NULL;
+         }
+      }
+
+      /* May the user view the production log? */
+      if ((ptr = posi(perm_buffer, SHOW_PLOG_PERM)) == NULL)
+      {
+         /* The user may NOT view the production log. */
+         mcp.show_plog = NO_PERMISSION;
+      }
+      else
+      {
+         ptr--;
+         if ((*ptr == ' ') || (*ptr == '\t'))
+         {
+            mcp.show_plog = store_host_names(&mcp.show_plog_list, ptr + 1);
+         }
+         else
+         {
+            mcp.show_plog = NO_LIMIT;
+            mcp.show_plog_list = NULL;
          }
       }
 

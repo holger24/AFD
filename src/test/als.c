@@ -1,7 +1,7 @@
 /*
  *  als.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 Deutscher Wetterdienst (DWD),
- *                     Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2016 Deutscher Wetterdienst (DWD),
+ *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -158,7 +158,7 @@ main(int argc, char *argv[])
          for (i = 0; i < no_of_search_targets; i++)
          {
             (void)sprintf(cmd, "%s -A %s", VIEW_HOSTS, search_target[i]);
-            if (exec_cmd(cmd, &buffer, -1, NULL, 0, "", 0L, YES) == 0)
+            if (exec_cmd(cmd, &buffer, -1, NULL, 0, "", NULL, NULL, 0, 0L, YES, YES) == 0)
             {
                (void)strcpy(search_alias_target[i], buffer);
                ptr = search_alias_target[i];

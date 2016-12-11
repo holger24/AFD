@@ -896,7 +896,7 @@ extern void  calc_trl_per_process(int),
              system_log(char *, char *, int, char *, ...),
              trace_log(char *, int, int, char *, int, char *, ...),
              trans_db_log(char *, char *, int, char *, char *, ...),
-             trans_exec(char *, char *, char *),
+             trans_exec(char *, char *, char *, clock_t),
              trans_log(char *, char *, int, char *, char *, char *, ...),
              update_tfc(int, off_t, off_t *, int, int, time_t);
 #endif /* __fddefs_h */

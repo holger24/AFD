@@ -96,7 +96,7 @@ DESCR__E_M1
 #endif
 #include <fcntl.h>
 #include <signal.h>                    /* signal()                       */
-#include <unistd.h>                    /* unlink(), close()              */
+#include <unistd.h>                    /* unlink(), close(), sysconf()   */
 #include <errno.h>
 #include "fddefs.h"
 #include "ftpdefs.h"
@@ -2943,7 +2943,7 @@ main(int argc, char *argv[])
 #ifdef _WITH_TRANS_EXEC
          if (db.special_flag & TRANS_EXEC)
          {
-            trans_exec(file_path, fullname, p_file_name_buffer);
+            trans_exec(file_path, fullname, p_file_name_buffer, clktck);
          }
 #endif
 

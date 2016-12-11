@@ -1,6 +1,6 @@
 /*
  *  bin_file_chopper.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -37,6 +37,7 @@ DESCR__S_M3
  **                          unsigned int split_job_counter,
  **                          unsigned int job_id,
  **                          unsigned int dir_id,
+ **                          clock_t      clktck,
  **                          char         *full_option,
  **                          char         *p_file_name)
  **   off_t bin_file_convert(char *src_ptr, off_t total_length, int to_fd)
@@ -100,8 +101,10 @@ DESCR__E_M3
 #define LOG_ENTRY_STEP_SIZE 10
 struct prod_log_db
        {
-          char  file_name[MAX_FILENAME_LENGTH + 1];
-          off_t size;
+          char           file_name[MAX_FILENAME_LENGTH + 1];
+          off_t          size;
+          double         production_time;
+          struct timeval cpu_usage;
        };
 #endif
 
@@ -147,29 +150,38 @@ bin_file_chopper(char         *bin_file,
                  unsigned int split_job_counter,
                  unsigned int job_id,
                  unsigned int dir_id,
+                 clock_t      clktck,
                  char         *full_option,
                  char         *p_file_name)
 #else
                  char         wmo_header_file_name)
 #endif
 {
-   int         i,
-               fd,
-               first_time = YES,
-               *counter;     /* Counter to keep file name unique.        */
-   off_t       data_length = 0,
-               length,
-               total_length;
-   time_t      tvalue;
-   mode_t      file_mode;
-   char        *buffer,
-               *p_file,
-               *ptr,
-               new_file[MAX_PATH_LENGTH],
-               *p_new_file,
-               date_str[16],
-               originator[MAX_FILENAME_LENGTH];
-   struct stat stat_buf;
+   int           i,
+                 fd,
+                 first_time = YES,
+                 *counter;     /* Counter to keep file name unique.        */
+   off_t         data_length = 0,
+                 length,
+                 total_length;
+   time_t        tvalue;
+   mode_t        file_mode;
+   char          *buffer,
+                 *p_file,
+                 *ptr,
+                 new_file[MAX_PATH_LENGTH],
+                 *p_new_file,
+                 date_str[16],
+                 originator[MAX_FILENAME_LENGTH];
+   struct stat   stat_buf;
+#ifdef _PRODUCTION_LOG
+   clock_t       start_time;
+   struct tms    tval;
+   struct rusage ru;
+
+   (void)getrusage(RUSAGE_SELF, &ru);
+   start_time = times(&tval);
+#endif
 
    if (stat(bin_file, &stat_buf) != 0)
    {
@@ -655,6 +667,9 @@ bin_file_chopper(char         *bin_file,
                if (pld != NULL)
                {
                   pld[no_of_log_entries].size = data_length;
+                  pld[no_of_log_entries].production_time = (times(&tval) - start_time) / (double)clktck;
+                  get_sum_cpu_usage(&ru, &pld[no_of_log_entries].cpu_usage);
+                  start_time = times(&tval);
                   (void)strcpy(pld[no_of_log_entries].file_name, p_new_file);
                   no_of_log_entries++;
                }
@@ -746,14 +761,18 @@ bin_file_chopper(char         *bin_file,
       {
          production_log(creation_time, 1, no_of_log_entries, unique_number,
                         split_job_counter, job_id, dir_id,
+                        pld[i].production_time, pld[i].cpu_usage.tv_sec,
+                        pld[i].cpu_usage.tv_usec,
 # if SIZEOF_OFF_T == 4
-                        "%s%c%s%c%lx%c0%c%s",
+                        "%s%c%lx%c%s%c%lx%c0%c%s",
 # else
-                        "%s%c%s%c%llx%c0%c%s",
+                        "%s%c%llx%c%s%c%llx%c0%c%s",
 # endif
-                        p_file_name, SEPARATOR_CHAR, pld[i].file_name,
-                        SEPARATOR_CHAR, (pri_off_t)pld[i].size,
-                        SEPARATOR_CHAR, SEPARATOR_CHAR, full_option);
+                        p_file_name, SEPARATOR_CHAR,
+                        (pri_off_t)stat_buf.st_size, SEPARATOR_CHAR,
+                        pld[i].file_name, SEPARATOR_CHAR,
+                        (pri_off_t)pld[i].size, SEPARATOR_CHAR,
+                        SEPARATOR_CHAR, full_option);
       }
       free(pld);
       no_of_log_entries = 0;

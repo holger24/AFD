@@ -1218,6 +1218,31 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
          (void)strcpy(progname, SHOW_ILOG);
          break;
 
+      case P_LOG_SEL : /* Production Log. */
+         args[0] = progname;
+         args[1] = WORK_DIR_ID;
+         args[2] = p_work_dir;
+         args[3] = "-f";
+         args[4] = font_name;
+         if (fake_user[0] != '\0')
+         {
+            args[5] = "-u";
+            args[6] = fake_user;
+            offset = 7;
+         }
+         else
+         {
+            offset = 5;
+         }
+         if (profile[0] != '\0')
+         {
+            args[offset] = "-p";
+            args[offset + 1] = profile;
+            offset += 2;
+         }
+         (void)strcpy(progname, SHOW_PLOG);
+         break;
+
       case O_LOG_SEL : /* Output Log. */
          args[0] = progname;
          args[1] = WORK_DIR_ID;
@@ -1886,6 +1911,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                         }
                         else
                         {
+                           free(hl);
                            free(args);
                            FREE_RT_ARRAY(hosts)
                            return;
@@ -2001,6 +2027,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                         }
                         else
                         {
+                           free(hl);
                            free(args);
                            FREE_RT_ARRAY(hosts)
                            return;
@@ -2457,6 +2484,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                break;
 
             case E_LOG_SEL :
+            case P_LOG_SEL :
             case O_LOG_SEL :
             case D_LOG_SEL :
             case SHOW_QUEUE_SEL :
@@ -2711,8 +2739,8 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
            make_xprocess(progname, progname, args, -1);
         }
    else if ((sel_typ == EVENT_SEL) || (sel_typ == E_LOG_SEL) ||
-            (sel_typ == O_LOG_SEL) || (sel_typ == D_LOG_SEL) ||
-            (sel_typ == SHOW_QUEUE_SEL))
+            (sel_typ == P_LOG_SEL) || (sel_typ == O_LOG_SEL) ||
+            (sel_typ == D_LOG_SEL) || (sel_typ == SHOW_QUEUE_SEL))
         {
            args[k + offset] = NULL;
            make_xprocess(progname, progname, args, -1);
@@ -2749,12 +2777,14 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                              CurrentTime);
            }
         }
-   else if (((sel_typ == QUEUE_SEL) || (sel_typ == TRANS_SEL) ||
-             (sel_typ == QUEUE_TRANS_SEL) ||
-             (sel_typ == DISABLE_SEL) || (sel_typ == SWITCH_SEL)) &&
-            (ehc == NO) && (change_host_config == YES))
+   else if ((sel_typ == QUEUE_SEL) || (sel_typ == TRANS_SEL) ||
+            (sel_typ == QUEUE_TRANS_SEL) ||
+            (sel_typ == DISABLE_SEL) || (sel_typ == SWITCH_SEL))
         {
-           (void)write_host_config(no_of_hosts, host_config_file, hl);
+           if ((ehc == NO) && (change_host_config == YES))
+           {
+              (void)write_host_config(no_of_hosts, host_config_file, hl);
+           }
            free(hl);
         }
 

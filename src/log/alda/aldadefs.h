@@ -1,6 +1,6 @@
 /*
  *  aldadefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -212,6 +212,9 @@
             plog.original_filename[0] = '\0'; \
             plog.new_filename[0] = '\0';      \
             plog.what_done[0] = '\0';         \
+            plog.cpu_time = 0.0;              \
+            plog.production_time = 0.0;       \
+            plog.original_file_size = -1;     \
             plog.new_file_size = -1;          \
             plog.input_time = -1L;            \
             plog.output_time = -1L;           \
@@ -549,6 +552,9 @@ struct alda_pdata
           char          original_filename[MAX_FILENAME_LENGTH + 1];
           char          new_filename[MAX_FILENAME_LENGTH + 1];
           char          what_done[MAX_OPTION_LENGTH + 1];
+          double        production_time;
+          double        cpu_time;
+          off_t         original_file_size;
           off_t         new_file_size;
           time_t        input_time;
           time_t        output_time;

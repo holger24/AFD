@@ -48,6 +48,7 @@ DESCR__S_M1
  **   20.12.2003 H.Kiehl Added search option.
  **   27.03.2003 H.Kiehl Added profile option.
  **   25.05.2006 H.Kiehl Added View->Configuration option.
+ **   26.09.2016 H.Kiehl Added production log.
  **
  */
 DESCR__E_M1
@@ -608,21 +609,23 @@ init_dir_ctrl(int *argc, char *argv[], char *window_title)
          dcp.disable_list       = NULL;
          dcp.rescan             = YES;
          dcp.rescan_list        = NULL;
-         dcp.show_slog          = YES; /* View the system log    */
+         dcp.show_slog          = YES; /* View the system log     */
          dcp.show_slog_list     = NULL;
-         dcp.show_rlog          = YES; /* View the receive log   */
+         dcp.show_rlog          = YES; /* View the receive log    */
          dcp.show_rlog_list     = NULL;
-         dcp.show_tlog          = YES; /* View the transfer log  */
+         dcp.show_tlog          = YES; /* View the transfer log   */
          dcp.show_tlog_list     = NULL;
-         dcp.show_ilog          = YES; /* View the input log     */
+         dcp.show_ilog          = YES; /* View the input log      */
          dcp.show_ilog_list     = NULL;
-         dcp.show_olog          = YES; /* View the output log    */
+         dcp.show_plog          = YES; /* View the production log */
+         dcp.show_plog_list     = NULL;
+         dcp.show_olog          = YES; /* View the output log     */
          dcp.show_olog_list     = NULL;
-         dcp.show_elog          = YES; /* View the delete log    */
+         dcp.show_elog          = YES; /* View the delete log     */
          dcp.show_elog_list     = NULL;
-         dcp.show_queue         = YES; /* View show_queue dialog */
+         dcp.show_queue         = YES; /* View show_queue dialog  */
          dcp.show_queue_list    = NULL;
-         dcp.view_dc            = YES; /* View DIR_CONFIG entry */
+         dcp.view_dc            = YES; /* View DIR_CONFIG entry   */
          dcp.view_dc_list       = NULL;
          break;
 
@@ -973,6 +976,7 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
        (dcp.show_rlog != NO_PERMISSION) ||
        (dcp.show_tlog != NO_PERMISSION) ||
        (dcp.show_ilog != NO_PERMISSION) ||
+       (dcp.show_plog != NO_PERMISSION) ||
        (dcp.show_olog != NO_PERMISSION) ||
        (dcp.show_elog != NO_PERMISSION) ||
        (dcp.show_queue != NO_PERMISSION) ||
@@ -1038,6 +1042,7 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
          }
       }
       if ((dcp.show_ilog != NO_PERMISSION) ||
+          (dcp.show_plog != NO_PERMISSION) ||
           (dcp.show_olog != NO_PERMISSION) ||
           (dcp.show_dlog != NO_PERMISSION))
       {
@@ -1052,6 +1057,15 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                               NULL);
             XtAddCallback(vw[DIR_INPUT_W], XmNactivateCallback, dir_popup_cb,
                           (XtPointer)I_LOG_SEL);
+         }
+         if (dcp.show_plog != NO_PERMISSION)
+         {
+            vw[DIR_PRODUCTION_W] = XtVaCreateManagedWidget("Production Log",
+                              xmPushButtonWidgetClass, view_pull_down_w,
+                              XmNfontList,             fontlist,
+                              NULL);
+            XtAddCallback(vw[DIR_PRODUCTION_W], XmNactivateCallback,
+                          dir_popup_cb, (XtPointer)P_LOG_SEL);
          }
          if (dcp.show_olog != NO_PERMISSION)
          {
@@ -1546,7 +1560,7 @@ create_pullright_other(Widget pullright_other_options)
 /*-------------------------- eval_permissions() -------------------------*/
 /*                           ------------------                          */
 /* Description: Checks the permissions on what the user may do.          */
-/* Returns    : Fills the global structure acp with data.                */
+/* Returns    : Fills the global structure dcp with data.                */
 /*-----------------------------------------------------------------------*/
 static void
 eval_permissions(char *perm_buffer)
@@ -1569,19 +1583,21 @@ eval_permissions(char *perm_buffer)
       dcp.disable_list       = NULL;
       dcp.rescan             = YES;
       dcp.rescan_list        = NULL;
-      dcp.show_slog          = YES;   /* View the system log   */
+      dcp.show_slog          = YES;   /* View the system log     */
       dcp.show_slog_list     = NULL;
-      dcp.show_rlog          = YES;   /* View the receive log  */
+      dcp.show_rlog          = YES;   /* View the receive log    */
       dcp.show_rlog_list     = NULL;
-      dcp.show_tlog          = YES;   /* View the transfer log */
+      dcp.show_tlog          = YES;   /* View the transfer log   */
       dcp.show_tlog_list     = NULL;
-      dcp.show_ilog          = YES;   /* View the input log    */
+      dcp.show_ilog          = YES;   /* View the input log      */
       dcp.show_ilog_list     = NULL;
-      dcp.show_olog          = YES;   /* View the output log   */
+      dcp.show_plog          = YES;   /* View the production log */
+      dcp.show_plog_list     = NULL;
+      dcp.show_olog          = YES;   /* View the output log     */
       dcp.show_olog_list     = NULL;
-      dcp.show_elog          = YES;   /* View the delete log   */
+      dcp.show_elog          = YES;   /* View the delete log     */
       dcp.show_elog_list     = NULL;
-      dcp.view_dc            = YES;   /* View DIR_CONFIG entry */
+      dcp.view_dc            = YES;   /* View DIR_CONFIG entry   */
       dcp.view_dc_list       = NULL;
    }
    else
@@ -1770,6 +1786,26 @@ eval_permissions(char *perm_buffer)
          {
             dcp.show_ilog = NO_LIMIT;
             dcp.show_ilog_list = NULL;
+         }
+      }
+
+      /* May the user view the production log? */
+      if ((ptr = posi(perm_buffer, SHOW_PLOG_PERM)) == NULL)
+      {
+         /* The user may NOT view the production log. */
+         dcp.show_plog = NO_PERMISSION;
+      }
+      else
+      {
+         ptr--;
+         if ((*ptr == ' ') || (*ptr == '\t'))
+         {
+            dcp.show_plog = store_host_names(&dcp.show_plog_list, ptr + 1);
+         }
+         else
+         {
+            dcp.show_plog = NO_LIMIT;
+            dcp.show_plog_list = NULL;
          }
       }
 

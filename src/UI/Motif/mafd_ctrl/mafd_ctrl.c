@@ -54,6 +54,7 @@ DESCR__S_M1
  **   15.09.2014 H.Kiehl Added option for simulated send mode.
  **   05.12.2014 H.Kiehl Added parameter -t to supply window title.
  **   27.02.2016 H.Kiehl Remove long/short line code.
+ **   14.09.2016 H.Kiehl Added production log.
  **
  */
 DESCR__E_M1
@@ -128,7 +129,7 @@ XFontStruct                *font_struct = NULL;
 XmFontList                 fontlist = NULL;
 Widget                     mw[5],          /* Main menu */
                            ow[13],         /* Host menu */
-                           vw[13],         /* View menu */
+                           vw[14],         /* View menu */
                            cw[8],          /* Control menu */
                            sw[5],          /* Setup menu */
                            hw[3],          /* Help menu */
@@ -788,6 +789,8 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
          acp.show_tdlog_list          = NULL;
          acp.show_ilog                = YES; /* View the input log    */
          acp.show_ilog_list           = NULL;
+         acp.show_plog                = YES; /* View the production log */
+         acp.show_plog_list           = NULL;
          acp.show_olog                = YES; /* View the output log   */
          acp.show_olog_list           = NULL;
          acp.show_dlog                = YES; /* View the delete log   */
@@ -1492,10 +1495,10 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
    if ((acp.show_slog != NO_PERMISSION) || (acp.show_mlog != NO_PERMISSION) ||
        (acp.show_elog != NO_PERMISSION) || (acp.show_rlog != NO_PERMISSION) ||
        (acp.show_tlog != NO_PERMISSION) || (acp.show_dlog != NO_PERMISSION) ||
-       (acp.show_ilog != NO_PERMISSION) || (acp.show_olog != NO_PERMISSION) ||
-       (acp.show_dlog != NO_PERMISSION) || (acp.show_queue != NO_PERMISSION) ||
-       (acp.info != NO_PERMISSION) || (acp.view_dc != NO_PERMISSION) ||
-       (acp.view_jobs != NO_PERMISSION))
+       (acp.show_ilog != NO_PERMISSION) || (acp.show_plog != NO_PERMISSION) ||
+       (acp.show_olog != NO_PERMISSION) || (acp.show_dlog != NO_PERMISSION) ||
+       (acp.show_queue != NO_PERMISSION) || (acp.info != NO_PERMISSION) ||
+       (acp.view_dc != NO_PERMISSION) || (acp.view_jobs != NO_PERMISSION))
    {
       pull_down_w = XmCreatePulldownMenu(*menu_w,
                                               "View Pulldown", NULL, 0);
@@ -1567,10 +1570,11 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                        (XtPointer)TD_LOG_SEL);
       }
       if ((acp.show_ilog != NO_PERMISSION) ||
+          (acp.show_plog != NO_PERMISSION) ||
           (acp.show_olog != NO_PERMISSION) ||
           (acp.show_dlog != NO_PERMISSION))
       {
-#if defined (_INPUT_LOG) || defined (_OUTPUT_LOG) || defined (_DELETE_LOG)
+#if defined (_INPUT_LOG) || defined (_PRODUCTION_LOG) || defined (_OUTPUT_LOG) || defined (_DELETE_LOG)
          XtVaCreateManagedWidget("Separator",
                                  xmSeparatorWidgetClass, pull_down_w,
                                  NULL);
@@ -1584,6 +1588,17 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                                     NULL);
             XtAddCallback(vw[INPUT_W], XmNactivateCallback, popup_cb,
                           (XtPointer)I_LOG_SEL);
+         }
+#endif
+#ifdef _PRODUCTION_LOG
+         if (acp.show_plog != NO_PERMISSION)
+         {
+            vw[PRODUCTION_W] = XtVaCreateManagedWidget("Production Log",
+                                    xmPushButtonWidgetClass, pull_down_w,
+                                    XmNfontList,             fontlist,
+                                    NULL);
+            XtAddCallback(vw[PRODUCTION_W], XmNactivateCallback, popup_cb,
+                          (XtPointer)P_LOG_SEL);
          }
 #endif
 #ifdef _OUTPUT_LOG
@@ -2485,6 +2500,8 @@ eval_permissions(char *perm_buffer)
       acp.show_tdlog_list          = NULL;
       acp.show_ilog                = YES;   /* View the input log    */
       acp.show_ilog_list           = NULL;
+      acp.show_plog                = YES;   /* View the production log */
+      acp.show_plog_list           = NULL;
       acp.show_olog                = YES;   /* View the output log   */
       acp.show_olog_list           = NULL;
       acp.show_dlog                = YES;   /* View the delete log   */
@@ -3015,6 +3032,26 @@ eval_permissions(char *perm_buffer)
          {
             acp.show_ilog = NO_LIMIT;
             acp.show_ilog_list = NULL;
+         }
+      }
+
+      /* May the user view the production log? */
+      if ((ptr = posi(perm_buffer, SHOW_PLOG_PERM)) == NULL)
+      {
+         /* The user may NOT view the production log. */
+         acp.show_plog = NO_PERMISSION;
+      }
+      else
+      {
+         ptr--;
+         if ((*ptr == ' ') || (*ptr == '\t'))
+         {
+            acp.show_plog = store_host_names(&acp.show_plog_list, ptr + 1);
+         }
+         else
+         {
+            acp.show_plog = NO_LIMIT;
+            acp.show_plog_list = NULL;
          }
       }
 

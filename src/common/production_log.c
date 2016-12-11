@@ -1,6 +1,6 @@
 /*
  *  production_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,20 +32,25 @@ DESCR__S_M3
  **                       unsigned int split_job_counter,
  **                       unsigned int job_id,
  **                       unsigned int dir_id,
+ **                       double       production_time,
+ **                       time_t       cpu_sec,
+ **                       long int     cpu_usec,
  **                       char         *fmt,
  **                       ...)
  **
  ** DESCRIPTION
  **   When process wants to log the files it changed, it writes them
  **   via a fifo. The data it will write looks as follows:
- **       <ML><RR><UDN>|<DID>|<JID>|<OFN>|<NFL>[|<CMD>]\n
- **         |   |   |     |     |     |     |      |
- **         |   |   |     |     |     |     |      +-------> Command executed.
- **         |   |   |     |     |     |     +--------------> New filename.
- **         |   |   |     |     |     +--------------------> Original File Name.
- **         |   |   |     |     +--------------------------> Job ID.
- **         |   |   |     +--------------------------------> Directory ID.
- **         |   |   +--------------------------------------> Unique ID.
+ **       <ML><RR>|<PT>|<UDN>|<DID>|<JID>|<OFN>|<NFL>[|<CMD>]\n
+ **         |   |   |     |     |     |     |     |      |
+ **         |   |   |     |     |     |     |     |      +-> Command executed.
+ **         |   |   |     |     |     |     |     +--------> New filename.
+ **         |   |   |     |     |     |     +--------------> Original File Name.
+ **         |   |   |     |     |     +--------------------> Job ID.
+ **         |   |   |     |     +--------------------------> Directory ID.
+ **         |   |   |     +--------------------------------> Unique ID.
+ **         |   |   +--------------------------------------> Production time +
+ **         |   |                                            cpu usage.
  **         |   +------------------------------------------> Ratio
  **         |                                                relationship.
  **         +----------------------------------------------> The length of this
@@ -64,6 +69,8 @@ DESCR__S_M3
  **   15.01.2008 H.Kiehl Added job ID.
  **   28.03.2008 H.Kiehl Added directory ID.
  **   28.10.2008 H.Kiehl Added ratio relationship.
+ **   10.11.2016 H.Kiehl Added production time.
+ **   30.11.2016 H.Kiehl And add the cpu usage time.
  **
  */
 DESCR__E_M3
@@ -93,6 +100,9 @@ production_log(time_t       creation_time,
                unsigned int split_job_counter,
                unsigned int job_id,
                unsigned int dir_id,
+               double       production_time,
+               time_t       cpu_sec,
+               long int     cpu_usec,
                char         *fmt,
                ...)
 {
@@ -151,12 +161,13 @@ production_log(time_t       creation_time,
    length += snprintf(&production_buffer[length],
                       (MAX_INT_LENGTH + MAX_PRODUCTION_BUFFER_LENGTH) - length,
 #if SIZEOF_TIME_T == 4
-                      "%x:%x%c%lx_%x_%x%c%x%c%x%c",
+                      "%x:%x%c%.3f.%lx.%lx%c%lx_%x_%x%c%x%c%x%c",
 #else
-                      "%x:%x%c%llx_%x_%x%c%x%c%x%c",
+                      "%x:%x%c%.3f.%llx.%lx%c%llx_%x_%x%c%x%c%x%c",
 #endif
                       ratio_1, ratio_2, SEPARATOR_CHAR,
-                      (pri_time_t)creation_time, unique_number,
+                      production_time, (pri_time_t)cpu_sec, cpu_usec,
+                      SEPARATOR_CHAR, (pri_time_t)creation_time, unique_number,
                       split_job_counter, SEPARATOR_CHAR, dir_id,
                       SEPARATOR_CHAR, job_id, SEPARATOR_CHAR);
    if (length > (MAX_INT_LENGTH + MAX_PRODUCTION_BUFFER_LENGTH))

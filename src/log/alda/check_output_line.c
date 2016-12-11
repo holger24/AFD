@@ -57,6 +57,7 @@ DESCR__E_M1
 
 /* External global variables. */
 extern int                       gt_lt_sign,
+                                 gt_lt_sign_duration,
                                  log_date_length,
                                  max_hostname_length,
                                  trace_mode,
@@ -66,6 +67,7 @@ extern unsigned int              file_pattern_counter,
                                  search_dir_alias_counter,
                                  search_dir_id_counter,
                                  search_dir_name_counter,
+                                 search_duration_flag,
                                  search_file_size_flag,
                                  search_job_id,
                                  search_unique_number;
@@ -73,6 +75,7 @@ extern time_t                    start,
                                  start_time_end,
                                  start_time_start;
 extern off_t                     search_file_size;
+extern double                    search_duration;
 extern char                      **file_pattern;
 extern struct alda_cache_data    *ocache;
 extern struct alda_position_list **opl;
@@ -339,12 +342,61 @@ check_output_line(char         *line,
                            {
                               *(ptr + i) = '\0';
                               olog.transmission_time = strtod(ptr, NULL);
-                              olog.send_start_time = olog.output_time - (time_t)olog.transmission_time;
-                              ptr += i + 1;
-
-                              if (olog.current_toggle != -1)
+                              if (((search_duration_flag & SEARCH_OUTPUT_LOG) == 0) ||
+                                  (((gt_lt_sign_duration == EQUAL_SIGN) &&
+                                    (olog.transmission_time == search_duration)) ||
+                                   ((gt_lt_sign_duration == LESS_THEN_SIGN) &&
+                                    (olog.transmission_time < search_duration)) ||
+                                   ((gt_lt_sign_duration == GREATER_THEN_SIGN) &&
+                                    (olog.transmission_time > search_duration)) ||
+                                   ((gt_lt_sign_duration == NOT_SIGN) &&
+                                    (olog.transmission_time != search_duration))))
                               {
-                                 /* Store number of retries. */
+                                 olog.send_start_time = olog.output_time - (time_t)olog.transmission_time;
+                                 ptr += i + 1;
+
+                                 if (olog.current_toggle != -1)
+                                 {
+                                    /* Store number of retries. */
+                                    i = 0;
+                                    while ((*(ptr + i) != SEPARATOR_CHAR) &&
+                                           (*(ptr + i) != '\0') &&
+                                           (i < MAX_INT_HEX_LENGTH))
+                                    {
+                                       i++;
+                                    }
+                                    if (*(ptr + i) == SEPARATOR_CHAR)
+                                    {
+                                       *(ptr + i) = '\0';
+                                       olog.retries = (unsigned int)strtoul(ptr, NULL, 16);
+                                       ptr += i + 1;
+                                    }
+                                    else
+                                    {
+                                       olog.local_filename[0] = '\0';
+                                       olog.remote_name[0] = '\0';
+                                       olog.alias_name[0] = '\0';
+                                       olog.real_hostname[0] = '\0';
+                                       olog.transmission_time = 0.0;
+                                       olog.file_size = -1;
+                                       olog.send_start_time = -1L;
+                                       olog.local_filename_length = 0;
+                                       olog.alias_name_length = 0;
+                                       olog.current_toggle = 0;
+                                       olog.protocol = 0;
+# ifndef HAVE_GETLINE
+                                       while (*(ptr + i) != '\0')
+                                       {
+                                          i++;
+                                       }
+                                       output.bytes_read += (ptr + i - line);
+# endif
+
+                                       return(INCORRECT);
+                                    }
+                                 }
+
+                                 /* Store job ID. */
                                  i = 0;
                                  while ((*(ptr + i) != SEPARATOR_CHAR) &&
                                         (*(ptr + i) != '\0') &&
@@ -355,206 +407,199 @@ check_output_line(char         *line,
                                  if (*(ptr + i) == SEPARATOR_CHAR)
                                  {
                                     *(ptr + i) = '\0';
-                                    olog.retries = (unsigned int)strtoul(ptr, NULL, 16);
-                                    ptr += i + 1;
-                                 }
-                                 else
-                                 {
-                                    olog.local_filename[0] = '\0';
-                                    olog.remote_name[0] = '\0';
-                                    olog.alias_name[0] = '\0';
-                                    olog.real_hostname[0] = '\0';
-                                    olog.transmission_time = 0.0;
-                                    olog.file_size = -1;
-                                    olog.send_start_time = -1L;
-                                    olog.local_filename_length = 0;
-                                    olog.alias_name_length = 0;
-                                    olog.current_toggle = 0;
-                                    olog.protocol = 0;
-# ifndef HAVE_GETLINE
-                                    while (*(ptr + i) != '\0')
+                                    olog.job_id = (unsigned int)strtoul(ptr, NULL, 16);
+                                    (void)get_recipient(olog.job_id);
+                                    if ((olog.output_type != OT_NORMAL_RECEIVED) && /* Does not store any more data. */
+                                        ((search_job_id == 0) ||
+                                         (olog.job_id == search_job_id)) &&
+                                        ((prev_job_id == 0) ||
+                                         (olog.job_id == prev_job_id)) &&
+                                        (((search_dir_alias_counter == 0) &&
+                                          (search_dir_id_counter == 0) &&
+                                          (search_dir_name_counter == 0)) ||
+                                         (get_dir_id(olog.job_id) == INCORRECT) ||
+                                         (check_did(olog.dir_id) == SUCCESS)))
                                     {
-                                       i++;
-                                    }
-                                    output.bytes_read += (ptr + i - line);
-# endif
+                                       ptr += i + 1;
 
-                                    return(INCORRECT);
-                                 }
-                              }
-
-                              /* Store job ID. */
-                              i = 0;
-                              while ((*(ptr + i) != SEPARATOR_CHAR) &&
-                                     (*(ptr + i) != '\0') &&
-                                     (i < MAX_INT_HEX_LENGTH))
-                              {
-                                 i++;
-                              }
-                              if (*(ptr + i) == SEPARATOR_CHAR)
-                              {
-                                 *(ptr + i) = '\0';
-                                 olog.job_id = (unsigned int)strtoul(ptr, NULL, 16);
-                                 (void)get_recipient(olog.job_id);
-                                 if ((olog.output_type != OT_NORMAL_RECEIVED) && /* Does not store any more data. */
-                                     ((search_job_id == 0) ||
-                                      (olog.job_id == search_job_id)) &&
-                                     ((prev_job_id == 0) ||
-                                      (olog.job_id == prev_job_id)) &&
-                                     (((search_dir_alias_counter == 0) &&
-                                       (search_dir_id_counter == 0) &&
-                                       (search_dir_name_counter == 0)) ||
-                                      (get_dir_id(olog.job_id) == INCORRECT) ||
-                                      (check_did(olog.dir_id) == SUCCESS)))
-                                 {
-                                    ptr += i + 1;
-
-                                    /* Get job creation time. */
-                                    i = 0;
-                                    while ((*(ptr + i) != '_') &&
-                                           (i < MAX_TIME_T_HEX_LENGTH) &&
-                                           (*(ptr + i) != '\0'))
-                                    {
-                                       i++;
-                                    }
-                                    if (*(ptr + i) == '_')
-                                    {
-                                       *(ptr + i) = '\0';
-                                       olog.job_creation_time = (time_t)str2timet(ptr, NULL, 16);
-                                       if (((prev_log_time == 0) || (olog.job_creation_time == prev_log_time)) &&
-                                           ((start_time_end == 0) || (olog.job_creation_time < start_time_end)))
+                                       /* Get job creation time. */
+                                       i = 0;
+                                       while ((*(ptr + i) != '_') &&
+                                              (i < MAX_TIME_T_HEX_LENGTH) &&
+                                              (*(ptr + i) != '\0'))
                                        {
-                                          ptr += i + 1;
-                                          i = 0;
-                                          while ((*(ptr + i) != '_') &&
-                                                 (i < MAX_INT_HEX_LENGTH) &&
-                                                 (*(ptr + i) != '\0'))
+                                          i++;
+                                       }
+                                       if (*(ptr + i) == '_')
+                                       {
+                                          *(ptr + i) = '\0';
+                                          olog.job_creation_time = (time_t)str2timet(ptr, NULL, 16);
+                                          if (((prev_log_time == 0) || (olog.job_creation_time == prev_log_time)) &&
+                                              ((start_time_end == 0) || (olog.job_creation_time < start_time_end)))
                                           {
-                                             i++;
-                                          }
-                                          if (*(ptr + i) == '_')
-                                          {
-                                             *(ptr + i) = '\0';
-                                             olog.unique_number = (unsigned int)strtoul(ptr, NULL, 16);
-
-                                             if (((prev_unique_number == NULL) ||
-                                                  (olog.unique_number == *prev_unique_number)) &&
-                                                 ((search_unique_number == 0) ||
-                                                  (search_unique_number == olog.unique_number)))
+                                             ptr += i + 1;
+                                             i = 0;
+                                             while ((*(ptr + i) != '_') &&
+                                                    (i < MAX_INT_HEX_LENGTH) &&
+                                                    (*(ptr + i) != '\0'))
                                              {
-                                                ptr += i + 1;
-                                                i = 0;
-                                                while ((*(ptr + i) != SEPARATOR_CHAR) &&
-                                                       (*(ptr + i) != ' ') &&
-                                                       (*(ptr + i) != '\0') &&
-                                                       (*(ptr + i) != '\n') &&
-                                                       (i < MAX_INT_HEX_LENGTH))
-                                                {
-                                                   i++;
-                                                }
-                                                if ((*(ptr + i) == SEPARATOR_CHAR) ||
-                                                    (*(ptr + i) == ' ') ||
-                                                    (*(ptr + i) == '\0') ||
-                                                    (*(ptr + i) == '\n'))
-                                                {
-                                                   tmp_char = *(ptr + i);
-                                                   *(ptr + i) = '\0';
-                                                   olog.split_job_counter = (unsigned int)strtoul(ptr, NULL, 16);
+                                                i++;
+                                             }
+                                             if (*(ptr + i) == '_')
+                                             {
+                                                *(ptr + i) = '\0';
+                                                olog.unique_number = (unsigned int)strtoul(ptr, NULL, 16);
 
-                                                   if ((prev_split_job_counter == NULL) ||
-                                                       (olog.split_job_counter == *prev_split_job_counter))
+                                                if (((prev_unique_number == NULL) ||
+                                                     (olog.unique_number == *prev_unique_number)) &&
+                                                    ((search_unique_number == 0) ||
+                                                     (search_unique_number == olog.unique_number)))
+                                                {
+                                                   ptr += i + 1;
+                                                   i = 0;
+                                                   while ((*(ptr + i) != SEPARATOR_CHAR) &&
+                                                          (*(ptr + i) != ' ') &&
+                                                          (*(ptr + i) != '\0') &&
+                                                          (*(ptr + i) != '\n') &&
+                                                          (i < MAX_INT_HEX_LENGTH))
                                                    {
-                                                      if (tmp_char == ' ')
+                                                      i++;
+                                                   }
+                                                   if ((*(ptr + i) == SEPARATOR_CHAR) ||
+                                                       (*(ptr + i) == ' ') ||
+                                                       (*(ptr + i) == '\0') ||
+                                                       (*(ptr + i) == '\n'))
+                                                   {
+                                                      tmp_char = *(ptr + i);
+                                                      *(ptr + i) = '\0';
+                                                      olog.split_job_counter = (unsigned int)strtoul(ptr, NULL, 16);
+
+                                                      if ((prev_split_job_counter == NULL) ||
+                                                          (olog.split_job_counter == *prev_split_job_counter))
                                                       {
-                                                         ptr += i + 1;
-                                                         i = 0;
-                                                         while ((*(ptr + i) != SEPARATOR_CHAR) &&
-                                                                (*(ptr + i) != '\n') &&
-                                                                (*(ptr + i) != '\0') &&
-                                                                (i < MAX_MAIL_ID_LENGTH))
+                                                         if (tmp_char == ' ')
                                                          {
-                                                            olog.mail_id[i] = *(ptr + i);
-                                                            i++;
-                                                         }
-                                                         olog.mail_id[i] = '\0';
-                                                         olog.mail_id_length = i;
-                                                         if (i == MAX_MAIL_ID_LENGTH)
-                                                         {
+                                                            ptr += i + 1;
+                                                            i = 0;
                                                             while ((*(ptr + i) != SEPARATOR_CHAR) &&
                                                                    (*(ptr + i) != '\n') &&
-                                                                   (*(ptr + i) != '\0'))
+                                                                   (*(ptr + i) != '\0') &&
+                                                                   (i < MAX_MAIL_ID_LENGTH))
                                                             {
+                                                               olog.mail_id[i] = *(ptr + i);
                                                                i++;
                                                             }
+                                                            olog.mail_id[i] = '\0';
+                                                            olog.mail_id_length = i;
+                                                            if (i == MAX_MAIL_ID_LENGTH)
+                                                            {
+                                                               while ((*(ptr + i) != SEPARATOR_CHAR) &&
+                                                                      (*(ptr + i) != '\n') &&
+                                                                      (*(ptr + i) != '\0'))
+                                                               {
+                                                                  i++;
+                                                               }
+                                                            }
                                                          }
-                                                      }
-                                                      if (tmp_char == SEPARATOR_CHAR)
-                                                      {
-                                                         ptr += i + 1;
+                                                         if (tmp_char == SEPARATOR_CHAR)
+                                                         {
+                                                            ptr += i + 1;
 
-                                                         /* Store remote rename part. */
-                                                         i = 0;
-                                                         while ((*(ptr + i) != '\n') &&
-                                                                (*(ptr + i) != '\0') &&
-                                                                (i < MAX_PATH_LENGTH))
-                                                         {
-                                                            olog.archive_dir[i] = *(ptr + i);
-                                                            i++;
-                                                         }
-                                                         olog.archive_dir[i] = '\0';
-                                                         olog.archive_dir_length = i;
-                                                      }
-                                                      else
-                                                      {
-                                                         olog.archive_dir[0] = '\0';
-                                                         olog.archive_dir_length = 0;
-                                                      }
-# ifndef HAVE_GETLINE
-                                                      while (*(ptr + i) != '\0')
-                                                      {
-                                                         i++;
-                                                      }
-                                                      output.bytes_read += (ptr + i - line);
-# endif
-                                                      if (verbose > 2)
-                                                      {
-                                                         if (olog.remote_name[0] == '\0')
-                                                         {
-# if SIZEOF_TIME_T == 4
-                                                            (void)printf("%06ld DEBUG 3: [OUTPUT] %s %s %x %x %x (%u)\n",
-# else
-                                                            (void)printf("%06lld DEBUG 3: [OUTPUT] %s %s %x %x %x (%u)\n",
-# endif
-                                                                         (pri_time_t)(time(NULL) - start),
-                                                                         olog.local_filename,
-                                                                         olog.alias_name,
-                                                                         olog.job_id,
-                                                                         olog.unique_number,
-                                                                         olog.split_job_counter,
-                                                                         olog.retries);
+                                                            /* Store remote rename part. */
+                                                            i = 0;
+                                                            while ((*(ptr + i) != '\n') &&
+                                                                   (*(ptr + i) != '\0') &&
+                                                                   (i < MAX_PATH_LENGTH))
+                                                            {
+                                                               olog.archive_dir[i] = *(ptr + i);
+                                                               i++;
+                                                            }
+                                                            olog.archive_dir[i] = '\0';
+                                                            olog.archive_dir_length = i;
                                                          }
                                                          else
                                                          {
-# if SIZEOF_TIME_T == 4
-                                                            (void)printf("%06ld DEBUG 3: [OUTPUT] %s->%s %s %x %x %x (%u)\n",
-# else
-                                                            (void)printf("%06lld DEBUG 3: [OUTPUT] %s->%s %s %x %x %x (%u)\n",
-# endif
-                                                                         (pri_time_t)(time(NULL) - start),
-                                                                         olog.local_filename,
-                                                                         olog.remote_name,
-                                                                         olog.alias_name,
-                                                                         olog.job_id,
-                                                                         olog.unique_number,
-                                                                         olog.split_job_counter,
-                                                                         olog.retries);
+                                                            olog.archive_dir[0] = '\0';
+                                                            olog.archive_dir_length = 0;
                                                          }
-                                                      }
+# ifndef HAVE_GETLINE
+                                                         while (*(ptr + i) != '\0')
+                                                         {
+                                                            i++;
+                                                         }
+                                                         output.bytes_read += (ptr + i - line);
+# endif
+                                                         if (verbose > 2)
+                                                         {
+                                                            if (olog.remote_name[0] == '\0')
+                                                            {
+# if SIZEOF_TIME_T == 4
+                                                               (void)printf("%06ld DEBUG 3: [OUTPUT] %s %s %x %x %x (%u)\n",
+# else
+                                                               (void)printf("%06lld DEBUG 3: [OUTPUT] %s %s %x %x %x (%u)\n",
+# endif
+                                                                            (pri_time_t)(time(NULL) - start),
+                                                                            olog.local_filename,
+                                                                            olog.alias_name,
+                                                                            olog.job_id,
+                                                                            olog.unique_number,
+                                                                            olog.split_job_counter,
+                                                                            olog.retries);
+                                                            }
+                                                            else
+                                                            {
+# if SIZEOF_TIME_T == 4
+                                                               (void)printf("%06ld DEBUG 3: [OUTPUT] %s->%s %s %x %x %x (%u)\n",
+# else
+                                                               (void)printf("%06lld DEBUG 3: [OUTPUT] %s->%s %s %x %x %x (%u)\n",
+# endif
+                                                                            (pri_time_t)(time(NULL) - start),
+                                                                            olog.local_filename,
+                                                                            olog.remote_name,
+                                                                            olog.alias_name,
+                                                                            olog.job_id,
+                                                                            olog.unique_number,
+                                                                            olog.split_job_counter,
+                                                                            olog.retries);
+                                                            }
+                                                         }
 
-                                                      return(SUCCESS);
+                                                         return(SUCCESS);
+                                                      }
+                                                      else
+                                                      {
+                                                         olog.local_filename[0] = '\0';
+                                                         olog.remote_name[0] = '\0';
+                                                         olog.alias_name[0] = '\0';
+                                                         olog.real_hostname[0] = '\0';
+                                                         olog.transmission_time = 0.0;
+                                                         olog.file_size = -1;
+                                                         olog.job_creation_time = -1L;
+                                                         olog.send_start_time = -1L;
+                                                         olog.local_filename_length = 0;
+                                                         olog.remote_name_length = 0;
+                                                         olog.alias_name_length = 0;
+                                                         olog.current_toggle = 0;
+                                                         olog.job_id = 0;
+                                                         olog.unique_number = 0;
+                                                         olog.protocol = 0;
+                                                         olog.retries = 0;
+# ifndef HAVE_GETLINE
+                                                         while (*(ptr + i) != '\0')
+                                                         {
+                                                            i++;
+                                                         }
+                                                         output.bytes_read += (ptr + i - line);
+# endif
+
+                                                         return(NOT_WANTED);
+                                                      }
                                                    }
                                                    else
                                                    {
+                                                      (void)fprintf(stderr,
+                                                                    "Unable to store the unique number since it is to large. (%s %d)\n",
+                                                                    __FILE__, __LINE__);
                                                       olog.local_filename[0] = '\0';
                                                       olog.remote_name[0] = '\0';
                                                       olog.alias_name[0] = '\0';
@@ -579,14 +624,11 @@ check_output_line(char         *line,
                                                       output.bytes_read += (ptr + i - line);
 # endif
 
-                                                      return(NOT_WANTED);
+                                                      return(INCORRECT);
                                                    }
                                                 }
                                                 else
                                                 {
-                                                   (void)fprintf(stderr,
-                                                                 "Unable to store the unique number since it is to large. (%s %d)\n",
-                                                                 __FILE__, __LINE__);
                                                    olog.local_filename[0] = '\0';
                                                    olog.remote_name[0] = '\0';
                                                    olog.alias_name[0] = '\0';
@@ -611,11 +653,29 @@ check_output_line(char         *line,
                                                    output.bytes_read += (ptr + i - line);
 # endif
 
-                                                   return(INCORRECT);
+                                                   return(NOT_WANTED);
                                                 }
                                              }
                                              else
                                              {
+                                                if (i == MAX_INT_HEX_LENGTH)
+                                                {
+                                                   (void)fprintf(stderr,
+                                                                 "Unable to store the unique number since it is to large. (%s %d)\n",
+                                                                 __FILE__, __LINE__);
+# ifndef HAVE_GETLINE
+                                                   while (*(ptr + i) != '\0')
+                                                   {
+                                                      i++;
+                                                   }
+# endif
+                                                }
+                                                else
+                                                {
+                                                   (void)fprintf(stderr,
+                                                                 "Unable to store the unique number because end was not found. (%s %d)\n",
+                                                                 __FILE__, __LINE__);
+                                                }
                                                 olog.local_filename[0] = '\0';
                                                 olog.remote_name[0] = '\0';
                                                 olog.alias_name[0] = '\0';
@@ -629,40 +689,17 @@ check_output_line(char         *line,
                                                 olog.alias_name_length = 0;
                                                 olog.current_toggle = 0;
                                                 olog.job_id = 0;
-                                                olog.unique_number = 0;
                                                 olog.protocol = 0;
                                                 olog.retries = 0;
 # ifndef HAVE_GETLINE
-                                                while (*(ptr + i) != '\0')
-                                                {
-                                                   i++;
-                                                }
                                                 output.bytes_read += (ptr + i - line);
 # endif
 
-                                                return(NOT_WANTED);
+                                                return(INCORRECT);
                                              }
                                           }
                                           else
                                           {
-                                             if (i == MAX_INT_HEX_LENGTH)
-                                             {
-                                                (void)fprintf(stderr,
-                                                              "Unable to store the unique number since it is to large. (%s %d)\n",
-                                                              __FILE__, __LINE__);
-# ifndef HAVE_GETLINE
-                                                while (*(ptr + i) != '\0')
-                                                {
-                                                   i++;
-                                                }
-# endif
-                                             }
-                                             else
-                                             {
-                                                (void)fprintf(stderr,
-                                                              "Unable to store the unique number because end was not found. (%s %d)\n",
-                                                              __FILE__, __LINE__);
-                                             }
                                              olog.local_filename[0] = '\0';
                                              olog.remote_name[0] = '\0';
                                              olog.alias_name[0] = '\0';
@@ -679,21 +716,42 @@ check_output_line(char         *line,
                                              olog.protocol = 0;
                                              olog.retries = 0;
 # ifndef HAVE_GETLINE
+                                             while (*(ptr + i) != '\0')
+                                             {
+                                                i++;
+                                             }
                                              output.bytes_read += (ptr + i - line);
 # endif
 
-                                             return(INCORRECT);
+                                             return(NOT_WANTED);
                                           }
                                        }
                                        else
                                        {
+                                          if (i == MAX_TIME_T_HEX_LENGTH)
+                                          {
+                                             (void)fprintf(stderr,
+                                                           "Unable to store the input time since it is to large. (%s %d)\n",
+                                                           __FILE__, __LINE__);
+# ifndef HAVE_GETLINE
+                                             while (*(ptr + i) != '\0')
+                                             {
+                                                i++;
+                                             }
+# endif
+                                          }
+                                          else
+                                          {
+                                             (void)fprintf(stderr,
+                                                           "Unable to store the input time because end was not found. (%s %d)\n",
+                                                           __FILE__, __LINE__);
+                                          }
                                           olog.local_filename[0] = '\0';
                                           olog.remote_name[0] = '\0';
                                           olog.alias_name[0] = '\0';
                                           olog.real_hostname[0] = '\0';
                                           olog.transmission_time = 0.0;
                                           olog.file_size = -1;
-                                          olog.job_creation_time = -1L;
                                           olog.send_start_time = -1L;
                                           olog.local_filename_length = 0;
                                           olog.remote_name_length = 0;
@@ -703,36 +761,14 @@ check_output_line(char         *line,
                                           olog.protocol = 0;
                                           olog.retries = 0;
 # ifndef HAVE_GETLINE
-                                          while (*(ptr + i) != '\0')
-                                          {
-                                             i++;
-                                          }
                                           output.bytes_read += (ptr + i - line);
 # endif
 
-                                          return(NOT_WANTED);
+                                          return(INCORRECT);
                                        }
                                     }
                                     else
                                     {
-                                       if (i == MAX_TIME_T_HEX_LENGTH)
-                                       {
-                                          (void)fprintf(stderr,
-                                                        "Unable to store the input time since it is to large. (%s %d)\n",
-                                                        __FILE__, __LINE__);
-# ifndef HAVE_GETLINE
-                                          while (*(ptr + i) != '\0')
-                                          {
-                                             i++;
-                                          }
-# endif
-                                       }
-                                       else
-                                       {
-                                          (void)fprintf(stderr,
-                                                        "Unable to store the input time because end was not found. (%s %d)\n",
-                                                        __FILE__, __LINE__);
-                                       }
                                        olog.local_filename[0] = '\0';
                                        olog.remote_name[0] = '\0';
                                        olog.alias_name[0] = '\0';
@@ -748,14 +784,36 @@ check_output_line(char         *line,
                                        olog.protocol = 0;
                                        olog.retries = 0;
 # ifndef HAVE_GETLINE
+                                       while (*(ptr + i) != '\0')
+                                       {
+                                          i++;
+                                       }
                                        output.bytes_read += (ptr + i - line);
 # endif
 
-                                       return(INCORRECT);
+                                       return(NOT_WANTED);
                                     }
                                  }
                                  else
                                  {
+                                    if (i == MAX_INT_HEX_LENGTH)
+                                    {
+                                       (void)fprintf(stderr,
+                                                     "Unable to store the job ID since it is to large. (%s %d)\n",
+                                                     __FILE__, __LINE__);
+# ifndef HAVE_GETLINE
+                                       while (*(ptr + i) != '\0')
+                                       {
+                                          i++;
+                                       }
+# endif
+                                    }
+                                    else
+                                    {
+                                       (void)fprintf(stderr,
+                                                     "Unable to store the job ID because end was not found. (%s %d)\n",
+                                                     __FILE__, __LINE__);
+                                    }
                                     olog.local_filename[0] = '\0';
                                     olog.remote_name[0] = '\0';
                                     olog.alias_name[0] = '\0';
@@ -767,40 +825,16 @@ check_output_line(char         *line,
                                     olog.remote_name_length = 0;
                                     olog.alias_name_length = 0;
                                     olog.current_toggle = 0;
-                                    olog.job_id = 0;
                                     olog.protocol = 0;
-                                    olog.retries = 0;
 # ifndef HAVE_GETLINE
-                                    while (*(ptr + i) != '\0')
-                                    {
-                                       i++;
-                                    }
                                     output.bytes_read += (ptr + i - line);
 # endif
 
-                                    return(NOT_WANTED);
+                                    return(INCORRECT);
                                  }
                               }
                               else
                               {
-                                 if (i == MAX_INT_HEX_LENGTH)
-                                 {
-                                    (void)fprintf(stderr,
-                                                  "Unable to store the job ID since it is to large. (%s %d)\n",
-                                                  __FILE__, __LINE__);
-# ifndef HAVE_GETLINE
-                                    while (*(ptr + i) != '\0')
-                                    {
-                                       i++;
-                                    }
-# endif
-                                 }
-                                 else
-                                 {
-                                    (void)fprintf(stderr,
-                                                  "Unable to store the job ID because end was not found. (%s %d)\n",
-                                                  __FILE__, __LINE__);
-                                 }
                                  olog.local_filename[0] = '\0';
                                  olog.remote_name[0] = '\0';
                                  olog.alias_name[0] = '\0';
@@ -817,7 +851,7 @@ check_output_line(char         *line,
                                  output.bytes_read += (ptr + i - line);
 # endif
 
-                                 return(INCORRECT);
+                                 return(NOT_WANTED);
                               }
                            }
                            else

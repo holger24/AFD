@@ -75,7 +75,9 @@ unsigned int               end_alias_counter,
                            *search_dir_id,
                            search_dir_id_counter,
                            search_dir_name_counter,
-                           search_file_size_flag,
+                           search_duration_flag = 0,
+                           search_file_size_flag = 0,
+                           search_orig_file_size_flag = 0,
                            search_host_alias_counter,
                            *search_host_id,
                            search_host_id_counter,
@@ -94,6 +96,8 @@ int                        data_printed,
                            fsa_fd = -1,
                            fsa_id,
                            gt_lt_sign,
+                           gt_lt_sign_duration,
+                           gt_lt_sign_orig,
                            log_date_length = LOG_DATE_LENGTH,
                            max_hostname_length = MAX_HOSTNAME_LENGTH,
                            no_of_dirs = 0,
@@ -111,7 +115,8 @@ time_t                     end_time_end,
                            start_time_end,
                            start_time_start;
 off_t                      log_data_written,
-                           search_file_size = -1;
+                           search_file_size = -1,
+                           search_orig_file_size = -1;
 #ifdef HAVE_MMAP
 off_t                      fra_size,
                            fsa_size;
@@ -119,6 +124,8 @@ off_t                      fra_size,
 #ifdef WITH_AFD_MON
 off_t                      msa_size;
 #endif
+double                     search_duration;
+clock_t                    clktck;
 char                       **end_alias,
                            **end_name,
                            **file_pattern,
@@ -237,6 +244,12 @@ main(int argc, char *argv[])
    CHECK_FOR_VERSION(argc, argv);
    if (get_afd_path(&argc, argv, work_dir) < 0)
    {
+      exit(INCORRECT);
+   }
+   if ((clktck = sysconf(_SC_CLK_TCK)) <= 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "Could not get clock ticks per second : %s", strerror(errno));
       exit(INCORRECT);
    }
    eval_input_alda(&argc, argv);

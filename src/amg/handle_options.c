@@ -206,6 +206,9 @@ extern char                       *file_name_buffer;
 extern char                       *bul_file,
                                   *p_work_dir,
                                   *rep_file;
+#ifdef _PRODUCTION_LOG
+extern clock_t                    clktck;
+#endif
 extern struct wmo_bul_list        *bcdb;
 extern struct rule                *rule;
 extern struct instant_db          *db;
@@ -255,8 +258,9 @@ static int                        recount_files(char *, off_t *);
 #ifdef _PRODUCTION_LOG
 static int                        check_changes(time_t, unsigned int,
                                                 unsigned int, int, char *,
-                                                char *, int, int, int,
-                                                char *, off_t *);
+                                                off_t, char *, int,
+                                                struct timeval *, double,
+                                                int, int, char *, off_t *);
 #endif
 
 
@@ -906,21 +910,23 @@ handle_options(int          position,
           (CHECK_STRNCMP(options, EXEC_ID, EXEC_ID_LENGTH) == 0))
       {
 #ifndef _WITH_PTHREAD
-         int    file_counter = *files_to_send;
+         int            file_counter = *files_to_send;
 #else
-         int    file_counter;
+         int            file_counter;
 #endif
-         int    lock_all_jobs = NO,
-                lock_one_job_only = NO,
-                delete_original_file = NO,
-                on_error_delete_all = NO,
-                on_error_save = NO;
-         time_t exec_timeout;
-         char   *p_command,
-                *del_orig_file = NULL,
-                *p_del_orig_file = NULL,
-                *p_save_orig_file = NULL,
-                *save_orig_file = NULL;
+         int            lock_all_jobs = NO,
+                        lock_one_job_only = NO,
+                        delete_original_file = NO,
+                        on_error_delete_all = NO,
+                        on_error_save = NO;
+         time_t         exec_timeout;
+         double         production_time;
+         char           *p_command,
+                        *del_orig_file = NULL,
+                        *p_del_orig_file = NULL,
+                        *p_save_orig_file = NULL,
+                        *save_orig_file = NULL;
+         struct timeval cpu_usage;
 
          /*
           * First lets get the command rule. The full file name
@@ -1258,8 +1264,9 @@ handle_options(int          position,
 #ifdef HAVE_SETPRIORITY
                                          sched_priority,
 #endif
-                                         "", exec_timeout, YES,
-                                         YES)) != 0) /* ie != SUCCESS */
+                                         "", &cpu_usage, &production_time,
+                                         clktck, exec_timeout,
+                                         YES, YES)) != 0) /* ie != SUCCESS */
                      {
                         receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                                     "Failed to execute command %s [Return code = %d] #%x",
@@ -1431,8 +1438,11 @@ handle_options(int          position,
                                                        split_job_counter,
                                                        position,
                                                        p_file_name,
+                                                       file_size_pool[j],
                                                        p_option,
                                                        ret,
+                                                       &cpu_usage,
+                                                       production_time,
                                                        file_counter,
                                                        YES,
                                                        file_path,
@@ -1451,8 +1461,11 @@ handle_options(int          position,
                                                        split_job_counter,
                                                        position,
                                                        p_file_name,
+                                                       file_size_pool[j],
                                                        p_option,
                                                        ret,
+                                                       &cpu_usage,
+                                                       production_time,
                                                        file_counter,
                                                        NO,
                                                        file_path,
@@ -1499,7 +1512,8 @@ handle_options(int          position,
 #ifdef HAVE_SETPRIORITY
                                    sched_priority,
 #endif
-                                   "", exec_timeout, YES, YES)) != 0)
+                                   "", &cpu_usage, &production_time, clktck,
+                                   exec_timeout, YES, YES)) != 0)
                {
                   receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                               "Failed to execute command %s [Return code = %d] #%x",
@@ -1693,8 +1707,16 @@ handle_options(int          position,
                         production_log(creation_time, file_counter, 0,
                                        unique_number, split_job_counter,
                                        db[position].job_id, db[position].dir_id,
-                                       "%s%c%c%c%d%c%s",
+                                       production_time, cpu_usage.tv_sec,
+                                       cpu_usage.tv_usec,
+# if SIZEOF_OFF_T == 4
+                                       "%s%c%lx%c%c%c%d%c%s",
+# else
+                                       "%s%c%llx%c%c%c%d%c%s",
+# endif
                                        p_file_name, SEPARATOR_CHAR,
+                                       (pri_off_t)file_size_pool[j],
+                                       SEPARATOR_CHAR,
                                        SEPARATOR_CHAR, SEPARATOR_CHAR,
                                        ret, SEPARATOR_CHAR, p_command);
                         p_file_name += MAX_FILENAME_LENGTH;
@@ -1713,8 +1735,11 @@ handle_options(int          position,
                                                  split_job_counter,
                                                  position,
                                                  NULL,
+                                                 0,
                                                  p_option,
                                                  ret,
+                                                 &cpu_usage,
+                                                 production_time,
                                                  file_counter,
                                                  YES,
                                                  file_path,
@@ -2514,9 +2539,15 @@ handle_options(int          position,
 
          if (file_counter > 0)
          {
-            int  length,
-                 ret;
-            char *buffer;
+            int            length,
+                           ret;
+# ifdef _PRODUCTION_LOG
+            clock_t        start_time;
+            struct tms     tval;
+            struct rusage  ru;
+            struct timeval cpu_usage;
+# endif
+            char           *buffer;
 
             *file_size = 0;
 
@@ -2526,6 +2557,10 @@ handle_options(int          position,
              */
             for (j = 0; j < file_counter; j++)
             {
+# ifdef _PRODUCTION_LOG
+               (void)getrusage(RUSAGE_SELF, &ru);
+               start_time = times(&tval);
+# endif
                (void)snprintf(fullname, MAX_PATH_LENGTH, "%s/%s",
                               file_path, p_file_name);
 
@@ -2605,12 +2640,21 @@ handle_options(int          position,
                            {
                               *file_size += length;
 # ifdef _PRODUCTION_LOG
+                              get_sum_cpu_usage(&ru, &cpu_usage);
                               production_log(creation_time, 1, 1, unique_number,
                                              split_job_counter,
                                              db[position].job_id,
                                              db[position].dir_id,
-                                             "%s%c%s%c%x%c0%cafw2wmo()",
+                                             (times(&tval) - start_time) / (double)clktck,
+                                             cpu_usage.tv_sec,
+                                             cpu_usage.tv_usec,
+# if SIZEOF_OFF_T == 4
+                                             "%s%c%lx%c%s%c%lx%c0%cafw2wmo()",
+# else
+                                             "%s%c%llx%c%s%c%llx%c0%cafw2wmo()",
+# endif
                                              p_file_name, SEPARATOR_CHAR,
+                                             (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
                                              p_file_name, SEPARATOR_CHAR,
                                              length, SEPARATOR_CHAR,
                                              SEPARATOR_CHAR);
@@ -2629,12 +2673,21 @@ handle_options(int          position,
                           {
                              *file_size += length;
 # ifdef _PRODUCTION_LOG
+                              get_sum_cpu_usage(&ru, &cpu_usage);
                               production_log(creation_time, 1, 1, unique_number,
                                              split_job_counter,
                                              db[position].job_id,
                                              db[position].dir_id,
-                                             "%s%c%s%c%x%c0%cafw2wmo()",
+                                             (times(&tval) - start_time) / (double)clktck,
+                                             cpu_usage.tv_sec,
+                                             cpu_usage.tv_usec,
+# if SIZEOF_OFF_T == 4
+                                             "%s%c%lx%c%s%c%lx%c0%cafw2wmo()",
+# else
+                                             "%s%c%llx%c%s%c%llx%c0%cafw2wmo()",
+# endif
                                              p_file_name, SEPARATOR_CHAR,
+                                             (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
                                              p_file_name, SEPARATOR_CHAR,
                                              length, SEPARATOR_CHAR,
                                              SEPARATOR_CHAR);
@@ -2690,8 +2743,14 @@ handle_options(int          position,
 
          if (file_counter > 0)
          {
-            int fax_format,
-                recount_files_var = NO;
+            int            fax_format,
+                           recount_files_var = NO;
+#ifdef _PRODUCTION_LOG
+            clock_t        start_time;
+            struct tms     tval;
+            struct rusage  ru;
+            struct timeval cpu_usage;
+#endif
 
             *file_size = 0;
             if (db[position].loptions_flag & TIFF2GTS_ID_FLAG)
@@ -2728,6 +2787,10 @@ handle_options(int          position,
              */
             for (j = 0; j < file_counter; j++)
             {
+#ifdef _PRODUCTION_LOG
+               (void)getrusage(RUSAGE_SELF, &ru);
+               start_time = times(&tval);
+#endif
                (void)snprintf(fullname, MAX_PATH_LENGTH, "%s/%s",
                               file_path, p_file_name);
                if (fax_format == 0)
@@ -2761,10 +2824,19 @@ handle_options(int          position,
                                  p_file_name, db[position].job_id);
                      recount_files_var = YES;
 #ifdef _PRODUCTION_LOG
+                     get_sum_cpu_usage(&ru, &cpu_usage);
                      production_log(creation_time, 1, 0, unique_number,
                                     split_job_counter, db[position].job_id,
-                                    db[position].dir_id, "%s%c%c%c-1%c%s",
+                                    db[position].dir_id,
+                                    (times(&tval) - start_time) / (double)clktck,
+                                    cpu_usage.tv_sec, cpu_usage.tv_usec,
+# if SIZEOF_OFF_T == 4
+                                    "%s%c%lx%c%c%c-1%c%s",
+# else
+                                    "%s%c%llx%c%c%c-1%c%s",
+# endif
                                     p_file_name, SEPARATOR_CHAR,
+                                    (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
                                     SEPARATOR_CHAR, SEPARATOR_CHAR,
                                     SEPARATOR_CHAR,
                                     (fax_format == 0) ? TIFF2GTS_ID : FAX2GTS_ID);
@@ -2799,16 +2871,22 @@ handle_options(int          position,
                {
                   *file_size += size;
 #ifdef _PRODUCTION_LOG
+                  get_sum_cpu_usage(&ru, &cpu_usage);
                   production_log(creation_time, 1, 1, unique_number,
                                  split_job_counter, db[position].job_id,
+                                 db[position].dir_id,
+                                 (times(&tval) - start_time) / (double)clktck,
+                                 cpu_usage.tv_sec, cpu_usage.tv_usec,
 # if SIZEOF_OFF_T == 4
-                                 db[position].dir_id, "%s%c%s%c%lx%c0%c%s",
+                                 "%s%c%lx%c%s%c%lx%c0%c%s",
 # else
-                                 db[position].dir_id, "%s%c%s%c%llx%c0%c%s",
+                                 "%s%c%llx%c%s%c%llx%c0%c%s",
 # endif
-                                 p_file_name, SEPARATOR_CHAR, p_file_name,
-                                 SEPARATOR_CHAR, (pri_off_t)size,
-                                 SEPARATOR_CHAR, SEPARATOR_CHAR,
+                                 p_file_name, SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                 p_file_name, SEPARATOR_CHAR,
+                                 (pri_off_t)size, SEPARATOR_CHAR,
+                                 SEPARATOR_CHAR,
                                  (fax_format == 0) ? TIFF2GTS_ID : FAX2GTS_ID);
 #endif
                }
@@ -2846,9 +2924,13 @@ handle_options(int          position,
 
          if (file_counter > 0)
          {
-            int  recount_files_var = NO;
+            int            recount_files_var = NO;
 #ifdef _PRODUCTION_LOG
-            char orig_file_name[MAX_FILENAME_LENGTH];
+            char           orig_file_name[MAX_FILENAME_LENGTH];
+            clock_t        start_time;
+            struct tms     tval;
+            struct rusage  ru;
+            struct timeval cpu_usage;
 #endif
 
             *file_size = 0;
@@ -2862,6 +2944,8 @@ handle_options(int          position,
                (void)snprintf(fullname, MAX_PATH_LENGTH, "%s/%s",
                               file_path, p_file_name);
 #ifdef _PRODUCTION_LOG
+               (void)getrusage(RUSAGE_SELF, &ru);
+               start_time = times(&tval);
                (void)strcpy(orig_file_name, p_file_name);
 #endif
                if ((size = gts2tiff(file_path, p_file_name)) < 0)
@@ -2883,11 +2967,19 @@ handle_options(int          position,
                                  p_file_name, db[position].job_id);
                      recount_files_var = YES;
 #ifdef _PRODUCTION_LOG
+                     get_sum_cpu_usage(&ru, &cpu_usage);
                      production_log(creation_time, 1, 0, unique_number,
                                     split_job_counter, db[position].job_id,
                                     db[position].dir_id,
-                                    "%s%c%c%c-1%c%s",
+                                    (times(&tval) - start_time) / (double)clktck,
+                                    cpu_usage.tv_sec, cpu_usage.tv_usec,
+# if SIZEOF_OFF_T == 4
+                                    "%s%c%lx%c%c%c-1%c%s",
+# else
+                                    "%s%c%llx%c%c%c-1%c%s",
+# endif
                                     orig_file_name, SEPARATOR_CHAR,
+                                    (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
                                     SEPARATOR_CHAR, SEPARATOR_CHAR,
                                     SEPARATOR_CHAR, GTS2TIFF_ID);
 #endif
@@ -2897,16 +2989,20 @@ handle_options(int          position,
                {
                   *file_size += size;
 #ifdef _PRODUCTION_LOG
+                  get_sum_cpu_usage(&ru, &cpu_usage);
                   production_log(creation_time, 1, 1, unique_number,
                                  split_job_counter, db[position].job_id,
                                  db[position].dir_id,
+                                 (times(&tval) - start_time) / (double)clktck,
+                                 cpu_usage.tv_sec, cpu_usage.tv_usec,
 # if SIZEOF_OFF_T == 4
-                                 "%s%c%s%c%lx%c0%c%s",
+                                 "%s%c%lx%c%s%c%lx%c0%c%s",
 # else
-                                 "%s%c%s%c%llx%c0%c%s",
+                                 "%s%c%llx%c%s%c%llx%c0%c%s",
 # endif
-                                 orig_file_name, SEPARATOR_CHAR, p_file_name,
-                                 SEPARATOR_CHAR, (pri_off_t)size,
+                                 orig_file_name, SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                 p_file_name, SEPARATOR_CHAR, (pri_off_t)size,
                                  SEPARATOR_CHAR, SEPARATOR_CHAR, GTS2TIFF_ID);
 #endif
                }
@@ -2944,11 +3040,15 @@ handle_options(int          position,
 
          if (file_counter > 0)
          {
-            int  recount_files_var = NO;
-            char cccc[4],
-                 *p_cccc;
-
+            int            recount_files_var = NO;
+            char           cccc[4],
+                           *p_cccc;
 #ifdef _PRODUCTION_LOG
+            clock_t        start_time;
+            struct tms     tval;
+            struct rusage  ru;
+            struct timeval cpu_usage;
+
             p_option = options;
 #endif
             if ((*(options + GRIB2WMO_ID_LENGTH) == ' ') ||
@@ -2986,6 +3086,10 @@ handle_options(int          position,
              */
             for (j = 0; j < file_counter; j++)
             {
+#ifdef _PRODUCTION_LOG
+               (void)getrusage(RUSAGE_SELF, &ru);
+               start_time = times(&tval);
+#endif
                (void)snprintf(fullname, MAX_PATH_LENGTH, "%s/%s",
                               file_path, p_file_name);
                size = 0;
@@ -3009,11 +3113,19 @@ handle_options(int          position,
                                  p_file_name, db[position].job_id);
                      recount_files_var = YES;
 #ifdef _PRODUCTION_LOG
+                     get_sum_cpu_usage(&ru, &cpu_usage);
                      production_log(creation_time, 1, 0, unique_number,
                                     split_job_counter, db[position].job_id,
                                     db[position].dir_id,
-                                    "%s%c%c%c-1%c%s",
+                                    (times(&tval) - start_time) / (double)clktck,
+                                    cpu_usage.tv_sec, cpu_usage.tv_usec,
+# if SIZEOF_OFF_T == 4
+                                    "%s%c%lx%c%c%c-1%c%s",
+# else
+                                    "%s%c%llx%c%c%c-1%c%s",
+# endif
                                     p_file_name, SEPARATOR_CHAR,
+                                    (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
                                     SEPARATOR_CHAR, SEPARATOR_CHAR,
                                     SEPARATOR_CHAR, p_option);
 #endif
@@ -3023,16 +3135,20 @@ handle_options(int          position,
                {
                   *file_size += size;
 #ifdef _PRODUCTION_LOG
+                  get_sum_cpu_usage(&ru, &cpu_usage);
                   production_log(creation_time, 1, 1, unique_number,
                                  split_job_counter, db[position].job_id,
                                  db[position].dir_id,
+                                 (times(&tval) - start_time) / (double)clktck,
+                                 cpu_usage.tv_sec, cpu_usage.tv_usec,
 # if SIZEOF_OFF_T == 4
-                                 "%s%c%s%c%lx%c0%c%s",
+                                 "%s%c%lx%c%s%c%lx%c0%c%s",
 # else
-                                 "%s%c%s%c%llx%c0%c%s",
+                                 "%s%c%llx%c%s%c%llx%c0%c%s",
 # endif
-                                 p_file_name, SEPARATOR_CHAR, p_file_name,
-                                 SEPARATOR_CHAR, (pri_off_t)size,
+                                 p_file_name, SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                 p_file_name, SEPARATOR_CHAR, (pri_off_t)size,
                                  SEPARATOR_CHAR, SEPARATOR_CHAR, p_option);
 #endif
                }
@@ -3397,7 +3513,7 @@ handle_options(int          position,
                                        (extract_typ == FOUR_BYTE_MRZ) ? NO : YES,
                                        creation_time, unique_number,
                                        split_job_counter, db[position].job_id,
-                                       db[position].dir_id, p_option,
+                                       db[position].dir_id, clktck, p_option,
                                        p_file_name) < 0)
 #else
                                        (extract_typ == FOUR_BYTE_MRZ) ? NO : YES) < 0)
@@ -3510,16 +3626,20 @@ handle_options(int          position,
           (CHECK_STRNCMP(options, ASSEMBLE_ID, ASSEMBLE_ID_LENGTH) == 0))
       {
 #ifdef _WITH_PTHREAD
-         int  file_counter = 0,
+         int            file_counter = 0,
 #else
-         int  file_counter = *files_to_send,
+         int            file_counter = *files_to_send,
 #endif
-              assemble_typ,
-              nnn_length = 0;
-         char *p_assemble_id,
-              assembled_name[MAX_FILENAME_LENGTH];
-
+                        assemble_typ,
+                        nnn_length = 0;
+         char           *p_assemble_id,
+                        assembled_name[MAX_FILENAME_LENGTH];
 #ifdef _PRODUCTION_LOG
+         clock_t        start_time;
+         struct tms     tval;
+         struct rusage  ru;
+         struct timeval cpu_usage;
+
          p_option = options;
 #endif
          p_assemble_id = options + ASSEMBLE_ID_LENGTH + 1;
@@ -3642,6 +3762,8 @@ handle_options(int          position,
 #endif
 #ifdef _PRODUCTION_LOG
             size = *file_size;
+            (void)getrusage(RUSAGE_SELF, &ru);
+            start_time = times(&tval);
 #endif
             (void)snprintf(fullname, MAX_PATH_LENGTH, "%s/%s",
                            file_path, assembled_name);
@@ -3657,21 +3779,27 @@ handle_options(int          position,
             else
             {
 #ifdef _PRODUCTION_LOG
-               int  ii;
+               int    ii;
+               double production_time;
 
+               production_time = (times(&tval) - start_time) / (double)clktck;
+               get_sum_cpu_usage(&ru, &cpu_usage);
                ptr = p_file_name;
                for (ii = 0; ii < file_counter; ii++)
                {
                   production_log(creation_time, file_counter, 1, unique_number,
                                  split_job_counter, db[position].job_id,
-                                 db[position].dir_id,
+                                 db[position].dir_id, production_time,
+                                 cpu_usage.tv_sec, cpu_usage.tv_usec,
 # if SIZEOF_OFF_T == 4
-                                 "%s%c%s%c%lx%c0%c%s",
+                                 "%s%c%lx%c%s%c%lx%c0%c%s",
 # else
-                                 "%s%c%s%c%llx%c0%c%s",
+                                 "%s%c%llx%c%s%c%llx%c0%c%s",
 # endif
-                                 ptr, SEPARATOR_CHAR, assembled_name,
-                                 SEPARATOR_CHAR, (pri_off_t)(*file_size - size),
+                                 ptr, SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_pool[ii], SEPARATOR_CHAR,
+                                 assembled_name, SEPARATOR_CHAR,
+                                 (pri_off_t)(*file_size - size),
                                  SEPARATOR_CHAR, SEPARATOR_CHAR, p_option);
                   ptr += MAX_FILENAME_LENGTH;
                }
@@ -3704,12 +3832,16 @@ handle_options(int          position,
 
          if (file_counter > 0)
          {
-            int  convert_type,
-                 nnn_length = 0,
-                 ret;
-            char *p_convert_id;
-
+            int            convert_type,
+                           nnn_length = 0,
+                           ret;
+            char           *p_convert_id;
 #ifdef _PRODUCTION_LOG
+            clock_t        start_time;
+            struct tms     tval;
+            struct rusage  ru;
+            struct timeval cpu_usage;
+
             p_option = options;
 #endif
             p_convert_id = options + CONVERT_ID_LENGTH + 1;
@@ -3891,32 +4023,42 @@ handle_options(int          position,
                     NEXT(options);
                     continue;
                  }
+
+            *file_size = 0;
             for (j = 0; j < file_counter; j++)
             {
 #ifdef _PRODUCTION_LOG
-               size = *file_size;
+               (void)getrusage(RUSAGE_SELF, &ru);
+               start_time = times(&tval);
 #endif
                ret = convert(file_path, p_file_name, convert_type, nnn_length,
-                             db[position].host_id, db[position].job_id,
-                             file_size);
+                             db[position].host_id, db[position].job_id, &size);
+#ifdef _PRODUCTION_LOG
+               get_sum_cpu_usage(&ru, &cpu_usage);
+#endif
                if (ret < 0)
                {
                   receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                               "Unable to convert file %s #%x",
                               p_file_name, db[position].job_id);
                }
+               *file_size += size;
 #ifdef _PRODUCTION_LOG
                production_log(creation_time, 1, 1, unique_number,
                               split_job_counter, db[position].job_id,
                               db[position].dir_id,
+                              (times(&tval) - start_time) / (double)clktck,
+                              cpu_usage.tv_sec, cpu_usage.tv_usec,
 # if SIZEOF_OFF_T == 4
-                              "%s%c%s%c%lx%c%d%c%s",
+                              "%s%c%lx%c%s%c%lx%c%d%c%s",
 # else
-                              "%s%c%s%c%llx%c%d%c%s",
+                              "%s%c%llx%c%s%c%llx%c%d%c%s",
 # endif
-                              p_file_name, SEPARATOR_CHAR, p_file_name,
-                              SEPARATOR_CHAR, (pri_off_t)(*file_size - size),
-                              SEPARATOR_CHAR, ret, SEPARATOR_CHAR, p_option);
+                              p_file_name, SEPARATOR_CHAR,
+                              (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                              p_file_name, SEPARATOR_CHAR,
+                              (pri_off_t)size, SEPARATOR_CHAR,
+                              ret, SEPARATOR_CHAR, p_option);
 #endif
                p_file_name += MAX_FILENAME_LENGTH;
             }
@@ -3943,7 +4085,13 @@ handle_options(int          position,
 #endif
          if (file_counter > 0)
          {
-            int recount_files_var = NO;
+            int        recount_files_var = NO;
+#ifdef _PRODUCTION_LOG
+            clock_t        start_time;
+            struct tms     tval;
+            struct rusage  ru;
+            struct timeval cpu_usage;
+#endif
 
             *file_size = 0;
 
@@ -3953,8 +4101,15 @@ handle_options(int          position,
              */
             for (j = 0; j < file_counter; j++)
             {
+#ifdef _PRODUCTION_LOG
+               (void)getrusage(RUSAGE_SELF, &ru);
+               start_time = times(&tval);
+#endif
                if ((wmo2ascii(file_path, p_file_name, &size)) < 0)
                {
+#ifdef _PRODUCTION_LOG
+                  get_sum_cpu_usage(&ru, &cpu_usage);
+#endif
                   receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                               "wmo2ascii(): Removing corrupt file `%s' #%x",
                               p_file_name, db[position].job_id);
@@ -3963,25 +4118,37 @@ handle_options(int          position,
                   production_log(creation_time, 1, 0, unique_number,
                                  split_job_counter, db[position].job_id,
                                  db[position].dir_id,
-                                 "%s%c%c%c-1%c%s",
-                                 p_file_name, SEPARATOR_CHAR, SEPARATOR_CHAR,
-                                 SEPARATOR_CHAR, SEPARATOR_CHAR, WMO2ASCII_ID);
+                                 (times(&tval) - start_time) / (double)clktck,
+                                 cpu_usage.tv_sec, cpu_usage.tv_usec,
+# if SIZEOF_OFF_T == 4
+                                 "%s%c%lx%c%c%c-1%c%s",
+# else
+                                 "%s%c%llx%c%c%c-1%c%s",
+# endif
+                                 p_file_name, SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                 SEPARATOR_CHAR, SEPARATOR_CHAR,
+                                 SEPARATOR_CHAR, WMO2ASCII_ID);
 #endif
                }
                else
                {
                   *file_size += size;
 #ifdef _PRODUCTION_LOG
+                  get_sum_cpu_usage(&ru, &cpu_usage);
                   production_log(creation_time, 1, 1, unique_number,
                                  split_job_counter, db[position].job_id,
                                  db[position].dir_id,
+                                 (times(&tval) - start_time) / (double)clktck,
+                                 cpu_usage.tv_sec, cpu_usage.tv_usec,
 # if SIZEOF_OFF_T == 4
-                                 "%s%c%s%c%lx%c0%c%s",
+                                 "%s%c%lx%c%s%c%lx%c0%c%s",
 # else
-                                 "%s%c%s%c%llx%c0%c%s",
+                                 "%s%c%llx%c%s%c%llx%c0%c%s",
 # endif
-                                 p_file_name, SEPARATOR_CHAR, p_file_name,
-                                 SEPARATOR_CHAR, (pri_off_t)size,
+                                 p_file_name, SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                 p_file_name, SEPARATOR_CHAR, (pri_off_t)size,
                                  SEPARATOR_CHAR, SEPARATOR_CHAR, WMO2ASCII_ID);
 #endif
                }
@@ -4201,9 +4368,6 @@ cleanup_rename_ow(int          file_counter,
 {
    int  files_deleted = 0,
         files_to_send,
-#ifdef _PRODUCTION_LOG
-        j,
-#endif
         i;
    char *p_file_name,
         *p_new_name;
@@ -4215,18 +4379,34 @@ cleanup_rename_ow(int          file_counter,
    {
       if (*p_new_name == '\0')
       {
-         j = 0;
+         production_log(creation_time, 1, 0, unique_number, split_job_counter,
+                        db[position].job_id, db[position].dir_id, 0.0, 0L, 0L,
+# if SIZEOF_OFF_T == 4
+                        "%s%c%lx%c%s%c%c0%c%s",
+# else
+                        "%s%c%llx%c%s%c%c0%c%s",
+# endif
+                        p_file_name, SEPARATOR_CHAR,
+                        (pri_off_t)file_size_pool[i], SEPARATOR_CHAR,
+                        p_new_name, SEPARATOR_CHAR,
+                        SEPARATOR_CHAR, SEPARATOR_CHAR, p_option);
          files_deleted++;
       }
       else
       {
-         j = 1;
+         production_log(creation_time, 1, 1, unique_number, split_job_counter,
+                        db[position].job_id, db[position].dir_id, 0.0, 0L, 0L,
+# if SIZEOF_OFF_T == 4
+                        "%s%c%lx%c%s%c%lx%c0%c%s",
+# else
+                        "%s%c%llx%c%s%c%llx%c0%c%s",
+# endif
+                        p_file_name, SEPARATOR_CHAR,
+                        (pri_off_t)file_size_pool[i], SEPARATOR_CHAR,
+                        p_new_name, SEPARATOR_CHAR,
+                        (pri_off_t)file_size_pool[i], SEPARATOR_CHAR,
+                        SEPARATOR_CHAR, p_option);
       }
-      production_log(creation_time, 1, j, unique_number, split_job_counter,
-                     db[position].job_id, db[position].dir_id,
-                     "%s%c%s%c%c0%c%s",
-                     p_file_name, SEPARATOR_CHAR, p_new_name, SEPARATOR_CHAR,
-                     SEPARATOR_CHAR, SEPARATOR_CHAR, p_option);
       p_new_name += MAX_FILENAME_LENGTH;
       p_file_name += MAX_FILENAME_LENGTH;
    }
@@ -4537,17 +4717,20 @@ delete_all_files(char *file_path,
 #ifdef _PRODUCTION_LOG
 /*+++++++++++++++++++++++++++ check_changes() +++++++++++++++++++++++++++*/
 static int
-check_changes(time_t       creation_time,
-              unsigned int unique_number,
-              unsigned int split_job_counter,
-              int          position,
-              char         *exec_name,
-              char         *exec_cmd,
-              int          exec_ret,
-              int          old_file_counter,
-              int          overwrite,
-              char         *file_path,
-              off_t        *file_size)
+check_changes(time_t         creation_time,
+              unsigned int   unique_number,
+              unsigned int   split_job_counter,
+              int            position,
+              char           *exec_name,
+              off_t          exec_size,
+              char           *exec_cmd,
+              int            exec_ret,
+              struct timeval *p_cpu_time,
+              double         production_time,
+              int            old_file_counter,
+              int            overwrite,
+              char           *file_path,
+              off_t          *file_size)
 {
    int file_counter = 0;
    DIR *dp;
@@ -4768,12 +4951,15 @@ check_changes(time_t       creation_time,
                      production_log(creation_time, log_entries, file_counter,
                                     unique_number, split_job_counter,
                                     db[position].job_id, db[position].dir_id,
+                                    production_time, p_cpu_time->tv_sec,
+                                    p_cpu_time->tv_usec,
 # if SIZEOF_OFF_T == 4
-                                    "%s%c%s%c%lx%c%d%c%s",
+                                    "%s%c%lx%c%s%c%lx%c%d%c%s",
 # else
-                                    "%s%c%s%c%llx%c%d%c%s",
+                                    "%s%c%llx%c%s%c%llx%c%d%c%s",
 # endif
                                     p_tmp_file_name, SEPARATOR_CHAR,
+                                    (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
                                     p_new_file_name, SEPARATOR_CHAR,
                                     (pri_off_t)new_file_size_buffer[i],
                                     SEPARATOR_CHAR, exec_ret, SEPARATOR_CHAR,
@@ -4785,13 +4971,17 @@ check_changes(time_t       creation_time,
                {
                   production_log(creation_time, 1, log_entries, unique_number,
                                  split_job_counter, db[position].job_id,
+                                 db[position].dir_id, production_time,
+                                 p_cpu_time->tv_sec, p_cpu_time->tv_usec,
 # if SIZEOF_OFF_T == 4
-                                 db[position].dir_id, "%s%c%s%c%lx%c%d%c%s",
+                                 "%s%c%lx%c%s%c%lx%c%d%c%s",
 # else
-                                 db[position].dir_id, "%s%c%s%c%llx%c%d%c%s",
+                                 "%s%c%llx%c%s%c%llx%c%d%c%s",
 # endif
-                                 exec_name, SEPARATOR_CHAR, p_new_file_name,
-                                 SEPARATOR_CHAR, (pri_off_t)new_file_size_buffer[i],
+                                 exec_name, SEPARATOR_CHAR,
+                                 exec_size, SEPARATOR_CHAR,
+                                 p_new_file_name, SEPARATOR_CHAR,
+                                 (pri_off_t)new_file_size_buffer[i],
                                  SEPARATOR_CHAR, exec_ret, SEPARATOR_CHAR,
                                  exec_cmd);
                }
@@ -4825,8 +5015,15 @@ check_changes(time_t       creation_time,
                {
                   production_log(creation_time, 1, 0, unique_number,
                                  split_job_counter, db[position].job_id,
-                                 db[position].dir_id, "%s%c%c%c%d%c%s",
+                                 db[position].dir_id, production_time,
+                                 p_cpu_time->tv_sec, p_cpu_time->tv_usec,
+# if SIZEOF_OFF_T == 4
+                                 "%s%c%lx%c%c%c%d%c%s",
+# else
+                                 "%s%c%llx%c%c%c%d%c%s",
+# endif
                                  p_old_file_name, SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
                                  SEPARATOR_CHAR, SEPARATOR_CHAR, exec_ret,
                                  SEPARATOR_CHAR, exec_cmd);
                }
@@ -4834,12 +5031,15 @@ check_changes(time_t       creation_time,
                {
                   production_log(creation_time, 1, 1, unique_number,
                                  split_job_counter, db[position].job_id,
+                                 db[position].dir_id, production_time,
+                                 p_cpu_time->tv_sec, p_cpu_time->tv_usec,
 # if SIZEOF_OFF_T == 4
-                                 db[position].dir_id, "%s%c%s%c%lx%c%d%c%s",
+                                 "%s%c%lx%c%s%c%lx%c%d%c%s",
 # else
-                                 db[position].dir_id, "%s%c%s%c%llx%c%d%c%s",
+                                 "%s%c%llx%c%s%c%llx%c%d%c%s",
 # endif
                                  p_old_file_name, SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
                                  p_old_file_name, SEPARATOR_CHAR,
                                  (pri_off_t)new_file_size_buffer[j],
                                  SEPARATOR_CHAR, exec_ret, SEPARATOR_CHAR,
@@ -4858,13 +5058,16 @@ check_changes(time_t       creation_time,
                {
                   production_log(creation_time, 1, 1, unique_number,
                                  split_job_counter, db[position].job_id,
+                                 db[position].dir_id, production_time,
+                                 p_cpu_time->tv_sec, p_cpu_time->tv_usec,
 # if SIZEOF_OFF_T == 4
-                                 db[position].dir_id, "%s%c%s%c%lx%c%d%c%s",
+                                 "%s%c%lx%c%s%c%lx%c%d%c%s",
 # else
-                                 db[position].dir_id, "%s%c%s%c%llx%c%d%c%s",
+                                 "%s%c%llx%c%s%c%llx%c%d%c%s",
 # endif
-                                 exec_name, SEPARATOR_CHAR, exec_name,
-                                 SEPARATOR_CHAR,
+                                 exec_name, SEPARATOR_CHAR,
+                                 exec_size, SEPARATOR_CHAR,
+                                 exec_name, SEPARATOR_CHAR,
                                  (pri_off_t)new_file_size_buffer[i],
                                  SEPARATOR_CHAR, exec_ret, SEPARATOR_CHAR,
                                  exec_cmd);
@@ -4877,10 +5080,17 @@ check_changes(time_t       creation_time,
             {
                production_log(creation_time, 1, 0, unique_number,
                               split_job_counter, db[position].job_id,
-                              db[position].dir_id, "%s%c%c%c%d%c%s",
-                              exec_name, SEPARATOR_CHAR, SEPARATOR_CHAR,
-                              SEPARATOR_CHAR, exec_ret, SEPARATOR_CHAR,
-                              exec_cmd);
+                              db[position].dir_id, production_time,
+                              p_cpu_time->tv_sec, p_cpu_time->tv_usec,
+# if SIZEOF_OFF_T == 4
+                              "%s%c%lx%c%c%c%d%c%s",
+# else
+                              "%s%c%llx%c%c%c%d%c%s",
+# endif
+                              exec_name, SEPARATOR_CHAR,
+                              exec_size, SEPARATOR_CHAR,
+                              SEPARATOR_CHAR, SEPARATOR_CHAR, exec_ret,
+                              SEPARATOR_CHAR, exec_cmd);
             }
          }
       }

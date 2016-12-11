@@ -1,6 +1,6 @@
 /*
  *  exec_cmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -26,15 +26,18 @@ DESCR__S_M3
  **   exec_cmd - executes a shell command
  **
  ** SYNOPSIS
- **   int exec_cmd(char   *cmd,
- **                char   **buffer,
- **                int    log_fd,
- **                char   *name,
- **                int    name_length,
- **                char   *job,
- **                time_t exec_timeout,
- **                int    dup_stderr,
- **                int    limit_read_buffer)
+ **   int exec_cmd(char           *cmd,
+ **                char           **buffer,
+ **                int            log_fd,
+ **                char           *name,
+ **                int            name_length,
+ **                char           *job,
+ **                struct timeval *p_cpu_time,
+ **                double         *exec_duration,
+ **                clock_t        clktck,
+ **                time_t         exec_timeout,
+ **                int            dup_stderr,
+ **                int            limit_read_buffer)
  **
  ** DESCRIPTION
  **   exec_cmd() executes a command specified in 'cmd' by calling
@@ -69,6 +72,8 @@ DESCR__S_M3
  **   14.10.2014 H.Kiehl If we get a EAGAIN or EWOULDBLOCK while reading
  **                      from a pipe we marked nonblocking it is not
  **                      an error.
+ **   10.11.2016 H.Kiehl Added return parameter exec_duration.
+ **   29.11.2016 H.Kiehl Added return parameter p_cpu_time.
  **
  */
 DESCR__E_M3
@@ -81,7 +86,7 @@ DESCR__E_M3
 #include <unistd.h>                   /* read(), close(), STDOUT_FILENO, */
                                       /* STDERR_FILENO, select()         */
 #include <sys/time.h>                 /* struct timeval                  */
-#ifdef HAVE_SETPRIORITY
+#if defined (HAVE_SETPRIORITY) || defined (HAVE_WAIT4)
 # include <sys/resource.h>            /* setpriority()                   */
 #endif
 #include <sys/types.h>
@@ -98,18 +103,21 @@ DESCR__E_M3
 
 /*############################## exec_cmd() #############################*/
 int
-exec_cmd(char   *cmd,
-         char   **buffer,
-         int    log_fd,
-         char   *name,
-         int    name_length,
+exec_cmd(char           *cmd,
+         char           **buffer,
+         int            log_fd,
+         char           *name,
+         int            name_length,
 #ifdef HAVE_SETPRIORITY
-         int    set_priority,
+         int            set_priority,
 #endif
-         char   *job,
-         time_t exec_timeout,
-         int    dup_stderr,
-         int    limit_read_buffer)
+         char           *job,
+         struct timeval *p_cpu_time,
+         double         *exec_duration,
+         clock_t        clktck,
+         time_t         exec_timeout,
+         int            dup_stderr,
+         int            limit_read_buffer)
 {
    int        channels[2],
               fds[2],
@@ -152,6 +160,11 @@ exec_cmd(char   *cmd,
          p_cmd = cmd;
       }
    }
+   else if (exec_duration != NULL)
+        {
+           start_time = times(&tval);
+        }
+
    if (limit_read_buffer == YES)
    {
       if (dup_stderr == YES)
@@ -243,6 +256,9 @@ exec_cmd(char   *cmd,
             fd_set         rset;
             time_t         exec_start_time;
             struct timeval timeout;
+#ifdef HAVE_WAIT4
+            struct rusage  ru;
+#endif
 
             free(*buffer);
             if ((*buffer = malloc(max_pipe_size + 1)) == NULL)
@@ -273,22 +289,31 @@ exec_cmd(char   *cmd,
             FD_ZERO(&rset);
             for (;;)
             {
-               if (waitpid(child_pid, &proc_status, WNOHANG) > 0)
-               {
-                  if (log_fd > -1)
-                  {
-                     long clktck;
-
-                     if ((clktck = sysconf(_SC_CLK_TCK)) <= 0)
-                     {
-#if SIZEOF_PID_T == 4
-                        (void)rec(log_fd, INFO_SIGN, _("%-*s%s: [%d] Done.\n"),
+#ifdef HAVE_WAIT4
+               if (wait4(child_pid, &proc_status, WNOHANG, &ru) > 0)
 #else
-                        (void)rec(log_fd, INFO_SIGN, _("%-*s%s: [%lld] Done.\n"),
+               if (waitpid(child_pid, &proc_status, WNOHANG) > 0)
 #endif
-                                  name_length, name, job, (pri_pid_t)child_pid);
+               {
+                  if ((log_fd > -1) || (exec_duration != NULL))
+                  {
+                     clock_t end_time = times(&tval);
+                     double  duration;
+
+                     if (clktck <= 0)
+                     {
+                        clktck = sysconf(_SC_CLK_TCK);
+                     }
+                     if (clktck <= 0)
+                     {
+                        duration = 0.0;
                      }
                      else
+                     {
+                        duration = (end_time - start_time) / (double)clktck;
+                     }
+
+                     if (log_fd > -1)
                      {
                         (void)rec(log_fd, INFO_SIGN,
 #if SIZEOF_PID_T == 4
@@ -296,9 +321,35 @@ exec_cmd(char   *cmd,
 #else
                                   _("%-*s%s: [%lld] Exec time: %.3fs\n"),
 #endif
-                                  name_length, name, job, (pri_pid_t)child_pid,
-                                  (times(&tval) - start_time) / (double)clktck);
+                                  name_length, name, job,
+                                  (pri_pid_t)child_pid, duration);
                      }
+                     if (exec_duration != NULL)
+                     {
+                        *exec_duration = duration;
+                     }
+                  }
+
+                  if (p_cpu_time != NULL)
+                  {
+#ifdef HAVE_WAIT4
+                     p_cpu_time->tv_usec = ru.ru_utime.tv_usec +
+                                           ru.ru_stime.tv_usec;
+                     if (p_cpu_time->tv_usec > 1000000L)
+                     {
+                        p_cpu_time->tv_usec -= 1000000L;
+                        p_cpu_time->tv_sec = 1L + ru.ru_utime.tv_sec +
+                                             ru.ru_stime.tv_sec;
+                     }
+                     else
+                     {
+                        p_cpu_time->tv_sec = ru.ru_utime.tv_sec +
+                                             ru.ru_stime.tv_sec;
+                     }
+#else
+                     p_cpu_time->tv_usec = 0L;
+                     p_cpu_time->tv_sec = 0L;
+#endif
                   }
 
                   if (WIFEXITED(proc_status))
@@ -498,18 +549,68 @@ exec_cmd(char   *cmd,
                      }
                      my_usleep(10000L);
 
-                     if (waitpid(child_pid, NULL, WNOHANG) == child_pid)
-                     {
-                        if (log_fd > -1)
-                        {
-                           (void)rec(log_fd, WARN_SIGN,
-#if SIZEOF_PID_T == 4
-                                     _("%-*s%s: [%d] Killed command \"%s\" due to timeout (execution time > %lds).\n"),
+#ifdef HAVE_WAIT4
+                     if (wait4(child_pid, NULL, WNOHANG, &ru) == child_pid)
 #else
-                                     _("%-*s%s: [%lld] Killed command \"%s\" due to timeout (execution time > %lds).\n"),
+                     if (waitpid(child_pid, NULL, WNOHANG) == child_pid)
 #endif
-                                     name_length, name, job,
-                                     (pri_pid_t)child_pid, p_cmd, exec_timeout);
+                     {
+                        if ((log_fd > -1) || (exec_duration != NULL))
+                        {
+                           clock_t end_time = times(&tval);
+                           double  duration;
+
+                           if (clktck <= 0)
+                           {
+                              clktck = sysconf(_SC_CLK_TCK);
+                           }
+                           if (clktck <= 0)
+                           {
+                              duration = 0.0;
+                           }
+                           else
+                           {
+                              duration = (end_time - start_time) / (double)clktck;
+                           }
+
+                           if (log_fd > -1)
+                           {
+                              (void)rec(log_fd, WARN_SIGN,
+#if SIZEOF_PID_T == 4
+                                        _("%-*s%s: [%d] Killed command \"%s\" due to timeout (execution time > %lds).\n"),
+#else
+                                        _("%-*s%s: [%lld] Killed command \"%s\" due to timeout (execution time > %lds).\n"),
+#endif
+                                        name_length, name, job,
+                                        (pri_pid_t)child_pid, p_cmd,
+                                        exec_timeout);
+                           }
+                           if (exec_duration != NULL)
+                           {
+                              *exec_duration = duration;
+                           }
+                        }
+
+                        if (p_cpu_time != NULL)
+                        {
+#ifdef HAVE_WAIT4
+                           p_cpu_time->tv_usec = ru.ru_utime.tv_usec +
+                                                 ru.ru_stime.tv_usec;
+                           if (p_cpu_time->tv_usec > 1000000L)
+                           {
+                              p_cpu_time->tv_usec -= 1000000L;
+                              p_cpu_time->tv_sec = 1L + ru.ru_utime.tv_sec +
+                                                   ru.ru_stime.tv_sec;
+                           }
+                           else
+                           {
+                              p_cpu_time->tv_sec = ru.ru_utime.tv_sec +
+                                                   ru.ru_stime.tv_sec;
+                           }
+#else
+                           p_cpu_time->tv_usec = 0L;
+                           p_cpu_time->tv_sec = 0L;
+#endif
                         }
                         exit_status = INCORRECT;
                         break;
@@ -532,19 +633,69 @@ exec_cmd(char   *cmd,
                         {
                            my_usleep(10000L);
                            counter++;
-                           if (waitpid(child_pid, NULL, WNOHANG) == child_pid)
-                           {
-                              if (log_fd > -1)
-                              {
-                                 (void)rec(log_fd, WARN_SIGN,
-#if SIZEOF_PID_T == 4
-                                           _("%-*s%s: [%d] Killed command \"%s\" due to timeout (execution time > %lds).\n"),
+#ifdef HAVE_WAIT4
+                           if (wait4(child_pid, NULL, WNOHANG, &ru) == child_pid)
 #else
-                                           _("%-*s%s: [%lld] Killed command \"%s\" due to timeout (execution time > %lds).\n"),
+                           if (waitpid(child_pid, NULL, WNOHANG) == child_pid)
 #endif
-                                           name_length, name, job,
-                                           (pri_pid_t)child_pid,
-                                           p_cmd, exec_timeout);
+                           {
+                              if ((log_fd > -1) || (exec_duration != NULL))
+                              {
+                                 clock_t end_time = times(&tval);
+                                 double  duration;
+
+                                 if (clktck <= 0)
+                                 {
+                                    clktck = sysconf(_SC_CLK_TCK);
+                                 }
+                                 if (clktck <= 0)
+                                 {
+                                    duration = 0.0;
+                                 }
+                                 else
+                                 {
+                                    duration = (end_time - start_time) / (double)clktck;
+                                 }
+
+                                 if (log_fd > -1)
+                                 {
+                                    (void)rec(log_fd, WARN_SIGN,
+#if SIZEOF_PID_T == 4
+                                              _("%-*s%s: [%d] Killed command \"%s\" due to timeout (execution time > %lds).\n"),
+#else
+                                              _("%-*s%s: [%lld] Killed command \"%s\" due to timeout (execution time > %lds).\n"),
+#endif
+                                              name_length, name, job,
+                                              (pri_pid_t)child_pid,
+                                              p_cmd, exec_timeout);
+                                 }
+                                 if (exec_duration != NULL)
+                                 {
+                                    *exec_duration = duration;
+                                 }
+                              }
+
+                              if (p_cpu_time != NULL)
+                              {
+#ifdef HAVE_WAIT4
+                                 p_cpu_time->tv_usec = ru.ru_utime.tv_usec +
+                                                       ru.ru_stime.tv_usec;
+                                 if (p_cpu_time->tv_usec > 1000000L)
+                                 {
+                                    p_cpu_time->tv_usec -= 1000000L;
+                                    p_cpu_time->tv_sec = 1L +
+                                                         ru.ru_utime.tv_sec +
+                                                         ru.ru_stime.tv_sec;
+                                 }
+                                 else
+                                 {
+                                    p_cpu_time->tv_sec = ru.ru_utime.tv_sec +
+                                                         ru.ru_stime.tv_sec;
+                                 }
+#else
+                                 p_cpu_time->tv_usec = 0L;
+                                 p_cpu_time->tv_sec = 0L;
+#endif
                               }
                               counter = 101;
                            }

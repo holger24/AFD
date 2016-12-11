@@ -44,6 +44,7 @@
 #define SHOW_TLOG_PERM           "show_tlog"       /* Transfer Log         */
 #define SHOW_TDLOG_PERM          "show_tdlog"      /* Transfer Debug Log   */
 #define SHOW_ILOG_PERM           "show_ilog"       /* Input Log            */
+#define SHOW_PLOG_PERM           "show_plog"       /* Production Log       */
 #define SHOW_OLOG_PERM           "show_olog"       /* Output Log           */
 #define SHOW_DLOG_PERM           "show_dlog"       /* Delete Log           */
 #define SHOW_ELOG_PERM           "show_elog"       /* Event Log            */

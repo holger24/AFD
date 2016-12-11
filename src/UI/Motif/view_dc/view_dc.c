@@ -621,7 +621,7 @@ init_view_dc(int *argc, char *argv[])
 #ifdef HAVE_SETPRIORITY
                  NO_PRIORITY,
 #endif
-                 "", 0L, NO, NO) != 0) ||
+                 "", NULL, NULL, 0, 0L, NO, NO) != 0) ||
        (data_buffer == NULL))
    {
       (void)fprintf(stderr, "Failed to execute command: %s\n", cmd);

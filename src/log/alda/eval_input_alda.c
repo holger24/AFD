@@ -82,6 +82,7 @@ DESCR__S_M3
  **              %[Z]Pt<time char>      - time when production starts
  **              %[Z]PT<time char>      - time when production finished
  **              %[X]PD<duration char>  - production time (duration)
+ **              %[X]Pu<duration char>  - CPU usage
  **              %[Z]Pb                 - ratio relationship 1
  **              %[Z]PB                 - ratio relationship 2
  **              %[Z]PJ                 - job ID
@@ -89,6 +90,7 @@ DESCR__S_M3
  **              %[Z]PU                 - unique number
  **              %[Z]PL                 - split job number
  **              %[Y]Pf                 - input file name
+ **              %[X]Ps<size char>      - input file size
  **              %[Y]PF                 - produced file name
  **              %[X]PS<size char>      - produced file size
  **              %[Y]PC                 - command executed
@@ -135,7 +137,7 @@ DESCR__S_M3
  **               [Y] -> [-]#
  **               [Z] -> [-][0]#[d|o|x]
  **
- **            (used second chars: AbBcCDeEfFhHIJjLNnpOoPrRStTuUWYZ)
+ **            (used second chars: AbBcCDeEfFhHIJjLNnpOoPrRsStTuUWYZ)
  **
  **            Time character (t,T):
  **                 a - Abbreviated weekday name: Tue
@@ -159,7 +161,7 @@ DESCR__S_M3
  **                 y - Year without centry [00 - 99]: 99
  **                 Y - Year with centry: 1999
  **                 Z - Time zone name: CET
- **            Duration character (D):
+ **            Duration character (D,u):
  **                 A - Automatic shortes format: 4d
  **                             d - days
  **                             h - hours
@@ -211,7 +213,10 @@ DESCR__S_M3
  **           -h <host name/alias/ID>      Host name, alias or ID.
  **           -j <job ID>                  Job identifier.
  **           -u <unique number>           Unique number.
+ **           -z <size>                    Original file size in byte.
+ **                                        (Production log only!)
  **           -S[I|U|P|O|D] <size>         File size in byte.
+ **           -D[P|O] <time>               Duration in seconds.
  **           -p <protocol>                Protocol used for transport.
  **   Other parameters
  **           -F <file name>               Footer to add to output.
@@ -276,7 +281,9 @@ extern unsigned int end_alias_counter,
                     *search_dir_id,
                     search_dir_id_counter,
                     search_dir_name_counter,
+                    search_duration_flag,
                     search_file_size_flag,
+                    search_orig_file_size_flag,
                     search_host_alias_counter,
                     *search_host_id,
                     search_host_id_counter,
@@ -289,6 +296,8 @@ extern unsigned int end_alias_counter,
                     start_id_counter,
                     start_name_counter;
 extern int          gt_lt_sign,
+                    gt_lt_sign_duration,
+                    gt_lt_sign_orig,
                     rotate_limit,
                     trace_mode,
                     verbose;
@@ -298,7 +307,9 @@ extern time_t       end_time_end,
                     max_search_time,
                     start_time_end,
                     start_time_start;
-extern off_t        search_file_size;
+extern off_t        search_file_size,
+                    search_orig_file_size;
+extern double       search_duration;
 extern char         **end_alias,
                     **end_name,
                     **file_pattern,
@@ -699,6 +710,50 @@ eval_input_alda(int *argc, char *argv[])
                }
                break;
 
+            case 'z' : /* Original file size (production only!) in byte. */
+               if ((*argc == 1) || (*(argv + 1)[0] == '-'))
+               {
+                  (void)fprintf(stderr,
+                                "ERROR  : No size specified for parameter -s.\n");
+                  correct = NO;
+                  (*argc) -= 1;
+                  argv += 1;
+               }
+               else
+               {
+                  char *ptr;
+
+                  search_orig_file_size_flag = SEARCH_PRODUCTION_LOG;
+                  ptr = *(argv + 1);
+                  if (*ptr == '<')
+                  {
+                     gt_lt_sign_orig = LESS_THEN_SIGN;
+                     ptr++;
+                  }
+                  else if (*ptr == '>')
+                       {
+                          gt_lt_sign_orig = GREATER_THEN_SIGN;
+                          ptr++;
+                       }
+                  else if (*ptr == '!')
+                       {
+                          gt_lt_sign_orig = NOT_SIGN;
+                          ptr++;
+                       }
+                       else
+                       {
+                          gt_lt_sign_orig = EQUAL_SIGN;
+                          if (*ptr == '=')
+                          {
+                             ptr++;
+                          }
+                       }
+                  search_orig_file_size = (unsigned int)strtoul(ptr, NULL, 10);
+                  (*argc) -= 2;
+                  argv += 2;
+               }
+               break;
+
             case 'S' : /* File size in byte. */
                if ((*argc == 1) || (*(argv + 1)[0] == '-'))
                {
@@ -764,6 +819,66 @@ eval_input_alda(int *argc, char *argv[])
                           }
                        }
                   search_file_size = (unsigned int)strtoul(ptr, NULL, 10);
+                  (*argc) -= 2;
+                  argv += 2;
+               }
+               break;
+
+            case 'D' : /* Duration in seconds. */
+               if ((*argc == 1) || (*(argv + 1)[0] == '-'))
+               {
+                  (void)fprintf(stderr,
+                                "ERROR  : No duration specified for parameter -D.\n");
+                  correct = NO;
+                  (*argc) -= 1;
+                  argv += 1;
+               }
+               else
+               {
+                  char *ptr;
+
+                  switch (*(argv[0] + 2))
+                  {
+#ifdef _PRODUCTION_LOG
+                     case 'P' : /* Production */
+                        search_duration_flag = SEARCH_PRODUCTION_LOG;
+                        break;
+#endif
+#ifdef _OUTPUT_LOG
+                     case 'O' : /* Output */
+                        search_duration_flag = SEARCH_OUTPUT_LOG;
+                        break;
+#endif
+                     default : /* All */
+                        search_duration_flag = SEARCH_ALL_LOGS;
+                        break;
+                  }
+
+                  ptr = *(argv + 1);
+                  if (*ptr == '<')
+                  {
+                     gt_lt_sign_duration = LESS_THEN_SIGN;
+                     ptr++;
+                  }
+                  else if (*ptr == '>')
+                       {
+                          gt_lt_sign_duration = GREATER_THEN_SIGN;
+                          ptr++;
+                       }
+                  else if (*ptr == '!')
+                       {
+                          gt_lt_sign_duration = NOT_SIGN;
+                          ptr++;
+                       }
+                       else
+                       {
+                          gt_lt_sign_duration = EQUAL_SIGN;
+                          if (*ptr == '=')
+                          {
+                             ptr++;
+                          }
+                       }
+                  search_duration = strtod(ptr, NULL);
                   (*argc) -= 2;
                   argv += 2;
                }
@@ -2043,6 +2158,7 @@ usage(char *progname)
    (void)fprintf(stderr, "              %%[Z]Pt<time char>      - time when production starts\n");
    (void)fprintf(stderr, "              %%[Z]PT<time char>      - time when production finished\n");
    (void)fprintf(stderr, "              %%[X]PD<duration char>  - production time (duration)\n");
+   (void)fprintf(stderr, "              %%[X]Pu<duration char>  - CPU usage\n");
    (void)fprintf(stderr, "              %%[Z]Pb                 - ratio relationship 1\n");
    (void)fprintf(stderr, "              %%[Z]PB                 - ratio relationship 2\n");
    (void)fprintf(stderr, "              %%[Z]PJ                 - job ID\n");
@@ -2050,6 +2166,7 @@ usage(char *progname)
    (void)fprintf(stderr, "              %%[Z]PU                 - unique number\n");
    (void)fprintf(stderr, "              %%[Z]PL                 - split job number\n");
    (void)fprintf(stderr, "              %%[Y]Pf                 - input file name\n");
+   (void)fprintf(stderr, "              %%[X]Ps<size char>      - input file size\n");
    (void)fprintf(stderr, "              %%[Y]PF                 - produced file name\n");
    (void)fprintf(stderr, "              %%[X]PS<size char>      - produced file size\n");
    (void)fprintf(stderr, "              %%[Y]PC                 - command executed\n");
@@ -2121,7 +2238,7 @@ usage(char *progname)
    (void)fprintf(stderr, "                 y - Year without century [00 - 99]: 99\n");
    (void)fprintf(stderr, "                 Y - Year with century: 1999\n");
    (void)fprintf(stderr, "                 Z - Time zone name: CET\n");
-   (void)fprintf(stderr, "            Duration character (D):\n");
+   (void)fprintf(stderr, "            Duration character (D,u):\n");
    (void)fprintf(stderr, "                 A - Automatic shortest format: 4d\n");
    (void)fprintf(stderr, "                             d - days\n");
    (void)fprintf(stderr, "                             h - hours\n");
@@ -2178,7 +2295,10 @@ usage(char *progname)
    (void)fprintf(stderr, "                                            host ID use prefix #\n");
    (void)fprintf(stderr, "            -j <job ID>                  Job identifier.\n");
    (void)fprintf(stderr, "            -u <unique number>           Unique number.\n");
+   (void)fprintf(stderr, "            -z <size>                    Original file size in byte.\n");
+   (void)fprintf(stderr, "                                         (Production log only!)\n");
    (void)fprintf(stderr, "            -S[I|U|P|O|D] <size>         File size in byte.\n");
+   (void)fprintf(stderr, "            -D[P|O] <time>               Duration in seconds.\n");
    (void)fprintf(stderr, "            -p <protocol>                Protocol used for transport:\n");
    (void)fprintf(stderr, "                                          %s\n", ALDA_FTP_SHEME);
    (void)fprintf(stderr, "                                          %s\n", ALDA_LOC_SHEME);

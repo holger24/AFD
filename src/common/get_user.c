@@ -1,6 +1,6 @@
 /*
  *  get_user.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2011 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -223,7 +223,7 @@ get_user(char *user, char *fake_user, int user_offset)
 #ifdef HAVE_SETPRIORITY
                              NO_PRIORITY,
 #endif
-                             "", 0L, YES, YES) != INCORRECT) &&
+                             "", NULL, NULL, 0, 0L, YES, YES) != INCORRECT) &&
                    (buffer != NULL))
                {
                   char *search_ptr = buffer;

@@ -192,26 +192,27 @@
 #define T_LOG_SEL                        104    /* Transfer Log */
 #define TD_LOG_SEL                       105    /* Transfer Debug Log */
 #define I_LOG_SEL                        106    /* Input Log */
-#define O_LOG_SEL                        107    /* Output Log */
-#define D_LOG_SEL                        108    /* Delete Log */
-#define EXIT_SEL                         109
-#define VIEW_FILE_LOAD_SEL               110
-#define VIEW_KBYTE_LOAD_SEL              111
-#define VIEW_CONNECTION_LOAD_SEL         112
-#define VIEW_TRANSFER_LOAD_SEL           113
-#define PING_SEL                         114
-#define TRACEROUTE_SEL                   115
-#define DIR_CTRL_SEL                     116
-#define SHOW_QUEUE_SEL                   117
-#define AFD_CTRL_SEL                     118
-#define CONTROL_AMG_SEL                  119
-#define CONTROL_FD_SEL                   120
-#define REREAD_DIR_CONFIG_SEL            121
-#define REREAD_HOST_CONFIG_SEL           122
-#define EDIT_DC_SEL                      123
-#define EDIT_HC_SEL                      124
-#define STARTUP_AFD_SEL                  125
-#define SHUTDOWN_AFD_SEL                 126
+#define P_LOG_SEL                        107    /* Production Log */
+#define O_LOG_SEL                        108    /* Output Log */
+#define D_LOG_SEL                        109    /* Delete Log */
+#define EXIT_SEL                         110
+#define VIEW_FILE_LOAD_SEL               111
+#define VIEW_KBYTE_LOAD_SEL              112
+#define VIEW_CONNECTION_LOAD_SEL         113
+#define VIEW_TRANSFER_LOAD_SEL           114
+#define PING_SEL                         115
+#define TRACEROUTE_SEL                   116
+#define DIR_CTRL_SEL                     117
+#define SHOW_QUEUE_SEL                   118
+#define AFD_CTRL_SEL                     119
+#define CONTROL_AMG_SEL                  120
+#define CONTROL_FD_SEL                   121
+#define REREAD_DIR_CONFIG_SEL            122
+#define REREAD_HOST_CONFIG_SEL           123
+#define EDIT_DC_SEL                      124
+#define EDIT_HC_SEL                      125
+#define STARTUP_AFD_SEL                  126
+#define SHUTDOWN_AFD_SEL                 127
 /* NOTE: Since some of these are used by more then one */
 /*       program each may define only a certain range: */
 /*         afd_ctrl.h        0 - 39                    */

@@ -1,6 +1,6 @@
 /*
  *  trans_exec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,10 @@ DESCR__S_M3
  **   trans_exec - execute a command for a file that has just been send.
  **
  ** SYNOPSIS
- **   void trans_exec(char *file_path, char *fullname, char *p_file_name_buffer)
+ **   void trans_exec(char    *file_path,
+ **                   char    *fullname,
+ **                   char    *p_file_name_buffer,
+ **                   clock_t clktck)
  **
  ** DESCRIPTION
  **
@@ -63,7 +66,10 @@ extern struct job                 db;
 
 /*############################ trans_exec() #############################*/
 void
-trans_exec(char *file_path, char *fullname, char *p_file_name_buffer)
+trans_exec(char    *file_path,
+           char    *fullname,
+           char    *p_file_name_buffer,
+           clock_t clktck)
 {
    char *p_command,
         tmp_connect_status;
@@ -276,7 +282,8 @@ trans_exec(char *file_path, char *fullname, char *p_file_name_buffer)
 #ifdef HAVE_SETPRIORITY
                                 sched_priority,
 #endif
-                                job_str, db.trans_exec_timeout,
+                                job_str, NULL, NULL, clktck,
+                                db.trans_exec_timeout,
                                 YES, YES)) != 0) /* ie != SUCCESS */
             {
                trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -326,8 +333,8 @@ trans_exec(char *file_path, char *fullname, char *p_file_name_buffer)
 #ifdef HAVE_SETPRIORITY
                                    sched_priority,
 #endif
-                                   job_str, db.trans_exec_timeout, YES,
-                                   YES)) != 0)
+                                   job_str, NULL, NULL, clktck,
+                                   db.trans_exec_timeout, YES, YES)) != 0)
                {
                   trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
                             "Failed to execute command %s [Return code = %d]",

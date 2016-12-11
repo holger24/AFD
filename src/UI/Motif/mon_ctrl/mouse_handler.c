@@ -1479,6 +1479,22 @@ start_remote_prog(Widget    w,
                }
                break;
 
+            case P_LOG_SEL : /* Remote Production Log. */
+               args[arg_count + display_offset + 5] = SHOW_PLOG;
+               args[arg_count + display_offset + 6] = "-f";
+               args[arg_count + display_offset + 7] = font_name;
+               if (fake_user[0] == '\0')
+               {
+                  args[arg_count + display_offset + 8] = NULL;
+               }
+               else
+               {
+                  args[arg_count + display_offset + 8] = "-u";
+                  args[arg_count + display_offset + 9] = fake_user;
+                  args[arg_count + display_offset + 10] = NULL;
+               }
+               break;
+
             case O_LOG_SEL : /* Remote Output Log. */
                args[arg_count + display_offset + 5] = SHOW_OLOG;
                args[arg_count + display_offset + 6] = "-f";
@@ -1950,6 +1966,12 @@ start_remote_prog(Widget    w,
                   case I_LOG_SEL : /* Remote Input Log. */
                      mconfig_log(MON_LOG, DEBUG_SIGN,
                                  "%-*s: Input Log started",
+                                 MAX_AFDNAME_LENGTH, msa[i].afd_alias);
+                     break;
+
+                  case P_LOG_SEL : /* Remote Production Log. */
+                     mconfig_log(MON_LOG, DEBUG_SIGN,
+                                 "%-*s: Production Log started",
                                  MAX_AFDNAME_LENGTH, msa[i].afd_alias);
                      break;
 

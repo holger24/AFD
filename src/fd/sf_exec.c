@@ -206,6 +206,7 @@ main(int argc, char *argv[])
                     source_file[MAX_PATH_LENGTH],
                     tmp_char,
                     tmp_option[MAX_PATH_LENGTH + MAX_RECIPIENT_LENGTH];
+   clock_t          clktck;
    struct job       *p_db;
 #ifdef SA_FULLDUMP
    struct sigaction sact;
@@ -248,6 +249,12 @@ main(int argc, char *argv[])
    local_file_counter = 0;
    files_to_send = init_sf(argc, argv, file_path, EXEC_FLAG);
    p_db = &db;
+   if ((clktck = sysconf(_SC_CLK_TCK)) <= 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "Could not get clock ticks per second : %s", strerror(errno));
+      exit(INCORRECT);
+   }
 
    if ((signal(SIGINT, sig_kill) == SIG_ERR) ||
        (signal(SIGQUIT, sig_exit) == SIG_ERR) ||
@@ -396,7 +403,7 @@ main(int argc, char *argv[])
 #ifdef HAVE_SETPRIORITY
                                       sched_priority,
 #endif
-                                      job_str,
+                                      job_str, NULL, NULL, clktck,
                                       (fsa->protocol_options & TIMEOUT_TRANSFER) ? (time_t)transfer_timeout : 0L,
                                       YES, YES)) != 0)
                   {
@@ -504,7 +511,7 @@ main(int argc, char *argv[])
 #ifdef HAVE_SETPRIORITY
                                    sched_priority,
 #endif
-                                   job_str,
+                                   job_str, NULL, NULL, clktck,
                                    (fsa->protocol_options & TIMEOUT_TRANSFER) ? (time_t)transfer_timeout : 0L,
                                    YES, YES)) != 0) /* ie != SUCCESS */
                {
@@ -573,7 +580,7 @@ main(int argc, char *argv[])
 #ifdef _WITH_TRANS_EXEC
          if (db.special_flag & TRANS_EXEC)
          {
-            trans_exec(file_path, source_file, p_file_name_buffer);
+            trans_exec(file_path, source_file, p_file_name_buffer, clktck);
          }
 #endif
 

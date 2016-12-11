@@ -364,7 +364,7 @@ info_click(Widget w, XtPointer client_data, XEvent *event)
 #ifdef HAVE_SETPRIORITY
                           NO_PRIORITY,
 #endif
-                          "", 0L, NO, NO) != 0) ||
+                          "", NULL, NULL, 0, 0L, NO, NO) != 0) ||
                 (text == NULL))
             {
                (void)fprintf(stderr, "Failed to execute command: %s\n",
@@ -393,7 +393,7 @@ info_click(Widget w, XtPointer client_data, XEvent *event)
 
          for (i = 0; i < id.count; i++)
          {
-            free(id.dbe[i].files);
+            free((void *)id.dbe[i].files);
             if (id.dbe[i].soptions != NULL)
             {
                free((void *)id.dbe[i].soptions);

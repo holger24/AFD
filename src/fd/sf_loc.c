@@ -224,6 +224,7 @@ main(int argc, char *argv[])
                     ff_name[MAX_PATH_LENGTH],
                     file_path[MAX_PATH_LENGTH],
                     source_file[MAX_PATH_LENGTH];
+   clock_t          clktck;
    struct job       *p_db;
 #ifdef SA_FULLDUMP
    struct sigaction sact;
@@ -266,6 +267,12 @@ main(int argc, char *argv[])
    local_file_counter = 0;
    files_to_send = init_sf(argc, argv, file_path, LOC_FLAG);
    p_db = &db;
+   if ((clktck = sysconf(_SC_CLK_TCK)) <= 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "Could not get clock ticks per second : %s", strerror(errno));
+      exit(INCORRECT);
+   }
 
    if ((signal(SIGINT, sig_kill) == SIG_ERR) ||
        (signal(SIGQUIT, sig_exit) == SIG_ERR) ||
@@ -1140,11 +1147,11 @@ cross_link_error:
             {
                if (db.special_flag & EXECUTE_IN_TARGET_DIR)
                {
-                  trans_exec(db.target_dir, ff_name, p_file_name_buffer);
+                  trans_exec(db.target_dir, ff_name, p_file_name_buffer, clktck);
                }
                else
                {
-                  trans_exec(file_path, source_file, p_file_name_buffer);
+                  trans_exec(file_path, source_file, p_file_name_buffer, clktck);
                }
             }
 #endif

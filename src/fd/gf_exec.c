@@ -309,7 +309,7 @@ main(int argc, char *argv[])
 #ifdef HAVE_SETPRIORITY
                           sched_priority,
 #endif
-                          job_str,
+                          job_str, NULL, NULL, 0,
                           (fsa->protocol_options & TIMEOUT_TRANSFER) ? (time_t)transfer_timeout : 0L,
                           YES, YES)) != 0)
       {

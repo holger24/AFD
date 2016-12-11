@@ -70,12 +70,13 @@
 #define TRANS_W                         4
 #define TRANS_DEBUG_W                   5
 #define INPUT_W                         6
-#define OUTPUT_W                        7
-#define DELETE_W                        8
-#define SHOW_QUEUE_W                    9
-#define INFO_W                         10
-#define VIEW_DC_W                      11
-#define VIEW_JOB_W                     12
+#define PRODUCTION_W                    7
+#define OUTPUT_W                        8
+#define DELETE_W                        9
+#define SHOW_QUEUE_W                   10
+#define INFO_W                         11
+#define VIEW_DC_W                      12
+#define VIEW_JOB_W                     13
 
 /* Definitions for Control pulldown. */
 #define AMG_CTRL_W                      0
@@ -219,6 +220,7 @@ struct afd_control_perm
           char        **show_tlog_list;
           char        **show_tdlog_list;
           char        **show_ilog_list;
+          char        **show_plog_list;
           char        **show_olog_list;
           char        **show_dlog_list;
           char        **show_queue_list;
@@ -251,6 +253,7 @@ struct afd_control_perm
           signed char show_tlog;             /* Show Transfer Log        */
           signed char show_tdlog;            /* Show Debug Log           */
           signed char show_ilog;             /* Show Input Log           */
+          signed char show_plog;             /* Show Production Log      */
           signed char show_olog;             /* Show Output Log          */
           signed char show_dlog;             /* Show Delete Log          */
           signed char show_queue;            /* Show AFD Queue           */

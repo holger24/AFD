@@ -202,12 +202,12 @@ main(int argc, char *argv[])
 #endif
    off_t            file_size,
                     no_of_bytes;
-   clock_t          clktck;
 #ifdef _OUTPUT_LOG
    clock_t          end_time = 0,
                     start_time = 0;
    struct tms       tmsdummy;
 #endif
+   clock_t          clktck;
    time_t           connected,
 #ifdef _WITH_BURST_2
                     diff_time,
@@ -255,15 +255,15 @@ main(int argc, char *argv[])
    local_file_counter = 0;
    files_to_send = init_sf(argc, argv, file_path, HTTP_FLAG);
    p_db = &db;
+   if ((clktck = sysconf(_SC_CLK_TCK)) <= 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "Could not get clock ticks per second : %s",
+                 strerror(errno));
+      exit(INCORRECT);
+   }
    if (fsa->trl_per_process > 0)
    {
-      if ((clktck = sysconf(_SC_CLK_TCK)) <= 0)
-      {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "Could not get clock ticks per second : %s",
-                    strerror(errno));
-         exit(INCORRECT);
-      }
       if (fsa->trl_per_process < fsa->block_size)
       {
          blocksize = fsa->trl_per_process;
@@ -925,7 +925,7 @@ main(int argc, char *argv[])
 #ifdef _WITH_TRANS_EXEC
          if (db.special_flag & TRANS_EXEC)
          {
-            trans_exec(file_path, fullname, p_file_name_buffer);
+            trans_exec(file_path, fullname, p_file_name_buffer, clktck);
          }
 #endif /* _WITH_TRANS_EXEC */
 

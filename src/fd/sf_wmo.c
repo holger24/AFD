@@ -199,7 +199,6 @@ main(int argc, char *argv[])
    unsigned int     archived_copied = 0;
 #endif
    off_t            no_of_bytes;
-   clock_t          clktck;
    time_t           connected,
 #ifdef _WITH_BURST_2
                     diff_time,
@@ -217,6 +216,7 @@ main(int argc, char *argv[])
                     *buffer,
                     fullname[MAX_PATH_LENGTH],
                     file_path[MAX_PATH_LENGTH];
+   clock_t          clktck;
    struct stat      stat_buf;
    struct job       *p_db;
 #ifdef SA_FULLDUMP
@@ -252,15 +252,15 @@ main(int argc, char *argv[])
    local_file_counter = 0;
    files_to_send = init_sf(argc, argv, file_path, WMO_FLAG);
    p_db = &db;
+   if ((clktck = sysconf(_SC_CLK_TCK)) <= 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "Could not get clock ticks per second : %s",
+                 strerror(errno));
+      exit(INCORRECT);
+   }
    if (fsa->trl_per_process > 0)
    {
-      if ((clktck = sysconf(_SC_CLK_TCK)) <= 0)
-      {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "Could not get clock ticks per second : %s",
-                    strerror(errno));
-         exit(INCORRECT);
-      }
       if (fsa->trl_per_process < fsa->block_size)
       {
          blocksize = fsa->trl_per_process;
@@ -799,7 +799,7 @@ main(int argc, char *argv[])
 #ifdef _WITH_TRANS_EXEC
          if (db.special_flag & TRANS_EXEC)
          {
-            trans_exec(file_path, fullname, p_file_name_buffer);
+            trans_exec(file_path, fullname, p_file_name_buffer, clktck);
          }
 #endif
 

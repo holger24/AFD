@@ -295,6 +295,10 @@ setup_window(char *font_name, int redraw_mainmenu)
             {
                XtVaSetValues(vw[INPUT_W], XmNfontList, fontlist, NULL);
             }
+            if (acp.show_plog != NO_PERMISSION)
+            {
+               XtVaSetValues(vw[PRODUCTION_W], XmNfontList, fontlist, NULL);
+            }
             if (acp.show_olog != NO_PERMISSION)
             {
                XtVaSetValues(vw[OUTPUT_W], XmNfontList, fontlist, NULL);

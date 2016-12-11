@@ -104,7 +104,8 @@ DESCR__E_M1
 #ifdef WITH_MEMCHECK
 # include <mcheck.h>
 #endif
-#include <unistd.h>                /* fork(), rmdir(), getuid(), getgid()*/
+#include <unistd.h>                /* fork(), rmdir(), getuid(),         */
+                                   /* getgid(), sysconf()                */
 #include <dirent.h>                /* opendir(), closedir(), readdir(),  */
                                    /* DIR, struct dirent                 */
 #include <setjmp.h>                /* sigsetjmp(), siglongjmp()          */
@@ -198,6 +199,7 @@ unsigned int               default_age_limit,
                            force_reread_interval;
 mode_t                     default_create_source_dir_mode = 0;
 time_t                     default_exec_timeout;
+clock_t                    clktck;
 off_t                      amg_data_size;
 pid_t                      *opl;
 #ifdef HAVE_MMAP
@@ -491,6 +493,13 @@ main(int argc, char *argv[])
    init_dis_log();
 #endif
 
+   if ((clktck = sysconf(_SC_CLK_TCK)) <= 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "Could not get clock ticks per second : %s", strerror(errno));
+      exit(INCORRECT);
+   }
+
    /* Find largest file descriptor. */
    max_fd = del_time_job_fd;
    if (read_fd > max_fd)
@@ -542,6 +551,29 @@ main(int argc, char *argv[])
    system_log(INFO_SIGN, NULL, 0, "Starting %s (%s)",
               DIR_CHECK, PACKAGE_VERSION);
 
+   system_log(DEBUG_SIGN, NULL, 0, "%s: Number of time jobs   : %d",
+              DC_PROC_NAME, no_of_time_jobs);
+   if (no_of_time_jobs > 0)
+   {
+      size_t length = 0;
+      char   buffer[80];
+
+      /* Show which jobs are time jobs. */
+      for (i = 0; i < no_of_time_jobs; i++)
+      {
+         length += snprintf(&buffer[length], 80 - length, "#%x ",
+                            db[time_job_list[i]].job_id);
+         if (length > 51)
+         {
+            system_log(DEBUG_SIGN, NULL, 0, "%s", buffer);
+            length = 0;
+         }
+      }
+      if (length != 0)
+      {
+         system_log(DEBUG_SIGN, NULL, 0, "%s", buffer);
+      }
+   }
    if (force_reread_interval)
    {
       system_log(DEBUG_SIGN, NULL, 0, "%s: Force reread interval : %u seconds",
@@ -1131,13 +1163,13 @@ main(int argc, char *argv[])
                {
                   fra[de[i].fra_pos].next_check_time = calc_next_time_array(fra[de[i].fra_pos].no_of_time_entries,
                                                                             &fra[de[i].fra_pos].te[0],
-#ifdef WITH_TIMEZONE
-# ifdef NEW_FRA
+# ifdef WITH_TIMEZONE
+#  ifdef NEW_FRA
                                                                             fra[de[i].fra_pos].timezone,
-# else
+#  else
                                                                             "",
+#  endif
 # endif
-#endif
                                                                             start_time,
                                                                             __FILE__, __LINE__);
                }
@@ -1160,7 +1192,7 @@ main(int argc, char *argv[])
           * every time we have checked a directory.
           */
          check_fifo(read_fd, write_fd);
-#else
+#else /* !_WITH_PTHREAD */
          /*
           * Since it can take very long until we have travelled
           * through all directories lets always check the time
@@ -1374,13 +1406,13 @@ main(int argc, char *argv[])
                {
                   fra[de[i].fra_pos].next_check_time = calc_next_time_array(fra[de[i].fra_pos].no_of_time_entries,
                                                                             &fra[de[i].fra_pos].te[0],
-#ifdef WITH_TIMEZONE
-# ifdef NEW_FRA
+# ifdef WITH_TIMEZONE
+#  ifdef NEW_FRA
                                                                             fra[de[i].fra_pos].timezone,
-# else
+#  else
                                                                             "",
+#  endif
 # endif
-#endif
                                                                             start_time,
                                                                             __FILE__, __LINE__);
                }
@@ -1405,7 +1437,7 @@ main(int argc, char *argv[])
                event_log(0L, EC_DIR, ET_AUTO, EA_WARN_TIME_SET, "%s",
                          fra[de[i].fra_pos].dir_alias);
             }
-#ifdef NEW_FRA
+# ifdef NEW_FRA
             if (((*(unsigned char *)((char *)fra - AFD_FEATURE_FLAG_OFFSET_END) & DISABLE_DIR_WARN_TIME) == 0) &&
                 ((fra[de[i].fra_pos].dir_flag & INFO_TIME_REACHED) == 0) &&
                 (fra[de[i].fra_pos].info_time > 0) &&
@@ -1425,7 +1457,7 @@ main(int argc, char *argv[])
                event_log(0L, EC_DIR, ET_AUTO, EA_INFO_TIME_SET, "%s",
                          fra[de[i].fra_pos].dir_alias);
             }
-#endif
+# endif
          } /* for (i = 0; i < no_of_local_dirs; i++) */
 
          /* Check if time went backwards. */
@@ -1451,12 +1483,12 @@ main(int argc, char *argv[])
             max_diff_time = diff_time;
             max_diff_time_time = now;
          }
-#ifdef MAX_DIFF_TIME
+# ifdef MAX_DIFF_TIME
          if (diff_time >= MAX_DIFF_TIME)
          {
             max_diff_time_counter++;
          }
-#endif
+# endif
          average_diff_time += diff_time;
          no_of_dir_searches++;
          if ((fdc == 0) && (fpdc == 0))
@@ -2446,12 +2478,12 @@ handle_dir(int                       dir_pos,
                                      * fork. This will make the handling of files
                                      * a lot slower, but better then exiting.
                                      */
-#ifdef MULTI_FS_SUPPORT
+# ifdef MULTI_FS_SUPPORT
                                     send_message(ewl[de[dir_pos].ewl_pos].outgoing_file_dir,
                                                  ewl[de[dir_pos].ewl_pos].dev,
-#else
+# else
                                     send_message(outgoing_file_dir,
-#endif
+# endif
                                                  unique_name,
                                                  split_job_counter,
                                                  unique_number,
@@ -2506,11 +2538,11 @@ handle_dir(int                       dir_pos,
                                                        tmp_unique_name[MAX_FILENAME_LENGTH],
                                                        src_file_path[MAX_PATH_LENGTH];
 
-#ifdef MULTI_FS_SUPPORT
+# ifdef MULTI_FS_SUPPORT
                                           (void)strcpy(src_file_path, ewl[de[dir_pos].ewl_pos].outgoing_file_dir);
-#else
+# else
                                           (void)strcpy(src_file_path, outgoing_file_dir);
-#endif
+# endif
                                           (void)strcat(src_file_path, unique_name);
                                           (void)strcat(src_file_path, "/");
                                           tmp_unique_name[0] = '/';
@@ -2564,31 +2596,31 @@ handle_dir(int                       dir_pos,
                                              }
                                              tmp_split_job_counter = split_job_counter + ii + 1;
                                              if ((split_files_renamed = rename_files(src_file_path,
-#ifdef MULTI_FS_SUPPORT
+# ifdef MULTI_FS_SUPPORT
                                                                                      ewl[de[dir_pos].ewl_pos].outgoing_file_dir,
                                                                                      ewl[de[dir_pos].ewl_pos].outgoing_file_dir_length,
-#else
+# else
                                                                                      outgoing_file_dir,
                                                                                      outgoing_file_dir_length,
-#endif
+# endif
                                                                                      files_moved,
                                                                                      &db[de[dir_pos].fme[j].pos[k]],
                                                                                      current_time,
                                                                                      unique_number,
                                                                                      &tmp_split_job_counter,
                                                                                      &tmp_unique_name[1],
-#if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
+# if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
                                                                                      __FILE__,
                                                                                      __LINE__,
-#endif
+# endif
                                                                                      &split_file_size_renamed)) > 0)
                                              {
-#ifdef MULTI_FS_SUPPORT
+# ifdef MULTI_FS_SUPPORT
                                                 send_message(ewl[de[dir_pos].ewl_pos].outgoing_file_dir,
                                                              ewl[de[dir_pos].ewl_pos].dev,
-#else
+# else
                                                 send_message(outgoing_file_dir,
-#endif
+# endif
                                                              tmp_unique_name,
                                                              tmp_split_job_counter,
                                                              unique_number,

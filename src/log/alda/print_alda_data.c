@@ -1,6 +1,6 @@
 /*
  *  print_alda_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -421,8 +421,19 @@ print_alda_data(void)
                      case 'D' : /* Production time. */
                         if ((j = pri_duration(format_orientation, fo_pos,
                                               max_length, base_char, *(ptr + 2),
-                                              (double)(plog.output_time - plog.input_time),
-                                              i)) == -1)
+                                              plog.production_time, i)) == -1)
+                        {
+                           j = ptr + 2 - p_start;
+                           (void)memcpy(&output_line[i], p_start, j);
+                        }
+                        ptr += 2;
+                        i += j;
+                        break;
+
+                     case 'u' : /* CPU usage. */
+                        if ((j = pri_duration(format_orientation, fo_pos,
+                                              max_length, base_char, *(ptr + 2),
+                                              plog.cpu_time, i)) == -1)
                         {
                            j = ptr + 2 - p_start;
                            (void)memcpy(&output_line[i], p_start, j);
@@ -484,6 +495,18 @@ print_alda_data(void)
                         i += pri_string(right_side, max_length, plog.new_filename,
                                         plog.new_filename_length, i);
                         ptr++;
+                        break;
+
+                     case 's' : /* Original file size. */
+                        if ((j = pri_size(format_orientation, fo_pos, max_length,
+                                          base_char, *(ptr + 2),
+                                          plog.original_file_size, i)) == -1)
+                        {
+                           j = ptr + 2 - p_start;
+                           (void)memcpy(&output_line[i], p_start, j);
+                        }
+                        ptr += 2;
+                        i += j;
                         break;
 
                      case 'S' : /* Produced file size. */
@@ -979,7 +1002,10 @@ print_alda_data(void)
                  output_line[i] = *ptr;
                  i++;
               }
-         ptr++;
+         if (*ptr != '\0')
+         {
+            ptr++;
+         }
       }
    } while (*ptr != '\0');
 
@@ -1748,14 +1774,22 @@ pri_duration(char   *format_orientation,
          return(-1);
    }
 
-   if (divisor)
+   if (divisor != 0)
    {
       format_orientation[fo_pos] = base_char;
       format_orientation[fo_pos + 1] = '%';
       format_orientation[fo_pos + 2] = 's';
       format_orientation[fo_pos + 3] = '\0';
-      fo_pos = sprintf(&output_line[pos], format_orientation, 
-                       (int)duration / divisor, unit_str);
+      if (base_char == 'f')
+      {
+         fo_pos = sprintf(&output_line[pos], format_orientation, 
+                          duration / (double)divisor, unit_str);
+      }
+      else /* 'd', 'o' or 'x'. */
+      {
+         fo_pos = sprintf(&output_line[pos], format_orientation, 
+                          (int)duration / divisor, unit_str);
+      }
 
       if ((max_length > 0) && (fo_pos > max_length))
       {

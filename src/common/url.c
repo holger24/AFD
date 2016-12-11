@@ -1,6 +1,6 @@
 /*
  *  url.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2008 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1651,7 +1651,8 @@ url_evaluate(char          *url,
 #ifdef HAVE_SETPRIORITY
                                                                 NO_PRIORITY,
 #endif
-                                                                NULL,
+                                                                NULL, NULL,
+                                                                NULL, 0,
                                                                 EXEC_PATH_TIMEOUT,
                                                                 YES, YES)) != 0)
                                             {

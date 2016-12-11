@@ -52,11 +52,11 @@ else
    EXTRA_SET_AFD_EUID = set_afd_euid.c
 endif
 if WITH_PRODUCTION_LOG
-   PRODUCTION_LOG = production_log.c
+   PRODUCTION_LOG = production_log.c get_sum_cpu_usage.c
    EXTRA_PRODUCTION_LOG =
 else
    PRODUCTION_LOG =
-   EXTRA_PRODUCTION_LOG = production_log.c
+   EXTRA_PRODUCTION_LOG = production_log.c get_sum_cpu_usage.c
 endif
 if WITH_OUTPUT_LOG
    OUTPUT_LOG_PTRS       = output_log_fd.c output_log_ptrs.c

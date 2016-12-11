@@ -1,6 +1,6 @@
 /*
  *  dir_ctrl.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2013 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -57,12 +57,13 @@
 #define DIR_RECEIVE_W                  2
 #define DIR_TRANS_W                    3
 #define DIR_INPUT_W                    4
-#define DIR_OUTPUT_W                   5
-#define DIR_DELETE_W                   6
-#define DIR_SHOW_QUEUE_W               7
-#define DIR_INFO_W                     8
-#define DIR_VIEW_DC_W                  9
-#define NO_DIR_VIEW_MENU               10
+#define DIR_PRODUCTION_W               5
+#define DIR_OUTPUT_W                   6
+#define DIR_DELETE_W                   7
+#define DIR_SHOW_QUEUE_W               8
+#define DIR_INFO_W                     9
+#define DIR_VIEW_DC_W                  10
+#define NO_DIR_VIEW_MENU               11
 
 /* Definitions of popup selections. */
 #define DIR_INFO_SEL                   70
@@ -150,6 +151,7 @@ struct dir_control_perm
           char        **show_rlog_list;
           char        **show_tlog_list;
           char        **show_ilog_list;
+          char        **show_plog_list;
           char        **show_olog_list;
           char        **show_dlog_list;
           char        **show_queue_list;
@@ -165,6 +167,7 @@ struct dir_control_perm
           signed char show_rlog;             /* Show Receive Log         */
           signed char show_tlog;             /* Show Transfer Log        */
           signed char show_ilog;             /* Show Input Log           */
+          signed char show_plog;             /* Show Production Log      */
           signed char show_olog;             /* Show Output Log          */
           signed char show_dlog;             /* Show Delete Log          */
           signed char show_queue;            /* Show Queue               */

@@ -713,6 +713,31 @@ dir_popup_cb(Widget    w,
          (void)strcpy(progname, SHOW_ILOG);
          break;
 
+      case P_LOG_SEL : /* Production Log */
+         args[0] = progname;
+         args[1] = WORK_DIR_ID;
+         args[2] = p_work_dir;
+         args[3] = "-f";
+         args[4] = font_name;
+         if (fake_user[0] != '\0')
+         {
+            args[5] = "-u";
+            args[6] = fake_user;
+            offset = 7;
+         }
+         else
+         {
+            offset = 5;
+         }
+         if (profile[0] != '\0')
+         {
+            args[offset] = "-p";
+            args[offset + 1] = profile;
+            offset += 2;
+         }
+         (void)strcpy(progname, SHOW_PLOG);
+         break;
+
       case O_LOG_SEL : /* Output Log */
          args[0] = progname;
          args[1] = WORK_DIR_ID;
@@ -1024,9 +1049,9 @@ dir_popup_cb(Widget    w,
          return;
       }
    }
-   else if (((sel_typ == I_LOG_SEL) || (sel_typ == O_LOG_SEL) ||
-             (sel_typ == D_LOG_SEL) ||  (sel_typ == E_LOG_SEL) ||
-             (sel_typ == SHOW_QUEUE_SEL) ||
+   else if (((sel_typ == I_LOG_SEL) || (sel_typ == P_LOG_SEL) ||
+             (sel_typ == O_LOG_SEL) || (sel_typ == D_LOG_SEL) ||
+             (sel_typ == E_LOG_SEL) || (sel_typ == SHOW_QUEUE_SEL) ||
              (sel_typ == DIR_HANDLE_EVENT_SEL)) &&
             ((no_selected > 0) || (no_selected_static > 0)))
         {
@@ -1334,10 +1359,11 @@ dir_popup_cb(Widget    w,
                k++;
                break;
 
-            case O_LOG_SEL : /* View Output Log. */
-            case D_LOG_SEL : /* View Delete Log. */
-            case I_LOG_SEL : /* View Input Log. */
-            case SHOW_QUEUE_SEL : /* View Queue. */
+            case O_LOG_SEL : /* View Output Log.     */
+            case D_LOG_SEL : /* View Delete Log.     */
+            case I_LOG_SEL : /* View Input Log.      */
+            case P_LOG_SEL : /* View Production Log. */
+            case SHOW_QUEUE_SEL : /* View Queue.     */
                (void)sprintf(dirs[k], "%x", fra[i].dir_id);
                args[offset + k] = dirs[k];
                k++;
@@ -1425,9 +1451,10 @@ dir_popup_cb(Widget    w,
       args[offset + k] = NULL;
       make_xprocess(progname, progname, args, -1);
    }
-   else if ((sel_typ == I_LOG_SEL) || (sel_typ == O_LOG_SEL) ||
-            (sel_typ == D_LOG_SEL) || (sel_typ == E_LOG_SEL) ||
-            (sel_typ == SHOW_QUEUE_SEL) || (sel_typ == DIR_HANDLE_EVENT_SEL))
+   else if ((sel_typ == I_LOG_SEL) || (sel_typ == P_LOG_SEL) ||
+            (sel_typ == O_LOG_SEL) || (sel_typ == D_LOG_SEL) ||
+            (sel_typ == E_LOG_SEL) || (sel_typ == SHOW_QUEUE_SEL) ||
+            (sel_typ == DIR_HANDLE_EVENT_SEL))
         {
            args[k + offset] = NULL;
            make_xprocess(progname, progname, args, -1);

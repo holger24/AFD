@@ -57,6 +57,10 @@
 #ifdef HAVE_WAIT4
 # include <sys/time.h>                /* struct timeval                  */
 #endif
+#ifdef _PRODUCTION_LOG
+# include <sys/resource.h>
+#endif
+#include <float.h>                    /* DBL_MANT_DIG, DBL_MIN_EXP       */
 
 #define MY_MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MY_MAX(a, b) (((a) > (b)) ? (a) : (b))
@@ -276,6 +280,7 @@ typedef unsigned long       u_long_64;
 #define MONITOR_LOG                "monitor_log"
 #define SHOW_ELOG                  "show_elog"
 #define SHOW_ILOG                  "show_ilog"
+#define SHOW_PLOG                  "show_plog"
 #define SHOW_OLOG                  "show_olog"
 #define SHOW_DLOG                  "show_dlog"
 #define SHOW_QUEUE                 "show_queue"
@@ -647,6 +652,7 @@ typedef unsigned long       u_long_64;
 #define EQUAL_SIGN                 1
 #define LESS_THEN_SIGN             2
 #define GREATER_THEN_SIGN          3
+#define NOT_SIGN                   4
 
 /* Size definitions. */
 #define KILOFILE                   1000
@@ -1343,6 +1349,7 @@ typedef unsigned long       u_long_64;
                                             /* 8 + 1 + 8 + 1 + 16 + 1 + 8 + 1 + 8 + 1 + 1 */
 #endif
 #define MAX_MSG_NAME_LENGTH_STR      "MAX_MSG_NAME_LENGTH"
+#define MAX_DOUBLE_LENGTH            (3 + DBL_MANT_DIG - DBL_MIN_EXP)
 #define MAX_INT_LENGTH               11     /* When storing integer values  */
                                             /* as string this is the no.    */
                                             /* characters needed to store   */
@@ -3862,7 +3869,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     bin_file_chopper(char *, int *, off_t *, char *,
                                      char, time_t, unsigned int,
                                      unsigned int, unsigned int,
-                                     unsigned int, char *, char *),
+                                     unsigned int, clock_t, char *, char *),
 #else
                     bin_file_chopper(char *, int *, off_t *, char *, char),
 #endif
@@ -3905,7 +3912,8 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
 #ifdef HAVE_SETPRIORITY
                              int,
 #endif
-                             char *, time_t, int, int),
+                             char *, struct timeval *, double *, clock_t,
+                             time_t, int, int),
                     expand_filter(char *, char *, time_t),
                     expand_path(char *, char *),
                     extract(char *, char *, char *,
@@ -4079,6 +4087,9 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
                     get_max_log_values(int *, char *, int, off_t *, char *,
                                        off_t),
                     get_rename_rules(int),
+#ifdef _PRODUCTION_LOG
+                    get_sum_cpu_usage(struct rusage *, struct timeval *),
+#endif
                     get_user(char *, char *, int),
                     ia_trans_log(char *, char *, int, int, char *, ...),
                     inform_fd_about_fsa_change(void),
@@ -4113,8 +4124,9 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
 #endif
 #ifdef _PRODUCTION_LOG
                     production_log(time_t, unsigned int, unsigned int,
-                                   unsigned int, unsigned int,
-                                   unsigned int, unsigned int, char *, ...),
+                                   unsigned int, unsigned int, unsigned int,
+                                   unsigned int, double, time_t,
+                                   long int, char *, ...),
 #endif
                     remove_job_files(char *, int,
 #ifdef _DELETE_LOG

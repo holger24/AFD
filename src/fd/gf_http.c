@@ -128,6 +128,7 @@ off_t                      fra_size,
                            fsa_size;
 #endif
 long                       transfer_timeout;
+clock_t                    clktck;
 char                       msg_str[MAX_RET_MSG_LENGTH],
                            *p_work_dir = NULL,
                            tr_hostname[MAX_HOSTNAME_LENGTH + 1];
@@ -175,7 +176,6 @@ main(int argc, char *argv[])
                     file_size_retrieved = 0,
                     file_size_to_retrieve = 0,
                     tmp_content_length;
-   clock_t          clktck;
    time_t           connected,
 #ifdef _WITH_BURST_2
                     diff_time,

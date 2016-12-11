@@ -56,18 +56,24 @@ DESCR__E_M1
 
 /* External global variables. */
 extern int                       gt_lt_sign,
+                                 gt_lt_sign_duration,
+                                 gt_lt_sign_orig,
                                  log_date_length,
                                  trace_mode,
                                  verbose;
 extern unsigned int              file_pattern_counter,
                                  mode,
+                                 search_duration_flag,
                                  search_file_size_flag,
+                                 search_orig_file_size_flag,
                                  search_job_id,
                                  search_unique_number;
 extern time_t                    start,
                                  start_time_end,
                                  start_time_start;
-extern off_t                     search_file_size;
+extern off_t                     search_file_size,
+                                 search_orig_file_size;
+extern double                    search_duration;
 extern char                      **file_pattern;
 extern struct alda_cache_data    *pcache;
 extern struct alda_position_list **ppl;
@@ -88,6 +94,7 @@ check_production_line(char         *line,
 {
    register int  i;
    register char *ptr = line + log_date_length;
+   int           onefoureigth_or_greater;
 
    if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
    {
@@ -105,9 +112,9 @@ check_production_line(char         *line,
       {
          ppl[production.current_file_no][pcache[production.current_file_no].pc].time = plog.output_time;
          ppl[production.current_file_no][pcache[production.current_file_no].pc].gotcha = NO;
-# ifdef CACHE_DEBUG
+#ifdef CACHE_DEBUG
          ppl[production.current_file_no][pcache[production.current_file_no].pc].filename[0] = '\0';
-# endif
+#endif
          pcache[production.current_file_no].mpc++;
       }
       pcache[production.current_file_no].pc++;
@@ -137,7 +144,8 @@ check_production_line(char         *line,
          plog.ratio_2 = (unsigned int)strtoul(ptr, NULL, 16);
          ptr += i + 1;
          i = 0;
-         while ((*(ptr + i) != '_') && (i < MAX_INT_HEX_LENGTH) &&
+         while ((*(ptr + i) != '_') && (*(ptr + i) != '.') &&
+                (*(ptr + i) != SEPARATOR_CHAR) && (i < MAX_DOUBLE_LENGTH) &&
                 (*(ptr + i) != '\0'))
          {
             i++;
@@ -150,12 +158,12 @@ check_production_line(char         *line,
             (void)fprintf(stderr,
                           "Unable to store the unique number since it is to large. (%s %d)\n",
                           __FILE__, __LINE__);
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
             while (*(ptr + i) != '\0')
             {
                i++;
             }
-# endif
+#endif
          }
          else
          {
@@ -165,9 +173,9 @@ check_production_line(char         *line,
          }
          plog.input_time = -1;
          plog.unique_number = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
          production.bytes_read += (ptr + i - line);
-# endif
+#endif
 
          return(INCORRECT);
       }
@@ -176,7 +184,181 @@ check_production_line(char         *line,
         {
            plog.ratio_1 = 0;
            plog.ratio_2 = 0;
+           plog.production_time = 0.0;
+           plog.cpu_time = 0.0;
         }
+
+   /*
+    * As of version 1.4.8 we added two more fields: production time + CPU
+    * usage and the original file size.
+    */
+   if ((*(ptr + i) == '.') || (*(ptr + i) == SEPARATOR_CHAR))
+   {
+      if (*(ptr + i) == SEPARATOR_CHAR)
+      {
+         plog.production_time = 0.0;
+         plog.cpu_time = 0.0;
+         i++;
+      }
+      else
+      {
+         i++;
+         while ((*(ptr + i) != '.') && (*(ptr + i) != SEPARATOR_CHAR) &&
+                (i < MAX_DOUBLE_LENGTH) && (*(ptr + i) != '\0'))
+         {
+            i++;
+         }
+         if ((*(ptr + i) == '.') || (*(ptr + i) == SEPARATOR_CHAR))
+         {
+            char tmp_char = *(ptr + i);
+
+            *(ptr + i) = '\0';
+            plog.production_time = strtod(ptr, NULL);
+            ptr += i + 1;
+            i = 0;
+
+            if (tmp_char == '.')
+            {
+               long int cpu_usec;
+               time_t   cpu_sec;
+
+               /* CPU usage. */
+               while ((*(ptr + i) != '.') && (*(ptr + i) != SEPARATOR_CHAR) &&
+                      (i < MAX_INT_HEX_LENGTH) && (*(ptr + i) != '\0'))
+               {
+                  i++;
+               }
+               if ((*(ptr + i) == '.') || (*(ptr + i) == SEPARATOR_CHAR))
+               {
+                  tmp_char = *(ptr + i);
+                  *(ptr + i) = '\0';
+                  cpu_sec = (time_t)str2timet(ptr, NULL, 16);
+                  ptr += i + 1;
+                  i = 0;
+
+                  if (tmp_char == '.')
+                  {
+                     while ((*(ptr + i) != SEPARATOR_CHAR) &&
+                            (i < MAX_INT_HEX_LENGTH) && (*(ptr + i) != '\0'))
+                     {
+                        i++;
+                     }
+                     if (*(ptr + i) == SEPARATOR_CHAR)
+                     {
+                        cpu_usec = strtol(ptr, NULL, 16);
+                        ptr += i + 1;
+                        i = 0;
+                     }
+                     else
+                     {
+                        cpu_usec = 0L;
+                        while ((*(ptr + i) != SEPARATOR_CHAR) &&
+                               (*(ptr + i) != '\0'))
+                        {
+                           i++;
+                        }
+                        if (*(ptr + i) == SEPARATOR_CHAR)
+                        {
+                           ptr += i + 1;
+                        }
+                        else
+                        {
+                           ptr += i;
+                        }
+                     }
+                     plog.cpu_time = (double)(cpu_sec + (cpu_usec / (double)1000000));
+                  }
+                  else
+                  {
+                     plog.cpu_time = cpu_sec;
+                  }
+               }
+               else
+               {
+                  plog.cpu_time = 0.0;
+                  while ((*(ptr + i) != SEPARATOR_CHAR) && (*(ptr + i) != '\0'))
+                  {
+                     i++;
+                  }
+                  if (*(ptr + i) == SEPARATOR_CHAR)
+                  {
+                     ptr += i + 1;
+                  }
+                  else
+                  {
+                     ptr += i;
+                  }
+               }
+            }
+         }
+         else
+         {
+            if (i == MAX_DOUBLE_LENGTH)
+            {
+               (void)fprintf(stderr,
+                             "Unable to store the production time since it is to large. (%s %d)\n",
+                             __FILE__, __LINE__);
+#ifndef HAVE_GETLINE
+               while (*(ptr + i) != '\0')
+               {
+                  i++;
+               }
+#endif
+            }
+            else
+            {
+               (void)fprintf(stderr,
+                             "Unable to store the production time because end was not found. (%s %d)\n",
+                             __FILE__, __LINE__);
+            }
+            plog.input_time = -1;
+            plog.unique_number = 0;
+            plog.ratio_1 = 0;
+            plog.ratio_2 = 0;
+            plog.production_time = 0.0;
+#ifndef HAVE_GETLINE
+            production.bytes_read += (ptr + i - line);
+#endif
+
+            return(INCORRECT);
+         }
+      }
+      if (((search_duration_flag & SEARCH_PRODUCTION_LOG) == 0) ||
+          (((gt_lt_sign_duration == EQUAL_SIGN) &&
+            (plog.production_time == search_duration)) ||
+           ((gt_lt_sign_duration == LESS_THEN_SIGN) &&
+            (plog.production_time < search_duration)) ||
+           ((gt_lt_sign_duration == GREATER_THEN_SIGN) &&
+            (plog.production_time > search_duration)) ||
+           ((gt_lt_sign_duration == NOT_SIGN) &&
+            (plog.production_time != search_duration))))
+      {
+         while ((*(ptr + i) != '_') && (i < MAX_INT_HEX_LENGTH) &&
+                (*(ptr + i) != '\0'))
+         {
+            i++;
+         }
+         onefoureigth_or_greater = YES;
+      }
+      else
+      {
+         plog.input_time = -1;
+         plog.unique_number = 0;
+         plog.ratio_1 = 0;
+         plog.ratio_2 = 0;
+         plog.production_time = 0.0;
+#ifndef HAVE_GETLINE
+         production.bytes_read += (ptr + i - line);
+#endif
+
+         return(NOT_WANTED);
+      }
+   }
+   else
+   {
+      plog.cpu_time = 0.0;
+      onefoureigth_or_greater = NO;
+   }
 
    if (*(ptr + i) == '_')
    {
@@ -274,10 +456,10 @@ check_production_line(char         *line,
 
                                     plog.original_filename[i] = '\0';
                                     plog.original_filename_length = i;
-# ifdef CACHE_DEBUG
+#ifdef CACHE_DEBUG
                                     (void)strcpy(ppl[production.current_file_no][pcache[production.current_file_no].pc - 1].filename,
                                                  plog.original_filename);
-# endif
+#endif
 
                                     if (prev_file_name == NULL)
                                     {
@@ -325,6 +507,100 @@ check_production_line(char         *line,
                                            */
                                           ptr += i + 1;
 
+                                          if (onefoureigth_or_greater == YES)
+                                          {
+                                             /* Store original file size. */
+                                             i = 0;
+                                             while ((*(ptr + i) != SEPARATOR_CHAR) &&
+                                                    (*(ptr + i) != '\0') &&
+                                                    (i < MAX_OFF_T_HEX_LENGTH))
+                                             {
+                                                i++;
+                                             }
+                                             if (*(ptr + i) == SEPARATOR_CHAR)
+                                             {
+                                                *(ptr + i) = '\0';
+                                                plog.original_file_size = (off_t)str2offt(ptr, NULL, 16);
+
+                                                if (((search_orig_file_size_flag & SEARCH_PRODUCTION_LOG) == 0) ||
+                                                    ((search_orig_file_size == -1) || (i == 0) ||
+                                                     ((gt_lt_sign_orig == EQUAL_SIGN) &&
+                                                      (plog.original_file_size == search_orig_file_size)) ||
+                                                     ((gt_lt_sign_orig == LESS_THEN_SIGN) &&
+                                                      (plog.original_file_size < search_orig_file_size)) ||
+                                                     ((gt_lt_sign_orig == GREATER_THEN_SIGN) &&
+                                                      (plog.original_file_size > search_orig_file_size)) ||
+                                                     ((gt_lt_sign_orig == NOT_SIGN) &&
+                                                      (plog.original_file_size != search_orig_file_size))))
+                                                {
+                                                   /* Lets continue. */
+                                                   ptr += i + 1;
+                                                }
+                                                else
+                                                {
+                                                   /* Size does not match, so this is */
+                                                   /* NOT wanted.                     */
+                                                   plog.original_filename[0] = '\0';
+                                                   plog.original_file_size = -1;
+                                                   plog.new_filename[0] = '\0';
+                                                   plog.new_file_size = -1;
+                                                   plog.input_time = -1;
+                                                   plog.original_filename_length = 0;
+                                                   plog.new_filename_length = 0;
+                                                   plog.dir_id = 0;
+                                                   plog.job_id = 0;
+                                                   plog.unique_number = 0;
+                                                   plog.split_job_counter = 0;
+#ifndef HAVE_GETLINE
+                                                   while (*(ptr + i) != '\0')
+                                                   {
+                                                      i++;
+                                                   }
+                                                   production.bytes_read += (ptr + i - line);
+#endif
+
+                                                   return(NOT_WANTED);
+                                                }
+                                             }
+                                             else
+                                             {
+                                                if (i == MAX_OFF_T_HEX_LENGTH)
+                                                {
+                                                   (void)fprintf(stderr,
+                                                                 "Unable to store the size for file %s since it is to large. (%s %d)\n",
+                                                                 plog.original_filename, __FILE__, __LINE__);
+#ifndef HAVE_GETLINE
+                                                   while (*(ptr + i) != '\0')
+                                                   {
+                                                      i++;
+                                                   }
+#endif
+                                                }
+                                                else
+                                                {
+                                                   (void)fprintf(stderr,
+                                                                 "Unable to store the size for file %s because end was not found. (%s %d)\n",
+                                                                 plog.original_filename, __FILE__, __LINE__);
+                                                }
+                                                plog.original_filename[0] = '\0';
+                                                plog.original_file_size = -1;
+                                                plog.new_filename[0] = '\0';
+                                                plog.new_file_size = -1;
+                                                plog.input_time = -1;
+                                                plog.original_filename_length = 0;
+                                                plog.new_filename_length = 0;
+                                                plog.dir_id = 0;
+                                                plog.job_id = 0;
+                                                plog.unique_number = 0;
+                                                plog.split_job_counter = 0;
+#ifndef HAVE_GETLINE
+                                                production.bytes_read += (ptr + i - line);
+#endif
+
+                                                return(INCORRECT);
+                                             }
+                                          }
+
                                           /* Store new filename. */
                                           i = 0;
                                           while ((*(ptr + i) != SEPARATOR_CHAR) &&
@@ -352,12 +628,12 @@ check_production_line(char         *line,
                                              {
                                                 if (i == 0)
                                                 {
-                                                   *(ptr + i) = '\0';
-                                                   plog.new_file_size = (off_t)str2offt(ptr, NULL, 16);
+                                                   plog.new_file_size = 0;
                                                 }
                                                 else
                                                 {
-                                                   plog.new_file_size = 0;
+                                                   *(ptr + i) = '\0';
+                                                   plog.new_file_size = (off_t)str2offt(ptr, NULL, 16);
                                                 }
                                                 if (((search_file_size_flag & SEARCH_PRODUCTION_LOG) == 0) ||
                                                     ((search_file_size == -1) || (i == 0) ||
@@ -397,12 +673,12 @@ check_production_line(char         *line,
                                                       {
                                                          plog.what_done[i] = '\0';
                                                          plog.what_done_length = i;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                                                          if (*(ptr + i) == '\n')
                                                          {
                                                             i++;
                                                          }
-# endif
+#endif
                                                       }
                                                       else
                                                       {
@@ -410,23 +686,23 @@ check_production_line(char         *line,
                                                                        "Unable to store the command executed since command is to long.\n");
                                                          plog.what_done[0] = '\0';
                                                          plog.what_done_length = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                                                          while (*(ptr + i) != '\0')
                                                          {
                                                             i++;
                                                          }
-# endif
+#endif
                                                       }
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                                                       production.bytes_read += (ptr + i - line);
-# endif
+#endif
                                                       if (verbose > 2)
                                                       {
-# if SIZEOF_TIME_T == 4
+#if SIZEOF_TIME_T == 4
                                                          (void)printf("%06ld DEBUG 3: [PRODUCTION] %s->%s %x %x %x %x\n",
-# else
+#else
                                                          (void)printf("%06lld DEBUG 3: [PRODUCTION] %s->%s %x %x %x %x\n",
-# endif
+#endif
                                                                       (pri_time_t)(time(NULL) - start),
                                                                       plog.original_filename,
                                                                       plog.new_filename,
@@ -445,12 +721,12 @@ check_production_line(char         *line,
                                                          (void)fprintf(stderr,
                                                                        "Unable to store return code for file %s since it is to large. (%s %d)\n",
                                                                        plog.original_filename, __FILE__, __LINE__);
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                                                          while (*(ptr + i) != '\0')
                                                          {
                                                             i++;
                                                          }
-# endif
+#endif
                                                       }
                                                       else
                                                       {
@@ -469,9 +745,9 @@ check_production_line(char         *line,
                                                       plog.job_id = 0;
                                                       plog.unique_number = 0;
                                                       plog.split_job_counter = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                                                       production.bytes_read += (ptr + i - line);
-# endif
+#endif
 
                                                       return(INCORRECT);
                                                    }
@@ -490,13 +766,13 @@ check_production_line(char         *line,
                                                    plog.job_id = 0;
                                                    plog.unique_number = 0;
                                                    plog.split_job_counter = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                                                    while (*(ptr + i) != '\0')
                                                    {
                                                       i++;
                                                    }
                                                    production.bytes_read += (ptr + i - line);
-# endif
+#endif
 
                                                    return(NOT_WANTED);
                                                 }
@@ -508,18 +784,18 @@ check_production_line(char         *line,
                                                    (void)fprintf(stderr,
                                                                  "Unable to store the size for file %s since it is to large. (%s %d)\n",
                                                                  plog.original_filename, __FILE__, __LINE__);
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                                                    while (*(ptr + i) != '\0')
                                                    {
                                                       i++;
                                                    }
-# endif
+#endif
                                                 }
                                                 else
                                                 {
                                                    (void)fprintf(stderr,
-                                                                 "Unable to store the size for file %s because end was not found. (%s %d)\n",
-                                                                 plog.original_filename, __FILE__, __LINE__);
+                                                                 "Unable to store the size for new file %s because end was not found. (%s %d)\n",
+                                                                 plog.new_filename, __FILE__, __LINE__);
                                                 }
                                                 plog.original_filename[0] = '\0';
                                                 plog.new_filename[0] = '\0';
@@ -531,9 +807,9 @@ check_production_line(char         *line,
                                                 plog.job_id = 0;
                                                 plog.unique_number = 0;
                                                 plog.split_job_counter = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                                                 production.bytes_read += (ptr + i - line);
-# endif
+#endif
 
                                                 return(INCORRECT);
                                              }
@@ -545,12 +821,12 @@ check_production_line(char         *line,
                                                 (void)fprintf(stderr,
                                                               "Unable to store the new filename for file %s since it is to large. (%s %d)\n",
                                                               plog.original_filename, __FILE__, __LINE__);
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                                                 while (*(ptr + i) != '\0')
                                                 {
                                                    i++;
                                                 }
-# endif
+#endif
                                              }
                                              else
                                              {
@@ -567,9 +843,9 @@ check_production_line(char         *line,
                                              plog.job_id = 0;
                                              plog.unique_number = 0;
                                              plog.split_job_counter = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                                              production.bytes_read += (ptr + i - line);
-# endif
+#endif
 
                                              return(INCORRECT);
                                           }
@@ -587,13 +863,13 @@ check_production_line(char         *line,
                                                plog.job_id = 0;
                                                plog.unique_number = 0;
                                                plog.split_job_counter = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                                                while (*(ptr + i) != '\0')
                                                {
                                                   i++;
                                                }
                                                production.bytes_read += (ptr + i - line);
-# endif
+#endif
 
                                                return(NOT_WANTED);
                                             }
@@ -606,12 +882,12 @@ check_production_line(char         *line,
                                        (void)fprintf(stderr,
                                                      "Unable to store the original filename since it is to large. (%s %d)\n",
                                                      __FILE__, __LINE__);
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                                        while (*(ptr + i) != '\0')
                                        {
                                           i++;
                                        }
-# endif
+#endif
                                     }
                                     else
                                     {
@@ -626,9 +902,9 @@ check_production_line(char         *line,
                                     plog.job_id = 0;
                                     plog.unique_number = 0;
                                     plog.split_job_counter = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                                     production.bytes_read += (ptr + i - line);
-# endif
+#endif
 
                                     return(INCORRECT);
                                  }
@@ -641,13 +917,13 @@ check_production_line(char         *line,
                                  plog.job_id = 0;
                                  plog.unique_number = 0;
                                  plog.split_job_counter = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                                  while (*(ptr + i) != '\0')
                                  {
                                     i++;
                                  }
                                  production.bytes_read += (ptr + i - line);
-# endif
+#endif
                               }
                            }
                            else
@@ -657,12 +933,12 @@ check_production_line(char         *line,
                                  (void)fprintf(stderr,
                                                "Unable to store the job ID since it is to large. (%s %d)\n",
                                                __FILE__, __LINE__);
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                                  while (*(ptr + i) != '\0')
                                  {
                                     i++;
                                  }
-# endif
+#endif
                               }
                               else
                               {
@@ -674,9 +950,9 @@ check_production_line(char         *line,
                               plog.dir_id = 0;
                               plog.unique_number = 0;
                               plog.split_job_counter = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                               production.bytes_read += (ptr + i - line);
-# endif
+#endif
 
                               return(INCORRECT);
                            }
@@ -688,13 +964,13 @@ check_production_line(char         *line,
                            plog.dir_id = 0;
                            plog.unique_number = 0;
                            plog.split_job_counter = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                            while (*(ptr + i) != '\0')
                            {
                               i++;
                            }
                            production.bytes_read += (ptr + i - line);
-# endif
+#endif
                         }
                      }
                      else
@@ -704,12 +980,12 @@ check_production_line(char         *line,
                            (void)fprintf(stderr,
                                          "Unable to store the directory ID since it is to large. (%s %d)\n",
                                          __FILE__, __LINE__);
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                            while (*(ptr + i) != '\0')
                            {
                               i++;
                            }
-# endif
+#endif
                         }
                         else
                         {
@@ -720,9 +996,9 @@ check_production_line(char         *line,
                         plog.input_time = -1;
                         plog.unique_number = 0;
                         plog.split_job_counter = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                         production.bytes_read += (ptr + i - line);
-# endif
+#endif
 
                         return(INCORRECT);
                      }
@@ -733,13 +1009,13 @@ check_production_line(char         *line,
                      plog.input_time = -1;
                      plog.unique_number = 0;
                      plog.split_job_counter = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                      while (*(ptr + i) != '\0')
                      {
                         i++;
                      }
                      production.bytes_read += (ptr + i - line);
-# endif
+#endif
                   }
                }
                else
@@ -749,12 +1025,12 @@ check_production_line(char         *line,
                      (void)fprintf(stderr,
                                    "Unable to store the split job counter since it is to large. (%s %d)\n",
                                    __FILE__, __LINE__);
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                      while (*(ptr + i) != '\0')
                      {
                         i++;
                      }
-# endif
+#endif
                   }
                   else
                   {
@@ -765,9 +1041,9 @@ check_production_line(char         *line,
                   plog.input_time = -1;
                   plog.unique_number = 0;
                   plog.split_job_counter = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                   production.bytes_read += (ptr + i - line);
-# endif
+#endif
 
                   return(INCORRECT);
                }
@@ -777,13 +1053,13 @@ check_production_line(char         *line,
                plog.input_time = -1;
                plog.unique_number = 0;
                plog.split_job_counter = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                while (*(ptr + i) != '\0')
                {
                   i++;
                }
                production.bytes_read += (ptr + i - line);
-# endif
+#endif
             }
          }
          else
@@ -793,12 +1069,12 @@ check_production_line(char         *line,
                (void)fprintf(stderr,
                              "Unable to store the unique number since it is to large. (%s %d)\n",
                              __FILE__, __LINE__);
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
                while (*(ptr + i) != '\0')
                {
                   i++;
                }
-# endif
+#endif
             }
             else
             {
@@ -808,9 +1084,9 @@ check_production_line(char         *line,
             }
             plog.input_time = -1;
             plog.unique_number = 0;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
             production.bytes_read += (ptr + i - line);
-# endif
+#endif
 
             return(INCORRECT);
          }
@@ -818,13 +1094,13 @@ check_production_line(char         *line,
       else
       {
          plog.input_time = -1;
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
          while (*(ptr + i) != '\0')
          {
             i++;
          }
          production.bytes_read += (ptr + i - line);
-# endif
+#endif
 
          return(NOT_WANTED);
       }
@@ -836,12 +1112,12 @@ check_production_line(char         *line,
          (void)fprintf(stderr,
                        "Unable to store the input time since it is to large. (%s %d)\n",
                        __FILE__, __LINE__);
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
          while (*(ptr + i) != '\0')
          {
             i++;
          }
-# endif
+#endif
       }
       else
       {
@@ -849,9 +1125,9 @@ check_production_line(char         *line,
                        "Unable to store the input time because end was not found. [%s] (%s %d)\n",
                        line, __FILE__, __LINE__);
       }
-# ifndef HAVE_GETLINE
+#ifndef HAVE_GETLINE
       production.bytes_read += (ptr + i - line);
-# endif
+#endif
 
       return(INCORRECT);
    }

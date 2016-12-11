@@ -53,10 +53,11 @@
 #define MON_RECEIVE_W                  3
 #define MON_TRANS_W                    4
 #define MON_INPUT_W                    5
-#define MON_OUTPUT_W                   6
-#define MON_DELETE_W                   7
-#define MON_SHOW_QUEUE_W               8
-#define MON_VIEW_LOAD_W                9
+#define MON_PRODUCTION_W               6
+#define MON_OUTPUT_W                   7
+#define MON_DELETE_W                   8
+#define MON_SHOW_QUEUE_W               9
+#define MON_VIEW_LOAD_W                10
 
 /* Definitions for Control pulldown. */
 #define AMG_CTRL_W                     0
@@ -192,6 +193,7 @@ struct mon_control_perm
           char        **show_tlog_list;
           char        **show_mm_log_list;
           char        **show_ilog_list;
+          char        **show_plog_list;
           char        **show_olog_list;
           char        **show_dlog_list;
           char        **afd_load_list;
@@ -214,6 +216,7 @@ struct mon_control_perm
           signed char show_rlog;             /* Show Receive Log         */
           signed char show_tlog;             /* Show Transfer Log        */
           signed char show_ilog;             /* Show Input Log           */
+          signed char show_plog;             /* Show Production Log      */
           signed char show_olog;             /* Show Output Log          */
           signed char show_dlog;             /* Show Delete Log          */
           signed char show_queue;            /* Show AFD Queue           */

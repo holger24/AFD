@@ -1,7 +1,7 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
- *                            Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2016 Deutscher Wetterdienst (DWD),
+ *                     Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,34 +23,26 @@
 DESCR__S_M3
 /*
  ** NAME
- **   callbacks - all callback functions for module show_olog
+ **   callbacks - all callback functions for module show_plog
  **
  ** SYNOPSIS
  **   void confirmation_toggle(Widget w, XtPointer client_data, XtPointer call_data)
  **   void continues_toggle(Widget w, XtPointer client_data, XtPointer call_data)
- **   void only_archived_toggle(Widget w, XtPointer client_data, XtPointer call_data)
- **   void file_name_toggle(Widget w, XtPointer client_data, XtPointer call_data)
  **   void radio_button(Widget w, XtPointer client_data, XtPointer call_data)
  **   void item_selection(Widget w, XtPointer client_data, XtPointer call_data)
  **   void info_click(Widget w, XtPointer client_data, XEvent *event)
  **   void search_button(Widget w, XtPointer client_data, XtPointer call_data)
  **   void select_all_button(Widget w, XtPointer client_data, XtPointer call_data)
- **   void resend_button(Widget w, XtPointer client_data, XtPointer call_data)
- **   void send_button(Widget w, XtPointer client_data, XtPointer call_data)
  **   void close_button(Widget w, XtPointer client_data, XtPointer call_data)
  **   void save_input(Widget w, XtPointer client_data, XtPointer call_data)
  **   void scrollbar_moved(Widget w, XtPointer client_data, XtPointer call_data)
+ **   void set_ratio_mode(Widget w, XtPointer client_data, XtPointer call_data)
  **   void set_sensitive(void)
- **   void set_view_mode(Widget w, XtPointer client_data, XtPointer call_data)
- **   void view_button(Widget w, XtPointer client_data, XtPointer call_data)
  **
  ** DESCRIPTION
  **   The function toggled() is used to set the bits in the global
  **   variable toggles_set. The following bits can be set: SHOW_FTP,
  **   SHOW_SMTP and SHOW_FILE.
- **
- **   file_name_toggle() sets the variable file_name_toggle_set either
- **   to local or remote and sets the label of the toggle.
  **
  **   Function item_selection() calculates a new summary string of
  **   the items that are currently selected and displays them.
@@ -61,16 +53,10 @@ DESCR__S_M3
  **   recipient, AMG-options, FD-options, priority, job ID and archive
  **   directory.
  **
- **   search_button() activates the search in the output log. When
+ **   search_button() activates the search in the production log. When
  **   pressed the label of the button changes to 'Stop'. Now the user
  **   has the chance to stop the search. During the search only the
  **   list widget and the Stop button can be used.
- **
- **   resend_button() will resend all selected files. As in search_button()
- **   during the resending the search button turns into a stop button,
- **   which can be used to terminate the process. By pressing the resend
- **   button again, it continues the resending at that point where it
- **   was stopped.
  **
  **   close_button() will terminate the program.
  **
@@ -85,12 +71,7 @@ DESCR__S_M3
  **   H.Kiehl
  **
  ** HISTORY
- **   31.03.1997 H.Kiehl Created
- **   13.02.1999 H.Kiehl Multiple recipients.
- **   23.11.2003 H.Kiehl Disallow user to change window width even if
- **                      window manager allows this, but allow to change
- **                      height.
- **   04.04.2007 H.Kiehl Added button to view data.
+ **   14.09.2016 H.Kiehl Created
  **
  */
 DESCR__E_M3
@@ -98,41 +79,43 @@ DESCR__E_M3
 #include <stdio.h>
 #include <ctype.h>          /* isdigit()                                 */
 #include <stdlib.h>         /* atol(), malloc(), free(), exit()          */
+#include <limits.h>         /* INT_MAX                                   */
 #include <Xm/Xm.h>
 #include <Xm/List.h>
 #include <Xm/Text.h>
 #include <Xm/LabelP.h>
 #include <errno.h>
 #include "mafd_ctrl.h"
-#include "show_olog.h"
+#include "show_plog.h"
 #include "permission.h"
 
 /* External global variables. */
 extern Display          *display;
 extern Widget           appshell,
+                        command_w,
                         cont_togglebox_w,
                         directory_w,
                         end_time_w,
                         file_length_w,
-                        file_name_w,
                         headingbox_w,
                         job_id_w,
                         listbox_w,
+                        new_file_name_w,
+                        new_file_size_w,
+                        orig_file_name_w,
+                        orig_file_size_w,
                         print_button_w,
-                        recipient_w,
-                        resend_button_w,
+                        prod_time_w,
+                        return_code_w,
                         scrollbar_w,
                         select_all_button_w,
                         selectionbox_w,
-                        send_button_w,
                         special_button_w,
                         start_time_w,
                         statusbox_w,
-                        summarybox_w,
-                        view_button_w;
+                        summarybox_w;
 extern Window           main_window;
 extern int              continues_toggle_set,
-                        file_name_toggle_set,
                         items_selected,
                         no_of_search_dirs,
                         no_of_search_dirids,
@@ -140,59 +123,53 @@ extern int              continues_toggle_set,
                         no_of_search_jobids,
                         file_name_length,
                         *search_dir_length,
+                        ratio_mode,
+                        search_return_code,
                         special_button_flag,
                         sum_line_length,
                         no_of_log_files,
-                        char_width,
-#ifdef _WITH_DE_MAIL_SUPPORT
-                        view_confirmation,
-#endif
-                        view_archived_only,
-                        view_mode;
+                        char_width;
 extern unsigned int     all_list_items,
                         *search_dirid,
                         *search_jobid;
 extern XT_PTR_TYPE      toggles_set;
 extern time_t           start_time_val,
                         end_time_val;
-extern size_t           search_file_size;
+extern size_t           search_new_file_size,
+                        search_orig_file_size;
+extern double           search_cpu_time,
+                        search_prod_time;
 extern char             header_line[],
-                        search_file_name[],
+                        search_production_cmd[],
+                        search_new_file_name[],
+                        search_orig_file_name[],
                         **search_dir,
                         *search_dir_filter,
+                        search_return_code_str[],
                         **search_recipient,
                         **search_user;
 extern struct item_list *il;
 extern struct sol_perm  perm;
 
 /* Global variables. */
-int                     gt_lt_sign,
+int                     do_search_return_code,
+                        gt_lt_sign_new,
+                        gt_lt_sign_orig,
+                        gt_lt_sign_ct,
+                        gt_lt_sign_pt,
+                        gt_lt_sign_rc,
                         max_x,
                         max_y;
-char                    search_file_size_str[20],
-                        summary_str[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 5],
-                        total_summary_str[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 5];
+char                    search_cpu_time_str[MAX_DISPLAYED_CPU_TIME + 2],
+                        search_new_file_size_str[20],
+                        search_orig_file_size_str[20],
+                        search_prod_time_str[MAX_DISPLAYED_PROD_TIME + 2],
+                        summary_str[MAX_PRODUCTION_LINE_LENGTH + SHOW_LONG_FORMAT + SHOW_LONG_FORMAT + 5 + 1],
+                        total_summary_str[MAX_PRODUCTION_LINE_LENGTH + SHOW_LONG_FORMAT + SHOW_LONG_FORMAT + 5 + 1];
 struct info_data        id;
 
 /* Local global variables. */
 static int              scrollbar_moved_flag;
-
-#ifdef _WITH_DE_MAIL_SUPPORT
-/*######################## confirmation_toggle() ########################*/
-void
-confirmation_toggle(Widget w, XtPointer client_data, XtPointer call_data)
-{
-   if (view_confirmation == NO)
-   {
-      view_confirmation = YES;
-   }
-   else
-   {
-      view_confirmation = NO;
-   }
-   return;
-}
-#endif /* _WITH_DE_MAIL_SUPPORT */
 
 
 /*########################## continues_toggle() #########################*/
@@ -211,45 +188,6 @@ continues_toggle(Widget w, XtPointer client_data, XtPointer call_data)
 }
 
 
-/*######################## only_archived_toggle() #######################*/
-void
-only_archived_toggle(Widget w, XtPointer client_data, XtPointer call_data)
-{
-   if (view_archived_only == NO)
-   {
-      view_archived_only = YES;
-   }
-   else
-   {
-      view_archived_only = NO;
-   }
-   return;
-}
-
-
-/*########################## file_name_toggle() #########################*/
-void
-file_name_toggle(Widget w, XtPointer client_data, XtPointer call_data)
-{
-   XmString text;
-
-   if (file_name_toggle_set == LOCAL_FILENAME)
-   {
-      file_name_toggle_set = REMOTE_FILENAME;
-      text = XmStringCreateLocalized("Remote");
-   }
-   else
-   {
-      file_name_toggle_set = LOCAL_FILENAME;
-      text = XmStringCreateLocalized("Local ");
-   }
-   XtVaSetValues(w, XmNlabelString, text, NULL);
-   XmStringFree(text);
-
-   return;
-}
-
-
 /*########################## item_selection() ###########################*/
 void
 item_selection(Widget w, XtPointer client_data, XtPointer call_data)
@@ -260,13 +198,15 @@ item_selection(Widget w, XtPointer client_data, XtPointer call_data)
                         prev_first_date_found,
                         prev_last_date_found;
    static unsigned int  total_no_files;
-   static double        file_size,
-                        trans_time;
+   static double        cpu_time,
+                        new_file_size,
+                        orig_file_size,
+                        prod_time;
    XmListCallbackStruct *cbs = (XmListCallbackStruct *)call_data;
 
    if (cbs->reason == XmCR_EXTENDED_SELECT)
    {
-      char selection_summary_str[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 5];
+      char selection_summary_str[MAX_PRODUCTION_LINE_LENGTH + SHOW_LONG_FORMAT + 1 + SHOW_LONG_FORMAT + 5];
 
       if (cbs->selection_type == XmINITIAL)
       {
@@ -275,8 +215,8 @@ item_selection(Widget w, XtPointer client_data, XtPointer call_data)
           */
          total_no_files = cbs->selected_item_count;
          if (get_sum_data((cbs->item_position - 1),
-                          &first_date_found, &file_size,
-                          &trans_time) == INCORRECT)
+                          &first_date_found, &orig_file_size, &new_file_size,
+                          &prod_time, &cpu_time) == INCORRECT)
          {
             return;
          }
@@ -286,21 +226,24 @@ item_selection(Widget w, XtPointer client_data, XtPointer call_data)
            {
               int    i;
               time_t date;
-              double current_file_size,
-                     current_trans_time;
+              double current_cpu_time,
+                     current_new_file_size,
+                     current_orig_file_size,
+                     current_prod_time;
 
               /*
                * Modification of selection. Have to recalculate
                * everything.
                */
               total_no_files = cbs->selected_item_count;
-              file_size = trans_time = 0.0;
+              orig_file_size = new_file_size = prod_time = cpu_time = 0.0;
               first_date_found = -1;
               for (i = 0; i < cbs->selected_item_count; i++)
               {
-                 if (get_sum_data((cbs->selected_item_positions[i] - 1),
-                                  &date, &current_file_size,
-                                  &current_trans_time) == INCORRECT)
+                 if (get_sum_data((cbs->selected_item_positions[i] - 1), &date,
+                                  &current_new_file_size,
+                                  &current_new_file_size, &current_prod_time,
+                                  &current_cpu_time) == INCORRECT)
                  {
                     return;
                  }
@@ -308,31 +251,37 @@ item_selection(Widget w, XtPointer client_data, XtPointer call_data)
                  {
                     first_date_found = date;
                  }
-                 file_size += current_file_size;
-                 trans_time += current_trans_time;
+                 orig_file_size += current_orig_file_size;
+                 new_file_size += current_new_file_size;
+                 prod_time += current_prod_time;
+                 cpu_time += current_cpu_time;
               }
               last_date_found = date;
            }
            else
            {
               time_t date;
-              double current_file_size,
-                     current_trans_time;
+              double current_new_file_size,
+                     current_orig_file_size,
+                     current_prod_time;
 
               /*
                * Additional selection. Add or subtract this selection to
                * current selection list.
                */
               if (get_sum_data((cbs->item_position - 1),
-                               &date, &current_file_size,
-                               &current_trans_time) == INCORRECT)
+                               &date, &current_orig_file_size,
+                               &current_new_file_size, &current_prod_time,
+                               &current_cpu_time) == INCORRECT)
               {
                  return;
               }
               if (XmListPosSelected(listbox_w, cbs->item_position) == True)
               {
-                 file_size += current_file_size;
-                 trans_time += current_trans_time;
+                 orig_file_size += current_orig_file_size;
+                 new_file_size += current_new_file_size;
+                 prod_time += current_prod_time;
+                 cpu_time += current_cpu_time;
                  total_no_files++;
                  if (last_date_found < date)
                  {
@@ -347,8 +296,10 @@ item_selection(Widget w, XtPointer client_data, XtPointer call_data)
               }
               else
               {
-                 file_size -= current_file_size;
-                 trans_time -= current_trans_time;
+                 orig_file_size -= current_orig_file_size;
+                 new_file_size -= current_new_file_size;
+                 prod_time -= current_prod_time;
+                 cpu_time -= current_cpu_time;
                  total_no_files--;
                  if (date == first_date_found)
                  {
@@ -372,25 +323,29 @@ item_selection(Widget w, XtPointer client_data, XtPointer call_data)
    static time_t        first_date_found,
                         last_date_found;
    static unsigned int  total_no_files;
-   static double        file_size,
-                        trans_time;
+   static double        cpu_time,
+                        new_file_size,
+                        orig_file_size,
+                        prod_time;
    XmListCallbackStruct *cbs = (XmListCallbackStruct *)call_data;
 
    if (cbs->reason == XmCR_EXTENDED_SELECT)
    {
       int    i;
       time_t date;
-      double current_file_size,
-             current_trans_time;
+      double current_cpu_time,
+             current_new_file_size,
+             current_orig_file_size,
+             current_prod_time;
 
       total_no_files = cbs->selected_item_count;
-      file_size = trans_time = 0.0;
+      orig_file_size = new_file_size = prod_time = cpu_time = 0.0;
       first_date_found = -1;
       for (i = 0; i < cbs->selected_item_count; i++)
       {
-         if (get_sum_data((cbs->selected_item_positions[i] - 1),
-                          &date, &current_file_size,
-                          &current_trans_time) == INCORRECT)
+         if (get_sum_data((cbs->selected_item_positions[i] - 1), &date,
+                          &current_orig_file_size, &current_new_file_size,
+                          &current_prod_time, &current_cpu_time) == INCORRECT)
          {
             return;
          }
@@ -398,8 +353,10 @@ item_selection(Widget w, XtPointer client_data, XtPointer call_data)
          {
             first_date_found = date;
          }
-         file_size += current_file_size;
-         trans_time += current_trans_time;
+         orig_file_size += current_orig_file_size;
+         new_file_size += current_new_file_size;
+         prod_time += current_prod_time;
+         cpu_time += current_cpu_time;
       }
       last_date_found = date;
 #endif
@@ -408,7 +365,8 @@ item_selection(Widget w, XtPointer client_data, XtPointer call_data)
       if (cbs->selected_item_count > 0)
       {
          calculate_summary(summary_str, first_date_found, last_date_found,
-                           total_no_files, file_size, trans_time);
+                           total_no_files, orig_file_size, new_file_size,
+                           prod_time, cpu_time);
       }
       else
       {
@@ -464,14 +422,16 @@ radio_button(Widget w, XtPointer client_data, XtPointer call_data)
       file_name_length = new_file_name_length;
 
       XGetGeometry(display, main_window, &root_return, &x, &y, &width, &window_height, &border, &depth);
-      sum_line_length = sprintf(header_line, "%s%-*s %-*s %s",
-                                DATE_TIME_HEADER, file_name_length,
-                                FILE_NAME_HEADER, HOST_NAME_LENGTH,
-                                HOST_NAME_HEADER, REST_HEADER);
+      sum_line_length = sprintf(header_line, "%s%-*s %*s %-*s %s",
+                                DATE_TIME_HEADER,
+                                file_name_length, ORIG_FILE_NAME_HEADER,
+                                MAX_DISPLAYED_FILE_SIZE, ORIG_FILE_SIZE_HEADER,
+                                file_name_length, NEW_FILE_NAME_HEADER,
+                                REST_HEADER);
       XmTextSetString(headingbox_w, header_line);
 
       window_width = char_width *
-                     (MAX_OUTPUT_LINE_LENGTH + file_name_length + 6);
+                     (MAX_PRODUCTION_LINE_LENGTH + file_name_length + 1 + file_name_length + 5);
       XtVaSetValues(appshell,
                     XmNminWidth, window_width,
                     XmNmaxWidth, window_width,
@@ -517,27 +477,20 @@ info_click(Widget w, XtPointer client_data, XEvent *event)
          id.no_of_files = 0;
          id.no_of_loptions = 0;
          id.no_of_soptions = 0;
-         id.local_file_name[0] = '\0';
+         id.original_filename[0] = '\0';
+         id.new_filename[0] = '\0';
          id.files = NULL;
 #ifdef _WITH_DYNAMIC_MEMORY
          id.loptions = NULL;
 #endif
          id.soptions = NULL;
-         id.archive_dir[0] = '\0';
 
          /* Get the information. */
          get_info(pos);
          get_info_free();
 
          /* Format information in a human readable text. */
-         if (id.is_receive_job == YES)
-         {
-            format_receive_info(&text, NO);
-         }
-         else
-         {
-            format_send_info(&text);
-         }
+         format_info(&text);
 
          /* Show the information. */
          show_info(text, NO);
@@ -580,20 +533,16 @@ search_button(Widget w, XtPointer client_data, XtPointer call_data)
       XtSetSensitive(selectionbox_w, False);
       XtSetSensitive(start_time_w, False);
       XtSetSensitive(end_time_w, False);
-      XtSetSensitive(file_name_w, False);
+      XtSetSensitive(orig_file_name_w, False);
+      XtSetSensitive(new_file_name_w, False);
       XtSetSensitive(directory_w, False);
+      XtSetSensitive(command_w, False);
+      XtSetSensitive(orig_file_size_w, False);
+      XtSetSensitive(new_file_size_w, False);
+      XtSetSensitive(prod_time_w, False);
       XtSetSensitive(job_id_w, False);
-      XtSetSensitive(file_length_w, False);
-      XtSetSensitive(recipient_w, False);
+      XtSetSensitive(return_code_w, False);
       XtSetSensitive(select_all_button_w, False);
-      if (perm.resend_limit != NO_PERMISSION)
-      {
-         XtSetSensitive(resend_button_w, False);
-      }
-      if (perm.send_limit != NO_PERMISSION)
-      {
-         XtSetSensitive(send_button_w, False);
-      }
       XtSetSensitive(print_button_w, False);
 
       scrollbar_moved_flag = NO;
@@ -653,32 +602,28 @@ set_sensitive(void)
    XtSetSensitive(selectionbox_w, True);
    XtSetSensitive(start_time_w, True);
    XtSetSensitive(end_time_w, True);
-   XtSetSensitive(file_name_w, True);
+   XtSetSensitive(orig_file_name_w, True);
+   XtSetSensitive(new_file_name_w, True);
    XtSetSensitive(directory_w, True);
+   XtSetSensitive(command_w, True);
+   XtSetSensitive(orig_file_size_w, True);
+   XtSetSensitive(new_file_size_w, True);
+   XtSetSensitive(prod_time_w, True);
    XtSetSensitive(job_id_w, True);
-   XtSetSensitive(file_length_w, True);
-   XtSetSensitive(recipient_w, True);
+   XtSetSensitive(return_code_w, True);
    XtSetSensitive(select_all_button_w, True);
-   if (perm.resend_limit != NO_PERMISSION)
-   {
-      XtSetSensitive(resend_button_w, True);
-   }
-   if (perm.send_limit != NO_PERMISSION)
-   {
-      XtSetSensitive(send_button_w, True);
-   }
    XtSetSensitive(print_button_w, True);
 
    return;
 }
 
 
-/*########################### set_view_mode() ###########################*/
+/*########################## set_ratio_mode() ###########################*/
 void
-set_view_mode(Widget w, XtPointer client_data, XtPointer call_data)
+set_ratio_mode(Widget w, XtPointer client_data, XtPointer call_data)
 {
 #if SIZEOF_LONG == 4
-   view_mode = (int)client_data;
+   ratio_mode = (int)client_data;
 #else
    union uintlong
          {
@@ -690,201 +635,13 @@ set_view_mode(Widget w, XtPointer client_data, XtPointer call_data)
    uil.lval = (long)client_data;
    if (*(char *)&byte_order == 1)
    {
-      view_mode = uil.ival[0];
+      ratio_mode = uil.ival[0];
    }
    else
    {
-      view_mode = uil.ival[1];
+      ratio_mode = uil.ival[1];
    }
 #endif
-
-   return;
-}
-
-
-/*############################ view_button() ############################*/
-void
-view_button(Widget w, XtPointer client_data, XtPointer call_data)
-{
-   int no_selected,
-       *select_list;
-
-   reset_message(statusbox_w);
-   if (XmListGetSelectedPos(listbox_w, &select_list, &no_selected) == True)
-   {
-      view_files(no_selected, select_list);
-      XtFree((char *)select_list);
-
-      /*
-       * After resending, see if any items habe been left selected.
-       * If so, create a new summary string or else insert the total
-       * summary string if no items are left selected.
-       */
-      if (XmListGetSelectedPos(listbox_w, &select_list, &no_selected) == True)
-      {
-         int    i;
-         time_t date,
-                first_date_found,
-                last_date_found;
-         double current_file_size,
-                current_trans_time,
-                file_size = 0.0,
-                trans_time = 0.0;
-
-         first_date_found = -1;
-         for (i = 0; i < no_selected; i++)
-         {
-            if (get_sum_data((select_list[i] - 1),
-                             &date, &current_file_size,
-                             &current_trans_time) == INCORRECT)
-            {
-               return;
-            }
-            if (first_date_found == -1)
-            {
-               first_date_found = date;
-            }
-            file_size += current_file_size;
-            trans_time += current_trans_time;
-         }
-         last_date_found = date;
-         XtFree((char *)select_list);
-         calculate_summary(summary_str, first_date_found, last_date_found,
-                           no_selected, file_size, trans_time);
-      }
-      else
-      {
-         (void)strcpy(summary_str, total_summary_str);
-      }
-      SHOW_SUMMARY_DATA();
-   }
-   else
-   {
-      show_message(statusbox_w, "No file selected!");
-   }
-
-   return;
-}
-
-
-/*########################### resend_button() ###########################*/
-void
-resend_button(Widget w, XtPointer client_data, XtPointer call_data)
-{
-   int no_selected,
-       *select_list;
-
-   reset_message(statusbox_w);
-   if (XmListGetSelectedPos(listbox_w, &select_list, &no_selected) == True)
-   {
-      resend_files(no_selected, select_list);
-      XtFree((char *)select_list);
-
-      /*
-       * After resending, see if any items habe been left selected.
-       * If so, create a new summary string or else insert the total
-       * summary string if no items are left selected.
-       */
-      if (XmListGetSelectedPos(listbox_w, &select_list, &no_selected) == True)
-      {
-         int    i;
-         time_t date,
-                first_date_found,
-                last_date_found;
-         double current_file_size,
-                current_trans_time,
-                file_size = 0.0,
-                trans_time = 0.0;
-
-         first_date_found = -1;
-         for (i = 0; i < no_selected; i++)
-         {
-            if (get_sum_data((select_list[i] - 1),
-                             &date, &current_file_size,
-                             &current_trans_time) == INCORRECT)
-            {
-               return;
-            }
-            if (first_date_found == -1)
-            {
-               first_date_found = date;
-            }
-            file_size += current_file_size;
-            trans_time += current_trans_time;
-         }
-         last_date_found = date;
-         XtFree((char *)select_list);
-         calculate_summary(summary_str, first_date_found, last_date_found,
-                           no_selected, file_size, trans_time);
-      }
-      else
-      {
-         (void)strcpy(summary_str, total_summary_str);
-      }
-      SHOW_SUMMARY_DATA();
-   }
-   else
-   {
-      show_message(statusbox_w, "No file selected!");
-   }
-
-   return;
-}
-
-
-/*############################# send_button() ###########################*/
-void
-send_button(Widget w, XtPointer client_data, XtPointer call_data)
-{
-   int no_selected,
-       *select_list;
-
-   reset_message(statusbox_w);
-   if (XmListGetSelectedPos(listbox_w, &select_list, &no_selected) == True)
-   {
-      int           gotcha = NO,
-                    i;
-      char          *line,
-                    *ptr;
-      XmStringTable all_items;
-
-      XtVaGetValues(listbox_w, XmNitems, &all_items, NULL);
-      for (i = 0; i < no_selected; i++)
-      {
-         XmStringGetLtoR(all_items[select_list[i] - 1],
-                         XmFONTLIST_DEFAULT_TAG, &line);
-         ptr = line + strlen(line) - 1;
-         if ((*ptr == 'Y') || (*ptr == '?'))
-         {
-            gotcha = YES;
-            XtFree(line);
-            break;
-         }
-         XtFree(line);
-      }
-      if (gotcha == YES)
-      {
-         send_files(no_selected, select_list);
-      }
-      else
-      {
-         if (no_selected == 1)
-         {
-            show_message(statusbox_w,
-                         "The file selected is NOT in the archive!");
-         }
-         else
-         {
-            show_message(statusbox_w,
-                         "None of the selected files are in the archive!");
-         }
-      }
-      XtFree((char *)select_list);
-   }
-   else
-   {
-      show_message(statusbox_w, "No file selected!");
-   }
 
    return;
 }
@@ -972,12 +729,22 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
          }
          break;
 
-      case FILE_NAME_NO_ENTER :
-         (void)strcpy(search_file_name, value);
+      case ORIG_FILE_NAME_NO_ENTER :
+         (void)strcpy(search_orig_file_name, value);
          break;
 
-      case FILE_NAME :
-         (void)strcpy(search_file_name, value);
+      case ORIG_FILE_NAME :
+         (void)strcpy(search_orig_file_name, value);
+         reset_message(statusbox_w);
+         XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         break;
+
+      case NEW_FILE_NAME_NO_ENTER :
+         (void)strcpy(search_new_file_name, value);
+         break;
+
+      case NEW_FILE_NAME :
+         (void)strcpy(search_new_file_name, value);
          reset_message(statusbox_w);
          XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
          break;
@@ -1188,6 +955,232 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
          }
          break;
 
+      case COMMAND_NAME_NO_ENTER :
+         (void)strcpy(search_production_cmd, value);
+         break;
+
+      case COMMAND_NAME :
+         (void)strcpy(search_production_cmd, value);
+         reset_message(statusbox_w);
+         XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         break;
+
+      case ORIG_FILE_SIZE_NO_ENTER :
+      case ORIG_FILE_SIZE :
+         if (value[0] == '\0')
+         {
+            search_orig_file_size = -1;
+         }
+         else
+         {
+            if (isdigit((int)value[0]))
+            {
+               gt_lt_sign_orig = EQUAL_SIGN;
+            }
+            else if (value[0] == '=')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_orig = EQUAL_SIGN;
+                 }
+            else if (value[0] == '<')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_orig = LESS_THEN_SIGN;
+                 }
+            else if (value[0] == '>')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_orig = GREATER_THEN_SIGN;
+                 }
+            else if (value[0] == '!')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_orig = NOT_SIGN;
+                 }
+                 else
+                 {
+                    show_message(statusbox_w, FILE_SIZE_FORMAT);
+                    XtFree(value);
+                    return;
+                 }
+            search_orig_file_size = (size_t)atol(value + extra_sign);
+            (void)strcpy(search_orig_file_size_str, value);
+         }
+         reset_message(statusbox_w);
+         if (type == ORIG_FILE_SIZE)
+         {
+            XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         }
+         break;
+
+      case NEW_FILE_SIZE_NO_ENTER :
+      case NEW_FILE_SIZE :
+         if (value[0] == '\0')
+         {
+            search_new_file_size = -1;
+         }
+         else
+         {
+            if (isdigit((int)value[0]))
+            {
+               gt_lt_sign_new = EQUAL_SIGN;
+            }
+            else if (value[0] == '=')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_new = EQUAL_SIGN;
+                 }
+            else if (value[0] == '<')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_new = LESS_THEN_SIGN;
+                 }
+            else if (value[0] == '>')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_new = GREATER_THEN_SIGN;
+                 }
+            else if (value[0] == '!')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_new = NOT_SIGN;
+                 }
+                 else
+                 {
+                    show_message(statusbox_w, FILE_SIZE_FORMAT);
+                    XtFree(value);
+                    return;
+                 }
+            search_new_file_size = (size_t)atol(value + extra_sign);
+            (void)strcpy(search_new_file_size_str, value);
+         }
+         reset_message(statusbox_w);
+         if (type == NEW_FILE_SIZE)
+         {
+            XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         }
+         break;
+
+      case RECIPIENT_NAME_NO_ENTER : /* Read the recipient. */
+      case RECIPIENT_NAME : /* Read the recipient. */
+         {
+            int  i = 0,
+                 ii = 0;
+            char *ptr_start;
+
+            if (no_of_search_hosts != 0)
+            {
+               FREE_RT_ARRAY(search_recipient);
+               FREE_RT_ARRAY(search_user);
+               no_of_search_hosts = 0;
+            }
+            ptr = value;
+            for (;;)
+            {
+               while ((*ptr != '\0') && (*ptr != ','))
+               {
+                  if (*ptr == '\\')
+                  {
+                     ptr++;
+                  }
+                  ptr++;
+               }
+               no_of_search_hosts++;
+               if (*ptr == '\0')
+               {
+                  if (ptr == value)
+                  {
+                     no_of_search_hosts = 0;
+                  }
+                  break;
+               }
+               ptr++;
+            }
+            if (no_of_search_hosts > 0)
+            {
+               RT_ARRAY(search_recipient, no_of_search_hosts,
+                        (MAX_RECIPIENT_LENGTH + 1), char);
+               RT_ARRAY(search_user, no_of_search_hosts,
+                        (MAX_RECIPIENT_LENGTH + 1), char);
+
+               ptr = value;
+               for (;;)
+               {
+                  ptr_start = ptr;
+                  i = 0;
+                  while ((*ptr != '\0') && (*ptr != '@') && (*ptr != ','))
+                  {
+                     if (*ptr == '\\')
+                     {
+                        ptr++;
+                     }
+                     search_user[ii][i] = *ptr;
+                     ptr++; i++;
+                  }
+                  if (*ptr == '@')
+                  {
+                     int tmp_i = i;
+
+                     search_user[ii][i] = *ptr;
+                     ptr++; i++;
+                     ptr_start = ptr;
+                     while ((*ptr != '\0') && (*ptr != '@') && (*ptr != ','))
+                     {
+                        if (*ptr == '\\')
+                        {
+                           ptr++;
+                        }
+                        search_user[ii][i] = *ptr;
+                        ptr++; i++;
+                     }
+                     if (*ptr == '@')
+                     {
+                        ptr++;
+                        search_user[ii][i] = '\0';
+                        ptr_start = ptr;
+                        while ((*ptr != '\0') && (*ptr != ','))
+                        {
+                           if (*ptr == '\\')
+                           {
+                              ptr++;
+                           }
+                           ptr++;
+                        }
+                     }
+                     else
+                     {
+                        search_user[ii][tmp_i] = '\0';
+                     }
+                  }
+                  else
+                  {
+                     search_user[ii][0] = '\0';
+                  }
+                  if (*ptr == ',')
+                  {
+                     *ptr = '\0';
+                     (void)strcpy(search_recipient[ii], ptr_start);
+                     ii++; ptr++;
+                     while ((*ptr == ' ') || (*ptr == '\t'))
+                     {
+                        ptr++;
+                     }
+                  }
+                  else
+                  {
+                     (void)strcpy(search_recipient[ii], ptr_start);
+                     break;
+                  }
+               } /* for (;;) */
+            } /* if (no_of_search_hosts > 0) */
+         }
+         reset_message(statusbox_w);
+         if (type == RECIPIENT_NAME)
+         {
+            XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         }
+         break;
+
       case JOB_ID_NO_ENTER :
       case JOB_ID :
          {
@@ -1313,164 +1306,146 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
          }
          break;
 
-      case FILE_LENGTH_NO_ENTER :
-      case FILE_LENGTH :
+      case RETURN_CODE_NO_ENTER :
+      case RETURN_CODE :
          if (value[0] == '\0')
          {
-            search_file_size = -1;
+            do_search_return_code = NO;
          }
          else
          {
-            if (isdigit((int)value[0]))
+            if ((isdigit((int)value[0])) || (value[0] == '-'))
             {
-               gt_lt_sign = EQUAL_SIGN;
+               gt_lt_sign_rc = EQUAL_SIGN;
             }
             else if (value[0] == '=')
                  {
                     extra_sign = 1;
-                    gt_lt_sign = EQUAL_SIGN;
+                    gt_lt_sign_rc = EQUAL_SIGN;
                  }
             else if (value[0] == '<')
                  {
                     extra_sign = 1;
-                    gt_lt_sign = LESS_THEN_SIGN;
+                    gt_lt_sign_rc = LESS_THEN_SIGN;
                  }
             else if (value[0] == '>')
                  {
                     extra_sign = 1;
-                    gt_lt_sign = GREATER_THEN_SIGN;
+                    gt_lt_sign_rc = GREATER_THEN_SIGN;
+                 }
+            else if (value[0] == '!')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_rc = NOT_SIGN;
                  }
                  else
                  {
-                    show_message(statusbox_w, FILE_SIZE_FORMAT);
+                    show_message(statusbox_w, RETURN_CODE_FORMAT);
                     XtFree(value);
                     return;
                  }
-            search_file_size = (size_t)atol(value + extra_sign);
-            (void)strcpy(search_file_size_str, value);
+            search_return_code = (size_t)atol(value + extra_sign);
+            do_search_return_code = YES;
+            (void)strcpy(search_return_code_str, value);
          }
          reset_message(statusbox_w);
-         if (type == FILE_LENGTH)
+         if (type == RETURN_CODE)
          {
             XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
          }
          break;
 
-      case RECIPIENT_NAME_NO_ENTER : /* Read the recipient. */
-      case RECIPIENT_NAME : /* Read the recipient. */
+      case PROD_TIME_NO_ENTER :
+      case PROD_TIME :
+         if (value[0] == '\0')
          {
-            int  i = 0,
-                 ii = 0;
-            char *ptr_start;
-
-            if (no_of_search_hosts != 0)
+            search_prod_time = -1.0;
+         }
+         else
+         {
+            if (isdigit((int)value[0]))
             {
-               FREE_RT_ARRAY(search_recipient);
-               FREE_RT_ARRAY(search_user);
-               no_of_search_hosts = 0;
+               gt_lt_sign_pt = EQUAL_SIGN;
             }
-            ptr = value;
-            for (;;)
-            {
-               while ((*ptr != '\0') && (*ptr != ','))
-               {
-                  if (*ptr == '\\')
-                  {
-                     ptr++;
-                  }
-                  ptr++;
-               }
-               no_of_search_hosts++;
-               if (*ptr == '\0')
-               {
-                  if (ptr == value)
-                  {
-                     no_of_search_hosts = 0;
-                  }
-                  break;
-               }
-               ptr++;
-            }
-            if (no_of_search_hosts > 0)
-            {
-               RT_ARRAY(search_recipient, no_of_search_hosts,
-                        (MAX_RECIPIENT_LENGTH + 1), char);
-               RT_ARRAY(search_user, no_of_search_hosts,
-                        (MAX_RECIPIENT_LENGTH + 1), char);
-
-               ptr = value;
-               for (;;)
-               {
-                  ptr_start = ptr;
-                  i = 0;
-                  while ((*ptr != '\0') && (*ptr != '@') && (*ptr != ','))
-                  {
-                     if (*ptr == '\\')
-                     {
-                        ptr++;
-                     }
-                     search_user[ii][i] = *ptr;
-                     ptr++; i++;
-                  }
-                  if (*ptr == '@')
-                  {
-                     int tmp_i = i;
-
-                     search_user[ii][i] = *ptr;
-                     ptr++; i++;
-                     ptr_start = ptr;
-                     while ((*ptr != '\0') && (*ptr != '@') && (*ptr != ','))
-                     {
-                        if (*ptr == '\\')
-                        {
-                           ptr++;
-                        }
-                        search_user[ii][i] = *ptr;
-                        ptr++; i++;
-                     }
-                     if (*ptr == '@')
-                     {
-                        ptr++;
-                        search_user[ii][i] = '\0';
-                        ptr_start = ptr;
-                        while ((*ptr != '\0') && (*ptr != ','))
-                        {
-                           if (*ptr == '\\')
-                           {
-                              ptr++;
-                           }
-                           ptr++;
-                        }
-                     }
-                     else
-                     {
-                        search_user[ii][tmp_i] = '\0';
-                     }
-                  }
-                  else
-                  {
-                     search_user[ii][0] = '\0';
-                  }
-                  if (*ptr == ',')
-                  {
-                     *ptr = '\0';
-                     (void)strcpy(search_recipient[ii], ptr_start);
-                     ii++; ptr++;
-                     while ((*ptr == ' ') || (*ptr == '\t'))
-                     {
-                        ptr++;
-                     }
-                  }
-                  else
-                  {
-                     (void)strcpy(search_recipient[ii], ptr_start);
-                     break;
-                  }
-               } /* for (;;) */
-            } /* if (no_of_search_hosts > 0) */
+            else if (value[0] == '=')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_pt = EQUAL_SIGN;
+                 }
+            else if (value[0] == '<')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_pt = LESS_THEN_SIGN;
+                 }
+            else if (value[0] == '>')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_pt = GREATER_THEN_SIGN;
+                 }
+            else if (value[0] == '!')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_pt = NOT_SIGN;
+                 }
+                 else
+                 {
+                    show_message(statusbox_w, PROD_TIME_FORMAT);
+                    XtFree(value);
+                    return;
+                 }
+            search_prod_time = strtod(value + extra_sign, NULL);
+            (void)strcpy(search_prod_time_str, value);
          }
          reset_message(statusbox_w);
-         if (type == RECIPIENT_NAME)
+         if (type == PROD_TIME)
+         {
+            XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         }
+         break;
+
+      case CPU_TIME_NO_ENTER :
+      case CPU_TIME :
+         if (value[0] == '\0')
+         {
+            search_cpu_time = -1.0;
+         }
+         else
+         {
+            if (isdigit((int)value[0]))
+            {
+               gt_lt_sign_pt = EQUAL_SIGN;
+            }
+            else if (value[0] == '=')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_ct = EQUAL_SIGN;
+                 }
+            else if (value[0] == '<')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_ct = LESS_THEN_SIGN;
+                 }
+            else if (value[0] == '>')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_ct = GREATER_THEN_SIGN;
+                 }
+            else if (value[0] == '!')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_ct = NOT_SIGN;
+                 }
+                 else
+                 {
+                    show_message(statusbox_w, CPU_TIME_FORMAT);
+                    XtFree(value);
+                    return;
+                 }
+            search_cpu_time = strtod(value + extra_sign, NULL);
+            (void)strcpy(search_cpu_time_str, value);
+         }
+         reset_message(statusbox_w);
+         if (type == CPU_TIME)
          {
             XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
          }
