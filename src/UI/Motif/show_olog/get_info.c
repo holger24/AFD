@@ -1,6 +1,6 @@
 /*
  *  get_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -488,7 +488,7 @@ get_sum_data(int item, time_t *date, double *file_size, double *trans_time)
    /* Get the date, file size and transfer time. */
    if (pos > -1)
    {
-      int  i = 0;
+      int  i;
       char *ptr,
            buffer[MAX_FILENAME_LENGTH + MAX_PATH_LENGTH],
            str_hex_number[23 + 1];
@@ -1095,6 +1095,10 @@ get_dir_data(int dir_pos)
                      (void)strcpy(id.dbe[id.count].recipient, jd[i].recipient);
                      id.dbe[id.count].job_id = jd[i].job_id;
                      id.count++;
+                  }
+                  else
+                  {
+                     free(id.dbe[id.count].files);
                   }
                }
             } /* if (current_jid_list[j] == jd[i].job_id) */

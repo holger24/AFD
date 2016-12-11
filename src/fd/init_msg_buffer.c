@@ -745,8 +745,7 @@ stat_again:
                         MAX_PATH_LENGTH - (p_alternate_file_name - alternate_file_name),
                         "%x", rml[i]);
          (void)unlink(alternate_file_name);
-         length += snprintf(&buffer[length], 80 - length,
-                            "%x ", rml[i]);
+         length += snprintf(&buffer[length], 80 - length, "#%x ", rml[i]);
          if (length > 51)
          {
             system_log(DEBUG_SIGN, NULL, 0, "%s", buffer);

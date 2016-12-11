@@ -245,7 +245,8 @@ static int                        check_list(char *, int, time_t, off_t, off_t,
                                              int *, off_t *, int *),
                                   check_name(char *, int, off_t, time_t),
                                   eval_html_dir_list(char *, int *, off_t *,
-                                                     int *);
+                                                     int *, unsigned int *,
+                                                     off_t *);
 static off_t                      convert_size(char *, off_t *);
 #ifdef WITH_ATOM_FEED_SUPPORT
 static time_t                     extract_feed_date(char *);
@@ -399,10 +400,12 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
    }
    else
    {
-      int       j,
-                status;
-      time_t    now;
-      struct tm *p_tm;
+      unsigned int list_length = 0;
+      int          j,
+                   status;
+      time_t       now;
+      off_t        list_size = 0;
+      struct tm    *p_tm;
 
       /* Get all file masks for this directory. */
       if ((j = read_file_mask(fra[db.fra_pos].dir_alias, &nfg, &fml)) != SUCCESS)
@@ -705,7 +708,8 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
 #endif
             if (eval_html_dir_list(listbuffer, &files_to_retrieve,
                                    file_size_to_retrieve,
-                                   more_files_in_list) == INCORRECT)
+                                   more_files_in_list,
+                                   &list_length, &list_size) == INCORRECT)
             {
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                          "Failed to evaluate HTML directory listing.");
@@ -746,6 +750,17 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
          free(fml[i].file_list);
       }
       free(fml);
+
+      trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                "%d files %ld bytes found for retrieving [%u files with %ld bytes in %s]. @%x",
+#else
+                "%d files %lld bytes found for retrieving [%u files with %lld bytes in %s]. @%x",
+#endif
+                files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
+                list_length, (pri_off_t)list_size,
+                (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                db.id.dir);
 
       /*
        * Remove all files from the remote_list structure that are not
@@ -853,10 +868,12 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
 
 /*++++++++++++++++++++++++ eval_html_dir_list() +++++++++++++++++++++++++*/
 static int
-eval_html_dir_list(char  *html_buffer,
-                   int   *files_to_retrieve,
-                   off_t *file_size_to_retrieve,
-                   int   *more_files_in_list)
+eval_html_dir_list(char         *html_buffer,
+                   int          *files_to_retrieve,
+                   off_t        *file_size_to_retrieve,
+                   int          *more_files_in_list,
+                   unsigned int *list_length,
+                   off_t        *list_size)
 {
    char *ptr;
 
@@ -1048,6 +1065,11 @@ eval_html_dir_list(char  *html_buffer,
                         file_size = -1;
                      }
 
+                     (*list_length)++;
+                     if (file_size > 0)
+                     {
+                        (*list_size) += file_size;
+                     }
                      if (check_name(file_name, file_name_length,
                                     file_size, file_mtime) != YES)
                      {
@@ -1265,6 +1287,12 @@ eval_html_dir_list(char  *html_buffer,
                               file_size = -1;
                            }
 
+                           (*list_length)++;
+                           if (file_size > 0)
+                           {
+                              (*list_size) += file_size;
+                           }
+
                            if (check_name(file_name, file_name_length,
                                           file_size, file_mtime) != YES)
                            {
@@ -1425,6 +1453,12 @@ eval_html_dir_list(char  *html_buffer,
                              file_size = -1;
                           }
 
+                           (*list_length)++;
+                           if (file_size > 0)
+                           {
+                              (*list_size) += file_size;
+                           }
+
                           if (check_name(file_name, file_name_length,
                                          file_size, file_mtime) != YES)
                           {
@@ -1510,6 +1544,12 @@ eval_html_dir_list(char  *html_buffer,
                           else
                           {
                              file_name[0] = '\0';
+                          }
+
+                          (*list_length)++;
+                          if (file_size > 0)
+                          {
+                             (*list_size) += file_size;
                           }
                        }
                        else

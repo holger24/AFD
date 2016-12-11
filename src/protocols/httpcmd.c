@@ -1623,7 +1623,7 @@ basic_authentication(void)
       return(INCORRECT);
    }
    free(hmr.authorization);
-   if ((hmr.authorization = malloc(21 + length + (length / 3) + 2 + 1)) == NULL)
+   if ((hmr.authorization = malloc(21 + length + (length / 3) + 4 + 2 + 1)) == NULL)
    {
       trans_log(ERROR_SIGN, __FILE__, __LINE__, "basic_authentication", NULL,
                 _("malloc() error : %s"), strerror(errno));
@@ -2853,11 +2853,7 @@ read_msg(int *read_length, int offset, int line)
 static int
 flush_read(void)
 {
-   int   bytes_buffered,
-         hunk_size;
-   off_t content_length,
-         total_read = 0;
-   char  buffer[2048];
+   off_t content_length;
 
    if (hmr.content_length == -1)
    {
@@ -2867,62 +2863,69 @@ flush_read(void)
    {
       content_length = hmr.content_length;
    }
-#ifdef WITH_TRACE
-   trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
-# if SIZEOF_OFF_T == 4
-             "Flush reading %ld bytes (bufferd bytes = %d).",
-# else
-             "Flush reading %lld bytes (bufferd bytes = %d).",
-# endif
-             (pri_off_t)content_length, hmr.bytes_buffered);
-#endif
-   while (total_read != content_length)
+
+   if (content_length != 0)
    {
-      hunk_size = content_length - total_read;
-      if (hunk_size > 2048)
+      int   bytes_buffered,
+            hunk_size;
+      off_t total_read = 0;
+      char  buffer[2048];
+
+#ifdef WITH_TRACE
+      trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+# if SIZEOF_OFF_T == 4
+                "Flush reading %ld bytes (bufferd bytes = %d).",
+# else
+                "Flush reading %lld bytes (bufferd bytes = %d).",
+# endif
+                (pri_off_t)content_length, hmr.bytes_buffered);
+#endif
+
+      while (total_read != content_length)
       {
-         hunk_size = 2048;
+         hunk_size = content_length - total_read;
+         if (hunk_size > 2048)
+         {
+            hunk_size = 2048;
+         }
+#ifdef WITH_TRACE
+         trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+                   "Reading hunk size = %d bytes.", hunk_size);
+#endif
+         if ((bytes_buffered = http_read(buffer, hunk_size)) <= 0)
+         {
+#ifdef WITH_TRACE
+            trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
+# if SIZEOF_OFF_T == 4
+                      "No good read %d, flushed %ld bytes.",
+# else
+                      "No good read %d, flushed %lld bytes.",
+# endif
+                      bytes_buffered, (pri_off_t)total_read);
+#endif
+            return(NO);
+         }
+         total_read += bytes_buffered;
       }
 #ifdef WITH_TRACE
       trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
-                "Reading hunk size = %d bytes.", hunk_size);
-#endif
-      if ((bytes_buffered = http_read(buffer, hunk_size)) <= 0)
-      {
-#ifdef WITH_TRACE
-         trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
 # if SIZEOF_OFF_T == 4
-                   "No good read %d, flushed %ld bytes.",
+                "Flushed %ld bytes.", (pri_off_t)total_read);
 # else
-                   "No good read %d, flushed %lld bytes.",
-# endif
-                   bytes_buffered, (pri_off_t)total_read);
-#endif
-         return(NO);
-      }
-      total_read += bytes_buffered;
-   }
-#ifdef WITH_TRACE
-   trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
-# if SIZEOF_OFF_T == 4
-             "Flushed %ld bytes.", (pri_off_t)total_read);
-# else
-             "Flushed %lld bytes.", (pri_off_t)total_read);
+                "Flushed %lld bytes.", (pri_off_t)total_read);
 # endif
 #endif
 
-   if ((bytes_buffered > 4) && (buffer[bytes_buffered - 1] == 10) &&
-       (buffer[bytes_buffered - 2] == 13) &&
-       (buffer[bytes_buffered - 3] == 10) &&
-       (buffer[bytes_buffered - 4] == 13) &&
-       (buffer[bytes_buffered - 5] == 48))
-   {
-      return(YES);
+      if ((bytes_buffered > 4) && (buffer[bytes_buffered - 1] == 10) &&
+          (buffer[bytes_buffered - 2] == 13) &&
+          (buffer[bytes_buffered - 3] == 10) &&
+          (buffer[bytes_buffered - 4] == 13) &&
+          (buffer[bytes_buffered - 5] == 48))
+      {
+         return(YES);
+      }
    }
-   else
-   {
-      return(NO);
-   }
+   return(NO);
 }
 
 

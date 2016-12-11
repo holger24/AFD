@@ -524,6 +524,8 @@ print_data(Widget w, XtPointer client_data, XtPointer call_data)
       XtManageChild(criteriabox_w);
       XtManageChild(main_form_w);
 
+      XmFontListFree(p_fontlist);
+
 #ifdef WITH_EDITRES
       XtAddEventHandler(printshell, (EventMask)0, True, _XEditResCheckMessages, NULL);
 #endif
@@ -608,7 +610,7 @@ send_print_cmd(char *message, int max_msg_length)
 #ifdef HAVE_SETPRIORITY
                        NO_PRIORITY,
 #endif
-                       "", 0L, YES, YES)) != 0)
+                       "", NULL, NULL, 0, 0L, YES, YES)) != 0)
    {
       if (buffer == NULL)
       {
@@ -670,7 +672,7 @@ send_mail_cmd(char *message, int max_msg_length)
 #ifdef HAVE_SETPRIORITY
                           NO_PRIORITY,
 #endif
-                          "", 0L, YES, YES)) != 0)
+                          "", NULL, NULL, 0, 0L, YES, YES)) != 0)
       {
          if (buffer == NULL)
          {

@@ -540,7 +540,7 @@ bin_file_chopper(char         *bin_file,
             }
             else
             {
-               length = strftime(date_str, sizeof(date_str) + 1,
+               length = strftime(date_str, sizeof(date_str),
                                  "%Y%m%d%H%M%S", gmtime(&tvalue));
                date_str[length] = '\0';
             }
@@ -778,11 +778,7 @@ bin_file_chopper(char         *bin_file,
 off_t
 bin_file_convert(char *src_ptr, off_t total_length, int to_fd)
 {
-   int   first_time = YES,
-         i;
-   off_t bytes_written = 0,
-         data_length = 0,
-         length;
+   off_t bytes_written = 0;
    char  *buffer,
          *ptr,
          length_indicator[15];
@@ -861,6 +857,11 @@ bin_file_convert(char *src_ptr, off_t total_length, int to_fd)
    }
    else
    {
+      int   first_time = YES,
+            i;
+      off_t data_length = 0,
+            length;
+
       while (total_length > 9)
       {
          if ((ptr = bin_search_start(buffer, total_length, &i, &total_length)) != NULL)

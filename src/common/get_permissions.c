@@ -1,6 +1,6 @@
 /*
  *  get_permissions.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -137,7 +137,7 @@ get_permissions(char **perm_buffer, char *fake_user, char *profile)
                     "malloc() error : %s", strerror(errno));
          exit(INCORRECT);
       }
-      (void)memcpy(user_profile, user, fd + 1);
+      (void)memcpy(user_profile, user, fd);
       user_profile[fd - 1] = ':';
       (void)strcpy(&user_profile[fd], profile);
    }

@@ -1,6 +1,6 @@
 /*
  *  select_host_dialog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -622,6 +622,8 @@ select_host_dialog(Widget w, XtPointer client_data, XtPointer call_data)
       XtManageChild(host_radiobox_w);
       XtManageChild(criteriabox_w);
       XtManageChild(main_form_w);
+
+      XmFontListFree(p_fontlist);
 
 #ifdef WITH_EDITRES
       XtAddEventHandler(findshell, (EventMask)0, True, _XEditResCheckMessages, NULL);

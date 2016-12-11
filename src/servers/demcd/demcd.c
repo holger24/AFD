@@ -453,7 +453,7 @@ main(int argc, char *argv[])
 static void
 get_demcd_config_value(char *mail_file, long *time_up)
 {
-   char *buffer;
+   char *buffer = NULL;
 
    (void)snprintf(afd_config_file, MAX_PATH_LENGTH, "%s%s%s",
                   p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
@@ -497,6 +497,7 @@ get_demcd_config_value(char *mail_file, long *time_up)
    {
       *time_up = DEFAULT_DE_MAIL_CONF_TIMEUP;
    }
+   free(buffer);
 
    return;
 }

@@ -284,6 +284,8 @@ select_delete_reason(Widget w, XtPointer client_data, XtPointer call_data)
       XtManageChild(criteriabox_w);
       XtManageChild(main_form_w);
 
+      XmFontListFree(p_fontlist);
+
 #ifdef WITH_EDITRES
       XtAddEventHandler(selectshell, (EventMask)0, True, _XEditResCheckMessages, NULL);
 #endif

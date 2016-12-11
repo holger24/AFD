@@ -1,6 +1,6 @@
 /*
  *  show_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -280,6 +280,8 @@ show_info(char *text, int with_search_function)
                     (XtCallbackProc)close_info_button, (XtPointer)0);
       XtManageChild(buttonbox_w);
       XtManageChild(form_w);
+
+      XmFontListFree(i_fontlist);
 
 #ifdef WITH_EDITRES
       XtAddEventHandler(infoshell, (EventMask)0, True,

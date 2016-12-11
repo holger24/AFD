@@ -1,6 +1,6 @@
 /*
  *  ftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -547,9 +547,12 @@ ftp_connect(char *hostname, int port)
 
       freeaddrinfo(result);
 
-      (void)memset((struct sockaddr *) &sin, 0, sizeof(sin));
-      (void)memcpy((struct sockaddr *) &sin, (struct sockaddr_in *)ai_addr,
-                   ai_addrlen);
+      (void)memset((struct sockaddr_in *) &sin, 0, sizeof(sin));
+      if (ai_family == AF_INET)
+      {
+         (void)memcpy((struct sockaddr *) &sin, (struct sockaddr_in *)ai_addr,
+                      ai_addrlen);
+      }
 #else
       register struct hostent *p_host = NULL;
 
@@ -2463,10 +2466,9 @@ ftp_list(int mode, int type, ...)
       }
       else /* mode & ACTIVE_MODE */
       {
-         int                sock_fd,
-                            tmp_errno;
-         my_socklen_t       length;
-         struct sockaddr_in from;
+         int          sock_fd,
+                      tmp_errno;
+         my_socklen_t length;
 
 #if defined (HAVE_GETADDRINFO) && defined (HAVE_GAI_STRERROR)
          if (ai_family == AF_INET6)
@@ -2673,7 +2675,7 @@ ftp_list(int mode, int type, ...)
             return(INCORRECT);
          }
          (void)alarm(transfer_timeout);
-         new_sock_fd = accept(sock_fd, (struct sockaddr *) &from, &length);
+         new_sock_fd = accept(sock_fd, NULL, NULL);
          tmp_errno = errno;
          (void)alarm(0);
 
@@ -3389,17 +3391,16 @@ ftp_data(char  *filename,
       }
       else /* ACTIVE_MODE */
       {
-         int                retries = 0,
-                            ret,
-                            sock_fd,
-                            tmp_errno;
-         my_socklen_t       length;
+         int            retries = 0,
+                        ret,
+                        sock_fd,
+                        tmp_errno;
+         my_socklen_t   length;
 #ifdef FTP_REUSE_DATA_PORT
-         unsigned int       loop_counter = 0;
-         static u_short     data_port = 0;
+         unsigned int   loop_counter = 0;
+         static u_short data_port = 0;
 #endif
-         register char      *h, *p;
-         struct sockaddr_in from;
+         register char  *h, *p;
 
          do
          {
@@ -3770,7 +3771,7 @@ try_again:
             return(INCORRECT);
          }
          (void)alarm(transfer_timeout);
-         new_sock_fd = accept(sock_fd, (struct sockaddr *) &from, &length);
+         new_sock_fd = accept(sock_fd, NULL, NULL);
          tmp_errno = errno;
          (void)alarm(0);
 

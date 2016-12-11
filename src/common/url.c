@@ -1687,6 +1687,7 @@ url_evaluate(char          *url,
                                                   url_error |= TARGET_DIR_CAN_CHANGE;
                                                }
                                             }
+                                            free(return_str);
                                          }
                                          else if (*(ptr + 3 + ii) == '\0')
                                               {
