@@ -160,8 +160,7 @@ count_pool_files(int           *dir_pos,
                         }
                         else
                         {
-                           check_file_pool_mem((file_counter + 1),
-                                               fra[de[*dir_pos].fra_pos].max_copied_files);
+                           check_file_pool_mem(file_counter + 1);
                            file_length_pool[file_counter] = strlen(p_dir->d_name);
                            (void)memcpy(file_name_pool[file_counter],
                                         p_dir->d_name,

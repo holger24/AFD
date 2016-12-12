@@ -26,8 +26,7 @@ DESCR__S_M3
  **                         large enough.
  **
  ** SYNOPSIS
- **   void check_file_pool_mem(int current_file_buffer,
- **                            unsigned int max_copied_files)
+ **   void check_file_pool_mem(int current_file_buffer)
  **
  ** DESCRIPTION
  **
@@ -64,7 +63,7 @@ extern struct file_dist_list      **file_dist_pool;
 
 /*######################## check_file_pool_mem() ########################*/
 void
-check_file_pool_mem(int current_file_buffer, unsigned int max_copied_files)
+check_file_pool_mem(int current_file_buffer)
 {
    if (current_file_buffer > max_file_buffer)
    {
@@ -74,24 +73,7 @@ check_file_pool_mem(int current_file_buffer, unsigned int max_copied_files)
       unsigned int prev_max_file_buffer = max_file_buffer;
 #endif
 
-      if (current_file_buffer > max_copied_files)
-      {
-         system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                    _("Hmmm, current_file_buffer %d is larger then max_copied_files %u."),
-                    current_file_buffer, max_copied_files);
-         max_file_buffer = current_file_buffer;
-      }
-      else
-      {
-         if ((max_file_buffer + FILE_BUFFER_STEP_SIZE) >= max_copied_files)
-         {
-            max_file_buffer = max_copied_files;
-         }
-         else
-         {
-            max_file_buffer += FILE_BUFFER_STEP_SIZE;
-         }
-      }
+      max_file_buffer += FILE_BUFFER_STEP_SIZE;
       REALLOC_RT_ARRAY(file_name_pool, max_file_buffer,
                        MAX_FILENAME_LENGTH, char);
       if ((file_length_pool = realloc(file_length_pool,

@@ -605,8 +605,7 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                               /* files every time we want to know what files */
                               /* are available. Hope this will reduce the    */
                               /* system time of the process dir_check.       */
-                              check_file_pool_mem((files_copied + 1),
-                                                  fra[p_de->fra_pos].max_copied_files);
+                              check_file_pool_mem(files_copied + 1);
                               if (rl_pos > -1)
                               {
                                  p_de->rl[rl_pos].retrieved = YES;

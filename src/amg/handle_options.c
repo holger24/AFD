@@ -4831,8 +4831,7 @@ check_changes(time_t         creation_time,
                *file_size += stat_buf.st_size;
                file_counter++;
 
-               check_file_pool_mem(file_counter,
-                                   fra[db[position].fra_pos].max_copied_files);
+               check_file_pool_mem(file_counter);
                file_length_pool[file_counter - 1] = strlen(p_dir->d_name);
                (void)memcpy(file_name_pool[file_counter - 1], p_dir->d_name,
                             (size_t)(file_length_pool[file_counter - 1] + 1));
@@ -5223,8 +5222,7 @@ restore_files(int position, char *file_path, off_t *file_size)
                *file_size += stat_buf.st_size;
                file_counter++;
 
-               check_file_pool_mem(file_counter,
-                                   fra[db[position].fra_pos].max_copied_files);
+               check_file_pool_mem(file_counter);
                file_length_pool[file_counter - 1] = strlen(p_dir->d_name);
                (void)memcpy(file_name_pool[file_counter - 1], p_dir->d_name,
                             (size_t)(file_length_pool[file_counter - 1] + 1));

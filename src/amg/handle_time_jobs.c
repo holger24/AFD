@@ -417,8 +417,7 @@ handle_time_dir(int time_job_no)
                   files_moved++;
                   file_size_moved += stat_buf.st_size;
 
-                  check_file_pool_mem(files_moved,
-                                      fra[de[db[time_job_list[time_job_no]].fra_pos].fra_pos].max_copied_files);
+                  check_file_pool_mem(files_moved);
                   file_length_pool[files_moved - 1] = strlen(p_dir->d_name);
                   (void)memcpy(file_name_pool[files_moved - 1], p_dir->d_name,
                                (size_t)(file_length_pool[files_moved - 1] + 1));

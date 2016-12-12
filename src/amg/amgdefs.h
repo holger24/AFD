@@ -939,7 +939,7 @@ extern void   add_file_mask(char *, struct dir_group *),
 #else
               check_file_dir(time_t, char *, int),
 #endif
-              check_file_pool_mem(int, unsigned int),
+              check_file_pool_mem(int),
               check_old_time_jobs(int, char *),
               clear_msg_buffer(void),
               clear_pool_dir(void),
