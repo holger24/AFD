@@ -247,7 +247,6 @@ check_production_line(char         *line,
                      {
                         cpu_usec = strtol(ptr, NULL, 16);
                         ptr += i + 1;
-                        i = 0;
                      }
                      else
                      {
@@ -266,6 +265,7 @@ check_production_line(char         *line,
                            ptr += i;
                         }
                      }
+                     i = 0;
                      plog.cpu_time = (double)(cpu_sec + (cpu_usec / (double)1000000));
                   }
                   else
@@ -288,6 +288,7 @@ check_production_line(char         *line,
                   {
                      ptr += i;
                   }
+                  i = 0;
                }
             }
          }
