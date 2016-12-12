@@ -198,10 +198,11 @@ extern int                        fra_fd,
                                   receive_log_fd;
 #ifndef _WITH_PTHREAD
 extern int                        max_copied_files;
-# ifdef _DELETE_LOG
 extern off_t                      *file_size_pool;
-# endif
-extern char                       *file_name_buffer;
+extern time_t                     *file_mtime_pool;
+extern char                       *file_name_buffer,
+                                  **file_name_pool;
+extern unsigned char              *file_length_pool;
 #endif
 extern char                       *bul_file,
                                   *p_work_dir,
@@ -250,7 +251,7 @@ static int                        cleanup_rename_ow(int,
 #ifdef _WITH_PTHREAD
 static int                        get_file_names(char *, char **, char **);
 #else
-static int                        restore_files(char *, off_t *);
+static int                        restore_files(int, char *, off_t *);
 #endif
 #if defined (_WITH_PTHREAD) || !defined (_PRODUCTION_LOG)
 static int                        recount_files(char *, off_t *);
@@ -1485,7 +1486,7 @@ handle_options(int          position,
                free(file_name_buffer);
 #else
 # ifndef _PRODUCTION_LOG
-                  *files_to_send = restore_files(file_path, file_size);
+                  *files_to_send = restore_files(position, file_path, file_size);
 # endif
 #endif
             }
@@ -1761,7 +1762,7 @@ handle_options(int          position,
                   }
                   else
                   {
-                     *files_to_send = restore_files(file_path, file_size);
+                     *files_to_send = restore_files(position, file_path, file_size);
                   }
 # endif
 #endif
@@ -2897,7 +2898,7 @@ handle_options(int          position,
 #ifdef _WITH_PTHREAD
                *files_to_send = recount_files(file_path, file_size);
 #else
-               *files_to_send = restore_files(file_path, file_size);
+               *files_to_send = restore_files(position, file_path, file_size);
 #endif
             }
          }
@@ -3013,7 +3014,7 @@ handle_options(int          position,
 #ifdef _WITH_PTHREAD
                *files_to_send = recount_files(file_path, file_size);
 #else
-               *files_to_send = restore_files(file_path, file_size);
+               *files_to_send = restore_files(position, file_path, file_size);
 #endif
             }
          }
@@ -3159,7 +3160,7 @@ handle_options(int          position,
 #ifdef _WITH_PTHREAD
                *files_to_send = recount_files(file_path, file_size);
 #else
-               *files_to_send = restore_files(file_path, file_size);
+               *files_to_send = restore_files(position, file_path, file_size);
 #endif
             }
          }
@@ -3610,7 +3611,7 @@ handle_options(int          position,
                *files_to_send = recount_files(file_path, file_size);
             }
 #else
-            *files_to_send = restore_files(file_path, file_size);
+            *files_to_send = restore_files(position, file_path, file_size);
 #endif
 #ifdef _WITH_PTHREAD
          }
@@ -3805,7 +3806,7 @@ handle_options(int          position,
                }
 #endif
 #ifndef _WITH_PTHREAD
-               *files_to_send = restore_files(file_path, file_size);
+               *files_to_send = restore_files(position, file_path, file_size);
 #endif
             }
 #ifdef _WITH_PTHREAD
@@ -4159,7 +4160,7 @@ handle_options(int          position,
 #ifdef _WITH_PTHREAD
                *files_to_send = recount_files(file_path, file_size);
 #else
-               *files_to_send = restore_files(file_path, file_size);
+               *files_to_send = restore_files(position, file_path, file_size);
 #endif
             }
          }
@@ -4829,6 +4830,14 @@ check_changes(time_t         creation_time,
                p_new_file_name += MAX_FILENAME_LENGTH;
                *file_size += stat_buf.st_size;
                file_counter++;
+
+               check_file_pool_mem(file_counter,
+                                   fra[db[position].fra_pos].max_copied_files);
+               file_length_pool[file_counter - 1] = strlen(p_dir->d_name);
+               (void)memcpy(file_name_pool[file_counter - 1], p_dir->d_name,
+                            (size_t)(file_length_pool[file_counter - 1] + 1));
+               file_size_pool[file_counter - 1] = stat_buf.st_size;
+               file_mtime_pool[file_counter - 1] = stat_buf.st_mtime;
             }
             else if (S_ISDIR(stat_buf.st_mode))
                  {
@@ -5134,7 +5143,7 @@ check_changes(time_t         creation_time,
 #ifndef _WITH_PTHREAD
 /*+++++++++++++++++++++++++++ restore_files() +++++++++++++++++++++++++++*/
 static int
-restore_files(char *file_path, off_t *file_size)
+restore_files(int position, char *file_path, off_t *file_size)
 {
    int file_counter = 0;
    DIR *dp;
@@ -5213,6 +5222,14 @@ restore_files(char *file_path, off_t *file_size)
                p_file_name += MAX_FILENAME_LENGTH;
                *file_size += stat_buf.st_size;
                file_counter++;
+
+               check_file_pool_mem(file_counter,
+                                   fra[db[position].fra_pos].max_copied_files);
+               file_length_pool[file_counter - 1] = strlen(p_dir->d_name);
+               (void)memcpy(file_name_pool[file_counter - 1], p_dir->d_name,
+                            (size_t)(file_length_pool[file_counter - 1] + 1));
+               file_size_pool[file_counter - 1] = stat_buf.st_size;
+               file_mtime_pool[file_counter - 1] = stat_buf.st_mtime;
             }
             else if (S_ISDIR(stat_buf.st_mode))
                  {

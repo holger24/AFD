@@ -80,6 +80,7 @@ amg_SOURCES            = add_file_mask.c\
 amg_LDADD              = ../common/libafd.a
 dir_check_SOURCES      = check_file_dir.c\
                          check_files.c\
+			 check_file_pool_mem.c\
                          check_paused_dir.c\
                          check_old_time_jobs.c\
                          clear_msg_buffer.c\

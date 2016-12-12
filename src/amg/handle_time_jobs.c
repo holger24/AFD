@@ -76,18 +76,11 @@ extern char                       outgoing_file_dir[],
                                   time_dir[];
 #endif
 #ifndef _WITH_PTHREAD
-extern unsigned int               max_file_buffer;
 extern char                       *file_name_buffer;
 extern off_t                      *file_size_pool;
 extern time_t                     *file_mtime_pool;
 extern char                       **file_name_pool;
 extern unsigned char              *file_length_pool;
-#endif
-#ifdef _DISTRIBUTION_LOG
-extern unsigned int               max_jobs_per_file;
-# ifndef _WITH_PTHREAD
-extern struct file_dist_list      **file_dist_pool;
-# endif
 #endif
 #ifdef MULTI_FS_SUPPORT
 extern struct extra_work_dirs     *ewl;
@@ -424,99 +417,8 @@ handle_time_dir(int time_job_no)
                   files_moved++;
                   file_size_moved += stat_buf.st_size;
 
-#ifndef _WITH_PTHREAD
-                  if (files_moved > max_file_buffer)
-                  {
-# ifdef _DISTRIBUTION_LOG
-                     int          k, m;
-                     size_t       tmp_val;
-                     unsigned int prev_max_file_buffer = max_file_buffer;
-# endif
-
-                     if (files_moved > fra[de[db[time_job_list[time_job_no]].fra_pos].fra_pos].max_copied_files)
-                     {
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   _("Hmmm, files_moved %d is larger then max_copied_files %u."),
-                                   files_moved,
-                                   fra[de[db[time_job_list[time_job_no]].fra_pos].fra_pos].max_copied_files);
-                        max_file_buffer = files_moved;
-                     }
-                     else
-                     {
-                        if ((max_file_buffer + FILE_BUFFER_STEP_SIZE) >= fra[de[db[time_job_list[time_job_no]].fra_pos].fra_pos].max_copied_files)
-                        {
-                           max_file_buffer = fra[de[db[time_job_list[time_job_no]].fra_pos].fra_pos].max_copied_files;
-                        }
-                        else
-                        {
-                           max_file_buffer += FILE_BUFFER_STEP_SIZE;
-                        }
-                     }
-                     REALLOC_RT_ARRAY(file_name_pool, max_file_buffer,
-                                      MAX_FILENAME_LENGTH, char);
-                     if ((file_length_pool = realloc(file_length_pool,
-                                                     max_file_buffer * sizeof(unsigned char))) == NULL)
-                     {
-                        system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                   _("realloc() error : %s"), strerror(errno));
-                        exit(INCORRECT);
-                     }
-                     if ((file_mtime_pool = realloc(file_mtime_pool,
-                                                    max_file_buffer * sizeof(off_t))) == NULL)
-                     {
-                        system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                   _("realloc() error : %s"), strerror(errno));
-                        exit(INCORRECT);
-                     }
-                     if ((file_size_pool = realloc(file_size_pool,
-                                          max_file_buffer * sizeof(off_t))) == NULL)
-                     {
-                        system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                   _("realloc() error : %s"), strerror(errno));
-                        exit(INCORRECT);
-                     }
-# ifdef _DISTRIBUTION_LOG
-#  ifdef RT_ARRAY_STRUCT_WORKING
-                     REALLOC_RT_ARRAY(file_dist_pool, max_file_buffer,
-                                      NO_OF_DISTRIBUTION_TYPES,
-                                      struct file_dist_list);
-#  else
-                     if ((file_dist_pool = (struct file_dist_list **)realloc(file_dist_pool, max_file_buffer * NO_OF_DISTRIBUTION_TYPES * sizeof(struct file_dist_list *))) == NULL)
-                     {
-                        system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                   _("realloc() error : %s"), strerror(errno));
-                        exit(INCORRECT);
-                     }
-                     if ((file_dist_pool[0] = (struct file_dist_list *)realloc(file_dist_pool[0], max_file_buffer * NO_OF_DISTRIBUTION_TYPES * sizeof(struct file_dist_list))) == NULL)
-                     {
-                        system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                   _("realloc() error : %s"), strerror(errno));
-                        exit(INCORRECT);
-                     }
-                     for (k = 0; k < max_file_buffer; k++)
-                     {
-                        file_dist_pool[k] = file_dist_pool[0] + (k * NO_OF_DISTRIBUTION_TYPES);
-                     }
-#  endif
-                     tmp_val = max_jobs_per_file * sizeof(unsigned int);
-                     for (k = prev_max_file_buffer; k < max_file_buffer; k++)
-                     {
-                        for (m = 0; m < NO_OF_DISTRIBUTION_TYPES; m++)
-                        {
-                           if (((file_dist_pool[k][m].jid_list = malloc(tmp_val)) == NULL) ||
-                               ((file_dist_pool[k][m].proc_cycles = malloc(max_jobs_per_file)) == NULL))
-                           {
-                              system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                         _("malloc() error : %s"),
-                                         strerror(errno));
-                              exit(INCORRECT);
-                           }
-                           file_dist_pool[k][m].no_of_dist = 0;
-                        }
-                     }
-# endif
-                  }
-#endif /* !_WITH_PTHREAD */
+                  check_file_pool_mem(files_moved,
+                                      fra[de[db[time_job_list[time_job_no]].fra_pos].fra_pos].max_copied_files);
                   file_length_pool[files_moved - 1] = strlen(p_dir->d_name);
                   (void)memcpy(file_name_pool[files_moved - 1], p_dir->d_name,
                                (size_t)(file_length_pool[files_moved - 1] + 1));

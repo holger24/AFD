@@ -836,8 +836,8 @@ extern int    amg_zombie_check(pid_t *, int),
                       off_t *),
 #ifdef _WITH_PTHREAD
               check_files(struct directory_entry *, char *, int, char *,
-                          int, int *, time_t, int *, off_t *, char **,
-                          unsigned char *,
+                          int, int *, time_t, int *, off_t *, time_t *,
+                          char **, unsigned char *,
 # if defined (_MAINTAINER_LOG) && defined (SHOW_FILE_MOVING)
                           char *, int,
 # endif
@@ -939,6 +939,7 @@ extern void   add_file_mask(char *, struct dir_group *),
 #else
               check_file_dir(time_t, char *, int),
 #endif
+              check_file_pool_mem(int, unsigned int),
               check_old_time_jobs(int, char *),
               clear_msg_buffer(void),
               clear_pool_dir(void),
