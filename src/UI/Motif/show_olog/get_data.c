@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -846,6 +846,15 @@ static void   check_log_updates(Widget),
                       /* Write file size. */               \
                       print_file_size(p_file_size, (off_t)tmp_file_size);\
                    }                                       \
+              else if ((gt_lt_sign == NOT_SIGN) &&         \
+                       (tmp_file_size != search_file_size))\
+                   {                                       \
+                      (void)memset(line, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length);\
+                      (void)memcpy(p_type, (id_string), 5);\
+                                                           \
+                      /* Write file size. */               \
+                      print_file_size(p_file_size, (off_t)tmp_file_size);\
+                   }                                       \
                    else                                    \
                    {                                       \
                       IGNORE_ENTRY();                      \
@@ -945,6 +954,15 @@ static void   check_log_updates(Widget),
                       /* Write file size. */               \
                       print_file_size(p_file_size, (off_t)tmp_file_size);\
                    }                                       \
+              else if ((gt_lt_sign == NOT_SIGN) &&         \
+                       (tmp_file_size != search_file_size))\
+                   {                                       \
+                      (void)memset(line, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length);\
+                      (void)memcpy(p_type, (id_string), 5);\
+                                                           \
+                      /* Write file size. */               \
+                      print_file_size(p_file_size, (off_t)tmp_file_size);\
+                   }                                       \
                    else                                    \
                    {                                       \
                       IGNORE_ENTRY();                      \
@@ -1024,6 +1042,15 @@ static void   check_log_updates(Widget),
                    }                                       \
               else if ((gt_lt_sign == GREATER_THEN_SIGN) &&\
                        (tmp_file_size > search_file_size)) \
+                   {                                       \
+                      (void)memset(line, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length);\
+                      (void)memcpy(p_type, (id_string), 5);\
+                                                           \
+                      /* Write file size. */               \
+                      print_file_size(p_file_size, (off_t)tmp_file_size);\
+                   }                                       \
+              else if ((gt_lt_sign == NOT_SIGN) &&         \
+                       (tmp_file_size != search_file_size))\
                    {                                       \
                       (void)memset(line, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length);\
                       (void)memcpy(p_type, (id_string), 5);\
@@ -1161,6 +1188,15 @@ static void   check_log_updates(Widget),
                    /* Write file size. */                  \
                    print_file_size(p_file_size, (off_t)tmp_file_size);\
                 }                                          \
+           else if ((gt_lt_sign == NOT_SIGN) &&            \
+                    (tmp_file_size != search_file_size))   \
+                {                                          \
+                   (void)memset(line, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length);\
+                   (void)memcpy(p_type, (id_string), 5);   \
+                                                           \
+                   /* Write file size. */                  \
+                   print_file_size(p_file_size, (off_t)tmp_file_size);\
+                }                                          \
                 else                                       \
                 {                                          \
                    IGNORE_ENTRY();                         \
@@ -1243,6 +1279,15 @@ static void   check_log_updates(Widget),
                    /* Write file size. */                  \
                    print_file_size(p_file_size, (off_t)tmp_file_size);\
                 }                                          \
+           else if ((gt_lt_sign == NOT_SIGN) &&            \
+                    (tmp_file_size != search_file_size))   \
+                {                                          \
+                   (void)memset(line, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length);\
+                   (void)memcpy(p_type, (id_string), 5);   \
+                                                           \
+                   /* Write file size. */                  \
+                   print_file_size(p_file_size, (off_t)tmp_file_size);\
+                }                                          \
                 else                                       \
                 {                                          \
                    IGNORE_ENTRY();                         \
@@ -1305,6 +1350,15 @@ static void   check_log_updates(Widget),
                 }                                          \
            else if ((gt_lt_sign == GREATER_THEN_SIGN) &&   \
                     (tmp_file_size > search_file_size))    \
+                {                                          \
+                   (void)memset(line, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length);\
+                   (void)memcpy(p_type, (id_string), 5);   \
+                                                           \
+                   /* Write file size. */                  \
+                   print_file_size(p_file_size, (off_t)tmp_file_size);\
+                }                                          \
+           else if ((gt_lt_sign == NOT_SIGN) &&            \
+                    (tmp_file_size != search_file_size))   \
                 {                                          \
                    (void)memset(line, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length);\
                    (void)memcpy(p_type, (id_string), 5);   \
@@ -4822,12 +4876,17 @@ file_name_and_size(register char *ptr,
             IGNORE_ENTRY();
          }
          else if ((gt_lt_sign == LESS_THEN_SIGN) &&
-                  (tmp_file_size >= search_file_size))
+                  (tmp_file_size > search_file_size))
               {
                  IGNORE_ENTRY();
               }
          else if ((gt_lt_sign == GREATER_THEN_SIGN) &&
-                  (tmp_file_size <= search_file_size))
+                  (tmp_file_size < search_file_size))
+              {
+                 IGNORE_ENTRY();
+              }
+         else if ((gt_lt_sign == NOT_SIGN) &&
+                  (tmp_file_size != search_file_size))
               {
                  IGNORE_ENTRY();
               }
@@ -7765,12 +7824,17 @@ file_name_size_recipient(register char *ptr,
             IGNORE_ENTRY();
          }
          else if ((gt_lt_sign == LESS_THEN_SIGN) &&
-                  (tmp_file_size >= search_file_size))
+                  (tmp_file_size > search_file_size))
               {
                  IGNORE_ENTRY();
               }
          else if ((gt_lt_sign == GREATER_THEN_SIGN) &&
-                  (tmp_file_size <= search_file_size))
+                  (tmp_file_size < search_file_size))
+              {
+                 IGNORE_ENTRY();
+              }
+         else if ((gt_lt_sign == NOT_SIGN) &&
+                  (tmp_file_size != search_file_size))
               {
                  IGNORE_ENTRY();
               }

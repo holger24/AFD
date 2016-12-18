@@ -114,7 +114,7 @@
 #define MAX_DISPLAYED_TRANSFER_TIME 6
 #define MAX_OUTPUT_LINE_LENGTH   (16 + MAX_HOSTNAME_LENGTH + 1 + 1 + 5 + 1 + MAX_DISPLAYED_FILE_SIZE + 1 + MAX_DISPLAYED_TRANSFER_TIME + 1 + 2)
 
-#define FILE_SIZE_FORMAT         "Enter file size in bytes: [=<>]file size"
+#define FILE_SIZE_FORMAT         "Enter file size in bytes: [!=<>]file size"
 #define TIME_FORMAT              "Absolut: MMDDhhmm or DDhhmm or hhmm   Relative: -DDhhmm or -hhmm or -mm"
 
 /* Maximum length of the file name that is displayed. */
