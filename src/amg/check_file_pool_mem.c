@@ -73,7 +73,11 @@ check_file_pool_mem(int current_file_buffer)
       unsigned int prev_max_file_buffer = max_file_buffer;
 #endif
 
-      max_file_buffer += FILE_BUFFER_STEP_SIZE;
+      do
+      {
+         max_file_buffer += FILE_BUFFER_STEP_SIZE;
+      } while (current_file_buffer > max_file_buffer);
+
       REALLOC_RT_ARRAY(file_name_pool, max_file_buffer,
                        MAX_FILENAME_LENGTH, char);
       if ((file_length_pool = realloc(file_length_pool,

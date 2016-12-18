@@ -58,17 +58,25 @@ get_sum_cpu_usage(struct rusage *ru_start, struct timeval *cpu_usage)
    start.tv_sec = ru_start->ru_utime.tv_sec + ru_start->ru_stime.tv_sec;
    end.tv_usec = ru.ru_utime.tv_usec + ru.ru_stime.tv_usec;
    end.tv_sec = ru.ru_utime.tv_sec + ru.ru_stime.tv_sec;
-   if (end.tv_usec > start.tv_usec)
+   if (end.tv_usec < start.tv_usec)
    {
       end.tv_usec += 1000000L;
       end.tv_sec -= 1;
    }
    cpu_usage->tv_usec = end.tv_usec - start.tv_usec;
    cpu_usage->tv_sec = end.tv_sec - start.tv_sec;
-   if (cpu_usage->tv_usec > 1000000L)
+   if (end.tv_sec < 0)
    {
-      cpu_usage->tv_usec -= 1000000L;
-      cpu_usage->tv_sec++;
+      cpu_usage->tv_usec = 0L;
+      cpu_usage->tv_sec = 0L;
+   }
+   else
+   {
+      if (cpu_usage->tv_usec > 1000000L)
+      {
+         cpu_usage->tv_usec -= 1000000L;
+         cpu_usage->tv_sec++;
+      }
    }
 
    /*

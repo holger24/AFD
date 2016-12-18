@@ -346,6 +346,7 @@ convert(char         *file_path,
                  }
                  else
                  {
+                    *file_size += stat_buf.st_size;
                     no_change = YES;
                  }
                  break;

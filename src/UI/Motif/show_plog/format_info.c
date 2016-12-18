@@ -186,7 +186,7 @@ format_info(char **text)
       max_x = count;
    }
    max_y++;
-   count = sprintf(*text, "Production time     : %.3f sec\n", id.production_time);
+   count = sprintf(*text, "Production time     : %g sec\n", id.production_time);
    length += count;
    if (count > max_x)
    {
@@ -498,7 +498,7 @@ format_info(char **text)
    }
    else
    {
-      length += sprintf(*text + length, "CPU time used       : %g sec\n", id.cpu_time);
+      length += sprintf(*text + length, "CPU time used       : %.6f sec\n", id.cpu_time);
    }
    length += sprintf(*text + length, "Production time     : %g sec\n", id.production_time);
    length += sprintf(*text + length, "Production finished : %s", ctime(&id.time_when_produced));

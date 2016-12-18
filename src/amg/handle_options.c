@@ -1472,7 +1472,7 @@ handle_options(int          position,
                                                        file_path,
                                                        file_size);
                      }
-#endif
+#endif /* _PRODUCTION_LOG */
 
                      p_file_name += MAX_FILENAME_LENGTH;
                   } /* for (j = 0; j < file_counter; j++) */
@@ -1486,7 +1486,7 @@ handle_options(int          position,
                free(file_name_buffer);
 #else
 # ifndef _PRODUCTION_LOG
-                  *files_to_send = restore_files(position, file_path, file_size);
+               *files_to_send = restore_files(position, file_path, file_size);
 # endif
 #endif
             }
@@ -1762,7 +1762,8 @@ handle_options(int          position,
                   }
                   else
                   {
-                     *files_to_send = restore_files(position, file_path, file_size);
+                     *files_to_send = restore_files(position, file_path,
+                                                    file_size);
                   }
 # endif
 #endif
@@ -3762,7 +3763,6 @@ handle_options(int          position,
          {
 #endif
 #ifdef _PRODUCTION_LOG
-            size = *file_size;
             (void)getrusage(RUSAGE_SELF, &ru);
             start_time = times(&tval);
 #endif
@@ -3800,8 +3800,8 @@ handle_options(int          position,
                                  ptr, SEPARATOR_CHAR,
                                  (pri_off_t)file_size_pool[ii], SEPARATOR_CHAR,
                                  assembled_name, SEPARATOR_CHAR,
-                                 (pri_off_t)(*file_size - size),
-                                 SEPARATOR_CHAR, SEPARATOR_CHAR, p_option);
+                                 (pri_off_t)(*file_size), SEPARATOR_CHAR,
+                                 SEPARATOR_CHAR, p_option);
                   ptr += MAX_FILENAME_LENGTH;
                }
 #endif
@@ -4756,6 +4756,8 @@ check_changes(time_t         creation_time,
                     *p_old_file_name,
                     *ptr,
                     *new_file_name_buffer = NULL;
+      unsigned char *new_file_length_buffer = NULL;
+      time_t        *new_file_mtime_buffer = NULL;
       static char   *old_file_name_buffer = NULL;
       struct stat   stat_buf;
       struct dirent *p_dir;
@@ -4824,19 +4826,42 @@ check_changes(time_t         creation_time,
                                 new_size, strerror(errno));
                      exit(INCORRECT);
                   }
+
+                  /* Calculate new size of file name length buffer. */
+                  new_size = ((file_counter / FILE_NAME_STEP_SIZE) + 1) *
+                             FILE_NAME_STEP_SIZE * sizeof(unsigned char);
+
+                  /* Increase the space for the file name length buffer. */
+                  if ((new_file_length_buffer = realloc(new_file_length_buffer,
+                                                        new_size)) == NULL)
+                  {
+                     system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                "Could not realloc() memory [%d bytes] : %s",
+                                new_size, strerror(errno));
+                     exit(INCORRECT);
+                  }
+
+                  /* Calculate new size of file mtime buffer. */
+                  new_size = ((file_counter / FILE_NAME_STEP_SIZE) + 1) *
+                             FILE_NAME_STEP_SIZE * sizeof(time_t);
+
+                  /* Increase the space for the file mtime buffer. */
+                  if ((new_file_mtime_buffer = realloc(new_file_mtime_buffer,
+                                                       new_size)) == NULL)
+                  {
+                     system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                "Could not realloc() memory [%d bytes] : %s",
+                                new_size, strerror(errno));
+                     exit(INCORRECT);
+                  }
                }
                (void)strcpy(p_new_file_name, p_dir->d_name);
                new_file_size_buffer[file_counter] = stat_buf.st_size;
+               new_file_length_buffer[file_counter] = strlen(p_dir->d_name);
+               new_file_mtime_buffer[file_counter] = stat_buf.st_mtime;
                p_new_file_name += MAX_FILENAME_LENGTH;
                *file_size += stat_buf.st_size;
                file_counter++;
-
-               check_file_pool_mem(file_counter);
-               file_length_pool[file_counter - 1] = strlen(p_dir->d_name);
-               (void)memcpy(file_name_pool[file_counter - 1], p_dir->d_name,
-                            (size_t)(file_length_pool[file_counter - 1] + 1));
-               file_size_pool[file_counter - 1] = stat_buf.st_size;
-               file_mtime_pool[file_counter - 1] = stat_buf.st_mtime;
             }
             else if (S_ISDIR(stat_buf.st_mode))
                  {
@@ -4876,7 +4901,6 @@ check_changes(time_t         creation_time,
       log_entries = 0;
       for (i = 0; i < file_counter; i++)
       {
-         gotcha = NO;
          if (exec_name != NULL)
          {
             if (old_file_name_buffer == NULL)
@@ -4900,6 +4924,7 @@ check_changes(time_t         creation_time,
             p_old_file_name = file_name_buffer;
          }
 
+         gotcha = NO;
          for (j = 0; j < prev_file_counter; j++)
          {
             if (CHECK_STRCMP(p_new_file_name, p_old_file_name) == 0)
@@ -5031,7 +5056,7 @@ check_changes(time_t         creation_time,
                                  "%s%c%llx%c%c%c%d%c%s",
 # endif
                                  p_old_file_name, SEPARATOR_CHAR,
-                                 (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_pool[i], SEPARATOR_CHAR,
                                  SEPARATOR_CHAR, SEPARATOR_CHAR, exec_ret,
                                  SEPARATOR_CHAR, exec_cmd);
                }
@@ -5047,7 +5072,7 @@ check_changes(time_t         creation_time,
                                  "%s%c%llx%c%s%c%llx%c%d%c%s",
 # endif
                                  p_old_file_name, SEPARATOR_CHAR,
-                                 (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_pool[i], SEPARATOR_CHAR,
                                  p_old_file_name, SEPARATOR_CHAR,
                                  (pri_off_t)new_file_size_buffer[j],
                                  SEPARATOR_CHAR, exec_ret, SEPARATOR_CHAR,
@@ -5102,6 +5127,7 @@ check_changes(time_t         creation_time,
             }
          }
       }
+      check_file_pool_mem(file_counter);
       if (overwrite == YES)
       {
          if ((exec_name != NULL) && (old_file_name_buffer != NULL))
@@ -5113,6 +5139,16 @@ check_changes(time_t         creation_time,
          file_name_buffer = new_file_name_buffer;
          p_file_name = file_name_buffer;
          prev_file_counter = 0;
+         p_new_file_name = new_file_name_buffer;
+         for (i = 0; i < file_counter; i++)
+         {
+            file_size_pool[i] = new_file_size_buffer[i];
+            file_length_pool[i] = new_file_length_buffer[i];
+            (void)memcpy(file_name_pool[i], new_file_name_buffer,
+                         file_length_pool[i]);
+            file_mtime_pool[i] = new_file_mtime_buffer[i];
+            p_new_file_name += MAX_FILENAME_LENGTH;
+         }
       }
       else
       {
@@ -5132,6 +5168,8 @@ check_changes(time_t         creation_time,
          }
       }
       free(new_file_size_buffer);
+      free(new_file_length_buffer);
+      free(new_file_mtime_buffer);
    }
 
    return(file_counter);
