@@ -132,7 +132,7 @@ time_t                     start_time_val,
 size_t                     search_file_size;
 char                       *p_work_dir,
                            font_name[40],
-                           header_line[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 1],
+                           header_line[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 2],
                            search_file_name[MAX_PATH_LENGTH],
                            **search_dir = NULL,
                            **search_dirid = NULL,
@@ -442,7 +442,7 @@ main(int argc, char *argv[])
    argcount++;
    criteriabox_w = XmCreateForm(mainform_w, "criteriabox", args, argcount);
 
-   label_w = XtVaCreateManagedWidget("File name :",
+   label_w = XtVaCreateManagedWidget("File name length:",
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_POSITION,

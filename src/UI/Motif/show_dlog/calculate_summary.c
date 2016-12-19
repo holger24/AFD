@@ -1,7 +1,7 @@
 /*
  *  calculate_summary.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1998 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -82,7 +82,9 @@ calculate_summary(char         *summary_str,
    char   file_rate_unit,
           *p_summary_str;
 
-   (void)memset(summary_str, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length);
+   (void)memset(summary_str, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length + 5);
+   *(summary_str + MAX_OUTPUT_LINE_LENGTH + file_name_length  + 5) = '\0';
+
    if ((first_date_found != -1) &&
        ((total_time = last_date_found - first_date_found) > 0L))
    {
@@ -131,8 +133,7 @@ calculate_summary(char         *summary_str,
       min = total_time / 60;
       total_time -= (min * 60);
       length = sprintf(summary_str, "%5d  %02d:%02d:%02d %d Files (",
-                       days, hours, min, (int)total_time,
-                       total_no_files);
+                       days, hours, min, (int)total_time, total_no_files);
    }
    else
    {
@@ -149,42 +150,51 @@ calculate_summary(char         *summary_str,
    p_summary_str += 16 + file_name_length + 1;
    if (file_size < KILOBYTE)
    {
+      length = sprintf(p_summary_str,
 #if SIZE_OF_OFF_T == 4
-      (void)sprintf(p_summary_str, "%4ld Bytes ", (pri_off_t)file_size);
+                       "%*ld Bytes ",
 #else
-      (void)sprintf(p_summary_str, "%4lld Bytes ", (pri_off_t)file_size);
+                       "%*lld Bytes ",
 #endif
+                       MAX_DISPLAYED_FILE_SIZE, (pri_off_t)file_size);
    }
    else if (file_size < MEGABYTE)
         {
-           (void)sprintf(p_summary_str, "%7.2f KB ",
-                         (double)(file_size / F_KILOBYTE));
+           length = sprintf(p_summary_str, "%*.2f KB ",
+                            MAX_DISPLAYED_FILE_SIZE,
+                            (double)(file_size / F_KILOBYTE));
         }
    else if (file_size < GIGABYTE)
         {
-           (void)sprintf(p_summary_str, "%7.2f MB ",
-                         (double)(file_size / F_MEGABYTE));
+           length = sprintf(p_summary_str, "%*.2f MB ",
+                            MAX_DISPLAYED_FILE_SIZE,
+                            (double)(file_size / F_MEGABYTE));
         }
    else if (file_size < TERABYTE)
         {
-           (void)sprintf(p_summary_str, "%7.2f GB ",
-                         (double)(file_size / F_GIGABYTE));
+           length = sprintf(p_summary_str, "%*.2f GB ",
+                            MAX_DISPLAYED_FILE_SIZE,
+                            (double)(file_size / F_GIGABYTE));
         }
    else if (file_size < PETABYTE)
         {
-           (void)sprintf(p_summary_str, "%7.2f TB ",
-                         (double)(file_size / F_TERABYTE));
+           length = sprintf(p_summary_str, "%*.2f TB ",
+                            MAX_DISPLAYED_FILE_SIZE,
+                            (double)(file_size / F_TERABYTE));
         }
    else if (file_size < EXABYTE)
         {
-           (void)sprintf(p_summary_str, "%7.2f PB ",
-                         (double)(file_size / F_PETABYTE));
+           length = sprintf(p_summary_str, "%*.2f PB ",
+                            MAX_DISPLAYED_FILE_SIZE,
+                            (double)(file_size / F_PETABYTE));
         }
         else
         {
-           (void)sprintf(p_summary_str, "%7.2f EB ",
-                         (double)(file_size / F_EXABYTE));
+           length = sprintf(p_summary_str, "%*.2f EB ",
+                            MAX_DISPLAYED_FILE_SIZE,
+                            (double)(file_size / F_EXABYTE));
         }
+   *(p_summary_str + length) = ' ';
 
    return;
 }

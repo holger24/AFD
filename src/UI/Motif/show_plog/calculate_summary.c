@@ -92,7 +92,7 @@ calculate_summary(char         *summary_str,
    char         *p_summary_str;
 
    (void)memset(summary_str, ' ', MAX_PRODUCTION_LINE_LENGTH + file_name_length + file_name_length + 5);
-   *(summary_str + MAX_PRODUCTION_LINE_LENGTH + file_name_length + file_name_length + 5) = '\0';;
+   *(summary_str + MAX_PRODUCTION_LINE_LENGTH + file_name_length + file_name_length + 5) = '\0';
 
    if ((first_date_found != -1) &&
        ((total_time = last_date_found - first_date_found) > 0L))
