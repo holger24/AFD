@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2012 Holger Kiehl <Holger.Kiehl@@dwd.de>
+ *  Copyright (c) 2001 - 2016 Holger Kiehl <Holger.Kiehl@@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -769,6 +769,11 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                  {
                     extra_sign = 1;
                     gt_lt_sign = GREATER_THEN_SIGN;
+                 }
+            else if (value[0] == '!')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign = NOT_SIGN;
                  }
                  else
                  {

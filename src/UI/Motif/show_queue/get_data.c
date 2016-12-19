@@ -1315,6 +1315,8 @@ insert_file(char         *queue_dir,
                             (stat_buf.st_size > search_file_size)) ||
                            ((gt_lt_sign == LESS_THEN_SIGN) &&
                             (stat_buf.st_size < search_file_size)) ||
+                           ((gt_lt_sign == NOT_SIGN) &&
+                            (stat_buf.st_size != search_file_size)) ||
                            ((gt_lt_sign == EQUAL_SIGN) &&
                             (stat_buf.st_size == search_file_size)))))
                      {

@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -384,6 +384,15 @@ static void             display_data(int, time_t, time_t),
                       /* Write file size. */                           \
                       print_file_size(p_file_size, tmp_file_size);     \
                    }                                                   \
+              else if ((gt_lt_sign == NOT_SIGN) &&                     \
+                       (tmp_file_size != search_file_size))            \
+                   {                                                   \
+                      (void)memset(line, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length + 1);\
+                      (void)memcpy(p_delete_reason, sdrstr[(reason_pos)], MAX_REASON_LENGTH);\
+                                                                       \
+                      /* Write file size. */                           \
+                      print_file_size(p_file_size, tmp_file_size);     \
+                   }                                                   \
                    else                                                \
                    {                                                   \
                       IGNORE_ENTRY();                                  \
@@ -480,6 +489,15 @@ static void             display_data(int, time_t, time_t),
                 }                                                      \
            else if ((gt_lt_sign == GREATER_THEN_SIGN) &&               \
                     (tmp_file_size > search_file_size))                \
+                {                                                      \
+                   (void)memset(line, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length + 1);\
+                   (void)memcpy(p_delete_reason, sdrstr[(reason_pos)], MAX_REASON_LENGTH);\
+                                                                       \
+                   /* Write file size. */                              \
+                   print_file_size(p_file_size, tmp_file_size);        \
+                }                                                      \
+           else if ((gt_lt_sign == NOT_SIGN) &&                        \
+                    (tmp_file_size != search_file_size))               \
                 {                                                      \
                    (void)memset(line, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length + 1);\
                    (void)memcpy(p_delete_reason, sdrstr[(reason_pos)], MAX_REASON_LENGTH);\
@@ -1583,6 +1601,11 @@ file_name_and_size(register char *ptr,
               {
                  IGNORE_ENTRY();
               }
+         else if ((gt_lt_sign == NOT_SIGN) &&
+                  (tmp_file_size == search_file_size))
+              {
+                 IGNORE_ENTRY();
+              }
 
          ptr = ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset;
          (void)memset(line, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length + 1);
@@ -2208,6 +2231,11 @@ file_name_size_recipient(register char *ptr,
               }
          else if ((gt_lt_sign == GREATER_THEN_SIGN) &&
                   (tmp_file_size <= search_file_size))
+              {
+                 IGNORE_ENTRY();
+              }
+         else if ((gt_lt_sign == NOT_SIGN) &&
+                  (tmp_file_size == search_file_size))
               {
                  IGNORE_ENTRY();
               }

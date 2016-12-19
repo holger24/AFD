@@ -4876,17 +4876,17 @@ file_name_and_size(register char *ptr,
             IGNORE_ENTRY();
          }
          else if ((gt_lt_sign == LESS_THEN_SIGN) &&
-                  (tmp_file_size > search_file_size))
+                  (tmp_file_size >= search_file_size))
               {
                  IGNORE_ENTRY();
               }
          else if ((gt_lt_sign == GREATER_THEN_SIGN) &&
-                  (tmp_file_size < search_file_size))
+                  (tmp_file_size <= search_file_size))
               {
                  IGNORE_ENTRY();
               }
          else if ((gt_lt_sign == NOT_SIGN) &&
-                  (tmp_file_size != search_file_size))
+                  (tmp_file_size == search_file_size))
               {
                  IGNORE_ENTRY();
               }
@@ -7824,17 +7824,17 @@ file_name_size_recipient(register char *ptr,
             IGNORE_ENTRY();
          }
          else if ((gt_lt_sign == LESS_THEN_SIGN) &&
-                  (tmp_file_size > search_file_size))
+                  (tmp_file_size >= search_file_size))
               {
                  IGNORE_ENTRY();
               }
          else if ((gt_lt_sign == GREATER_THEN_SIGN) &&
-                  (tmp_file_size < search_file_size))
+                  (tmp_file_size <= search_file_size))
               {
                  IGNORE_ENTRY();
               }
          else if ((gt_lt_sign == NOT_SIGN) &&
-                  (tmp_file_size != search_file_size))
+                  (tmp_file_size == search_file_size))
               {
                  IGNORE_ENTRY();
               }

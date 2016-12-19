@@ -48,7 +48,7 @@
 #define MAX_DISPLAYED_FILE_SIZE 10
 #define MAX_OUTPUT_LINE_LENGTH  (16 + MAX_DISPLAYED_FILE_SIZE + 1)
 
-#define FILE_SIZE_FORMAT        "Enter file size in bytes: [=<>]file size"
+#define FILE_SIZE_FORMAT        "Enter file size in bytes: [!=<>]file size"
 #define TIME_FORMAT             "Absolut: MMDDhhmm or DDhhmm or hhmm   Relative: -DDhhmm or -hhmm or -mm"
 
 /* Maximum length of the file name that is displayed. */

@@ -830,6 +830,11 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                     extra_sign = 1;
                     gt_lt_sign = GREATER_THEN_SIGN;
                  }
+            else if (value[0] == '!')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign = NOT_SIGN;
+                 }
                  else
                  {
                     show_message(statusbox_w, FILE_SIZE_FORMAT);
