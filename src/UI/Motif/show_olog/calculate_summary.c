@@ -1,7 +1,7 @@
 /*
  *  calculate_summary.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1998 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -89,7 +89,9 @@ calculate_summary(char         *summary_str,
    char         file_rate_unit,
                 *p_summary_str;
 
-   (void)memset(summary_str, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length);
+   (void)memset(summary_str, ' ', MAX_OUTPUT_LINE_LENGTH + file_name_length + 5);
+   *(summary_str + MAX_OUTPUT_LINE_LENGTH + file_name_length  + 5) = '\0';
+
    if ((first_date_found != -1) &&
        ((total_time = last_date_found - first_date_found) > 0L))
    {
@@ -200,42 +202,49 @@ calculate_summary(char         *summary_str,
         }
    *(p_summary_str + length) = ' ';
    p_summary_str += 16 + file_name_length + 1 +
-                    MAX_HOSTNAME_LENGTH + 1 + 4 + 2;
+                    MAX_HOSTNAME_LENGTH + 1 + 4 + 2 + 1;
    if (file_size < F_KILOBYTE)
    {
-      length = sprintf(p_summary_str, "%4.0f Bytes ", file_size);
+      length = sprintf(p_summary_str, "%*.0f B  ",
+                       MAX_DISPLAYED_FILE_SIZE, file_size);
    }
    else if (file_size < F_MEGABYTE)
         {
-           length = sprintf(p_summary_str, "%7.2f KB ", file_size / F_KILOBYTE);
+           length = sprintf(p_summary_str, "%*.2f KB ",
+                            MAX_DISPLAYED_FILE_SIZE, file_size / F_KILOBYTE);
         }
    else if (file_size < F_GIGABYTE)
         {
-           length = sprintf(p_summary_str, "%7.2f MB ", file_size / F_MEGABYTE);
+           length = sprintf(p_summary_str, "%*.2f MB ",
+                            MAX_DISPLAYED_FILE_SIZE, file_size / F_MEGABYTE);
         }
    else if (file_size < F_TERABYTE)
         {
-           length = sprintf(p_summary_str, "%7.2f GB ", file_size / F_GIGABYTE);
+           length = sprintf(p_summary_str, "%*.2f GB ",
+                            MAX_DISPLAYED_FILE_SIZE, file_size / F_GIGABYTE);
         }
    else if (file_size < F_PETABYTE)
         {
-           length = sprintf(p_summary_str, "%7.2f TB ", file_size / F_TERABYTE);
+           length = sprintf(p_summary_str, "%*.2f TB ",
+                            MAX_DISPLAYED_FILE_SIZE, file_size / F_TERABYTE);
         }
    else if (file_size < F_EXABYTE)
         {
-           length = sprintf(p_summary_str, "%7.2f PB ", file_size / F_PETABYTE);
+           length = sprintf(p_summary_str, "%*.2f PB ",
+                            MAX_DISPLAYED_FILE_SIZE, file_size / F_PETABYTE);
         }
         else
         {
-           length = sprintf(p_summary_str, "%7.2f EB ", file_size / F_EXABYTE);
+           length = sprintf(p_summary_str, "%*.2f EB ",
+                            MAX_DISPLAYED_FILE_SIZE, file_size / F_EXABYTE);
         }
    average = trans_time;
    hours = average / 3600;
    average -= (hours * 3600);
    if (hours > 0)
    {
-      (void)sprintf((p_summary_str + length), "%3dh %02dm",
-                    hours, (int)average / 60);
+      length += sprintf((p_summary_str + length), "%dh %02dm",
+                        hours, (int)average / 60);
    }
    else
    {
@@ -243,14 +252,15 @@ calculate_summary(char         *summary_str,
       average -= (min * 60);
       if (min > 0)
       {
-         (void)sprintf((p_summary_str + length), "%3dm %02ds",
-                       min, (int)average);
+         length += sprintf((p_summary_str + length), "%dm %02ds",
+                           min, (int)average);
       }
       else
       {
-         (void)sprintf((p_summary_str + length), "%7.2fs", average);
+         length += sprintf((p_summary_str + length), "%.2fs", average);
       }
    }
+   *(p_summary_str + length) = ' ';
 
    return;
 }

@@ -170,8 +170,8 @@ int                     gt_lt_sign,
                         max_x,
                         max_y;
 char                    search_file_size_str[20],
-                        summary_str[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 5],
-                        total_summary_str[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 5];
+                        summary_str[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 5 + 1],
+                        total_summary_str[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 5 + 1];
 struct info_data        id;
 
 /* Local global variables. */
