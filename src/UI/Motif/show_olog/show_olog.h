@@ -100,6 +100,8 @@
 #define FILE_LENGTH              12
 #define RECIPIENT_NAME_NO_ENTER  13
 #define RECIPIENT_NAME           14
+#define TRANSPORT_TIME_NO_ENTER  15
+#define TRANSPORT_TIME           16
 
 #define NO_OF_VISIBLE_LINES      20
 
@@ -109,11 +111,13 @@
 # define ARCHIVE_SUB_DIR_LEVEL   3
 #endif
 
-#define LINES_BUFFERED           1000
-#define MAX_DISPLAYED_FILE_SIZE  10
-#define MAX_DISPLAYED_TRANSFER_TIME 6
+#define LINES_BUFFERED               1000
+#define MAX_DISPLAYED_TRANSPORT_TIME 7
+#define MAX_DISPLAYED_FILE_SIZE      10
+#define MAX_DISPLAYED_TRANSFER_TIME  6
 #define MAX_OUTPUT_LINE_LENGTH   (16 + MAX_HOSTNAME_LENGTH + 1 + 1 + 5 + 1 + MAX_DISPLAYED_FILE_SIZE + 1 + MAX_DISPLAYED_TRANSFER_TIME + 1 + 2)
 
+#define TRANSPORT_TIME_FORMAT    "Enter transport time: [!=<>]number.number"
 #define FILE_SIZE_FORMAT         "Enter file size in bytes: [!=<>]file size"
 #define TIME_FORMAT              "Absolut: MMDDhhmm or DDhhmm or hhmm   Relative: -DDhhmm or -hhmm or -mm"
 
@@ -176,6 +180,7 @@ struct info_data
           unsigned int       retries;
           time_t             date_send;
           time_t             arrival_time; /* For alda information. */
+          double             transport_time;
           char               *files;
 #ifdef _WITH_DYNAMIC_MEMORY
           int                no_of_loptions;

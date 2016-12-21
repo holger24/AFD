@@ -156,6 +156,7 @@ extern XT_PTR_TYPE      toggles_set;
 extern time_t           start_time_val,
                         end_time_val;
 extern size_t           search_file_size;
+extern double           search_transport_time;
 extern char             header_line[],
                         search_file_name[],
                         **search_dir,
@@ -167,9 +168,11 @@ extern struct sol_perm  perm;
 
 /* Global variables. */
 int                     gt_lt_sign,
+                        gt_lt_sign_tt,
                         max_x,
                         max_y;
 char                    search_file_size_str[20],
+                        search_transport_time_str[MAX_DISPLAYED_TRANSPORT_TIME + 2],
                         summary_str[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 5 + 1],
                         total_summary_str[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 5 + 1];
 struct info_data        id;
@@ -1476,6 +1479,54 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
          }
          reset_message(statusbox_w);
          if (type == RECIPIENT_NAME)
+         {
+            XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         }
+         break;
+
+      case TRANSPORT_TIME_NO_ENTER :
+      case TRANSPORT_TIME :
+         if (value[0] == '\0')
+         {
+            search_transport_time = -1.0;
+         }
+         else
+         {
+            if (isdigit((int)value[0]))
+            {
+               gt_lt_sign_tt = EQUAL_SIGN;
+            }
+            else if (value[0] == '=')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_tt = EQUAL_SIGN;
+                 }
+            else if (value[0] == '<')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_tt = LESS_THEN_SIGN;
+                 }
+            else if (value[0] == '>')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_tt = GREATER_THEN_SIGN;
+                 }
+            else if (value[0] == '!')
+                 {
+                    extra_sign = 1;
+                    gt_lt_sign_tt = NOT_SIGN;
+                 }
+                 else
+                 {
+                    show_message(statusbox_w, TRANSPORT_TIME_FORMAT);
+                    XtFree(value);
+                    return;
+                 }
+            search_transport_time = strtod(value + extra_sign, NULL);
+            (void)strcpy(search_transport_time_str, value);
+         }
+         reset_message(statusbox_w);
+         if (type == TRANSPORT_TIME)
          {
             XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
          }

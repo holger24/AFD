@@ -95,6 +95,7 @@ extern int              continues_toggle_set,
                         file_name_toggle_set,
                         radio_set,
                         gt_lt_sign,
+                        gt_lt_sign_tt,
                         log_date_length,
                         max_hostname_length,
                         max_output_log_files,
@@ -117,6 +118,7 @@ extern XT_PTR_TYPE      toggles_set;
 extern size_t           search_file_size;
 extern time_t           start_time_val,
                         end_time_val;
+extern double           search_transport_time;
 extern char             *p_work_dir,
                         search_file_name[],
                         **search_dir,
@@ -420,7 +422,23 @@ static void   check_log_updates(Widget),
                  ptr++;\
               }\
            }\
-           trans_time += strtod(tmp_ptr, NULL);\
+           id.transport_time = strtod(tmp_ptr, NULL);\
+           if ((search_transport_time == -1.0) ||\
+               (((gt_lt_sign_tt == EQUAL_SIGN) &&\
+                 (id.transport_time == search_transport_time)) ||\
+                ((gt_lt_sign_tt == LESS_THEN_SIGN) &&\
+                 (id.transport_time < search_transport_time)) ||\
+                ((gt_lt_sign_tt == GREATER_THEN_SIGN) &&\
+                 (id.transport_time > search_transport_time)) ||\
+                ((gt_lt_sign_tt == NOT_SIGN) &&\
+                 (id.transport_time != search_transport_time))))\
+           {\
+              trans_time += id.transport_time;\
+           }\
+           else\
+           {\
+              IGNORE_ENTRY();\
+           }\
            ptr++;\
            while ((*ptr != SEPARATOR_CHAR) && (*ptr != '\n'))\
            {\
@@ -683,7 +701,23 @@ static void   check_log_updates(Widget),
                  ptr++;\
               }\
            }\
-           trans_time += strtod(tmp_ptr, NULL);\
+           id.transport_time = strtod(tmp_ptr, NULL);\
+           if ((search_transport_time == -1.0) ||\
+               (((gt_lt_sign_tt == EQUAL_SIGN) &&\
+                 (id.transport_time == search_transport_time)) ||\
+                ((gt_lt_sign_tt == LESS_THEN_SIGN) &&\
+                 (id.transport_time < search_transport_time)) ||\
+                ((gt_lt_sign_tt == GREATER_THEN_SIGN) &&\
+                 (id.transport_time > search_transport_time)) ||\
+                ((gt_lt_sign_tt == NOT_SIGN) &&\
+                 (id.transport_time != search_transport_time))))\
+           {\
+              trans_time += id.transport_time;\
+           }\
+           else\
+           {\
+              IGNORE_ENTRY();\
+           }\
            ptr++;\
            while ((*ptr != SEPARATOR_CHAR) && (*ptr != '\n'))\
            {\
@@ -2868,7 +2902,23 @@ no_criteria(register char *ptr,
                ptr++;
             }
          }
-         trans_time += strtod(tmp_ptr, NULL);
+         id.transport_time = strtod(tmp_ptr, NULL);
+         if ((search_transport_time == -1.0) ||
+             (((gt_lt_sign_tt == EQUAL_SIGN) &&
+               (id.transport_time == search_transport_time)) ||
+              ((gt_lt_sign_tt == LESS_THEN_SIGN) &&
+               (id.transport_time < search_transport_time)) ||
+              ((gt_lt_sign_tt == GREATER_THEN_SIGN) &&
+               (id.transport_time > search_transport_time)) ||
+              ((gt_lt_sign_tt == NOT_SIGN) &&
+               (id.transport_time != search_transport_time))))
+         {
+            trans_time += id.transport_time;
+         }
+         else
+         {
+            IGNORE_ENTRY();
+         }
          ptr++;
          while ((*ptr != SEPARATOR_CHAR) && (*ptr != '\n'))
          {
@@ -5986,7 +6036,23 @@ recipient_only(register char *ptr,
                ptr++;
             }
          }
-         trans_time += strtod(tmp_ptr, NULL);
+         id.transport_time = strtod(tmp_ptr, NULL);
+         if ((search_transport_time == -1.0) ||
+             (((gt_lt_sign_tt == EQUAL_SIGN) &&
+               (id.transport_time == search_transport_time)) ||
+              ((gt_lt_sign_tt == LESS_THEN_SIGN) &&
+               (id.transport_time < search_transport_time)) ||
+              ((gt_lt_sign_tt == GREATER_THEN_SIGN) &&
+               (id.transport_time > search_transport_time)) ||
+              ((gt_lt_sign_tt == NOT_SIGN) &&
+               (id.transport_time != search_transport_time))))
+         {
+            trans_time += id.transport_time;
+         }
+         else
+         {
+            IGNORE_ENTRY();
+         }
          ptr++;
          while ((*ptr != SEPARATOR_CHAR) && (*ptr != '\n'))
          {

@@ -114,6 +114,7 @@ Widget                     cont_togglebox_w,
                            summarybox_w,
                            scrollbar_w,
                            special_button_w,
+                           transport_time_w,
                            view_button_w;
 Window                     main_window;
 XmFontList                 fontlist;
@@ -157,6 +158,7 @@ Dimension                  button_height;
 time_t                     start_time_val,
                            end_time_val;
 size_t                     search_file_size;
+double                     search_transport_time = -1.0;
 char                       *p_work_dir,
                            font_name[40],
                            header_line[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 1],
@@ -712,6 +714,39 @@ main(int argc, char *argv[])
                  (XtPointer)RECIPIENT_NAME_NO_ENTER);
    XtAddCallback(recipient_w, XmNactivateCallback, save_input,
                  (XtPointer)RECIPIENT_NAME);
+
+   XtVaCreateManagedWidget("Trans time :",
+                           xmLabelGadgetClass,  criteriabox_w,
+                           XmNfontList,         fontlist,
+                           XmNalignment,        XmALIGNMENT_END,
+                           XmNtopAttachment,    XmATTACH_POSITION,
+                           XmNtopPosition,      105,
+                           XmNbottomAttachment, XmATTACH_POSITION,
+                           XmNbottomPosition,   155,
+                           XmNleftAttachment,   XmATTACH_POSITION,
+                           XmNleftPosition,     92,
+                           XmNrightAttachment,  XmATTACH_POSITION,
+                           XmNrightPosition,    115,
+                           NULL);
+   transport_time_w = XtVaCreateManagedWidget("",
+                           xmTextWidgetClass,   criteriabox_w,
+                           XmNfontList,         fontlist,
+                           XmNmarginHeight,     1,
+                           XmNmarginWidth,      1,
+                           XmNshadowThickness,  1,
+                           XmNtopAttachment,    XmATTACH_POSITION,
+                           XmNtopPosition,      105,
+                           XmNbottomAttachment, XmATTACH_POSITION,
+                           XmNbottomPosition,   155,
+                           XmNleftAttachment,   XmATTACH_WIDGET,
+                           XmNleftWidget,       label_w,
+                           XmNrightAttachment,  XmATTACH_POSITION,
+                           XmNrightPosition,    155,
+                           NULL);
+   XtAddCallback(transport_time_w, XmNlosingFocusCallback, save_input,
+                 (XtPointer)TRANSPORT_TIME_NO_ENTER);
+   XtAddCallback(transport_time_w, XmNactivateCallback, save_input,
+                 (XtPointer)TRANSPORT_TIME);
    XtManageChild(criteriabox_w);
 
 
