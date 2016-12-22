@@ -55,9 +55,9 @@ to reduce the search time by filling in some of the following values:
 </tr>
 <tr>
    <td>&nbsp;<b>5</b>&nbsp;</tD>
-   <td>Here it is possible to enter the length/size of a file. If a &lt; or
-       a &gt; sign is put before the size value, it will search for files
-       less then or greater then the given size.</td>
+   <td>Here it is possible to enter the length/size of a file. If a &lt;,
+       &gt; or ! sign is put before the size value, it will search for files
+       less then, greater then or not the given size.</td>
    <td>&nbsp;</td>
 </tr>
 <tr>
@@ -88,23 +88,32 @@ to reduce the search time by filling in some of the following values:
 </tr>
 <tr>
    <td>&nbsp;<b>9</b>&nbsp;</td>
+   <td>Transport time. Search for the time it took to transport a file to
+       it's destination. If a &lt;, &gt; or ! sign is put before the time
+       value, it will search for files that took less then, greater then or
+       not the given value. Values are in seconds. It is possible to enter
+       decimal values, lowest value is 0.01.</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>10</b>&nbsp;</td>
    <td>Here it is possible to select by the protocol that the data was
        transmitted. The dialog on the rigth shows the options possible.</td>
    <td><img src="../images/select_protocol.png"></td>
 </tr>
 <tr>
-   <td>&nbsp;<b>10</b>&nbsp;</td>
+   <td>&nbsp;<b>11</b>&nbsp;</td>
    <td>When selected, only archived data will be shown.</td>
    <td>&nbsp;</td>
 </tr>
 <tr>
-   <td>&nbsp;<b>11</b>&nbsp;</td>
+   <td>&nbsp;<b>12</b>&nbsp;</td>
    <td>When selected, only confirmed data will be shown. Confirmed
        is where the protocol does support this. Not yet implemented.</td>
    <td>&nbsp;</td>
 </tr>
 <tr>
-   <td>&nbsp;<b>12</b>&nbsp;</td>
+   <td>&nbsp;<b>13</b>&nbsp;</td>
    <td>How the content of a file in the archive is viewed. When set to
        Auto, then the viewer specified by the pattern for the
        parameter <a href="afd_config.html#view_data_no_filter_prog">
@@ -114,14 +123,14 @@ to reduce the search time by filling in some of the following values:
    <td><img src="../images/view_content_mode.png"></td>
 </tr>
 <tr>
-   <td>&nbsp;<b>13</b>&nbsp;</td>
+   <td>&nbsp;<b>14</b>&nbsp;</td>
    <td>These toggle buttons allow the user to toggle between different length
        of the file name in the list box. The short one is useful when
        printing on A4 paper.</td>
    <td>&nbsp;</td>
 </tr>
 <tr>
-   <td>&nbsp;<b>14</b>&nbsp;</td>
+   <td>&nbsp;<b>15</b>&nbsp;</td>
    <td>File names displayed will be those before being send ie. local.
        When pressed they will be shown how they where stored on the
        remote side.</td>
@@ -328,7 +337,7 @@ which have the following meaning:
    <td width="90%"><small><address>
    Copyright &copy; 1997 - 2016 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 17.08.2016
+   Last updated: 22.12.2016
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
