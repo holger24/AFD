@@ -83,9 +83,9 @@
 #define TIME_FORMAT                "Absolut: MMDDhhmm or DDhhmm or hhmm   Relative: -DDhhmm or -hhmm or -mm"
 
 /* Maximum length of the file name that is displayed. */
-#define SHOW_SHORT_FORMAT          20
-#define SHOW_MEDIUM_FORMAT         30
-#define SHOW_LONG_FORMAT           55
+#define SHOW_SHORT_FORMAT          18
+#define SHOW_MEDIUM_FORMAT         27
+#define SHOW_LONG_FORMAT           50
 #define DATE_TIME_HEADER           "mm.dd. HH:MM:SS "
 #define ORIG_FILE_NAME_HEADER      "Orig File name"
 #define ORIG_FILE_SIZE_HEADER      "Size"

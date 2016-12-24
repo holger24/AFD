@@ -945,7 +945,7 @@ main(int argc, char *argv[])
                                XmNorientation, XmHORIZONTAL,
                                NULL);
    block_w = XmCreateForm(rowcol_w, "rowcol", NULL, 0);
-   label_w = XtVaCreateManagedWidget(" Return Code :",
+   label_w = XtVaCreateManagedWidget("Return Code :",
                            xmLabelGadgetClass,  block_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_FORM,
@@ -1003,7 +1003,7 @@ main(int argc, char *argv[])
    rowcol_w = XtVaCreateWidget("rowcol", xmRowColumnWidgetClass, enter_xx_w,
                                XmNorientation, XmHORIZONTAL, NULL);
    block_w = XmCreateForm(rowcol_w, "rowcol", NULL, 0);
-   label_w = XtVaCreateManagedWidget(" Prod time :",
+   label_w = XtVaCreateManagedWidget("Prod time :",
                            xmLabelGadgetClass,  block_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_FORM,
@@ -1061,7 +1061,7 @@ main(int argc, char *argv[])
    rowcol_w = XtVaCreateWidget("rowcol", xmRowColumnWidgetClass, enter_xx_w,
                                XmNorientation, XmHORIZONTAL, NULL);
    block_w = XmCreateForm(rowcol_w, "rowcol", NULL, 0);
-   label_w = XtVaCreateManagedWidget(" CPU time :",
+   label_w = XtVaCreateManagedWidget("CPU time :",
                            xmLabelGadgetClass,  block_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_FORM,

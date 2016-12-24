@@ -1,24 +1,22 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-<title>AFD (show_olog.html)</title>
+<title>AFD (show_plog.html)</title>
 </head>
 <body bgcolor="#F0ECD6">
-<h1 align=center><a name="show_olog">Output Log Window</a></h1>
+<h1 align=center><a name="show_plog">Production Log Window</a></h1>
 <hr size=3 noshade>
 <p>
-<center><img src="../images/show_olog_small.png" alt="[small picture of show_olog dialog]"></center>
+<center><img src="../images/show_plog_small.png" alt="[small picture of show_plog dialog]"></center>
 </p>
 <p>
-All files that have been transmitted by the AFD, can be viewed
-with the help of this dialog (see <a href="log.html#output_log">Output Log</a>).
-However, only those files will be shown where the option
-<a href="amg.html#no_log_output">no log output</a> was <b>NOT</b> set.
-This option is commonly used to reduce the overhead caused by logging.
-Since the output log can be very extensive, there are lots of possibility
-to reduce the search time by filling in some of the following values:
+All files that have been changed by the AFD, can be viewed
+with the help of this dialog (see <a href="log.html#production_log">Production
+Log</a>). Since the production log can be very extensive, there are lots of
+possibility to reduce the search time by filling in some of the following
+values:
 </p>
-<center><img src="../images/show_olog_selection.gif" alt="[closeup of selection part]"></center>
+<center><img src="../images/show_plog_selection.gif" alt="[closeup of selection part]"></center>
 <p>
 <center>
 <table border>
@@ -36,8 +34,8 @@ to reduce the search time by filling in some of the following values:
 </tr>
 <tr>
    <td>&nbsp;<b>2</b>&nbsp;</td>
-   <td>When set the output log will be shown continuously, ie. if new entries
-       come they will be shown live as they come in.</td>
+   <td>When set the production log will be shown continuously, ie. if new
+       entries come they will be shown live as they come in.</td>
    <td>&nbsp;</td>
 </tr>
 <tr>
@@ -48,20 +46,35 @@ to reduce the search time by filling in some of the following values:
 </tr>
 <tr>
    <td>&nbsp;<b>4</b>&nbsp;</td>
-   <td>Enter a file name. The name may have any number of the two following
-       wild cards: * and ?. If no file name or wild card is entered it will
-       always search for all file names.</td>
+   <td>Enter the original file name. The name may have any number of the two
+       following wild cards: * and ?. If no file name or wild card is entered
+       it will always search for all file names.</td>
    <td>&nbsp;</td>
 </tr>
 <tr>
    <td>&nbsp;<b>5</b>&nbsp;</tD>
-   <td>Here it is possible to enter the length/size of a file. If a &lt;,
-       &gt; or ! sign is put before the size value, it will search for files
-       less then, greater then or not the given size.</td>
+   <td>Here it is possible to enter the length/size of the original file. If
+       a &lt;, &gt; or ! sign is put before the size value, it will search
+       for files less then, greater then or not the given size.</td>
    <td>&nbsp;</td>
 </tr>
 <tr>
    <td>&nbsp;<b>6</b>&nbsp;</td>
+   <td>Enter the new file name, the one that has been produced. The name may
+       have any number of the two following wild cards: * and ?. If no file
+       name or wild card is entered it will always search for all file
+       names.</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>7</b>&nbsp;</tD>
+   <td>Here it is possible to enter the length/size of the new file. If
+       a &lt;, &gt; or ! sign is put before the size value, it will search
+       for files less then, greater then or not the given size.</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>8</b>&nbsp;</td>
    <td>The source directory where the AFD has picked up the file. Even here
        it is possible to enter wild cards. Sometimes it can be easier if
        you just enter the directory ID. However this must have a leading
@@ -69,7 +82,7 @@ to reduce the search time by filling in some of the following values:
    <td>&nbsp;</td>
 </tr>
 <tr>
-   <td>&nbsp;<b>7</b>&nbsp;</td>
+   <td>&nbsp;<b>9</b>&nbsp;</td>
    <td>Here you can enter a remote host name and only files that where
        send to this host will be shown. It is also possible to enter more
        then one host, by separating the hosts with a comma. Wild cards
@@ -79,61 +92,66 @@ to reduce the search time by filling in some of the following values:
    <td>&nbsp;</td>
 </tr>
 <tr>
-   <td>&nbsp;<b>8</b>&nbsp;</td>
+   <td>&nbsp;<b>10</b>&nbsp;</td>
+   <td>The command used to do the production. Again you can use the
+       following wild cards: * and ?. If no command or wild card is entered
+       it will always search for all commands.</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>11</b>&nbsp;</td>
    <td>The Job Idendification Number to search for. This is a hexadecimal
-       number which can be found at the end of each line in TRANSFER_LOG.
-       This number may also be entered with a leading &#35;. Multiple
+       number which can be found at the end of each line in TRANSFER_LOG,
+       RECEIVE_LOG and sometimes even SYSTEM_LOG when it starts with a
+       &#35;. This number may also be entered with a leading &#35;. Multiple
        numbers can be entered by seperating them with a comma.</td>
    <td>&nbsp;</td>
 </tr>
 <tr>
-   <td>&nbsp;<b>9</b>&nbsp;</td>
-   <td>Transport time. Search for the time it took to transport a file to
-       it's destination. If a &lt;, &gt; or ! sign is put before the time
-       value, it will search for files that took less then, greater then or
-       not the given value. Values are in seconds. It is possible to enter
-       decimal values, lowest value is 0.01.</td>
-   <td>&nbsp;</td>
-</tr>
-<tr>
-   <td>&nbsp;<b>10</b>&nbsp;</td>
-   <td>Here it is possible to select by the protocol that the data was
-       transmitted. The dialog on the rigth shows the options possible.</td>
-   <td><img src="../images/select_protocol.png"></td>
-</tr>
-<tr>
-   <td>&nbsp;<b>11</b>&nbsp;</td>
-   <td>When selected, only archived data will be shown.</td>
-   <td>&nbsp;</td>
-</tr>
-<tr>
    <td>&nbsp;<b>12</b>&nbsp;</td>
-   <td>When selected, only confirmed data will be shown. Confirmed
-       is where the protocol does support this. Not yet implemented.</td>
-   <td>&nbsp;</td>
+   <td>Select ratio how files are produced. 1 - 1 ratio example could
+       be 'exec -d bzip2 %s', 'prefix del', 'rename', etc. This does not
+       always mean there needs to be a new file name. If you convert a
+       file the new name can be the same as the original name. 1 - 0 is when
+       the original file name is deleted during the production process,
+       either due to an error during the production process or as a
+       result of it. 1 - n can be 'exec tar xf %s'. n - 1 is if you create
+       a tar or any other archive. n - n is some exec option which creates
+       from n files another arbitrary number of files. The default 'Any'
+       is all the above.</td>
+   <td align=center><img src="../images/production_ratio.gif"></td>
 </tr>
 <tr>
    <td>&nbsp;<b>13</b>&nbsp;</td>
-   <td>How the content of a file in the archive is viewed. When set to
-       Auto, then the viewer specified by the pattern for the
-       parameter <a href="afd_config.html#view_data_no_filter_prog">
-       VIEW_DATA_NO_FILTER_PROG</a> will be selected. A special viewer
-       can also be configured via the  <a href="afd_config.html#view_data_prog">
-       VIEW_DATA_PROG</a> parameter in $AFD_WORK_DIR/etc/AFD_CONFIG.</td>
-   <td><img src="../images/view_content_mode.png"></td>
+   <td>The return code of the command executed. Normally a 0 is successful
+       completion of the command. Any other number could mean some error
+       condition, see <a href="log.html#receive_log">Receive Log</a>
+       for more details.</td>
+   <td>&nbsp;</td>
 </tr>
 <tr>
    <td>&nbsp;<b>14</b>&nbsp;</td>
-   <td>These toggle buttons allow the user to toggle between different length
-       of the file name in the list box. The short one is useful when
-       printing on A4 paper.</td>
+   <td>Production time (or wall-clock-time). Search for the time it took
+       to produce a file. If a &lt;, &gt; or ! sign is put before the time
+       value, it will search for files that took less then, greater then or
+       not the given value. Values are in seconds. It is possible to enter
+       decimal values, lowest value is 0.001.</td>
    <td>&nbsp;</td>
 </tr>
 <tr>
    <td>&nbsp;<b>15</b>&nbsp;</td>
-   <td>File names displayed will be those before being send ie. local.
-       When pressed they will be shown how they where stored on the
-       remote side.</td>
+   <td>CPU time (user and system time). Search for the CPU time it took
+       to produce a file. If a &lt;, &gt; or ! sign is put before the time
+       value, it will search for files that took less then, greater then or
+       not the given value. Values are in seconds. It is possible to enter
+       decimal values, lowest value is 0.000001.</td>
+   <td>&nbsp;</td>
+</tr>
+<tr>
+   <td>&nbsp;<b>16</b>&nbsp;</td>
+   <td>These toggle buttons allow the user to toggle between different length
+       of the file name in the list box. The short one is useful when
+       printing on A4 paper.</td>
    <td>&nbsp;</td>
 </tr>
 </table>
@@ -154,55 +172,56 @@ Here follows a short description of the list widgets and the meaning of
 each item:
 </p>
 <p>
-<center><img src="../images/output_log_list.gif" alt="[closeup of the list field]"></center>
+<center><img src="../images/production_log_list.gif" alt="[closeup of the list field]"></center>
 <p>
 <center>
 <table border>
 <tr>
-   <td>Date</td>
+   <td>mm.dd.</td>
    <td>The date in the following format: MM.DD. where MM is the month
        (01-12) and DD is the day of the month (01-31).</td>
 </tr>
 <tr>
-   <td>Time</td>
+   <td>HH:MM:SS</td>
    <td>The time in the following format: hh:mm:ss where hh is the hour
        (00-23), mm is the minute (00-59) and ss is the second (00-59).</td>
 </tr>
 <tr>
-   <td>File name</td>
-   <td>The file name as it was distributed.</td>
+   <td>Orig File name</td>
+   <td>The original file name as it was before the production.</td>
 </tr>
 <tr>
-   <td>Hostname</td>
-   <td>The host name of the remote host.</td>
+   <td>Size</td>
+   <td>The original file size as it was before the production.</td>
 </tr>
 <tr>
-   <td>Type</td>
-   <td>The protocol with which this file was distributed. Currently there
-       are three protocols: FTP, SMTP and LOC.</td>
+   <td>New File name</td>
+   <td>The new file name as after the production.</td>
 </tr>
 <tr>
-   <td>File size</td>
-   <td>The size of the distributed file in bytes.</td>
+   <td>Size</td>
+   <td>The new file size after the production.</td>
 </tr>
 <tr>
-   <td>TT</td>
-   <td>Transfer time. This is the time taken for this file to be
-       transmitted.</td>
+   <td>Ratio</td>
+   <td>The ratio of input files to output files.</td>
 </tr>
 <tr>
-   <td>A</td>
-   <td>Archive/type flag. The meaning of this flag is as follows:
-       <pre>
-           Y - Is archived and is still in archive.
-           D - Is archived, however it has already been deleted.
-           N - Is not archived.
-           * - Receive job.
-           d - Confirmation of dispatch.
-           r - Confirmation of receipt.
-           R - Confirmation of retrieve.
-           t - Confirmation deleteted due to timeup.
-       </pre></td>
+   <td>Exec cmd</td>
+   <td>The command used to do the production.</td>
+</tr>
+<tr>
+   <td>RC</td>
+   <td>The decimal return code of the command executed.</td>
+</tr>
+<tr>
+   <td>P-time</td>
+   <td>Production time. This is the wall-clock-time to do the production.</td>
+</tr>
+<tr>
+   <td>C-time</td>
+   <td>CPU time. This is the CPU user and system time to do the
+       production.</td>
 </tr>
 </table>
 </center>
@@ -214,7 +233,7 @@ by pressing the right mouse button while the cursor is over the wanted
 item in the list widget. The following window will pop up:
 </p>
 <p>
-<center><img src="../images/show_olog_info.png" alt="[picture of info dialog]"></center>
+<center><img src="../images/show_plog_info.png" alt="[picture of info dialog]"></center>
 </p>
 <p>
 As shown, this window also shows what the entry in the DIR_CONFIG looked
@@ -226,7 +245,7 @@ regardless how many changes there where in the DIR_CONFIG file.
 Right under the list widget is a summary line which looks as follows:
 </p>
 <p>
-<center><img src="../images/output_log_summary.gif" alt="[summary line]"></center>
+<center><img src="../images/production_log_summary.gif" alt="[summary line]"></center>
 </p>
 <p>
 <center>
@@ -242,25 +261,24 @@ Right under the list widget is a summary line which looks as follows:
 </tr>
 <tr>
    <td>&nbsp;<b>3</b>&nbsp;</td>
-   <td>The total number of files found.</td>
+   <td>The total number of production entries found.</td>
 </tr>
 <tr>
    <td>&nbsp;<b>4</b>&nbsp;</td>
-   <td>The average transfer rate. This is calculated from the values
-       found in 6 and 7.</td>
+   <td>The total size of the original files.</td>
 </tr>
 <tr>
    <td>&nbsp;<b>5</b>&nbsp;</td>
-   <td>The average number of files transmitted. This is calculated from
-       the values found in 1, 2 and 3.</td>
+   <td>The total size of the new files.</td>
 </tr>
 <tr>
    <td>&nbsp;<b>6</b>&nbsp;</td>
-   <td>Total number of bytes transferred.</td>
+   <td>The total wall-clock-time it took to produce all the files.</td>
 </tr>
 <tr>
    <td>&nbsp;<b>7</b>&nbsp;</td>
-   <td>Total time used for transferring the files.</td>
+   <td>The total CPU time (user + system) it took to produce all the
+       files.</td>
 </tr>
 </table>
 </center>
@@ -277,7 +295,7 @@ At the bottom is a line with up to six (depending on user permissions) buttons
 which have the following meaning:
 </p>
 <p>
-<center><img src="../images/show_olog_button_line.gif" alt="[closeup of the button line]"></center>
+<center><img src="../images/show_plog_button_line.gif" alt="[closeup of the button line]"></center>
 </p>
 <p>
 <center>
@@ -292,28 +310,9 @@ which have the following meaning:
    <td>&nbsp;</td>
 </tr>
 <tr>
-   <td>&nbsp;<b>View</b>&nbsp;</td>
-   <td>Depending on what is configured in <a href="afd_config.html">
-       AFD_CONFIG</a>, this will show the image or the content of
-       the dialog. By default when nothing is configured it will
-       show the content of the file as shown on the right side. See
-       <a href="afd_config.html#view_data_prog">VIEW_DATA_PROG</a>
-       for more details on how to set this to use other programs
-       to view the data. Only data that is in the archive can be
-       viewed.</td>
-   <td align=center><img src="../images/hex_print_dialog.gif"></td>
-</tr>
-<tr>
-   <td>&nbsp;<b>Resend</b>&nbsp;</td>
-   <td>The selected files will be resend if they are in the local archive.</td>
+   <td>&nbsp;<b>Select All</b>&nbsp;</td>
+   <td>Selects all elements in the list.</td>
    <td>&nbsp;</td>
-</tr>
-<tr>
-   <td>&nbsp;<b>Send</b>&nbsp;</td>
-   <td>This will popup the <a href="xsend_file.html">xsend_file</a> dialog
-       which will allow you to send the selected files to some other
-       destination if the selected files are in local archive.</td>
-   <td align=center><img src="../images/xsend_file.png"></td>
 </tr>
 <tr>
    <td>&nbsp;<b>Print</b>&nbsp;</td>
@@ -335,7 +334,7 @@ which have the following meaning:
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1997 - 2016 by H.Kiehl<br>
+   Copyright &copy; 2016 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
    Last updated: 24.12.2016
    </address></small></td>
