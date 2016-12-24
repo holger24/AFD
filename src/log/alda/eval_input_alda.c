@@ -223,7 +223,7 @@ DESCR__S_M3
  **           -R <x>                       Rotate log x times.
  **           -H <file name>               Header to add to output.
  **           -O <file name>               File where to write output.
- **           -v[v[v[v]]]                  Verbose mode.
+ **           -v[v[v[v[v[v]]]]]            Verbose mode.
  **           -w <work dir>                Working directory of the AFD.
  **
  **   To be able to differentiate between name, alias and ID:
@@ -2318,7 +2318,7 @@ usage(char *progname)
    (void)fprintf(stderr, "            -R <x>                       Rotate log x times.\n");
    (void)fprintf(stderr, "            -H <file name>               Header to add to output.\n");
    (void)fprintf(stderr, "            -O <file name>               File where to write output.\n");
-   (void)fprintf(stderr, "            -v[v[v[v]]]                  Verbose mode.\n");
+   (void)fprintf(stderr, "            -v[v[v[v[v[v]]]]]            Verbose mode.\n");
    (void)fprintf(stderr, "            -w <work dir>                Working directory of the AFD.");
    (void)fprintf(stderr, "\n    To be able to differentiate between name, alias and ID:\n");
    (void)fprintf(stderr, "        alias - must always begin with %%\n");

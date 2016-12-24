@@ -226,28 +226,34 @@ above.
 A log entry of this type looks as follows:
 </p>
 <pre>
-4167b8f3  1:1|0.001|4167b8f3_10f_0|682d6409|d1fe5d48|fiau_9605060847-814|26a0|fiau_9605060847-814.bz2|14ac1|0|bzip2 %s
-   |       |    |          |          |        |               |           |          |                 |   |  |
-   |       |    |          |          |        |               |           |          |                 |   |  +-&gt; Command executed.
-   |       |    |          |          |        |               |           |          |                 |   +----&gt; Return code of command.
-   |       |    |          |          |        |               |           |          |                 +--------&gt; Size of changed file.
-   |       |    |          |          |        |               |           |          +--------------------------&gt; New file name. If this
-   |       |    |          |          |        |               |           |                                       is empty, then the file
-   |       |    |          |          |        |               |           |                                       has been removed.
-   |       |    |          |          |        |               |           +-------------------------------------&gt; Original file size.
-   |       |    |          |          |        |               +-------------------------------------------------&gt; Original file name.
-   |       |    |          |          |        +-----------------------------------------------------------------&gt; Job Identifier.
-   |       |    |          |          +--------------------------------------------------------------------------&gt; Directory ID.
-   |       |    |          +-------------------------------------------------------------------------------------&gt; Unique Identifier. The
-   |       |    |                                                                                                  first number is the date
-   |       |    |                                                                                                  when this file was picked
-   |       |    |                                                                                                  up by AFD, the second is
-   |       |    |                                                                                                  a unique number and third
-   |       |    |                                                                                                  is the split job counter.
-   |       |    +------------------------------------------------------------------------------------------------&gt; Production time.
-   |       +-----------------------------------------------------------------------------------------------------&gt; Ratio relationship.
-   +-------------------------------------------------------------------------------------------------------------&gt; Unix time for this
-                                                                                                                   entry.
+4167b8f3  1:1|0.010.0.104a|4167b8f3_10f_0|682d6409|d1fe5d48|fiau_9605060847-814|26a0|fiau_9605060847-814.bz2|14ac1|0|bzip2 %s
+   |       |        |             |          |        |               |           |          |                 |   |  |
+   |       |        |             |          |        |               |           |          |                 |   |  +-&gt; Command executed.
+   |       |        |             |          |        |               |           |          |                 |   +----&gt; Return code of command.
+   |       |        |             |          |        |               |           |          |                 +--------&gt; Size of changed file.
+   |       |        |             |          |        |               |           |          +--------------------------&gt; New file name. If this
+   |       |        |             |          |        |               |           |                                       is empty, then the file
+   |       |        |             |          |        |               |           |                                       has been removed.
+   |       |        |             |          |        |               |           +-------------------------------------&gt; Original file size.
+   |       |        |             |          |        |               +-------------------------------------------------&gt; Original file name.
+   |       |        |             |          |        +-----------------------------------------------------------------&gt; Job Identifier.
+   |       |        |             |          +--------------------------------------------------------------------------&gt; Directory ID.
+   |       |        |             +-------------------------------------------------------------------------------------&gt; Unique Identifier. The
+   |       |        |                                                                                                     first number is the date
+   |       |        |                                                                                                     when this file was picked
+   |       |        |                                                                                                     up by AFD, the second is
+   |       |        |                                                                                                     a unique number and third
+   |       |        |                                                                                                     is the split job counter.
+   |       |        +---------------------------------------------------------------------------------------------------&gt; Production time (decimal
+   |       |                                                                                                              value with a maximum of 3
+   |       |                                                                                                              digits behind the decimal
+   |       |                                                                                                              point) and CPU time (all
+   |       |                                                                                                              hexa values, seconds and
+   |       |                                                                                                              then microseconds behind
+   |       |                                                                                                              the last decimal point).
+   |       +------------------------------------------------------------------------------------------------------------&gt; Ratio relationship.
+   +--------------------------------------------------------------------------------------------------------------------&gt; Unix time for this
+                                                                                                                          entry.
 </pre>
 <p>
 There is currently no log file viewer for this log type.
@@ -389,7 +395,7 @@ To view these log files, use <a href="show_dlog.html">show_dlog</a>.
    <td width="90%"><small><address>
    Copyright &copy; 1997 - 2016 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 11.11.2016
+   Last updated: 24.12.2016
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

@@ -81,6 +81,7 @@ Usage: alda [options] &lt;file name pattern&gt;
               %[Z]Pt&lt;time char&gt;      - time when production starts
               %[Z]PT&lt;time char&gt;      - time when production finished
               %[X]PD&lt;duration char&gt;  - production time (duration)
+              %[X]Pu&lt;duration char&gt;  - CPU usage
               %[Z]Pb                 - ratio relationship 1
               %[Z]PB                 - ratio relationship 2
               %[Z]PJ                 - job ID
@@ -88,6 +89,7 @@ Usage: alda [options] &lt;file name pattern&gt;
               %[Z]PU                 - unique number
               %[Z]PL                 - split job number
               %[Y]Pf                 - input file name
+              %[X]Ps&lt;size char&gt;      - input file size
               %[Y]PF                 - produced file name
               %[X]PS&lt;size char&gt;      - produced file size
               %[Y]PC                 - command executed
@@ -213,11 +215,17 @@ Usage: alda [options] &lt;file name pattern&gt;
                                             host alias use prefix %
                                             host ID use prefix #
             -j &lt;job ID&gt;                  Job identifier.
+            -u &lt;unique number&gt;           Unique number.
+            -z &lt;size&gt;                    Original file size in byte.
+                                            (Production log only!)
             -S[I|U|P|O|D] &lt;size&gt;         File size in byte.
+            -D[P|O] &lt;time&gt;               Duration in seconds.
             -p &lt;protocol&gt;                Protocol used for transport:
                                           ftp
                                           file
+                                          exec
                                           mailto
+                                          demail
                                           sftp
                                           scp
                                           http
@@ -225,12 +233,13 @@ Usage: alda [options] &lt;file name pattern&gt;
                                           ftps
                                           wmo
                                           map
+                                          dfax
     Other parameters
             -F &lt;file name&gt;               Footer to add to output.
             -R &lt;x&gt;                       Rotate log x times.
             -H &lt;file name&gt;               Header to add to output.
             -O &lt;file name&gt;               File where to write output.
-            -v[v[v]]                     Verbose mode.
+            -v[v[v[v[v[v]]]]]            Verbose mode.
             -w &lt;work dir&gt;                Working directory of the AFD.
     To be able to differentiate between name, alias and ID:
         alias - must always begin with %
@@ -434,9 +443,9 @@ comma.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 2009 - 2013 by H.Kiehl<br>
+   Copyright &copy; 2009 - 2016 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 22.11.2013
+   Last updated: 24.12.2016
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
