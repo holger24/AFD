@@ -18,7 +18,7 @@
 
 MAINTAINERCLEANFILES = Makefile.in
 CLEANFILES           = gmon.out core core.*
-noinst_HEADERS       = show_plog.h p_str.h
+noinst_HEADERS       = show_plog.h
 AM_CPPFLAGS          = @AFD_MOTIF_INCLUDES@ -I../../.. -I../../common\
                        -I../common -I../../../init_afd -I../../../log\
                        -I../../../fd -I../../../amg -I../mafd_ctrl
@@ -29,7 +29,6 @@ show_plog_SOURCES    = calculate_summary.c\
                        get_data.c\
                        get_info.c\
                        print_data.c\
-		       select_protocol.c\
                        show_plog.c
 show_plog_LDADD      = ../common/libmotifafd.a ../../common/libuiafd.a\
                        ../../../common/libafd.a @AFD_MOTIF_LIBS@
