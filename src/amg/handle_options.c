@@ -200,8 +200,7 @@ extern int                        fra_fd,
 extern int                        max_copied_files;
 extern off_t                      *file_size_pool;
 extern time_t                     *file_mtime_pool;
-extern char                       *file_name_buffer,
-                                  **file_name_pool;
+extern char                       *file_name_buffer;
 extern unsigned char              *file_length_pool;
 #endif
 extern char                       *bul_file,
@@ -5127,7 +5126,6 @@ check_changes(time_t         creation_time,
             }
          }
       }
-      check_file_pool_mem(file_counter);
       if (overwrite == YES)
       {
          if ((exec_name != NULL) && (old_file_name_buffer != NULL))
@@ -5139,16 +5137,6 @@ check_changes(time_t         creation_time,
          file_name_buffer = new_file_name_buffer;
          p_file_name = file_name_buffer;
          prev_file_counter = 0;
-         p_new_file_name = new_file_name_buffer;
-         for (i = 0; i < file_counter; i++)
-         {
-            file_size_pool[i] = new_file_size_buffer[i];
-            file_length_pool[i] = new_file_length_buffer[i];
-            (void)memcpy(file_name_pool[i], new_file_name_buffer,
-                         file_length_pool[i]);
-            file_mtime_pool[i] = new_file_mtime_buffer[i];
-            p_new_file_name += MAX_FILENAME_LENGTH;
-         }
       }
       else
       {
@@ -5259,13 +5247,6 @@ restore_files(int position, char *file_path, off_t *file_size)
                p_file_name += MAX_FILENAME_LENGTH;
                *file_size += stat_buf.st_size;
                file_counter++;
-
-               check_file_pool_mem(file_counter);
-               file_length_pool[file_counter - 1] = strlen(p_dir->d_name);
-               (void)memcpy(file_name_pool[file_counter - 1], p_dir->d_name,
-                            (size_t)(file_length_pool[file_counter - 1] + 1));
-               file_size_pool[file_counter - 1] = stat_buf.st_size;
-               file_mtime_pool[file_counter - 1] = stat_buf.st_mtime;
             }
             else if (S_ISDIR(stat_buf.st_mode))
                  {
