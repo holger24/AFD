@@ -1056,13 +1056,16 @@ init_show_ilog(int *argc, char *argv[])
    }
    else
    {
-      int i;
-
-      RT_ARRAY(search_user, no_of_search_hosts,
-               (MAX_RECIPIENT_LENGTH + 1), char);
-      for (i = 0; i < no_of_search_hosts; i++)
+      if (no_of_search_hosts > 0)
       {
-         search_user[i][0] = '\0';
+         int i;
+
+         RT_ARRAY(search_user, no_of_search_hosts,
+                  (MAX_RECIPIENT_LENGTH + 1), char);
+         for (i = 0; i < no_of_search_hosts; i++)
+         {
+            search_user[i][0] = '\0';
+         }
       }
    }
    if (get_arg_int_array(argc, argv, "-d", &search_dirid,
@@ -1077,17 +1080,20 @@ init_show_ilog(int *argc, char *argv[])
    }
    else
    {
-      if ((search_dir_filter = malloc(no_of_search_dirs)) == NULL)
+      if (no_of_search_dirs > 0)
       {
-         (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
-                       strerror(errno), __FILE__, __LINE__);
-         exit(INCORRECT);
-      }
-      if ((search_dir_length = malloc((no_of_search_dirs * sizeof(int)))) == NULL)
-      {
-         (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
-                       strerror(errno), __FILE__, __LINE__);
-         exit(INCORRECT);
+         if ((search_dir_filter = malloc(no_of_search_dirs)) == NULL)
+         {
+            (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
+                          strerror(errno), __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+         if ((search_dir_length = malloc((no_of_search_dirs * sizeof(int)))) == NULL)
+         {
+            (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
+                          strerror(errno), __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
       }
    }
 
