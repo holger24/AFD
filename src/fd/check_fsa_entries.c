@@ -55,6 +55,8 @@ DESCR__E_M3
 #include <string.h>            /* strcmp()                               */
 #include "fddefs.h"
 
+#define CHECK_FSA_ENTRIES_WITH_LOCK
+
 /* External global variables. */
 #ifdef WITH_ERROR_QUEUE
 extern int                        fsa_fd;
@@ -100,6 +102,13 @@ check_fsa_entries(void)
 # endif
          }
       }
+#endif
+#ifdef CHECK_FSA_ENTRIES_WITH_LOCK
+# ifdef LOCK_DEBUG
+      lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_TFC), __FILE__, __LINE__);
+# else
+      lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_TFC));
+# endif
 #endif
       gotcha = NO;
       for (j = 0; j < *no_msg_queued; j++)
@@ -231,6 +240,14 @@ check_fsa_entries(void)
             }
          }
       } /* if (gotcha == NO) */
+
+#ifdef CHECK_FSA_ENTRIES_WITH_LOCK
+# ifdef LOCK_DEBUG
+      unlock_region(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_TFC), __FILE__, __LINE__);
+# else
+      unlock_region(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_TFC));
+# endif
+#endif
    } /* for (i = 0; i < no_of_hosts; i++) */
 
    return;
