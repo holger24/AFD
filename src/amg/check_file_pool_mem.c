@@ -141,7 +141,7 @@ check_file_pool_mem(int current_file_buffer)
             file_dist_pool[k][m].no_of_dist = 0;
          }
       }
-#endif              
+#endif
    }
 
    return;

@@ -250,7 +250,7 @@ static int                        cleanup_rename_ow(int,
 #ifdef _WITH_PTHREAD
 static int                        get_file_names(char *, char **, char **);
 #else
-static int                        restore_files(int, char *, off_t *);
+static int                        restore_files(char *, off_t *);
 #endif
 #if defined (_WITH_PTHREAD) || !defined (_PRODUCTION_LOG)
 static int                        recount_files(char *, off_t *);
@@ -1485,7 +1485,7 @@ handle_options(int          position,
                free(file_name_buffer);
 #else
 # ifndef _PRODUCTION_LOG
-               *files_to_send = restore_files(position, file_path, file_size);
+               *files_to_send = restore_files(file_path, file_size);
 # endif
 #endif
             }
@@ -1761,8 +1761,7 @@ handle_options(int          position,
                   }
                   else
                   {
-                     *files_to_send = restore_files(position, file_path,
-                                                    file_size);
+                     *files_to_send = restore_files(file_path, file_size);
                   }
 # endif
 #endif
@@ -2898,7 +2897,7 @@ handle_options(int          position,
 #ifdef _WITH_PTHREAD
                *files_to_send = recount_files(file_path, file_size);
 #else
-               *files_to_send = restore_files(position, file_path, file_size);
+               *files_to_send = restore_files(file_path, file_size);
 #endif
             }
          }
@@ -3014,7 +3013,7 @@ handle_options(int          position,
 #ifdef _WITH_PTHREAD
                *files_to_send = recount_files(file_path, file_size);
 #else
-               *files_to_send = restore_files(position, file_path, file_size);
+               *files_to_send = restore_files(file_path, file_size);
 #endif
             }
          }
@@ -3160,7 +3159,7 @@ handle_options(int          position,
 #ifdef _WITH_PTHREAD
                *files_to_send = recount_files(file_path, file_size);
 #else
-               *files_to_send = restore_files(position, file_path, file_size);
+               *files_to_send = restore_files(file_path, file_size);
 #endif
             }
          }
@@ -3611,7 +3610,7 @@ handle_options(int          position,
                *files_to_send = recount_files(file_path, file_size);
             }
 #else
-            *files_to_send = restore_files(position, file_path, file_size);
+            *files_to_send = restore_files(file_path, file_size);
 #endif
 #ifdef _WITH_PTHREAD
          }
@@ -3805,7 +3804,7 @@ handle_options(int          position,
                }
 #endif
 #ifndef _WITH_PTHREAD
-               *files_to_send = restore_files(position, file_path, file_size);
+               *files_to_send = restore_files(file_path, file_size);
 #endif
             }
 #ifdef _WITH_PTHREAD
@@ -4159,7 +4158,7 @@ handle_options(int          position,
 #ifdef _WITH_PTHREAD
                *files_to_send = recount_files(file_path, file_size);
 #else
-               *files_to_send = restore_files(position, file_path, file_size);
+               *files_to_send = restore_files(file_path, file_size);
 #endif
             }
          }
@@ -5168,7 +5167,7 @@ check_changes(time_t         creation_time,
 #ifndef _WITH_PTHREAD
 /*+++++++++++++++++++++++++++ restore_files() +++++++++++++++++++++++++++*/
 static int
-restore_files(int position, char *file_path, off_t *file_size)
+restore_files(char *file_path, off_t *file_size)
 {
    int file_counter = 0;
    DIR *dp;
