@@ -2955,14 +2955,15 @@ struct fileretrieve_status
        };
 
 /* Bit map flag for AMG and FD communication. */
-#define DIR_CHECK_ACTIVE      1
-#define REREADING_DIR_CONFIG  2
-#define FD_WAITING            4
+#define DIR_CHECK_ACTIVE            1
+#define REREADING_DIR_CONFIG        2
+#define FD_WAITING                  4
 #ifdef AFDBENCH_CONFIG
-# define PAUSE_DISTRIBUTION   8
+# define PAUSE_DISTRIBUTION         8
 #endif
-#define WRITTING_JID_STRUCT   64
-#define CHECK_FILE_DIR_ACTIVE 128
+#define FD_CHECK_FSA_ENTRIES_ACTIVE 32
+#define WRITTING_JID_STRUCT         64
+#define CHECK_FILE_DIR_ACTIVE       128
 
 /* Structure that holds status of all process. */
 struct afd_status
@@ -2987,7 +2988,11 @@ struct afd_status
                                           /*|      | to finish DIR_CONFIG|*/
                                           /*|  4   | Pause distribution  |*/
                                           /*|      | at start.           |*/
-                                          /*|  5   | Not used.           |*/
+                                          /*|  5   | If FD calls         |*/
+                                          /*|      | check_fsa_entries() |*/
+                                          /*|      | this flag is set    |*/
+                                          /*|      | while the function  |*/
+                                          /*|      | is active.          |*/
                                           /*|  6   | dir_check() has msg |*/
                                           /*|      | queued.             |*/
                                           /*|  7   | AMG writting to     |*/

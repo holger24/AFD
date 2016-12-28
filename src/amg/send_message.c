@@ -289,6 +289,19 @@ send_message(char          *outgoing_file_dir,
                        "pthread_mutex_lock() error : %s", strerror(rtn));
          }
 #endif
+
+         /*
+          * If FD is currently performing a check of the FSA entries,
+          * wait for them to finish, since this check is based on the fact
+          * that the queue is empty. If we do not wait here, check_fsa_entries()
+          * removes what we add here!
+          */
+         while ((p_afd_status->amg_jobs & FD_CHECK_FSA_ENTRIES_ACTIVE) &&
+                (p_afd_status->fd == ON))
+         {
+            (void)my_usleep(10000L);
+         }
+
          lock_offset = AFD_WORD_OFFSET +
                        (db[position].position * sizeof(struct filetransfer_status));
 

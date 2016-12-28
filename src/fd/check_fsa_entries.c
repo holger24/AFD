@@ -55,7 +55,7 @@ DESCR__E_M3
 #include <string.h>            /* strcmp()                               */
 #include "fddefs.h"
 
-#define CHECK_FSA_ENTRIES_WITH_LOCK
+/* #define CHECK_FSA_ENTRIES_WITH_LOCK */
 
 /* External global variables. */
 #ifdef WITH_ERROR_QUEUE
@@ -68,6 +68,7 @@ extern struct filetransfer_status *fsa;
 extern struct fileretrieve_status *fra;
 extern struct queue_buf           *qb;
 extern struct msg_cache_buf       *mdb;
+extern struct afd_status          *p_afd_status;
 
 
 /*########################## check_fsa_entries() ########################*/
@@ -81,6 +82,7 @@ check_fsa_entries(void)
    now = time(NULL);
 #endif
 
+   p_afd_status->amg_jobs |= FD_CHECK_FSA_ENTRIES_ACTIVE;
    for (i = 0; i < no_of_hosts; i++)
    {
 #ifdef WITH_ERROR_QUEUE
@@ -210,7 +212,8 @@ check_fsa_entries(void)
                {
                   system_log(DEBUG_SIGN, __FILE__, __LINE__,
                              "Process ID in job %d for host %s is %d. It should be -1. Correcting.",
-                             j, fsa[i].host_dsp_name, fsa[i].job_status[j].proc_id);
+                             j, fsa[i].host_dsp_name,
+                             fsa[i].job_status[j].proc_id);
                   fsa[i].job_status[j].proc_id = -1;
                }
 #ifdef _WITH_BURST_2
@@ -218,8 +221,8 @@ check_fsa_entries(void)
                {
                   system_log(DEBUG_SIGN, __FILE__, __LINE__,
                              "Job ID in job %d for host %s is #%x. It should be %d. Correcting.",
-                             j, fsa[i].host_dsp_name, fsa[i].job_status[j].job_id,
-                             NO_ID);
+                             j, fsa[i].host_dsp_name,
+                             fsa[i].job_status[j].job_id, NO_ID);
                   fsa[i].job_status[j].job_id = NO_ID;
                }
 #endif
@@ -249,6 +252,8 @@ check_fsa_entries(void)
 # endif
 #endif
    } /* for (i = 0; i < no_of_hosts; i++) */
+
+   p_afd_status->amg_jobs &= ~FD_CHECK_FSA_ENTRIES_ACTIVE;
 
    return;
 }
