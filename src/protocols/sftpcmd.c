@@ -2770,7 +2770,7 @@ read_msg(char *block, int blocksize, int line)
             }
             else
             {
-               status = bytes_read;
+               status = 0;
             }
             type = BIN_CMD_R_TRACE;
          }
