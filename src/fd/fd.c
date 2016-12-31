@@ -277,6 +277,7 @@ int
 main(int argc, char *argv[])
 {
    int              afd_status_fd,
+                    do_fsa_check = NO,
                     fifo_full_counter = 0,
                     flush_msg_fifo_dump_queue = NO,
                     host_config_counter,
@@ -910,17 +911,6 @@ main(int argc, char *argv[])
          }
       }
 
-      /*
-       * Always check in 10 minute intervals if the FSA enties are still
-       * correct.
-       */
-      if (now > fsa_check_time)
-      {
-         check_fsa_entries();
-         fsa_check_time = ((now / FD_CHECK_FSA_INTERVAL) *
-                           FD_CHECK_FSA_INTERVAL) + FD_CHECK_FSA_INTERVAL;
-      }
-
 #ifdef _WITH_INTERRUPT_JOB
       if (now > interrupt_check_time)
       {
@@ -1212,6 +1202,24 @@ system_log(DEBUG_SIGN, NULL, 0,
          host_config_counter = (int)*(unsigned char *)((char *)fsa - AFD_WORD_OFFSET + SIZEOF_INT);
       }
 
+      /*
+       * Always check in 10 minute intervals if the FSA enties are still
+       * correct.
+       */
+      if (now > fsa_check_time)
+      {
+         do_fsa_check = YES;
+         FD_ZERO(&rset);
+         FD_SET(msg_fifo_fd, &rset);
+         timeout.tv_usec = 0L;
+         timeout.tv_sec = 0L;
+#ifdef LOCK_DEBUG
+         lock_region_w(fsa_fd, LOCK_CHECK_FSA_ENTRIES, __FILE__, __LINE__);
+#else
+         lock_region_w(fsa_fd, LOCK_CHECK_FSA_ENTRIES);
+#endif
+      }
+
       /* Wait for message x seconds and then continue. */
       status = select(max_fd, &rset, NULL, NULL, &timeout);
       status_done = 0;
@@ -1252,7 +1260,7 @@ system_log(DEBUG_SIGN, NULL, 0,
                   break;
 
                case CHECK_FSA_ENTRIES :
-                  check_fsa_entries();
+                  check_fsa_entries(do_fsa_check);
                   break;
 
                case SAVE_STOP :
@@ -2037,6 +2045,14 @@ system_log(DEBUG_SIGN, NULL, 0,
          status_done++;
       } /* NEW MESSAGE ARRIVED */
 
+      if (do_fsa_check == YES)
+      {
+         check_fsa_entries(do_fsa_check);
+         fsa_check_time = ((now / FD_CHECK_FSA_INTERVAL) *
+                           FD_CHECK_FSA_INTERVAL) + FD_CHECK_FSA_INTERVAL;
+         do_fsa_check = NO;
+      }
+
       /*
        * DELETE FILE(S) FROM QUEUE
        * =========================
@@ -2306,7 +2322,7 @@ system_log(DEBUG_SIGN, NULL, 0,
                           "close() error : %s", strerror(errno));
             }
          }
-         check_fsa_entries();
+         check_fsa_entries(do_fsa_check);
 
          /* Back to normal mode. */
          flush_msg_fifo_dump_queue = NO;

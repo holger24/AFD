@@ -2170,6 +2170,7 @@ typedef unsigned long       u_long_64;
 #define LOCK_EXEC                  23  /* Lock for exec and pexec option, */
                                        /* this is ALSO used in FRA.       */
 #define LOCK_HS                    24  /* Lock host_status in FSA.        */
+#define LOCK_CHECK_FSA_ENTRIES     (AFD_WORD_OFFSET - 1)
 
 /*-----------------------------------------------------------------------*
  * Word offset for memory mapped structures of the AFD. Best is to leave
@@ -2961,7 +2962,6 @@ struct fileretrieve_status
 #ifdef AFDBENCH_CONFIG
 # define PAUSE_DISTRIBUTION         8
 #endif
-#define FD_CHECK_FSA_ENTRIES_ACTIVE 32
 #define WRITTING_JID_STRUCT         64
 #define CHECK_FILE_DIR_ACTIVE       128
 
@@ -2988,11 +2988,7 @@ struct afd_status
                                           /*|      | to finish DIR_CONFIG|*/
                                           /*|  4   | Pause distribution  |*/
                                           /*|      | at start.           |*/
-                                          /*|  5   | If FD calls         |*/
-                                          /*|      | check_fsa_entries() |*/
-                                          /*|      | this flag is set    |*/
-                                          /*|      | while the function  |*/
-                                          /*|      | is active.          |*/
+                                          /*|  5   | not used            |*/
                                           /*|  6   | dir_check() has msg |*/
                                           /*|      | queued.             |*/
                                           /*|  7   | AMG writting to     |*/

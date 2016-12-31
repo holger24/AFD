@@ -26,7 +26,7 @@ DESCR__S_M3
  **                       correct
  **
  ** SYNOPSIS
- **   void check_fsa_entries(void)
+ **   void check_fsa_entries(int lock_set)
  **
  ** DESCRIPTION
  **   The function check_fsa_entries() checks the file counter,
@@ -55,8 +55,6 @@ DESCR__E_M3
 #include <string.h>            /* strcmp()                               */
 #include "fddefs.h"
 
-/* #define CHECK_FSA_ENTRIES_WITH_LOCK */
-
 /* External global variables. */
 #ifdef WITH_ERROR_QUEUE
 extern int                        fsa_fd;
@@ -68,12 +66,11 @@ extern struct filetransfer_status *fsa;
 extern struct fileretrieve_status *fra;
 extern struct queue_buf           *qb;
 extern struct msg_cache_buf       *mdb;
-extern struct afd_status          *p_afd_status;
 
 
 /*########################## check_fsa_entries() ########################*/
 void
-check_fsa_entries(void)
+check_fsa_entries(int lock_set)
 {
    register int gotcha, i, j;
 #ifdef WITH_ERROR_QUEUE
@@ -82,7 +79,15 @@ check_fsa_entries(void)
    now = time(NULL);
 #endif
 
-   p_afd_status->amg_jobs |= FD_CHECK_FSA_ENTRIES_ACTIVE;
+   if (lock_set != YES)
+   {
+#ifdef LOCK_DEBUG
+      lock_region_w(fsa_fd, LOCK_CHECK_FSA_ENTRIES, __FILE__, __LINE__);
+#else
+      lock_region_w(fsa_fd, LOCK_CHECK_FSA_ENTRIES);
+#endif
+   }
+
    for (i = 0; i < no_of_hosts; i++)
    {
 #ifdef WITH_ERROR_QUEUE
@@ -104,13 +109,6 @@ check_fsa_entries(void)
 # endif
          }
       }
-#endif
-#ifdef CHECK_FSA_ENTRIES_WITH_LOCK
-# ifdef LOCK_DEBUG
-      lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_TFC), __FILE__, __LINE__);
-# else
-      lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_TFC));
-# endif
 #endif
       gotcha = NO;
       for (j = 0; j < *no_msg_queued; j++)
@@ -243,17 +241,13 @@ check_fsa_entries(void)
             }
          }
       } /* if (gotcha == NO) */
-
-#ifdef CHECK_FSA_ENTRIES_WITH_LOCK
-# ifdef LOCK_DEBUG
-      unlock_region(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_TFC), __FILE__, __LINE__);
-# else
-      unlock_region(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_TFC));
-# endif
-#endif
    } /* for (i = 0; i < no_of_hosts; i++) */
 
-   p_afd_status->amg_jobs &= ~FD_CHECK_FSA_ENTRIES_ACTIVE;
+#ifdef LOCK_DEBUG
+   unlock_region(fsa_fd, LOCK_CHECK_FSA_ENTRIES, __FILE__, __LINE__);
+#else
+   unlock_region(fsa_fd, LOCK_CHECK_FSA_ENTRIES);
+#endif
 
    return;
 }

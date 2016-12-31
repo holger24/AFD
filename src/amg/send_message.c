@@ -290,25 +290,15 @@ send_message(char          *outgoing_file_dir,
          }
 #endif
 
-         /*
-          * If FD is currently performing a check of the FSA entries,
-          * wait for them to finish, since this check is based on the fact
-          * that the queue is empty. If we do not wait here, check_fsa_entries()
-          * removes what we add here!
-          */
-         while ((p_afd_status->amg_jobs & FD_CHECK_FSA_ENTRIES_ACTIVE) &&
-                (p_afd_status->fd == ON))
-         {
-            (void)my_usleep(10000L);
-         }
-
          lock_offset = AFD_WORD_OFFSET +
                        (db[position].position * sizeof(struct filetransfer_status));
 
          /* Total file counter. */
 #ifdef LOCK_DEBUG
+         lock_region_w(fsa_fd, LOCK_CHECK_FSA_ENTRIES, __FILE__, __LINE__);
          lock_region_w(fsa_fd, lock_offset + LOCK_TFC, __FILE__, __LINE__);
 #else
+         lock_region_w(fsa_fd, LOCK_CHECK_FSA_ENTRIES);
          lock_region_w(fsa_fd, lock_offset + LOCK_TFC);
 #endif
          fsa[db[position].position].total_file_counter += files_to_send;
@@ -317,8 +307,10 @@ send_message(char          *outgoing_file_dir,
          fsa[db[position].position].total_file_size += file_size_to_send;
 #ifdef LOCK_DEBUG
          unlock_region(fsa_fd, lock_offset + LOCK_TFC, __FILE__, __LINE__);
+         unlock_region(fsa_fd, LOCK_CHECK_FSA_ENTRIES, __FILE__, __LINE__);
 #else
          unlock_region(fsa_fd, lock_offset + LOCK_TFC);
+         unlock_region(fsa_fd, LOCK_CHECK_FSA_ENTRIES);
 #endif
 
 #ifdef _WITH_PTHREAD

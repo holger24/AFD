@@ -843,7 +843,7 @@ extern int   append_compare(char *, char *),
              reset_ls_data(void),
              send_mail(char *, char *, char *, char *, char *);
 extern void  calc_trl_per_process(int),
-             check_fsa_entries(void),
+             check_fsa_entries(int),
              check_msg_time(void),
              check_queue_space(void),
              check_trl_file(void),
