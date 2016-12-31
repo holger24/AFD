@@ -1247,6 +1247,7 @@ main(int argc, char *argv[])
                                            fsa->job_status[(int)db.job_no].file_name_in_use,
                                            (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
                                  sftp_quit();
+                                 exitflag = 0;
                                  exit(STILL_FILES_TO_SEND);
                               }
                            }

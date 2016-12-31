@@ -865,6 +865,7 @@ main(int argc, char *argv[])
                   trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                             "Failed to change to home directory (%d).", status);
                   (void)ftp_quit();
+                  exitflag = 0;
                   exit(STILL_FILES_TO_SEND);
                }
                else
@@ -2152,6 +2153,7 @@ main(int argc, char *argv[])
                                      fsa->job_status[(int)db.job_no].file_name_in_use,
                                      (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
                            (void)ftp_quit();
+                           exitflag = 0;
                            exit(STILL_FILES_TO_SEND);
                         }
                      }
@@ -2307,6 +2309,7 @@ main(int argc, char *argv[])
                                               fsa->job_status[(int)db.job_no].file_name_in_use,
                                               (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
                                     (void)ftp_quit();
+                                    exitflag = 0;
                                     exit(STILL_FILES_TO_SEND);
                                  }
                               }
