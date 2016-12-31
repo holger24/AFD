@@ -382,6 +382,10 @@
 #define SMTP_BURST_TRANSFER_ACTIVE_COLOR_1 "DeepPink"
 #define SMTP_BURST_TRANSFER_ACTIVE_COLOR_2 "LightPink"
 #define SMTP_BURST_TRANSFER_ACTIVE_COLOR_3 "PaleVioletRed"
+#define SFTP_RETRIEVE_ACTIVE_COLOR         "peru"
+#define SFTP_RETRIEVE_ACTIVE_COLOR_1       "tan"
+#define SFTP_RETRIEVE_ACTIVE_COLOR_2       "LightSalmon"
+#define SFTP_RETRIEVE_ACTIVE_COLOR_3       "DarkKhaki"
 
 
 /* Position of each color in global array. */

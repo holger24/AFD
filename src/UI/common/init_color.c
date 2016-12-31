@@ -61,35 +61,36 @@ init_color(Display *p_disp)
 {
    const char *p_color[COLOR_POOL_SIZE][4] =
               {
-                 { DEFAULT_BG_COLOR, DEFAULT_BG_COLOR_1, DEFAULT_BG_COLOR_2, DEFAULT_BG_COLOR_3 },                             /* Default background color.   */
-                 { WHITE_COLOR, WHITE_COLOR_1, WHITE_COLOR_2, WHITE_COLOR_3 },
-                 { CHAR_BACKGROUND_COLOR, CHAR_BACKGROUND_COLOR_1, CHAR_BACKGROUND_COLOR_2, CHAR_BACKGROUND_COLOR_3 },         /* Color for background of     */
+    /*  0 */     { DEFAULT_BG_COLOR, DEFAULT_BG_COLOR_1, DEFAULT_BG_COLOR_2, DEFAULT_BG_COLOR_3 },                             /* Default background color.   */
+    /*  1 */     { WHITE_COLOR, WHITE_COLOR_1, WHITE_COLOR_2, WHITE_COLOR_3 },
+    /*  2 */     { CHAR_BACKGROUND_COLOR, CHAR_BACKGROUND_COLOR_1, CHAR_BACKGROUND_COLOR_2, CHAR_BACKGROUND_COLOR_3 },         /* Color for background of     */
                                                                                                                                /* characters.                 */
-                 { PAUSE_QUEUE_COLOR, PAUSE_QUEUE_COLOR_1, PAUSE_QUEUE_COLOR_2, PAUSE_QUEUE_COLOR_3 },                         /* Stop generating messages.   */
-                 { AUTO_PAUSE_QUEUE_COLOR, AUTO_PAUSE_QUEUE_COLOR_1, AUTO_PAUSE_QUEUE_COLOR_2, AUTO_PAUSE_QUEUE_COLOR_3 },     /* Automatic stop of generating*/
-                 { CONNECTING_COLOR, CONNECTING_COLOR_1, CONNECTING_COLOR_2, CONNECTING_COLOR_3 },                             /* connecting.                 */
-                 { LOCKED_INVERSE_COLOR, LOCKED_INVERSE_COLOR_1, LOCKED_INVERSE_COLOR_2, LOCKED_INVERSE_COLOR_3 },             /* Inverse color when holding  */
+    /*  3 */     { PAUSE_QUEUE_COLOR, PAUSE_QUEUE_COLOR_1, PAUSE_QUEUE_COLOR_2, PAUSE_QUEUE_COLOR_3 },                         /* Stop generating messages.   */
+    /*  4 */     { AUTO_PAUSE_QUEUE_COLOR, AUTO_PAUSE_QUEUE_COLOR_1, AUTO_PAUSE_QUEUE_COLOR_2, AUTO_PAUSE_QUEUE_COLOR_3 },     /* Automatic stop of generating*/
+    /*  5 */     { CONNECTING_COLOR, CONNECTING_COLOR_1, CONNECTING_COLOR_2, CONNECTING_COLOR_3 },                             /* connecting.                 */
+    /*  6 */     { LOCKED_INVERSE_COLOR, LOCKED_INVERSE_COLOR_1, LOCKED_INVERSE_COLOR_2, LOCKED_INVERSE_COLOR_3 },             /* Inverse color when holding  */
                                                                                                                                /* Ctrl Key.                   */
-                 { TR_BAR_COLOR, TR_BAR_COLOR_1, TR_BAR_COLOR_2, TR_BAR_COLOR_3 },                                             /* Color for transfer rate bar.*/
-                 { LABEL_BG_COLOR, LABEL_BG_COLOR_1, LABEL_BG_COLOR_2, LABEL_BG_COLOR_3 },                                     /* Background for label.       */
-                 { BUTTON_BACKGROUND_COLOR, BUTTON_BACKGROUND_COLOR_1, BUTTON_BACKGROUND_COLOR_2, BUTTON_BACKGROUND_COLOR_3 }, /* Background for button line  */
+    /*  7 */     { TR_BAR_COLOR, TR_BAR_COLOR_1, TR_BAR_COLOR_2, TR_BAR_COLOR_3 },                                             /* Color for transfer rate bar.*/
+    /*  8 */     { LABEL_BG_COLOR, LABEL_BG_COLOR_1, LABEL_BG_COLOR_2, LABEL_BG_COLOR_3 },                                     /* Background for label.       */
+    /*  9 */     { BUTTON_BACKGROUND_COLOR, BUTTON_BACKGROUND_COLOR_1, BUTTON_BACKGROUND_COLOR_2, BUTTON_BACKGROUND_COLOR_3 }, /* Background for button line  */
                                                                                                                                /* in afd_ctrl dialog.         */
-                 { SMTP_ACTIVE_COLOR, SMTP_ACTIVE_COLOR_1, SMTP_ACTIVE_COLOR_2, SMTP_ACTIVE_COLOR_3 },                     /* Color to indicate that an   */
+    /* 10 */     { SMTP_ACTIVE_COLOR, SMTP_ACTIVE_COLOR_1, SMTP_ACTIVE_COLOR_2, SMTP_ACTIVE_COLOR_3 },                     /* Color to indicate that an   */
                                                                                                                                /* email is being send.        */
-                 { FTP_BURST_TRANSFER_ACTIVE_COLOR, FTP_BURST_TRANSFER_ACTIVE_COLOR_1, FTP_BURST_TRANSFER_ACTIVE_COLOR_2, FTP_BURST_TRANSFER_ACTIVE_COLOR_3 }, /* When transmitting files     */
+    /* 11 */     { FTP_BURST_TRANSFER_ACTIVE_COLOR, FTP_BURST_TRANSFER_ACTIVE_COLOR_1, FTP_BURST_TRANSFER_ACTIVE_COLOR_2, FTP_BURST_TRANSFER_ACTIVE_COLOR_3 }, /* When transmitting files     */
                                                                                                                                /* without connecting.         */
-                 { NORMAL_STATUS_COLOR, NORMAL_STATUS_COLOR_1, NORMAL_STATUS_COLOR_2, NORMAL_STATUS_COLOR_3 },                 /* Normal status.              */
-                 { TRANSFER_ACTIVE_COLOR, TRANSFER_ACTIVE_COLOR_1, TRANSFER_ACTIVE_COLOR_2, TRANSFER_ACTIVE_COLOR_3 } ,        /* Transfer active.            */
-                 { STOP_TRANSFER_COLOR, STOP_TRANSFER_COLOR_1, STOP_TRANSFER_COLOR_2, STOP_TRANSFER_COLOR_3 },                 /* Transfer stopped.           */
-                 { NOT_WORKING_COLOR, NOT_WORKING_COLOR_1, NOT_WORKING_COLOR_2, NOT_WORKING_COLOR_3 },                         /* Connection not working.     */
-                 { NOT_WORKING2_COLOR, NOT_WORKING2_COLOR_1, NOT_WORKING2_COLOR_2, NOT_WORKING2_COLOR_3 },                     /* Connection not working.     */
-                 { BLACK_COLOR, BLACK_COLOR_1, BLACK_COLOR_2, BLACK_COLOR_3 },                                                 /* Foreground color.           */
-                 { SFTP_BURST_TRANSFER_ACTIVE_COLOR, SFTP_BURST_TRANSFER_ACTIVE_COLOR_1, SFTP_BURST_TRANSFER_ACTIVE_COLOR_2, SFTP_BURST_TRANSFER_ACTIVE_COLOR_3 }, /* Foreground color.           */
+    /* 12 */     { NORMAL_STATUS_COLOR, NORMAL_STATUS_COLOR_1, NORMAL_STATUS_COLOR_2, NORMAL_STATUS_COLOR_3 },                 /* Normal status.              */
+    /* 13 */     { TRANSFER_ACTIVE_COLOR, TRANSFER_ACTIVE_COLOR_1, TRANSFER_ACTIVE_COLOR_2, TRANSFER_ACTIVE_COLOR_3 } ,        /* Transfer active.            */
+    /* 14 */     { STOP_TRANSFER_COLOR, STOP_TRANSFER_COLOR_1, STOP_TRANSFER_COLOR_2, STOP_TRANSFER_COLOR_3 },                 /* Transfer stopped.           */
+    /* 15 */     { NOT_WORKING_COLOR, NOT_WORKING_COLOR_1, NOT_WORKING_COLOR_2, NOT_WORKING_COLOR_3 },                         /* Connection not working.     */
+    /* 16 */     { NOT_WORKING2_COLOR, NOT_WORKING2_COLOR_1, NOT_WORKING2_COLOR_2, NOT_WORKING2_COLOR_3 },                     /* Connection not working.     */
+    /* 17 */     { BLACK_COLOR, BLACK_COLOR_1, BLACK_COLOR_2, BLACK_COLOR_3 },                                                 /* Foreground color.           */
+    /* 18 */     { SFTP_BURST_TRANSFER_ACTIVE_COLOR, SFTP_BURST_TRANSFER_ACTIVE_COLOR_1, SFTP_BURST_TRANSFER_ACTIVE_COLOR_2, SFTP_BURST_TRANSFER_ACTIVE_COLOR_3 }, /* SFTP burst.           */
+    /* 19 */     { SMTP_BURST_TRANSFER_ACTIVE_COLOR, SMTP_BURST_TRANSFER_ACTIVE_COLOR_1, SMTP_BURST_TRANSFER_ACTIVE_COLOR_2, SMTP_BURST_TRANSFER_ACTIVE_COLOR_3 }, /* SMTP burst.           */
 #ifdef _WITH_WMO_SUPPORT
-                 { SMTP_BURST_TRANSFER_ACTIVE_COLOR, SMTP_BURST_TRANSFER_ACTIVE_COLOR_1, SMTP_BURST_TRANSFER_ACTIVE_COLOR_2, SMTP_BURST_TRANSFER_ACTIVE_COLOR_3 }, /* Foreground color.           */
-                 { WMO_BURST_TRANSFER_ACTIVE_COLOR, WMO_BURST_TRANSFER_ACTIVE_COLOR_1, WMO_BURST_TRANSFER_ACTIVE_COLOR_2, WMO_BURST_TRANSFER_ACTIVE_COLOR_3 }
+    /* 20 */     { SFTP_RETRIEVE_ACTIVE_COLOR, SFTP_RETRIEVE_ACTIVE_COLOR_1, SFTP_RETRIEVE_ACTIVE_COLOR_2, SFTP_RETRIEVE_ACTIVE_COLOR_3 }, /* SFTP retrieve.           */
+    /* 21 */     { WMO_BURST_TRANSFER_ACTIVE_COLOR, WMO_BURST_TRANSFER_ACTIVE_COLOR_1, WMO_BURST_TRANSFER_ACTIVE_COLOR_2, WMO_BURST_TRANSFER_ACTIVE_COLOR_3 }
 #else
-                 { SMTP_BURST_TRANSFER_ACTIVE_COLOR, SMTP_BURST_TRANSFER_ACTIVE_COLOR_1, SMTP_BURST_TRANSFER_ACTIVE_COLOR_2, SMTP_BURST_TRANSFER_ACTIVE_COLOR_3 }
+    /* 20 */     { SFTP_RETRIEVE_ACTIVE_COLOR, SFTP_RETRIEVE_ACTIVE_COLOR_1, SFTP_RETRIEVE_ACTIVE_COLOR_2, SFTP_RETRIEVE_ACTIVE_COLOR_3 }
 #endif
               };
    int        i;

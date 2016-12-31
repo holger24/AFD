@@ -1559,7 +1559,6 @@ typedef unsigned long       u_long_64;
 #ifdef _WITH_SCP_SUPPORT
 # define SCP_BURST_TRANSFER_ACTIVE 4
 #endif
-#define SFTP_RETRIEVE_ACTIVE       4
 /*############################### Blue ##################################*/
 #define HTML_COLOR_5               "#0000FF"
 #define CONNECTING                 5  /* Open connection to remote host, */
@@ -1651,13 +1650,16 @@ typedef unsigned long       u_long_64;
 /*############################### cyan ##################################*/
 #define HTML_COLOR_19              "#00FFFF"
 #define SMTP_BURST_TRANSFER_ACTIVE 19
+/*############################### peru ##################################*/
+#define HTML_COLOR_20              "#CD853F"
+#define SFTP_RETRIEVE_ACTIVE       20
 /*############################## yellow #################################*/
 #ifdef _WITH_WMO_SUPPORT
-# define HTML_COLOR_20             "#FFFF00"
-# define WMO_BURST_TRANSFER_ACTIVE 20
-# define COLOR_POOL_SIZE           21
+# define HTML_COLOR_21             "#FFFF00"
+# define WMO_BURST_TRANSFER_ACTIVE 21
+# define COLOR_POOL_SIZE           22
 #else
-# define COLOR_POOL_SIZE           20
+# define COLOR_POOL_SIZE           21
 #endif
 
 /* History types. */
