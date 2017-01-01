@@ -1,7 +1,7 @@
 /*
  *  edit_hc_callbacks.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -206,8 +206,9 @@ close_button(Widget w, XtPointer client_data, XtPointer call_data)
    {
       if ((ce[i].value_changed != 0) || (ce[i].value_changed2 != 0))
       {
+printf("i=%d value_changed=%d value_changed2=%d\n", i, ce[i].value_changed, ce[i].value_changed2);
          if (xrec(QUESTION_DIALOG,
-                  "There are unsaved changes!\nDo you want to discarde these?") != YES)
+                  "There are unsaved changes!\nDo you want to discard these?") != YES)
          {
             return;
          }
@@ -966,7 +967,15 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
             {
                ce[cur_pos].real_hostname[0][0] = '\0';
             }
-            ce[cur_pos].value_changed |= REAL_HOSTNAME_1_CHANGED;
+            if (CHECK_STRCMP(fsa[cur_pos].real_hostname[0],
+                             ce[cur_pos].real_hostname[0]) == 0)
+            {
+               ce[cur_pos].real_hostname[0][0] = -1;
+            }
+            else
+            {
+               ce[cur_pos].value_changed |= REAL_HOSTNAME_1_CHANGED;
+            }
             break;
 
          case REAL_HOST_NAME_2 :
@@ -978,7 +987,15 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
             {
                ce[cur_pos].real_hostname[1][0] = '\0';
             }
-            ce[cur_pos].value_changed |= REAL_HOSTNAME_2_CHANGED;
+            if (CHECK_STRCMP(fsa[cur_pos].real_hostname[1],
+                             ce[cur_pos].real_hostname[1]) == 0)
+            {
+               ce[cur_pos].real_hostname[1][0] = -1;
+            }
+            else
+            {
+               ce[cur_pos].value_changed |= REAL_HOSTNAME_2_CHANGED;
+            }
             break;
 
          case HOST_1_ID :
@@ -1030,7 +1047,15 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                   ce[cur_pos].proxy_name[length] = '\0';
                }
             }
-            ce[cur_pos].value_changed |= PROXY_NAME_CHANGED;
+            if (CHECK_STRCMP(fsa[cur_pos].proxy_name,
+                             ce[cur_pos].proxy_name) == 0)
+            {
+               ce[cur_pos].proxy_name[0] = -1;
+            }
+            else
+            {
+               ce[cur_pos].value_changed |= PROXY_NAME_CHANGED;
+            }
             break;
 
          case TRANSFER_TIMEOUT :
@@ -1042,7 +1067,14 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
             {
                ce[cur_pos].transfer_timeout = atol(input_data);
             }
-            ce[cur_pos].value_changed |= TRANSFER_TIMEOUT_CHANGED;
+            if (fsa[cur_pos].transfer_timeout != ce[cur_pos].transfer_timeout)
+            {
+               ce[cur_pos].value_changed |= TRANSFER_TIMEOUT_CHANGED;
+            }
+            else
+            {
+               ce[cur_pos].transfer_timeout = -1L;
+            }
             break;
 
          case RETRY_INTERVAL :
@@ -1054,7 +1086,14 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
             {
                ce[cur_pos].retry_interval = atoi(input_data);
             }
-            ce[cur_pos].value_changed |= RETRY_INTERVAL_CHANGED;
+            if (fsa[cur_pos].retry_interval != ce[cur_pos].retry_interval)
+            {
+               ce[cur_pos].value_changed |= RETRY_INTERVAL_CHANGED;
+            }
+            else
+            {
+               ce[cur_pos].retry_interval = -1;
+            }
             break;
 
          case MAXIMUM_ERRORS :
@@ -1066,7 +1105,14 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
             {
                ce[cur_pos].max_errors = atoi(input_data);
             }
-            ce[cur_pos].value_changed |= MAX_ERRORS_CHANGED;
+            if (fsa[cur_pos].max_errors != ce[cur_pos].max_errors)
+            {
+               ce[cur_pos].value_changed |= MAX_ERRORS_CHANGED;
+            }
+            else
+            {
+               ce[cur_pos].max_errors = -1;
+            }
             break;
 
          case SUCCESSFUL_RETRIES :
@@ -1078,7 +1124,14 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
             {
                ce[cur_pos].max_successful_retries = atoi(input_data);
             }
-            ce[cur_pos].value_changed |= SUCCESSFUL_RETRIES_CHANGED;
+            if (fsa[cur_pos].max_successful_retries != ce[cur_pos].max_successful_retries)
+            {
+               ce[cur_pos].value_changed |= SUCCESSFUL_RETRIES_CHANGED;
+            }
+            else
+            {
+               ce[cur_pos].max_successful_retries = -1;
+            }
             break;
 
          case TRANSFER_RATE_LIMIT :
@@ -1090,7 +1143,14 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
             {
                ce[cur_pos].transfer_rate_limit = (off_t)str2offt(input_data, NULL, 10) * 1024;
             }
-            ce[cur_pos].value_changed |= TRANSFER_RATE_LIMIT_CHANGED;
+            if (fsa[cur_pos].transfer_rate_limit != ce[cur_pos].transfer_rate_limit)
+            {
+               ce[cur_pos].value_changed |= TRANSFER_RATE_LIMIT_CHANGED;
+            }
+            else
+            {
+               ce[cur_pos].transfer_rate_limit = -1;
+            }
             break;
 
          case SOCKET_SEND_BUFFER :
@@ -1102,7 +1162,14 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
             {
                ce[cur_pos].sndbuf_size = (unsigned int)strtoul(input_data, NULL, 10) * 1024;
             }
-            ce[cur_pos].value_changed |= SOCKET_SEND_BUFFER_CHANGED;
+            if (fsa[cur_pos].socksnd_bufsize != (ce[cur_pos].sndbuf_size / 1024))
+            {
+               ce[cur_pos].value_changed |= SOCKET_SEND_BUFFER_CHANGED;
+            }
+            else
+            {
+               ce[cur_pos].sndbuf_size = 0;
+            }
             break;
 
          case SOCKET_RECEIVE_BUFFER :
@@ -1114,7 +1181,14 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
             {
                ce[cur_pos].rcvbuf_size = (unsigned int)strtoul(input_data, NULL, 10) * 1024;
             }
-            ce[cur_pos].value_changed |= SOCKET_RECEIVE_BUFFER_CHANGED;
+            if (fsa[cur_pos].sockrcv_bufsize != (ce[cur_pos].rcvbuf_size / 1024))
+            {
+               ce[cur_pos].value_changed |= SOCKET_RECEIVE_BUFFER_CHANGED;
+            }
+            else
+            {
+               ce[cur_pos].rcvbuf_size = 0;
+            }
             break;
 
          case KEEP_CONNECTED :
@@ -1126,7 +1200,14 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
             {
                ce[cur_pos].keep_connected = (unsigned int)strtoul(input_data, NULL, 10);
             }
-            ce[cur_pos].value_changed |= KEEP_CONNECTED_CHANGED;
+            if (fsa[cur_pos].keep_connected != ce[cur_pos].keep_connected)
+            {
+               ce[cur_pos].value_changed |= KEEP_CONNECTED_CHANGED;
+            }
+            else
+            {
+               ce[cur_pos].keep_connected = 0;
+            }
             break;
 
          case WARN_TIME_DAYS :
@@ -1187,7 +1268,14 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
             {
                ce[cur_pos].dup_check_timeout = atol(input_data);
             }
-            ce[cur_pos].value_changed |= DC_TIMEOUT_CHANGED;
+            if (fsa[cur_pos].dup_check_timeout != ce[cur_pos].dup_check_timeout)
+            {
+               ce[cur_pos].value_changed |= DC_TIMEOUT_CHANGED;
+            }
+            else
+            {
+               ce[cur_pos].dup_check_timeout = 0L;
+            }
             break;
 #endif
 
@@ -1569,17 +1657,18 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(transfer_timeout_label_w, False);
       }
 
+      if (ce[cur_pos].value_changed & PROXY_NAME_CHANGED)
+      {
+         tmp_ptr = ce[cur_pos].proxy_name;
+      }
+      else
+      {
+         tmp_ptr = fsa[cur_pos].proxy_name;
+      }
+      XtVaSetValues(proxy_name_w, XmNvalue, tmp_ptr, NULL);
+
       if (fsa[cur_pos].protocol & FTP_FLAG)
       {
-         if (ce[cur_pos].value_changed & PROXY_NAME_CHANGED)
-         {
-            tmp_ptr = ce[cur_pos].proxy_name;
-         }
-         else
-         {
-            tmp_ptr = fsa[cur_pos].proxy_name;
-         }
-         XtVaSetValues(proxy_name_w, XmNvalue, tmp_ptr, NULL);
          XtSetSensitive(mode_label_w, True);
          XtSetSensitive(extended_mode_w, True);
          if (fsa[cur_pos].protocol_options & FTP_EXTENDED_MODE)
