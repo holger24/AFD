@@ -206,7 +206,6 @@ close_button(Widget w, XtPointer client_data, XtPointer call_data)
    {
       if ((ce[i].value_changed != 0) || (ce[i].value_changed2 != 0))
       {
-printf("i=%d value_changed=%d value_changed2=%d\n", i, ce[i].value_changed, ce[i].value_changed2);
          if (xrec(QUESTION_DIALOG,
                   "There are unsaved changes!\nDo you want to discard these?") != YES)
          {
