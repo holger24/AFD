@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2016, 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1276,6 +1276,25 @@ collect_data(register char *ptr,
             {
                IGNORE_ENTRY();
             }
+
+            /* Store job ID. */
+            j = 0;
+            while ((*ptr != SEPARATOR_CHAR) && (*ptr != '\n') &&
+                   (j < MAX_DOUBLE_LENGTH))
+            {
+               numeric_str[j] = *ptr;
+               j++; ptr++;
+            }
+            if (*ptr == SEPARATOR_CHAR)
+            {
+               numeric_str[j] = '\0';
+               id.job_id = (unsigned int)strtoul(numeric_str, NULL, 16);
+            }
+            else
+            {
+               IGNORE_ENTRY();
+            }
+
             if ((no_of_search_dirs > 0) || (no_of_search_dirids > 0))
             {
                int gotcha = NO,
@@ -1317,11 +1336,16 @@ collect_data(register char *ptr,
                      {
                         if (search_dir_length[kk] == length)
                         {
+                           id.dir[length] = '\0';
                            if (strncmp(search_dir[kk], (char *)id.dir,
                                        length) == 0)
                            {
                               gotcha = YES;
                               break;
+                           }
+                           else
+                           {
+                              id.dir[length] = SEPARATOR_CHAR;
                            }
                         }
                      }
@@ -1331,24 +1355,6 @@ collect_data(register char *ptr,
                      IGNORE_ENTRY();
                   }
                }
-            }
-
-            /* Store job ID. */
-            j = 0;
-            while ((*ptr != SEPARATOR_CHAR) && (*ptr != '\n') &&
-                   (j < MAX_DOUBLE_LENGTH))
-            {
-               numeric_str[j] = *ptr;
-               j++; ptr++;
-            }
-            if (*ptr == SEPARATOR_CHAR)
-            {
-               numeric_str[j] = '\0';
-               id.job_id = (unsigned int)strtoul(numeric_str, NULL, 16);
-            }
-            else
-            {
-               IGNORE_ENTRY();
             }
 
             if (no_of_search_jobids > 0)
