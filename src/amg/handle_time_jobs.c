@@ -1,6 +1,6 @@
 /*
  *  handle_time_jobs.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -77,10 +77,7 @@ extern char                       outgoing_file_dir[],
 #endif
 #ifndef _WITH_PTHREAD
 extern char                       *file_name_buffer;
-extern off_t                      *file_size_pool;
-extern time_t                     *file_mtime_pool;
-extern char                       **file_name_pool;
-extern unsigned char              *file_length_pool;
+extern off_t                      *file_size_buffer;
 #endif
 #ifdef MULTI_FS_SUPPORT
 extern struct extra_work_dirs     *ewl;
@@ -121,14 +118,7 @@ handle_time_jobs(time_t now)
    {
       if (db[time_job_list[i]].next_start_time <= now)
       {
-#ifdef _WITH_PTHREAD
-         handle_time_dir(i, p_data[db[time_job_list[i]].fra_pos].file_size_pool,
-                         p_data[db[time_job_list[i]].fra_pos].file_mtime_pool,
-                         p_data[db[time_job_list[i]].fra_pos].file_name_pool,
-                         p_data[db[time_job_list[i]].fra_pos].file_length_pool);
-#else
          handle_time_dir(i);
-#endif
          if (files_handled > MAX_FILES_FOR_TIME_JOBS)
          {
             break;
@@ -149,15 +139,7 @@ handle_time_jobs(time_t now)
 
 /*++++++++++++++++++++++++++ handle_time_dir() ++++++++++++++++++++++++++*/
 static void
-#ifdef _WITH_PTHREAD
-handle_time_dir(int           time_job_no,
-                off_t         *file_size_pool,
-                time_t        *file_mtime_pool,
-                char          **file_name_pool,
-                unsigned char *file_length_pool)
-#else
 handle_time_dir(int time_job_no)
-#endif
 {
 #ifdef MULTI_FS_SUPPORT
    int  outgoing_file_dir_length;
@@ -410,19 +392,25 @@ handle_time_dir(int time_job_no)
                                    new_size, strerror(errno));
                         exit(INCORRECT);
                      }
+
+                     /* Calculate new size of file size buffer. */
+                     new_size = ((files_moved / FILE_NAME_STEP_SIZE) + 1) * FILE_NAME_STEP_SIZE * sizeof(off_t);
+
+                     /* Increase the space for the file size buffer. */
+                     if ((file_size_buffer = realloc(file_size_buffer, new_size)) == NULL)
+                     {
+                        system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                   "Could not realloc() memory [%d bytes] : %s",
+                                   new_size, strerror(errno));
+                        exit(INCORRECT);
+                     }
                   }
                   (void)strcpy((file_name_buffer + (files_moved * MAX_FILENAME_LENGTH)), p_dir->d_name);
+                  file_size_buffer[files_moved] = stat_buf.st_size;
 #endif
                   files_handled++;
                   files_moved++;
                   file_size_moved += stat_buf.st_size;
-
-                  check_file_pool_mem(files_moved);
-                  file_length_pool[files_moved - 1] = strlen(p_dir->d_name);
-                  (void)memcpy(file_name_pool[files_moved - 1], p_dir->d_name,
-                               (size_t)(file_length_pool[files_moved - 1] + 1));
-                  file_size_pool[files_moved - 1] = stat_buf.st_size;
-                  file_mtime_pool[files_moved - 1] = stat_buf.st_mtime;
                }
             }
          } /* while ((p_dir = readdir(dp)) != NULL) */

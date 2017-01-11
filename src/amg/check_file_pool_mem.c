@@ -1,6 +1,6 @@
 /*
  *  check_file_pool_mem.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2016, 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,7 +50,6 @@ DESCR__E_M3
 
 /* External global variables. */
 extern unsigned int               max_file_buffer;
-extern char                       *file_name_buffer;
 extern off_t                      *file_size_pool;
 extern time_t                     *file_mtime_pool;
 extern char                       **file_name_pool;

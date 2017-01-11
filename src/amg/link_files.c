@@ -1,6 +1,6 @@
 /*
  *  link_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -84,7 +84,8 @@ DESCR__E_M3
 
 /* External global variables. */
 #ifndef _WITH_PTHREAD
-extern off_t                      *file_size_pool;
+extern off_t                      *file_size_buffer,
+                                  *file_size_pool;
 extern time_t                     *file_mtime_pool;
 extern char                       *file_name_buffer,
                                   **file_name_pool;
@@ -537,10 +538,23 @@ try_copy_file:
                                    strerror(errno));
                         exit(INCORRECT);
                      }
+
+                     /* Calculate new size of file size buffer. */
+                     new_size = ((files_linked / FILE_NAME_STEP_SIZE) + 1) * FILE_NAME_STEP_SIZE * sizeof(off_t);
+
+                     /* Increase the space for the file size buffer. */
+                     if ((file_size_buffer = realloc(file_size_buffer, new_size)) == NULL)
+                     {
+                        system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                   "Could not realloc() memory : %s",
+                                   strerror(errno));
+                        exit(INCORRECT);
+                     }
                   }
                   (void)memcpy((file_name_buffer + (files_linked * MAX_FILENAME_LENGTH)),
                                file_name_pool[i],
                                (size_t)(file_length_pool[i] + 1));
+                  file_size_buffer[files_linked] = file_size_pool[i];
 #endif
                   files_linked++;
                   *file_size_linked += file_size_pool[i];

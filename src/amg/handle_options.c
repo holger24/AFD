@@ -1,6 +1,6 @@
 /*
  *  handle_options.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -169,7 +169,8 @@ DESCR__E_M3
                                    /* strncmp(), strerror()              */
 #include <ctype.h>                 /* toupper(), tolower()               */
 #include <unistd.h>                /* unlink()                           */
-#include <stdlib.h>                /* system()                           */
+#include <stdlib.h>                /* system(), malloc(), realloc(),     */
+                                   /* free()                             */
 #include <time.h>                  /* time(), gmtime()                   */
 #include <sys/types.h>
 #include <sys/stat.h>              /* stat(), S_ISREG()                  */
@@ -198,10 +199,8 @@ extern int                        fra_fd,
                                   receive_log_fd;
 #ifndef _WITH_PTHREAD
 extern int                        max_copied_files;
-extern off_t                      *file_size_pool;
-extern time_t                     *file_mtime_pool;
+extern off_t                      *file_size_buffer;
 extern char                       *file_name_buffer;
-extern unsigned char              *file_length_pool;
 #endif
 extern char                       *bul_file,
                                   *p_work_dir,
@@ -226,8 +225,8 @@ static char                       *p_file_name;
 #endif
 
 /* Local function prototypes. */
-static void                       prepare_rename_ow(int, char **),
-                                  rename_ow(int, int, char *, off_t *,
+static void                       prepare_rename_ow(int, char **, off_t **),
+                                  rename_ow(int, int, char *, off_t *, off_t *,
 #ifdef _DELETE_LOG
                                             time_t, unsigned int, unsigned int,
 #endif
@@ -246,7 +245,7 @@ static int                        cleanup_rename_ow(int,
                                                     int, time_t, unsigned int,
                                                     unsigned int, char *,
 #endif
-                                                    char **);
+                                                    char **, off_t **);
 #ifdef _WITH_PTHREAD
 static int                        get_file_names(char *, char **, char **);
 #else
@@ -364,6 +363,7 @@ handle_options(int          position,
                                   overwrite,
                                   with_path,
                                   ret;
+                     off_t        *new_size_buffer;
                      char         changed_name[MAX_FILENAME_LENGTH],
                                   *new_name_buffer,
                                   *p_overwrite,
@@ -499,7 +499,8 @@ handle_options(int          position,
                         *p_with_path_name++ = '/';
                      }
 
-                     prepare_rename_ow(file_counter, &new_name_buffer);
+                     prepare_rename_ow(file_counter, &new_name_buffer,
+                                       &new_size_buffer);
 
                      for (j = 0; j < file_counter; j++)
                      {
@@ -540,7 +541,8 @@ handle_options(int          position,
                                * loose it!
                                */
                               rename_ow(overwrite, file_counter,
-                                        new_name_buffer, file_size,
+                                        new_name_buffer, new_size_buffer,
+                                        file_size,
 #ifdef _DELETE_LOG
                                         creation_time, unique_number,
                                         split_job_counter,
@@ -570,12 +572,14 @@ handle_options(int          position,
                                                         split_job_counter,
                                                         p_option,
 #endif
-                                                        &new_name_buffer);
+                                                        &new_name_buffer,
+                                                        &new_size_buffer);
 
                   }
 #ifdef _WITH_PTHREAD
 
                   free(file_name_buffer);
+                  free(file_size_buffer);
 #endif
                }
             }
@@ -694,6 +698,7 @@ handle_options(int          position,
                         register int overwrite,
                                      ret,
                                      with_path;
+                        off_t        *new_size_buffer;
                         char         changed_name[MAX_FILENAME_LENGTH],
                                      *new_name_buffer,
                                      *p_overwrite,
@@ -833,7 +838,8 @@ handle_options(int          position,
                            *p_with_path_name++ = '/';
                         }
 
-                        prepare_rename_ow(file_counter, &new_name_buffer);
+                        prepare_rename_ow(file_counter, &new_name_buffer,
+                                          &new_size_buffer);
 
                         for (j = 0; j < file_counter; j++)
                         {
@@ -862,7 +868,8 @@ handle_options(int          position,
                                * loose it!
                                */
                               rename_ow(overwrite, file_counter,
-                                        new_name_buffer, file_size,
+                                        new_name_buffer, new_size_buffer,
+                                        file_size,
 #ifdef _DELETE_LOG
                                         creation_time, unique_number,
                                         split_job_counter,
@@ -889,12 +896,14 @@ handle_options(int          position,
                                                            split_job_counter,
                                                            p_option,
 #endif
-                                                           &new_name_buffer);
+                                                           &new_name_buffer,
+                                                           &new_size_buffer);
 
                      }
 #ifdef _WITH_PTHREAD
 
                      free(file_name_buffer);
+                     free(file_size_buffer);
 #endif
                   }
                }
@@ -1349,7 +1358,7 @@ handle_options(int          position,
                                                 MAX_HOSTNAME_LENGTH,
                                                 db[position].host_alias,
                                                 EXEC_FAILED_STORED);
-                                 *dl.file_size = file_size_pool[j];
+                                 *dl.file_size = file_size_buffer[j];
                                  *dl.job_id = db[position].job_id;
                                  *dl.dir_id = db[position].dir_id;
                                  *dl.input_time = creation_time;
@@ -1408,7 +1417,7 @@ handle_options(int          position,
                                              MAX_HOSTNAME_LENGTH,
                                              db[position].host_alias,
                                              EXEC_FAILED_DEL);
-                              *dl.file_size = file_size_pool[j];
+                              *dl.file_size = file_size_buffer[j];
                               *dl.job_id = db[position].job_id;
                               *dl.dir_id = db[position].dir_id;
                               *dl.input_time = creation_time;
@@ -1438,7 +1447,7 @@ handle_options(int          position,
                                                        split_job_counter,
                                                        position,
                                                        p_file_name,
-                                                       file_size_pool[j],
+                                                       file_size_buffer[j],
                                                        p_option,
                                                        ret,
                                                        &cpu_usage,
@@ -1461,7 +1470,7 @@ handle_options(int          position,
                                                        split_job_counter,
                                                        position,
                                                        p_file_name,
-                                                       file_size_pool[j],
+                                                       file_size_buffer[j],
                                                        p_option,
                                                        ret,
                                                        &cpu_usage,
@@ -1483,6 +1492,7 @@ handle_options(int          position,
                }
 
                free(file_name_buffer);
+               free(file_size_buffer);
 #else
 # ifndef _PRODUCTION_LOG
                *files_to_send = restore_files(file_path, file_size);
@@ -1626,7 +1636,7 @@ handle_options(int          position,
                                           MAX_HOSTNAME_LENGTH,
                                           db[position].host_alias,
                                           (do_rename == NO) ? EXEC_FAILED_DEL : EXEC_FAILED_STORED);
-                           *dl.file_size = file_size_pool[j];
+                           *dl.file_size = file_size_buffer[j];
                            *dl.job_id = db[position].job_id;
                            *dl.dir_id = db[position].dir_id;
                            *dl.input_time = creation_time;
@@ -1715,7 +1725,7 @@ handle_options(int          position,
                                        "%s%c%llx%c%c%c%d%c%s",
 # endif
                                        p_file_name, SEPARATOR_CHAR,
-                                       (pri_off_t)file_size_pool[j],
+                                       (pri_off_t)file_size_buffer[j],
                                        SEPARATOR_CHAR,
                                        SEPARATOR_CHAR, SEPARATOR_CHAR,
                                        ret, SEPARATOR_CHAR, p_command);
@@ -1723,6 +1733,7 @@ handle_options(int          position,
                      }
 # ifdef _WITH_PTHREAD
                      free(file_name_buffer);
+                     free(file_size_buffer);
                   }
 # endif
 #endif
@@ -1797,10 +1808,11 @@ handle_options(int          position,
 
          if (file_counter > 0)
          {
-            int  overwrite;
-            char *new_name_buffer,
-                 *p_overwrite,
-                 *p_search;
+            int   overwrite;
+            off_t *new_size_buffer;
+            char  *new_name_buffer,
+                  *p_overwrite,
+                  *p_search;
 
             p_overwrite = options + BASENAME_ID_LENGTH;
             if ((*p_overwrite == ' ') || (*p_overwrite == '\t'))
@@ -1840,7 +1852,7 @@ handle_options(int          position,
             (void)strcpy(newname, fullname);
             p_newname = newname + (ptr - fullname);
 
-            prepare_rename_ow(file_counter, &new_name_buffer);
+            prepare_rename_ow(file_counter, &new_name_buffer, &new_size_buffer);
 
             for (j = 0; j < file_counter; j++)
             {
@@ -1858,7 +1870,8 @@ handle_options(int          position,
                   *p_search = '\0';
                   (void)strcpy(p_newname, filename);
 
-                  rename_ow(overwrite, file_counter, new_name_buffer, file_size,
+                  rename_ow(overwrite, file_counter, new_name_buffer,
+                            new_size_buffer, file_size,
 #ifdef _DELETE_LOG
                             creation_time, unique_number, split_job_counter,
 #endif
@@ -1873,11 +1886,13 @@ handle_options(int          position,
                                                unique_number,
                                                split_job_counter, options,
 #endif
-                                               &new_name_buffer);
+                                               &new_name_buffer,
+                                               &new_size_buffer);
          }
 #ifdef _WITH_PTHREAD
 
          free(file_name_buffer);
+         free(file_size_buffer);
 #endif
          NEXT(options);
          continue;
@@ -1897,10 +1912,11 @@ handle_options(int          position,
 #endif
          if (file_counter > 0)
          {
-            int  overwrite;
-            char *new_name_buffer,
-                 *p_overwrite,
-                 *p_search;
+            int   overwrite;
+            off_t *new_size_buffer;
+            char  *new_name_buffer,
+                  *p_overwrite,
+                  *p_search;
 
             p_overwrite = options + EXTENSION_ID_LENGTH;
             if ((*p_overwrite == ' ') || (*p_overwrite == '\t'))
@@ -1940,7 +1956,7 @@ handle_options(int          position,
             (void)strcpy(newname, fullname);
             p_newname = newname + (ptr - fullname);
 
-            prepare_rename_ow(file_counter, &new_name_buffer);
+            prepare_rename_ow(file_counter, &new_name_buffer, &new_size_buffer);
 
             for (j = 0; j < file_counter; j++)
             {
@@ -1958,7 +1974,8 @@ handle_options(int          position,
                   *p_search = '\0';
                   (void)strcpy(p_newname, filename);
 
-                  rename_ow(overwrite, file_counter, new_name_buffer, file_size,
+                  rename_ow(overwrite, file_counter, new_name_buffer,
+                            new_size_buffer, file_size,
 #ifdef _DELETE_LOG
                             creation_time, unique_number, split_job_counter,
 #endif
@@ -1972,11 +1989,13 @@ handle_options(int          position,
                                                unique_number,
                                                split_job_counter, options,
 #endif
-                                               &new_name_buffer);
+                                               &new_name_buffer,
+                                               &new_size_buffer);
          }
 #ifdef _WITH_PTHREAD
 
          free(file_name_buffer);
+         free(file_size_buffer);
 #endif
          NEXT(options);
          continue;
@@ -1987,12 +2006,13 @@ handle_options(int          position,
           (CHECK_STRNCMP(options, ADD_PREFIX_ID, ADD_PREFIX_ID_LENGTH) == 0))
       {
 #ifdef _WITH_PTHREAD
-         int  file_counter;
+         int   file_counter;
 #else
-         int  file_counter = *files_to_send;
+         int   file_counter = *files_to_send;
 #endif
-         char *new_name_buffer,
-              *p_prefix_newname;
+         off_t *new_size_buffer;
+         char  *new_name_buffer,
+               *p_prefix_newname;
 
          /* Get the prefix. */
 #ifdef _PRODUCTION_LOG
@@ -2021,7 +2041,7 @@ handle_options(int          position,
          file_counter = get_file_names(file_path, &file_name_buffer,
                                        &p_file_name);
 #endif
-         prepare_rename_ow(file_counter, &new_name_buffer);
+         prepare_rename_ow(file_counter, &new_name_buffer, &new_size_buffer);
 
 #ifdef _WITH_PTHREAD
          if (file_counter > 0)
@@ -2034,7 +2054,8 @@ handle_options(int          position,
                /* Generate name with prefix. */
                (void)strcpy(p_newname, p_file_name);
 
-               rename_ow(YES, file_counter, new_name_buffer, file_size,
+               rename_ow(YES, file_counter, new_name_buffer, new_size_buffer,
+                         file_size,
 #ifdef _DELETE_LOG
                          creation_time, unique_number, split_job_counter,
 #endif
@@ -2048,15 +2069,18 @@ handle_options(int          position,
                                                unique_number,
                                                split_job_counter, p_option,
 #endif
-                                               &new_name_buffer);
+                                               &new_name_buffer,
+                                               &new_size_buffer);
 #ifdef _WITH_PTHREAD
          }
          else
          {
             free(new_name_buffer);
+            free(new_size_buffer);
          }
 
          free(file_name_buffer);
+         free(file_size_buffer);
 #endif
          NEXT(options);
          continue;
@@ -2067,12 +2091,13 @@ handle_options(int          position,
           (CHECK_STRNCMP(options, DEL_PREFIX_ID, DEL_PREFIX_ID_LENGTH) == 0))
       {
 #ifdef _WITH_PTHREAD
-         int  file_counter;
+         int   file_counter;
 #else
-         int  file_counter = *files_to_send;
+         int   file_counter = *files_to_send;
 #endif
-         int  length;
-         char *new_name_buffer;
+         int   length;
+         off_t *new_size_buffer;
+         char  *new_name_buffer;
 
          /* Get the prefix. */
 #ifdef _PRODUCTION_LOG
@@ -2097,7 +2122,7 @@ handle_options(int          position,
                                        &p_file_name);
 #endif
 
-         prepare_rename_ow(file_counter, &new_name_buffer);
+         prepare_rename_ow(file_counter, &new_name_buffer, &new_size_buffer);
 
 #ifdef _WITH_PTHREAD
          if (file_counter > 0)
@@ -2112,7 +2137,8 @@ handle_options(int          position,
                   /* Generate name without prefix. */
                   (void)strcpy(p_newname, p_file_name + length);
 
-                  rename_ow(YES, file_counter, new_name_buffer, file_size,
+                  rename_ow(YES, file_counter, new_name_buffer, new_size_buffer,
+                            file_size,
 #ifdef _DELETE_LOG
                             creation_time, unique_number, split_job_counter,
 #endif
@@ -2126,15 +2152,18 @@ handle_options(int          position,
                                                unique_number,
                                                split_job_counter, p_option,
 #endif
-                                               &new_name_buffer);
+                                               &new_name_buffer,
+                                               &new_size_buffer);
 #ifdef _WITH_PTHREAD
          }
          else
          {
             free(new_name_buffer);
+            free(new_size_buffer);
          }
 
          free(file_name_buffer);
+         free(file_size_buffer);
 #endif
          NEXT(options);
          continue;
@@ -2365,6 +2394,7 @@ handle_options(int          position,
 #ifdef _WITH_PTHREAD
                }
                free(file_name_buffer);
+               free(file_size_buffer);
 #endif
             }
          }
@@ -2392,12 +2422,13 @@ handle_options(int          position,
           (CHECK_STRNCMP(options, TOUPPER_ID, TOUPPER_ID_LENGTH) == 0))
       {
 #ifdef _WITH_PTHREAD
-         int  file_counter;
+         int   file_counter;
 #else
-         int  file_counter = *files_to_send;
+         int   file_counter = *files_to_send;
 #endif
-         char *convert_ptr,
-              *new_name_buffer;
+         off_t *new_size_buffer;
+         char  *convert_ptr,
+               *new_name_buffer;
 
          (void)strcpy(newname, file_path);
          p_newname = newname + strlen(newname);
@@ -2411,7 +2442,7 @@ handle_options(int          position,
                                        &p_file_name);
 #endif
 
-         prepare_rename_ow(file_counter, &new_name_buffer);
+         prepare_rename_ow(file_counter, &new_name_buffer, &new_size_buffer);
 
 #ifdef _WITH_PTHREAD
          if (file_counter > 0)
@@ -2428,7 +2459,8 @@ handle_options(int          position,
                   convert_ptr++;
                }
 
-               rename_ow(YES, file_counter, new_name_buffer, file_size,
+               rename_ow(YES, file_counter, new_name_buffer, new_size_buffer,
+                         file_size,
 #ifdef _DELETE_LOG
                          creation_time, unique_number, split_job_counter,
 #endif
@@ -2441,15 +2473,18 @@ handle_options(int          position,
                                                unique_number,
                                                split_job_counter, options,
 #endif
-                                               &new_name_buffer);
+                                               &new_name_buffer,
+                                               &new_size_buffer);
 #ifdef _WITH_PTHREAD
          }
          else
          {
             free(new_name_buffer);
+            free(new_size_buffer);
          }
 
          free(file_name_buffer);
+         free(file_size_buffer);
 #endif
          NEXT(options);
          continue;
@@ -2460,12 +2495,13 @@ handle_options(int          position,
           (CHECK_STRNCMP(options, TOLOWER_ID, TOLOWER_ID_LENGTH) == 0))
       {
 #ifdef _WITH_PTHREAD
-         int  file_counter;
+         int   file_counter;
 #else
-         int  file_counter = *files_to_send;
+         int   file_counter = *files_to_send;
 #endif
-         char *convert_ptr,
-              *new_name_buffer;
+         off_t *new_size_buffer;
+         char  *convert_ptr,
+               *new_name_buffer;
 
          (void)strcpy(newname, file_path);
          p_newname = newname + strlen(newname);
@@ -2479,7 +2515,7 @@ handle_options(int          position,
                                        &p_file_name);
 #endif
 
-         prepare_rename_ow(file_counter, &new_name_buffer);
+         prepare_rename_ow(file_counter, &new_name_buffer, &new_size_buffer);
 
 #ifdef _WITH_PTHREAD
          if (file_counter > 0)
@@ -2496,7 +2532,8 @@ handle_options(int          position,
                   convert_ptr++;
                }
 
-               rename_ow(YES, file_counter, new_name_buffer, file_size,
+               rename_ow(YES, file_counter, new_name_buffer, new_size_buffer,
+                         file_size,
 #ifdef _DELETE_LOG
                          creation_time, unique_number, split_job_counter,
 #endif
@@ -2509,15 +2546,18 @@ handle_options(int          position,
                                                unique_number,
                                                split_job_counter, options,
 #endif
-                                               &new_name_buffer);
+                                               &new_name_buffer,
+                                               &new_size_buffer);
 #ifdef _WITH_PTHREAD
          }
          else
          {
             free(new_name_buffer);
+            free(new_size_buffer);
          }
 
          free(file_name_buffer);
+         free(file_size_buffer);
 #endif
          NEXT(options);
          continue;
@@ -2654,7 +2694,7 @@ handle_options(int          position,
                                              "%s%c%llx%c%s%c%llx%c0%cafw2wmo()",
 # endif
                                              p_file_name, SEPARATOR_CHAR,
-                                             (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                             (pri_off_t)file_size_buffer[j], SEPARATOR_CHAR,
                                              p_file_name, SEPARATOR_CHAR,
                                              length, SEPARATOR_CHAR,
                                              SEPARATOR_CHAR);
@@ -2687,7 +2727,7 @@ handle_options(int          position,
                                              "%s%c%llx%c%s%c%llx%c0%cafw2wmo()",
 # endif
                                              p_file_name, SEPARATOR_CHAR,
-                                             (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                             (pri_off_t)file_size_buffer[j], SEPARATOR_CHAR,
                                              p_file_name, SEPARATOR_CHAR,
                                              length, SEPARATOR_CHAR,
                                              SEPARATOR_CHAR);
@@ -2720,6 +2760,7 @@ handle_options(int          position,
 # ifdef _WITH_PTHREAD
 
          free(file_name_buffer);
+         free(file_size_buffer);
 # endif
          NEXT(options);
          continue;
@@ -2836,7 +2877,7 @@ handle_options(int          position,
                                     "%s%c%llx%c%c%c-1%c%s",
 # endif
                                     p_file_name, SEPARATOR_CHAR,
-                                    (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                    (pri_off_t)file_size_buffer[j], SEPARATOR_CHAR,
                                     SEPARATOR_CHAR, SEPARATOR_CHAR,
                                     SEPARATOR_CHAR,
                                     (fax_format == 0) ? TIFF2GTS_ID : FAX2GTS_ID);
@@ -2847,7 +2888,7 @@ handle_options(int          position,
                                     "%-*s %03x",
                                     MAX_HOSTNAME_LENGTH, db[position].host_alias,
                                     CONVERSION_FAILED);
-                     *dl.file_size = file_size_pool[j];
+                     *dl.file_size = file_size_buffer[j];
                      *dl.job_id = db[position].job_id;
                      *dl.dir_id = db[position].dir_id;
                      *dl.input_time = creation_time;
@@ -2883,7 +2924,7 @@ handle_options(int          position,
                                  "%s%c%llx%c%s%c%llx%c0%c%s",
 # endif
                                  p_file_name, SEPARATOR_CHAR,
-                                 (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_buffer[j], SEPARATOR_CHAR,
                                  p_file_name, SEPARATOR_CHAR,
                                  (pri_off_t)size, SEPARATOR_CHAR,
                                  SEPARATOR_CHAR,
@@ -2904,6 +2945,7 @@ handle_options(int          position,
 #ifdef _WITH_PTHREAD
 
          free(file_name_buffer);
+         free(file_size_buffer);
 #endif
          NEXT(options);
          continue;
@@ -2979,7 +3021,7 @@ handle_options(int          position,
                                     "%s%c%llx%c%c%c-1%c%s",
 # endif
                                     orig_file_name, SEPARATOR_CHAR,
-                                    (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                    (pri_off_t)file_size_buffer[j], SEPARATOR_CHAR,
                                     SEPARATOR_CHAR, SEPARATOR_CHAR,
                                     SEPARATOR_CHAR, GTS2TIFF_ID);
 #endif
@@ -3001,7 +3043,7 @@ handle_options(int          position,
                                  "%s%c%llx%c%s%c%llx%c0%c%s",
 # endif
                                  orig_file_name, SEPARATOR_CHAR,
-                                 (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_buffer[j], SEPARATOR_CHAR,
                                  p_file_name, SEPARATOR_CHAR, (pri_off_t)size,
                                  SEPARATOR_CHAR, SEPARATOR_CHAR, GTS2TIFF_ID);
 #endif
@@ -3020,6 +3062,7 @@ handle_options(int          position,
 #ifdef _WITH_PTHREAD
 
          free(file_name_buffer);
+         free(file_size_buffer);
 #endif
          NEXT(options);
          continue;
@@ -3125,7 +3168,7 @@ handle_options(int          position,
                                     "%s%c%llx%c%c%c-1%c%s",
 # endif
                                     p_file_name, SEPARATOR_CHAR,
-                                    (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                    (pri_off_t)file_size_buffer[j], SEPARATOR_CHAR,
                                     SEPARATOR_CHAR, SEPARATOR_CHAR,
                                     SEPARATOR_CHAR, p_option);
 #endif
@@ -3147,7 +3190,7 @@ handle_options(int          position,
                                  "%s%c%llx%c%s%c%llx%c0%c%s",
 # endif
                                  p_file_name, SEPARATOR_CHAR,
-                                 (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_buffer[j], SEPARATOR_CHAR,
                                  p_file_name, SEPARATOR_CHAR, (pri_off_t)size,
                                  SEPARATOR_CHAR, SEPARATOR_CHAR, p_option);
 #endif
@@ -3166,6 +3209,7 @@ handle_options(int          position,
 #ifdef _WITH_PTHREAD
 
          free(file_name_buffer);
+         free(file_size_buffer);
 #endif
          NEXT(options);
          continue;
@@ -3616,6 +3660,7 @@ handle_options(int          position,
          }
 
          free(file_name_buffer);
+         free(file_size_buffer);
 #endif
          NEXT(options);
          continue;
@@ -3796,7 +3841,7 @@ handle_options(int          position,
                                  "%s%c%llx%c%s%c%llx%c0%c%s",
 # endif
                                  ptr, SEPARATOR_CHAR,
-                                 (pri_off_t)file_size_pool[ii], SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_buffer[ii], SEPARATOR_CHAR,
                                  assembled_name, SEPARATOR_CHAR,
                                  (pri_off_t)(*file_size), SEPARATOR_CHAR,
                                  SEPARATOR_CHAR, p_option);
@@ -3811,6 +3856,7 @@ handle_options(int          position,
          }
 
          free(file_name_buffer);
+         free(file_size_buffer);
 #endif
          NEXT(options);
          continue;
@@ -4054,7 +4100,7 @@ handle_options(int          position,
                               "%s%c%llx%c%s%c%llx%c%d%c%s",
 # endif
                               p_file_name, SEPARATOR_CHAR,
-                              (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                              (pri_off_t)file_size_buffer[j], SEPARATOR_CHAR,
                               p_file_name, SEPARATOR_CHAR,
                               (pri_off_t)size, SEPARATOR_CHAR,
                               ret, SEPARATOR_CHAR, p_option);
@@ -4065,6 +4111,7 @@ handle_options(int          position,
 #ifdef _WITH_PTHREAD
 
          free(file_name_buffer);
+         free(file_size_buffer);
 #endif
          NEXT(options);
          continue;
@@ -4125,7 +4172,7 @@ handle_options(int          position,
                                  "%s%c%llx%c%c%c-1%c%s",
 # endif
                                  p_file_name, SEPARATOR_CHAR,
-                                 (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_buffer[j], SEPARATOR_CHAR,
                                  SEPARATOR_CHAR, SEPARATOR_CHAR,
                                  SEPARATOR_CHAR, WMO2ASCII_ID);
 #endif
@@ -4146,7 +4193,7 @@ handle_options(int          position,
                                  "%s%c%llx%c%s%c%llx%c0%c%s",
 # endif
                                  p_file_name, SEPARATOR_CHAR,
-                                 (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_buffer[j], SEPARATOR_CHAR,
                                  p_file_name, SEPARATOR_CHAR, (pri_off_t)size,
                                  SEPARATOR_CHAR, SEPARATOR_CHAR, WMO2ASCII_ID);
 #endif
@@ -4165,6 +4212,7 @@ handle_options(int          position,
 #ifdef _WITH_PTHREAD
 
          free(file_name_buffer);
+         free(file_size_buffer);
 #endif
          NEXT(options);
          continue;
@@ -4186,6 +4234,7 @@ static void
 rename_ow(int          overwrite,
           int          file_counter,
           char         *new_name_buffer,
+          off_t        *new_size_buffer,
           off_t        *file_size,
 #ifdef _DELETE_LOG
           time_t       creation_time,
@@ -4202,7 +4251,7 @@ rename_ow(int          overwrite,
          i,
          rename_overwrite;
    char  *p_new_name_buffer;
-   off_t rename_overwrite_size;
+   off_t rename_overwrite_size = 0;
 
    if (overwrite == NO)
    {
@@ -4219,6 +4268,7 @@ rename_ow(int          overwrite,
             if (CHECK_STRCMP(p_new_name_buffer, p_newname) == 0)
             {
                gotcha = YES;
+               rename_overwrite_size = new_size_buffer[i];
                break;
             }
             p_new_name_buffer += MAX_FILENAME_LENGTH;
@@ -4246,6 +4296,7 @@ rename_ow(int          overwrite,
       else
       {
          rename_overwrite = NO;
+         rename_overwrite_size = 0;
       }
    }
    else
@@ -4265,6 +4316,7 @@ rename_ow(int          overwrite,
       if (gotcha == YES)
       {
          rename_overwrite = YES;
+         rename_overwrite_size = new_size_buffer[i];
       }
       else
       {
@@ -4272,19 +4324,6 @@ rename_ow(int          overwrite,
       }
    }
 
-   if (rename_overwrite == YES)
-   {
-      struct stat stat_buf;
-
-      if (stat(newname, &stat_buf) != -1)
-      {
-         rename_overwrite_size = stat_buf.st_size;
-      }
-      else
-      {
-         rename_overwrite_size = 0;
-      }
-   }
    if (rename(oldname, newname) < 0)
    {
       receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
@@ -4325,6 +4364,8 @@ rename_ow(int          overwrite,
       }
       (void)strcpy(new_name_buffer + (p_file_name - file_name_buffer),
                    p_newname);
+      i = (p_file_name - file_name_buffer) / MAX_FILENAME_LENGTH;
+      new_size_buffer[i] = file_size_buffer[i];
    }
 
    return;
@@ -4333,7 +4374,9 @@ rename_ow(int          overwrite,
 
 /*++++++++++++++++++++++++++ prepare_rename_ow() ++++++++++++++++++++++++*/
 static void
-prepare_rename_ow(int file_counter, char **new_name_buffer)
+prepare_rename_ow(int   file_counter,
+                  char  **new_name_buffer,
+                  off_t **new_size_buffer)
 {
    if (file_counter > 0)
    {
@@ -4347,6 +4390,21 @@ prepare_rename_ow(int file_counter, char **new_name_buffer)
          exit(INCORRECT);
       }
       (void)memcpy(*new_name_buffer, file_name_buffer, new_size);
+
+      new_size = file_counter * sizeof(off_t);
+      if ((*new_size_buffer = malloc(new_size)) == NULL)
+      {
+         system_log(FATAL_SIGN, __FILE__, __LINE__,
+                    "Could not malloc() memory [%d bytes] : %s",
+                    new_size, strerror(errno));
+         exit(INCORRECT);
+      }
+      (void)memcpy(*new_size_buffer, file_size_buffer, new_size);
+   }
+   else
+   {
+      *new_name_buffer = NULL;
+      *new_size_buffer = NULL;
    }
 
    return;
@@ -4363,7 +4421,8 @@ cleanup_rename_ow(int          file_counter,
                   unsigned int split_job_counter,
                   char         *p_option,
 #endif
-                  char         **new_name_buffer)
+                  char         **new_name_buffer,
+                  off_t        **new_size_buffer)
 {
    int  files_deleted = 0,
         files_to_send,
@@ -4386,7 +4445,7 @@ cleanup_rename_ow(int          file_counter,
                         "%s%c%llx%c%s%c%c0%c%s",
 # endif
                         p_file_name, SEPARATOR_CHAR,
-                        (pri_off_t)file_size_pool[i], SEPARATOR_CHAR,
+                        (pri_off_t)file_size_buffer[i], SEPARATOR_CHAR,
                         p_new_name, SEPARATOR_CHAR,
                         SEPARATOR_CHAR, SEPARATOR_CHAR, p_option);
          files_deleted++;
@@ -4401,9 +4460,9 @@ cleanup_rename_ow(int          file_counter,
                         "%s%c%llx%c%s%c%llx%c0%c%s",
 # endif
                         p_file_name, SEPARATOR_CHAR,
-                        (pri_off_t)file_size_pool[i], SEPARATOR_CHAR,
+                        (pri_off_t)file_size_buffer[i], SEPARATOR_CHAR,
                         p_new_name, SEPARATOR_CHAR,
-                        (pri_off_t)file_size_pool[i], SEPARATOR_CHAR,
+                        (pri_off_t)(*new_size_buffer)[i], SEPARATOR_CHAR,
                         SEPARATOR_CHAR, p_option);
       }
       p_new_name += MAX_FILENAME_LENGTH;
@@ -4421,13 +4480,24 @@ cleanup_rename_ow(int          file_counter,
 
    if (files_deleted)
    {
+      int    count = 0;
       size_t new_size;
 
       free(file_name_buffer);
+      free(file_size_buffer);
       files_to_send = file_counter - files_deleted;
       new_size = ((files_to_send / FILE_NAME_STEP_SIZE) + 1) * FILE_NAME_STEP_SIZE *
                  MAX_FILENAME_LENGTH;
       if ((file_name_buffer = malloc(new_size)) == NULL)
+      {
+         system_log(FATAL_SIGN, __FILE__, __LINE__,
+                    "Could not malloc() memory [%d bytes] : %s",
+                    new_size, strerror(errno));
+         exit(INCORRECT);
+      }
+      new_size = ((files_to_send / FILE_NAME_STEP_SIZE) + 1) * FILE_NAME_STEP_SIZE *
+                 sizeof(off_t);
+      if ((file_size_buffer = malloc(new_size)) == NULL)
       {
          system_log(FATAL_SIGN, __FILE__, __LINE__,
                     "Could not malloc() memory [%d bytes] : %s",
@@ -4442,6 +4512,8 @@ cleanup_rename_ow(int          file_counter,
          {
             (void)strcpy(p_file_name, p_new_name);
             p_file_name += MAX_FILENAME_LENGTH;
+            file_size_buffer[count] = (*new_size_buffer)[i];
+            count++;
          }
          p_new_name += MAX_FILENAME_LENGTH;
       }
@@ -4454,12 +4526,15 @@ cleanup_rename_ow(int          file_counter,
       for (i = 0; i < file_counter; i++)
       {
          (void)strcpy(p_file_name, p_new_name);
+         file_size_buffer[i] = (*new_size_buffer)[i];
          p_file_name += MAX_FILENAME_LENGTH;
          p_new_name += MAX_FILENAME_LENGTH;
       }
    }
    free(*new_name_buffer);
    *new_name_buffer = NULL;
+   free(*new_size_buffer);
+   *new_size_buffer = NULL;
 
    return(files_to_send);
 }
@@ -4754,9 +4829,8 @@ check_changes(time_t         creation_time,
                     *p_old_file_name,
                     *ptr,
                     *new_file_name_buffer = NULL;
-      unsigned char *new_file_length_buffer = NULL;
-      time_t        *new_file_mtime_buffer = NULL;
       static char   *old_file_name_buffer = NULL;
+      static off_t  *old_file_size_buffer = NULL;
       struct stat   stat_buf;
       struct dirent *p_dir;
 
@@ -4824,39 +4898,9 @@ check_changes(time_t         creation_time,
                                 new_size, strerror(errno));
                      exit(INCORRECT);
                   }
-
-                  /* Calculate new size of file name length buffer. */
-                  new_size = ((file_counter / FILE_NAME_STEP_SIZE) + 1) *
-                             FILE_NAME_STEP_SIZE * sizeof(unsigned char);
-
-                  /* Increase the space for the file name length buffer. */
-                  if ((new_file_length_buffer = realloc(new_file_length_buffer,
-                                                        new_size)) == NULL)
-                  {
-                     system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                "Could not realloc() memory [%d bytes] : %s",
-                                new_size, strerror(errno));
-                     exit(INCORRECT);
-                  }
-
-                  /* Calculate new size of file mtime buffer. */
-                  new_size = ((file_counter / FILE_NAME_STEP_SIZE) + 1) *
-                             FILE_NAME_STEP_SIZE * sizeof(time_t);
-
-                  /* Increase the space for the file mtime buffer. */
-                  if ((new_file_mtime_buffer = realloc(new_file_mtime_buffer,
-                                                       new_size)) == NULL)
-                  {
-                     system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                "Could not realloc() memory [%d bytes] : %s",
-                                new_size, strerror(errno));
-                     exit(INCORRECT);
-                  }
                }
                (void)strcpy(p_new_file_name, p_dir->d_name);
                new_file_size_buffer[file_counter] = stat_buf.st_size;
-               new_file_length_buffer[file_counter] = strlen(p_dir->d_name);
-               new_file_mtime_buffer[file_counter] = stat_buf.st_mtime;
                p_new_file_name += MAX_FILENAME_LENGTH;
                *file_size += stat_buf.st_size;
                file_counter++;
@@ -4901,10 +4945,10 @@ check_changes(time_t         creation_time,
       {
          if (exec_name != NULL)
          {
+            size_t new_size;
+
             if (old_file_name_buffer == NULL)
             {
-               size_t new_size;
-
                new_size = old_file_counter * MAX_FILENAME_LENGTH;
                if ((old_file_name_buffer = malloc(new_size)) == NULL)
                {
@@ -4916,6 +4960,19 @@ check_changes(time_t         creation_time,
                (void)memcpy(old_file_name_buffer, file_name_buffer, new_size);
             }
             p_old_file_name = old_file_name_buffer;
+
+            if (old_file_size_buffer == NULL)
+            {
+               new_size = old_file_counter * sizeof(off_t);
+               if ((old_file_size_buffer = malloc(new_size)) == NULL)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             "Could not malloc() memory [%d bytes] : %s",
+                             new_size, strerror(errno));
+                  exit(INCORRECT);
+               }
+               (void)memcpy(old_file_size_buffer, file_size_buffer, new_size);
+            }
          }
          else
          {
@@ -4990,7 +5047,7 @@ check_changes(time_t         creation_time,
                                     "%s%c%llx%c%s%c%llx%c%d%c%s",
 # endif
                                     p_tmp_file_name, SEPARATOR_CHAR,
-                                    (pri_off_t)file_size_pool[j], SEPARATOR_CHAR,
+                                    (pri_off_t)file_size_buffer[j], SEPARATOR_CHAR,
                                     p_new_file_name, SEPARATOR_CHAR,
                                     (pri_off_t)new_file_size_buffer[i],
                                     SEPARATOR_CHAR, exec_ret, SEPARATOR_CHAR,
@@ -5054,7 +5111,7 @@ check_changes(time_t         creation_time,
                                  "%s%c%llx%c%c%c%d%c%s",
 # endif
                                  p_old_file_name, SEPARATOR_CHAR,
-                                 (pri_off_t)file_size_pool[i], SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_buffer[i], SEPARATOR_CHAR,
                                  SEPARATOR_CHAR, SEPARATOR_CHAR, exec_ret,
                                  SEPARATOR_CHAR, exec_cmd);
                }
@@ -5070,7 +5127,7 @@ check_changes(time_t         creation_time,
                                  "%s%c%llx%c%s%c%llx%c%d%c%s",
 # endif
                                  p_old_file_name, SEPARATOR_CHAR,
-                                 (pri_off_t)file_size_pool[i], SEPARATOR_CHAR,
+                                 (pri_off_t)file_size_buffer[i], SEPARATOR_CHAR,
                                  p_old_file_name, SEPARATOR_CHAR,
                                  (pri_off_t)new_file_size_buffer[j],
                                  SEPARATOR_CHAR, exec_ret, SEPARATOR_CHAR,
@@ -5127,14 +5184,24 @@ check_changes(time_t         creation_time,
       }
       if (overwrite == YES)
       {
-         if ((exec_name != NULL) && (old_file_name_buffer != NULL))
+         if (exec_name != NULL)
          {
-            free(old_file_name_buffer);
-            old_file_name_buffer = NULL;
+            if (old_file_name_buffer != NULL)
+            {
+               free(old_file_name_buffer);
+               old_file_name_buffer = NULL;
+            }
+            if (old_file_size_buffer != NULL)
+            {
+               free(old_file_size_buffer);
+               old_file_size_buffer = NULL;
+            }
          }
          free(file_name_buffer);
          file_name_buffer = new_file_name_buffer;
          p_file_name = file_name_buffer;
+         free(file_size_buffer);
+         file_size_buffer = new_file_size_buffer;
          prev_file_counter = 0;
       }
       else
@@ -5145,18 +5212,21 @@ check_changes(time_t         creation_time,
             {
                free(old_file_name_buffer);
             }
+            if (old_file_size_buffer != NULL)
+            {
+               free(old_file_size_buffer);
+            }
             old_file_name_buffer = new_file_name_buffer;
+            old_file_size_buffer = new_file_size_buffer;
             prev_file_counter = file_counter;
          }
          else
          {
             free(new_file_name_buffer);
+            free(new_file_size_buffer);
             prev_file_counter = 0;
          }
       }
-      free(new_file_size_buffer);
-      free(new_file_length_buffer);
-      free(new_file_mtime_buffer);
    }
 
    return(file_counter);
@@ -5192,6 +5262,11 @@ restore_files(char *file_path, off_t *file_size)
          file_name_buffer = NULL;
       }
       p_file_name = file_name_buffer;
+      if (file_size_buffer != NULL)
+      {
+         free(file_size_buffer);
+         file_size_buffer = NULL;
+      }
 
       (void)strcpy(fullname, file_path);
       ptr = fullname + strlen(fullname);
@@ -5241,8 +5316,23 @@ restore_files(char *file_path, off_t *file_size)
                   /* After realloc, don't forget to position */
                   /* pointer correctly.                      */
                   p_file_name = file_name_buffer + offset;
+
+                  /* Calculate new size of file size buffer. */
+                  new_size = ((file_counter / FILE_NAME_STEP_SIZE) + 1) * FILE_NAME_STEP_SIZE *
+                             sizeof(off_t);
+
+                  /* Increase the space for the file size buffer. */
+                  if ((file_size_buffer = realloc(file_size_buffer,
+                                                  new_size)) == NULL)
+                  {
+                     system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                "Could not realloc() memory [%d bytes] : %s",
+                                new_size, strerror(errno));
+                     exit(INCORRECT);
+                  }
                }
                (void)strcpy(p_file_name, p_dir->d_name);
+               file_size_buffer[file_counter] = stat_buf.st_size;
                p_file_name += MAX_FILENAME_LENGTH;
                *file_size += stat_buf.st_size;
                file_counter++;

@@ -1,6 +1,6 @@
 /*
  *  dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -212,7 +212,8 @@ pthread_t                  *thread;
 #else
 unsigned int               max_file_buffer;
 time_t                     *file_mtime_pool;
-off_t                      *file_size_pool;
+off_t                      *file_size_buffer = NULL,
+                           *file_size_pool;
 #endif
 #ifdef _POSIX_SAVED_IDS
 int                        no_of_sgids;
@@ -2533,7 +2534,8 @@ handle_dir(int                       dir_pos,
                                                        split_files_renamed,
                                                        loops = files_linked / MAX_FILES_TO_PROCESS;
                                           unsigned int tmp_split_job_counter;
-                                          off_t        split_file_size_renamed;
+                                          off_t        split_file_size_renamed,
+                                                       *tmp_file_size_buffer = NULL;
                                           char         *tmp_file_name_buffer = NULL,
                                                        tmp_unique_name[MAX_FILENAME_LENGTH],
                                                        src_file_path[MAX_PATH_LENGTH];
@@ -2557,6 +2559,15 @@ handle_dir(int                       dir_pos,
                                                 exit(INCORRECT);
                                              }
                                              (void)memcpy(tmp_file_name_buffer, file_name_buffer, (files_linked * MAX_FILENAME_LENGTH));
+
+                                             if ((tmp_file_size_buffer = malloc(files_linked * sizeof(off_t))) == NULL)
+                                             {
+                                                system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                                           "malloc() error : %s",
+                                                           strerror(errno));
+                                                exit(INCORRECT);
+                                             }
+                                             (void)memcpy(tmp_file_size_buffer, file_size_buffer, (files_linked * sizeof(off_t)));
                                           }
 
                                           /*
@@ -2593,6 +2604,18 @@ handle_dir(int                       dir_pos,
                                                    }
                                                 }
                                                 (void)memcpy(file_name_buffer, (tmp_file_name_buffer + file_offset), (MAX_FILES_TO_PROCESS * MAX_FILENAME_LENGTH));
+
+                                                if (file_size_buffer == NULL)
+                                                {
+                                                   if ((file_size_buffer = malloc((files_linked * sizeof(off_t)))) == NULL)
+                                                   {
+                                                      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                                                 "malloc() error : %s",
+                                                                 strerror(errno));
+                                                      exit(INCORRECT);
+                                                   }
+                                                }
+                                                (void)memcpy(file_size_buffer, ((char *)tmp_file_size_buffer + (ii * MAX_FILES_TO_PROCESS * sizeof(off_t))), (MAX_FILES_TO_PROCESS * sizeof(off_t)));
                                              }
                                              tmp_split_job_counter = split_job_counter + ii + 1;
                                              if ((split_files_renamed = rename_files(src_file_path,
@@ -2668,6 +2691,18 @@ handle_dir(int                       dir_pos,
                                                    }
                                                 }
                                                 (void)memcpy(file_name_buffer, (tmp_file_name_buffer + file_offset), (files_linked * MAX_FILENAME_LENGTH));
+
+                                                if (file_size_buffer == NULL)
+                                                {
+                                                   if ((file_size_buffer = malloc((files_linked * sizeof(off_t)))) == NULL)
+                                                   {
+                                                      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                                                 "malloc() error : %s",
+                                                                 strerror(errno));
+                                                      exit(INCORRECT);
+                                                   }
+                                                }
+                                                (void)memcpy(file_size_buffer, ((char *)tmp_file_size_buffer + (loops * MAX_FILES_TO_PROCESS * sizeof(off_t))), (files_linked * sizeof(off_t)));
                                              }
 # ifdef MULTI_FS_SUPPORT
                                              send_message(ewl[de[dir_pos].ewl_pos].outgoing_file_dir,
@@ -2719,6 +2754,7 @@ handle_dir(int                       dir_pos,
                                              }
                                           }
                                           free(tmp_file_name_buffer);
+                                          free(tmp_file_size_buffer);
                                        }
                                        else
                                        {
@@ -2854,6 +2890,11 @@ handle_dir(int                       dir_pos,
                            {
                               free(file_name_buffer);
                               file_name_buffer = NULL;
+                           }
+                           if (file_size_buffer != NULL)
+                           {
+                              free(file_size_buffer);
+                              file_size_buffer = NULL;
                            }
                         }
 #endif
