@@ -1,6 +1,6 @@
 /*
  *  draw_mon_line.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,6 +52,9 @@ DESCR__S_M3
  **   05.09.1998 H.Kiehl Created
  **   08.06.2005 H.Kiehl Added button line at bottom.
  **   24.02.2008 H.Kiehl For drawing areas, draw to offline pixmap as well.
+ **   13.01.2017 H.Kiehl Prevent this dialog from crashing when we access
+ **                      color_pool values that do not exist due to broken
+ **                      data.
  **
  */
 DESCR__E_M3
@@ -445,8 +448,7 @@ draw_plus_minus(int pos, int x, int y)
 
    gc_values.foreground = color_pool[FG];
    gc_values.background = color_pool[DEFAULT_BG];
-   XChangeGC(display, color_letter_gc,
-             GCForeground | GCBackground, &gc_values);
+   XChangeGC(display, color_letter_gc, GCForeground | GCBackground, &gc_values);
 
    if (connect_data[pos].plus_minus == PM_CLOSE_STATE)
    {
@@ -482,9 +484,15 @@ draw_afd_identifier(int pos, int x, int y)
    {
       gc_values.foreground = color_pool[FG];
    }
-   gc_values.background = color_pool[(int)connect_data[pos].connect_status];
-   XChangeGC(display, color_letter_gc,
-             GCForeground | GCBackground, &gc_values);
+   if (connect_data[pos].connect_status < COLOR_POOL_SIZE)
+   {
+      gc_values.background = color_pool[(int)connect_data[pos].connect_status];
+   }
+   else
+   {
+      gc_values.background = color_pool[DEFAULT_BG];
+   }
+   XChangeGC(display, color_letter_gc, GCForeground | GCBackground, &gc_values);
 
    XDrawImageString(display, line_window, color_letter_gc,
                     DEFAULT_FRAME_SPACE + x,
@@ -589,7 +597,14 @@ draw_remote_log_status(int pos, int si_pos, int x, int y)
    }
    for (i = 0; i < LOG_FIFO_SIZE; i++)
    {
-      gc_values.foreground = color_pool[(int)connect_data[pos].sys_log_fifo[i]];
+      if (connect_data[pos].sys_log_fifo[i] < COLOR_POOL_SIZE)
+      {
+         gc_values.foreground = color_pool[(int)connect_data[pos].sys_log_fifo[i]];
+      }
+      else
+      {
+         gc_values.foreground = color_pool[DEFAULT_BG];
+      }
       XChangeGC(display, color_gc, GCForeground, &gc_values);
       XFillArc(display, line_window, color_gc,
                x + x_offset_log_status,
@@ -656,7 +671,14 @@ draw_mon_log_status(int log_typ, int si_pos)
    {
       for (i = 0; i < LOG_FIFO_SIZE; i++)
       {
-         gc_values.foreground = color_pool[(int)prev_afd_mon_status.mon_sys_log_fifo[i]];
+         if (prev_afd_mon_status.mon_sys_log_fifo[i] < COLOR_POOL_SIZE)
+         {
+            gc_values.foreground = color_pool[(int)prev_afd_mon_status.mon_sys_log_fifo[i]];
+         }
+         else
+         {
+            gc_values.foreground = color_pool[DEFAULT_BG];
+         }
          XChangeGC(display, color_gc, GCForeground, &gc_values);
          XFillArc(display, button_window, color_gc,
                   x_offset_sys_log, SPACE_ABOVE_LINE,
@@ -697,7 +719,14 @@ draw_mon_log_status(int log_typ, int si_pos)
    {
       for (i = 0; i < LOG_FIFO_SIZE; i++)
       {
-         gc_values.foreground = color_pool[(int)prev_afd_mon_status.mon_log_fifo[i]];
+         if (prev_afd_mon_status.mon_log_fifo[i] < COLOR_POOL_SIZE)
+         {
+            gc_values.foreground = color_pool[(int)prev_afd_mon_status.mon_log_fifo[i]];
+         }
+         else
+         {
+            gc_values.foreground = color_pool[DEFAULT_BG];
+         }
          XChangeGC(display, color_gc, GCForeground, &gc_values);
          XFillArc(display, button_window, color_gc,
                   x_offset_mon_log, SPACE_ABOVE_LINE,
@@ -751,7 +780,14 @@ draw_remote_history(int pos, int type, int x, int y)
 
    for (i = (MAX_LOG_HISTORY - his_log_set); i < MAX_LOG_HISTORY; i++)
    {
-      gc_values.foreground = color_pool[(int)connect_data[pos].log_history[type][i]];
+      if (connect_data[pos].log_history[type][i] < COLOR_POOL_SIZE)
+      {
+         gc_values.foreground = color_pool[(int)connect_data[pos].log_history[type][i]];
+      }
+      else
+      {
+         gc_values.foreground = color_pool[DEFAULT_BG];
+      }
       XChangeGC(display, color_gc, GCForeground, &gc_values);
       XFillRectangle(display, line_window, color_gc, x_offset, y_offset,
                      bar_thickness_3, bar_thickness_3);
