@@ -1,6 +1,6 @@
 /*
  *  afddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -276,6 +276,7 @@ typedef unsigned long       u_long_64;
 #define RLOG                       "receive_log"
 #define TLOG                       "transfer_log"
 #define TDBLOG                     "trans_db_log"
+#define TRLOG                      "transfer_rate_log"
 #define MON_SYS_LOG                "mon_sys_log"
 #define MONITOR_LOG                "monitor_log"
 #define SHOW_ELOG                  "show_elog"
@@ -594,14 +595,20 @@ typedef unsigned long       u_long_64;
 #else
 # define DISTRIBUTION_OFFSET       0
 #endif
-#define MAINTAINER_LOG_NO          (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + 1)
+#ifdef _TRANSFER_RATE_LOG
+# define TRANSFER_RATE_OFFSET      1
+# define TRANSFER_RATE_LOG_NO      (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET)
+#else
+# define TRANSFER_RATE_OFFSET      0
+#endif
+#define MAINTAINER_LOG_NO          (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1)
 #if defined (_INPUT_LOG) || defined (_OUTPUT_LOG) || defined (_CONFIRMATION_LOG) || defined (_DELETE_LOG) || defined (_PRODUCTION_LOG) || defined (_DISTRIBUTION_LOG)
 # define ALDAD_OFFSET              1
-# define ALDAD_NO                  (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + 1 + ALDAD_OFFSET)
+# define ALDAD_NO                  (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1 + ALDAD_OFFSET)
 #else
 # define ALDAD_OFFSET              0
 #endif
-#define NO_OF_PROCESS              (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + 1 + ALDAD_OFFSET + 1)
+#define NO_OF_PROCESS              (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1 + ALDAD_OFFSET + 1)
 #define SHOW_OLOG_NO               30
 
 #define NA                         -1
@@ -3038,6 +3045,9 @@ struct afd_status
 #endif
 #ifdef _PRODUCTION_LOG
           signed char    production_log;
+#endif
+#ifdef _TRANSFER_RATE_LOG
+          signed char    transfer_rate_log;
 #endif
 #if defined (_INPUT_LOG) || defined (_OUTPUT_LOG) || defined (_CONFIRMATION_LOG) || defined (_DELETE_LOG) || defined (_PRODUCTION_LOG) || defined (_DISTRIBUTION_LOG)
           signed char    aldad;

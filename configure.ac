@@ -76,6 +76,14 @@ AC_ARG_ENABLE(maintainer_log,
    [AM_CONDITIONAL(WITH_MAINTAINER_LOG, false)
     ac_cv_maintainer_log=""])
 
+AC_ARG_ENABLE(transfer_rate_log,
+   [  --enable-transfer_rate_log      enable transfer_rate_log support],
+   [AC_DEFINE([_TRANSFER_RATE_LOG], [], [With transfer_rate_log support])
+    ac_cv_transfer_rate_log="TRANSFER_RATE "
+    AM_CONDITIONAL(WITH_TRANSFER_RATE_LOG, true)],
+   [AM_CONDITIONAL(WITH_TRANSFER_RATE_LOG, false)
+    ac_cv_transfer_rate_log=""])
+
 AC_ARG_ENABLE(alda_cache_positioning,
    [  --disable-alda_cache_positioning disable ALDA cache positioning support],
    [AC_DEFINE([WITH_LOG_CACHE], [], [With ALDA cache positioning support])
@@ -1658,7 +1666,7 @@ then
 else
    echo "    With TLS/SSL support             : no"
 fi
-echo "    Logs                             : ${ac_cv_input_log}${ac_cv_distribution_log}${ac_cv_output_log}${ac_cv_confirmation_log}${ac_cv_delete_log}${ac_cv_production_log}${ac_cv_maintainer_log}${ac_cv_alda_cache}"
+echo "    Logs                             : ${ac_cv_input_log}${ac_cv_distribution_log}${ac_cv_output_log}${ac_cv_confirmation_log}${ac_cv_delete_log}${ac_cv_production_log}${ac_cv_maintainer_log}${ac_cv_alda_cache}${ac_cv_transfer_rate_log}"
 echo "    Error queue support              : ${ac_cv_error_queue}"
 echo "    With AFD monitor                 : ${ac_cv_afd_mon}"
 echo "    Multiple file system support     : ${ac_cv_multi_fs_support}"

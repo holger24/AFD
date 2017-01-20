@@ -1,6 +1,6 @@
 /*
  *  system_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,6 +45,9 @@ DESCR__S_M3
  **
  ** HISTORY
  **   07.09.2013 H.Kiehl Created
+ **   12.01.2017 H.Kiehl Don't just check if the *_log_fifo values are
+ **                      correct in get_system_data(), do the same check
+ **                      for *_log_history values.
  **
  */
 DESCR__E_M3
@@ -306,7 +309,24 @@ get_system_data(struct system_data *sd)
                                           i = 0;
                                           while (i < k)
                                           {
-                                             sd->receive_log_history[i] = val_str[i];
+                                             switch (val_str[i])
+                                             {
+                                                case 'I' :
+                                                   sd->receive_log_history[i] = INFO_ID;
+                                                   break;
+                                                case 'E' :
+                                                   sd->receive_log_history[i] = ERROR_ID;
+                                                   break;
+                                                case 'W' :
+                                                   sd->receive_log_history[i] = WARNING_ID;
+                                                   break;
+                                                case 'F' :
+                                                   sd->receive_log_history[i] = FAULTY_ID;
+                                                   break;
+                                                default :
+                                                   sd->receive_log_history[i] = NO_INFORMATION;
+                                                   break;
+                                             }
                                              i++;
                                           }
                                           if ((*ptr != '\n') &&
@@ -371,7 +391,27 @@ get_system_data(struct system_data *sd)
                                           i = 0;
                                           while (i < k)
                                           {
-                                             sd->sys_log_history[i] = val_str[i];
+                                             switch (val_str[i])
+                                             {
+                                                case 'I' :
+                                                   sd->sys_log_history[i] = INFO_ID;
+                                                   break;
+                                                case 'E' :
+                                                   sd->sys_log_history[i] = ERROR_ID;
+                                                   break;
+                                                case 'W' :
+                                                   sd->sys_log_history[i] = WARNING_ID;
+                                                   break;
+                                                case 'C' :
+                                                   sd->sys_log_history[i] = CONFIG_ID;
+                                                   break;
+                                                case 'F' :
+                                                   sd->sys_log_history[i] = FAULTY_ID;
+                                                   break;
+                                                default :
+                                                   sd->sys_log_history[i] = NO_INFORMATION;
+                                                   break;
+                                             }
                                              i++;
                                           }
                                           if ((*ptr != '\n') &&
@@ -436,7 +476,27 @@ get_system_data(struct system_data *sd)
                                           i = 0;
                                           while (i < k)
                                           {
-                                             sd->trans_log_history[i] = val_str[i];
+                                             switch (val_str[i])
+                                             {
+                                                case 'I' :
+                                                   sd->trans_log_history[i] = INFO_ID;
+                                                   break;
+                                                case 'E' :
+                                                   sd->trans_log_history[i] = ERROR_ID;
+                                                   break;
+                                                case 'W' :
+                                                   sd->trans_log_history[i] = WARNING_ID;
+                                                   break;
+                                                case 'O' :
+                                                   sd->trans_log_history[i] = ERROR_OFFLINE_ID;
+                                                   break;
+                                                case 'F' :
+                                                   sd->trans_log_history[i] = FAULTY_ID;
+                                                   break;
+                                                default :
+                                                   sd->trans_log_history[i] = NO_INFORMATION;
+                                                   break;
+                                             }
                                              i++;
                                           }
                                           if ((*ptr != '\n') &&

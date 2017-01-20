@@ -1,6 +1,6 @@
 /*
  *  logdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -66,6 +66,13 @@
 #define TRANS_DB_LOG_NAME                 "TRANS_DB_LOG."
 #define TRANS_DB_LOG_NAME_LENGTH          (sizeof(TRANS_DB_LOG_NAME) - 1)
 #define TRANS_DB_LOG_NAME_ALL             "TRANS_DB_LOG.*"
+#ifdef _TRANSFER_RATE_LOG
+# define TRANSFER_RATE_LOG_INTERVAL       5            /* Every 5s.      */
+# define MAX_TRANSFER_RATE_LOG_FILES      3            /* Must be > 1!   */
+# define TRANSFER_RATE_LOG_NAME           "TRANSFER_RATE_LOG."
+# define TRANSFER_RATE_LOG_NAME_LENGTH    (sizeof(TRANSFER_RATE_LOG_NAME) - 1)
+# define TRANSFER_RATE_LOG_NAME_ALL       "TRANSFER_RATE_LOG.*"
+#endif
 
 /* Definitions for the log process of afd_monitor. */
 #define MAX_MON_SYS_LOGFILE_SIZE          2097152

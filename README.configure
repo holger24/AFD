@@ -7,6 +7,9 @@
                                        which need confirmation you have to
                                        enable this feature.
                                        [Default: disabled]
+--enable-transfer_rate_log           - This writes the transfer rate into a
+                                       separate log file TRANSFER_RATE_LOG.
+                                       [Default: disabled]
 --disable-input_log                  - If you want to log all files names
                                        on input you have to enable these
                                        features. But note that enabling this

@@ -1,6 +1,6 @@
 /*
  *  init_afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -438,41 +438,44 @@ main(int argc, char *argv[])
    }
    else
    {
-      p_afd_status->amg              = 0;
-      p_afd_status->amg_jobs         = 0;
-      p_afd_status->fd               = 0;
-      p_afd_status->sys_log          = 0;
-      p_afd_status->maintainer_log   = 0;
-      p_afd_status->event_log        = 0;
-      p_afd_status->receive_log      = 0;
-      p_afd_status->trans_log        = 0;
-      p_afd_status->trans_db_log     = 0;
-      p_afd_status->archive_watch    = 0;
-      p_afd_status->afd_stat         = 0;
-      p_afd_status->afdd             = 0;
+      p_afd_status->amg               = 0;
+      p_afd_status->amg_jobs          = 0;
+      p_afd_status->fd                = 0;
+      p_afd_status->sys_log           = 0;
+      p_afd_status->maintainer_log    = 0;
+      p_afd_status->event_log         = 0;
+      p_afd_status->receive_log       = 0;
+      p_afd_status->trans_log         = 0;
+      p_afd_status->trans_db_log      = 0;
+      p_afd_status->archive_watch     = 0;
+      p_afd_status->afd_stat          = 0;
+      p_afd_status->afdd              = 0;
 #ifndef HAVE_MMAP
-      p_afd_status->mapper           = 0;
+      p_afd_status->mapper            = 0;
 #endif
 #ifdef _INPUT_LOG
-      p_afd_status->input_log        = 0;
+      p_afd_status->input_log         = 0;
 #endif
 #ifdef _OUTPUT_LOG
-      p_afd_status->output_log       = 0;
+      p_afd_status->output_log        = 0;
 #endif
 #ifdef _CONFIRMATION_LOG
-      p_afd_status->confirmation_log = 0;
+      p_afd_status->confirmation_log  = 0;
 #endif
 #ifdef _DELETE_LOG
-      p_afd_status->delete_log       = 0;
+      p_afd_status->delete_log        = 0;
 #endif
 #ifdef _PRODUCTION_LOG
-      p_afd_status->production_log   = 0;
+      p_afd_status->production_log    = 0;
 #endif
 #ifdef _DISTRIBUTION_LOG
-      p_afd_status->distribution_log = 0;
+      p_afd_status->distribution_log  = 0;
 #endif
-      p_afd_status->no_of_transfers = 0;
-      p_afd_status->start_time      = 0L;
+#ifdef _TRANSFER_RATE_LOG
+      p_afd_status->transfer_rate_log = 0;
+#endif
+      p_afd_status->no_of_transfers   = 0;
+      p_afd_status->start_time        = 0L;
    }
    (void)strcpy(p_afd_status->work_dir, work_dir);
    p_afd_status->user_id = geteuid();
@@ -603,6 +606,12 @@ main(int argc, char *argv[])
          case DISTRIBUTION_LOG_NO :
             proc_table[i].status = &p_afd_status->distribution_log;
             (void)strcpy(proc_table[i].proc_name, DISTRIBUTION_LOG_PROCESS);
+            break;
+#endif
+#ifdef _TRANSFER_RATE_LOG
+         case TRANSFER_RATE_LOG_NO :
+            proc_table[i].status = &p_afd_status->transfer_rate_log;
+            (void)strcpy(proc_table[i].proc_name, TRLOG);
             break;
 #endif
 #if ALDAD_OFFSET != 0
@@ -740,6 +749,11 @@ main(int argc, char *argv[])
 #else
    proc_table[MAINTAINER_LOG_NO].pid = -1;
    *proc_table[MAINTAINER_LOG_NO].status = NEITHER;
+#endif
+#ifdef _TRANSFER_RATE_LOG
+   proc_table[TRANSFER_RATE_LOG_NO].pid = make_process(TRLOG, work_dir, NULL);
+   *(pid_t *)(pid_list + ((TRANSFER_RATE_LOG_NO + 1) * sizeof(pid_t))) = proc_table[TRANSFER_RATE_LOG_NO].pid;
+   *proc_table[TRANSFER_RATE_LOG_NO].status = ON;
 #endif
 
    /* Tell user at what time the AFD was started. */
@@ -1122,7 +1136,7 @@ main(int argc, char *argv[])
                              IP_DB_RESET_CHECK_INTERVAL) +
                             IP_DB_RESET_CHECK_INTERVAL;
       }
-#endif
+#endif /* WITH_IP_DB */
 
       /* Initialise descriptor set and timeout. */
       FD_SET(afd_cmd_fd, &rset);
