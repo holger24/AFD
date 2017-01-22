@@ -1,6 +1,6 @@
 /*
  *  detach_afd_status.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -63,9 +63,8 @@ detach_afd_status(void)
    char        afd_status_file[MAX_PATH_LENGTH];
    struct stat stat_buf;
 
-   (void)strcpy(afd_status_file, p_work_dir);
-   (void)strcat(afd_status_file, FIFO_DIR);
-   (void)strcat(afd_status_file, STATUS_SHMID_FILE);
+   (void)snprintf(afd_status_file, MAX_PATH_LENGTH, "%s%s/%s.%x",
+                  p_work_dir, FIFO_DIR, AFD_STATUS_FILE, get_afd_status_struct_size());
    if (stat(afd_status_file, &stat_buf) == -1)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,

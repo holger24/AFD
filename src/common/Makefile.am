@@ -160,6 +160,7 @@ libafd_a_SOURCES     = attach_afd_status.c\
                        get_additional_locked_files.c\
                        get_afd_name.c\
                        get_afd_path.c\
+		       get_afd_status_struct_size.c\
                        get_arg.c\
                        get_checksum.c\
                        get_checksum_crc32c.c\

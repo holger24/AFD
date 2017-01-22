@@ -1748,7 +1748,9 @@ typedef unsigned long       u_long_64;
 #define FRA_ID_FILE                "/fra.id"
 #define FRA_STAT_FILE              "/fra_status"
 #define FRA_STAT_FILE_ALL          "/fra_status.*"
-#define STATUS_SHMID_FILE          "/afd.status"
+#define AFD_STATUS_FILE            "afd.status"
+#define AFD_STATUS_FILE_LENGTH     (sizeof(AFD_STATUS_FILE) - 1)
+#define AFD_STATUS_FILE_ALL        "/afd.status.*"
 #define NNN_FILE                   "/nnn"
 #define NNN_ASSEMBLE_FILE          "/nnn.assemble"
 #define NNN_FILE_ALL               "/nnn.*"
@@ -2974,7 +2976,12 @@ struct fileretrieve_status
 #define WRITTING_JID_STRUCT         64
 #define CHECK_FILE_DIR_ACTIVE       128
 
-/* Structure that holds status of all process. */
+/*
+ * Structure that holds status of all process.
+ *
+ * NOTE: If any change is done to the structure below, do not forgot
+ *       to do the changes in function get_afd_status_struct_size()!!!
+ */
 struct afd_status
        {
           signed char    amg;             /* Automatic Message Generator, */
@@ -3843,7 +3850,8 @@ extern char         *convert_ls_data(int, char *, off_t *, int, char *,
                     *lock_proc(int, int),
                     *lposi(char *, char *, const size_t),
                     *posi(char *, char *);
-extern unsigned int get_checksum(const unsigned int, char *, int),
+extern unsigned int get_afd_status_struct_size(void),
+                    get_checksum(const unsigned int, char *, int),
 #ifdef HAVE_HW_CRC32
                     get_checksum_crc32c(const unsigned int, char *, size_t, int),
                     get_str_checksum_crc32c(char *, int),

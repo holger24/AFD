@@ -92,6 +92,8 @@ DESCR__E_M1
 #include <unistd.h>              /* select(), unlink(), lseek(), sleep() */
                                  /* gethostname(),  STDERR_FILENO        */
 #include <fcntl.h>               /* O_RDWR, O_CREAT, O_WRONLY, etc       */
+#include <dirent.h>              /* opendir(), readdir(), closedir(),    */
+                                 /* DIR, struct dirent                   */
 #include <errno.h>
 #include "amgdefs.h"
 #include "version.h"
@@ -152,6 +154,7 @@ const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 static pid_t               make_process(char *, char *, sigset_t *);
 static void                afd_exit(void),
                            check_dirs(char *),
+                           delete_old_afd_status_files(void),
                            get_afd_config_value(int *, int *, unsigned int *,
                                                 int *, int *),
                            init_afd_check_fsa(void),
@@ -237,9 +240,10 @@ main(int argc, char *argv[])
    p_work_dir = work_dir;
    (void)strcpy(afd_status_file, work_dir);
    (void)strcat(afd_status_file, FIFO_DIR);
+   i = strlen(afd_status_file);
    (void)strcpy(afd_active_file, afd_status_file);
-   (void)strcat(afd_active_file, AFD_ACTIVE_FILE);
-   (void)strcat(afd_status_file, STATUS_SHMID_FILE);
+   (void)strcpy(afd_active_file + i, AFD_ACTIVE_FILE);
+   (void)sprintf(afd_status_file + i, "/%s.%x", AFD_STATUS_FILE, get_afd_status_struct_size());
 
    (void)strcpy(afd_file_dir, work_dir);
    (void)strcat(afd_file_dir, AFD_FILE_DIR);
@@ -327,6 +331,11 @@ main(int argc, char *argv[])
          (void)unlink(afd_active_file);
          exit(INCORRECT);
       }
+      else
+      {
+         (void)fprintf(stderr, _("INFO: No old afd status file %s found. (%s %d)\n"),
+                       afd_status_file, __FILE__, __LINE__);
+      }
       if ((afd_status_fd = coe_open(afd_status_file, O_RDWR | O_CREAT | O_TRUNC,
 #ifdef GROUP_CAN_WRITE
                                     S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
@@ -354,6 +363,7 @@ main(int argc, char *argv[])
          exit(INCORRECT);
       }
       old_afd_stat = NO;
+      delete_old_afd_status_files();
    }
    else
    {
@@ -2370,6 +2380,77 @@ check_dirs(char *work_dir)
    free_extra_work_dirs(no_of_extra_work_dirs, &ewl);
 #endif
    sys_log_fd = tmp_sys_log_fd;
+
+   return;
+}
+
+
+/*+++++++++++++++++++ delete_old_afd_status_files() ++++++++++++++++++++*/
+static void
+delete_old_afd_status_files(void)
+{
+   char fifo_dir[MAX_PATH_LENGTH],
+        *p_fifo_dir;
+   DIR  *dp;
+
+   p_fifo_dir = fifo_dir + snprintf(fifo_dir, MAX_PATH_LENGTH, "%s%s",
+                                    p_work_dir, FIFO_DIR);
+   if ((dp = opendir(fifo_dir)) == NULL)
+   {
+      (void)fprintf(stderr, "Could not opendir() `%s' : %s (%s %d)\n",
+                    fifo_dir, strerror(errno), __FILE__, __LINE__);
+   }
+   else
+   {
+      int           current_afd_status_file_length;
+      char          current_afd_status_file[AFD_STATUS_FILE_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1];
+      struct dirent *p_dir;
+
+      current_afd_status_file_length = snprintf(current_afd_status_file,
+                                                AFD_STATUS_FILE_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1,
+                                                "%s.%x",
+                                                AFD_STATUS_FILE,
+                                                get_afd_status_struct_size());
+      *p_fifo_dir = '/';
+      errno = 0;
+      while ((p_dir = readdir(dp)) != NULL)
+      {
+         if (p_dir->d_name[0] == '.')
+         {
+            continue;
+         }
+         if ((strncmp(p_dir->d_name, AFD_STATUS_FILE, AFD_STATUS_FILE_LENGTH - 1) == 0) &&
+             (memcmp(p_dir->d_name, current_afd_status_file,
+                     current_afd_status_file_length + 1) != 0))
+         {
+            (void)strcpy(p_fifo_dir + 1, p_dir->d_name);
+            if (unlink(fifo_dir) == -1)
+            {
+               (void)fprintf(stderr, "Could not unlink() `%s' : %s (%s %d)\n",
+                             fifo_dir, strerror(errno), __FILE__, __LINE__);
+            }
+            else
+            {
+               (void)fprintf(stderr, "INFO: Removed %s (%s %d)\n",
+                             fifo_dir, __FILE__, __LINE__);
+            }
+         }
+         errno = 0;
+      } /*  while (readdir(dp) != NULL) */
+
+      if (errno)
+      {
+         *p_fifo_dir = '\0';
+         (void)fprintf(stderr, "readdir() error `%s' : %s (%s %d)\n",
+                       fifo_dir, strerror(errno), __FILE__, __LINE__);
+      }
+      if (closedir(dp) == -1)
+      {
+         *p_fifo_dir = '\0';
+         (void)fprintf(stderr, "Could not closedir() `%s' : %s (%s %d)\n",
+                       fifo_dir, strerror(errno), __FILE__, __LINE__);
+      }
+   }
 
    return;
 }

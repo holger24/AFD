@@ -3678,29 +3678,8 @@ check_fifo(int read_fd, int write_fd)
                           DIR_CHECK, PACKAGE_VERSION);
 
                /* Unmap from AFD status area. */
-               {
-                  char        afd_status_file[MAX_PATH_LENGTH];
-                  struct stat stat_buf;
+               detach_afd_status();
 
-                  (void)strcpy(afd_status_file, p_work_dir);
-                  (void)strcat(afd_status_file, FIFO_DIR);
-                  (void)strcat(afd_status_file, STATUS_SHMID_FILE);
-                  if (stat(afd_status_file, &stat_buf) == -1)
-                  {
-                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                "Failed to stat() %s : %s",
-                                afd_status_file, strerror(errno));
-                  }
-                  else
-                  {
-                     if (munmap((void *)p_afd_status, stat_buf.st_size) == -1)
-                     {
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   "Failed to munmap() from %s : %s",
-                                   afd_status_file, strerror(errno));
-                     }
-                  }
-               }
 #ifdef _FIFO_DEBUG
                cmd[0] = ACKN; cmd[1] = '\0';
                show_fifo_data('W', "ip_resp", cmd, 1, __FILE__, __LINE__);

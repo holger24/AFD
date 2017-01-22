@@ -1,6 +1,6 @@
 /*
  *  attach_afd_status.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2010 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ DESCR__S_M3
  **
  ** DESCRIPTION
  **   The function attach_afd_status() reads the shared memory ID
- **   from the file STATUS_SHMID_FILE and attaches to this shared
+ **   from the file AFD_STATUS_FILE and attaches to this shared
  **   memory area.
  **
  ** RETURN VALUES
@@ -88,9 +88,8 @@ attach_afd_status(int *fd, int timeout)
       ptr_fd = fd;
    }
 
-   (void)strcpy(afd_status_file, p_work_dir);
-   (void)strcat(afd_status_file, FIFO_DIR);
-   (void)strcat(afd_status_file, STATUS_SHMID_FILE);
+   (void)snprintf(afd_status_file, MAX_PATH_LENGTH, "%s%s/%s.%x",
+                  p_work_dir, FIFO_DIR, AFD_STATUS_FILE, get_afd_status_struct_size());
    loop_counter = 0;
    max_loops = (timeout * 100) / (AAS_SLEEP_INTERVAL / 10000);
    while ((*ptr_fd = coe_open(afd_status_file, O_RDWR)) < 0)

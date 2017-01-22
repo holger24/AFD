@@ -1,6 +1,6 @@
 /*
  *  initialize_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,93 +53,93 @@ DESCR__E_M3
 
 #define FSA_ID_FILE_NO              0
 #define FRA_ID_FILE_NO              1
-#define STATUS_SHMID_FILE_NO        2
-#define BLOCK_FILE_NO               3
-#define AMG_COUNTER_FILE_NO         4
-#define COUNTER_FILE_NO             5
-#define MESSAGE_BUF_FILE_NO         6
-#define MSG_CACHE_FILE_NO           7
-#define MSG_QUEUE_FILE_NO           8
+#define BLOCK_FILE_NO               2
+#define AMG_COUNTER_FILE_NO         3
+#define COUNTER_FILE_NO             4
+#define MESSAGE_BUF_FILE_NO         5
+#define MSG_CACHE_FILE_NO           6
+#define MSG_QUEUE_FILE_NO           7
 #ifdef WITH_ERROR_QUEUE
-# define ERROR_QUEUE_FILE_NO        9
+# define ERROR_QUEUE_FILE_NO        8
 #endif
 #ifdef _WITH_DE_MAIL_SUPPORT
-# define DEMCD_QUEUE_FILE_NO        10
+# define DEMCD_QUEUE_FILE_NO        9
 #endif
-#define FILE_MASK_FILE_NO           11
-#define DC_LIST_FILE_NO             12
-#define DIR_NAME_FILE_NO            13
-#define JOB_ID_DATA_FILE_NO         14
-#define DCPL_FILE_NAME_NO           15
-#define PWB_DATA_FILE_NO            16
-#define CURRENT_MSG_LIST_FILE_NO    17
-#define AMG_DATA_FILE_NO            18
-#define AMG_DATA_FILE_TMP_NO        19
-#define LOCK_PROC_FILE_NO           20
-#define AFD_ACTIVE_FILE_NO          21
-#define WINDOW_ID_FILE_NO           22
-#define SYSTEM_LOG_FIFO_NO          23
-#define EVENT_LOG_FIFO_NO           24
-#define RECEIVE_LOG_FIFO_NO         25
-#define TRANSFER_LOG_FIFO_NO        26
-#define TRANS_DEBUG_LOG_FIFO_NO     27
-#define AFD_CMD_FIFO_NO             28
-#define AFD_RESP_FIFO_NO            29
-#define AMG_CMD_FIFO_NO             30
-#define DB_UPDATE_FIFO_NO           31
-#define FD_CMD_FIFO_NO              32
-#define AW_CMD_FIFO_NO              33
-#define IP_FIN_FIFO_NO              34
+#define FILE_MASK_FILE_NO           10
+#define DC_LIST_FILE_NO             11
+#define DIR_NAME_FILE_NO            12
+#define JOB_ID_DATA_FILE_NO         13
+#define DCPL_FILE_NAME_NO           14
+#define PWB_DATA_FILE_NO            15
+#define CURRENT_MSG_LIST_FILE_NO    16
+#define AMG_DATA_FILE_NO            17
+#define AMG_DATA_FILE_TMP_NO        18
+#define LOCK_PROC_FILE_NO           19
+#define AFD_ACTIVE_FILE_NO          20
+#define WINDOW_ID_FILE_NO           21
+#define SYSTEM_LOG_FIFO_NO          22
+#define EVENT_LOG_FIFO_NO           23
+#define RECEIVE_LOG_FIFO_NO         24
+#define TRANSFER_LOG_FIFO_NO        25
+#define TRANS_DEBUG_LOG_FIFO_NO     26
+#define AFD_CMD_FIFO_NO             27
+#define AFD_RESP_FIFO_NO            28
+#define AMG_CMD_FIFO_NO             29
+#define DB_UPDATE_FIFO_NO           30
+#define FD_CMD_FIFO_NO              31
+#define AW_CMD_FIFO_NO              32
+#define IP_FIN_FIFO_NO              33
 #ifdef WITH_ONETIME
-# define OT_FIN_FIFO_NO             35
+# define OT_FIN_FIFO_NO             34
 #endif
-#define SF_FIN_FIFO_NO              36
-#define RETRY_FD_FIFO_NO            37
-#define FD_DELETE_FIFO_NO           38
-#define FD_WAKE_UP_FIFO_NO          39
-#define TRL_CALC_FIFO_NO            40
-#define QUEUE_LIST_READY_FIFO_NO    41
-#define QUEUE_LIST_DONE_FIFO_NO     42
-#define PROBE_ONLY_FIFO_NO          43
+#define SF_FIN_FIFO_NO              35
+#define RETRY_FD_FIFO_NO            36
+#define FD_DELETE_FIFO_NO           37
+#define FD_WAKE_UP_FIFO_NO          38
+#define TRL_CALC_FIFO_NO            39
+#define QUEUE_LIST_READY_FIFO_NO    40
+#define QUEUE_LIST_DONE_FIFO_NO     41
+#define PROBE_ONLY_FIFO_NO          42
 #ifdef _INPUT_LOG
-# define INPUT_LOG_FIFO_NO          44
+# define INPUT_LOG_FIFO_NO          43
 #endif
 #ifdef _DISTRIBUTION_LOG
-# define DISTRIBUTION_LOG_FIFO_NO   45
+# define DISTRIBUTION_LOG_FIFO_NO   44
 #endif
 #ifdef _OUTPUT_LOG
-# define OUTPUT_LOG_FIFO_NO         46
+# define OUTPUT_LOG_FIFO_NO         45
 #endif
 #ifdef _CONFIRMATION_LOG
-# define CONFIRMATION_LOG_FIFO_NO   47
+# define CONFIRMATION_LOG_FIFO_NO   46
 #endif
 #ifdef _DELETE_LOG
-# define DELETE_LOG_FIFO_NO         48
+# define DELETE_LOG_FIFO_NO         47
 #endif
 #ifdef _PRODUCTION_LOG
-# define PRODUCTION_LOG_FIFO_NO     49
+# define PRODUCTION_LOG_FIFO_NO     48
 #endif
-#define DEL_TIME_JOB_FIFO_NO        50
-#define MSG_FIFO_NO                 51
-#define DC_CMD_FIFO_NO              52
-#define DC_RESP_FIFO_NO             53
-#define AFDD_LOG_FIFO_NO            54
-#define TYPESIZE_DATA_FILE_NO       55
-#define SYSTEM_DATA_FILE_NO         56
+#define DEL_TIME_JOB_FIFO_NO        49
+#define MSG_FIFO_NO                 50
+#define DC_CMD_FIFO_NO              51
+#define DC_RESP_FIFO_NO             52
+#define AFDD_LOG_FIFO_NO            53
+#define TYPESIZE_DATA_FILE_NO       54
+#define SYSTEM_DATA_FILE_NO         55
 #ifdef _MAINTAINER_LOG
-# define MAINTAINER_LOG_FIFO_NO     57
+# define MAINTAINER_LOG_FIFO_NO     56
 #endif
 #ifdef _WITH_DE_MAIL_SUPPORT
-# define DEMCD_FIFO_NO              58
+# define DEMCD_FIFO_NO              57
 #endif
-#define MAX_FILE_LIST_LENGTH        59
+#define MAX_FILE_LIST_LENGTH        58
 
 #define FSA_STAT_FILE_ALL_NO        0
 #define FRA_STAT_FILE_ALL_NO        1
-#define ALTERNATE_FILE_ALL_NO       2
-#define DB_UPDATE_REPLY_FIFO_ALL_NO 3
-#define NNN_FILE_ALL_NO             4
-#define MAX_MFILE_LIST_LENGTH       5
+#define AFD_STATUS_FILE_ALL_NO      2
+#define ALTERNATE_FILE_ALL_NO       3
+#define DB_UPDATE_REPLY_FIFO_ALL_NO 4
+#define NNN_FILE_ALL_NO             5
+#define MAX_MFILE_LIST_LENGTH       6
 
 #define AFD_MSG_DIR_FLAG            1
 #ifdef WITH_DUP_CHECK
@@ -205,7 +205,7 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
       {
          filelistflag[FSA_ID_FILE_NO] = YES;
          mfilelistflag[FSA_STAT_FILE_ALL_NO] = YES;
-         filelistflag[STATUS_SHMID_FILE_NO] = YES;
+         mfilelistflag[AFD_STATUS_FILE_ALL_NO] = YES;
          filelistflag[PWB_DATA_FILE_NO] = YES;
       }
       if (old_value_list[0] & MAX_PROXY_NAME_LENGTH_NR)
@@ -267,7 +267,6 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
       {
          filelistflag[FSA_ID_FILE_NO] = YES;
          filelistflag[FRA_ID_FILE_NO] = YES;
-         filelistflag[STATUS_SHMID_FILE_NO] = YES;
          /* No need to delete BLOCK_FILE */
          filelistflag[AMG_COUNTER_FILE_NO] = YES;
          filelistflag[COUNTER_FILE_NO] = YES;
@@ -294,6 +293,7 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
          filelistflag[TYPESIZE_DATA_FILE_NO] = YES;
          mfilelistflag[FSA_STAT_FILE_ALL_NO] = YES;
          mfilelistflag[FRA_STAT_FILE_ALL_NO] = YES;
+         mfilelistflag[AFD_STATUS_FILE_ALL_NO] = YES;
          mfilelistflag[ALTERNATE_FILE_ALL_NO] = YES;
          mfilelistflag[NNN_FILE_ALL_NO] = YES;
          delete_dir |= LS_DATA_DIR_FLAG;
@@ -436,7 +436,7 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
       }
       if (init_level > 5)
       {
-         filelistflag[STATUS_SHMID_FILE_NO] = YES;
+         mfilelistflag[AFD_STATUS_FILE_ALL_NO] = YES;
       }
       if (init_level > 6)
       {
@@ -628,7 +628,6 @@ delete_fifodir_files(char *fifodir,
         {
            FSA_ID_FILE,
            FRA_ID_FILE,
-           STATUS_SHMID_FILE,
            BLOCK_FILE,
            AMG_COUNTER_FILE,
            COUNTER_FILE,
@@ -738,6 +737,7 @@ delete_fifodir_files(char *fifodir,
         {
            FSA_STAT_FILE_ALL,
            FRA_STAT_FILE_ALL,
+           AFD_STATUS_FILE_ALL,
            ALTERNATE_FILE_ALL,
            DB_UPDATE_REPLY_FIFO_ALL,
 #ifdef STAT_IN_FIFODIR

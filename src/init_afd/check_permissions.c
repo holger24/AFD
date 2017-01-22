@@ -1,6 +1,6 @@
 /*
  *  check_permissions.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -124,7 +124,6 @@ check_permissions(void)
                         { DEMCD_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) },
 # endif
                         { DEL_TIME_JOB_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) },
-                        { STATUS_SHMID_FILE, (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) },
                         { AMG_DATA_FILE, (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) },
                         { AFD_ACTIVE_FILE, (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) },
                         { MSG_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP), (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) },
@@ -184,7 +183,6 @@ check_permissions(void)
                         { DEMCD_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR), (S_IRUSR | S_IWUSR) },
 # endif
                         { DEL_TIME_JOB_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR), (S_IRUSR | S_IWUSR) },
-                        { STATUS_SHMID_FILE, (S_IFREG | S_IRUSR | S_IWUSR), (S_IRUSR | S_IWUSR) },
                         { AMG_DATA_FILE, (S_IFREG | S_IRUSR | S_IWUSR), (S_IRUSR | S_IWUSR) },
                         { AFD_ACTIVE_FILE, (S_IFREG | S_IRUSR | S_IWUSR), (S_IRUSR | S_IWUSR) },
                         { MSG_FIFO, (S_IFIFO | S_IRUSR | S_IWUSR), (S_IRUSR | S_IWUSR) },
@@ -343,6 +341,51 @@ check_permissions(void)
       }
       i++;
    } while (fifodir[i].file_name != NULL);
+
+   (void)sprintf(ptr, "/%s.%x", AFD_STATUS_FILE, get_afd_status_struct_size());
+   if (stat(fullname, &stat_buf) == -1)
+   {
+      if (errno != ENOENT)
+      {
+         (void)fprintf(stdout, _("Can't access file %s : %s (%s %d)\n"),
+                       fullname, strerror(errno), __FILE__, __LINE__);
+      }
+   }
+   else
+   {
+#ifdef GROUP_CAN_WRITE
+      if (stat_buf.st_mode != (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP))
+      {
+         (void)fprintf(stdout,
+               _("File %s has mode %o, changing to %o. (%s %d)\n"),
+               fullname, stat_buf.st_mode,
+               (S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP),
+               __FILE__, __LINE__);
+         if (chmod(fullname, (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
+         {
+            (void)fprintf(stdout,
+                          _("Can't change mode to %o for file %s : %s (%s %d)\n"),
+                          (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP), fullname, strerror(errno),
+                          __FILE__, __LINE__);
+         }
+      }
+#else
+      if (stat_buf.st_mode != (S_IFREG | S_IRUSR | S_IWUSR))
+      {
+         (void)fprintf(stdout,
+               _("File %s has mode %o, changing to %o. (%s %d)\n"),
+               fullname, stat_buf.st_mode, (S_IFREG | S_IRUSR | S_IWUSR),
+               __FILE__, __LINE__);
+         if (chmod(fullname, (S_IRUSR | S_IWUSR)) == -1)
+         {
+            (void)fprintf(stdout,
+                          _("Can't change mode to %o for file %s : %s (%s %d)\n"),
+                          (S_IRUSR | S_IWUSR), fullname, strerror(errno),
+                          __FILE__, __LINE__);
+         }
+      }
+#endif
+   }
 
    ptr = fullname + snprintf(fullname, MAX_PATH_LENGTH, "%s%s/",
                              p_work_dir, LOG_DIR);
