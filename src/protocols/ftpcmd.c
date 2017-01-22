@@ -1958,6 +1958,14 @@ ftp_size(char *filename, off_t *remote_size)
                  reply = SUCCESS;
               }
       }
+      else
+      {
+         *remote_size = 0;
+      }
+   }
+   else
+   {
+      *remote_size = 0;
    }
 
    return(reply);
