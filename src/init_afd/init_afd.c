@@ -1105,7 +1105,7 @@ main(int argc, char *argv[])
          char *ip_hl = NULL,
               *p_ip_hl;
 
-         no_of_ip_hl = get_current_ip_hl(&ip_hl);
+         no_of_ip_hl = get_current_ip_hl(&ip_hl, NULL);
          for (i = 0; i < no_of_hosts; i++)
          {
             p_ip_hl = ip_hl;

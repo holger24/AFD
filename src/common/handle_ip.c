@@ -1,6 +1,6 @@
 /*
  *  handle_ip.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014, 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ DESCR__S_M3
  ** SYNOPSIS
  **   int  attach_ip_db(void)
  **   int  detach_ip_db(void)
- **   int  get_current_ip_hl(char **ip_hl)
+ **   int  get_current_ip_hl(char **ip_hl, char **ip_ips)
  **   void add_to_ip_db(char *host_name, char *ip_str)
  **   int  lookup_ip_from_ip_db(char *host_name, char *ip_str, int length)
  **   int  remove_from_ip_db(char *host_name)
@@ -173,7 +173,7 @@ detach_ip_db(void)
 
 /*####################### get_current_ip_hl() ###########################*/
 int
-get_current_ip_hl(char **ip_hl)
+get_current_ip_hl(char **ip_hl, char **ip_ips)
 {
    int detach,
        ret;
@@ -197,17 +197,44 @@ get_current_ip_hl(char **ip_hl)
    if ((*ip_hl = malloc((*no_of_entries * MAX_REAL_HOSTNAME_LENGTH))) != NULL)
    {
       int  i;
-      char *ptr = *ip_hl;
+      char *ptr = *ip_hl,
+           *p_ips = NULL;
+
+      if (*ip_ips != NULL)
+      {
+         if ((*ip_ips = malloc((*no_of_entries * MAX_AFD_INET_ADDRSTRLEN))) == NULL)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       _("malloc() error : %s"), strerror(errno));
+         }
+         else
+         {
+            p_ips = *ip_ips;
+         }
+      }
 
 #ifdef LOCK_DEBUG
       lock_region_w(ip_db_fd, 1, __FILE__, __LINE__);
 #else
       lock_region_w(ip_db_fd, 1);
 #endif
-      for (i = 0; i < *no_of_entries; i++)
+      if (p_ips != NULL)
       {
-         (void)memcpy(ptr, ipdb[i].host_name, MAX_REAL_HOSTNAME_LENGTH);
-         ptr += MAX_REAL_HOSTNAME_LENGTH;
+         for (i = 0; i < *no_of_entries; i++)
+         {
+            (void)memcpy(ptr, ipdb[i].host_name, MAX_REAL_HOSTNAME_LENGTH);
+            ptr += MAX_REAL_HOSTNAME_LENGTH;
+            (void)memcpy(p_ips, ipdb[i].host_name, MAX_AFD_INET_ADDRSTRLEN);
+            p_ips += MAX_AFD_INET_ADDRSTRLEN;
+         }
+      }
+      else
+      {
+         for (i = 0; i < *no_of_entries; i++)
+         {
+            (void)memcpy(ptr, ipdb[i].host_name, MAX_REAL_HOSTNAME_LENGTH);
+            ptr += MAX_REAL_HOSTNAME_LENGTH;
+         }
       }
       ret = *no_of_entries;
 

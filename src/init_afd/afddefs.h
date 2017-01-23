@@ -3953,7 +3953,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     get_afd_path(int *, char **, char *),
 #ifdef WITH_IP_DB
                     get_and_reset_store_ip(void),
-                    get_current_ip_hl(char **),
+                    get_current_ip_hl(char **, char **),
                     get_store_ip(void),
 #endif
                     get_arg(int *, char **, char *, char *, int),
