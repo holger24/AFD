@@ -200,7 +200,7 @@ get_current_ip_hl(char **ip_hl, char **ip_ips)
       char *ptr = *ip_hl,
            *p_ips = NULL;
 
-      if (*ip_ips != NULL)
+      if (ip_ips != NULL)
       {
          if ((*ip_ips = malloc((*no_of_entries * MAX_AFD_INET_ADDRSTRLEN))) == NULL)
          {
@@ -224,7 +224,7 @@ get_current_ip_hl(char **ip_hl, char **ip_ips)
          {
             (void)memcpy(ptr, ipdb[i].host_name, MAX_REAL_HOSTNAME_LENGTH);
             ptr += MAX_REAL_HOSTNAME_LENGTH;
-            (void)memcpy(p_ips, ipdb[i].host_name, MAX_AFD_INET_ADDRSTRLEN);
+            (void)memcpy(p_ips, ipdb[i].ip_str, MAX_AFD_INET_ADDRSTRLEN);
             p_ips += MAX_AFD_INET_ADDRSTRLEN;
          }
       }
