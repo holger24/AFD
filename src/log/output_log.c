@@ -1,6 +1,6 @@
 /*
  *  output_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -97,14 +97,14 @@ DESCR__S_M1
  **                      process transmitting same file, etc. This is
  **                      indicated by adding the output type.
  **   14.08.2009 H.Kiehl Added ALDA cache file.
- **                     
+ **   09.02.2017 H.Kiehl Flush buffers when we exit.
  **
  */
 DESCR__E_M1
 
 #include <stdio.h>           /* fopen(), fflush()                        */
 #include <string.h>          /* strcpy(), strcat(), strerror(), memcpy() */
-#include <stdlib.h>          /* malloc()                                 */
+#include <stdlib.h>          /* malloc(), atexit()                       */
 #include <time.h>            /* time()                                   */
 #include <sys/types.h>       /* fdset                                    */
 #include <sys/stat.h>
@@ -118,6 +118,7 @@ DESCR__E_M1
 
 
 /* External global variables. */
+FILE       *output_file = NULL;
 int        sys_log_fd = STDERR_FILENO;
 char       *iobuf = NULL,
            *p_work_dir = NULL;
@@ -128,12 +129,15 @@ const char *sys_log_name = SYSTEM_LOG_FIFO;
 static void show_buffer(char *, int);
 #endif
 
+/* Local function prototypes. */
+static void sig_exit(int),
+            output_log_exit(void);
+
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
 int
 main(int argc, char *argv[])
 {
-   FILE           *output_file;
    int            bytes_buffered = 0,
                   log_number = 0,
                   n,
@@ -433,8 +437,18 @@ main(int argc, char *argv[])
                 sizeof(unsigned short) + sizeof(unsigned short) +
                 sizeof(unsigned short) + MAX_HOSTNAME_LENGTH + 6 + 1 + 1;
 
-   /* Ignore any SIGHUP signal. */
-   if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
+   /* Do some cleanups when we exit. */
+   if (atexit(output_log_exit) != 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 _("Could not register exit function : %s"), strerror(errno));
+   }
+
+   /* Ignore any SIGTERM + SIGHUP signal. */
+   if ((signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
+       (signal(SIGHUP, SIG_IGN) == SIG_ERR) ||
+       (signal(SIGINT, sig_exit) == SIG_ERR) ||
+       (signal(SIGQUIT, sig_exit) == SIG_ERR))
    {
       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                  "signal() error : %s", strerror(errno));
@@ -475,6 +489,7 @@ main(int argc, char *argv[])
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           "fclose() error : %s", strerror(errno));
             }
+            output_file = NULL;
 #ifdef WITH_LOG_CACHE
             if (close(log_cache_fd) == -1)
             {
@@ -727,6 +742,7 @@ main(int argc, char *argv[])
                     system_log(ERROR_SIGN, __FILE__, __LINE__,
                                "fclose() error : %s", strerror(errno));
                  }
+                 output_file = NULL;
 #ifdef WITH_LOG_CACHE
                  if (close(log_cache_fd) == -1)
                  {
@@ -845,3 +861,29 @@ show_buffer(char *buffer, int buffer_length)
    return;
 }
 #endif
+
+
+/*+++++++++++++++++++++++++++ output_log_exit() +++++++++++++++++++++++++*/
+static void
+output_log_exit(void)
+{
+   if (output_file != NULL)
+   {
+      (void)fflush(output_file);
+      if (fclose(output_file) == EOF)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "fclose() error : %s", strerror(errno));
+      }
+   }
+
+   return;
+}
+
+
+/*++++++++++++++++++++++++++++++ sig_exit() +++++++++++++++++++++++++++++*/
+static void
+sig_exit(int signo)
+{
+   exit(INCORRECT);
+}

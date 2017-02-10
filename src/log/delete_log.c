@@ -1,6 +1,6 @@
 /*
  *  delete_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -81,13 +81,14 @@ DESCR__S_M1
  **   26.03.2008 H.Kiehl Added unique ID to simplify searching.
  **   29.01.2009 H.Kiehl Changed unique_number from unsigned short to
  **                      unsigned int.
+ **   09.02.2017 H.Kiehl Flush buffers when we exit.
  **
  */
 DESCR__E_M1
 
 #include <stdio.h>           /* fopen(), fflush()                        */
 #include <string.h>          /* strcpy(), strcat(), strerror(), memcpy() */
-#include <stdlib.h>          /* malloc()                                 */
+#include <stdlib.h>          /* malloc(), atexit()                       */
 #include <time.h>            /* time()                                   */
 #include <sys/types.h>       /* fdset                                    */
 #include <sys/stat.h>
@@ -101,18 +102,21 @@ DESCR__E_M1
 
 
 /* External global variables. */
+FILE       *delete_file = NULL;
 int        sys_log_fd = STDERR_FILENO;
 char       *iobuf = NULL,
            *p_work_dir = NULL;
 const char *sys_log_name = SYSTEM_LOG_FIFO;
+
+/* Local function prototypes. */
+static void delete_log_exit(void),
+            sig_exit(int);
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
 int
 main(int argc, char *argv[])
 {
-#ifdef _DELETE_LOG
-   FILE           *delete_file;
    int            bytes_buffered = 0,
                   log_number = 0,
                   n,
@@ -339,9 +343,18 @@ main(int argc, char *argv[])
    check_size = n + n + n + n + n + sizeof(unsigned int) +
                 MAX_HOSTNAME_LENGTH + 4 + sizeof(unsigned char) + 1 + 1 + 1;
 
+   /* Do some cleanups when we exit. */
+   if (atexit(delete_log_exit) != 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 _("Could not register exit function : %s"), strerror(errno));
+   }
+
    /* Ignore any SIGTERM + SIGHUP signal. */
    if ((signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
-       (signal(SIGHUP, SIG_IGN) == SIG_ERR))
+       (signal(SIGHUP, SIG_IGN) == SIG_ERR) ||
+       (signal(SIGINT, sig_exit) == SIG_ERR) ||
+       (signal(SIGQUIT, sig_exit) == SIG_ERR))
    {
       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                  "signal() error : %s", strerror(errno));
@@ -381,6 +394,7 @@ main(int argc, char *argv[])
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           "fclose() error : %s", strerror(errno));
             }
+            delete_file = NULL;
             if (max_delete_log_files > 1)
             {
                reshuffel_log_files(log_number, log_file, p_end, 0, 0);
@@ -554,6 +568,7 @@ main(int argc, char *argv[])
                     system_log(ERROR_SIGN, __FILE__, __LINE__,
                                "fclose() error : %s", strerror(errno));
                  }
+                 delete_file = NULL;
                  if (max_delete_log_files > 1)
                  {
                     reshuffel_log_files(log_number, log_file, p_end, 0, 0);
@@ -590,7 +605,32 @@ main(int argc, char *argv[])
            }
    } /* for (;;) */
 
-#endif /* _DELETE_LOG */
    /* Should never come to this point. */
    exit(SUCCESS);
+}
+
+
+/*++++++++++++++++++++++++++ delete_log_exit() ++++++++++++++++++++++++++*/
+static void
+delete_log_exit(void)
+{
+   if (delete_file != NULL)
+   {
+      (void)fflush(delete_file);
+      if (fclose(delete_file) == EOF)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "fclose() error : %s", strerror(errno));
+      }
+   }
+
+   return;
+}
+
+
+/*++++++++++++++++++++++++++++++ sig_exit() +++++++++++++++++++++++++++++*/
+static void
+sig_exit(int signo)
+{
+   exit(INCORRECT);
 }

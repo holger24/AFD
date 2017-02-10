@@ -1,6 +1,6 @@
 /*
  *  confirmation_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2015, 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -85,14 +85,14 @@ DESCR__S_M1
  **
  ** HISTORY
  **   04.05.2015 H.Kiehl Created
- **                     
+ **   09.02.2017 H.Kiehl Flush buffers when we exit.
  **
  */
 DESCR__E_M1
 
 #include <stdio.h>           /* fopen(), fflush()                        */
 #include <string.h>          /* strcpy(), strcat(), strerror(), memcpy() */
-#include <stdlib.h>          /* malloc()                                 */
+#include <stdlib.h>          /* malloc(), atexit()                       */
 #include <time.h>            /* time()                                   */
 #include <sys/types.h>       /* fdset                                    */
 #include <sys/stat.h>
@@ -106,11 +106,15 @@ DESCR__E_M1
 
 
 /* External global variables. */
+FILE       *confirmation_file = NULL;
 int        sys_log_fd = STDERR_FILENO;
 char       *iobuf = NULL,
            *p_work_dir = NULL;
 const char *sys_log_name = SYSTEM_LOG_FIFO;
 
+/* Local function prototypes. */
+static void confirmation_log_exit(void),
+            sig_exit(int);
 /* #define _TEST_FIFO_BUFFER */
 #ifdef _TEST_FIFO_BUFFER
 static void show_buffer(char *, int);
@@ -121,7 +125,6 @@ static void show_buffer(char *, int);
 int
 main(int argc, char *argv[])
 {
-   FILE           *confirmation_file;
    int            bytes_buffered = 0,
                   log_number = 0,
                   n,
@@ -356,9 +359,18 @@ main(int argc, char *argv[])
                 sizeof(unsigned short) + sizeof(unsigned short) +
                 sizeof(unsigned short) + MAX_HOSTNAME_LENGTH + 6 + 1 + 1;
 
+   /* Do some cleanups when we exit. */
+   if (atexit(confirmation_log_exit) != 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 _("Could not register exit function : %s"), strerror(errno));
+   }
+
    /* Ignore any SIGTERM + SIGHUP signal. */
    if ((signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
-       (signal(SIGHUP, SIG_IGN) == SIG_ERR))
+       (signal(SIGHUP, SIG_IGN) == SIG_ERR) ||
+       (signal(SIGINT, sig_exit) == SIG_ERR) ||
+       (signal(SIGQUIT, sig_exit) == SIG_ERR))
    {
       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                  "signal() error : %s", strerror(errno));
@@ -399,6 +411,7 @@ main(int argc, char *argv[])
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           "fclose() error : %s", strerror(errno));
             }
+            confirmation_file = NULL;
             if (max_confirmation_log_files > 1)
             {
                reshuffel_log_files(log_number, log_file, p_end, 0, 0);
@@ -594,6 +607,7 @@ main(int argc, char *argv[])
                     system_log(ERROR_SIGN, __FILE__, __LINE__,
                                "fclose() error : %s", strerror(errno));
                  }
+                 confirmation_file = NULL;
                  if (max_confirmation_log_files > 1)
                  {
                     reshuffel_log_files(log_number, log_file, p_end, 0, 0);
@@ -672,3 +686,29 @@ show_buffer(char *buffer, int buffer_length)
    return;
 }
 #endif
+
+
+/*++++++++++++++++++++++++ confirmation_log_exit() ++++++++++++++++++++++*/
+static void
+confirmation_log_exit(void)
+{
+   if (confirmation_file != NULL)
+   {
+      (void)fflush(confirmation_file);
+      if (fclose(confirmation_file) == EOF)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "fclose() error : %s", strerror(errno));
+      }
+   }
+
+   return;
+}
+
+
+/*++++++++++++++++++++++++++++++ sig_exit() +++++++++++++++++++++++++++++*/
+static void
+sig_exit(int signo)
+{
+   exit(INCORRECT);
+}

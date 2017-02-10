@@ -1,6 +1,6 @@
 /*
  *  monitor_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,7 @@ DESCR__E_M1
 
 #include <stdio.h>           /* fopen(), fflush()                        */
 #include <string.h>          /* strcpy(), strcat(), strerror(), memcpy() */
-#include <stdlib.h>          /* malloc()                                 */
+#include <stdlib.h>          /* malloc(), atexit()                       */
 #include <time.h>            /* time()                                   */
 #include <sys/types.h>       /* fdset                                    */
 #include <sys/stat.h>
@@ -58,18 +58,22 @@ DESCR__E_M1
 
 
 /* External global variables. */
+FILE                  *monitor_file = NULL;
 int                   sys_log_fd = STDERR_FILENO;
 char                  *iobuf = NULL,
                       *p_work_dir = NULL;
 struct afd_mon_status *p_afd_mon_status;
 const char            *sys_log_name = MON_SYS_LOG_FIFO;
 
+/* Local function prototypes. */
+static void           monitor_log_exit(void),
+                      sig_exit(int);
+
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
 int
 main(int argc, char *argv[])
 {
-   FILE           *monitor_file;
    int            bytes_buffered = 0,
                   count,
                   dup_msg = 0,
@@ -252,9 +256,18 @@ main(int argc, char *argv[])
    monitor_file = open_log_file(current_log_file);
 #endif
 
+   /* Do some cleanups when we exit. */
+   if (atexit(monitor_log_exit) != 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 _("Could not register exit function : %s"), strerror(errno));
+   }
+
    /* Ignore any SIGTERM + SIGHUP signal. */
    if ((signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
-       (signal(SIGHUP, SIG_IGN) == SIG_ERR))
+       (signal(SIGHUP, SIG_IGN) == SIG_ERR) ||
+       (signal(SIGINT, sig_exit) == SIG_ERR) ||
+       (signal(SIGQUIT, sig_exit) == SIG_ERR))
    {
       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                  "signal() error : %s", strerror(errno));
@@ -294,6 +307,7 @@ main(int argc, char *argv[])
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           "fclose() error : %s", strerror(errno));
             }
+            monitor_file = NULL;
             if (max_mon_log_files > 1)
             {
                reshuffel_log_files(log_number, log_file, p_end, 0, 0);
@@ -509,6 +523,7 @@ main(int argc, char *argv[])
                     system_log(ERROR_SIGN, __FILE__, __LINE__,
                                "fclose() error : %s", strerror(errno));
                  }
+                 monitor_file = NULL;
                  if (max_mon_log_files > 1)
                  {
                     reshuffel_log_files(log_number, log_file, p_end, 0, 0);
@@ -541,4 +556,30 @@ main(int argc, char *argv[])
 
    /* Should never come to this point. */
    exit(SUCCESS);
+}
+
+
+/*++++++++++++++++++++++++++ monitor_log_exit() +++++++++++++++++++++++++*/
+static void
+monitor_log_exit(void)
+{
+   if (monitor_file != NULL)
+   {
+      (void)fflush(monitor_file);
+      if (fclose(monitor_file) == EOF)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "fclose() error : %s", strerror(errno));
+      }
+   }
+
+   return;
+}
+
+
+/*++++++++++++++++++++++++++++++ sig_exit() +++++++++++++++++++++++++++++*/
+static void
+sig_exit(int signo)
+{
+   exit(INCORRECT);
 }

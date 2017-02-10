@@ -1,6 +1,6 @@
 /*
  *  distribution_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -97,13 +97,14 @@ DESCR__S_M1
  **
  ** HISTORY
  **   08.04.2008 H.Kiehl Created
+ **   09.02.2017 H.Kiehl Flush buffers when we exit.
  **
  */
 DESCR__E_M1
 
 #include <stdio.h>           /* fopen(), fflush()                        */
 #include <string.h>          /* strcpy(), strcat(), strerror(), memcpy() */
-#include <stdlib.h>          /* malloc()                                 */
+#include <stdlib.h>          /* malloc(), atexit()                       */
 #include <time.h>            /* time()                                   */
 #include <sys/types.h>       /* fdset                                    */
 #include <sys/stat.h>
@@ -117,17 +118,22 @@ DESCR__E_M1
 
 
 /* External global variables. */
+FILE       *distribution_file = NULL;
 int        sys_log_fd = STDERR_FILENO;
 char       *iobuf = NULL,
            *p_work_dir = NULL;
 const char *sys_log_name = SYSTEM_LOG_FIFO;
 
 
+/* Local function prototypes. */
+static void distribution_log_exit(void),
+            sig_exit(int);
+
+
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
 int
 main(int argc, char *argv[])
 {
-   FILE                 *distribution_file;
    int                  bytes_buffered = 0,
                         check_size,
                         i,
@@ -369,9 +375,18 @@ main(int argc, char *argv[])
    check_size = length + length + sizeof(int) + sizeof(int) + sizeof(int) +
                 sizeof(int) + sizeof(int);
 
+   /* Do some cleanups when we exit. */
+   if (atexit(distribution_log_exit) != 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 _("Could not register exit function : %s"), strerror(errno));
+   }
+
    /* Ignore any SIGTERM + SIGHUP signal. */
    if ((signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
-       (signal(SIGHUP, SIG_IGN) == SIG_ERR))
+       (signal(SIGHUP, SIG_IGN) == SIG_ERR) ||
+       (signal(SIGINT, sig_exit) == SIG_ERR) ||
+       (signal(SIGQUIT, sig_exit) == SIG_ERR))
    {
       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                  "signal() error : %s", strerror(errno));
@@ -412,6 +427,7 @@ main(int argc, char *argv[])
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           "fclose() error : %s", strerror(errno));
             }
+            distribution_file = NULL;
             if (max_distribution_log_files > 1)
             {
                reshuffel_log_files(log_number, log_file, p_end, 0, 0);
@@ -716,6 +732,7 @@ main(int argc, char *argv[])
                     system_log(ERROR_SIGN, __FILE__, __LINE__,
                                "fclose() error : %s", strerror(errno));
                  }
+                 distribution_file = NULL;
                  if (max_distribution_log_files > 1)
                  {
                     reshuffel_log_files(log_number, log_file, p_end, 0, 0);
@@ -784,4 +801,30 @@ main(int argc, char *argv[])
 
    /* Should never come to this point. */
    exit(SUCCESS);
+}
+
+
+/*+++++++++++++++++++++++ distribution_log_exit() +++++++++++++++++++++++*/
+static void
+distribution_log_exit(void)
+{
+   if (distribution_file != NULL)
+   {
+      (void)fflush(distribution_file);
+      if (fclose(distribution_file) == EOF)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "fclose() error : %s", strerror(errno));
+      }
+   }
+
+   return;
+}
+
+
+/*++++++++++++++++++++++++++++++ sig_exit() +++++++++++++++++++++++++++++*/
+static void
+sig_exit(int signo)
+{
+   exit(INCORRECT);
 }
