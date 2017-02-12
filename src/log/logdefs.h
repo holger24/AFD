@@ -72,6 +72,7 @@
 # define TRANSFER_RATE_LOG_NAME           "TRANSFER_RATE_LOG."
 # define TRANSFER_RATE_LOG_NAME_LENGTH    (sizeof(TRANSFER_RATE_LOG_NAME) - 1)
 # define TRANSFER_RATE_LOG_NAME_ALL       "TRANSFER_RATE_LOG.*"
+# define MAX_TRANSFER_RATE_LOG_FILES_DEF  "MAX_TRANSFER_RATE_LOG_FILES"
 #endif
 
 /* Definitions for the log process of afd_monitor. */

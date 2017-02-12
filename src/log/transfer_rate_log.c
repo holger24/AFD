@@ -42,7 +42,7 @@ DESCR__E_M1
 
 #include <stdio.h>           /* fopen(), fflush()                        */
 #include <string.h>          /* strcpy(), strcat(), strerror(), memcpy() */
-#include <stdlib.h>          /* malloc()                                 */
+#include <stdlib.h>          /* malloc(), atexit()                       */
 #include <time.h>            /* time()                                   */
 #include <sys/types.h>       /* fdset                                    */
 #include <sys/stat.h>
@@ -54,13 +54,23 @@ DESCR__E_M1
 #include "logdefs.h"
 #include "version.h"
 
+#define TRANSFER_RATE_LOG_VERSION 0
 struct prev_rate
        {
           u_off_t      bytes_send;
           unsigned int host_id;
        };
+#ifdef WITH_IP_DB
+struct prev_rate_ip
+       {
+          u_off_t      bytes_send;
+          u_off_t      tmp_bytes_send;
+          char         ip_str[MAX_AFD_INET_ADDRSTRLEN];
+       };
+#endif
 
 /* External global variables. */
+FILE                       *transfer_rate_file = NULL;
 int                        fsa_fd = -1,
                            fsa_id,
                            no_of_hosts = 0,
@@ -74,15 +84,28 @@ const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 struct filetransfer_status *fsa;
 
 /* Local global variables. */
+static int                 *fsa_ip_pos;
 static struct prev_rate    *pr = NULL;
+#ifdef WITH_IP_DB
+static struct prev_rate_ip *prip = NULL;
+
+/* Local function prototypes. */
+static void                 get_ip_data(int *);
+#endif
+static void                 sig_exit(int),
+                            transfer_rate_log_exit(void);
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
 int
 main(int argc, char *argv[])
 {
-   FILE        *transfer_rate_file;
-   int         gotcha,
+   int         do_flush,
+#ifdef WITH_IP_DB
+               fsa_ip_counter,
+               prev_no_of_hosts,
+#endif
+               gotcha,
                i,
                j,
                log_number = 0,
@@ -96,14 +119,11 @@ main(int argc, char *argv[])
                time_elapsed;
    u_off_t     bytes_send,
                rate,
-               tmp_bytes_send,
-               total_bytes_send;
+               tmp_bytes_send;
    char        current_log_file[MAX_PATH_LENGTH],
                log_file[MAX_PATH_LENGTH],
                *p_end,
-               time_str[12],
                *work_dir;
-   struct tm   *p_ts;
    struct stat stat_buf;
 
    CHECK_FOR_VERSION(argc, argv);
@@ -123,8 +143,9 @@ main(int argc, char *argv[])
    p_work_dir = work_dir;
 
    /* Get the maximum number of logfiles we keep for history. */
-   get_max_log_values(&max_transfer_rate_log_files, MAX_TRANSFER_LOG_FILES_DEF,
-                      MAX_TRANSFER_LOG_FILES, NULL, NULL, 0);
+   get_max_log_values(&max_transfer_rate_log_files,
+                      MAX_TRANSFER_RATE_LOG_FILES_DEF,
+                      MAX_TRANSFER_RATE_LOG_FILES, NULL, NULL, 0);
 
    /* Attach to the FSA. */
    if (fsa_attach_passive(NO, TRLOG) != SUCCESS)
@@ -132,6 +153,7 @@ main(int argc, char *argv[])
       system_log(ERROR_SIGN, __FILE__, __LINE__, _("Failed to attach to FSA."));
       exit(INCORRECT);
    }
+   prev_no_of_hosts = no_of_hosts;
 
    /* Allocate memory to cache previous values. */
    if ((pr = malloc((no_of_hosts * sizeof(struct prev_rate)))) == NULL)
@@ -144,6 +166,15 @@ main(int argc, char *argv[])
       pr[i].host_id = fsa[i].host_id;
       pr[i].bytes_send = fsa[i].bytes_send;
    }
+#ifdef WITH_IP_DB
+   if ((fsa_ip_pos = malloc((no_of_hosts * sizeof(int)))) == NULL)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__, _("malloc() error"));
+      exit(INCORRECT);
+   }
+   fsa_ip_counter = 0;
+   get_ip_data(&fsa_ip_counter);
+#endif /* WITH_IP_DB */
 
    /*
     * Set umask so that all log files have the permission 644.
@@ -210,18 +241,34 @@ main(int argc, char *argv[])
    transfer_rate_file = open_log_file(current_log_file);
 #endif
 
+   /* Write information usefull for evaluating this file. */
+   (void)fprintf(transfer_rate_file,
+#if SIZEOF_TIME_T == 4
+                 "*|%lx|Start|interval=%d|version=%d\n",
+#else
+                 "*|%llx|Start|interval=%d|version=%d\n",
+#endif
+                 (pri_time_t)time(NULL), TRANSFER_RATE_LOG_INTERVAL,
+                 TRANSFER_RATE_LOG_VERSION);
+   (void)fflush(transfer_rate_file);
+
+
+   /* Do some cleanups when we exit. */
+   if (atexit(transfer_rate_log_exit) != 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 _("Could not register exit function : %s"), strerror(errno));
+   }
+
    /* Ignore any SIGTERM + SIGHUP signal. */
    if ((signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
-       (signal(SIGHUP, SIG_IGN) == SIG_ERR))
+       (signal(SIGHUP, SIG_IGN) == SIG_ERR) ||
+       (signal(SIGINT, sig_exit) == SIG_ERR) ||
+       (signal(SIGQUIT, sig_exit) == SIG_ERR))
    {
       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                  "signal() error : %s", strerror(errno));
    }
-
-   time_str[2]  = ' ';
-   time_str[5]  = ':';
-   time_str[8]  = ':';
-   time_str[11] = '\0';
 
    /*
     * Now lets wait for data to be written to the transfer log.
@@ -240,6 +287,7 @@ main(int argc, char *argv[])
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        "fclose() error : %s", strerror(errno));
          }
+         transfer_rate_file = NULL;
          if (max_transfer_rate_log_files > 1)
          {
             reshuffel_log_files(log_number, log_file, p_end, 0, 0);
@@ -258,6 +306,16 @@ main(int argc, char *argv[])
 #else
          transfer_rate_file = open_log_file(current_log_file);
 #endif
+
+         /* Write information usefull for evaluating this file. */
+         (void)fprintf(transfer_rate_file,
+#if SIZEOF_TIME_T == 4
+                       "*|%lx|Reshuffel|interval=%d\n",
+#else
+                       "*|%llx|Reshuffel|interval=%d\n",
+#endif
+                       (pri_time_t)now, TRANSFER_RATE_LOG_INTERVAL);
+         (void)fflush(transfer_rate_file);
          next_file_time = (now / SWITCH_FILE_TIME) * SWITCH_FILE_TIME +
                           SWITCH_FILE_TIME;
          sleep_time = next_file_time - now;
@@ -315,22 +373,41 @@ main(int argc, char *argv[])
             }
             free(pr);
             pr = new_pr;
+#ifdef WITH_IP_DB
+            if (no_of_hosts != prev_no_of_hosts)
+            {
+               if ((fsa_ip_pos = realloc(fsa_ip_pos,
+                                         (no_of_hosts * sizeof(int)))) == NULL)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             _("realloc() error"));
+                  exit(INCORRECT);
+               }
+               prev_no_of_hosts = no_of_hosts;
+            }
+
+            /*
+             * Instead of finding out what has changed, just lets redo
+             * the complete structure with the IP information.
+             */
+            fsa_ip_counter = 0;
+            free(prip);
+            prip = NULL;
+            get_ip_data(&fsa_ip_counter);
+#endif
          }
          if (fsa != NULL)
          {
             time_elapsed = now - prev_time;
             if (time_elapsed > 0)
             {
-               p_ts         = localtime(&now);
-               time_str[0]  = (p_ts->tm_mday / 10) + '0';
-               time_str[1]  = (p_ts->tm_mday % 10) + '0';
-               time_str[3]  = (p_ts->tm_hour / 10) + '0';
-               time_str[4]  = (p_ts->tm_hour % 10) + '0';
-               time_str[6]  = (p_ts->tm_min / 10) + '0';
-               time_str[7]  = (p_ts->tm_min % 10) + '0';
-               time_str[9]  = (p_ts->tm_sec / 10) + '0';
-               time_str[10] = (p_ts->tm_sec % 10) + '0';
-               total_bytes_send = 0;
+               do_flush = NO;
+#ifdef WITH_IP_DB
+               for (i = 0; i < fsa_ip_counter; i++)
+               {
+                  prip[i].tmp_bytes_send = 0;
+               }
+#endif
                for (i = 0; i < no_of_hosts; i++)
                {
                   bytes_send = fsa[i].bytes_send;
@@ -338,17 +415,44 @@ main(int argc, char *argv[])
                   {
                      tmp_bytes_send = bytes_send - pr[i].bytes_send;
                      rate = tmp_bytes_send / time_elapsed;
-                     (void)fprintf(transfer_rate_file, "%s %s %llu\n",
-                                   time_str, fsa[i].host_dsp_name, rate);
-                     total_bytes_send += tmp_bytes_send;
+                     (void)fprintf(transfer_rate_file,
+#if SIZEOF_TIME_T == 4
+                                   "%lx|A|%s|%llu\n",
+#else
+                                   "%llx|A|%s|%llu\n",
+#endif
+                                   (pri_time_t)now, fsa[i].host_dsp_name, rate);
+                     do_flush = YES;
                   }
                   pr[i].bytes_send = bytes_send;
+#ifdef WITH_IP_DB
+                  if (fsa_ip_pos[i] != -1)
+                  {
+                     prip[fsa_ip_pos[i]].tmp_bytes_send += bytes_send;
+                  }
+#endif
                }
-               if (total_bytes_send > 0)
+#ifdef WITH_IP_DB
+               for (i = 0; i < fsa_ip_counter; i++)
                {
-                  rate = total_bytes_send / time_elapsed;
-                  (void)fprintf(transfer_rate_file, "%s **** %llu\n",
-                                time_str, rate);
+                  if (prip[i].tmp_bytes_send > prip[i].bytes_send)
+                  {
+                     tmp_bytes_send = prip[i].tmp_bytes_send - prip[i].bytes_send;
+                     rate = tmp_bytes_send / time_elapsed;
+                     (void)fprintf(transfer_rate_file,
+# if SIZEOF_TIME_T == 4
+                                   "%lx|I|%s|%llu\n",
+# else
+                                   "%llx|I|%s|%llu\n",
+# endif
+                                   (pri_time_t)now, prip[i].ip_str, rate);
+                     do_flush = YES;
+                  }
+                  prip[i].bytes_send = prip[i].tmp_bytes_send;
+               }
+#endif /* WITH_IP_DB */
+               if (do_flush == YES)
+               {
                   (void)fflush(transfer_rate_file);
                }
             }
@@ -380,4 +484,116 @@ main(int argc, char *argv[])
 
    /* Should never come to this point. */
    exit(SUCCESS);
+}
+
+
+#ifdef WITH_IP_DB
+/*++++++++++++++++++++++++++++ get_ip_data() ++++++++++++++++++++++++++++*/
+static void
+get_ip_data(int *fsa_ip_counter)
+{
+   int  i,
+        j,
+        no_of_ips;
+   char *ip_hl = NULL,
+        *ip_ips = NULL;
+
+   if ((no_of_ips = get_current_ip_hl(&ip_hl, &ip_ips)) > 0)
+   {
+      int  gotcha,
+           k;
+      char *p_ip_hl,
+           *p_ip_ips;
+
+      for (i = 0; i < no_of_hosts; i++)
+      {
+         p_ip_hl = ip_hl;
+         p_ip_ips = ip_ips;
+         for (j = 0; j < no_of_ips; j++)
+         {
+            fsa_ip_pos[i] = -1;
+            if ((my_strcmp(fsa[i].real_hostname[0], p_ip_hl) == 0) ||
+                ((fsa[i].real_hostname[1][0] != '\0') &&
+                 (my_strcmp(fsa[i].real_hostname[1], p_ip_hl) == 0)))
+            {
+               gotcha = NO;
+               for (k = 0; k < *fsa_ip_counter; k++)
+               {
+                  if (my_strcmp(p_ip_ips, prip[k].ip_str) == 0)
+                  {
+                     gotcha = YES;
+                     break;
+                  }
+               }
+               if (gotcha == YES)
+               {
+                  fsa_ip_pos[i] = k;
+                  prip[k].bytes_send += fsa[i].bytes_send;
+               }
+               else
+               {
+                  if ((*fsa_ip_counter % 10) == 0)
+                  {
+                     size_t new_size = ((*fsa_ip_counter / 10) + 1) * 10 *
+                                       sizeof(struct prev_rate_ip);
+
+                     if ((prip = realloc(prip, new_size)) == NULL)
+                     {
+                        system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                   _("realloc() error"));
+                        exit(INCORRECT);
+                     }
+                  }
+                  fsa_ip_pos[i] = *fsa_ip_counter;
+                  (void)strcpy(prip[*fsa_ip_counter].ip_str, p_ip_ips);
+                  prip[*fsa_ip_counter].bytes_send = fsa[i].bytes_send;
+                  prip[*fsa_ip_counter].tmp_bytes_send = 0;
+                  (*fsa_ip_counter)++;
+               }
+               break;
+            }
+            p_ip_hl += MAX_REAL_HOSTNAME_LENGTH;
+            p_ip_ips += MAX_AFD_INET_ADDRSTRLEN;
+         }
+      }
+   }
+   free(ip_hl);
+   ip_hl = NULL;
+   free(ip_ips);
+   ip_ips = NULL;
+
+   return;
+}
+#endif /* WITH_IP_DB */
+
+
+/*+++++++++++++++++++++++ transfer_rate_log_exit() ++++++++++++++++++++++*/
+static void
+transfer_rate_log_exit(void)
+{
+   if (transfer_rate_file != NULL)
+   {
+      (void)fprintf(transfer_rate_file,
+#if SIZEOF_TIME_T == 4
+                    "*|%lx|Stop\n", (pri_time_t)time(NULL));
+#else
+                    "*|%llx|Stop\n", (pri_time_t)time(NULL));
+#endif
+      (void)fflush(transfer_rate_file);
+      if (fclose(transfer_rate_file) == EOF)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "fclose() error : %s", strerror(errno));
+      }
+   }
+
+   return;
+}
+
+
+/*++++++++++++++++++++++++++++++ sig_exit() +++++++++++++++++++++++++++++*/
+static void
+sig_exit(int signo)
+{
+   exit(INCORRECT);
 }
