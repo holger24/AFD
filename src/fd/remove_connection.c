@@ -1,6 +1,6 @@
 /*
  *  remove_connection.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,7 +54,8 @@ DESCR__E_M3
 extern int                        fsa_fd,
                                   fra_fd,
                                   no_of_hosts,
-                                  no_of_trl_groups;
+                                  no_of_trl_groups,
+                                  transfer_log_fd;
 extern struct filetransfer_status *fsa;
 extern struct fileretrieve_status *fra;
 extern struct afd_status          *p_afd_status;
@@ -142,9 +143,13 @@ remove_connection(struct connection *p_con, int faulty, time_t now)
             }
             if ((fsa[p_con->fsa_pos].error_counter % fsa[p_con->fsa_pos].max_errors) == 0)
             {
-               system_log(INFO_SIGN, NULL, 0,
-                          "Automatic host switch initiated for host %s",
-                          fsa[p_con->fsa_pos].host_dsp_name);
+               char tr_hostname[MAX_HOSTNAME_LENGTH + 2];
+
+               (void)strcpy(tr_hostname, fsa[p_con->fsa_pos].host_dsp_name);
+               (void)rec(transfer_log_fd, INFO_SIGN,
+                         "%-*s[%d]: Automatic host switch initiated for host %s\n",
+                         MAX_HOSTNAME_LENGTH, tr_hostname, p_con->job_no,
+                         fsa[p_con->fsa_pos].host_dsp_name);
                if (fsa[p_con->fsa_pos].host_toggle == HOST_ONE)
                {
                   fsa[p_con->fsa_pos].host_toggle = HOST_TWO;

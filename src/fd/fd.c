@@ -1,6 +1,6 @@
 /*
  *  fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -3524,12 +3524,17 @@ zombie_check(struct connection *p_con,
                      fsa[p_con->fsa_pos].successful_retries = 0;
                      if (fsa[p_con->fsa_pos].original_toggle_pos != NONE)
                      {
+                        char tr_hostname[MAX_HOSTNAME_LENGTH + 2];
+
                         fsa[p_con->fsa_pos].host_toggle = fsa[p_con->fsa_pos].original_toggle_pos;
                         fsa[p_con->fsa_pos].original_toggle_pos = NONE;
                         fsa[p_con->fsa_pos].host_dsp_name[(int)fsa[p_con->fsa_pos].toggle_pos] = fsa[p_con->fsa_pos].host_toggle_str[(int)fsa[p_con->fsa_pos].host_toggle];
-                        system_log(INFO_SIGN, NULL, 0,
-                                   "Switching back to host <%s> after successful transfer.",
-                                   fsa[p_con->fsa_pos].host_dsp_name);
+                        (void)strcpy(tr_hostname, fsa[p_con->fsa_pos].host_dsp_name);
+                        (void)rec(transfer_log_fd, INFO_SIGN,
+                                  "%-*s[%d]: Switching back to host <%s> after successful transfer.\n",
+                                  MAX_HOSTNAME_LENGTH, tr_hostname,
+                                  p_con->job_no,
+                                  fsa[p_con->fsa_pos].host_dsp_name);
                      }
                   }
                   fsa[p_con->fsa_pos].first_error_time = 0L;
