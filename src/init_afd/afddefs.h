@@ -345,7 +345,7 @@ typedef unsigned long       u_long_64;
 #define DIR_INFO                   "dir_info"
 #define DIR_CHECK                  "dir_check"
 #define HANDLE_EVENT               "handle_event"
-#define MAX_PROCNAME_LENGTH        17
+#define MAX_PROCNAME_LENGTH        18
 #define AFTP                       "aftp"
 #define ASFTP                      "asftp"
 #define ASMTP                      "asmtp"

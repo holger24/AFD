@@ -4569,12 +4569,12 @@ get_afd_config_value(void)
          }
          if ((ptr = getenv("LOGNAME")) != NULL)
          {
-            (void)snprintf(default_de_mail_sender, MAX_FILENAME_LENGTH,
+            (void)snprintf(default_de_mail_sender, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH,
                            "%s@%s", ptr, host_name);
          }
          else
          {
-            (void)snprintf(default_de_mail_sender, MAX_FILENAME_LENGTH,
+            (void)snprintf(default_de_mail_sender, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH,
                            "%s@%s", AFD_USER_NAME, host_name);
          }
       }
@@ -4715,12 +4715,12 @@ get_afd_config_value(void)
       }
       if ((ptr = getenv("LOGNAME")) != NULL)
       {
-         (void)snprintf(default_de_mail_sender, MAX_FILENAME_LENGTH,
+         (void)snprintf(default_de_mail_sender, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH,
                         "%s@%s", ptr, host_name);
       }
       else
       {
-         (void)snprintf(default_de_mail_sender, MAX_FILENAME_LENGTH,
+         (void)snprintf(default_de_mail_sender, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH,
                         "%s@%s", AFD_USER_NAME, host_name);
       }
 #endif
