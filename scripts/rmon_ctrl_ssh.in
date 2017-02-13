@@ -12,7 +12,7 @@
 #
 
 AFD_WORK_DIR="/home/afd"
-PATH=$PATH:@prefix@/bin
+PATH=@prefix@/bin:$PATH
 export AFD_WORK_DIR
 
 mon_ctrl $*

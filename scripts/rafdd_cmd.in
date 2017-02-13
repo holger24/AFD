@@ -25,7 +25,7 @@ then
 fi
 
 AFD_WORK_DIR=$2
-PATH=$PATH:@prefix@/bin:@prefix@/sbin
+PATH=@prefix@/bin:@prefix@/sbin:$PATH
 DISPLAY=$1
 export DISPLAY AFD_WORK_DIR PATH
 if [ -f $AFD_WORK_DIR/etc/afd-remote.env ]

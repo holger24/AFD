@@ -13,7 +13,7 @@
 #
 
 AFD_WORK_DIR="/home/afd"
-PATH=$PATH:@prefix@/bin
+PATH=@prefix@/bin:$PATH
 echo $1 | /bin/grep ':'
 if [ $? -eq 0 ]
 then
