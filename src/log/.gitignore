@@ -12,3 +12,4 @@ receive_log
 system_log
 transfer_log
 trans_db_log
+transfer_rate_log

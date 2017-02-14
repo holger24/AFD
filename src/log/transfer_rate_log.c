@@ -41,14 +41,13 @@ DESCR__S_M1
 DESCR__E_M1
 
 #include <stdio.h>           /* fopen(), fflush()                        */
-#include <string.h>          /* strcpy(), strcat(), strerror(), memcpy() */
+#include <string.h>          /* strcpy(), strcat(), strerror()           */
 #include <stdlib.h>          /* malloc(), atexit()                       */
 #include <time.h>            /* time()                                   */
 #include <sys/types.h>       /* fdset                                    */
 #include <sys/stat.h>
 #include <sys/time.h>        /* struct timeval, time()                   */
-#include <unistd.h>          /* fpathconf(), sysconf()                   */
-#include <fcntl.h>           /* O_RDWR, open()                           */
+#include <unistd.h>          /* select()                                 */
 #include <signal.h>          /* signal()                                 */
 #include <errno.h>
 #include "logdefs.h"
@@ -100,31 +99,31 @@ static void                 sig_exit(int),
 int
 main(int argc, char *argv[])
 {
-   int         do_flush,
+   int            do_flush,
 #ifdef WITH_IP_DB
-               fsa_ip_counter,
-               prev_no_of_hosts,
+                  fsa_ip_counter,
+                  prev_no_of_hosts,
 #endif
-               gotcha,
-               i,
-               j,
-               log_number = 0,
-               max_transfer_rate_log_files = MAX_TRANSFER_RATE_LOG_FILES,
-               old_no_of_hosts,
-               sleep_time;
-   time_t      next_check_time,
-               next_file_time,
-               now,
-               prev_time,
-               time_elapsed;
-   u_off_t     bytes_send,
-               rate,
-               tmp_bytes_send;
-   char        current_log_file[MAX_PATH_LENGTH],
-               log_file[MAX_PATH_LENGTH],
-               *p_end,
-               *work_dir;
-   struct stat stat_buf;
+                  gotcha,
+                  i,
+                  j,
+                  log_number = 0,
+                  max_transfer_rate_log_files = MAX_TRANSFER_RATE_LOG_FILES,
+                  old_no_of_hosts,
+                  status;
+   time_t         next_file_time,
+                  now,
+                  prev_time,
+                  time_elapsed;
+   u_off_t        bytes_send,
+                  rate,
+                  tmp_bytes_send;
+   char           current_log_file[MAX_PATH_LENGTH],
+                  log_file[MAX_PATH_LENGTH],
+                  *p_end,
+                  *work_dir;
+   struct stat    stat_buf;
+   struct timeval timeout;
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -204,11 +203,6 @@ main(int argc, char *argv[])
    /* Calculate time when we have to start a new file. */
    next_file_time = (time(&now) / SWITCH_FILE_TIME) * SWITCH_FILE_TIME +
                     SWITCH_FILE_TIME;
-
-   /* Calculate time when to log the transfer rate. */
-   next_check_time = (now / TRANSFER_RATE_LOG_INTERVAL) *
-                     TRANSFER_RATE_LOG_INTERVAL +
-                     TRANSFER_RATE_LOG_INTERVAL - 1;
 
    /* Is current log file already too old? */
    if (stat(current_log_file, &stat_buf) == 0)
@@ -318,17 +312,27 @@ main(int argc, char *argv[])
          (void)fflush(transfer_rate_file);
          next_file_time = (now / SWITCH_FILE_TIME) * SWITCH_FILE_TIME +
                           SWITCH_FILE_TIME;
-         sleep_time = next_file_time - now;
-         if (sleep_time < 0)
-         {
-            sleep_time = 0L;
-         }
+      }
+
+      timeout.tv_sec = ((now / TRANSFER_RATE_LOG_INTERVAL) *
+                        TRANSFER_RATE_LOG_INTERVAL) +
+                       TRANSFER_RATE_LOG_INTERVAL - now;
+      if (timeout.tv_sec == 0)
+      {
+         timeout.tv_usec = 50000L;
       }
       else
       {
-         sleep_time = 0L;
+         timeout.tv_usec = 0;
       }
-      if (now > next_check_time)
+
+      if ((status = select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout)) == -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("select() error : %s"), strerror(errno));
+         exit(INCORRECT);
+      }
+      if (status == 0)
       {
          old_no_of_hosts = no_of_hosts;
          if (check_fsa(YES, TRLOG) == YES)
@@ -458,28 +462,7 @@ main(int argc, char *argv[])
             }
             prev_time = now;
          }
-         next_check_time = (now / TRANSFER_RATE_LOG_INTERVAL) *
-                           TRANSFER_RATE_LOG_INTERVAL +
-                           TRANSFER_RATE_LOG_INTERVAL - 1;
-         if (sleep_time == 0L)
-         {
-            sleep_time = next_check_time - now;
-            if (sleep_time < 0)
-            {
-               sleep_time = 0L;
-            }
-         }
-         else
-         {
-            if ((sleep_time > (next_check_time - now)) &&
-                ((next_check_time - now) > 0))
-            {
-               sleep_time = next_check_time - now;
-            }
-
-         }
       }
-      (void)sleep((unsigned int)sleep_time);
    } /* for (;;) */
 
    /* Should never come to this point. */
