@@ -1,6 +1,6 @@
 /*
  *  create_fsa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -56,6 +56,8 @@ DESCR__S_M3
  **   26.06.2004 H.Kiehl Added error_history and ttl.
  **   16.02.2006 H.Kiehl Added socket send and receive buffer.
  **   08.03.2006 H.Kiehl Added duplicate check on a per host basis.
+ **   13.02.2017 H.Kiehl Increase FSA by one host, so get_new_positions()
+ **                      can write invisible data.
  **
  */
 DESCR__E_M3
@@ -340,9 +342,11 @@ create_fsa(void)
    /*
     * Create the new mmap region.
     */
-   /* First calculate the new size. */
+   /* First calculate the new size. The + 1 after no_of_hosts is in case */
+   /* the function get_new_positions() needs to write some data not      */
+   /* visible to the user.                                               */
    fsa_size = AFD_WORD_OFFSET +
-              (no_of_hosts * sizeof(struct filetransfer_status));
+              ((no_of_hosts + 1) * sizeof(struct filetransfer_status));
 
    if ((old_fsa_id + 1) > -1)
    {
