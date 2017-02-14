@@ -2699,6 +2699,7 @@ handle_options(int          position,
                                              length, SEPARATOR_CHAR,
                                              SEPARATOR_CHAR);
 # endif
+                              file_size_buffer[j] = length;
                            }
 
                            if (close(fd) == -1)
@@ -2732,6 +2733,7 @@ handle_options(int          position,
                                              length, SEPARATOR_CHAR,
                                              SEPARATOR_CHAR);
 # endif
+                             file_size_buffer[j] = length;
                           }
                   }
                   free(buffer);
@@ -2930,6 +2932,7 @@ handle_options(int          position,
                                  SEPARATOR_CHAR,
                                  (fax_format == 0) ? TIFF2GTS_ID : FAX2GTS_ID);
 #endif
+                  file_size_buffer[j] = size;
                }
                p_file_name += MAX_FILENAME_LENGTH;
             }
@@ -3047,6 +3050,7 @@ handle_options(int          position,
                                  p_file_name, SEPARATOR_CHAR, (pri_off_t)size,
                                  SEPARATOR_CHAR, SEPARATOR_CHAR, GTS2TIFF_ID);
 #endif
+                  file_size_buffer[j] = size;
                }
                p_file_name += MAX_FILENAME_LENGTH;
             }
@@ -3194,6 +3198,7 @@ handle_options(int          position,
                                  p_file_name, SEPARATOR_CHAR, (pri_off_t)size,
                                  SEPARATOR_CHAR, SEPARATOR_CHAR, p_option);
 #endif
+                  file_size_buffer[j] = size;
                }
                p_file_name += MAX_FILENAME_LENGTH;
             }
@@ -4105,6 +4110,7 @@ handle_options(int          position,
                               (pri_off_t)size, SEPARATOR_CHAR,
                               ret, SEPARATOR_CHAR, p_option);
 #endif
+               file_size_buffer[j] = size;
                p_file_name += MAX_FILENAME_LENGTH;
             }
          }
@@ -4197,6 +4203,7 @@ handle_options(int          position,
                                  p_file_name, SEPARATOR_CHAR, (pri_off_t)size,
                                  SEPARATOR_CHAR, SEPARATOR_CHAR, WMO2ASCII_ID);
 #endif
+                  file_size_buffer[j] = size;
                }
                p_file_name += MAX_FILENAME_LENGTH;
             }
