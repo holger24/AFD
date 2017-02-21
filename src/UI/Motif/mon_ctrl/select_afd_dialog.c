@@ -1,6 +1,6 @@
 /*
  *  select_afd_dialog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ static int                    deselect,
 static void                   done_button(Widget, XtPointer, XtPointer),
                               search_select_afd(Widget, XtPointer, XtPointer),
                               select_callback(Widget, XtPointer, XtPointer),
-                              select_line(int);
+                              select_line(int, int);
 
 #define STATIC_SELECT_CB      1
 #define DESELECT_CB           2
@@ -496,7 +496,8 @@ static void
 search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
 {
    char *text = XmTextGetString(find_text_w);
-   int  i;
+   int  i,
+        k = 0;
 
    if (name_class == AFD_NAME_CLASS)
    {
@@ -504,22 +505,27 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
 
       for (i = 0; i < no_of_afds; i++)
       {
-         if (name_type == ALIAS_NAME)
+         if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+             (connect_data[i].rcmd == '\0'))
          {
-            match = pmatch((text[0] == '\0') ? "*" : text, connect_data[i].afd_alias, NULL);
-         }
-         else
-         {
-            match = pmatch((text[0] == '\0') ? "*" : text, msa[i].hostname[0], NULL);
-            if ((match != 0) && (msa[i].hostname[1][0] != '\0') &&
-                (my_strcmp(msa[i].hostname[0], msa[i].hostname[0]) != 0))
+            if (name_type == ALIAS_NAME)
             {
-               match = pmatch((text[0] == '\0') ? "*" : text, msa[i].hostname[1], NULL);
+               match = pmatch((text[0] == '\0') ? "*" : text, connect_data[i].afd_alias, NULL);
             }
-         }
-         if (match == 0)
-         {
-            select_line(i);
+            else
+            {
+               match = pmatch((text[0] == '\0') ? "*" : text, msa[i].hostname[0], NULL);
+               if ((match != 0) && (msa[i].hostname[1][0] != '\0') &&
+                   (my_strcmp(msa[i].hostname[0], msa[i].hostname[0]) != 0))
+               {
+                  match = pmatch((text[0] == '\0') ? "*" : text, msa[i].hostname[1], NULL);
+               }
+            }
+            if (match == 0)
+            {
+               select_line(i, k);
+            }
+            k++;
          }
       }
    }
@@ -571,15 +577,20 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
       {
          for (i = 0; i < no_of_afds; i++)
          {
-            if (ahl[i] != NULL)
+            if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                (connect_data[i].rcmd == '\0'))
             {
-               for (j = 0; j < msa[i].no_of_hosts; j++)
+               if (ahl[i] != NULL)
                {
-                  if (pmatch((text[0] == '\0') ? "*" : text, ahl[i][j].host_alias, NULL) == 0)
+                  for (j = 0; j < msa[i].no_of_hosts; j++)
                   {
-                     select_line(i);
+                     if (pmatch((text[0] == '\0') ? "*" : text, ahl[i][j].host_alias, NULL) == 0)
+                     {
+                        select_line(i, k);
+                     }
                   }
                }
+               k++;
             }
          }
       }
@@ -587,17 +598,22 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
       {
          for (i = 0; i < no_of_afds; i++)
          {
-            if (ahl[i] != NULL)
+            if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                (connect_data[i].rcmd == '\0'))
             {
-               for (j = 0; j < msa[i].no_of_hosts; j++)
+               if (ahl[i] != NULL)
                {
-                  if ((pmatch((text[0] == '\0') ? "*" : text, ahl[i][j].real_hostname[0], NULL) == 0) ||
-                      ((ahl[i][j].real_hostname[1][0] != '\0') &&
-                       (pmatch((text[0] == '\0') ? "*" : text,  ahl[i][j].real_hostname[1], NULL) == 0)))
+                  for (j = 0; j < msa[i].no_of_hosts; j++)
                   {
-                     select_line(i);
+                     if ((pmatch((text[0] == '\0') ? "*" : text, ahl[i][j].real_hostname[0], NULL) == 0) ||
+                         ((ahl[i][j].real_hostname[1][0] != '\0') &&
+                          (pmatch((text[0] == '\0') ? "*" : text,  ahl[i][j].real_hostname[1], NULL) == 0)))
+                     {
+                        select_line(i, k);
+                     }
                   }
                }
+               k++;
             }
          }
       }
@@ -631,7 +647,7 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
 
 /*---------------------------- select_line() ----------------------------*/
 static void
-select_line(int i)
+select_line(int i, int k)
 {
    int draw_selection;
 
@@ -692,7 +708,11 @@ select_line(int i)
    }
    if (draw_selection == YES)
    {
-      draw_line_status(i, 1);
+      int x,
+          y;
+
+      locate_xy(k, &x, &y);
+      draw_mon_line_status(i, 1, x, y);
    }
 
    return;

@@ -26,13 +26,12 @@ DESCR__S_M3
  **
  ** SYNOPSIS
  **   void draw_mon_bar(int pos, signed char delta, char bar_no, int x, int y)
- **   void draw_mon_blank_line(int pos)
  **   void draw_mon_button_line(void)
  **   void draw_mon_chars(int pos, char type, int x, int y)
  **   void draw_mon_label_line(void)
- **   void draw_mon_log_status(int, int)
- **   void draw_mon_line_status(int pos, signed char delta)
- **   void draw_mon_blank_line(int pos)
+ **   void draw_mon_log_status(int log_typ, int si_pos)
+ **   void draw_mon_line_status(int pos, signed char delta, int x, int y)
+ **   void draw_mon_blank_line(int x, int y)
  **   void draw_mon_proc_led(int led_no, signed char led_status, int x, int y)
  **   void draw_remote_log_status(int pos, int si_pos, int x, int y)
  **   void draw_clock(time_t current_time)
@@ -127,9 +126,9 @@ static unsigned int          counter = 0;
 #endif
 
 
-/*########################## draw_label_line() ##########################*/
+/*######################## draw_mon_label_line() ########################*/
 void
-draw_label_line(void)
+draw_mon_label_line(void)
 {
    int i,
        x = 0;
@@ -277,16 +276,11 @@ draw_label_line(void)
 }
 
 
-/*######################### draw_line_status() ##########################*/
+/*####################### draw_mon_line_status() ########################*/
 void
-draw_line_status(int pos, signed char delta)
+draw_mon_line_status(int pos, signed char delta, int x, int y)
 {
-   int x = 0,
-       y = 0;
-   GC  tmp_gc;
-
-   /* First locate position of x and y. */
-   locate_xy(pos, &x, &y);
+   GC tmp_gc;
 
 #ifdef _DEBUG
    (void)printf("Drawing line %d %d  x = %d  y = %d\n",
@@ -398,13 +392,8 @@ draw_line_status(int pos, signed char delta)
 
 /*######################## draw_mon_blank_line() ########################*/
 void
-draw_mon_blank_line(int pos)
+draw_mon_blank_line(int x, int y)
 {
-   int x,
-       y;
-
-   locate_xy(pos, &x, &y);
-
    XFillRectangle(display, line_window, default_bg_gc, x, y,
                   line_length, line_height);
    XFillRectangle(display, line_pixmap, default_bg_gc, x, y,

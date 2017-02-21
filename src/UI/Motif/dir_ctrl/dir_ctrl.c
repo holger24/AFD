@@ -1,6 +1,6 @@
 /*
  *  dir_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -490,10 +490,13 @@ static void
 init_dir_ctrl(int *argc, char *argv[], char *window_title)
 {
    int           i,
+                 no_of_invisible_members = 0,
+                 prev_plus_minus,
                  user_offset;
    unsigned int  new_bar_length;
    char          *perm_buffer,
-                 hostname[MAX_AFD_NAME_LENGTH];
+                 hostname[MAX_AFD_NAME_LENGTH],
+                 **invisible_members = NULL;
    struct passwd *pwd;
 
    /* See if user wants some help. */
@@ -711,7 +714,9 @@ init_dir_ctrl(int *argc, char *argv[], char *window_title)
    other_options = DEFAULT_OTHER_OPTIONS;
    line_style = CHARACTERS_AND_BARS;
    no_of_rows_set = DEFAULT_NO_OF_ROWS;
-   read_setup(DIR_CTRL, profile, NULL, NULL, NULL);
+   read_setup(DIR_CTRL, profile, NULL, NULL, NULL,
+              &no_of_invisible_members, &invisible_members);
+   prev_plus_minus = PM_OPEN_STATE;
 
    /* Determine the default bar length. */
    max_bar_length  = 6 * BAR_LENGTH_MODIFIER;
@@ -803,6 +808,11 @@ init_dir_ctrl(int *argc, char *argv[], char *window_title)
       connect_data[i].start_time = times(&tmsdummy);
       connect_data[i].inverse = OFF;
       connect_data[i].expose_flag = NO;
+   }
+
+   if (invisible_members != NULL)
+   {
+      FREE_RT_ARRAY(invisible_members);
    }
 
    no_selected = no_selected_static = 0;

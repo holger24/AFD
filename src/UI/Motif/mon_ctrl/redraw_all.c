@@ -1,6 +1,6 @@
 /*
  *  redraw_all.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,26 +46,31 @@ DESCR__E_M3
 #include "mon_ctrl.h"
 
 /* External global variables. */
-extern Window  button_window,
-               label_window,
-               line_window;
-extern Pixmap  button_pixmap,
-               label_pixmap,
-               line_pixmap;
-extern Display *display;
-extern GC      default_bg_gc;
-extern int     depth,
-               line_height,
-               no_of_afds,
-               no_of_rows,
-               window_width;
+extern Window          button_window,
+                       label_window,
+                       line_window;
+extern Pixmap          button_pixmap,
+                       label_pixmap,
+                       line_pixmap;
+extern Display         *display;
+extern GC              default_bg_gc;
+extern int             depth,
+                       line_height,
+                       no_of_afds,
+                       no_of_rows,
+                       *vpl,
+                       window_width;
+extern struct mon_line *connect_data;
 
 
 /*############################# redraw_all() ############################*/
 void
 redraw_all(void)
 {
-   int i;
+   int i,
+       j = 0,
+       x,
+       y;
 
    /* Clear everything. */
    XClearWindow(display, line_window);
@@ -82,10 +87,17 @@ redraw_all(void)
                                  line_height, depth);
 
    /* Redraw everything. */
-   draw_label_line();
+   draw_mon_label_line();
    for (i = 0; i < no_of_afds; i++)
    {
-      draw_line_status(i, 1);
+      if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+          (connect_data[i].rcmd == '\0'))
+      {
+         vpl[j] = i;
+         locate_xy(j, &x, &y);
+         draw_mon_line_status(i, 1, x, y);
+         j++;
+      }
    }
    draw_mon_button_line();
 

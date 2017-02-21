@@ -1,6 +1,6 @@
 /*
  *  mafd_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -627,9 +627,11 @@ main(int argc, char *argv[])
 static void
 init_mafd_ctrl(int *argc, char *argv[], char *window_title)
 {
-   int          i,
+   int          fd,
+                i,
                 j,
-                fd,
+                no_of_invisible_members = 0,
+                prev_plus_minus,
                 user_offset;
    unsigned int new_bar_length;
    time_t       current_time,
@@ -639,6 +641,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
                 config_file[MAX_PATH_LENGTH],
                 hostname[MAX_AFD_NAME_LENGTH],
                 **hosts = NULL,
+                **invisible_members = NULL,
                 *perm_buffer;
    struct tms   tmsdummy;
    struct stat  stat_buf;
@@ -978,7 +981,9 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
    hostname_display_length = DEFAULT_HOSTNAME_DISPLAY_LENGTH;
    RT_ARRAY(hosts, no_of_hosts, (MAX_REAL_HOSTNAME_LENGTH + 4 + 1), char);
    read_setup(AFD_CTRL, profile, &hostname_display_length,
-              &filename_display_length, NULL);
+              &filename_display_length, NULL,
+              &no_of_invisible_members, &invisible_members);
+   prev_plus_minus = PM_OPEN_STATE;
 
    /* Determine the default bar length. */
    max_bar_length  = 6 * BAR_LENGTH_MODIFIER;

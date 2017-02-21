@@ -1,7 +1,7 @@
 /*
  *  mon_expose_handler.c - Part of AFD, an automatic file distribution
  *                         program.
- *  Copyright (c) 1998 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -103,7 +103,7 @@ mon_expose_handler_label(Widget                      w,
 
    if (ft_exposure_label == 0)
    {
-      draw_label_line();
+      draw_mon_label_line();
       ft_exposure_label = 1;
    }
    else
@@ -137,7 +137,10 @@ mon_expose_handler_line(Widget                      w,
    if (ft_exposure_line == 0)
    {
       int       bs_attribute,
-                i;
+                i,
+                j = 0,
+                x,
+                y;
       Dimension height;
       Screen    *c_screen = ScreenOfDisplay(display, DefaultScreen(display));
 
@@ -145,7 +148,13 @@ mon_expose_handler_line(Widget                      w,
                      window_width, (line_height * no_of_rows));
       for (i = 0; i < no_of_afds; i++)
       {
-         draw_line_status(i, 1);
+         if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+             (connect_data[i].rcmd == '\0'))
+         {
+            locate_xy(j, &x, &y);
+            draw_mon_line_status(i, 1, x, y);
+            j++;
+         }
       }
 
       (void)XtAppAddTimeOut(app, redraw_time_line,

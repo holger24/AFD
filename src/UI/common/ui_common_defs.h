@@ -1,6 +1,6 @@
 /*
  *  ui_common_defs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -101,6 +101,10 @@
 #define FATAL_DIALOG                     FATAL_NO
 #define ABORT_DIALOG                     6
 #define QUESTION_DIALOG                  7
+
+/* Plus Minus Sign state. */
+#define PM_OPEN_STATE                    0
+#define PM_CLOSE_STATE                   1
 
 /* LED indicators. */
 #define AMG_LED                          0
@@ -231,6 +235,7 @@
 #define ROW_ID                           "Number of rows:"
 #define STYLE_ID                         "Line style:"
 #define OTHER_ID                         "Other options:"
+#define INVISIBLE_GROUP_ID               "Invisible group:"
 #define HOSTNAME_DISPLAY_LENGTH_ID       "Hostname display length:"
 #define FILENAME_DISPLAY_LENGTH_ID       "Filename display length:"
 #define NO_OF_HISTORY_LENGTH_ID          "History log length:"
@@ -1134,11 +1139,11 @@ extern void   check_window_ids(char *),
               lookup_color(XColor *),
               make_xprocess(char *, char *, char **, int),
               print_file_size(char *, off_t),
-              read_setup(char *, char *, int *, int *, int *),
+              read_setup(char *, char *, int *, int *, int *, int *, char ***),
               remove_window_id(pid_t, char *),
               view_data(char *, char *),
               view_data_no_filter(char *, char *, int),
               write_window_id(Window, pid_t, char *),
-              write_setup(int, int, int);
+              write_setup(int, int, int, char *);
 
 #endif /* __ui_common_defs_h */

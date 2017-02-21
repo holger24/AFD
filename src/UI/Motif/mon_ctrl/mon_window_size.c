@@ -1,6 +1,6 @@
 /*
  *  mon_window_size.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ extern int           line_length,
                      no_of_columns,
                      no_of_rows,
                      no_of_rows_set,
-                     no_of_afds;
+                     no_of_afds_visible;
 
 
 /*######################### mon_window_size() ##########################*/
@@ -64,8 +64,8 @@ mon_window_size(int *window_width, int *window_height)
    signed char window_size_changed;
 
    /* How many columns do we need? */
-   no_of_columns = no_of_afds / no_of_rows_set;
-   if ((no_of_afds % no_of_rows_set) != 0)
+   no_of_columns = no_of_afds_visible / no_of_rows_set;
+   if ((no_of_afds_visible % no_of_rows_set) != 0)
    {
       no_of_columns += 1;
    }
@@ -78,24 +78,27 @@ mon_window_size(int *window_width, int *window_height)
 
    /* How many lines per window? */
    previous_no_of_rows = no_of_rows;
-   no_of_rows = no_of_afds / no_of_columns;
-   if (no_of_afds != (no_of_columns * no_of_rows))
+   no_of_rows = no_of_afds_visible / no_of_columns;
+   if (no_of_afds_visible != (no_of_columns * no_of_rows))
    {
-      if ((no_of_afds % no_of_columns) != 0)
+      if ((no_of_afds_visible % no_of_columns) != 0)
       {
          no_of_rows += 1;
       }
    }
 
    /* Check if in last column rows moved up. */
-   if (((max_no_of_afds = (no_of_columns * no_of_rows)) > no_of_afds) &&
+   if (((max_no_of_afds = (no_of_columns * no_of_rows)) > no_of_afds_visible) &&
        (previous_no_of_rows != no_of_rows) && (previous_no_of_rows != 0))
    {
-      int i;
+      int i,
+          x,
+          y;
 
-      for (i = max_no_of_afds; i > no_of_afds; i--)
+      for (i = max_no_of_afds; i > no_of_afds_visible; i--)
       {
-         draw_mon_blank_line(i - 1);
+         locate_xy(i, &x, &y);
+         draw_mon_blank_line(x, y);
       }
    }
 

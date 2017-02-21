@@ -1,6 +1,6 @@
 /*
  *  nafd_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -203,9 +203,11 @@ main(int argc, char *argv[])
 static void
 init_nafd_ctrl(int *argc, char *argv[])
 {
-   int          i,
+   int          fd,
+                i,
                 j,
-                fd,
+                *no_of_invisible_members = 0,
+                prev_plus_minus,
                 user_offset;
    time_t       start_time;
    char         afd_file_dir[MAX_PATH_LENGTH],
@@ -213,6 +215,7 @@ init_nafd_ctrl(int *argc, char *argv[])
                 config_file[MAX_PATH_LENGTH],
                 hostname[MAX_AFD_NAME_LENGTH],
                 **hosts = NULL,
+                **invisible_members = NULL,
                 *perm_buffer;
    struct tms   tmsdummy;
    struct stat  stat_buf;
@@ -477,7 +480,9 @@ init_nafd_ctrl(int *argc, char *argv[])
    hostname_display_length = DEFAULT_HOSTNAME_DISPLAY_LENGTH;
    RT_ARRAY(hosts, no_of_hosts, (MAX_HOSTNAME_LENGTH + 4 + 1), char);
    read_setup(AFD_CTRL, profile, &hostname_display_length,
-              &filename_display_length, NULL, hosts, MAX_HOSTNAME_LENGTH);
+              &filename_display_length, NULL, hosts, MAX_HOSTNAME_LENGTH,
+              &no_of_invisible_members, &invisible_members);
+   prev_plus_minus = PM_OPEN_STATE;
 
    /* Determine the default bar length. */
    max_bar_length  = 6 * BAR_LENGTH_MODIFIER;
@@ -654,6 +659,10 @@ init_nafd_ctrl(int *argc, char *argv[])
       }
    }
 
+   if (invisible_members != NULL)
+   {
+      FREE_RT_ARRAY(invisible_members);
+   }
    FREE_RT_ARRAY(hosts);
 
    /*

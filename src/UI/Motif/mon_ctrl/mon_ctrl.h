@@ -1,6 +1,6 @@
 /*
  *  mon_ctrl.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -128,10 +128,6 @@
 #define MON_SYS_LOG_INDICATOR          0
 #define MON_LOG_INDICATOR              1
 
-/* Plus Minus Sign state. */
-#define PM_OPEN_STATE                  0
-#define PM_CLOSE_STATE                 1
-
 struct mon_line 
        {
           char           afd_alias[MAX_AFDNAME_LENGTH + 1];
@@ -239,14 +235,12 @@ void        calc_mon_but_coord(int),
             destroy_error_history(void),
             draw_afd_identifier(int, int, int),
             draw_clock(time_t),
-            draw_label_line(void),
-            draw_line_status(int, signed char),
             draw_mon_bar(int, signed char, char, int, int),
-            draw_mon_blank_line(int),
+            draw_mon_blank_line(int, int),
             draw_mon_button_line(void),
             draw_mon_chars(int, char, int, int),
             draw_mon_label_line(void),
-            draw_mon_line_status(int, signed char),
+            draw_mon_line_status(int, signed char, int, int),
             draw_mon_log_status(int, int),
             draw_mon_proc_led(int, signed char, int, int),
             draw_plus_minus(int, int, int),

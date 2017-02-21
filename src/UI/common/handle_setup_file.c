@@ -1,7 +1,7 @@
 /*
  *  handle_setup_file.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,10 +30,13 @@ DESCR__S_M3
  **                   char *profile,
  **                   int  *hostname_display_length,
  **                   int  *filename_display_length,
- **                   int  *his_log_set)
+ **                   int  *his_log_set,
+ **                   int  *no_of_invisible_members,
+ **                   char ***invisible_members)
  **   void write_setup(int  hostname_display_length,
  **                    int  filename_display_length,
- **                    int  his_log_set)
+ **                    int  his_log_set,
+ **                    char *invisible_groups)
  **
  ** DESCRIPTION
  **   read_setup() looks in the home directory for the file
@@ -60,12 +63,13 @@ DESCR__S_M3
  **   27.03.2004 H.Kiehl Enable user to load a certain profile.
  **   26.04.2008 H.Kiehl Added parameter for hostname display length.
  **   26.07.2013 H.Kiehl Added other options.
+ **   16.02.2017 H.Kiehl Added invisible groups.
  **
  */
 DESCR__E_M3
 
 #include <stdio.h>
-#include <string.h>                  /* strcpy(), strcat()               */
+#include <string.h>                  /* strcpy(), strcat(), memcpy()     */
 #include <stdlib.h>                  /* getenv()                         */
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -93,7 +97,9 @@ read_setup(char *file_name,
            char *profile,
            int  *hostname_display_length,
            int  *filename_display_length,
-           int  *his_log_set)
+           int  *his_log_set,
+           int  *no_of_invisible_members,
+           char ***invisible_members)
 {
    int         fd;
    uid_t       euid, /* Effective user ID. */
@@ -383,6 +389,61 @@ read_setup(char *file_name,
       }
    }
 
+   /* Get the invisible group names. */
+   *no_of_invisible_members = 0;
+   if ((ptr = posi(buffer, INVISIBLE_GROUP_ID)) != NULL)
+   {
+      int  length = 0,
+           max_length = 0;
+      char *tmp_ptr;
+
+      while ((*ptr == ' ') || (*ptr == '\t'))
+      {
+         ptr++;
+      }
+      tmp_ptr = ptr;
+      while ((*tmp_ptr != '\n') && (*tmp_ptr != '\0'))
+      {
+         if (*tmp_ptr == '|')
+         {
+           (*no_of_invisible_members)++;
+           if (length > max_length)
+           {
+              max_length = length;
+           }
+           length = 0;
+         }
+         tmp_ptr++; length++;
+      }
+      if (*no_of_invisible_members > 0)
+      {
+         int i;
+
+         RT_ARRAY(*invisible_members, *no_of_invisible_members,
+                  max_length, char);
+         length = 0;
+         for (length = 0; length < *no_of_invisible_members; length++)
+         {
+            i = 0;
+            while (*ptr != '|')
+            {
+               (*invisible_members)[length][i] = *ptr;
+               ptr++; i++;
+            }
+            (*invisible_members)[length][i] = '\0';
+            ptr++;
+         }
+      }
+      else
+      {
+         *invisible_members = NULL;
+      }
+   }
+   else
+   {
+      *invisible_members = NULL;
+   }
+
    /* Get the hostname display length. */
    if (hostname_display_length != NULL)
    {
@@ -487,7 +548,8 @@ read_setup(char *file_name,
 void
 write_setup(int  hostname_display_length,
             int  filename_display_length,
-            int  his_log_set)
+            int  his_log_set,
+            char *invisible_groups)
 {
    int         buf_length,
                fd = -1,
@@ -604,6 +666,11 @@ write_setup(int  hostname_display_length,
                 strlen(ROW_ID) + 1 + MAX_INT_LENGTH + 1 +
                 strlen(STYLE_ID) + 1 + MAX_INT_LENGTH + 1 +
                 strlen(OTHER_ID) + 1 + MAX_INT_LENGTH + 1;
+
+   if (invisible_groups[0] != '\0')
+   {
+      buf_length += strlen(INVISIBLE_GROUP_ID) + 1 + strlen(invisible_groups) + 1;
+   }
    if (hostname_display_length != -1)
    {
       buf_length += strlen(HOSTNAME_DISPLAY_LENGTH_ID) + 1 + MAX_INT_LENGTH + 1;
@@ -694,6 +761,17 @@ write_setup(int  hostname_display_length,
       }
       else
       {
+         if (invisible_groups[0] != '\0')
+         {
+            length += snprintf(&buffer[length], buf_length - length, "%s %s\n",
+                               INVISIBLE_GROUP_ID, invisible_groups);
+            if (length > buf_length)
+            {
+               (void)fprintf(stderr, "Buffer to small %d > %d (%s %d)",
+                             length, buf_length, __FILE__, __LINE__);
+               length = buf_length;
+            }
+         }
          if (hostname_display_length != -1)
          {
             length += snprintf(&buffer[length], buf_length - length, "%s %d\n",
@@ -797,6 +875,17 @@ write_setup(int  hostname_display_length,
       }
       else
       {
+         if (invisible_groups[0] != '\0')
+         {
+            length += snprintf(&buffer[length], buf_length - length, "%s %s\n",
+                               INVISIBLE_GROUP_ID, invisible_groups);
+            if (length > buf_length)
+            {
+               (void)fprintf(stderr, "Buffer to small %d > %d (%s %d)",
+                             length, buf_length, __FILE__, __LINE__);
+               length = buf_length;
+            }
+         }
          if (hostname_display_length != -1)
          {
             length += snprintf(&buffer[length], buf_length - length, "%s %d\n",

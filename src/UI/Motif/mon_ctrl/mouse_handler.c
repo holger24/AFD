@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -113,6 +113,8 @@ extern GC                      letter_gc,
 extern int                     depth,
                                no_of_active_process,
                                no_of_afds,
+                               no_of_afds_invisible,
+                               no_of_afds_visible,
                                no_of_jobs_selected,
                                line_length,
                                line_height,
@@ -124,6 +126,7 @@ extern int                     depth,
                                no_of_rows,
                                no_of_rows_set,
                                his_log_set,
+                               *vpl,
                                window_width;
 extern unsigned int            glyph_width;
 extern XT_PTR_TYPE             current_font,
@@ -154,7 +157,7 @@ static int                     in_window = NO;
 
 /* Local function prototypes. */
 static int                     in_ec_area(int, XEvent *),
-                               in_pm_area(int, XEvent *);
+                               in_pm_area(XEvent *);
 
 
 /*############################ mon_focus() ##############################*/
@@ -194,43 +197,51 @@ mon_input(Widget w, XtPointer client_data, XEvent *event)
       select_no = (event->xbutton.y / line_height) +
                   ((event->xbutton.x / line_length) * no_of_rows);
 
-      if ((select_no < no_of_afds) && (last_motion_pos != select_no))
+      if ((select_no < no_of_afds_visible) && (last_motion_pos != select_no))
       {
          if (event->xkey.state & ControlMask)
          {
-            if (connect_data[select_no].inverse == STATIC)
+            int x,
+                y;
+
+            if (connect_data[vpl[select_no]].inverse == STATIC)
             {
-               connect_data[select_no].inverse = OFF;
+               connect_data[vpl[select_no]].inverse = OFF;
                ABS_REDUCE_GLOBAL(no_selected_static);
             }
             else
             {
-               connect_data[select_no].inverse = STATIC;
+               connect_data[vpl[select_no]].inverse = STATIC;
                no_selected_static++;
             }
 
-            draw_line_status(select_no, select_no);
+            locate_xy(select_no, &x, &y);
+            draw_mon_line_status(vpl[select_no], vpl[select_no], x, y);
             XFlush(display);
          }
          else if (event->xkey.state & ShiftMask)
               {
-                 if (connect_data[select_no].inverse == ON)
+                 int x,
+                     y;
+
+                 if (connect_data[vpl[select_no]].inverse == ON)
                  {
-                    connect_data[select_no].inverse = OFF;
+                    connect_data[vpl[select_no]].inverse = OFF;
                     ABS_REDUCE_GLOBAL(no_selected);
                  }
-                 else if (connect_data[select_no].inverse == STATIC)
+                 else if (connect_data[vpl[select_no]].inverse == STATIC)
                       {
-                         connect_data[select_no].inverse = OFF;
+                         connect_data[vpl[select_no]].inverse = OFF;
                          ABS_REDUCE_GLOBAL(no_selected_static);
                       }
                       else
                       {
-                         connect_data[select_no].inverse = ON;
+                         connect_data[vpl[select_no]].inverse = ON;
                          no_selected++;
                       }
 
-                 draw_line_status(select_no, 1);
+                 locate_xy(select_no, &x, &y);
+                 draw_mon_line_status(vpl[select_no], 1, x, y);
                  XFlush(display);
               }
       }
@@ -246,172 +257,220 @@ mon_input(Widget w, XtPointer client_data, XEvent *event)
                   ((event->xbutton.x / line_length) * no_of_rows);
 
       /* Make sure that this field does contain a channel. */
-      if (select_no < no_of_afds)
+      if (select_no < no_of_afds_visible)
       {
          if (((event->xkey.state & Mod1Mask) ||
              (event->xkey.state & Mod4Mask)) &&
              (event->xany.type == ButtonPress))
          {
-            int    gotcha = NO,
-                   i;
-            Window window_id;
-
-            for (i = 0; i < no_of_active_process; i++)
+            if (connect_data[vpl[select_no]].rcmd != '\0')
             {
-               if ((apps_list[i].position == select_no) &&
-                   (my_strcmp(apps_list[i].progname, MON_INFO) == 0))
+               int    gotcha = NO,
+                      i;
+               Window window_id;
+
+               for (i = 0; i < no_of_active_process; i++)
                {
-                  if ((window_id = get_window_id(apps_list[i].pid,
-                                                 MON_CTRL)) != 0L)
+                  if ((apps_list[i].position == vpl[select_no]) &&
+                      (my_strcmp(apps_list[i].progname, MON_INFO) == 0))
                   {
-                     gotcha = YES;
+                     if ((window_id = get_window_id(apps_list[i].pid,
+                                                    MON_CTRL)) != 0L)
+                     {
+                        gotcha = YES;
+                     }
+                     break;
                   }
-                  break;
                }
-            }
-            if (gotcha == NO)
-            {
-               char *args[8],
-                    progname[MAX_PATH_LENGTH];
+               if (gotcha == NO)
+               {
+                  char *args[8],
+                       progname[MAX_PATH_LENGTH];
 
-               args[0] = progname;
-               args[1] = WORK_DIR_ID;
-               args[2] = p_work_dir;
-               args[3] = "-f";
-               args[4] = font_name;
-               args[5] = "-a";
-               args[6] = msa[select_no].afd_alias;
-               args[7] = NULL;
-               (void)strcpy(progname, MON_INFO);
+                  args[0] = progname;
+                  args[1] = WORK_DIR_ID;
+                  args[2] = p_work_dir;
+                  args[3] = "-f";
+                  args[4] = font_name;
+                  args[5] = "-a";
+                  args[6] = msa[vpl[select_no]].afd_alias;
+                  args[7] = NULL;
+                  (void)strcpy(progname, MON_INFO);
 
-               make_xprocess(progname, progname, args, select_no);
-            }
-            else
-            {
-               XRaiseWindow(display, window_id);
-               XSetInputFocus(display, window_id, RevertToParent,
-                              CurrentTime);
+                  make_xprocess(progname, progname, args, vpl[select_no]);
+               }
+               else
+               {
+                  XRaiseWindow(display, window_id);
+                  XSetInputFocus(display, window_id, RevertToParent,
+                                 CurrentTime);
+               }
             }
          }
          else if (event->xany.type == ButtonPress)
               {
                  if (event->xkey.state & ControlMask)
                  {
-                    if (connect_data[select_no].inverse == STATIC)
+                    if (connect_data[vpl[select_no]].rcmd != '\0')
                     {
-                       connect_data[select_no].inverse = OFF;
-                       ABS_REDUCE_GLOBAL(no_selected_static);
-                    }
-                    else
-                    {
-                       connect_data[select_no].inverse = STATIC;
-                       no_selected_static++;
-                    }
+                       int x,
+                           y;
 
-                    draw_line_status(select_no, 1);
-                    XFlush(display);
+                       if (connect_data[vpl[select_no]].inverse == STATIC)
+                       {
+                          connect_data[vpl[select_no]].inverse = OFF;
+                          ABS_REDUCE_GLOBAL(no_selected_static);
+                       }
+                       else
+                       {
+                          connect_data[vpl[select_no]].inverse = STATIC;
+                          no_selected_static++;
+                       }
+
+                       locate_xy(select_no, &x, &y);
+                       draw_mon_line_status(vpl[select_no], 1, x, y);
+                       XFlush(display);
+                    }
                  }
                  else if (event->xkey.state & ShiftMask)
                       {
-                         if (connect_data[select_no].inverse == OFF)
+                         if (connect_data[vpl[select_no]].rcmd != '\0')
                          {
-                            int i;
+                            int x,
+                                y;
 
-                            if (select_no > 0)
+                            if (connect_data[vpl[select_no]].inverse == OFF)
                             {
-                               for (i = select_no - 1; i > 0; i--)
+                               int i;
+
+                               if (select_no > 0)
                                {
-                                  if (connect_data[i].inverse != OFF)
+                                  for (i = select_no - 1; i > 0; i--)
                                   {
-                                     break;
+                                     if (connect_data[vpl[i]].inverse != OFF)
+                                     {
+                                        break;
+                                     }
                                   }
                                }
-                            }
-                            else
-                            {
-                               i = 0;
-                            }
-                            if (connect_data[i].inverse != OFF)
-                            {
-                               int j;
-
-                               for (j = i + 1; j <= select_no; j++)
+                               else
                                {
-                                  connect_data[j].inverse = connect_data[i].inverse;
-                                  draw_line_status(j, 1);
+                                  i = 0;
+                               }
+                               if (connect_data[vpl[i]].inverse != OFF)
+                               {
+                                  int j;
+
+                                  for (j = i + 1; j <= select_no; j++)
+                                  {
+                                     if (connect_data[vpl[j]].rcmd != '\0')
+                                     {
+                                        connect_data[vpl[j]].inverse = connect_data[vpl[i]].inverse;
+                                        no_selected++;
+                                        locate_xy(j, &x, &y);
+                                        draw_mon_line_status(vpl[j], 1, x, y);
+                                     }
+                                  }
+                               }
+                               else
+                               {
+                                  connect_data[vpl[select_no]].inverse = ON;
+                                  no_selected++;
+                                  locate_xy(select_no, &x, &y);
+                                  draw_mon_line_status(vpl[select_no], 1, x, y);
                                }
                             }
                             else
                             {
-                               connect_data[select_no].inverse = ON;
-                               no_selected++;
-                               draw_line_status(select_no, 1);
+                               if (connect_data[vpl[select_no]].inverse == ON)
+                               {
+                                  connect_data[vpl[select_no]].inverse = OFF;
+                                  ABS_REDUCE_GLOBAL(no_selected);
+                               }
+                               else
+                               {
+                                  connect_data[vpl[select_no]].inverse = OFF;
+                                  ABS_REDUCE_GLOBAL(no_selected_static);
+                               }
+                               locate_xy(select_no, &x, &y);
+                               draw_mon_line_status(vpl[select_no], 1, x, y);
                             }
+                            XFlush(display);
                          }
-                         else
-                         {
-                            if (connect_data[select_no].inverse == ON)
-                            {
-                               connect_data[select_no].inverse = OFF;
-                               ABS_REDUCE_GLOBAL(no_selected);
-                            }
-                            else
-                            {
-                               connect_data[select_no].inverse = OFF;
-                               ABS_REDUCE_GLOBAL(no_selected_static);
-                            }
-                            draw_line_status(select_no, 1);
-                         }
-                         XFlush(display);
                       }
                  else if ((line_style != BARS_ONLY) &&
-                          ((msa[select_no].ec > 0) ||
-                           (msa[select_no].host_error_counter > 0)) &&
-                          (in_ec_area(select_no, event)))
+                          ((msa[vpl[select_no]].ec > 0) ||
+                           (msa[vpl[select_no]].host_error_counter > 0)) &&
+                          (in_ec_area(vpl[select_no], event)))
                       {
                          popup_error_history(event->xbutton.x_root,
-                                             event->xbutton.y_root, select_no);
+                                             event->xbutton.y_root,
+                                             vpl[select_no]);
                       }
-                 else if ((connect_data[select_no].rcmd == '\0') &&
-                          (in_pm_area(select_no, event)))
+                 else if ((connect_data[vpl[select_no]].rcmd == '\0') &&
+                          (in_pm_area(event)))
                       {
-                         int x = 0,
-                             y = 0;
+                         int i,
+                             invisible;
 
-                         if (connect_data[select_no].plus_minus == PM_CLOSE_STATE)
+                         if (connect_data[vpl[select_no]].plus_minus == PM_CLOSE_STATE)
                          {
-                            connect_data[select_no].plus_minus = PM_OPEN_STATE;
+                            connect_data[vpl[select_no]].plus_minus = PM_OPEN_STATE;
+                            invisible = -1;
                          }
                          else
                          {
-                            connect_data[select_no].plus_minus = PM_CLOSE_STATE;
+                            connect_data[vpl[select_no]].plus_minus = PM_CLOSE_STATE;
+                            invisible = 1;
                          }
-                         locate_xy(select_no, &x, &y);
-                         draw_plus_minus(select_no, x, y);
-                         XFlush(display);
+                         for (i = vpl[select_no] + 1; connect_data[i].rcmd != '\0'; i++)
+                         {
+                            connect_data[i].plus_minus = connect_data[vpl[select_no]].plus_minus;
+                            if ((invisible == 1) &&
+                                (connect_data[i].inverse != OFF))
+                            {
+                               connect_data[i].inverse = OFF;
+                               ABS_REDUCE_GLOBAL(no_selected);
+                            }
+                            no_of_afds_invisible += invisible;
+                         }
+                         no_of_afds_visible = no_of_afds - no_of_afds_invisible;
+
+                         /* Resize and redraw window. */
+                         if (resize_mon_window() == YES)
+                         {
+                            calc_mon_but_coord(window_width);
+                            redraw_all();
+                            XFlush(display);
+                         }
                       }
                       else
                       {
                          destroy_error_history();
-                         if ((other_options & FORCE_SHIFT_SELECT) == 0)
+                         if (((other_options & FORCE_SHIFT_SELECT) == 0) &&
+                             (connect_data[vpl[select_no]].rcmd != '\0'))
                          {
-                            if (connect_data[select_no].inverse == ON)
+                            int x,
+                                y;
+
+                            if (connect_data[vpl[select_no]].inverse == ON)
                             {
-                               connect_data[select_no].inverse = OFF;
+                               connect_data[vpl[select_no]].inverse = OFF;
                                ABS_REDUCE_GLOBAL(no_selected);
                             }
-                            else if (connect_data[select_no].inverse == STATIC)
+                            else if (connect_data[vpl[select_no]].inverse == STATIC)
                                  {
-                                    connect_data[select_no].inverse = OFF;
+                                    connect_data[vpl[select_no]].inverse = OFF;
                                     ABS_REDUCE_GLOBAL(no_selected_static);
                                  }
                                  else
                                  {
-                                    connect_data[select_no].inverse = ON;
+                                    connect_data[vpl[select_no]].inverse = ON;
                                     no_selected++;
                                  }
 
-                            draw_line_status(select_no, 1);
+                            locate_xy(select_no, &x, &y);
+                            draw_mon_line_status(vpl[select_no], 1, x, y);
                             XFlush(display);
                          }
                       }
@@ -480,7 +539,7 @@ mon_input(Widget w, XtPointer client_data, XEvent *event)
 
 /*+++++++++++++++++++++++++++++ in_ec_area() ++++++++++++++++++++++++++++*/
 static int
-in_ec_area(int select_no, XEvent *event)
+in_ec_area(int pos, XEvent *event)
 {
    int x_offset,
        y_offset;
@@ -502,10 +561,10 @@ in_ec_area(int select_no, XEvent *event)
 #endif
    if ((((x_offset > x_offset_ec) &&
          (x_offset < (x_offset_ec + (2 * glyph_width))) &&
-         (msa[select_no].ec > 0)) ||
+         (msa[pos].ec > 0)) ||
         ((x_offset > x_offset_eh) &&
          (x_offset < (x_offset_eh + (2 * glyph_width))) &&
-         (msa[select_no].host_error_counter > 0))) &&
+         (msa[pos].host_error_counter > 0))) &&
        ((y_offset > SPACE_ABOVE_LINE) &&
         (y_offset < (line_height - SPACE_BELOW_LINE))))
    {
@@ -518,7 +577,7 @@ in_ec_area(int select_no, XEvent *event)
 
 /*+++++++++++++++++++++++++++++ in_pm_area() ++++++++++++++++++++++++++++*/
 static int
-in_pm_area(int select_no, XEvent *event)
+in_pm_area(XEvent *event)
 {
    int x_offset,
        y_offset;
@@ -576,7 +635,51 @@ save_mon_setup_cb(Widget    w,
                   XtPointer client_data,
                   XtPointer call_data)
 {
-   write_setup(-1, -1, his_log_set);
+   int  i,
+        invisible_group_counter = 0;
+
+   for (i = 0; i < no_of_afds; i++)
+   {
+      if ((connect_data[i].rcmd == '\0') &&
+          (connect_data[i].plus_minus == PM_CLOSE_STATE))
+      {
+         invisible_group_counter++;
+      }
+   }
+   if (invisible_group_counter == 0)
+   {
+      write_setup(-1, -1, his_log_set, "");
+   }
+   else
+   {
+      int  malloc_length;
+      char *invisible_groups;
+
+      malloc_length = invisible_group_counter * (MAX_AFDNAME_LENGTH + 2);
+      if ((invisible_groups = malloc(malloc_length)) == NULL)
+      {
+         (void)fprintf(stderr, "Failed to malloc() %d bytes : %s (%s %d)\n",
+                       malloc_length, strerror(errno), __FILE__, __LINE__);
+         write_setup(-1, -1, his_log_set, "");
+      }
+      else
+      {
+         int length = 0;
+
+         for (i = 0; i < no_of_afds; i++)
+         {
+            if ((connect_data[i].rcmd == '\0') &&
+                (connect_data[i].plus_minus == PM_CLOSE_STATE))
+            {
+               length += snprintf(invisible_groups + length,
+                                  (invisible_group_counter * (MAX_AFDNAME_LENGTH + 2)),
+                                  "%s|", connect_data[i].afd_alias);
+            }
+         }
+         write_setup(-1, -1, his_log_set, invisible_groups);
+         free(invisible_groups);
+      }
+   }
 
    return;
 }
@@ -589,11 +692,11 @@ mon_popup_cb(Widget    w,
              XtPointer call_data)
 {
    int         i,
-#ifdef _DEBUG
                j,
-#endif
                k,
-               offset = 0;
+               offset = 0,
+               x,
+               y;
    XT_PTR_TYPE sel_typ = (XT_PTR_TYPE)client_data;
    char        host_err_no[1025],
                progname[MAX_PROCNAME_LENGTH + 1],
@@ -1218,12 +1321,23 @@ mon_popup_cb(Widget    w,
       }
    }
 
+   j = 0;
    for (i = 0; i < no_of_afds; i++)
    {
       if (connect_data[i].inverse == ON)
       {
          connect_data[i].inverse = OFF;
-         draw_line_status(i, -1);
+         if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+             (connect_data[i].rcmd == '\0'))
+         {
+            locate_xy(j, &x, &y);
+            draw_mon_line_status(i, -1, x, y);
+         }
+      }
+      if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+          (connect_data[i].rcmd == '\0'))
+      {
+         j++;
       }
    }
 
@@ -1244,7 +1358,10 @@ start_remote_prog(Widget    w,
 {
    int         arg_count,
                display_offset,
-               i;
+               i,
+               k = 0,
+               x,
+               y;
    XT_PTR_TYPE item_no = (XT_PTR_TYPE)client_data;
    char        **args,
                progname[MAX_PATH_LENGTH];
@@ -1848,7 +1965,7 @@ start_remote_prog(Widget    w,
 
             if ((item_no == AFD_CTRL_SEL) || (item_no == DIR_CTRL_SEL))
             {
-               int    j;
+               int j;
 
                for (j = 0; j < no_of_active_process; j++)
                {
@@ -2066,7 +2183,12 @@ start_remote_prog(Widget    w,
                if (connect_data[i].inverse == ON)
                {
                   connect_data[i].inverse = OFF;
-                  draw_line_status(i, -1);
+                  if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                      (connect_data[i].rcmd == '\0'))
+                  {
+                     locate_xy(k, &x, &y);
+                     draw_mon_line_status(i, -1, x, y);
+                  }
                   ABS_REDUCE_GLOBAL(no_selected);
                }
             }
@@ -2083,6 +2205,11 @@ start_remote_prog(Widget    w,
 #endif
             }
          }
+      }
+      if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+          (connect_data[i].rcmd == '\0'))
+      {
+         k++;
       }
    }
    free(args);
@@ -2464,7 +2591,10 @@ change_mon_history_cb(Widget    w,
 
    if (resize_mon_window() == YES)
    {
-      int i;
+      int i,
+          j = 0,
+          x,
+          y;
 
       calc_mon_but_coord(window_width);
       XClearWindow(display, line_window);
@@ -2481,7 +2611,7 @@ change_mon_history_cb(Widget    w,
                                     line_height, depth);
 
       /* Redraw label line at top. */
-      draw_label_line();
+      draw_mon_label_line();
 
       /* Redraw all status lines. */
       for (i = 0; i < no_of_afds; i++)
@@ -2491,7 +2621,13 @@ change_mon_history_cb(Widget    w,
             (void)memcpy(connect_data[i].log_history, msa[i].log_history,
                          (NO_OF_LOG_HISTORY * MAX_LOG_HISTORY));
          }
-         draw_line_status(i, 1);
+         if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+             (connect_data[i].rcmd == '\0'))
+         {
+            locate_xy(j, &x, &y);
+            draw_mon_line_status(i, 1, x, y);
+            j++;
+         }
       }
 
       /* Redraw buttons at bottom. */

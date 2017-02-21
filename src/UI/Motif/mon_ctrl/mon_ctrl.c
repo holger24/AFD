@@ -158,12 +158,15 @@ int                     bar_thickness_3,
                         no_of_rows,
                         no_of_rows_set,
                         no_of_afds,
+                        no_of_afds_invisible = 0,
+                        no_of_afds_visible,
                         no_of_jobs_selected,
                         sys_log_fd = STDERR_FILENO,
 #ifdef WITHOUT_FIFO_RW_SUPPORT
                         mon_log_readfd,
                         sys_log_readfd,
 #endif
+                        *vpl,           /* Visible position list. */
                         window_width,
                         window_height,
                         x_center_log_status,
@@ -558,14 +561,20 @@ static void
 init_mon_ctrl(int *argc, char *argv[], char *window_title)
 {
    int           fd,
+                 gotcha,
                  i,
+                 j,
+                 no_of_invisible_members = 0,
+                 prev_plus_minus,
+                 reduce_val,
                  user_offset;
    unsigned int  new_bar_length;
    char          *buffer,
                  config_file[MAX_PATH_LENGTH],
-                 *perm_buffer,
                  hostname[MAX_AFD_NAME_LENGTH],
-                 mon_log_fifo[MAX_PATH_LENGTH];
+                 **invisible_members = NULL,
+                 mon_log_fifo[MAX_PATH_LENGTH],
+                 *perm_buffer;
    struct stat   stat_buf;
    struct passwd *pwd;
 
@@ -763,6 +772,13 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
       }
       exit(INCORRECT);
    }
+   if ((vpl = malloc((no_of_afds * sizeof(int)))) == NULL)
+   {
+      (void)fprintf(stderr, "Failed to malloc() %ld bytes : %s (%s %d)\n",
+                    (no_of_afds * sizeof(int)), strerror(errno),
+                    __FILE__, __LINE__);
+      exit(INCORRECT);
+   }
 
    /*
     * Map to AFD_MON_ACTIVE file, to check if all process are really
@@ -843,7 +859,10 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
    line_style = CHARACTERS_AND_BARS;
    no_of_rows_set = DEFAULT_NO_OF_ROWS;
    his_log_set = DEFAULT_NO_OF_HISTORY_LOGS;
-   read_setup(MON_CTRL, profile, NULL, NULL, &his_log_set);
+   read_setup(MON_CTRL, profile, NULL, NULL, &his_log_set,
+              &no_of_invisible_members, &invisible_members);
+   prev_plus_minus = PM_OPEN_STATE;
+   reduce_val = 0;
 
    /* Determine the default bar length. */
    max_bar_length  = 6 * BAR_LENGTH_MODIFIER;
@@ -884,7 +903,39 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
       connect_data[i].fd = msa[i].fd;
       connect_data[i].archive_watch = msa[i].archive_watch;
       connect_data[i].rcmd = msa[i].rcmd[0];
-      connect_data[i].plus_minus = PM_OPEN_STATE;
+      if (no_of_invisible_members > 0)
+      {
+         if (connect_data[i].rcmd == '\0')
+         {
+            gotcha = NO;
+            for (j = 0; j < no_of_invisible_members; j++)
+            {
+               if (strcmp(connect_data[i].afd_alias, invisible_members[j]) == 0)
+               {
+                  connect_data[i].plus_minus = PM_CLOSE_STATE;
+                  prev_plus_minus = PM_CLOSE_STATE;
+                  reduce_val = 1;
+                  gotcha = YES;
+                  break;
+               }
+            }
+            if (gotcha == NO)
+            {
+               connect_data[i].plus_minus = PM_OPEN_STATE;
+               prev_plus_minus = PM_OPEN_STATE;
+               reduce_val = 0;
+            }
+         }
+         else
+         {
+            connect_data[i].plus_minus = prev_plus_minus;
+            no_of_afds_invisible += reduce_val;
+         }
+      }
+      else
+      {
+         connect_data[i].plus_minus = PM_OPEN_STATE;
+      }
       if ((connect_data[i].amg == OFF) ||
           (connect_data[i].fd == OFF) ||
           (connect_data[i].archive_watch == OFF))
@@ -977,6 +1028,23 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
                                                               connect_data[i].scale[HOST_ERROR_BAR_NO - 1];
            }
       connect_data[i].inverse = OFF;
+   }
+
+   if (invisible_members != NULL)
+   {
+      FREE_RT_ARRAY(invisible_members);
+   }
+   no_of_afds_visible = no_of_afds - no_of_afds_invisible;
+
+   j = 0;
+   for (i = 0; i < no_of_afds; i++)
+   {
+      if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+          (connect_data[i].rcmd == '\0'))
+      {
+         vpl[j] = i;
+         j++;
+      }
    }
 
    /*

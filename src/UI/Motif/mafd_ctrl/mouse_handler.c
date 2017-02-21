@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -857,7 +857,7 @@ popup_menu_cb(Widget w, XtPointer client_data, XEvent *event)
 void
 save_setup_cb(Widget w, XtPointer client_data, XtPointer call_data)
 {
-   write_setup(hostname_display_length, filename_display_length, -1);
+   write_setup(hostname_display_length, filename_display_length, -1, "");
 
    return;
 }
