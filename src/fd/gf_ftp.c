@@ -1,6 +1,6 @@
 /*
  *  gf_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -2119,6 +2119,19 @@ main(int argc, char *argv[])
 static void
 gf_ftp_exit(void)
 {
+   if ((fra != NULL) && (db.fra_pos >= 0))
+   {
+      if ((fra[db.fra_pos].stupid_mode == YES) ||
+          (fra[db.fra_pos].remove == YES))
+      {
+         detach_ls_data(YES);
+      }
+      else
+      {
+         detach_ls_data(NO);
+      }
+   }
+
    if ((fsa != NULL) && (db.fsa_pos >= 0))
    {
       int     diff_no_of_files_done;
