@@ -481,6 +481,12 @@ get_ip_data(int *fsa_ip_counter)
    char *ip_hl = NULL,
         *ip_ips = NULL;
 
+   if ((prip = malloc((no_of_hosts * sizeof(struct prev_rate_ip)))) == NULL)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__, _("malloc() error"));
+      exit(INCORRECT);
+   }
+
    if ((no_of_ips = get_current_ip_hl(&ip_hl, &ip_ips)) > 0)
    {
       int  gotcha,
