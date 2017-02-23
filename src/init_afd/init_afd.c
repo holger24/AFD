@@ -760,11 +760,6 @@ main(int argc, char *argv[])
    proc_table[MAINTAINER_LOG_NO].pid = -1;
    *proc_table[MAINTAINER_LOG_NO].status = NEITHER;
 #endif
-#ifdef _TRANSFER_RATE_LOG
-   proc_table[TRANSFER_RATE_LOG_NO].pid = make_process(TRLOG, work_dir, NULL);
-   *(pid_t *)(pid_list + ((TRANSFER_RATE_LOG_NO + 1) * sizeof(pid_t))) = proc_table[TRANSFER_RATE_LOG_NO].pid;
-   *proc_table[TRANSFER_RATE_LOG_NO].status = ON;
-#endif
 
    /* Tell user at what time the AFD was started. */
    *(pid_t *)(pid_list) = getpid();
@@ -829,6 +824,12 @@ main(int argc, char *argv[])
    proc_table[ALDAD_NO].pid = make_process(ALDAD, work_dir, NULL);
    *(pid_t *)(pid_list + ((ALDAD_NO + 1) * sizeof(pid_t))) = proc_table[ALDAD_NO].pid;
    *proc_table[ALDAD_NO].status = ON;
+#endif
+
+#ifdef _TRANSFER_RATE_LOG
+   proc_table[TRANSFER_RATE_LOG_NO].pid = make_process(TRLOG, work_dir, NULL);
+   *(pid_t *)(pid_list + ((TRANSFER_RATE_LOG_NO + 1) * sizeof(pid_t))) = proc_table[TRANSFER_RATE_LOG_NO].pid;
+   *proc_table[TRANSFER_RATE_LOG_NO].status = ON;
 #endif
 
    /*
