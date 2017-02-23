@@ -171,7 +171,6 @@ main(int argc, char *argv[])
       system_log(ERROR_SIGN, __FILE__, __LINE__, _("malloc() error"));
       exit(INCORRECT);
    }
-   fsa_ip_counter = 0;
    get_ip_data(&fsa_ip_counter);
 #endif /* WITH_IP_DB */
 
@@ -394,9 +393,6 @@ main(int argc, char *argv[])
              * Instead of finding out what has changed, just lets redo
              * the complete structure with the IP information.
              */
-            fsa_ip_counter = 0;
-            free(prip);
-            prip = NULL;
             get_ip_data(&fsa_ip_counter);
 #endif
          }
@@ -430,7 +426,7 @@ main(int argc, char *argv[])
                   }
                   pr[i].bytes_send = bytes_send;
 #ifdef WITH_IP_DB
-                  if (fsa_ip_pos[i] != -1)
+                  if ((fsa_ip_counter > 0) && (fsa_ip_pos[i] != -1))
                   {
                      prip[fsa_ip_pos[i]].tmp_bytes_send += bytes_send;
                   }
@@ -481,11 +477,12 @@ get_ip_data(int *fsa_ip_counter)
    char *ip_hl = NULL,
         *ip_ips = NULL;
 
-   if ((prip = malloc((no_of_hosts * sizeof(struct prev_rate_ip)))) == NULL)
+   if (prip != NULL)
    {
-      system_log(ERROR_SIGN, __FILE__, __LINE__, _("malloc() error"));
-      exit(INCORRECT);
+      free(prip);
+      prip = NULL;
    }
+   *fsa_ip_counter = 0;
 
    if ((no_of_ips = get_current_ip_hl(&ip_hl, &ip_ips)) > 0)
    {
@@ -494,6 +491,11 @@ get_ip_data(int *fsa_ip_counter)
       char *p_ip_hl,
            *p_ip_ips;
 
+      if ((prip = malloc((no_of_hosts * sizeof(struct prev_rate_ip)))) == NULL)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__, _("malloc() error"));
+         exit(INCORRECT);
+      }
       for (i = 0; i < no_of_hosts; i++)
       {
          p_ip_hl = ip_hl;
