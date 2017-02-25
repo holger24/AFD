@@ -423,7 +423,7 @@ mon_input(Widget w, XtPointer client_data, XEvent *event)
                             connect_data[vpl[select_no]].plus_minus = PM_CLOSE_STATE;
                             invisible = 1;
                          }
-                         for (i = vpl[select_no] + 1; connect_data[i].rcmd != '\0'; i++)
+                         for (i = vpl[select_no] + 1; i < no_of_afds && connect_data[i].rcmd != '\0'; i++)
                          {
                             connect_data[i].plus_minus = connect_data[vpl[select_no]].plus_minus;
                             if ((invisible == 1) &&
