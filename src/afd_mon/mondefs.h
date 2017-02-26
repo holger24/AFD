@@ -1,6 +1,6 @@
 /*
  *  mondefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -36,6 +36,7 @@
 #define MAX_CONVERT_USERNAME     5
 #define MAX_INODE_LOG_NO_LENGTH  (MAX_LONG_LONG_LENGTH + 1 + MAX_INT_LENGTH + 1)
 #define DATA_STEP_SIZE           10
+#define AFD_MON_RESCAN_TIME      1
 
 #define MON_CONFIG_FILE          "/MON_CONFIG"
 #define AFD_MON_CONFIG_FILE      "/AFD_MON_CONFIG"
@@ -771,6 +772,7 @@ extern void  create_msa(void),
              start_log_process(int, unsigned int),
              stop_log_process(int),
              stop_process(int, int),
+             update_group_summary(void),
              write_afd_log(int, int, unsigned int, unsigned int, char *);
 
 #endif /* __mondefs_h */

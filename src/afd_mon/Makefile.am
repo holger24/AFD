@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2016 Holger Kiehl
+## Copyright (C) 2001 - 2017 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -32,7 +32,8 @@ afd_mon_SOURCES        = afd_mon.c\
                          mon_log.c\
                          start_all.c\
                          start_process.c\
-                         stop_process.c
+                         stop_process.c\
+			 update_group_summary.c
 afd_mon_LDADD          = ../common/libafd.a
 afd_mon_status_SOURCES = afd_mon_status.c
 afd_mon_status_LDADD   = ../common/libafd.a

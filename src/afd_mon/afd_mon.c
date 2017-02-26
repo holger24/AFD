@@ -1,6 +1,6 @@
 /*
  *  afd_mon.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -162,11 +162,12 @@ int
 main(int argc, char *argv[])
 {
    int            bytes_buffered,
-                  check_time,
                   current_month,
                   current_week,
                   current_year,
                   fd,
+                  group_elements = 0,
+                  i,
                   new_month,
                   new_week,
                   new_year,
@@ -178,10 +179,10 @@ main(int argc, char *argv[])
                   total_no_of_hosts = 0,
                   total_no_of_dirs = 0,
                   total_no_of_jobs = 0;
-   time_t         new_day_sum_time,
+   time_t         afd_mon_db_check_time,
+                  new_day_sum_time,
                   new_hour_sum_time,
-                  now,
-                  time_offset;
+                  now;
    size_t         fifo_size;
    char           afd_mon_status_file[MAX_PATH_LENGTH],
                   *fifo_buffer,
@@ -417,15 +418,23 @@ main(int argc, char *argv[])
       exit(INCORRECT);
    }
 
+   for (i = 0; i < no_of_afds; i++)
+   {
+      if (msa[i].rcmd[0] == '\0')
+      {
+         group_elements++;
+      }
+   }
+
    /* Start all process. */
    start_all();
 
    /* Log all pid's in MON_ACTIVE file. */
    mon_active();
 
+   afd_mon_db_check_time = ((now / 10) * 10) + 10;
    new_hour_sum_time = ((now / 3600) * 3600) + 3600;
    new_day_sum_time = ((now / 86400) * 86400) + 86400;
-   check_time = NO;
    p_ts = localtime(&now);
    current_week = (p_ts->tm_yday - (p_ts->tm_wday - 1 + 7) % 7 + 7) / 7;
    current_month = p_ts->tm_mon;
@@ -435,32 +444,24 @@ main(int argc, char *argv[])
    FD_ZERO(&rset);
    for (;;)
    {
-      now = time(NULL);
-
       /* Initialise descriptor set and timeout. */
       FD_SET(mon_cmd_fd, &rset);
+      now = time(NULL);
       timeout.tv_usec = 0L;
-      if ((now + 10L) <= new_hour_sum_time)
+      if (group_elements == 0)
       {
-         time_offset = 10L;
-         check_time = NO;
+         timeout.tv_sec = 2;
       }
       else
       {
-         time_offset = new_hour_sum_time - now;
-         if (time_offset < 0)
-         {
-            time_offset = 0;
-         }
-         check_time = YES;
+         timeout.tv_sec = ((now / AFD_MON_RESCAN_TIME) * AFD_MON_RESCAN_TIME) +
+                          AFD_MON_RESCAN_TIME - now;
       }
-      timeout.tv_sec = time_offset;
 
       /* Wait for message x seconds and then continue. */
       status = select(mon_cmd_fd + 1, &rset, NULL, NULL, &timeout);
 
-      if ((check_time == YES) &&
-          ((status == 0) || (time(NULL) >= new_hour_sum_time)))
+      if ((status == 0) && ((now = time(NULL)) >= new_hour_sum_time))
       {
          get_sum_data(HOUR_SUM);
 
@@ -500,6 +501,74 @@ main(int argc, char *argv[])
          new_hour_sum_time = ((new_hour_sum_time / 3600) * 3600) + 3600;
       }
 
+      if ((status == 0) && (now >= afd_mon_db_check_time))
+      {
+         if (stat(afd_mon_db_file, &stat_buf) == -1)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "Could not stat() %s : %s",
+                       afd_mon_db_file, strerror(errno));
+            exit(INCORRECT);
+         }
+         if (stat_buf.st_mtime != afd_mon_db_time)
+         {
+            system_log(INFO_SIGN, NULL, 0, "Rereading AFD_MON_CONFIG.");
+            afd_mon_db_time = stat_buf.st_mtime;
+
+            /* Kill all process. */
+            stop_process(-1, NO);
+
+            if (msa_detach() != SUCCESS)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "Failed to detach from MSA.");
+            }
+            create_msa();
+
+            if (msa_attach() != SUCCESS)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "Failed to attach to MSA.");
+               exit(INCORRECT);
+            }
+
+            /* Start all process. */
+            start_all();
+
+            mon_active();
+         }
+
+         /* Check if total number directories, hosts and/or no_of_jobs */
+         /* has changed.                                               */
+         new_total_no_of_hosts = new_total_no_of_dirs = new_total_no_of_jobs = 0;
+         group_elements = 0;
+         for (i = 0; i < no_of_afds; i++)
+         {
+            if (msa[i].rcmd[0] == '\0')
+            {
+               group_elements++;
+            }
+            new_total_no_of_hosts += msa[i].no_of_hosts;
+            new_total_no_of_dirs += msa[i].no_of_dirs;
+            new_total_no_of_jobs += msa[i].no_of_jobs;
+         }
+         if ((new_total_no_of_hosts != total_no_of_hosts) ||
+             (new_total_no_of_dirs != total_no_of_dirs) ||
+             (new_total_no_of_jobs != total_no_of_jobs))
+         {
+            system_log(INFO_SIGN, NULL, 0,
+                       "Totals : no_of_hosts = %u, no_of_dirs = %u, no_of_jobs = %u",
+                       new_total_no_of_hosts, new_total_no_of_dirs,
+                       new_total_no_of_jobs);
+            total_no_of_hosts = new_total_no_of_hosts;
+            total_no_of_dirs = new_total_no_of_dirs;
+            total_no_of_jobs = new_total_no_of_jobs;
+            new_total_no_of_hosts = new_total_no_of_dirs = new_total_no_of_jobs = 0;
+         }
+
+         afd_mon_db_check_time = ((now / 10) * 10) + 10;
+      }
+
       if ((status > 0) && (FD_ISSET(mon_cmd_fd, &rset)))
       {
          int  n;
@@ -512,78 +581,19 @@ main(int argc, char *argv[])
       }
       else if (status == 0)
            {
-              int i;
-
-              if (stat(afd_mon_db_file, &stat_buf) == -1)
+              if (group_elements > 0)
               {
-                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                            "Could not stat() %s : %s",
-                            afd_mon_db_file, strerror(errno));
-                 exit(INCORRECT);
-              }
-              if (stat_buf.st_mtime != afd_mon_db_time)
-              {
-                 system_log(INFO_SIGN, NULL, 0, "Rereading AFD_MON_CONFIG.");
-                 afd_mon_db_time = stat_buf.st_mtime;
-
-                 /* Kill all process. */
-                 stop_process(-1, NO);
-
-                 if (msa_detach() != SUCCESS)
-                 {
-                    system_log(ERROR_SIGN, __FILE__, __LINE__,
-                               "Failed to detach from MSA.");
-                 }
-                 create_msa();
-
-                 if (msa_attach() != SUCCESS)
-                 {
-                    system_log(ERROR_SIGN, __FILE__, __LINE__,
-                               "Failed to attach to MSA.");
-                    exit(INCORRECT);
-                 }
-
-                 /* Start all process. */
-                 start_all();
-
-                 mon_active();
-              }
-
-              /* Check if total number directories, hosts and/or no_of_jobs */
-              /* has changed.                                               */
-              new_total_no_of_hosts = new_total_no_of_dirs = new_total_no_of_jobs = 0;
-              for (i = 0; i < no_of_afds; i++)
-              {
-                 new_total_no_of_hosts += msa[i].no_of_hosts;
-                 new_total_no_of_dirs += msa[i].no_of_dirs;
-                 new_total_no_of_jobs += msa[i].no_of_jobs;
-              }
-              if ((new_total_no_of_hosts != total_no_of_hosts) ||
-                  (new_total_no_of_dirs != total_no_of_dirs) ||
-                  (new_total_no_of_jobs != total_no_of_jobs))
-              {
-                 system_log(INFO_SIGN, NULL, 0,
-                            "Totals : no_of_hosts = %u, no_of_dirs = %u, no_of_jobs = %u",
-                            new_total_no_of_hosts, new_total_no_of_dirs,
-                            new_total_no_of_jobs);
-                 total_no_of_hosts = new_total_no_of_hosts;
-                 total_no_of_dirs = new_total_no_of_dirs;
-                 total_no_of_jobs = new_total_no_of_jobs;
-                 new_total_no_of_hosts = new_total_no_of_dirs = new_total_no_of_jobs = 0;
+                 update_group_summary();
               }
 
               /* Check if any process terminated for whatever reason. */
-              zombie_check(now + time_offset);
+              zombie_check(now);
            }
            else
            {
               system_log(FATAL_SIGN, __FILE__, __LINE__,
-#if SIZEOF_TIME_T == 4
-                         "select() error (time_offset=%ld mon_cmd_fd=%d) : %s",
-#else
-                         "select() error (time_offset=%lld mon_cmd_fd=%d) : %s",
-#endif
-                         (pri_time_t)time_offset, mon_cmd_fd, strerror(errno));
+                         "select() error (mon_cmd_fd=%d) : %s",
+                         mon_cmd_fd, strerror(errno));
               exit(INCORRECT);
            }
    } /* for (;;) */

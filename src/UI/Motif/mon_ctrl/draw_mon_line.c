@@ -322,68 +322,68 @@ draw_mon_line_status(int pos, signed char delta, int x, int y)
       draw_mon_proc_led(AW_LED, connect_data[pos].archive_watch, x, y);
 
       draw_remote_log_status(pos, connect_data[pos].sys_log_ec % LOG_FIFO_SIZE, x, y);
+   }
 
-      if (his_log_set > 0)
+   if (his_log_set > 0)
+   {
+      draw_remote_history(pos, RECEIVE_HISTORY, x, y);
+      draw_remote_history(pos, SYSTEM_HISTORY, x, y + bar_thickness_3);
+      draw_remote_history(pos, TRANSFER_HISTORY, x,
+                          y + bar_thickness_3 + bar_thickness_3);
+   }
+
+   /* Print information for number of files to be send (nf), */
+   /* total file size (tfs), transfer rate (tr) and error    */
+   /* counter (ec).                                          */
+   if (line_style != BARS_ONLY)
+   {
+      draw_mon_chars(pos, FILES_TO_BE_SEND, x, y);
+      draw_mon_chars(pos, FILE_SIZE_TO_BE_SEND, x + (5 * glyph_width), y);
+      draw_mon_chars(pos, AVERAGE_TRANSFER_RATE, x + (10 * glyph_width), y);
+      draw_mon_chars(pos, AVERAGE_CONNECTION_RATE, x + (15 * glyph_width), y);
+      draw_mon_chars(pos, JOBS_IN_QUEUE, x + (19 * glyph_width), y);
+      draw_mon_chars(pos, ACTIVE_TRANSFERS, x + (23 * glyph_width), y);
+      draw_mon_chars(pos, TOTAL_ERROR_COUNTER, x + (27 * glyph_width), y);
+      draw_mon_chars(pos, ERROR_HOSTS, x + (30 * glyph_width), y);
+   }
+
+   /* Draw bars, indicating graphically how many errors have */
+   /* occurred, total file size still to do and the transfer */
+   /* rate.                                                  */
+   if (line_style != CHARACTERS_ONLY)
+   {
+      /* Draw bars. */
+      draw_mon_bar(pos, delta, MON_TR_BAR_NO, x, y);
+      draw_mon_bar(pos, delta, ACTIVE_TRANSFERS_BAR_NO, x, y);
+      draw_mon_bar(pos, delta, HOST_ERROR_BAR_NO, x, y);
+
+      /* Show beginning and end of bars. */
+      if (connect_data[pos].inverse > OFF)
       {
-         draw_remote_history(pos, RECEIVE_HISTORY, x, y);
-         draw_remote_history(pos, SYSTEM_HISTORY, x, y + bar_thickness_3);
-         draw_remote_history(pos, TRANSFER_HISTORY, x,
-                             y + bar_thickness_3 + bar_thickness_3);
+         tmp_gc = white_line_gc;
       }
-
-      /* Print information for number of files to be send (nf), */
-      /* total file size (tfs), transfer rate (tr) and error    */
-      /* counter (ec).                                          */
-      if (line_style != BARS_ONLY)
+      else
       {
-         draw_mon_chars(pos, FILES_TO_BE_SEND, x, y);
-         draw_mon_chars(pos, FILE_SIZE_TO_BE_SEND, x + (5 * glyph_width), y);
-         draw_mon_chars(pos, AVERAGE_TRANSFER_RATE, x + (10 * glyph_width), y);
-         draw_mon_chars(pos, AVERAGE_CONNECTION_RATE, x + (15 * glyph_width), y);
-         draw_mon_chars(pos, JOBS_IN_QUEUE, x + (19 * glyph_width), y);
-         draw_mon_chars(pos, ACTIVE_TRANSFERS, x + (23 * glyph_width), y);
-         draw_mon_chars(pos, TOTAL_ERROR_COUNTER, x + (27 * glyph_width), y);
-         draw_mon_chars(pos, ERROR_HOSTS, x + (30 * glyph_width), y);
+         tmp_gc = black_line_gc;
       }
-
-      /* Draw bars, indicating graphically how many errors have */
-      /* occurred, total file size still to do and the transfer */
-      /* rate.                                                  */
-      if (line_style != CHARACTERS_ONLY)
-      {
-         /* Draw bars. */
-         draw_mon_bar(pos, delta, MON_TR_BAR_NO, x, y);
-         draw_mon_bar(pos, delta, ACTIVE_TRANSFERS_BAR_NO, x, y);
-         draw_mon_bar(pos, delta, HOST_ERROR_BAR_NO, x, y);
-
-         /* Show beginning and end of bars. */
-         if (connect_data[pos].inverse > OFF)
-         {
-            tmp_gc = white_line_gc;
-         }
-         else
-         {
-            tmp_gc = black_line_gc;
-         }
-         XDrawLine(display, line_window, black_line_gc,
-                   x + x_offset_bars - 1,
-                   y + SPACE_ABOVE_LINE,
-                   x + x_offset_bars - 1,
-                   y + glyph_height);
-         XDrawLine(display, line_window, black_line_gc,
-                   x + x_offset_bars + (int)max_bar_length,
-                   y + SPACE_ABOVE_LINE,
-                   x + x_offset_bars + (int)max_bar_length, y + glyph_height);
-         XDrawLine(display, line_pixmap, black_line_gc,
-                   x + x_offset_bars - 1,
-                   y + SPACE_ABOVE_LINE,
-                   x + x_offset_bars - 1,
-                   y + glyph_height);
-         XDrawLine(display, line_pixmap, black_line_gc,
-                   x + x_offset_bars + (int)max_bar_length,
-                   y + SPACE_ABOVE_LINE,
-                   x + x_offset_bars + (int)max_bar_length, y + glyph_height);
-      }
+      XDrawLine(display, line_window, black_line_gc,
+                x + x_offset_bars - 1,
+                y + SPACE_ABOVE_LINE,
+                x + x_offset_bars - 1,
+                y + glyph_height);
+      XDrawLine(display, line_window, black_line_gc,
+                x + x_offset_bars + (int)max_bar_length,
+                y + SPACE_ABOVE_LINE,
+                x + x_offset_bars + (int)max_bar_length, y + glyph_height);
+      XDrawLine(display, line_pixmap, black_line_gc,
+                x + x_offset_bars - 1,
+                y + SPACE_ABOVE_LINE,
+                x + x_offset_bars - 1,
+                y + glyph_height);
+      XDrawLine(display, line_pixmap, black_line_gc,
+                x + x_offset_bars + (int)max_bar_length,
+                y + SPACE_ABOVE_LINE,
+                x + x_offset_bars + (int)max_bar_length, y + glyph_height);
    }
 
    return;
