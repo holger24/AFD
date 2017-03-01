@@ -1,6 +1,6 @@
 /*
  *  event_logger.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,6 +47,8 @@ DESCR__S_M3
  **
  ** HISTORY
  **   18.06.2007 H.Kiehl Created
+ **   01.03.2017 H.Kiehl If disk is full add a new line for the next
+ **                      time we want to write something.
  **
  */
 DESCR__E_M3
@@ -72,7 +74,8 @@ extern char         *fifo_buffer,
                     *p_log_fifo;
 
 /* Local global varaibles. */
-static int          log_fd;
+static int          add_new_line = NO,
+                    log_fd;
 static FILE         *p_log_file;
 
 /* Local function prototypes. */
@@ -145,7 +148,8 @@ check_data(long rescan_time)
                     fifo_size - bytes_buffered)) > 0)
       {
          int count = 0,
-             length;
+             length,
+             ret;
 
          if (bytes_buffered != 0)
          {
@@ -156,7 +160,23 @@ check_data(long rescan_time)
          /* Now evaluate all data read from fifo, byte after byte. */
          while (count < n)
          {
-            length = 0;
+            if (add_new_line == YES)
+            {
+               /*
+                * The disk was full! Since we do not know how much
+                * was written the last time, lets just add a new line.
+                * This hopefully makes the logs in such cases more
+                * readable and applications evaluating them will
+                * also have an easier time.
+                */
+               msg_str[0] = '\n';
+               length = 1;
+               add_new_line = NO;
+            }
+            else
+            {
+               length = 0;
+            }
             while ((count < n) && (*ptr != '\n'))
             {
                if (*ptr >= ' ')
@@ -172,8 +192,18 @@ check_data(long rescan_time)
                msg_str[length++] = '\n';
                msg_str[length] = '\0';
 
-               total_length += fprintf(p_log_file, "%s", msg_str);
-               (void)fflush(p_log_file);
+               if ((ret = fprintf(p_log_file, "%s", msg_str)) < 0)
+               {
+                  if (errno == ENOSPC)
+                  {
+                     add_new_line = YES;
+                  }
+               }
+               else
+               {
+                  total_length += ret;
+                  (void)fflush(p_log_file);
+               }
             }
             else /* Buffer it until line is complete. */
             {
