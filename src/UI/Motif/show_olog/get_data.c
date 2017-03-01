@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -235,9 +235,15 @@ static void   check_log_updates(Widget),
            {                                               \
               first_date_found = time_when_transmitted;    \
            }                                               \
-           p_ts = localtime(&time_when_transmitted);       \
-           CONVERT_TIME();                                 \
-           (void)memcpy(p_type, (protocol), 5);            \
+           if ((p_ts = localtime(&time_when_transmitted)) == NULL)\
+           {                                               \
+              IGNORE_ENTRY();                              \
+           }                                               \
+           else                                            \
+           {                                               \
+              CONVERT_TIME();                              \
+              (void)memcpy(p_type, (protocol), 5);         \
+           }                                               \
         }
 #ifdef _WITH_DE_MAIL_SUPPORT
 #define COMMON_BLOCK()\
@@ -4302,7 +4308,10 @@ file_size_only(register char *ptr,
          {
             first_date_found = time_when_transmitted;
          }
-         p_ts = localtime(&time_when_transmitted);
+         if ((p_ts = localtime(&time_when_transmitted)) == NULL)
+         {
+            IGNORE_ENTRY();
+         }
          CONVERT_TIME();
          if (file_name_toggle_set == REMOTE_FILENAME)
          {
@@ -4950,7 +4959,10 @@ file_name_and_size(register char *ptr,
          {
             first_date_found = time_when_transmitted;
          }
-         p_ts = localtime(&time_when_transmitted);
+         if ((p_ts = localtime(&time_when_transmitted)) == NULL)
+         {
+            IGNORE_ENTRY();
+         }
          CONVERT_TIME();
          switch (type)
          {
@@ -7013,7 +7025,10 @@ file_size_and_recipient(register char *ptr,
          {
             first_date_found = time_when_transmitted;
          }
-         p_ts = localtime(&time_when_transmitted);
+         if ((p_ts = localtime(&time_when_transmitted)) == NULL)
+         {
+            IGNORE_ENTRY();
+         }
          CONVERT_TIME();
          if (file_name_toggle_set == REMOTE_FILENAME)
          {
@@ -7914,7 +7929,10 @@ file_name_size_recipient(register char *ptr,
          {
             first_date_found = time_when_transmitted;
          }
-         p_ts = localtime(&time_when_transmitted);
+         if ((p_ts = localtime(&time_when_transmitted)) == NULL)
+         {
+            IGNORE_ENTRY();
+         }
          CONVERT_TIME();
          switch (type)
          {

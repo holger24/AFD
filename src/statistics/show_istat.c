@@ -1,6 +1,6 @@
 /*
  *  show_istat.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -143,7 +143,12 @@ main(int argc, char *argv[])
    /* Initialize variables */
    p_work_dir = work_dir;
    now = time(NULL);
-   p_ts = localtime(&now);
+   if ((p_ts = localtime(&now)) == NULL)
+   {
+      (void)fprintf(stderr, "ERROR   : Failed to get localtime() : %s (%s %d)\n",
+                    strerror(errno), __FILE__, __LINE__);
+      exit(INCORRECT);
+   }
    current_year = p_ts->tm_year + 1900;
    if (my_strcmp(statistic_file_name, ISTATISTIC_FILE) == 0)
    {
@@ -289,7 +294,12 @@ main(int argc, char *argv[])
                          last_time;
                struct tm *p_ts;
 
-               p_ts = localtime(&now);
+               if ((p_ts = localtime(&now)) == NULL)
+               {
+                  (void)fprintf(stderr, "ERROR   : Failed to get localtime() : %s (%s %d)\n",
+                                strerror(errno), __FILE__, __LINE__);
+                  exit(INCORRECT);
+               }
                p_ts->tm_year = year - 1900;
                p_ts->tm_mon = 0;
                p_ts->tm_mday = 1;
@@ -520,7 +530,12 @@ main(int argc, char *argv[])
                {
                   time_t first_time, last_time;
 
-                  p_ts = localtime(&now);
+                  if ((p_ts = localtime(&now)) == NULL)
+                  {
+                     (void)fprintf(stderr, "ERROR   : Failed to get localtime() : %s (%s %d)\n",
+                                   strerror(errno), __FILE__, __LINE__);
+                     exit(INCORRECT);
+                  }
                   p_ts->tm_year = year - 1900;
                   p_ts->tm_mon = 0;
                   p_ts->tm_mday = 1;
@@ -669,7 +684,12 @@ main(int argc, char *argv[])
                          last_time;
                struct tm *p_ts;
 
-               p_ts = localtime(&now);
+               if ((p_ts = localtime(&now)) == NULL)
+               {
+                  (void)fprintf(stderr, "ERROR   : Failed to get localtime() : %s (%s %d)\n",
+                                strerror(errno), __FILE__, __LINE__);
+                  exit(INCORRECT);
+               }
                p_ts->tm_year = year - 1900;
                p_ts->tm_mon = 0;
                p_ts->tm_mday = 1;
@@ -1059,7 +1079,12 @@ main(int argc, char *argv[])
             {
                struct tm *p_ts;
 
-               p_ts = localtime(&now);
+               if ((p_ts = localtime(&now)) == NULL)
+               {
+                  (void)fprintf(stderr, "ERROR   : Failed to get localtime() : %s (%s %d)\n",
+                                strerror(errno), __FILE__, __LINE__);
+                  exit(INCORRECT);
+               }
                tmp_nfr = tmp_nbr = 0.0;
                if (show_numeric_total_only == NO)
                {

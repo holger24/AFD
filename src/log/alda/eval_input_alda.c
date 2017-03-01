@@ -1,6 +1,6 @@
 /*
  *  eval_input_alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1924,7 +1924,13 @@ get_time_value(char *input, char **ret_ptr, time_t now)
                *(ptr + length) = tmp_char;
                return(INCORRECT);
             }
-            bd_time = localtime(&now);
+            if ((bd_time = localtime(&now)) == NULL)
+            {
+               (void)fprintf(stderr, "Failed to determine localtime() : %s (%s %d)\n",
+                             strerror(errno), __FILE__, __LINE__);
+               *(ptr + length) = tmp_char;
+               return(INCORRECT);
+            }
             bd_time->tm_sec  = 0;
             bd_time->tm_min  = min;
             bd_time->tm_hour = hour;
@@ -1971,7 +1977,13 @@ get_time_value(char *input, char **ret_ptr, time_t now)
                        *(ptr + length) = tmp_char;
                        return(INCORRECT);
                     }
-                    bd_time = localtime(&now);
+                    if ((bd_time = localtime(&now)) == NULL)
+                    {
+                       (void)fprintf(stderr, "Failed to determine localtime() : %s (%s %d)\n",
+                                     strerror(errno), __FILE__, __LINE__);
+                       *(ptr + length) = tmp_char;
+                       return(INCORRECT);
+                    }
                     bd_time->tm_sec  = 0;
                     bd_time->tm_min  = min;
                     bd_time->tm_hour = hour;
@@ -2032,7 +2044,13 @@ get_time_value(char *input, char **ret_ptr, time_t now)
                        *(ptr + length) = tmp_char;
                        return(INCORRECT);
                     }
-                    bd_time = localtime(&now);
+                    if ((bd_time = localtime(&now)) == NULL)
+                    {
+                       (void)fprintf(stderr, "Failed to determine localtime() : %s (%s %d)\n",
+                                     strerror(errno), __FILE__, __LINE__);
+                       *(ptr + length) = tmp_char;
+                       return(INCORRECT);
+                    }
                     bd_time->tm_sec  = 0;
                     bd_time->tm_min  = min;
                     bd_time->tm_hour = hour;

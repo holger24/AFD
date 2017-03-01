@@ -507,41 +507,77 @@ struct alda_call_data
         }
 #define CONVERT_TIME()                               \
         {                                            \
-           line[0] = ((p_ts->tm_mon + 1) / 10) + '0';\
-           line[1] = ((p_ts->tm_mon + 1) % 10) + '0';\
+           if (p_ts == NULL)                         \
+           {                                         \
+              line[0] = '?';                         \
+              line[1] = '?';                         \
+              line[3] = '?';                         \
+              line[4] = '?';                         \
+              line[7] = '?';                         \
+              line[8] = '?';                         \
+              line[10] = '?';                        \
+              line[11] = '?';                        \
+              line[13] = '?';                        \
+              line[14] = '?';                        \
+           }                                         \
+           else                                      \
+           {                                         \
+              line[0] = ((p_ts->tm_mon + 1) / 10) + '0';\
+              line[1] = ((p_ts->tm_mon + 1) % 10) + '0';\
+              line[3] = (p_ts->tm_mday / 10) + '0';  \
+              line[4] = (p_ts->tm_mday % 10) + '0';  \
+              line[7] = (p_ts->tm_hour / 10) + '0';  \
+              line[8] = (p_ts->tm_hour % 10) + '0';  \
+              line[10] = (p_ts->tm_min / 10) + '0';  \
+              line[11] = (p_ts->tm_min % 10) + '0';  \
+              line[13] = (p_ts->tm_sec / 10) + '0';  \
+              line[14] = (p_ts->tm_sec % 10) + '0';  \
+           }                                         \
            line[2] = '.';                            \
-           line[3] = (p_ts->tm_mday / 10) + '0';     \
-           line[4] = (p_ts->tm_mday % 10) + '0';     \
            line[5] = '.';                            \
-           line[7] = (p_ts->tm_hour / 10) + '0';     \
-           line[8] = (p_ts->tm_hour % 10) + '0';     \
            line[9] = ':';                            \
-           line[10] = (p_ts->tm_min / 10) + '0';     \
-           line[11] = (p_ts->tm_min % 10) + '0';     \
            line[12] = ':';                           \
-           line[13] = (p_ts->tm_sec / 10) + '0';     \
-           line[14] = (p_ts->tm_sec % 10) + '0';     \
         }
-#define CONVERT_TIME_YEAR()                               \
+#define CONVERT_TIME_YEAR()                          \
         {                                            \
-           line[0] = (p_ts->tm_mday / 10) + '0';     \
-           line[1] = (p_ts->tm_mday % 10) + '0';     \
+           if (p_ts == NULL)                         \
+           {                                         \
+              line[0] = '?';                         \
+              line[1] = '?';                         \
+              line[3] = '?';                         \
+              line[4] = '?';                         \
+              line[6] = '?';                         \
+              line[7] = '?';                         \
+              line[8] = '?';                         \
+              line[9] = '?';                         \
+              line[11] = '?';                        \
+              line[12] = '?';                        \
+              line[14] = '?';                        \
+              line[15] = '?';                        \
+              line[17] = '?';                        \
+              line[18] = '?';                        \
+           }                                         \
+           else                                      \
+           {                                         \
+              line[0] = (p_ts->tm_mday / 10) + '0';  \
+              line[1] = (p_ts->tm_mday % 10) + '0';  \
+              line[3] = ((p_ts->tm_mon + 1) / 10) + '0';\
+              line[4] = ((p_ts->tm_mon + 1) % 10) + '0';\
+              line[6] = (((p_ts->tm_year + 1900) / 1000) % 10) + '0';\
+              line[7] = (((p_ts->tm_year + 1900) / 100) % 10) + '0';\
+              line[8] = (((p_ts->tm_year + 1900) / 10) % 10) + '0';\
+              line[9] = ((p_ts->tm_year + 1900) % 10) + '0';\
+              line[11] = (p_ts->tm_hour / 10) + '0'; \
+              line[12] = (p_ts->tm_hour % 10) + '0'; \
+              line[14] = (p_ts->tm_min / 10) + '0';  \
+              line[15] = (p_ts->tm_min % 10) + '0';  \
+              line[17] = (p_ts->tm_sec / 10) + '0';  \
+              line[18] = (p_ts->tm_sec % 10) + '0';  \
+           }                                         \
            line[2] = '.';                            \
-           line[3] = ((p_ts->tm_mon + 1) / 10) + '0';\
-           line[4] = ((p_ts->tm_mon + 1) % 10) + '0';\
            line[5] = '.';                            \
-           line[6] = (((p_ts->tm_year + 1900) / 1000) % 10) + '0';\
-           line[7] = (((p_ts->tm_year + 1900) / 100) % 10) + '0';\
-           line[8] = (((p_ts->tm_year + 1900) / 10) % 10) + '0';\
-           line[9] = ((p_ts->tm_year + 1900) % 10) + '0';\
-           line[11] = (p_ts->tm_hour / 10) + '0';     \
-           line[12] = (p_ts->tm_hour % 10) + '0';     \
-           line[13] = ':';                            \
-           line[14] = (p_ts->tm_min / 10) + '0';     \
-           line[15] = (p_ts->tm_min % 10) + '0';     \
+           line[13] = ':';                           \
            line[16] = ':';                           \
-           line[17] = (p_ts->tm_sec / 10) + '0';     \
-           line[18] = (p_ts->tm_sec % 10) + '0';     \
         }
 #define CREATE_LFC_STRING(str, value)              \
         {                                          \

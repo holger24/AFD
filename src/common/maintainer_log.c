@@ -1,6 +1,6 @@
 /*
  *  maintainer_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -123,18 +123,32 @@ maintainer_log(char *sign, char *file, int line, char *fmt, ...)
    }
 
    tvalue = time(NULL);
-   p_ts    = localtime(&tvalue);
-   buf[0]  = (p_ts->tm_mday / 10) + '0';
-   buf[1]  = (p_ts->tm_mday % 10) + '0';
-   buf[2]  = ' ';
-   buf[3]  = (p_ts->tm_hour / 10) + '0';
-   buf[4]  = (p_ts->tm_hour % 10) + '0';
-   buf[5]  = ':';
-   buf[6]  = (p_ts->tm_min / 10) + '0';
-   buf[7]  = (p_ts->tm_min % 10) + '0';
+   p_ts = localtime(&tvalue);
+   if (p_ts == NULL)
+   {
+      buf[0]  = '0';
+      buf[1]  = '0';
+      buf[3]  = '0';
+      buf[4]  = '0';
+      buf[6]  = '0';
+      buf[7]  = '0';
+      buf[9]  = '0';
+      buf[10] = '0';
+   }
+   else
+   {
+      buf[0]  = (p_ts->tm_mday / 10) + '0';
+      buf[1]  = (p_ts->tm_mday % 10) + '0';
+      buf[3]  = (p_ts->tm_hour / 10) + '0';
+      buf[4]  = (p_ts->tm_hour % 10) + '0';
+      buf[6]  = (p_ts->tm_min / 10) + '0';
+      buf[7]  = (p_ts->tm_min % 10) + '0';
+      buf[9]  = (p_ts->tm_sec / 10) + '0';
+      buf[10] = (p_ts->tm_sec % 10) + '0';
+   }
    buf[8]  = ':';
-   buf[9]  = (p_ts->tm_sec / 10) + '0';
-   buf[10] = (p_ts->tm_sec % 10) + '0';
+   buf[5]  = ':';
+   buf[2]  = ' ';
    buf[11] = ' ';
    buf[12] = sign[0];
    buf[13] = sign[1];

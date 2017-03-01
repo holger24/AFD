@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -192,8 +192,14 @@ static void   check_log_updates(Widget),
            {                                              \
               first_date_found = time_when_transmitted;   \
            }                                              \
-           p_ts = localtime(&time_when_transmitted);      \
-           CONVERT_TIME();                                \
+           if ((p_ts = localtime(&time_when_transmitted)) == NULL)\
+           {                                              \
+              IGNORE_ENTRY();                             \
+           }                                              \
+           else                                           \
+           {                                              \
+              CONVERT_TIME();                             \
+           }                                              \
         }
 #define COMMON_BLOCK()                                                      \
         {                                                                   \
@@ -1665,7 +1671,10 @@ file_size_only(register char *ptr,
          {
             first_date_found = time_when_transmitted;
          }
-         p_ts = localtime(&time_when_transmitted);
+         if ((p_ts = localtime(&time_when_transmitted)) == NULL)
+         {
+            IGNORE_ENTRY();
+         }
          CONVERT_TIME();
          j = 0;
          while ((*ptr != SEPARATOR_CHAR) && (j < file_name_length))
@@ -2717,7 +2726,10 @@ file_size_and_recipient(register char *ptr,
          {
             first_date_found = time_when_transmitted;
          }
-         p_ts = localtime(&time_when_transmitted);
+         if ((p_ts = localtime(&time_when_transmitted)) == NULL)
+         {
+            IGNORE_ENTRY();
+         }
          CONVERT_TIME();
          j = 0;
          while ((*ptr != SEPARATOR_CHAR) && (j < file_name_length))

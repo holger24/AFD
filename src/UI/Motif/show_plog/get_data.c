@@ -1007,7 +1007,10 @@ collect_data(register char *ptr,
          {
             first_date_found = id.time_when_produced;
          }
-         p_ts = localtime(&id.time_when_produced);
+         if ((p_ts = localtime(&id.time_when_produced)) == NULL)
+         {
+            IGNORE_ENTRY();
+         }
          CONVERT_TIME();
 
          /* Away with the date. */

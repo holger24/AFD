@@ -671,8 +671,16 @@ main(int argc, char *argv[])
     */
    now = time(NULL);
 
-   bd_time = localtime(&now);
-   current_month = bd_time->tm_mon;
+   if ((bd_time = localtime(&now)) == NULL)
+   {
+      system_log(WARN_SIGN, __FILE__, __LINE__,
+                 "localtime() error : %s", strerror(errno));
+      current_month = 0;
+   }
+   else
+   {
+      current_month = bd_time->tm_mon;
+   }
    month_check_time = ((now / 86400) * 86400) + 86400;
    full_dir_check_time = ((now / FULL_DIR_CHECK_INTERVAL) *
                           FULL_DIR_CHECK_INTERVAL) + FULL_DIR_CHECK_INTERVAL;
@@ -767,11 +775,9 @@ main(int argc, char *argv[])
               "=================> STARTUP <=================");
    if (p_afd_status->hostname[0] != '\0')
    {
-      char      dstr[26];
-      struct tm *p_ts;
+      char dstr[26];
 
-      p_ts = localtime(&now);
-      strftime(dstr, 26, "%a %h %d %H:%M:%S %Y", p_ts);
+      strftime(dstr, 26, "%a %h %d %H:%M:%S %Y", localtime(&now));
       system_log(CONFIG_SIGN, NULL, 0, _("Starting on <%s> %s"),
                  p_afd_status->hostname, dstr);
    }
@@ -999,15 +1005,22 @@ main(int argc, char *argv[])
                     p_afd_status->inotify_events);
          p_afd_status->inotify_events = 0;
 #endif
-         bd_time = localtime(&now);
-         if (bd_time->tm_mon != current_month)
+         if ((bd_time = localtime(&now)) == NULL)
          {
-            char date[20];
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "localtime() error : %s", strerror(errno));
+         }
+         else
+         {
+            if (bd_time->tm_mon != current_month)
+            {
+               char date[20];
 
-            (void)strftime(date, 20, "%B %Y", bd_time);
-            system_log(DUMMY_SIGN, NULL, 0,
-                       "=================> %s <=================", date);
-            current_month = bd_time->tm_mon;
+               (void)strftime(date, 20, "%B %Y", bd_time);
+               system_log(DUMMY_SIGN, NULL, 0,
+                          "=================> %s <=================", date);
+               current_month = bd_time->tm_mon;
+            }
          }
          month_check_time = ((now / 86400) * 86400) + 86400;
       }
@@ -2942,13 +2955,11 @@ afd_exit(void)
 
       if (p_afd_status->hostname[0] != '\0')
       {
-         char      date_str[26];
-         time_t    now;
-         struct tm *p_ts;
+         char   date_str[26];
+         time_t now;
 
          now = time(NULL);
-         p_ts = localtime(&now);
-         strftime(date_str, 26, "%a %h %d %H:%M:%S %Y", p_ts);
+         strftime(date_str, 26, "%a %h %d %H:%M:%S %Y", localtime(&now));
          system_log(CONFIG_SIGN, NULL, 0,
                     _("Shutdown on <%s> %s"), p_afd_status->hostname, date_str);
       }

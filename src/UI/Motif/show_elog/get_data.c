@@ -624,9 +624,15 @@ search_data(register char *ptr,
             if (toggles_set & SHOW_CLASS_HOST)
             {
                time_when_transmitted = (time_t)str2timet(ptr_start_line, NULL, 16);
-               p_ts = localtime(&time_when_transmitted);
-               CONVERT_TIME_YEAR();
-               *p_event_class = 'H';
+               if ((p_ts = localtime(&time_when_transmitted)) == NULL)
+               {
+                  IGNORE_ENTRY();
+               }
+               else
+               {
+                  CONVERT_TIME_YEAR();
+                  *p_event_class = 'H';
+               }
             }
             else
             {
@@ -638,9 +644,15 @@ search_data(register char *ptr,
                  if (toggles_set & SHOW_CLASS_GLOBAL)
                  {
                     time_when_transmitted = (time_t)str2timet(ptr_start_line, NULL, 16);
-                    p_ts = localtime(&time_when_transmitted);
-                    CONVERT_TIME_YEAR();
-                    *p_event_class = 'G';
+                    if ((p_ts = localtime(&time_when_transmitted)) == NULL)
+                    {
+                       IGNORE_ENTRY();
+                    }
+                    else
+                    {
+                       CONVERT_TIME_YEAR();
+                       *p_event_class = 'G';
+                    }
                  }
                  else
                  {
@@ -652,9 +664,15 @@ search_data(register char *ptr,
                  if (toggles_set & SHOW_CLASS_PRODUCTION)
                  {
                     time_when_transmitted = (time_t)str2timet(ptr_start_line, NULL, 16);
-                    p_ts = localtime(&time_when_transmitted);
-                    CONVERT_TIME_YEAR();
-                    *p_event_class = 'P';
+                    if ((p_ts = localtime(&time_when_transmitted)) == NULL)
+                    {
+                       IGNORE_ENTRY();
+                    }
+                    else
+                    {
+                       CONVERT_TIME_YEAR();
+                       *p_event_class = 'P';
+                    }
                  }
                  else
                  {
@@ -666,9 +684,15 @@ search_data(register char *ptr,
                  if (toggles_set & SHOW_CLASS_DIRECTORY)
                  {
                     time_when_transmitted = (time_t)str2timet(ptr_start_line, NULL, 16);
-                    p_ts = localtime(&time_when_transmitted);
-                    CONVERT_TIME_YEAR();
-                    *p_event_class = 'D';
+                    if ((p_ts = localtime(&time_when_transmitted)) == NULL)
+                    {
+                       IGNORE_ENTRY();
+                    }
+                    else
+                    {
+                       CONVERT_TIME_YEAR();
+                       *p_event_class = 'D';
+                    }
                  }
                  else
                  {
@@ -678,9 +702,15 @@ search_data(register char *ptr,
               else
               {
                  time_when_transmitted = (time_t)str2timet(ptr_start_line, NULL, 16);
-                 p_ts = localtime(&time_when_transmitted);
-                 CONVERT_TIME_YEAR();
-                 *p_event_class = '?';
+                 if ((p_ts = localtime(&time_when_transmitted)) == NULL)
+                 {
+                    IGNORE_ENTRY();
+                 }
+                 else
+                 {
+                    CONVERT_TIME_YEAR();
+                    *p_event_class = '?';
+                 }
               }
 
          /* Evaluate event type. */
@@ -779,7 +809,8 @@ search_data(register char *ptr,
          k = 0;
          if ((*p_event_class == 'H') || (*p_event_class == 'D'))
          {
-            while ((*(ptr + k) != SEPARATOR_CHAR) && (*(ptr + k) != '\n'))
+            while ((k < MAX_ALIAS_LENGTH) && (*(ptr + k) != SEPARATOR_CHAR) &&
+                   (*(ptr + k) != '\n'))
             {
                *(p_alias_name + k) = *(ptr + k);
                k++;
@@ -829,6 +860,10 @@ search_data(register char *ptr,
                     *(p_alias_name + k) = ' ';
                  }
             ptr += k;
+            while ((*ptr != SEPARATOR_CHAR) && (*ptr != '\n'))
+            {
+               ptr++;
+            }
             if (*ptr == SEPARATOR_CHAR)
             {
                ptr++;
@@ -1056,7 +1091,7 @@ search_data(register char *ptr,
             *(p_add_info + 1) = '\0';
             bytes_written = p_add_info - line + 1;
          }
-         
+
          item_counter++;
          (void)memcpy(&str_list[bytes_buffered], line, bytes_written);
          bytes_buffered += bytes_written;

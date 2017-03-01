@@ -1,6 +1,6 @@
 /*
  *  rec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -66,18 +66,32 @@ rec(int fd, char *sign, char *fmt, ...)
    struct tm *p_ts;
 
    tvalue = time(NULL);
-   p_ts    = localtime(&tvalue);
-   buf[0]  = (p_ts->tm_mday / 10) + '0';
-   buf[1]  = (p_ts->tm_mday % 10) + '0';
-   buf[2]  = ' ';
-   buf[3]  = (p_ts->tm_hour / 10) + '0';
-   buf[4]  = (p_ts->tm_hour % 10) + '0';
-   buf[5]  = ':';
-   buf[6]  = (p_ts->tm_min / 10) + '0';
-   buf[7]  = (p_ts->tm_min % 10) + '0';
+   p_ts = localtime(&tvalue);
+   if (p_ts == NULL)
+   {
+      buf[0]  = '?';
+      buf[1]  = '?';
+      buf[3]  = '?';
+      buf[4]  = '?';
+      buf[6]  = '?';
+      buf[7]  = '?';
+      buf[9]  = '?';
+      buf[10] = '?';
+   }
+   else
+   {
+      buf[0]  = (p_ts->tm_mday / 10) + '0';
+      buf[1]  = (p_ts->tm_mday % 10) + '0';
+      buf[3]  = (p_ts->tm_hour / 10) + '0';
+      buf[4]  = (p_ts->tm_hour % 10) + '0';
+      buf[6]  = (p_ts->tm_min / 10) + '0';
+      buf[7]  = (p_ts->tm_min % 10) + '0';
+      buf[9]  = (p_ts->tm_sec / 10) + '0';
+      buf[10] = (p_ts->tm_sec % 10) + '0';
+   }
    buf[8]  = ':';
-   buf[9]  = (p_ts->tm_sec / 10) + '0';
-   buf[10] = (p_ts->tm_sec % 10) + '0';
+   buf[5]  = ':';
+   buf[2]  = ' ';
    buf[11] = ' ';
    buf[12] = sign[0];
    buf[13] = sign[1];

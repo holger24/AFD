@@ -1,6 +1,6 @@
 /*
  *  calc_next_time.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -203,7 +203,12 @@ calc_next_time(struct bd_time_entry *te,
       reset_env = NO;
    }
 #endif /* WITH_TIMEZONE */
-   bd_time = localtime(&current_time);
+   if ((bd_time = localtime(&current_time)) == NULL)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "localtime() error : %s", strerror(errno));
+      return(0);
+   }
 
    if (check_month(te, bd_time) == INCORRECT)
    {
@@ -632,7 +637,12 @@ check_month(struct bd_time_entry *te, struct tm *bd_time)
             time_t time_val;
 
             time_val = mktime(bd_time);
-            bd_time = localtime(&time_val);
+            if ((bd_time = localtime(&time_val)) == NULL)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "check_month(): localtime() error : %s", strerror(errno));
+               return(INCORRECT);
+            }
          }
       }
    }
