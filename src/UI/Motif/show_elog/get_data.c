@@ -320,6 +320,7 @@ get_data(void)
       xstr = XmStringCreateLtoR("Search", XmFONTLIST_DEFAULT_TAG);
       XtVaSetValues(special_button_w, XmNlabelString, xstr, NULL);
       XmStringFree(xstr);
+      free(str_list);
    }
    else
    {
