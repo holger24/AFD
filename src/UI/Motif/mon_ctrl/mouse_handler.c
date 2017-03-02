@@ -399,8 +399,6 @@ mon_input(Widget w, XtPointer client_data, XEvent *event)
                          }
                       }
                  else if ((line_style != BARS_ONLY) &&
-                          ((msa[vpl[select_no]].ec > 0) ||
-                           (msa[vpl[select_no]].host_error_counter > 0)) &&
                           (in_ec_area(vpl[select_no], event)))
                       {
                          popup_error_history(event->xbutton.x_root,
