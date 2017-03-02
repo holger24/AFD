@@ -57,12 +57,24 @@ extern struct mon_status_area *msa;
 void
 update_group_summary(void)
 {
-   int  i,
-        j,
-        k,
-        m;
-   char connect_status,
-        log_history[NO_OF_LOG_HISTORY][MAX_LOG_HISTORY];
+   int          host_error_counter,
+                i,
+                j,
+                jobs_in_queue,
+                k,
+                m,
+                max_connections,
+                no_of_dirs,
+                no_of_hosts,
+                no_of_transfers;
+   unsigned int ec,
+                fc,
+                fr;
+   long         danger_no_of_jobs;
+   u_off_t      fs,
+                tr;
+   char         connect_status,
+                log_history[NO_OF_LOG_HISTORY][MAX_LOG_HISTORY];
 
    for (i = 0; i < no_of_afds; i++)
    {
@@ -71,14 +83,18 @@ update_group_summary(void)
          connect_status = DISABLED;
          (void)memset(log_history, NO_INFORMATION,
                       (NO_OF_LOG_HISTORY * MAX_LOG_HISTORY));
-         msa[i].no_of_transfers = 0;
-         msa[i].max_connections = 0;
-         msa[i].host_error_counter = 0;
-         msa[i].fc = 0;
-         msa[i].fs = 0;
-         msa[i].tr = 0;
-         msa[i].fr = 0;
-         msa[i].ec = 0;
+         no_of_transfers = 0;
+         max_connections = 0;
+         host_error_counter = 0;
+         jobs_in_queue = 0;
+         danger_no_of_jobs = 0;
+         fc = 0;
+         fs = 0;
+         tr = 0;
+         fr = 0;
+         ec = 0;
+         no_of_hosts = 0;
+         no_of_dirs = 0;
          for (j = i + 1; j < no_of_afds && msa[j].rcmd[0] != '\0'; j++)
          {
             if (msa[j].connect_status > connect_status)
@@ -95,15 +111,31 @@ update_group_summary(void)
                   }
                }
             }
-            msa[i].no_of_transfers += msa[j].no_of_transfers;
-            msa[i].max_connections += msa[j].max_connections;
-            msa[i].host_error_counter += msa[j].host_error_counter;
-            msa[i].fc += msa[j].fc;
-            msa[i].fs += msa[j].fs;
-            msa[i].tr += msa[j].tr;
-            msa[i].fr += msa[j].fr;
-            msa[i].ec += msa[j].ec;
+            no_of_transfers += msa[j].no_of_transfers;
+            max_connections += msa[j].max_connections;
+            host_error_counter += msa[j].host_error_counter;
+            jobs_in_queue += msa[j].jobs_in_queue;
+            danger_no_of_jobs += msa[j].danger_no_of_jobs;
+            fc += msa[j].fc;
+            fs += msa[j].fs;
+            tr += msa[j].tr;
+            fr += msa[j].fr;
+            ec += msa[j].ec;
+            no_of_hosts += msa[j].no_of_hosts;
+            no_of_dirs += msa[j].no_of_dirs;
          }
+         msa[i].no_of_transfers = no_of_transfers;
+         msa[i].max_connections = max_connections;
+         msa[i].host_error_counter = host_error_counter;
+         msa[i].jobs_in_queue = jobs_in_queue;
+         msa[i].danger_no_of_jobs = danger_no_of_jobs;
+         msa[i].fc = fc;
+         msa[i].fs = fs;
+         msa[i].tr = tr;
+         msa[i].fr = fr;
+         msa[i].ec = ec;
+         msa[i].no_of_hosts = no_of_hosts;
+         msa[i].no_of_dirs = no_of_dirs;
          msa[i].connect_status = connect_status;
          for (k = 0;  k < NO_OF_LOG_HISTORY; k++)
          {
