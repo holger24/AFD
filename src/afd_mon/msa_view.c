@@ -1,6 +1,6 @@
 /*
  *  msa_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1999 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -481,7 +481,7 @@ main(int argc, char *argv[])
       }
       (void)fprintf(stdout, "\n");
       (void)fprintf(stdout, "Host error counter : %d\n", msa[j].host_error_counter);
-      if (msa[j].host_error_counter > 0)
+      if ((msa[j].host_error_counter > 0) && (msa[j].rcmd[0] != '\0'))
       {
          (void)sprintf(ahl_file, "%s%s%s%s",
                        p_work_dir, FIFO_DIR, AHL_FILE_NAME, msa[j].afd_alias);
