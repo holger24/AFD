@@ -309,7 +309,12 @@ draw_mon_line_status(int pos, signed char delta, int x, int y)
    {
       draw_plus_minus(pos, x, y);
 
-      draw_afd_identifier(pos, x + (4 * glyph_width), y);
+      draw_afd_identifier(pos, x + (3 * glyph_width), y);
+
+      /* Draw status LED's of remote AFD. */
+      draw_mon_proc_led(AMG_LED, connect_data[pos].amg, x + (3 * glyph_width), y);
+      draw_mon_proc_led(FD_LED, connect_data[pos].fd, x + (3 * glyph_width), y);
+      draw_mon_proc_led(AW_LED, connect_data[pos].archive_watch, x + (3 * glyph_width), y);
    }
    else
    {
@@ -443,6 +448,11 @@ draw_plus_minus(int pos, int x, int y)
    {
       plus_minus_str[1] = '+';
    }
+
+#ifdef _WITH_DEBUG_PLUS_MINUS
+   (void)fprintf(stderr, "%s (%d) %c\n",
+                 connect_data[pos].afd_alias, pos, plus_minus_str[1]);
+#endif
 
    XDrawImageString(display, line_window, color_letter_gc,
                     DEFAULT_FRAME_SPACE + x,

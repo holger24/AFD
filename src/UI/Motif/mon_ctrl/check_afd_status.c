@@ -494,7 +494,7 @@ check_afd_status(Widget w)
          {
             if (connect_data[i].rcmd == '\0')
             {
-                draw_afd_identifier(i, x + (4 * glyph_width), y);
+                draw_afd_identifier(i, x + (3 * glyph_width), y);
             }
             else
             {
@@ -533,12 +533,16 @@ check_afd_status(Widget w)
                  connect_data[i].blink_flag = OFF;
               }
          connect_data[i].amg = msa[i].amg;
-         if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-             (connect_data[i].rcmd == '\0'))
+         if (connect_data[i].rcmd == '\0')
          {
-            draw_mon_proc_led(AMG_LED, connect_data[i].amg, x, y);
+            draw_mon_proc_led(AMG_LED, connect_data[i].amg, x + (3 * glyph_width), y);
             flush = YES;
          }
+         else if (connect_data[i].plus_minus == PM_OPEN_STATE)
+              {
+                 draw_mon_proc_led(AMG_LED, connect_data[i].amg, x, y);
+                 flush = YES;
+              }
       }
       if (connect_data[i].fd != msa[i].fd)
       {
@@ -554,36 +558,43 @@ check_afd_status(Widget w)
                  connect_data[i].blink_flag = OFF;
               }
          connect_data[i].fd = msa[i].fd;
-         if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-             (connect_data[i].rcmd == '\0'))
+         if (connect_data[i].rcmd == '\0')
          {
-            draw_mon_proc_led(FD_LED, connect_data[i].fd, x, y);
+            draw_mon_proc_led(FD_LED, connect_data[i].fd, x + (3 * glyph_width), y);
             flush = YES;
          }
+         else if (connect_data[i].plus_minus == PM_OPEN_STATE)
+              {
+                 draw_mon_proc_led(FD_LED, connect_data[i].fd, x, y);
+                 flush = YES;
+              }
       }
       if (connect_data[i].archive_watch != msa[i].archive_watch)
       {
          connect_data[i].archive_watch = msa[i].archive_watch;
-         if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-             (connect_data[i].rcmd == '\0'))
+         if (connect_data[i].rcmd == '\0')
          {
-            draw_mon_proc_led(AW_LED, connect_data[i].archive_watch, x, y);
+            draw_mon_proc_led(AW_LED, connect_data[i].archive_watch, x + (3 * glyph_width), y);
             flush = YES;
          }
+         else if (connect_data[i].plus_minus == PM_OPEN_STATE)
+              {
+                 draw_mon_proc_led(AW_LED, connect_data[i].archive_watch, x, y);
+                 flush = YES;
+              }
       }
-      if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-          (connect_data[i].rcmd == '\0'))
+      if (connect_data[i].rcmd == '\0')
       {
          if (connect_data[i].blink_flag == ON)
          {
             if (connect_data[i].amg == OFF)
             {
-               draw_mon_proc_led(AMG_LED, connect_data[i].blink, x, y);
+               draw_mon_proc_led(AMG_LED, connect_data[i].blink, x + (3 * glyph_width), y);
                flush = YES;
             }
             if (connect_data[i].fd == OFF)
             {
-               draw_mon_proc_led(FD_LED, connect_data[i].blink, x, y);
+               draw_mon_proc_led(FD_LED, connect_data[i].blink, x + (3 * glyph_width), y);
                flush = YES;
             }
             if (connect_data[i].blink == TR_BAR)
@@ -596,6 +607,30 @@ check_afd_status(Widget w)
             }
          }
       }
+      else if (connect_data[i].plus_minus == PM_OPEN_STATE)
+           {
+              if (connect_data[i].blink_flag == ON)
+              {
+                 if (connect_data[i].amg == OFF)
+                 {
+                    draw_mon_proc_led(AMG_LED, connect_data[i].blink, x, y);
+                    flush = YES;
+                 }
+                 if (connect_data[i].fd == OFF)
+                 {
+                    draw_mon_proc_led(FD_LED, connect_data[i].blink, x, y);
+                    flush = YES;
+                 }
+                 if (connect_data[i].blink == TR_BAR)
+                 {
+                    connect_data[i].blink = OFF;
+                 }
+                 else
+                 {
+                    connect_data[i].blink = TR_BAR;
+                 }
+              }
+           }
 
       /*
        * SYSTEM LOG INFORMATION

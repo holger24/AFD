@@ -71,8 +71,12 @@ Widget                        findshell = (Widget)NULL;
 extern Display                *display;
 extern Widget                 appshell;
 extern int                    no_of_afds,
+                              no_of_afds_invisible,
+                              no_of_afds_visible,
                               no_selected,
-                              no_selected_static;
+                              no_selected_static,
+                              *vpl,
+                              window_width;
 extern char                   font_name[],
                               *p_work_dir;
 extern struct mon_line        *connect_data;
@@ -84,13 +88,16 @@ static Widget                 alias_toggle_w,
 static int                    deselect,
                               name_class,
                               name_type,
+                              redraw_counter,
+                              *redraw_line,
                               static_select;
 
 /* Local function prototypes. */
 static void                   done_button(Widget, XtPointer, XtPointer),
+                              draw_selections(void),
                               search_select_afd(Widget, XtPointer, XtPointer),
                               select_callback(Widget, XtPointer, XtPointer),
-                              select_line(int, int);
+                              select_line(int);
 
 #define STATIC_SELECT_CB      1
 #define DESELECT_CB           2
@@ -496,8 +503,16 @@ static void
 search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
 {
    char *text = XmTextGetString(find_text_w);
-   int  i,
-        k = 0;
+   int  i;
+
+   redraw_counter = 0;
+   if ((redraw_line = malloc((no_of_afds * sizeof(int)))) == NULL)
+   {
+      (void)fprintf(stderr,
+                    "ERROR : Failed to malloc() memory : %s (%s %d)\n",
+                    strerror(errno), __FILE__, __LINE__);
+      exit(INCORRECT);
+   }
 
    if (name_class == AFD_NAME_CLASS)
    {
@@ -505,27 +520,22 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
 
       for (i = 0; i < no_of_afds; i++)
       {
-         if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-             (connect_data[i].rcmd == '\0'))
+         if (name_type == ALIAS_NAME)
          {
-            if (name_type == ALIAS_NAME)
+            match = pmatch((text[0] == '\0') ? "*" : text, connect_data[i].afd_alias, NULL);
+         }
+         else
+         {
+            match = pmatch((text[0] == '\0') ? "*" : text, msa[i].hostname[0], NULL);
+            if ((match != 0) && (msa[i].hostname[1][0] != '\0') &&
+                (my_strcmp(msa[i].hostname[0], msa[i].hostname[0]) != 0))
             {
-               match = pmatch((text[0] == '\0') ? "*" : text, connect_data[i].afd_alias, NULL);
+               match = pmatch((text[0] == '\0') ? "*" : text, msa[i].hostname[1], NULL);
             }
-            else
-            {
-               match = pmatch((text[0] == '\0') ? "*" : text, msa[i].hostname[0], NULL);
-               if ((match != 0) && (msa[i].hostname[1][0] != '\0') &&
-                   (my_strcmp(msa[i].hostname[0], msa[i].hostname[0]) != 0))
-               {
-                  match = pmatch((text[0] == '\0') ? "*" : text, msa[i].hostname[1], NULL);
-               }
-            }
-            if (match == 0)
-            {
-               select_line(i, k);
-            }
-            k++;
+         }
+         if (match == 0)
+         {
+            select_line(i);
          }
       }
    }
@@ -577,20 +587,15 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
       {
          for (i = 0; i < no_of_afds; i++)
          {
-            if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                (connect_data[i].rcmd == '\0'))
+            if (ahl[i] != NULL)
             {
-               if (ahl[i] != NULL)
+               for (j = 0; j < msa[i].no_of_hosts; j++)
                {
-                  for (j = 0; j < msa[i].no_of_hosts; j++)
+                  if (pmatch((text[0] == '\0') ? "*" : text, ahl[i][j].host_alias, NULL) == 0)
                   {
-                     if (pmatch((text[0] == '\0') ? "*" : text, ahl[i][j].host_alias, NULL) == 0)
-                     {
-                        select_line(i, k);
-                     }
+                     select_line(i);
                   }
                }
-               k++;
             }
          }
       }
@@ -598,22 +603,17 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
       {
          for (i = 0; i < no_of_afds; i++)
          {
-            if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                (connect_data[i].rcmd == '\0'))
+            if (ahl[i] != NULL)
             {
-               if (ahl[i] != NULL)
+               for (j = 0; j < msa[i].no_of_hosts; j++)
                {
-                  for (j = 0; j < msa[i].no_of_hosts; j++)
+                  if ((pmatch((text[0] == '\0') ? "*" : text, ahl[i][j].real_hostname[0], NULL) == 0) ||
+                      ((ahl[i][j].real_hostname[1][0] != '\0') &&
+                       (pmatch((text[0] == '\0') ? "*" : text,  ahl[i][j].real_hostname[1], NULL) == 0)))
                   {
-                     if ((pmatch((text[0] == '\0') ? "*" : text, ahl[i][j].real_hostname[0], NULL) == 0) ||
-                         ((ahl[i][j].real_hostname[1][0] != '\0') &&
-                          (pmatch((text[0] == '\0') ? "*" : text,  ahl[i][j].real_hostname[1], NULL) == 0)))
-                     {
-                        select_line(i, k);
-                     }
+                     select_line(i);
                   }
                }
-               k++;
             }
          }
       }
@@ -638,8 +638,10 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
       }
       (void)free(ahl);
    }
+   draw_selections();
    XFlush(display);
    XtFree(text);
+   free(redraw_line);
 
    return;
 }
@@ -647,72 +649,143 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
 
 /*---------------------------- select_line() ----------------------------*/
 static void
-select_line(int i, int k)
+select_line(int i)
 {
-   int draw_selection;
-
-   if (deselect == YES)
+   if (connect_data[i].rcmd != '\0')
    {
-      if (connect_data[i].inverse == STATIC)
-      {
-         ABS_REDUCE_GLOBAL(no_selected_static);
-         draw_selection = YES;
-      }
-      else if (connect_data[i].inverse == ON)
-           {
-              ABS_REDUCE_GLOBAL(no_selected);
-              draw_selection = YES;
-           }
-           else
-           {
-              draw_selection = NO;
-           }
-      connect_data[i].inverse = OFF;
-   }
-   else
-   {
-      if (static_select == YES)
+      if (deselect == YES)
       {
          if (connect_data[i].inverse == STATIC)
          {
-            draw_selection = NO;
+            ABS_REDUCE_GLOBAL(no_selected_static);
+            redraw_line[redraw_counter] = i;
+            redraw_counter++;
          }
-         else
-         {
-            if (connect_data[i].inverse == ON)
-            {
-               ABS_REDUCE_GLOBAL(no_selected);
-            }
-            no_selected_static++;
-            connect_data[i].inverse = STATIC;
-            draw_selection = YES;
-         }
+         else if (connect_data[i].inverse == ON)
+              {
+                 ABS_REDUCE_GLOBAL(no_selected);
+                 redraw_line[redraw_counter] = i;
+                 redraw_counter++;
+              }
+         connect_data[i].inverse = OFF;
       }
       else
       {
-         if (connect_data[i].inverse == ON)
+         if (static_select == YES)
          {
-            draw_selection = NO;
+            if (connect_data[i].inverse != STATIC)
+            {
+               if (connect_data[i].inverse == ON)
+               {
+                  ABS_REDUCE_GLOBAL(no_selected);
+               }
+               no_selected_static++;
+               connect_data[i].inverse = STATIC;
+               redraw_line[redraw_counter] = i;
+               redraw_counter++;
+            }
          }
          else
          {
-            if (connect_data[i].inverse == STATIC)
+            if (connect_data[i].inverse != ON)
             {
-               ABS_REDUCE_GLOBAL(no_selected_static);
+               if (connect_data[i].inverse == STATIC)
+               {
+                  ABS_REDUCE_GLOBAL(no_selected_static);
+               }
+               no_selected++;
+               connect_data[i].inverse = ON;
+               redraw_line[redraw_counter] = i;
+               redraw_counter++;
             }
-            no_selected++;
-            connect_data[i].inverse = ON;
-            draw_selection = YES;
          }
       }
    }
-   if (draw_selection == YES)
+
+   return;
+}
+
+
+/*-------------------------- draw_selections() --------------------------*/
+static void
+draw_selections(void)
+{
+   int i,
+       j,
+       redraw_everything = NO;
+
+   /*
+    * First lets see if we have to open a group. If that is the
+    * case we need to redraw everything.
+    */
+   for (i = 0; i < redraw_counter; i++)
+   {
+      if (connect_data[redraw_line[i]].plus_minus == PM_CLOSE_STATE)
+      {
+         for (j = redraw_line[i]; ((j > 0) &&
+                                   (connect_data[j].rcmd != '\0')); j--)
+         {
+#ifdef _WITH_DEBUG
+            (void)fprintf(stderr, "Opening (%d) %s\n",
+                          j, connect_data[j].afd_alias);
+#endif
+            connect_data[j].plus_minus = PM_OPEN_STATE;
+            no_of_afds_visible++;
+            no_of_afds_invisible--;
+         }
+#ifdef _WITH_DEBUG
+            (void)fprintf(stderr, "!Opening Group! (%d) %s\n",
+                          j, connect_data[j].afd_alias);
+#endif
+         connect_data[j].plus_minus = PM_OPEN_STATE;
+         no_of_afds_visible++;
+         no_of_afds_invisible--;
+         for (j = redraw_line[i] + 1; ((j < no_of_afds) &&
+                                       (connect_data[j].rcmd != '\0')); j++)
+         {
+#ifdef _WITH_DEBUG
+            (void)fprintf(stderr, "Opening (%d) %s\n",
+                          j, connect_data[j].afd_alias);
+#endif
+            connect_data[j].plus_minus = PM_OPEN_STATE;
+            no_of_afds_visible++;
+            no_of_afds_invisible--;
+         }
+         redraw_everything = YES;
+      }
+   }
+
+   if (redraw_everything == YES)
+   {
+      /* First lets redo the visible position list (vpl). */
+      j = 0;
+      for (i = 0; i < no_of_afds; i++)
+      {
+         if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+             (connect_data[i].rcmd == '\0'))
+         {
+            vpl[j] = i;
+            j++;
+         }
+      }
+
+      /* Resize and redraw window. */
+      if (resize_mon_window() == YES)
+      {
+         calc_mon_but_coord(window_width);
+      }
+      redraw_all();
+   }
+   else
    {
       int x,
           y;
 
-      locate_xy(k, &x, &y);
-      draw_mon_line_status(i, 1, x, y);
+      for (i = 0; i < redraw_counter; i++)
+      {
+         locate_xy(vpl[redraw_line[i]], &x, &y);
+         draw_mon_line_status(redraw_line[i], 1, x, y);
+      }
    }
 
    return;
