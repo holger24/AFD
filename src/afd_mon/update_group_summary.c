@@ -73,7 +73,10 @@ update_group_summary(void)
    long         danger_no_of_jobs;
    u_off_t      fs,
                 tr;
-   char         connect_status,
+   char         amg,
+                archive_watch,
+                connect_status,
+                fd,
                 log_history[NO_OF_LOG_HISTORY][MAX_LOG_HISTORY];
 
    for (i = 0; i < no_of_afds; i++)
@@ -95,6 +98,7 @@ update_group_summary(void)
          ec = 0;
          no_of_hosts = 0;
          no_of_dirs = 0;
+         amg = fd = archive_watch = 20;
          for (j = i + 1; j < no_of_afds && msa[j].rcmd[0] != '\0'; j++)
          {
             if (msa[j].connect_status > connect_status)
@@ -123,6 +127,30 @@ update_group_summary(void)
             ec += msa[j].ec;
             no_of_hosts += msa[j].no_of_hosts;
             no_of_dirs += msa[j].no_of_dirs;
+            if (msa[j].amg < amg)
+            {
+               amg = msa[j].amg;
+            }
+            else if ((amg == ON) && (msa[j].amg == SHUTDOWN))
+                 {
+                    amg = SHUTDOWN;
+                 }
+            if (msa[j].fd < fd)
+            {
+               fd = msa[j].fd;
+            }
+            else if ((fd == ON) && (msa[j].fd == SHUTDOWN))
+                 {
+                    fd = SHUTDOWN;
+                 }
+            if (msa[j].archive_watch < archive_watch)
+            {
+               archive_watch = msa[j].archive_watch;
+            }
+            else if ((archive_watch == ON) && (msa[j].archive_watch == SHUTDOWN))
+                 {
+                    archive_watch = SHUTDOWN;
+                 }
          }
          msa[i].no_of_transfers = no_of_transfers;
          msa[i].max_connections = max_connections;
@@ -141,6 +169,9 @@ update_group_summary(void)
          {
             (void)memcpy(msa[i].log_history[k], log_history[k], MAX_LOG_HISTORY);
          }
+         msa[i].amg = amg;
+         msa[i].fd = fd;
+         msa[i].archive_watch = archive_watch;
          i = j - 1;
       }
    }
