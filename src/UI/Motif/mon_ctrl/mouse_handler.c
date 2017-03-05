@@ -115,7 +115,6 @@ extern int                     depth,
                                no_of_afds,
                                no_of_afds_invisible,
                                no_of_afds_visible,
-                               no_of_jobs_selected,
                                line_length,
                                line_height,
                                x_offset_proc,
@@ -398,13 +397,6 @@ mon_input(Widget w, XtPointer client_data, XEvent *event)
                             XFlush(display);
                          }
                       }
-                 else if ((line_style != BARS_ONLY) &&
-                          (in_ec_area(vpl[select_no], event)))
-                      {
-                         popup_error_history(event->xbutton.x_root,
-                                             event->xbutton.y_root,
-                                             vpl[select_no]);
-                      }
                  else if ((connect_data[vpl[select_no]].rcmd == '\0') &&
                           (in_pm_area(event)))
                       {
@@ -421,7 +413,8 @@ mon_input(Widget w, XtPointer client_data, XEvent *event)
                             connect_data[vpl[select_no]].plus_minus = PM_CLOSE_STATE;
                             invisible = 1;
                          }
-                         for (i = vpl[select_no] + 1; i < no_of_afds && connect_data[i].rcmd != '\0'; i++)
+                         for (i = vpl[select_no] + 1; ((i < no_of_afds) &&
+                                                       (connect_data[i].rcmd != '\0')); i++)
                          {
                             connect_data[i].plus_minus = connect_data[vpl[select_no]].plus_minus;
                             if ((invisible == 1) &&
@@ -441,6 +434,14 @@ mon_input(Widget w, XtPointer client_data, XEvent *event)
                             redraw_all();
                             XFlush(display);
                          }
+                      }
+                 else if ((line_style != BARS_ONLY) &&
+                          (msa[vpl[select_no]].ec > 0) &&
+                          (in_ec_area(vpl[select_no], event)))
+                      {
+                         popup_error_history(event->xbutton.x_root,
+                                             event->xbutton.y_root,
+                                             vpl[select_no]);
                       }
                       else
                       {

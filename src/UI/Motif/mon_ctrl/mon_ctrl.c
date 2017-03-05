@@ -160,7 +160,6 @@ int                     bar_thickness_3,
                         no_of_afds,
                         no_of_afds_invisible = 0,
                         no_of_afds_visible,
-                        no_of_jobs_selected,
                         sys_log_fd = STDERR_FILENO,
 #ifdef WITHOUT_FIFO_RW_SUPPORT
                         mon_log_readfd,

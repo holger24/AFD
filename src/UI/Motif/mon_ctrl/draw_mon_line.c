@@ -33,6 +33,7 @@ DESCR__S_M3
  **   void draw_mon_line_status(int pos, signed char delta, int x, int y)
  **   void draw_mon_blank_line(int x, int y)
  **   void draw_mon_proc_led(int led_no, signed char led_status, int x, int y)
+ **   void draw_plus_minus(int pos, int x, int y)
  **   void draw_remote_log_status(int pos, int si_pos, int x, int y)
  **   void draw_clock(time_t current_time)
  **
