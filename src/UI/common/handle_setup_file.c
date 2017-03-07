@@ -415,6 +415,7 @@ read_setup(char *file_name,
          }
          tmp_ptr++; length++;
       }
+      max_length += 1;
       if (*no_of_invisible_members > 0)
       {
          int i;
