@@ -1,7 +1,7 @@
 /*
  *  setup_mon_window.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 1998 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -359,6 +359,7 @@ setup_mon_window(char *font_name)
       XtVaSetValues(rw[ROW_17_W], XmNfontList, fontlist, NULL);
       XtVaSetValues(rw[ROW_18_W], XmNfontList, fontlist, NULL);
       XtVaSetValues(rw[ROW_19_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(rw[ROW_20_W], XmNfontList, fontlist, NULL);
 
       /* Set the font for the Line Style pulldown. */
       XtVaSetValues(lsw[STYLE_0_W], XmNfontList, fontlist, NULL);

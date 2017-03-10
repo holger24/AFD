@@ -2007,7 +2007,7 @@ create_pullright_row(Widget pullright_row)
                {
                   ROW_0, ROW_1, ROW_2, ROW_3, ROW_4, ROW_5, ROW_6,
                   ROW_7, ROW_8, ROW_9, ROW_10, ROW_11, ROW_12, ROW_13,
-                  ROW_14, ROW_15, ROW_16, ROW_17, ROW_18, ROW_19
+                  ROW_14, ROW_15, ROW_16, ROW_17, ROW_18, ROW_19, ROW_20
                };
    XmString    x_string;
    Arg         args[MAXARGS];

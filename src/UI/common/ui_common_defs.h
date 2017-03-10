@@ -180,7 +180,8 @@
 #define ROW_17_W                         17
 #define ROW_18_W                         18
 #define ROW_19_W                         19
-#define NO_OF_ROWS                       20
+#define ROW_20_W                         20
+#define NO_OF_ROWS                       21
 
 /* Definitions for the Line Style pulldown widgets. */
 #define STYLE_0_W                        0
@@ -281,24 +282,25 @@
 /* List of number of rows in a column. */
 #define ROW_0                            "2"
 #define ROW_1                            "4"
-#define ROW_2                            "6"
-#define ROW_3                            "8"
-#define ROW_4                            "10"
-#define ROW_5                            "14"
-#define ROW_6                            "16"
-#define ROW_7                            "20"
-#define ROW_8                            "25"
-#define ROW_9                            "30"
-#define ROW_10                           "40"
-#define ROW_11                           "50"
-#define ROW_12                           "60"
-#define ROW_13                           "70"
-#define ROW_14                           "80"
-#define ROW_15                           "90"
-#define ROW_16                           "100"
-#define ROW_17                           "120"
-#define ROW_18                           "140"
-#define ROW_19                           "160"
+#define ROW_2                            "5"
+#define ROW_3                            "6"
+#define ROW_4                            "8"
+#define ROW_5                            "10"
+#define ROW_6                            "14"
+#define ROW_7                            "16"
+#define ROW_8                            "20"
+#define ROW_9                            "25"
+#define ROW_10                           "30"
+#define ROW_11                           "40"
+#define ROW_12                           "50"
+#define ROW_13                           "60"
+#define ROW_14                           "70"
+#define ROW_15                           "80"
+#define ROW_16                           "90"
+#define ROW_17                           "100"
+#define ROW_18                           "120"
+#define ROW_19                           "140"
+#define ROW_20                           "160"
 
 /* All colors for status, background, foreground, etc. */
 #define DEFAULT_BG_COLOR                   "LightBlue1"

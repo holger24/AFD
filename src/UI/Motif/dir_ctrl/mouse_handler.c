@@ -1708,6 +1708,10 @@ change_dir_rows_cb(Widget    w,
          no_of_rows_set = atoi(ROW_19);
          break;
 
+      case 20  :
+         no_of_rows_set = atoi(ROW_20);
+         break;
+
       default  :
 #if SIZEOF_LONG == 4
          (void)xrec(WARN_DIALOG, "Impossible row selection (%d).", item_no);
