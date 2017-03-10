@@ -1,6 +1,6 @@
 /*
  *  redraw_all.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,19 +46,21 @@ DESCR__E_M3
 #include "mafd_ctrl.h"
 
 /* External global variables. */
-extern Window  button_window,
-               label_window,
-               line_window;
-extern Pixmap  button_pixmap,
-               label_pixmap,
-               line_pixmap;
-extern Display *display;
-extern GC      default_bg_gc;
-extern int     depth,
-               line_height,
-               no_of_hosts,
-               no_of_rows,
-               window_width;
+extern Window      button_window,
+                   label_window,
+                   line_window;
+extern Pixmap      button_pixmap,
+                   label_pixmap,
+                   line_pixmap;
+extern Display     *display;
+extern GC          default_bg_gc;
+extern int         depth,
+                   line_height,
+                   no_of_hosts,
+                   no_of_rows,
+                   *vpl,
+                   window_width;
+extern struct line *connect_data;
 
 
 /*############################# redraw_all() ############################*/
@@ -66,7 +68,8 @@ void
 redraw_all(void)
 {
    unsigned int height;
-   int          i;
+   int          i,
+                j = 0;
 
    /* Clear everything. */
    XClearWindow(display, line_window);
@@ -87,7 +90,13 @@ redraw_all(void)
    draw_label_line();
    for (i = 0; i < no_of_hosts; i++)
    {
-      draw_line_status(i, 1);
+      if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+          (connect_data[i].type == 1))
+      {
+         vpl[j] = i;
+         draw_line_status(j, 1);
+         j++;
+      }
    }
    draw_button_line();
 

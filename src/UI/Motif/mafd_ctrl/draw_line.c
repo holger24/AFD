@@ -36,8 +36,9 @@ DESCR__S_M3
  **   void draw_history(int type, int left)
  **   void draw_log_status(int log_typ, int si_pos)
  **   void draw_queue_counter(nlink_t queue_counter)
+ **   void draw_plus_minus(int pos, int x, int y)
  **   void draw_proc_stat(int pos, int job_no, int x, int y)
- **   void draw_detailed_selection(int pos, int job_no)
+ **   void draw_detailed_selection(int pos, int job_no, int x, int y)
  **   void draw_chars(int pos, char type, int x, int y, int column)
  **   void draw_bar(int pos, signed cahr delta, char bar_no, int x, int y, int column);
  **
@@ -66,6 +67,7 @@ DESCR__S_M3
  **   12.01.2017 H.Kiehl Prevent this dialog from crashing when we access
  **                      color_pool values that do not exist due to broken
  **                      data.
+ **   04.03.2017 H.Kiehl Add support for groups.
  **
  */
 DESCR__E_M3
@@ -76,6 +78,8 @@ DESCR__E_M3
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
 #include "mafd_ctrl.h"
+
+#define OUTLINE_GROUP
 
 extern Display                    *display;
 extern Pixmap                     button_pixmap,
@@ -114,6 +118,7 @@ extern int                        *line_length,
                                   hostname_display_length,
                                   led_width,
                                   no_of_his_log,
+                                  *vpl,
                                   window_width,
                                   x_offset_debug_led,
                                   x_offset_led,
@@ -303,9 +308,9 @@ draw_line_status(int pos, signed char delta)
                 pos, counter++, x, y);
 #endif
 
-   if ((connect_data[pos].inverse > OFF) && (delta >= 0))
+   if ((connect_data[vpl[pos]].inverse > OFF) && (delta >= 0))
    {
-      if (connect_data[pos].inverse == ON)
+      if (connect_data[vpl[pos]].inverse == ON)
       {
          tmp_gc = normal_bg_gc;
       }
@@ -323,17 +328,35 @@ draw_line_status(int pos, signed char delta)
    XFillRectangle(display, line_pixmap, tmp_gc, x, y,
                   line_length[column], line_height);
 
-   /* Write destination identifier to screen. */
-   draw_dest_identifier(line_window, line_pixmap, pos, x, y);
-
-   if (line_style & SHOW_LEDS)
+   if (connect_data[vpl[pos]].type == 1)
    {
-      /* Draw debug led. */
-      draw_debug_led(pos, x, y);
+      draw_plus_minus(vpl[pos], x, y);
 
-      /* Draw status LED's. */
-      draw_led(pos, 0, x, y);
-      draw_led(pos, 1, x + led_width + LED_SPACING, y);
+      /* Write destination identifier to screen. */
+      draw_dest_identifier(line_window, line_pixmap, vpl[pos],
+                           x - DEFAULT_FRAME_SPACE + (3 * glyph_width), y);
+
+      if (line_style & SHOW_LEDS)
+      {
+         /* Draw status LED's. */
+         draw_led(vpl[pos], 0, x, y);
+         draw_led(vpl[pos], 1, x + led_width + LED_SPACING, y);
+      }
+   }
+   else
+   {
+      /* Write destination identifier to screen. */
+      draw_dest_identifier(line_window, line_pixmap, vpl[pos], x, y);
+
+      if (line_style & SHOW_LEDS)
+      {
+         /* Draw debug led. */
+         draw_debug_led(vpl[pos], x, y);
+
+         /* Draw status LED's. */
+         draw_led(vpl[pos], 0, x, y);
+         draw_led(vpl[pos], 1, x + led_width + LED_SPACING, y);
+      }
    }
 
    if ((line_style & SHOW_JOBS) || (line_style & SHOW_JOBS_COMPACT))
@@ -341,13 +364,14 @@ draw_line_status(int pos, signed char delta)
       int i;
 
       /* Draw status button for each parallel transfer. */
-      for (i = 0; i < fsa[pos].allowed_transfers; i++)
+      for (i = 0; i < fsa[vpl[pos]].allowed_transfers; i++)
       {
-         draw_proc_stat(pos, i, x, y);
+         draw_proc_stat(vpl[pos], i, x, y);
       }
       if (line_style & SHOW_JOBS_COMPACT)
       {
-         draw_detailed_selection(pos, fsa[pos].allowed_transfers);
+         draw_detailed_selection(vpl[pos], fsa[vpl[pos]].allowed_transfers,
+                                 x, y);
       }
    }
 
@@ -356,10 +380,10 @@ draw_line_status(int pos, signed char delta)
    /* counter (ec).                                          */
    if (line_style & SHOW_CHARACTERS)
    {
-      draw_chars(pos, NO_OF_FILES, x, y, column);
-      draw_chars(pos, TOTAL_FILE_SIZE, x + (5 * glyph_width), y, column);
-      draw_chars(pos, TRANSFER_RATE, x + (10 * glyph_width), y, column);
-      draw_chars(pos, ERROR_COUNTER, x + (15 * glyph_width), y, column);
+      draw_chars(vpl[pos], NO_OF_FILES, x, y, column);
+      draw_chars(vpl[pos], TOTAL_FILE_SIZE, x + (5 * glyph_width), y, column);
+      draw_chars(vpl[pos], TRANSFER_RATE, x + (10 * glyph_width), y, column);
+      draw_chars(vpl[pos], ERROR_COUNTER, x + (15 * glyph_width), y, column);
    }
 
    /* Draw bars, indicating graphically how many errors have */
@@ -368,11 +392,11 @@ draw_line_status(int pos, signed char delta)
    if (line_style & SHOW_BARS)
    {
       /* Draw bars. */
-      draw_bar(pos, delta, TR_BAR_NO, x, y, column);
-      draw_bar(pos, delta, ERROR_BAR_NO, x, y + bar_thickness_2, column);
+      draw_bar(vpl[pos], delta, TR_BAR_NO, x, y, column);
+      draw_bar(vpl[pos], delta, ERROR_BAR_NO, x, y + bar_thickness_2, column);
 
       /* Show beginning and end of bars. */
-      if (connect_data[pos].inverse > OFF)
+      if (connect_data[vpl[pos]].inverse > OFF)
       {
          tmp_gc = white_line_gc;
       }
@@ -399,6 +423,52 @@ draw_line_status(int pos, signed char delta)
                 y + SPACE_ABOVE_LINE,
                 x + x_offset_bars - (max_line_length - line_length[column]) + (int)max_bar_length, y + glyph_height);
    }
+
+#ifdef OUTLINE_GROUP
+   if (connect_data[vpl[pos]].type == 1)
+   {
+      XDrawLine(display, line_window, black_line_gc,
+                x,
+                y,
+                x,
+                y + line_height - 2);
+      XDrawLine(display, line_pixmap, black_line_gc,
+                x,
+                y,
+                x,
+                y + line_height - 2);
+      XDrawLine(display, line_window, black_line_gc,
+                x,
+                y,
+                x + line_length[column],
+                y);
+      XDrawLine(display, line_pixmap, black_line_gc,
+                x,
+                y,
+                x + line_length[column],
+                y);
+      XDrawLine(display, line_window, black_line_gc,
+                x,
+                y + line_height - 2,
+                x + line_length[column],
+                y + line_height - 2);
+      XDrawLine(display, line_pixmap, black_line_gc,
+                x,
+                y + line_height - 2,
+                x + line_length[column],
+                y + line_height - 2);
+      XDrawLine(display, line_window, black_line_gc,
+                x + line_length[column] - 1,
+                y,
+                x + line_length[column] - 1,
+                y + line_height - 2);
+      XDrawLine(display, line_pixmap, black_line_gc,
+                x + line_length[column] - 1,
+                y,
+                x + line_length[column] - 1,
+                y + line_height - 2);
+   }
+#endif
 
    return;
 }
@@ -465,6 +535,40 @@ draw_blank_line(int pos)
                   line_length[column], line_height);
    XFillRectangle(display, line_pixmap, default_bg_gc, x, y,
                   line_length[column], line_height);
+
+   return;
+}
+
+
+/*++++++++++++++++++++++++++ draw_plus_minus() ++++++++++++++++++++++++++*/
+void
+draw_plus_minus(int pos, int x, int y)
+{
+   char      plus_minus_str[] = { '[', '-', ']', '\0' };
+   XGCValues gc_values;
+
+   gc_values.foreground = color_pool[FG];
+   gc_values.background = color_pool[DEFAULT_BG];
+   XChangeGC(display, color_letter_gc, GCForeground | GCBackground, &gc_values);
+
+   if (connect_data[pos].plus_minus == PM_CLOSE_STATE)
+   {
+      plus_minus_str[1] = '+';
+   }
+
+#ifdef _WITH_DEBUG_PLUS_MINUS
+   (void)fprintf(stderr, "%s (%d) %c\n",
+                 connect_data[pos].afd_alias, pos, plus_minus_str[1]);
+#endif
+
+   XDrawImageString(display, line_window, color_letter_gc,
+                    x,
+                    y + text_offset + SPACE_ABOVE_LINE,
+                    plus_minus_str, 3);
+   XDrawImageString(display, line_pixmap, color_letter_gc,
+                    x,
+                    y + text_offset + SPACE_ABOVE_LINE,
+                    plus_minus_str, 3);
 
    return;
 }
@@ -1281,9 +1385,9 @@ draw_proc_stat(int pos, int job_no, int x, int y)
 
 /*+++++++++++++++++++++ draw_detailed_selection() +++++++++++++++++++++++*/
 void
-draw_detailed_selection(int pos, int job_no)
+draw_detailed_selection(int pos, int job_no, int x, int y)
 {
-   int       x, y, offset, proc_width;
+   int       offset, proc_width;
    XGCValues gc_values;
 
    if (line_style & SHOW_JOBS_COMPACT)
@@ -1323,7 +1427,6 @@ draw_detailed_selection(int pos, int job_no)
            }
    }
    XChangeGC(display, color_gc, GCForeground, &gc_values);
-   locate_xy_column(pos, &x, &y, NULL);
    XDrawRectangle(display, line_window, color_gc,
                   x + x_offset_proc + offset - 1,
                   y + SPACE_ABOVE_LINE - 1,

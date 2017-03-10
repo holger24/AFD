@@ -55,6 +55,7 @@ DESCR__S_M1
  **   05.12.2014 H.Kiehl Added parameter -t to supply window title.
  **   27.02.2016 H.Kiehl Remove long/short line code.
  **   14.09.2016 H.Kiehl Added production log.
+ **   04.03.2017 H.Kiehl Added group support.
  **
  */
 DESCR__E_M1
@@ -175,6 +176,7 @@ int                        amg_flag = NO,
                            led_width,
                            *line_length = NULL,
                            max_line_length,
+                           max_parallel_jobs_columns,
                            line_height = 0,
                            magic_value,
                            log_angle,
@@ -189,6 +191,8 @@ int                        amg_flag = NO,
                            no_of_rows,
                            no_of_rows_set,
                            no_of_hosts,
+                           no_of_hosts_invisible,
+                           no_of_hosts_visible,
                            no_of_jobs_selected,
                            sys_log_fd = STDERR_FILENO,
 #ifdef WITHOUT_FIFO_RW_SUPPORT
@@ -197,6 +201,7 @@ int                        amg_flag = NO,
                            tv_line_length,
                            tv_no_of_columns,
                            tv_no_of_rows,
+                           *vpl,           /* Visible position list. */
                            window_width,
                            window_height,
                            x_center_receive_log,
@@ -628,10 +633,12 @@ static void
 init_mafd_ctrl(int *argc, char *argv[], char *window_title)
 {
    int          fd,
+                gotcha,
                 i,
                 j,
                 no_of_invisible_members = 0,
                 prev_plus_minus,
+                reduce_val,
                 user_offset;
    unsigned int new_bar_length;
    time_t       current_time,
@@ -878,6 +885,14 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
    p_feature_flag = (unsigned char *)fsa - AFD_FEATURE_FLAG_OFFSET_END;
    saved_feature_flag = *p_feature_flag;
 
+   if ((vpl = malloc((no_of_hosts * sizeof(int)))) == NULL)
+   {
+      (void)fprintf(stderr, "Failed to malloc() %ld bytes : %s (%s %d)\n",
+                    (no_of_hosts * sizeof(int)), strerror(errno),
+                    __FILE__, __LINE__);
+      exit(INCORRECT);
+   }
+
    /*
     * Attach to the AFD Status Area.
     */
@@ -915,6 +930,14 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
 # endif
 #endif
    danger_no_of_jobs = link_max / 2;
+   if (MAX_NO_PARALLEL_JOBS % 3)
+   {
+      max_parallel_jobs_columns = (MAX_NO_PARALLEL_JOBS / 3) + 1;
+   }
+   else
+   {
+      max_parallel_jobs_columns = MAX_NO_PARALLEL_JOBS / 3;
+   }
 
    /*
     * Map to AFD_ACTIVE file, to check if all process are really
@@ -984,6 +1007,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
               &filename_display_length, NULL,
               &no_of_invisible_members, &invisible_members);
    prev_plus_minus = PM_OPEN_STATE;
+   reduce_val = 0;
 
    /* Determine the default bar length. */
    max_bar_length  = 6 * BAR_LENGTH_MODIFIER;
@@ -996,12 +1020,54 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
    {
       (void)strcpy(connect_data[i].hostname, fsa[i].host_alias);
       connect_data[i].host_id = fsa[i].host_id;
+      if (fsa[i].real_hostname[0][0] == 1)
+      {
+         connect_data[i].type = 1;
+      }
+      else
+      {
+         connect_data[i].type = 0;
+      }
+      if (no_of_invisible_members > 0)
+      {
+         if (connect_data[i].type == 1)
+         {
+            gotcha = NO;
+            for (j = 0; j < no_of_invisible_members; j++)
+            {
+               if (strcmp(connect_data[i].hostname, invisible_members[j]) == 0)
+               {
+                  connect_data[i].plus_minus = PM_CLOSE_STATE;
+                  prev_plus_minus = PM_CLOSE_STATE;
+                  reduce_val = 1;
+                  gotcha = YES;
+                  break;
+               }
+            }
+            if (gotcha == NO)
+            {
+               connect_data[i].plus_minus = PM_OPEN_STATE;
+               prev_plus_minus = PM_OPEN_STATE;
+               reduce_val = 0;
+            }
+         }
+         else
+         {
+            connect_data[i].plus_minus = prev_plus_minus;
+            no_of_hosts_invisible += reduce_val;
+         }
+      }
+      else
+      {
+         connect_data[i].plus_minus = PM_OPEN_STATE;
+      }
       (void)snprintf(connect_data[i].host_display_str, MAX_HOSTNAME_LENGTH + 2,
                      "%-*s",
                      MAX_HOSTNAME_LENGTH, fsa[i].host_dsp_name);
+      connect_data[i].host_toggle = fsa[i].host_toggle;
       if (fsa[i].host_toggle_str[0] != '\0')
       {
-         connect_data[i].host_toggle_display = fsa[i].host_toggle_str[(int)fsa[i].host_toggle];
+         connect_data[i].host_toggle_display = fsa[i].host_toggle_str[(int)connect_data[i].host_toggle];
       }
       else
       {
@@ -1166,6 +1232,23 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
       }
    }
    FREE_RT_ARRAY(hosts);
+
+   if (invisible_members != NULL)
+   {
+      FREE_RT_ARRAY(invisible_members);
+   }
+   no_of_hosts_visible = no_of_hosts - no_of_hosts_invisible;
+
+   j = 0;
+   for (i = 0; i < no_of_hosts; i++)
+   {
+      if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+          (connect_data[i].type == 1))
+      {
+         vpl[j] = i;
+         j++;
+      }
+   }
 
    /*
     * Initialise all data for AFD status area.
@@ -2240,7 +2323,7 @@ create_pullright_row(Widget pullright_row)
                {
                   ROW_0, ROW_1, ROW_2, ROW_3, ROW_4, ROW_5, ROW_6,
                   ROW_7, ROW_8, ROW_9, ROW_10, ROW_11, ROW_12, ROW_13,
-                  ROW_14, ROW_15, ROW_16, ROW_17, ROW_18, ROW_19
+                  ROW_14, ROW_15, ROW_16, ROW_17, ROW_18, ROW_19, ROW_20
                };
    XmString    x_string;
    Arg         args[3];

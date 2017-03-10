@@ -1,6 +1,6 @@
 /*
  *  window_size.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -50,18 +50,20 @@ DESCR__E_M3
 #include <errno.h>
 #include "mafd_ctrl.h"
 
-extern Display                    *display;
-extern int                        bar_thickness_3,
-                                  button_width,
-                                  *line_length,
-                                  max_line_length,
-                                  line_height,
-                                  no_of_columns,
-                                  no_of_hosts,
-                                  no_of_rows,
-                                  no_of_rows_set;
-extern char                       line_style;
-extern struct filetransfer_status *fsa;
+/* External global variables. */
+extern Display     *display;
+extern int         bar_thickness_3,
+                   button_width,
+                   *line_length,
+                   max_line_length,
+                   max_parallel_jobs_columns,
+                   line_height,
+                   no_of_columns,
+                   no_of_hosts_visible,
+                   no_of_rows,
+                   no_of_rows_set;
+extern char        line_style;
+extern struct line *connect_data;
 
 
 /*########################### window_size() ############################*/
@@ -76,8 +78,8 @@ window_size(int *window_width, int *window_height)
    signed char window_size_changed;
 
    /* How many columns do we need? */
-   no_of_columns = no_of_hosts / no_of_rows_set;
-   if ((no_of_hosts % no_of_rows_set) != 0)
+   no_of_columns = no_of_hosts_visible / no_of_rows_set;
+   if ((no_of_hosts_visible % no_of_rows_set) != 0)
    {
       no_of_columns += 1;
    }
@@ -90,10 +92,10 @@ window_size(int *window_width, int *window_height)
 
    /* How many lines per window? */
    previous_no_of_rows = no_of_rows;
-   no_of_rows = no_of_hosts / no_of_columns;
-   if (no_of_hosts != (no_of_columns * no_of_rows))
+   no_of_rows = no_of_hosts_visible / no_of_columns;
+   if (no_of_hosts_visible != (no_of_columns * no_of_rows))
    {
-      if ((no_of_hosts % no_of_columns) != 0)
+      if ((no_of_hosts_visible % no_of_columns) != 0)
       {
          no_of_rows += 1;
       }
@@ -118,36 +120,42 @@ window_size(int *window_width, int *window_height)
       {
          for (j = 0; j < no_of_rows; j++)
          {
-            if (max_no_parallel_jobs < fsa[pos].allowed_transfers)
+            if ((connect_data[pos].plus_minus == PM_OPEN_STATE) ||
+                (connect_data[pos].type == 0))
             {
-               max_no_parallel_jobs = fsa[pos].allowed_transfers;
-               if (max_no_parallel_jobs == MAX_NO_PARALLEL_JOBS)
+               if (max_no_parallel_jobs < connect_data[pos].allowed_transfers)
                {
-                  /* No need to go on with the search. */
-                  pos += (no_of_rows - j);
-                  break;
+                  max_no_parallel_jobs = connect_data[pos].allowed_transfers;
+                  if (max_no_parallel_jobs == MAX_NO_PARALLEL_JOBS)
+                  {
+                     /* No need to go on with the search. */
+                     pos += (no_of_rows - j);
+                     break;
+                  }
                }
             }
             pos++;
-            if (pos >= no_of_hosts)
+            if (pos >= no_of_hosts_visible)
             {
                break;
             }
          }
          if (line_style & SHOW_JOBS_COMPACT)
          {
-            int p_jobs_less = MAX_NO_PARALLEL_JOBS - max_no_parallel_jobs;
+            int parallel_jobs_columns_less;
 
-            if (((max_no_parallel_jobs % 3) == 0) && ((MAX_NO_PARALLEL_JOBS % 3) != 0))
+            if (max_no_parallel_jobs % 3)
             {
-               line_length[i] = max_line_length -
-                                (((p_jobs_less / 3) + 1) * bar_thickness_3);
+               parallel_jobs_columns_less = max_parallel_jobs_columns -
+                                            ((max_no_parallel_jobs / 3) + 1);
             }
             else
             {
-               line_length[i] = max_line_length -
-                                ((p_jobs_less / 3) * bar_thickness_3);
+               parallel_jobs_columns_less = max_parallel_jobs_columns -
+                                            (max_no_parallel_jobs / 3);
             }
+            line_length[i] = max_line_length -
+                             (parallel_jobs_columns_less * bar_thickness_3);
          }
          else
          {
@@ -169,10 +177,10 @@ window_size(int *window_width, int *window_height)
    }
 
    /* Check if in last column rows moved up. */
-   if (((max_no_of_lines = (no_of_columns * no_of_rows)) > no_of_hosts) &&
+   if (((max_no_of_lines = (no_of_columns * no_of_rows)) > no_of_hosts_visible) &&
        (previous_no_of_rows != no_of_rows) && (previous_no_of_rows != 0))
    {
-      for (i = max_no_of_lines; i > no_of_hosts; i--)
+      for (i = max_no_of_lines; i > no_of_hosts_visible; i--)
       {
          draw_blank_line(i - 1);
       }

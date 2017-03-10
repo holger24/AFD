@@ -81,7 +81,7 @@ locate_xy_column(int pos, int *x, int *y, int *column)
    {
       register int i;
 
-      for (i = 0; i < (column_no - 1); i++)
+      for (i = 0; ((i < no_of_columns) && (i < (column_no - 1))); i++)
       {
          *x += line_length[i];
       }

@@ -41,6 +41,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   27.06.2004 H.Kiehl Created
+ **   09.03.2017 H.Kiehl Added support for groups.
  **
  */
 DESCR__E_M3
@@ -54,8 +55,11 @@ DESCR__E_M3
 #include <Xm/Form.h>
 #include <Xm/Label.h>
 
+#define EL_STEP_SIZE 3
+
 
 /* External global variables. */
+extern int                        no_of_hosts;
 extern Display                    *display;
 extern Widget                     appshell;
 extern XmFontList                 fontlist;
@@ -63,6 +67,7 @@ extern unsigned long              color_pool[];
 extern unsigned int               glyph_height,
                                   glyph_width;
 extern char                       *p_work_dir;
+extern struct line                *connect_data;
 extern struct filetransfer_status *fsa;
 
 /* Local global variables. */
@@ -76,81 +81,175 @@ static void                       eh_input(Widget, XtPointer, XEvent *);
 void
 popup_error_history(int x_root, int y_root, int host_no)
 {
+   int  display_height,
+        total_error_list_length,
+        i,
+        lines,
+        max_lines,
+        max_length,
+        str_length;
+   char *error_list;
+
    if (error_shell != NULL)
    {
       destroy_error_history();
    }
 
-   if (fsa[host_no].error_history[0] != 0)
-   {
-      Widget   error_label,
-               form;
-      XmString x_string;
-      int      display_height,
-               display_width,
-               error_list_length,
-               i,
-               length,
-               lines,
-               max_lines,
-               max_length,
-               over_hang,
-               str_length;
-      char     *error_list;
+   /* Lets determine how many lines we are able to display. */
+   display_height = DisplayHeight(display, DefaultScreen(display));
+   max_lines = display_height / glyph_height;
 
-      /* Lets determine how many lines we are able to display. */
-      display_height = DisplayHeight(display, DefaultScreen(display));
-      max_lines = display_height / glyph_height;
-   
-      error_list_length = ERROR_HISTORY_LENGTH *
-                          (5 + 1 + MAX_ERROR_STR_LENGTH + 1);
-      if ((error_list = malloc(error_list_length)) == NULL)
+   if (connect_data[host_no].type == 1)
+   {
+      int host_alias_shown,
+          j;
+      struct error_list
+             {  
+                char host_alias[MAX_HOSTNAME_LENGTH + 1];
+                char error_str[MAX_ERROR_STR_LENGTH + 1];
+             } *el;
+
+      if ((el = malloc((EL_STEP_SIZE * sizeof(struct error_list)))) == NULL)
       {
          (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
                        strerror(errno), __FILE__, __LINE__);
          exit(INCORRECT);
       }
-      length = max_length = lines = 0;
 
-      str_length = snprintf(error_list + length, error_list_length - length,
-                            "[%d] %s\n",
-                            (int)fsa[host_no].error_history[0],
-                            get_error_str(fsa[host_no].error_history[0]));
-      if (str_length > error_list_length)
+      max_length = lines = 0;
+      for (i = host_no + 1; ((i < no_of_hosts) && (connect_data[i].type != 1) &&
+                             (lines < max_lines)); i++)
       {
-         str_length = error_list_length;
-      }
-      if (str_length > max_length)
-      {
-         max_length = str_length;
-      }
-      length += str_length;
-      lines++;
-      for (i = 1; i < ERROR_HISTORY_LENGTH; i++)
-      {
-         if ((fsa[host_no].error_history[i] == 0) || (lines >= max_lines))
+         host_alias_shown = NO;
+         if (connect_data[i].error_counter > 0)
          {
-            i = ERROR_HISTORY_LENGTH;
-         }
-         else
-         {
-            str_length = snprintf(error_list + length, error_list_length - length,
-                                  "[%d] %s\n",
-                                  (int)fsa[host_no].error_history[i],
-                                  get_error_str(fsa[host_no].error_history[i]));
-            if (str_length > (error_list_length - length))
+            for (j = 0; ((j < ERROR_HISTORY_LENGTH) && (lines < max_lines)); j++)
             {
-               str_length = error_list_length - length;
-               i = ERROR_HISTORY_LENGTH;
+               if ((lines != 0) && ((lines % EL_STEP_SIZE) == 0))
+               {
+                  size_t new_size = ((lines / EL_STEP_SIZE) + 1) *
+                                    EL_STEP_SIZE * sizeof(struct error_list);
+
+                  if ((el = realloc(el, new_size)) == NULL)
+                  {
+                     (void)fprintf(stderr, "realloc() error : %s (%s %d)\n",
+                                   strerror(errno), __FILE__, __LINE__);
+                     exit(INCORRECT);
+                  }
+               }
+               if (host_alias_shown == NO)
+               {
+                  (void)strcpy(el[lines].host_alias, connect_data[i].hostname);
+                  host_alias_shown = YES;
+               }
+               else
+               {
+                  el[lines].host_alias[0] = '\0';
+               }
+               (void)strcpy(el[lines].error_str,
+                            get_error_str(fsa[i].error_history[j]));
+               str_length = strlen(el[lines].error_str);
+               if (str_length > max_length)
+               {
+                  max_length = str_length;
+               }
+               lines++;
             }
+         }
+      }
+
+      if (lines > 0)
+      {
+         total_error_list_length = (lines * (MAX_HOSTNAME_LENGTH + 1 +
+                                             max_length + 1)) + 1;
+         if ((error_list = malloc(total_error_list_length)) == NULL)
+         {
+            (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
+                          strerror(errno), __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+
+         str_length = 0;
+         for (i = 0; i < lines; i++)
+         {
+            str_length += sprintf(error_list + str_length, "%-*s %-*s\n",
+                                  MAX_HOSTNAME_LENGTH, el[i].host_alias,
+                                  max_length, el[i].error_str);
+         }
+         error_list[str_length - 1] = '\0';
+      }
+      free((char *)el);
+   }
+   else
+   {
+      if (connect_data[host_no].error_counter > 0)
+      {
+         struct error_list
+                {
+                   char error_str[MAX_ERROR_STR_LENGTH + 1];
+                } *el;
+
+         if ((el = malloc((EL_STEP_SIZE * sizeof(struct error_list)))) == NULL)
+         {
+            (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
+                          strerror(errno), __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+
+         max_length = lines = 0;
+         for (i = 0; ((i < ERROR_HISTORY_LENGTH) && (lines < max_lines)); i++)
+         {
+            if ((lines != 0) && ((lines % EL_STEP_SIZE) == 0))
+            {
+               size_t new_size = ((lines / EL_STEP_SIZE) + 1) *
+                                 EL_STEP_SIZE * sizeof(struct error_list);
+
+               if ((el = realloc(el, new_size)) == NULL)
+               {
+                  (void)fprintf(stderr, "realloc() error : %s (%s %d)\n",
+                                strerror(errno), __FILE__, __LINE__);
+                  exit(INCORRECT);
+               }
+            }
+            (void)strcpy(el[lines].error_str,
+                         get_error_str(fsa[host_no].error_history[i]));
+            str_length = strlen(el[lines].error_str);
             if (str_length > max_length)
             {
                max_length = str_length;
             }
-            length += str_length;
             lines++;
          }
+
+         if (lines > 0)
+         {
+            total_error_list_length = (lines * (max_length + 1)) + 1;
+            if ((error_list = malloc(total_error_list_length)) == NULL)
+            {
+               (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
+                             strerror(errno), __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
+
+            str_length = 0;
+            for (i = 0; i < lines; i++)
+            {
+               str_length += sprintf(error_list + str_length, "%-*s\n",
+                                     max_length, el[i].error_str);
+            }
+            error_list[str_length - 1] = '\0';
+         }
+         free((char *)el);
       }
+   }
+
+   if (error_list != NULL)
+   {
+      Widget   error_label,
+               form;
+      XmString x_string;
+      int      display_width,
+               over_hang;
 
       error_shell = XtVaCreatePopupShell("error_history_shell",
                                       topLevelShellWidgetClass, appshell,
@@ -183,7 +282,6 @@ popup_error_history(int x_root, int y_root, int host_no)
       XMoveResizeWindow(display, XtWindow(error_shell),
                         x_root, y_root, max_length * glyph_width, lines * glyph_height);
 
-      error_list[length - 1] = '\0';
       x_string = XmStringCreateLocalized(error_list);
       error_label = XtVaCreateWidget("error_label",
                                   xmLabelWidgetClass, form,
@@ -198,12 +296,12 @@ popup_error_history(int x_root, int y_root, int host_no)
                         (XtEventHandler)destroy_error_history, NULL);
       XtPopup(error_shell, XtGrabNone);
       XRaiseWindow(display, XtWindow(error_shell));
-      free(error_list);
    }
    else
    {
       destroy_error_history();
    }
+   free(error_list);
 
    return;
 }

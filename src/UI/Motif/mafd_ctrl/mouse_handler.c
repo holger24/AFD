@@ -135,6 +135,8 @@ extern int                        bar_thickness_3,
                                   no_of_current_jobs,
                                   no_of_dirs,
                                   no_of_hosts,
+                                  no_of_hosts_invisible,
+                                  no_of_hosts_visible,
                                   no_of_jobs_selected,
                                   no_selected,
                                   no_selected_static,
@@ -142,6 +144,7 @@ extern int                        bar_thickness_3,
                                   no_of_rows_set,
                                   tv_no_of_columns,
                                   tv_no_of_rows,
+                                  *vpl,
                                   window_width,
                                   x_offset_proc;
 extern unsigned int               *current_jid_list,
@@ -197,6 +200,7 @@ static struct job_id_data         *jid = NULL;
 /* Local function prototypes. */
 static int                        in_ec_area(int, XEvent *),
                                   in_host_area(int, XEvent *),
+                                  in_pm_area(int, XEvent *),
                                   insert_dir_ids_input(int);
 static void                       add_tv_line(Widget, int, int),
                                   cleanup_did_data(void),
@@ -239,28 +243,28 @@ input(Widget w, XtPointer client_data, XEvent *event)
    {
       int column = 0,
           dummy_length = event->xbutton.x;
-
-      do
-      {
+      
+      do 
+      {  
          dummy_length -= line_length[column];
          column++;
       } while (dummy_length > 0);
-      column--;
+      column--; 
       select_no = (event->xbutton.y / line_height) + (column * no_of_rows);
 
-      if ((select_no < no_of_hosts) && (last_motion_pos != select_no) &&
+      if ((select_no < no_of_hosts_visible) && (last_motion_pos != select_no) &&
           (select_no > -1))
       {
          if (event->xkey.state & ControlMask)
          {
-            if (connect_data[select_no].inverse == STATIC)
+            if (connect_data[vpl[select_no]].inverse == STATIC)
             {
-               connect_data[select_no].inverse = OFF;
+               connect_data[vpl[select_no]].inverse = OFF;
                ABS_REDUCE_GLOBAL(no_selected_static);
             }
             else
             {
-               connect_data[select_no].inverse = STATIC;
+               connect_data[vpl[select_no]].inverse = STATIC;
                no_selected_static++;
             }
 
@@ -269,19 +273,19 @@ input(Widget w, XtPointer client_data, XEvent *event)
          }
          else if (event->xkey.state & ShiftMask)
               {
-                 if (connect_data[select_no].inverse == ON)
+                 if (connect_data[vpl[select_no]].inverse == ON)
                  {
-                    connect_data[select_no].inverse = OFF;
+                    connect_data[vpl[select_no]].inverse = OFF;
                     ABS_REDUCE_GLOBAL(no_selected);
                  }
-                 else if (connect_data[select_no].inverse == STATIC)
+                 else if (connect_data[vpl[select_no]].inverse == STATIC)
                       {
-                         connect_data[select_no].inverse = OFF;
+                         connect_data[vpl[select_no]].inverse = OFF;
                          ABS_REDUCE_GLOBAL(no_selected_static);
                       }
                       else
                       {
-                         connect_data[select_no].inverse = ON;
+                         connect_data[vpl[select_no]].inverse = ON;
                          no_selected++;
                       }
 
@@ -299,83 +303,87 @@ input(Widget w, XtPointer client_data, XEvent *event)
    {
       int column = 0,
           dummy_length = event->xbutton.x;
-
-      do
-      {
+      
+      do 
+      {  
          dummy_length -= line_length[column];
          column++;
       } while (dummy_length > 0);
-      column--;
+      column--; 
       select_no = (event->xbutton.y / line_height) + (column * no_of_rows);
 
       /* Make sure that this field does contain a channel. */
-      if ((select_no < no_of_hosts) && (select_no > -1))
+      if ((select_no < no_of_hosts_visible) && (select_no > -1))
       {
          if (((event->xkey.state & Mod1Mask) ||
              (event->xkey.state & Mod4Mask)) &&
              (event->xany.type == ButtonPress))
          {
-            int    gotcha = NO,
-                   i;
-            Window window_id;
-
-            for (i = 0; i < no_of_active_process; i++)
+            if (connect_data[vpl[select_no]].type == 0)
             {
-               if ((apps_list[i].position == select_no) &&
-                   (CHECK_STRCMP(apps_list[i].progname, AFD_INFO) == 0))
+               int    gotcha = NO,
+                      i;
+               Window window_id;
+
+               for (i = 0; i < no_of_active_process; i++)
                {
-                  if ((window_id = get_window_id(apps_list[i].pid,
-                                                 AFD_CTRL)) != 0L)
+                  if ((apps_list[i].position == vpl[select_no]) &&
+                      (CHECK_STRCMP(apps_list[i].progname, AFD_INFO) == 0))
                   {
-                     gotcha = YES;
+                     if ((window_id = get_window_id(apps_list[i].pid,
+                                                    AFD_CTRL)) != 0L)
+                     {
+                        gotcha = YES;
+                     }
+                     break;
                   }
-                  break;
                }
-            }
-            if (gotcha == NO)
-            {
-               char *args[10],
-                    progname[AFD_INFO_LENGTH + 1];
-
-               args[0] = progname;
-               args[1] = WORK_DIR_ID;
-               args[2] = p_work_dir;
-               args[3] = "-f";
-               args[4] = font_name;
-               args[5] = "-h";
-               args[6] = fsa[select_no].host_alias;
-               if (fake_user[0] != '\0')
+               if (gotcha == NO)
                {
-                  args[7] = "-u";
-                  args[8] = fake_user;
-                  args[9] = NULL;
+                  char *args[10],
+                       progname[AFD_INFO_LENGTH + 1];
+
+                  args[0] = progname;
+                  args[1] = WORK_DIR_ID;
+                  args[2] = p_work_dir;
+                  args[3] = "-f";
+                  args[4] = font_name;
+                  args[5] = "-h";
+                  args[6] = fsa[vpl[select_no]].host_alias;
+                  if (fake_user[0] != '\0')
+                  {
+                     args[7] = "-u";
+                     args[8] = fake_user;
+                     args[9] = NULL;
+                  }
+                  else
+                  {
+                     args[7] = NULL;
+                  }
+                  (void)strcpy(progname, AFD_INFO);
+
+                  make_xprocess(progname, progname, args, vpl[select_no]);
                }
                else
                {
-                  args[7] = NULL;
+                  XRaiseWindow(display, window_id);
+                  XSetInputFocus(display, window_id, RevertToParent,
+                                 CurrentTime);
                }
-               (void)strcpy(progname, AFD_INFO);
-
-               make_xprocess(progname, progname, args, select_no);
-            }
-            else
-            {
-               XRaiseWindow(display, window_id);
-               XSetInputFocus(display, window_id, RevertToParent, CurrentTime);
             }
          }
          else if (event->xany.type == ButtonPress)
               {
                  if (event->xkey.state & ControlMask)
                  {
-                    if (connect_data[select_no].inverse == STATIC)
+                    if (connect_data[vpl[select_no]].inverse == STATIC)
                     {
-                       connect_data[select_no].inverse = OFF;
+                       connect_data[vpl[select_no]].inverse = OFF;
                        ABS_REDUCE_GLOBAL(no_selected_static);
                     }
                     else
                     {
-                       connect_data[select_no].inverse = STATIC;
+                       connect_data[vpl[select_no]].inverse = STATIC;
                        no_selected_static++;
                     }
 
@@ -384,94 +392,142 @@ input(Widget w, XtPointer client_data, XEvent *event)
                  }
                  else if (event->xkey.state & ShiftMask)
                       {
-                         if (connect_data[select_no].inverse == OFF)
+                         if (connect_data[vpl[select_no]].type == 0)
                          {
-                            int i;
-
-                            if (select_no > 0)
+                            if (connect_data[vpl[select_no]].inverse == OFF)
                             {
-                               for (i = select_no - 1; i > 0; i--)
+                               int i;
+
+                               if (select_no > 0)
                                {
-                                  if (connect_data[i].inverse != OFF)
+                                  for (i = select_no - 1; i > 0; i--)
                                   {
-                                     break;
+                                     if (connect_data[vpl[i]].inverse != OFF)
+                                     {
+                                        break;
+                                     }
                                   }
                                }
-                            }
-                            else
-                            {
-                               i = 0;
-                            }
-                            if (connect_data[i].inverse != OFF)
-                            {
-                               int j;
-
-                               for (j = i + 1; j <= select_no; j++)
+                               else
                                {
-                                  connect_data[j].inverse = connect_data[i].inverse;
-                                  draw_line_status(j, 1);
+                                  i = 0;
+                               }
+                               if (connect_data[vpl[i]].inverse != OFF)
+                               {
+                                  int j;
+
+                                  for (j = i + 1; j <= select_no; j++)
+                                  {
+                                     if (connect_data[vpl[j]].type == 0)
+                                     {
+                                        connect_data[vpl[j]].inverse = connect_data[vpl[i]].inverse;
+                                        no_selected++;
+                                        draw_line_status(j, 1);
+                                     }
+                                  }
+                               }
+                               else
+                               {
+                                  connect_data[vpl[select_no]].inverse = ON;
+                                  no_selected++;
+                                  draw_line_status(select_no, 1);
                                }
                             }
                             else
                             {
-                               connect_data[select_no].inverse = ON;
-                               no_selected++;
+                               if (connect_data[vpl[select_no]].inverse == ON)
+                               {
+                                  connect_data[vpl[select_no]].inverse = OFF;
+                                  ABS_REDUCE_GLOBAL(no_selected);
+                               }
+                               else
+                               {
+                                  connect_data[vpl[select_no]].inverse = OFF;
+                                  ABS_REDUCE_GLOBAL(no_selected_static);
+                               }
                                draw_line_status(select_no, 1);
                             }
+                            XFlush(display);
+                         }
+                      }
+                 else if ((connect_data[vpl[select_no]].type == 1) &&
+                          (in_pm_area(column, event)))
+                      {
+                         int i,
+                             invisible;
+
+                         if (connect_data[vpl[select_no]].plus_minus == PM_CLOSE_STATE)
+                         {
+                            connect_data[vpl[select_no]].plus_minus = PM_OPEN_STATE;
+                            invisible = -1;
                          }
                          else
                          {
-                            if (connect_data[select_no].inverse == ON)
+                            connect_data[vpl[select_no]].plus_minus = PM_CLOSE_STATE;
+                            invisible = 1;
+                         }
+                         for (i = vpl[select_no] + 1; ((i < no_of_hosts) &&
+                                                       (connect_data[i].type == 0)); i++)
+                         {
+                            connect_data[i].plus_minus = connect_data[vpl[select_no]].plus_minus;
+                            if ((invisible == 1) &&
+                                (connect_data[i].inverse != OFF))
                             {
-                               connect_data[select_no].inverse = OFF;
+                               connect_data[i].inverse = OFF;
                                ABS_REDUCE_GLOBAL(no_selected);
                             }
-                            else
-                            {
-                               connect_data[select_no].inverse = OFF;
-                               ABS_REDUCE_GLOBAL(no_selected_static);
-                            }
-                            draw_line_status(select_no, 1);
+                            no_of_hosts_invisible += invisible;
                          }
-                         XFlush(display);
+                         no_of_hosts_visible = no_of_hosts - no_of_hosts_invisible;
+
+                         /* Resize and redraw window. */
+                         if (resize_window() == YES)
+                         {
+                            calc_but_coord(window_width);
+                            redraw_all();
+                            XFlush(display);
+                         }
                       }
-                 else if (((fsa[select_no].host_status & HOST_ERROR_ACKNOWLEDGED) ||
-                           (fsa[select_no].host_status & HOST_ERROR_OFFLINE) ||
-                           (fsa[select_no].host_status & HOST_ERROR_ACKNOWLEDGED_T) ||
-                           (fsa[select_no].host_status & HOST_ERROR_OFFLINE_T) ||
-                           ((fsa[select_no].host_status & HOST_ERROR_OFFLINE_STATIC) &&
-                            (fsa[select_no].error_counter > fsa[select_no].max_errors))) &&
+                 else if (((fsa[vpl[select_no]].host_status & HOST_ERROR_ACKNOWLEDGED) ||
+                           (fsa[vpl[select_no]].host_status & HOST_ERROR_OFFLINE) ||
+                           (fsa[vpl[select_no]].host_status & HOST_ERROR_ACKNOWLEDGED_T) ||
+                           (fsa[vpl[select_no]].host_status & HOST_ERROR_OFFLINE_T) ||
+                           ((fsa[vpl[select_no]].host_status & HOST_ERROR_OFFLINE_STATIC) &&
+                            (fsa[vpl[select_no]].error_counter > fsa[vpl[select_no]].max_errors))) &&
                            (in_host_area(column, event)))
                       {
                          popup_event_reason(event->xbutton.x_root,
-                                            event->xbutton.y_root, select_no);
+                                            event->xbutton.y_root,
+                                            vpl[select_no]);
                       }
                  else if ((line_style & SHOW_CHARACTERS) &&
-                          (fsa[select_no].error_counter > 0) &&
+                          (fsa[vpl[select_no]].error_counter > 0) &&
                           (in_ec_area(column, event)))
                       {
                          popup_error_history(event->xbutton.x_root,
-                                             event->xbutton.y_root, select_no);
+                                             event->xbutton.y_root,
+                                             vpl[select_no]);
                       }
                       else
                       {
                          destroy_event_reason();
                          destroy_error_history();
-                         if ((other_options & FORCE_SHIFT_SELECT) == 0)
+                         if (((other_options & FORCE_SHIFT_SELECT) == 0) &&
+                             (connect_data[vpl[select_no]].type == 0))
                          {
-                            if (connect_data[select_no].inverse == ON)
+                            if (connect_data[vpl[select_no]].inverse == ON)
                             {
-                               connect_data[select_no].inverse = OFF;
+                               connect_data[vpl[select_no]].inverse = OFF;
                                ABS_REDUCE_GLOBAL(no_selected);
                             }
                             else if (connect_data[select_no].inverse == STATIC)
                                  {
-                                    connect_data[select_no].inverse = OFF;
+                                    connect_data[vpl[select_no]].inverse = OFF;
                                     ABS_REDUCE_GLOBAL(no_selected_static);
                                  }
                                  else
                                  {
-                                    connect_data[select_no].inverse = ON;
+                                    connect_data[vpl[select_no]].inverse = ON;
                                     no_selected++;
                                  }
 
@@ -549,17 +605,17 @@ input(Widget w, XtPointer client_data, XEvent *event)
    {
       int column = 0,
           dummy_length = event->xbutton.x;
-
-      do
-      {
+      
+      do 
+      {  
          dummy_length -= line_length[column];
          column++;
       } while (dummy_length > 0);
-      column--;
+      column--; 
       select_no = (event->xbutton.y / line_height) + (column * no_of_rows);
 
       /* Make sure that this field does contain a channel. */
-      if ((select_no < no_of_hosts) && (select_no > -1))
+      if ((select_no < no_of_hosts_visible) && (select_no > -1))
       {
          int x_pos,
              min_length = x_offset_proc;
@@ -577,18 +633,21 @@ input(Widget w, XtPointer client_data, XEvent *event)
          {
             /* See if this is a proc_stat area. */
             if ((x_pos > min_length) &&
-                (x_pos < (min_length + (fsa[select_no].allowed_transfers * (button_width + BUTTON_SPACING)) - BUTTON_SPACING)))
+                (x_pos < (min_length + (fsa[vpl[select_no]].allowed_transfers * (button_width + BUTTON_SPACING)) - BUTTON_SPACING)))
             {
-               int job_no;
+               int job_no,
+                   x,
+                   y;
 
                x_pos -= min_length;
-               for (job_no = 0; job_no < fsa[select_no].allowed_transfers; job_no++)
+               for (job_no = 0; job_no < fsa[vpl[select_no]].allowed_transfers; job_no++)
                {
                   x_pos -= button_width;
                   if (x_pos <= 0)
                   {
-                     handle_tv_line(w, select_no, job_no);
-                     draw_detailed_selection(select_no, job_no);
+                     handle_tv_line(w, vpl[select_no], job_no);
+                     locate_xy_column(select_no, &x, &y, NULL);
+                     draw_detailed_selection(vpl[select_no], job_no, x, y);
                      break;
                   }
                   x_pos -= BUTTON_SPACING;
@@ -603,24 +662,29 @@ input(Widget w, XtPointer client_data, XEvent *event)
               {
                  int proc_width;
 
-                 if (fsa[select_no].allowed_transfers % 3)
+                 if (fsa[vpl[select_no]].allowed_transfers % 3)
                  {
-                    proc_width = ((fsa[select_no].allowed_transfers / 3) + 1) * bar_thickness_3;
+                    proc_width = ((fsa[vpl[select_no]].allowed_transfers / 3) + 1) * bar_thickness_3;
                  }
                  else
                  {
-                    proc_width = (fsa[select_no].allowed_transfers / 3) * bar_thickness_3;
+                    proc_width = (fsa[vpl[select_no]].allowed_transfers / 3) * bar_thickness_3;
                  }
                  if ((x_pos > min_length) &&
                      (x_pos < (min_length + proc_width)))
                  {
-                    int job_no;
+                    int job_no,
+                        x,
+                        y;
 
-                    for (job_no = 0; job_no < fsa[select_no].allowed_transfers; job_no++)
+                    for (job_no = 0; job_no < fsa[vpl[select_no]].allowed_transfers; job_no++)
                     {
-                       handle_tv_line(w, select_no, job_no);
+                       handle_tv_line(w, vpl[select_no], job_no);
                     }
-                    draw_detailed_selection(select_no, fsa[select_no].allowed_transfers);
+                    locate_xy_column(select_no, &x, &y, NULL);
+                    draw_detailed_selection(vpl[select_no],
+                                            fsa[vpl[select_no]].allowed_transfers,
+                                            x, y);
                  }
               }
       }
@@ -857,7 +921,52 @@ popup_menu_cb(Widget w, XtPointer client_data, XEvent *event)
 void
 save_setup_cb(Widget w, XtPointer client_data, XtPointer call_data)
 {
-   write_setup(hostname_display_length, filename_display_length, -1, "");
+   int  i,
+        invisible_group_counter = 0;
+
+   for (i = 0; i < no_of_hosts; i++)
+   {
+      if ((connect_data[i].type == 1) &&
+          (connect_data[i].plus_minus == PM_CLOSE_STATE))
+      {
+         invisible_group_counter++;
+      }
+   }
+   if (invisible_group_counter == 0)
+   {
+      write_setup(hostname_display_length, filename_display_length, -1, "");
+   }
+   else
+   {
+      int  malloc_length;
+      char *invisible_groups;
+
+      malloc_length = invisible_group_counter * (MAX_HOSTNAME_LENGTH + 2);
+      if ((invisible_groups = malloc(malloc_length)) == NULL)
+      {
+         (void)fprintf(stderr, "Failed to malloc() %d bytes : %s (%s %d)\n",
+                       malloc_length, strerror(errno), __FILE__, __LINE__);
+         write_setup(hostname_display_length, filename_display_length, -1, "");
+      }
+      else
+      {
+         int length = 0;
+
+         for (i = 0; i < no_of_hosts; i++)
+         {
+            if ((connect_data[i].type == 1) &&
+                (connect_data[i].plus_minus == PM_CLOSE_STATE))
+            {
+               length += snprintf(invisible_groups + length,
+                                  (invisible_group_counter * (MAX_HOSTNAME_LENGTH + 2)),
+                                  "%s|", connect_data[i].hostname);
+            }
+         }
+         write_setup(hostname_display_length, filename_display_length,
+                     -1, invisible_groups);
+         free(invisible_groups);
+      }
+   }
 
    return;
 }
@@ -872,10 +981,9 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                     offset,
                     hosts_found,
                     i,
-#ifdef _DEBUG
                     j,
-#endif
-                    k;
+                    k,
+                    m;
    XT_PTR_TYPE      sel_typ = (XT_PTR_TYPE)client_data;
    char             host_config_file[MAX_PATH_LENGTH],
                     host_err_no[1025],
@@ -1459,6 +1567,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
          if ((no_selected > 0) || (no_selected_static > 0))
          {
             args[offset] = "-h";
+            j = 0;
             for (i = 0; i < no_of_hosts; i++)
             {
                if (connect_data[i].inverse > OFF)
@@ -1467,9 +1576,18 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                   if (connect_data[i].inverse == ON)
                   {
                      connect_data[i].inverse = OFF;
-                     draw_line_status(i, -1);
+                     if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                         (connect_data[i].type == 1))
+                     {
+                        draw_line_status(j, -1);
+                     }
                   }
                   break;
+               }
+               if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                   (connect_data[i].type == 1))
+               {
+                  j++;
                }
             }
             args[offset + 2] = NULL;
@@ -1685,7 +1803,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
 #endif
 
    /* Set each host. */
-   k = display_error = 0;
+   m = k = display_error = 0;
    for (i = 0; i < no_of_hosts; i++)
    {
       if (connect_data[i].inverse > OFF)
@@ -2263,7 +2381,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                   {
                      connect_data[i].inverse = OFF;
                   }
-                  draw_line_status(i, 1);
+                  draw_line_status(m, 1);
                }
                else
                {
@@ -2636,6 +2754,11 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                return;
          }
       }
+      if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+          (connect_data[i].type == 1))
+      {
+         m++;
+      }
    } /* for (i = 0; i < no_of_hosts; i++) */
 
    if (sel_typ == T_LOG_SEL)
@@ -2817,12 +2940,22 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
       }
    }
 
+   j = 0;
    for (i = 0; i < no_of_hosts; i++)
    {
       if (connect_data[i].inverse == ON)
       {
          connect_data[i].inverse = OFF;
-         draw_line_status(i, -1);
+         if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+             (connect_data[i].type == 1))
+         {
+            draw_line_status(j, -1);
+         }
+      }
+      if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+          (connect_data[i].type == 1))
+      {
+         j++;
       }
    }
 
@@ -3621,6 +3754,10 @@ change_rows_cb(Widget w, XtPointer client_data, XtPointer call_data)
          no_of_rows_set = atoi(ROW_19);
          break;
 
+      case 20  :
+         no_of_rows_set = atoi(ROW_20);
+         break;
+
       default  :
          (void)xrec(WARN_DIALOG, "Impossible row selection (%d).", item_no);
          return;
@@ -3850,6 +3987,37 @@ change_other_cb(Widget w, XtPointer client_data, XtPointer call_data)
 #endif
 
    return;
+}
+
+
+/*+++++++++++++++++++++++++++++ in_pm_area() ++++++++++++++++++++++++++++*/
+static int
+in_pm_area(int column, XEvent *event)
+{
+   int x_offset,
+       y_offset;
+
+    x_offset = event->xbutton.x - ((event->xbutton.x / line_length[column]) *
+               line_length[column]);
+    y_offset = event->xbutton.y - ((event->xbutton.y / line_height) *
+               line_height);
+
+#ifdef _DEBUG
+   (void)fprintf(stderr,
+                 "x_offset=%d y_offset=%d X:%d-%d Y:%d-%d\n",
+                 x_offset, y_offset,
+                 DEFAULT_FRAME_SPACE, (DEFAULT_FRAME_SPACE + (3 * glyph_width)),
+                 SPACE_ABOVE_LINE, (line_height - SPACE_BELOW_LINE));
+#endif
+   if ((x_offset > DEFAULT_FRAME_SPACE) &&
+       (x_offset < (DEFAULT_FRAME_SPACE + (3 * glyph_width))) &&
+       (y_offset > SPACE_ABOVE_LINE) &&
+       (y_offset < (line_height - SPACE_BELOW_LINE)))
+   {
+      return(YES);
+   }
+
+   return(NO);
 }
 
 

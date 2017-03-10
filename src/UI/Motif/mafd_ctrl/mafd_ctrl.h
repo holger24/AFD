@@ -1,6 +1,6 @@
 /*
  *  mafd_ctrl.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -165,6 +165,8 @@ struct line
                                              /* or disabled?             */
           char           host_toggle;
           char           host_toggle_display;
+          char           type;
+          char           plus_minus;
           unsigned char  stat_color_no;
           unsigned char  special_flag;
           clock_t        start_time;
@@ -320,7 +322,7 @@ extern void        calc_but_coord(int),
                    draw_blank_line(int),
                    draw_proc_stat(int, int, int, int),
                    draw_detailed_line(int),
-                   draw_detailed_selection(int, int),
+                   draw_detailed_selection(int, int, int, int),
                    draw_dest_identifier(Window, Pixmap, int, int, int),
                    draw_debug_led(int, int, int),
                    draw_led(int, int, int, int),
@@ -329,6 +331,7 @@ extern void        calc_but_coord(int),
                    draw_proc_led(int, signed char),
                    draw_history(int , int),
                    draw_log_status(int, int),
+                   draw_plus_minus(int, int, int),
                    draw_queue_counter(nlink_t),
                    draw_rotating_dash(int, int, int),
                    draw_tv_bar(int, signed char, char, int, int),

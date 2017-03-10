@@ -1,6 +1,6 @@
 /*
  *  expose_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ extern GC                      color_letter_gc,
 extern int                     ft_exposure_tv_line,
                                magic_value,
                                no_input,
-                               no_of_hosts,
+                               no_of_hosts_visible,
                                no_of_jobs_selected,
                                window_height,
                                tv_line_length,
@@ -96,6 +96,7 @@ extern int                     ft_exposure_tv_line,
                                tv_no_of_columns,
                                no_of_rows,
                                tv_no_of_rows,
+                               *vpl,
                                window_width;
 extern unsigned long           redraw_time_host,
                                redraw_time_status;
@@ -172,7 +173,7 @@ expose_handler_line(Widget                      w,
 
       XFillRectangle(display, line_pixmap, default_bg_gc, 0, 0,
                      window_width, (line_height * no_of_rows));
-      for (i = 0; i < no_of_hosts; i++)
+      for (i = 0; i < no_of_hosts_visible; i++)
       {
          draw_line_status(i, 1);
       }

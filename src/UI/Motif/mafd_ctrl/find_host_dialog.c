@@ -1,6 +1,6 @@
 /*
  *  select_host_dialog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -74,8 +74,12 @@ Widget                            findshell = (Widget)NULL;
 extern Display                    *display;
 extern Widget                     appshell;
 extern int                        no_of_hosts,
+                                  no_of_hosts_invisible,
+                                  no_of_hosts_visible,
                                   no_selected,
-                                  no_selected_static;
+                                  no_selected_static,
+                                  *vpl,
+                                  window_width;
 extern char                       font_name[],
                                   *info_data;
 extern struct line                *connect_data;
@@ -88,14 +92,18 @@ static Widget                     alias_toggle_w,
                                   proto_togglebox_w;
 static int                        deselect,
                                   hostname_type,
+                                  redraw_counter,
+                                  *redraw_line,
                                   search_type,
                                   static_select;
 static XT_PTR_TYPE                toggles_set;
 
 /* Local function prototypes. */
 static void                       done_button(Widget, XtPointer, XtPointer),
+                                  draw_selections(void),
                                   search_select_host(Widget, XtPointer, XtPointer),
                                   select_callback(Widget, XtPointer, XtPointer),
+                                  select_line(int),
                                   toggled(Widget, XtPointer, XtPointer);
 
 #define STATIC_SELECT_CB          1
@@ -719,8 +727,16 @@ static void
 search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
 {
    char *text = XmTextGetString(find_text_w);
-   int  draw_selection,
-        i;
+   int  i;
+
+   redraw_counter = 0;
+   if ((redraw_line = malloc((no_of_hosts * sizeof(int)))) == NULL)
+   {
+      (void)fprintf(stderr,
+                    "ERROR : Failed to malloc() memory : %s (%s %d)\n",
+                    strerror(errno), __FILE__, __LINE__);
+      exit(INCORRECT);
+   }
 
    if (search_type == SEARCH_HOSTNAME)
    {
@@ -779,65 +795,7 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
             }
             if (match == 0)
             {
-               if (deselect == YES)
-               {
-                  if (connect_data[i].inverse == STATIC)
-                  {
-                     ABS_REDUCE_GLOBAL(no_selected_static);
-                     draw_selection = YES;
-                  }
-                  else if (connect_data[i].inverse == ON)
-                       {
-                          ABS_REDUCE_GLOBAL(no_selected);
-                          draw_selection = YES;
-                       }
-                       else
-                       {
-                          draw_selection = NO;
-                       }
-                  connect_data[i].inverse = OFF;
-               }
-               else
-               {
-                  if (static_select == YES)
-                  {
-                     if (connect_data[i].inverse == STATIC)
-                     {
-                        draw_selection = NO;
-                     }
-                     else
-                     {
-                        if (connect_data[i].inverse == ON)
-                        {
-                           ABS_REDUCE_GLOBAL(no_selected);
-                        }
-                        no_selected_static++;
-                        connect_data[i].inverse = STATIC;
-                        draw_selection = YES;
-                     }
-                  }
-                  else
-                  {
-                     if (connect_data[i].inverse == ON)
-                     {
-                        draw_selection = NO;
-                     }
-                     else
-                     {
-                        if (connect_data[i].inverse == STATIC)
-                        {
-                           ABS_REDUCE_GLOBAL(no_selected_static);
-                        }
-                        no_selected++;
-                        connect_data[i].inverse = ON;
-                        draw_selection = YES;
-                     }
-                  }
-               }
-               if (draw_selection == YES)
-               {
-                  draw_line_status(i, 1);
-               }
+               select_line(i);
             }
          }
       }
@@ -871,65 +829,7 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
             if (pmatch(real_text, info_data, NULL) == 0)
 #endif
             {
-               if (deselect == YES)
-               {
-                  if (connect_data[i].inverse == STATIC)
-                  {
-                     ABS_REDUCE_GLOBAL(no_selected_static);
-                     draw_selection = YES;
-                  }
-                  else if (connect_data[i].inverse == ON)
-                       {
-                          ABS_REDUCE_GLOBAL(no_selected);
-                          draw_selection = YES;
-                       }
-                       else
-                       {
-                          draw_selection = NO;
-                       }
-                  connect_data[i].inverse = OFF;
-               }
-               else
-               {
-                  if (static_select == YES)
-                  {
-                     if (connect_data[i].inverse == STATIC)
-                     {
-                        draw_selection = NO;
-                     }
-                     else
-                     {
-                        if (connect_data[i].inverse == ON)
-                        {
-                           ABS_REDUCE_GLOBAL(no_selected);
-                        }
-                        no_selected_static++;
-                        connect_data[i].inverse = STATIC;
-                        draw_selection = YES;
-                     }
-                  }
-                  else
-                  {
-                     if (connect_data[i].inverse == ON)
-                     {
-                        draw_selection = NO;
-                     }
-                     else
-                     {
-                        if (connect_data[i].inverse == STATIC)
-                        {
-                           ABS_REDUCE_GLOBAL(no_selected_static);
-                        }
-                        no_selected++;
-                        connect_data[i].inverse = ON;
-                        draw_selection = YES;
-                     }
-                  }
-               }
-               if (draw_selection == YES)
-               {
-                  draw_line_status(i, 1);
-               }
+               select_line(i);
             }
             free(info_data);
             info_data = NULL;
@@ -939,8 +839,163 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
       (void)free(real_text);
 #endif
    }
+   draw_selections();
    XFlush(display);
    XtFree(text);
+   free(redraw_line);
+   redraw_line = NULL;
+
+   return;
+}
+
+
+/*---------------------------- select_line() ----------------------------*/
+static void
+select_line(int i)
+{
+   if (connect_data[i].type == 0)
+   {
+      if (deselect == YES)
+      {
+         if (connect_data[i].inverse == STATIC)
+         {
+            ABS_REDUCE_GLOBAL(no_selected_static);
+            redraw_line[redraw_counter] = i;
+            redraw_counter++;
+         }
+         else if (connect_data[i].inverse == ON)
+              {
+                 ABS_REDUCE_GLOBAL(no_selected);
+                 redraw_line[redraw_counter] = i;
+                 redraw_counter++;
+              }
+         connect_data[i].inverse = OFF;
+      }
+      else
+      {
+         if (static_select == YES)
+         {
+            if (connect_data[i].inverse != STATIC)
+            {
+               if (connect_data[i].inverse == ON)
+               {
+                  ABS_REDUCE_GLOBAL(no_selected);
+               }
+               no_selected_static++;
+               connect_data[i].inverse = STATIC;
+               redraw_line[redraw_counter] = i;
+               redraw_counter++;
+            }
+         }
+         else
+         {
+            if (connect_data[i].inverse != ON)
+            {
+               if (connect_data[i].inverse == STATIC)
+               {
+                  ABS_REDUCE_GLOBAL(no_selected_static);
+               }
+               no_selected++;
+               connect_data[i].inverse = ON;
+               redraw_line[redraw_counter] = i;
+               redraw_counter++;
+            }
+         }
+      }
+   }
+
+   return;
+}
+
+
+/*-------------------------- draw_selections() --------------------------*/
+static void
+draw_selections(void)
+{
+   int i,
+       j,
+       redraw_everything = NO;
+
+   /*
+    * First lets see if we have to open a group. If that is the
+    * case we need to redraw everything.
+    */
+   for (i = 0; i < redraw_counter; i++)
+   {
+      if (connect_data[redraw_line[i]].plus_minus == PM_CLOSE_STATE)
+      {
+         for (j = redraw_line[i]; ((j > 0) &&
+                                   (connect_data[j].type != 1)); j--)
+         {
+#ifdef _WITH_DEBUG
+            (void)fprintf(stderr,
+                          "Opening (%d) %s no_of_hosts_visible=%d no_of_hosts_invisible=%d\n",
+                          j, connect_data[j].hostname, no_of_hosts_visible,
+                          no_of_hosts_invisible);
+#endif
+            connect_data[j].plus_minus = PM_OPEN_STATE;
+            no_of_hosts_visible++;
+            no_of_hosts_invisible--;
+         }
+#ifdef _WITH_DEBUG
+         (void)fprintf(stderr,
+                       "!Opening Group! (%d) %s no_of_hosts_visible=%d no_of_hosts_invisible=%d\n",
+                       j, connect_data[j].hostname, no_of_hosts_visible,
+                       no_of_hosts_invisible);
+#endif
+         connect_data[j].plus_minus = PM_OPEN_STATE;
+         for (j = redraw_line[i] + 1; ((j < no_of_hosts) &&
+                                       (connect_data[j].type != 1)); j++)
+         {
+#ifdef _WITH_DEBUG
+            (void)fprintf(stderr,
+                          "Opening (%d) %s no_of_hosts_visible=%d no_of_hosts_invisible=%d\n",
+                          j, connect_data[j].hostname, no_of_hosts_visible,
+                          no_of_hosts_invisible);
+#endif
+            connect_data[j].plus_minus = PM_OPEN_STATE;
+            no_of_hosts_visible++;
+            no_of_hosts_invisible--;
+         }
+         redraw_everything = YES;
+      }
+   }
+
+   if (redraw_everything == YES)
+   {
+      /* First lets redo the visible position list (vpl). */
+      j = 0;
+      for (i = 0; i < no_of_hosts; i++)
+      {
+         if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+             (connect_data[i].type == 1))
+         {
+            vpl[j] = i;
+            j++;
+         }
+      }
+
+      /* Resize and redraw window. */
+      if (resize_window() == YES)
+      {
+         calc_but_coord(window_width);
+      }
+      redraw_all();
+   }
+   else
+   {
+      for (i = 0; i < redraw_counter; i++)
+      {
+         for (j = 0; j < no_of_hosts; j++)
+         {
+            if (redraw_line[i] == vpl[j])
+            {
+               draw_line_status(j, 1);
+               break;
+            }
+         }
+      }
+   }
 
    return;
 }

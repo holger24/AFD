@@ -1,6 +1,6 @@
 /*
  *  setup_window.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -91,6 +91,7 @@ extern GC                         letter_gc,
 extern float                      max_bar_length;
 extern int                        no_of_hosts,
                                   max_line_length,
+                                  max_parallel_jobs_columns,
                                   line_height,
                                   led_width,
                                   hostname_display_length,
@@ -408,6 +409,7 @@ setup_window(char *font_name, int redraw_mainmenu)
          XtVaSetValues(rw[ROW_17_W], XmNfontList, fontlist, NULL);
          XtVaSetValues(rw[ROW_18_W], XmNfontList, fontlist, NULL);
          XtVaSetValues(rw[ROW_19_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(rw[ROW_20_W], XmNfontList, fontlist, NULL);
 
          /* Set the font for the Line Style pulldown. */
          XtVaSetValues(lsw[STYLE_0_W], XmNfontList, fontlist, NULL);
@@ -510,7 +512,8 @@ setup_window(char *font_name, int redraw_mainmenu)
    button_width    = 2 * glyph_width;
    y_offset_led    = (glyph_height - glyph_width) / 2;
    led_width       = glyph_height / 3;
-   max_line_length = DEFAULT_FRAME_SPACE + (hostname_display_length * glyph_width) +
+   max_line_length = DEFAULT_FRAME_SPACE +
+                     (hostname_display_length * glyph_width) +
                      DEFAULT_FRAME_SPACE;
 
    x_offset_proc = x_offset_characters = x_offset_bars = max_line_length;
@@ -534,16 +537,8 @@ setup_window(char *font_name, int redraw_mainmenu)
    }
    else if (line_style & SHOW_JOBS_COMPACT)
         {
-           if (MAX_NO_PARALLEL_JOBS % 3)
-           {
-              max_line_length += (((MAX_NO_PARALLEL_JOBS / 3) + 1) * bar_thickness_3) +
-                                 BUTTON_SPACING;
-           }
-           else
-           {
-              max_line_length += ((MAX_NO_PARALLEL_JOBS / 3) * bar_thickness_3) +
-                                 BUTTON_SPACING;
-           }
+           max_line_length += (max_parallel_jobs_columns * bar_thickness_3) +
+                              BUTTON_SPACING;
            x_offset_characters = x_offset_bars = max_line_length;
         }
         else
