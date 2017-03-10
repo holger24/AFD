@@ -3175,7 +3175,8 @@ check_distribution_log(char         *search_afd,
             new_log_file = YES;
          }
 #ifdef WITH_DEBUG
-fprintf(stderr, "ulog %d: %s\n", distribution.current_file_no, prev_file_name);
+         (void)fprintf(stderr, "ulog %d: %s\n",
+                       distribution.current_file_no, prev_file_name);
 #endif
          if ((distribution.current_file_no != 0) ||
              (((mode & ALDA_CONTINUOUS_MODE) == 0) &&
@@ -3805,7 +3806,8 @@ check_production_log(char         *search_afd,
                }
             }
 #ifdef WITH_DEBUG
-fprintf(stderr, "prod %d: %s\n", production.current_file_no, prev_file_name);
+            (void)fprintf(stderr, "prod %d: %s\n",
+                          production.current_file_no, prev_file_name);
 #endif
             new_log_file = YES;
          }
@@ -4499,7 +4501,8 @@ check_output_log(char         *search_afd,
             new_log_file = YES;
          }
 #ifdef WITH_DEBUG
-fprintf(stderr, "olog %d: %s\n", output.current_file_no, prev_file_name);
+         (void)fprintf(stderr, "olog %d: %s\n",
+                       output.current_file_no, prev_file_name);
 #endif
          if ((output.current_file_no != 0) ||
              (((mode & ALDA_CONTINUOUS_MODE) == 0) &&
@@ -5090,7 +5093,8 @@ check_delete_log(char         *search_afd,
                }
             }
 #ifdef WITH_DEBUG
-fprintf(stderr, "del %d: %s\n", delete.current_file_no, prev_file_name);
+            (void)fprintf(stderr, "del %d: %s\n",
+                          delete.current_file_no, prev_file_name);
 #endif
             new_log_file = YES;
          }
