@@ -642,6 +642,7 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
    XFlush(display);
    XtFree(text);
    free(redraw_line);
+   redraw_line = NULL;
 
    return;
 }
@@ -734,12 +735,10 @@ draw_selections(void)
             no_of_afds_invisible--;
          }
 #ifdef _WITH_DEBUG
-            (void)fprintf(stderr, "!Opening Group! (%d) %s\n",
-                          j, connect_data[j].afd_alias);
+         (void)fprintf(stderr, "!Opening Group! (%d) %s\n",
+                       j, connect_data[j].afd_alias);
 #endif
          connect_data[j].plus_minus = PM_OPEN_STATE;
-         no_of_afds_visible++;
-         no_of_afds_invisible--;
          for (j = redraw_line[i] + 1; ((j < no_of_afds) &&
                                        (connect_data[j].rcmd != '\0')); j++)
          {
