@@ -100,6 +100,7 @@ check_afd_status(Widget w)
                location_where_changed,
                new_bar_length,
                old_bar_length,
+               prev_no_of_afds,
                redraw_everything = NO;
 
    /* Initialise variables. */
@@ -110,10 +111,10 @@ check_afd_status(Widget w)
     * See if a host has been added or removed from the MSA.
     * If it changed resize the window.
     */
+   prev_no_of_afds = no_of_afds;
    if (check_msa() == YES)
    {
-      int             prev_no_of_afds = no_of_afds,
-                      prev_no_of_afds_visible = no_of_afds_visible,
+      int             prev_no_of_afds_visible = no_of_afds_visible,
                       prev_plus_minus;
       size_t          new_size = no_of_afds * sizeof(struct mon_line);
       struct mon_line *new_connect_data,
