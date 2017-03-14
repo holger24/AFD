@@ -454,6 +454,7 @@ input(Widget w, XtPointer client_data, XEvent *event)
                           (in_pm_area(column, event)))
                       {
                          int i,
+                             j,
                              invisible;
 
                          if (connect_data[vpl[select_no]].plus_minus == PM_CLOSE_STATE)
@@ -479,6 +480,17 @@ input(Widget w, XtPointer client_data, XEvent *event)
                             no_of_hosts_invisible += invisible;
                          }
                          no_of_hosts_visible = no_of_hosts - no_of_hosts_invisible;
+
+                         j = 0;
+                         for (i = 0; i < no_of_hosts; i++)
+                         {
+                            if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                                (connect_data[i].type == 1))
+                            {
+                               vpl[j] = i;
+                               j++;
+                            }
+                         }
 
                          /* Resize and redraw window. */
                          if (resize_window() == YES)
@@ -3997,10 +4009,25 @@ in_pm_area(int column, XEvent *event)
    int x_offset,
        y_offset;
 
-    x_offset = event->xbutton.x - ((event->xbutton.x / line_length[column]) *
-               line_length[column]);
-    y_offset = event->xbutton.y - ((event->xbutton.y / line_height) *
-               line_height);
+   if (column == -1)
+   {
+      x_offset = event->xbutton.x -
+                 ((event->xbutton.x / (DEFAULT_FRAME_SPACE + (3 * glyph_width))) *
+                  (DEFAULT_FRAME_SPACE + (3 * glyph_width)));
+   }
+   else
+   {
+      int dummy_length = 0,
+          i;
+
+      for (i = 0; i < column; i++)
+      {
+         dummy_length += line_length[i];
+      }
+      x_offset = event->xbutton.x - dummy_length;
+   }
+   y_offset = event->xbutton.y - ((event->xbutton.y / line_height) *
+              line_height);
 
 #ifdef _DEBUG
    (void)fprintf(stderr,

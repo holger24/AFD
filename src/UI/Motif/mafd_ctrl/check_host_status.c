@@ -127,6 +127,7 @@ check_host_status(Widget w)
                  led_changed = 0,
                  location_where_changed,
                  new_bar_length,
+                 prev_no_of_hosts,
                  old_bar_length,
                  redraw_everything = NO;
    clock_t       end_time;
@@ -150,10 +151,10 @@ check_host_status(Widget w)
     * See if a host has been added or removed from the FSA.
     * If it changed resize the window.
     */
+   prev_no_of_hosts = no_of_hosts;
    if (check_fsa(NO, "mafd_ctrl") == YES)
    {
-      int         prev_no_of_hosts = no_of_hosts,
-                  prev_no_of_hosts_visible = no_of_hosts_visible,
+      int         prev_no_of_hosts_visible = no_of_hosts_visible,
                   prev_plus_minus;
       size_t      new_size = (no_of_hosts + 1) * sizeof(struct line);
       struct line *new_connect_data,
@@ -1039,7 +1040,16 @@ check_host_status(Widget w)
             {
                locate_xy_column(i, &x, &y, &column);
             }
-            draw_dest_identifier(line_window, line_pixmap, i, x, y);
+            if (connect_data[i].type == 1)
+            {
+               draw_dest_identifier(line_window, line_pixmap, i,
+                                    x - DEFAULT_FRAME_SPACE + (3 * glyph_width),
+                                    y);
+            }
+            else
+            {
+               draw_dest_identifier(line_window, line_pixmap, i, x, y);
+            }
             flush = YES;
          }
       }
@@ -1246,12 +1256,27 @@ check_host_status(Widget w)
                }
                if (led_changed & LED_ONE)
                {
-                  draw_led(i, 0, x, y);
+                  if (connect_data[i].type == 0)
+                  {
+                     draw_led(i, 0, x, y);
+                  }
+                  else
+                  {
+                     draw_led(i, 0, x + glyph_width + (glyph_width / 2) - DEFAULT_FRAME_SPACE, y);
+                  }
                }
                if ((led_changed & LED_TWO) ||
                    (disable_retrieve_flag_changed == YES))
                {
-                  draw_led(i, 1, x + led_width + LED_SPACING, y);
+                  if (connect_data[i].type == 0)
+                  {
+                     draw_led(i, 1, x + led_width + LED_SPACING, y);
+                  }
+                  else
+                  {
+                     draw_led(i, 1, x + glyph_width + (glyph_width / 2) - DEFAULT_FRAME_SPACE + led_width + LED_SPACING,
+                              y);
+                  }
                }
                led_changed = 0;
                flush = YES;

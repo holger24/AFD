@@ -339,8 +339,8 @@ draw_line_status(int pos, signed char delta)
       if (line_style & SHOW_LEDS)
       {
          /* Draw status LED's. */
-         draw_led(vpl[pos], 0, x, y);
-         draw_led(vpl[pos], 1, x + led_width + LED_SPACING, y);
+         draw_led(vpl[pos], 0, x + glyph_width + (glyph_width / 2) - DEFAULT_FRAME_SPACE, y);
+         draw_led(vpl[pos], 1, x + glyph_width + (glyph_width / 2) - DEFAULT_FRAME_SPACE + led_width + LED_SPACING, y);
       }
    }
    else
@@ -357,21 +357,21 @@ draw_line_status(int pos, signed char delta)
          draw_led(vpl[pos], 0, x, y);
          draw_led(vpl[pos], 1, x + led_width + LED_SPACING, y);
       }
-   }
 
-   if ((line_style & SHOW_JOBS) || (line_style & SHOW_JOBS_COMPACT))
-   {
-      int i;
+      if ((line_style & SHOW_JOBS) || (line_style & SHOW_JOBS_COMPACT))
+      {
+         int i;
 
-      /* Draw status button for each parallel transfer. */
-      for (i = 0; i < fsa[vpl[pos]].allowed_transfers; i++)
-      {
-         draw_proc_stat(vpl[pos], i, x, y);
-      }
-      if (line_style & SHOW_JOBS_COMPACT)
-      {
-         draw_detailed_selection(vpl[pos], fsa[vpl[pos]].allowed_transfers,
-                                 x, y);
+         /* Draw status button for each parallel transfer. */
+         for (i = 0; i < fsa[vpl[pos]].allowed_transfers; i++)
+         {
+            draw_proc_stat(vpl[pos], i, x, y);
+         }
+         if (line_style & SHOW_JOBS_COMPACT)
+         {
+            draw_detailed_selection(vpl[pos], fsa[vpl[pos]].allowed_transfers,
+                                    x, y);
+         }
       }
    }
 

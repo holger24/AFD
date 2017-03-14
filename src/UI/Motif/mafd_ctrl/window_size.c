@@ -51,19 +51,22 @@ DESCR__E_M3
 #include "mafd_ctrl.h"
 
 /* External global variables. */
-extern Display     *display;
-extern int         bar_thickness_3,
-                   button_width,
-                   *line_length,
-                   max_line_length,
-                   max_parallel_jobs_columns,
-                   line_height,
-                   no_of_columns,
-                   no_of_hosts_visible,
-                   no_of_rows,
-                   no_of_rows_set;
-extern char        line_style;
-extern struct line *connect_data;
+extern Display      *display;
+extern int          bar_thickness_3,
+                    button_width,
+                    *line_length,
+                    max_line_length,
+                    max_parallel_jobs_columns,
+                    line_height,
+                    no_of_columns,
+                    no_of_hosts,
+                    no_of_hosts_visible,
+                    no_of_rows,
+                    no_of_rows_set,
+                    *vpl;
+extern unsigned int glyph_width;
+extern char         line_style;
+extern struct line  *connect_data;
 
 
 /*########################### window_size() ############################*/
@@ -112,30 +115,30 @@ window_size(int *window_width, int *window_height)
    new_window_width = 0;
    if ((line_style & SHOW_JOBS) || (line_style & SHOW_JOBS_COMPACT))
    {
-      int j,
+      int group_name_in_row,
+          j,
           max_no_parallel_jobs = 0,
           pos = 0;
 
       for (i = 0; i < no_of_columns; i++)
       {
+         group_name_in_row = NO;
          for (j = 0; j < no_of_rows; j++)
          {
-            if ((connect_data[pos].plus_minus == PM_OPEN_STATE) ||
-                (connect_data[pos].type == 0))
+            if (connect_data[vpl[pos]].type == 1)
             {
-               if (max_no_parallel_jobs < connect_data[pos].allowed_transfers)
+               group_name_in_row = YES;
+            }
+            if ((connect_data[vpl[pos]].plus_minus == PM_OPEN_STATE) &&
+                (connect_data[vpl[pos]].type == 0))
+            {
+               if (max_no_parallel_jobs < connect_data[vpl[pos]].allowed_transfers)
                {
-                  max_no_parallel_jobs = connect_data[pos].allowed_transfers;
-                  if (max_no_parallel_jobs == MAX_NO_PARALLEL_JOBS)
-                  {
-                     /* No need to go on with the search. */
-                     pos += (no_of_rows - j);
-                     break;
-                  }
+                  max_no_parallel_jobs = connect_data[vpl[pos]].allowed_transfers;
                }
             }
             pos++;
-            if (pos >= no_of_hosts_visible)
+            if (pos >= no_of_hosts)
             {
                break;
             }
@@ -162,6 +165,10 @@ window_size(int *window_width, int *window_height)
             line_length[i] = max_line_length -
                              (((MAX_NO_PARALLEL_JOBS - max_no_parallel_jobs) *
                               (button_width + BUTTON_SPACING)) - BUTTON_SPACING);
+         }
+         if ((group_name_in_row == YES) && (max_no_parallel_jobs == 0))
+         {
+            line_length[i] += glyph_width;
          }
          new_window_width += line_length[i];
          max_no_parallel_jobs = 0;
