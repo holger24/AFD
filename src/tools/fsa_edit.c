@@ -1,6 +1,6 @@
 /*
  *  fsa_edit.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -339,13 +339,16 @@ main(int argc, char *argv[])
                     }
                     fsa[position].transfer_timeout = value;
                     break;
-         case 'a' : (void)fprintf(stderr, _("\n\n     Enter hostname  : "));
-                    if (scanf("%39s", fsa[position].real_hostname[0]) == EOF)
+         case 'a' : if (fsa[position].real_hostname[0][0] != 1)
                     {
-                       (void)fprintf(stderr,
-                                     _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
-                                     strerror(errno), __FILE__, __LINE__);
-                       exit(INCORRECT);
+                       (void)fprintf(stderr, _("\n\n     Enter hostname  : "));
+                       if (scanf("%39s", fsa[position].real_hostname[0]) == EOF)
+                       {
+                          (void)fprintf(stderr,
+                                        _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
+                                        strerror(errno), __FILE__, __LINE__);
+                          exit(INCORRECT);
+                       }
                     }
                     break;
          case 'b' : (void)fprintf(stderr, _("\n\nEnter hostdisplayname: "));
@@ -478,7 +481,10 @@ menu(int position)
    (void)fprintf(stdout, "        |  7  |Block size        | %14d |\n", fsa[position].block_size);
    (void)fprintf(stdout, "        |  8  |Allowed transfers | %14d |\n", fsa[position].allowed_transfers);
    (void)fprintf(stdout, "        |  9  |Transfer timeout  | %14ld |\n", fsa[position].transfer_timeout);
-   (void)fprintf(stdout, "        |  a  |Real hostname     | %14s |\n", fsa[position].real_hostname[0]);
+   if (fsa[position].real_hostname[0][0] != 1)
+   {
+      (void)fprintf(stdout, "        |  a  |Real hostname     | %14s |\n", fsa[position].real_hostname[0]);
+   }
    (void)fprintf(stdout, "        |  b  |Host display name | %14s |\n", fsa[position].host_dsp_name);
    (void)fprintf(stdout, "        |  c  |Error offline stat| %14s |\n", (fsa[position].host_status & HOST_ERROR_OFFLINE_STATIC) ? "Yes" : "No");
    (void)fprintf(stdout, "        |  d  |Active transfers  | %14d |\n", fsa[position].active_transfers);

@@ -1282,8 +1282,21 @@ main(int argc, char *argv[])
           */
          if (fsa != NULL)
          {
-            int jobs_in_queue = 0,
-                lock_set = NO;
+            unsigned char special_flag;
+            unsigned int  host_status,
+                          protocol;
+            int           active_transfers,
+                          error_counter,
+                          host_counter,
+                          host_disabled_counter,
+                          j,
+                          jobs_in_queue = 0,
+                          k,
+                          lock_set = NO,
+                          max_errors,
+                          total_file_counter;
+            off_t         total_file_size;
+            u_off_t       bytes_send[MAX_NO_PARALLEL_JOBS];
 
             (*heartbeat)++;
             init_afd_check_fsa();
@@ -1311,236 +1324,299 @@ main(int argc, char *argv[])
             for (i = 0; i < no_of_hosts; i++)
             {
                jobs_in_queue += fsa[i].jobs_queued;
+
+               /* Update group summary. */
+               if (fsa[i].real_hostname[0][0] == 1)
+               {
+                  active_transfers = 0;
+                  (void)memset(bytes_send, 0,
+                               (MAX_NO_PARALLEL_JOBS * sizeof(u_off_t)));
+                  error_counter = 0;
+                  host_status = 0;
+                  max_errors = 0;
+                  protocol = 0;
+                  special_flag = 0;
+                  total_file_counter = 0;
+                  total_file_size = 0;
+                  host_counter = 0;
+                  host_disabled_counter = 0;
+                  for (j = i + 1; ((j < no_of_hosts) &&
+                                   (fsa[j].real_hostname[0][0] != 1)); j++)
+                  {
+                     active_transfers += fsa[j].active_transfers;
+                     error_counter += fsa[j].error_counter;
+                     host_status |= fsa[j].host_status;
+                     max_errors += fsa[j].max_errors;
+                     protocol |= fsa[j].protocol;
+                     special_flag |= fsa[j].special_flag;
+                     if (fsa[j].special_flag & HOST_DISABLED)
+                     {
+                        host_disabled_counter++;
+                     }
+                     total_file_counter += fsa[j].total_file_counter;
+                     total_file_size += fsa[j].total_file_size;
+                     for (k = 0; k < fsa[j].allowed_transfers; k++)
+                     {
+                        bytes_send[k] += fsa[j].job_status[k].bytes_send;
+                     }
+                     host_counter++;
+                  }
+                  fsa[i].active_transfers = active_transfers;
+                  for (k = 0; k < MAX_NO_PARALLEL_JOBS; k++)
+                  {
+                     fsa[i].job_status[k].bytes_send = bytes_send[k];
+                  }
+                  fsa[i].error_counter = error_counter;
+                  fsa[i].host_status = host_status;
+                  fsa[i].max_errors = max_errors;
+                  fsa[i].protocol = protocol;
+                  if ((host_disabled_counter != host_counter) &&
+                      (special_flag & HOST_DISABLED))
+                  {
+                     /*
+                      * Don't show white status if not all host in group
+                      * are disabled.
+                      */
+                     special_flag &= ~HOST_DISABLED;
+                  }
+                  fsa[i].special_flag = special_flag;
+                  fsa[i].total_file_counter = total_file_counter;
+                  fsa[i].total_file_size = total_file_size;
+                  i = j - 1;
+               }
             }
             p_afd_status->jobs_in_queue = jobs_in_queue;
 
             for (i = 0; i < no_of_hosts; i++)
             {
-               (*heartbeat)++;
-               if (((fsa[i].error_counter >= fsa[i].max_errors) &&
-                    ((fsa[i].host_status & AUTO_PAUSE_QUEUE_STAT) == 0)) ||
-                   ((fsa[i].error_counter < fsa[i].max_errors) &&
-                    (fsa[i].host_status & AUTO_PAUSE_QUEUE_STAT)))
+               if (fsa[i].real_hostname[0][0] != 1)
                {
-                  char *sign;
-
-#ifdef LOCK_DEBUG
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                  lock_set = YES;
-                  fsa[i].host_status ^= AUTO_PAUSE_QUEUE_STAT;
-                  if (fsa[i].error_counter >= fsa[i].max_errors)
-                  {
-                     if ((fsa[i].host_status & HOST_ERROR_OFFLINE_STATIC) ||
-                         (fsa[i].host_status & HOST_ERROR_OFFLINE) ||
-                         (fsa[i].host_status & HOST_ERROR_OFFLINE_T))
-                     {
-                        sign = OFFLINE_SIGN;
-                     }
-                     else
-                     {
-                        sign = WARN_SIGN;
-                     }
-                     if ((fsa[i].host_status & PENDING_ERRORS) == 0)
-                     {
-                        fsa[i].host_status |= PENDING_ERRORS;
-                        event_log(0L, EC_HOST, ET_EXT, EA_ERROR_START, "%s",
-                                  fsa[i].host_alias);
-                        error_action(fsa[i].host_alias, "start", HOST_ERROR_ACTION);
-                     }
-                     ia_trans_log(sign, __FILE__, __LINE__, i,
-                                  _("Stopped input queue, since there are to many errors."));
-                     event_log(0L, EC_HOST, ET_AUTO, EA_STOP_QUEUE,
-                               "%s%cErrors %d >= max errors %d",
-                               fsa[i].host_alias, SEPARATOR_CHAR,
-                               fsa[i].error_counter, fsa[i].max_errors);
-                  }
-                  else
-                  {
-                     if ((fsa[i].host_status & HOST_ERROR_OFFLINE_STATIC) ||
-                         (fsa[i].host_status & HOST_ERROR_OFFLINE) ||
-                         (fsa[i].host_status & HOST_ERROR_OFFLINE_T))
-                     {
-                        sign = OFFLINE_SIGN;
-                     }
-                     else
-                     {
-                        sign = INFO_SIGN;
-                     }
-                     if (fsa[i].last_connection > fsa[i].first_error_time)
-                     {
-                        if (now > fsa[i].end_event_handle)
-                        {
-                           fsa[i].host_status &= ~EVENT_STATUS_FLAGS;
-                           if (fsa[i].end_event_handle > 0L)
-                           {
-                              fsa[i].end_event_handle = 0L;
-                           }
-                           if (fsa[i].start_event_handle > 0L)
-                           {
-                              fsa[i].start_event_handle = 0L;
-                           }
-                        }
-                        else
-                        {
-                           fsa[i].host_status &= ~EVENT_STATUS_STATIC_FLAGS;
-                        }
-                        event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",
-                                  fsa[i].host_alias);
-                        error_action(fsa[i].host_alias, "stop", HOST_ERROR_ACTION);
-                     }
-                     ia_trans_log(sign, __FILE__, __LINE__, i,
-                                  _("Started input queue that has been stopped due to too many errors."));
-                     event_log(0L, EC_HOST, ET_AUTO, EA_START_QUEUE, "%s",
-                               fsa[i].host_alias);
-                  }
-               }
-#ifdef WITH_ACKNOWLEDGED_OFFLINE_CHECK
-               if ((fsa[i].error_counter == 0) &&
-                   (fsa[i].host_status & (HOST_ERROR_OFFLINE | HOST_ERROR_OFFLINE_T | HOST_ERROR_ACKNOWLEDGED | HOST_ERROR_ACKNOWLEDGED_T)))
-               {
-                  if (fsa[i].host_status & HOST_ERROR_OFFLINE)
-                  {
-                     fsa[i].host_status &= ~HOST_ERROR_OFFLINE;
-                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                "Hmm, removing HOST_ERROR_OFFLINE flag from %s",
-                                fsa[i].host_alias);
-                  }
-                  if ((fsa[i].host_status & HOST_ERROR_OFFLINE_T) &&
-                      (now > fsa[i].end_event_handle))
-                  {
-                     fsa[i].host_status &= ~HOST_ERROR_OFFLINE_T;
-                     fsa[i].end_event_handle = 0L;
-                     fsa[i].start_event_handle = 0L;
-                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                "Hmm, removing HOST_ERROR_OFFLINE_T flag from %s",
-                                fsa[i].host_alias);
-                  }
-                  if (fsa[i].host_status & HOST_ERROR_ACKNOWLEDGED)
-                  {
-                     fsa[i].host_status &= ~HOST_ERROR_ACKNOWLEDGED;
-                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                "Hmm, removing HOST_ERROR_ACKNOWLEDGED flag from %s",
-                                fsa[i].host_alias);
-                  }
-                  if ((fsa[i].host_status & HOST_ERROR_ACKNOWLEDGED_T) &&
-                      (now > fsa[i].end_event_handle))
-                  {
-                     fsa[i].host_status &= ~HOST_ERROR_ACKNOWLEDGED_T;
-                     fsa[i].end_event_handle = 0L;
-                     fsa[i].start_event_handle = 0L;
-                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                "Hmm, removing HOST_ERROR_ACKNOWLEDGED_T flag from %s",
-                                fsa[i].host_alias);
-                  }
-               }
-#endif /* WITH_ACKNOWLEDGED_OFFLINE_CHECK */
-               if (((*(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) & DISABLE_HOST_WARN_TIME) == 0) &&
-                   (fsa[i].warn_time > 0L) &&
-                   ((now - fsa[i].last_connection) >= fsa[i].warn_time))
-               {
-                  if ((fsa[i].host_status & HOST_WARN_TIME_REACHED) == 0)
+                  (*heartbeat)++;
+                  if (((fsa[i].error_counter >= fsa[i].max_errors) &&
+                       ((fsa[i].host_status & AUTO_PAUSE_QUEUE_STAT) == 0)) ||
+                      ((fsa[i].error_counter < fsa[i].max_errors) &&
+                       (fsa[i].host_status & AUTO_PAUSE_QUEUE_STAT)))
                   {
                      char *sign;
 
-                     if (lock_set == NO)
-                     {
-#ifdef LOCK_DEBUG
-                        lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                        lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                        lock_set = YES;
-                     }
-                     fsa[i].host_status |= HOST_WARN_TIME_REACHED;
-                     if ((fsa[i].host_status & HOST_ERROR_OFFLINE_STATIC) ||
-                         (fsa[i].host_status & HOST_ERROR_OFFLINE) ||
-                         (fsa[i].host_status & HOST_ERROR_OFFLINE_T))
-                     {
-                        sign = OFFLINE_SIGN;
-                     }
-                     else
-                     {
-                        sign = WARN_SIGN;
-                     }
-                     system_log(sign, __FILE__, __LINE__,
-                                _("%-*s: Warn time reached."),
-                                MAX_HOSTNAME_LENGTH, fsa[i].host_dsp_name);
-                     error_action(fsa[i].host_alias, "start", HOST_WARN_ACTION);
-                     event_log(0L, EC_HOST, ET_AUTO, EA_WARN_TIME_SET, "%s",
-                               fsa[i].host_alias);
-                  }
-               }
-               else
-               {
-                  if (fsa[i].host_status & HOST_WARN_TIME_REACHED)
-                  {
-                     if (lock_set == NO)
-                     {
-#ifdef LOCK_DEBUG
-                        lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                        lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                        lock_set = YES;
-                     }
-                     fsa[i].host_status &= ~HOST_WARN_TIME_REACHED;
-                     error_action(fsa[i].host_alias, "stop", HOST_WARN_ACTION);
-                     event_log(0L, EC_HOST, ET_AUTO, EA_WARN_TIME_UNSET, "%s",
-                               fsa[i].host_alias);
-                  }
-               }
-               if ((p_afd_status->jobs_in_queue >= (link_max / 2)) &&
-                   ((fsa[i].host_status & DANGER_PAUSE_QUEUE_STAT) == 0) &&
-                   (fsa[i].total_file_counter > danger_no_of_files))
-               {
-                  if (lock_set == NO)
-                  {
 #ifdef LOCK_DEBUG
                      lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
 #else
                      lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
 #endif
                      lock_set = YES;
+                     fsa[i].host_status ^= AUTO_PAUSE_QUEUE_STAT;
+                     if (fsa[i].error_counter >= fsa[i].max_errors)
+                     {
+                        if ((fsa[i].host_status & HOST_ERROR_OFFLINE_STATIC) ||
+                            (fsa[i].host_status & HOST_ERROR_OFFLINE) ||
+                            (fsa[i].host_status & HOST_ERROR_OFFLINE_T))
+                        {
+                           sign = OFFLINE_SIGN;
+                        }
+                        else
+                        {
+                           sign = WARN_SIGN;
+                        }
+                        if ((fsa[i].host_status & PENDING_ERRORS) == 0)
+                        {
+                           fsa[i].host_status |= PENDING_ERRORS;
+                           event_log(0L, EC_HOST, ET_EXT, EA_ERROR_START, "%s",
+                                     fsa[i].host_alias);
+                           error_action(fsa[i].host_alias, "start", HOST_ERROR_ACTION);
+                        }
+                        ia_trans_log(sign, __FILE__, __LINE__, i,
+                                     _("Stopped input queue, since there are to many errors."));
+                        event_log(0L, EC_HOST, ET_AUTO, EA_STOP_QUEUE,
+                                  "%s%cErrors %d >= max errors %d",
+                                  fsa[i].host_alias, SEPARATOR_CHAR,
+                                  fsa[i].error_counter, fsa[i].max_errors);
+                     }
+                     else
+                     {
+                        if ((fsa[i].host_status & HOST_ERROR_OFFLINE_STATIC) ||
+                            (fsa[i].host_status & HOST_ERROR_OFFLINE) ||
+                            (fsa[i].host_status & HOST_ERROR_OFFLINE_T))
+                        {
+                           sign = OFFLINE_SIGN;
+                        }
+                        else
+                        {
+                           sign = INFO_SIGN;
+                        }
+                        if (fsa[i].last_connection > fsa[i].first_error_time)
+                        {
+                           if (now > fsa[i].end_event_handle)
+                           {
+                              fsa[i].host_status &= ~EVENT_STATUS_FLAGS;
+                              if (fsa[i].end_event_handle > 0L)
+                              {
+                                 fsa[i].end_event_handle = 0L;
+                              }
+                              if (fsa[i].start_event_handle > 0L)
+                              {
+                                 fsa[i].start_event_handle = 0L;
+                              }
+                           }
+                           else
+                           {
+                              fsa[i].host_status &= ~EVENT_STATUS_STATIC_FLAGS;
+                           }
+                           event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",
+                                     fsa[i].host_alias);
+                           error_action(fsa[i].host_alias, "stop", HOST_ERROR_ACTION);
+                        }
+                        ia_trans_log(sign, __FILE__, __LINE__, i,
+                                     _("Started input queue that has been stopped due to too many errors."));
+                        event_log(0L, EC_HOST, ET_AUTO, EA_START_QUEUE, "%s",
+                                  fsa[i].host_alias);
+                     }
                   }
-                  fsa[i].host_status |= DANGER_PAUSE_QUEUE_STAT;
-                  ia_trans_log(WARN_SIGN, __FILE__, __LINE__, i,
-                               _("Stopped input queue, since there are to many jobs in the input queue."));
-                  event_log(0L, EC_HOST, ET_AUTO, EA_STOP_QUEUE,
-                            _("%s%cNumber of files %d > file threshold %d"),
-                            fsa[i].host_alias, SEPARATOR_CHAR,
-                            fsa[i].total_file_counter, danger_no_of_files);
-               }
-               else if ((fsa[i].host_status & DANGER_PAUSE_QUEUE_STAT) &&
-                        ((fsa[i].total_file_counter < (danger_no_of_files / 2)) ||
-                         (p_afd_status->jobs_in_queue < (link_max / 4))))
-                    {
-                       if (lock_set == NO)
-                       {
-#ifdef LOCK_DEBUG
-                          lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                          lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                          lock_set = YES;
-                       }
-                       fsa[i].host_status &= ~DANGER_PAUSE_QUEUE_STAT;
-                       ia_trans_log(INFO_SIGN, __FILE__, __LINE__, i,
-                                    _("Started input queue, that was stopped due to too many jobs in the input queue."));
-                       event_log(0L, EC_HOST, ET_AUTO, EA_START_QUEUE, "%s",
-                                 fsa[i].host_alias);
-                    }
+#ifdef WITH_ACKNOWLEDGED_OFFLINE_CHECK
+                  if ((fsa[i].error_counter == 0) &&
+                      (fsa[i].host_status & (HOST_ERROR_OFFLINE | HOST_ERROR_OFFLINE_T | HOST_ERROR_ACKNOWLEDGED | HOST_ERROR_ACKNOWLEDGED_T)))
+                  {
+                     if (fsa[i].host_status & HOST_ERROR_OFFLINE)
+                     {
+                        fsa[i].host_status &= ~HOST_ERROR_OFFLINE;
+                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                   "Hmm, removing HOST_ERROR_OFFLINE flag from %s",
+                                   fsa[i].host_alias);
+                     }
+                     if ((fsa[i].host_status & HOST_ERROR_OFFLINE_T) &&
+                         (now > fsa[i].end_event_handle))
+                     {
+                        fsa[i].host_status &= ~HOST_ERROR_OFFLINE_T;
+                        fsa[i].end_event_handle = 0L;
+                        fsa[i].start_event_handle = 0L;
+                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                   "Hmm, removing HOST_ERROR_OFFLINE_T flag from %s",
+                                   fsa[i].host_alias);
+                     }
+                     if (fsa[i].host_status & HOST_ERROR_ACKNOWLEDGED)
+                     {
+                        fsa[i].host_status &= ~HOST_ERROR_ACKNOWLEDGED;
+                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                   "Hmm, removing HOST_ERROR_ACKNOWLEDGED flag from %s",
+                                   fsa[i].host_alias);
+                     }
+                     if ((fsa[i].host_status & HOST_ERROR_ACKNOWLEDGED_T) &&
+                         (now > fsa[i].end_event_handle))
+                     {
+                        fsa[i].host_status &= ~HOST_ERROR_ACKNOWLEDGED_T;
+                        fsa[i].end_event_handle = 0L;
+                        fsa[i].start_event_handle = 0L;
+                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                   "Hmm, removing HOST_ERROR_ACKNOWLEDGED_T flag from %s",
+                                   fsa[i].host_alias);
+                     }
+                  }
+#endif /* WITH_ACKNOWLEDGED_OFFLINE_CHECK */
+                  if (((*(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) & DISABLE_HOST_WARN_TIME) == 0) &&
+                      (fsa[i].warn_time > 0L) &&
+                      ((now - fsa[i].last_connection) >= fsa[i].warn_time))
+                  {
+                     if ((fsa[i].host_status & HOST_WARN_TIME_REACHED) == 0)
+                     {
+                        char *sign;
 
-               if (lock_set == YES)
-               {
+                        if (lock_set == NO)
+                        {
 #ifdef LOCK_DEBUG
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+                           lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
 #else
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
+                           lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
 #endif
-                  lock_set = NO;
+                           lock_set = YES;
+                        }
+                        fsa[i].host_status |= HOST_WARN_TIME_REACHED;
+                        if ((fsa[i].host_status & HOST_ERROR_OFFLINE_STATIC) ||
+                            (fsa[i].host_status & HOST_ERROR_OFFLINE) ||
+                            (fsa[i].host_status & HOST_ERROR_OFFLINE_T))
+                        {
+                           sign = OFFLINE_SIGN;
+                        }
+                        else
+                        {
+                           sign = WARN_SIGN;
+                        }
+                        system_log(sign, __FILE__, __LINE__,
+                                   _("%-*s: Warn time reached."),
+                                   MAX_HOSTNAME_LENGTH, fsa[i].host_dsp_name);
+                        error_action(fsa[i].host_alias, "start", HOST_WARN_ACTION);
+                        event_log(0L, EC_HOST, ET_AUTO, EA_WARN_TIME_SET, "%s",
+                                  fsa[i].host_alias);
+                     }
+                  }
+                  else
+                  {
+                     if (fsa[i].host_status & HOST_WARN_TIME_REACHED)
+                     {
+                        if (lock_set == NO)
+                        {
+#ifdef LOCK_DEBUG
+                           lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                           lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                           lock_set = YES;
+                        }
+                        fsa[i].host_status &= ~HOST_WARN_TIME_REACHED;
+                        error_action(fsa[i].host_alias, "stop", HOST_WARN_ACTION);
+                        event_log(0L, EC_HOST, ET_AUTO, EA_WARN_TIME_UNSET, "%s",
+                                  fsa[i].host_alias);
+                     }
+                  }
+                  if ((p_afd_status->jobs_in_queue >= (link_max / 2)) &&
+                      ((fsa[i].host_status & DANGER_PAUSE_QUEUE_STAT) == 0) &&
+                      (fsa[i].total_file_counter > danger_no_of_files))
+                  {
+                     if (lock_set == NO)
+                     {
+#ifdef LOCK_DEBUG
+                        lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                        lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                        lock_set = YES;
+                     }
+                     fsa[i].host_status |= DANGER_PAUSE_QUEUE_STAT;
+                     ia_trans_log(WARN_SIGN, __FILE__, __LINE__, i,
+                                  _("Stopped input queue, since there are to many jobs in the input queue."));
+                     event_log(0L, EC_HOST, ET_AUTO, EA_STOP_QUEUE,
+                               _("%s%cNumber of files %d > file threshold %d"),
+                               fsa[i].host_alias, SEPARATOR_CHAR,
+                               fsa[i].total_file_counter, danger_no_of_files);
+                  }
+                  else if ((fsa[i].host_status & DANGER_PAUSE_QUEUE_STAT) &&
+                           ((fsa[i].total_file_counter < (danger_no_of_files / 2)) ||
+                            (p_afd_status->jobs_in_queue < (link_max / 4))))
+                       {
+                          if (lock_set == NO)
+                          {
+#ifdef LOCK_DEBUG
+                             lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                             lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                             lock_set = YES;
+                          }
+                          fsa[i].host_status &= ~DANGER_PAUSE_QUEUE_STAT;
+                          ia_trans_log(INFO_SIGN, __FILE__, __LINE__, i,
+                                       _("Started input queue, that was stopped due to too many jobs in the input queue."));
+                          event_log(0L, EC_HOST, ET_AUTO, EA_START_QUEUE, "%s",
+                                    fsa[i].host_alias);
+                       }
+
+                  if (lock_set == YES)
+                  {
+#ifdef LOCK_DEBUG
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                     lock_set = NO;
+                  }
                }
             } /* for (i = 0; i < no_of_hosts; i++) */
          } /* if (fsa != NULL) */

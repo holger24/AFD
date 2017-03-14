@@ -1,6 +1,6 @@
 /*
  *  eval_host_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -91,6 +91,7 @@ DESCR__S_M3
  **   31.12.2007 H.Kiehl Added warn time.
  **   21.09.2009 H.Kiehl Ensure that one cannot enter 0 as transfer block
  **                      size.
+ **   04.03.2017 H.Kiehl Addwd group support.
  **
  */
 DESCR__E_M3
@@ -253,19 +254,21 @@ eval_host_config(int              *hosts_found,
       (*hl)[host_counter].in_dir_config = (char)NO;
       if ((*ptr == '\n') || (*ptr == '\0'))
       {
+         /* Mark as group. */
+         (*hl)[host_counter].real_hostname[0][0] = 1;
+
          /* Initialise all other values with DEFAULTS. */
-         (*hl)[host_counter].real_hostname[0][0] = '\0';
          (*hl)[host_counter].real_hostname[1][0] = '\0';
          (*hl)[host_counter].proxy_name[0]       = '\0';
          (*hl)[host_counter].host_toggle_str[0]  = '\0';
-         (*hl)[host_counter].allowed_transfers   = DEFAULT_NO_PARALLEL_JOBS;
-         (*hl)[host_counter].max_errors          = DEFAULT_MAX_ERRORS;
-         (*hl)[host_counter].retry_interval      = DEFAULT_RETRY_INTERVAL;
-         (*hl)[host_counter].transfer_blksize    = DEFAULT_TRANSFER_BLOCKSIZE;
-         (*hl)[host_counter].successful_retries  = DEFAULT_SUCCESSFUL_RETRIES;
-         (*hl)[host_counter].file_size_offset    = (char)DEFAULT_FILE_SIZE_OFFSET;
-         (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
-         (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
+         (*hl)[host_counter].allowed_transfers   = MAX_NO_PARALLEL_JOBS;
+         (*hl)[host_counter].max_errors          = 0;
+         (*hl)[host_counter].retry_interval      = 0;
+         (*hl)[host_counter].transfer_blksize    = 0;
+         (*hl)[host_counter].successful_retries  = 0;
+         (*hl)[host_counter].file_size_offset    = 0;
+         (*hl)[host_counter].transfer_timeout    = 0;
+         (*hl)[host_counter].number_of_no_bursts = 0;
          (*hl)[host_counter].host_status         = 0;
          (*hl)[host_counter].protocol_options    = 0;
          (*hl)[host_counter].transfer_rate_limit = 0;

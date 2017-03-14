@@ -1,6 +1,6 @@
 /*
  *  fsa_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -219,7 +219,14 @@ main(int argc, char *argv[])
       (void)fprintf(stdout, "=============================> %s (%d) <=============================\n",
                     fsa[j].host_alias, j);
       (void)fprintf(stdout, "Host alias CRC       : %x\n", fsa[j].host_id);
-      (void)fprintf(stdout, "Real hostname 1      : %s\n", fsa[j].real_hostname[0]);
+      if (fsa[j].real_hostname[0][0] == 1)
+      {
+         (void)fprintf(stdout, "Real hostname 1      :\n");
+      }
+      else
+      {
+         (void)fprintf(stdout, "Real hostname 1      : %s\n", fsa[j].real_hostname[0]);
+      }
       (void)fprintf(stdout, "Real hostname 2      : %s\n", fsa[j].real_hostname[1]);
       (void)fprintf(stdout, "Hostname (display)   : >%s<\n", fsa[j].host_dsp_name);
       if (fsa[j].host_toggle == HOST_ONE)
@@ -811,497 +818,500 @@ main(int argc, char *argv[])
                     (pri_off_t)fsa[j].mc_ctrl_per_process);
 #endif
 
-      if (view_type == SHORT_VIEW)
+      if (fsa[j].real_hostname[0][0] != 1)
       {
-         int                        k,
-                                    max_digits = 9,
-                                    nr_of_digits;
-         struct filetransfer_status sfsa;
+         if (view_type == SHORT_VIEW)
+         {
+            int                        k,
+                                       max_digits = 9,
+                                       nr_of_digits;
+            struct filetransfer_status sfsa;
 
-         /*
-          * Lets get the longest value so we can setup the table as
-          * compact as possible. For this to work we need to keep the
-          * values in FSA constant until we are done. So just copy them
-          * to a new static storage and use that then.
-          */
-         (void)memcpy(&sfsa, &fsa[j], sizeof(struct filetransfer_status));
-         for (i = 0; i < sfsa.allowed_transfers; i++)
-         {
-            GET_MAX_DIGIT(sfsa.job_status[i].proc_id);
-            GET_MAX_DIGIT(sfsa.job_status[i].no_of_files);
-            GET_MAX_DIGIT(sfsa.job_status[i].no_of_files_done);
-            GET_MAX_DIGIT(sfsa.job_status[i].file_size);
-            GET_MAX_DIGIT(sfsa.job_status[i].file_size_done);
-            GET_MAX_DIGIT(sfsa.job_status[i].bytes_send);
-            GET_MAX_DIGIT(sfsa.job_status[i].file_size_in_use);
-            GET_MAX_DIGIT(sfsa.job_status[i].file_size_in_use_done);
-         }
-         (void)fprintf(stdout, "                    ");
-         for (i = 0; i < sfsa.allowed_transfers; i++)
-         {
-            if (i < 10)
+            /*
+             * Lets get the longest value so we can setup the table as
+             * compact as possible. For this to work we need to keep the
+             * values in FSA constant until we are done. So just copy them
+             * to a new static storage and use that then.
+             */
+            (void)memcpy(&sfsa, &fsa[j], sizeof(struct filetransfer_status));
+            for (i = 0; i < sfsa.allowed_transfers; i++)
             {
-               k = fprintf(stdout, "| Job %d", i);
+               GET_MAX_DIGIT(sfsa.job_status[i].proc_id);
+               GET_MAX_DIGIT(sfsa.job_status[i].no_of_files);
+               GET_MAX_DIGIT(sfsa.job_status[i].no_of_files_done);
+               GET_MAX_DIGIT(sfsa.job_status[i].file_size);
+               GET_MAX_DIGIT(sfsa.job_status[i].file_size_done);
+               GET_MAX_DIGIT(sfsa.job_status[i].bytes_send);
+               GET_MAX_DIGIT(sfsa.job_status[i].file_size_in_use);
+               GET_MAX_DIGIT(sfsa.job_status[i].file_size_in_use_done);
             }
-            else if (i < 100)
-                 {
-                    k = fprintf(stdout, "| Job %d", i);
-                 }
-            else if (i < 1000)
-                 {
-                    k = fprintf(stdout, "| Job %d", i);
-                 }
-            else if (i < 10000)
-                 {
-                    k = fprintf(stdout, "| Job %d", i);
-                 }
-                 else
-                 {
-                    k = fprintf(stdout, "| Job XXXX");
-                 }
-
-            if (k < max_digits)
+            (void)fprintf(stdout, "                    ");
+            for (i = 0; i < sfsa.allowed_transfers; i++)
             {
-               int m;
-
-               for (m = 0; m < (max_digits - k + 2); m++)
+               if (i < 10)
                {
-                  (void)fprintf(stdout, " ");
+                  k = fprintf(stdout, "| Job %d", i);
+               }
+               else if (i < 100)
+                    {
+                       k = fprintf(stdout, "| Job %d", i);
+                    }
+               else if (i < 1000)
+                    {
+                       k = fprintf(stdout, "| Job %d", i);
+                    }
+               else if (i < 10000)
+                    {
+                       k = fprintf(stdout, "| Job %d", i);
+                    }
+                    else
+                    {
+                       k = fprintf(stdout, "| Job XXXX");
+                    }
+
+               if (k < max_digits)
+               {
+                  int m;
+
+                  for (m = 0; m < (max_digits - k + 2); m++)
+                  {
+                     (void)fprintf(stdout, " ");
+                  }
                }
             }
-         }
-         (void)fprintf(stdout, "\n");
-         (void)fprintf(stdout, "--------------------");
-         for (i = 0; i < sfsa.allowed_transfers; i++)
-         {
-            (void)fprintf(stdout, "+");
-            for (k = 0; k < (max_digits + 1); k++)
+            (void)fprintf(stdout, "\n");
+            (void)fprintf(stdout, "--------------------");
+            for (i = 0; i < sfsa.allowed_transfers; i++)
             {
-               (void)fprintf(stdout, "-");
+               (void)fprintf(stdout, "+");
+               for (k = 0; k < (max_digits + 1); k++)
+               {
+                  (void)fprintf(stdout, "-");
+               }
             }
-         }
-         (void)fprintf(stdout, "\n");
-         (void)fprintf(stdout, "PID                 ");
-         for (i = 0; i < sfsa.allowed_transfers; i++)
-         {
-#if SIZEOF_PID_T == 4
-            (void)fprintf(stdout, "|%*d ", max_digits,
-#else
-            (void)fprintf(stdout, "|%*lld ", max_digits,
-#endif
-                          (pri_pid_t)sfsa.job_status[i].proc_id);
-         }
-         (void)fprintf(stdout, "\n");
-         (void)fprintf(stdout, "Connect status      ");
-         for (i = 0; i < fsa[j].allowed_transfers; i++)
-         {
-            switch (sfsa.job_status[i].connect_status)
+            (void)fprintf(stdout, "\n");
+            (void)fprintf(stdout, "PID                 ");
+            for (i = 0; i < sfsa.allowed_transfers; i++)
             {
-               case CONNECTING :
-                  if (sfsa.protocol & LOC_FLAG)
-                  {
-                     if ((sfsa.protocol & FTP_FLAG) ||
-                         (sfsa.protocol & SFTP_FLAG) ||
-                         (sfsa.protocol & HTTP_FLAG) ||
+#if SIZEOF_PID_T == 4
+               (void)fprintf(stdout, "|%*d ", max_digits,
+#else
+               (void)fprintf(stdout, "|%*lld ", max_digits,
+#endif
+                             (pri_pid_t)sfsa.job_status[i].proc_id);
+            }
+            (void)fprintf(stdout, "\n");
+            (void)fprintf(stdout, "Connect status      ");
+            for (i = 0; i < fsa[j].allowed_transfers; i++)
+            {
+               switch (sfsa.job_status[i].connect_status)
+               {
+                  case CONNECTING :
+                     if (sfsa.protocol & LOC_FLAG)
+                     {
+                        if ((sfsa.protocol & FTP_FLAG) ||
+                            (sfsa.protocol & SFTP_FLAG) ||
+                            (sfsa.protocol & HTTP_FLAG) ||
 #ifdef _WITH_MAP_SUPPORT
-                         (sfsa.protocol & MAP_FLAG) ||
+                            (sfsa.protocol & MAP_FLAG) ||
 #endif
 #ifdef _WITH_SCP_SUPPORT
-                         (sfsa.protocol & SCP_FLAG) ||
+                            (sfsa.protocol & SCP_FLAG) ||
 #endif
 #ifdef _WITH_WMO_SUPPORT
-                         (sfsa.protocol & WMO_FLAG) ||
+                            (sfsa.protocol & WMO_FLAG) ||
 #endif
-                         (sfsa.protocol & SMTP_FLAG))
-                     {
-                        (void)fprintf(stdout, "|CONNECTING ");
+                            (sfsa.protocol & SMTP_FLAG))
+                        {
+                           (void)fprintf(stdout, "|CONNECTING ");
+                        }
+                        else
+                        {
+                           (void)fprintf(stdout, "|CON or LOCB");
+                        }
                      }
                      else
                      {
-                        (void)fprintf(stdout, "|CON or LOCB");
+                        (void)fprintf(stdout, "|CONNECTING ");
                      }
-                  }
-                  else
-                  {
-                     (void)fprintf(stdout, "|CONNECTING ");
-                  }
-                  break;
+                     break;
 
-               case DISCONNECT :
-                  (void)fprintf(stdout, "|DISCONNECT ");
-                  break;
+                  case DISCONNECT :
+                     (void)fprintf(stdout, "|DISCONNECT ");
+                     break;
 
-               case NOT_WORKING :
-                  (void)fprintf(stdout, "|NOT WORKING");
-                  break;
+                  case NOT_WORKING :
+                     (void)fprintf(stdout, "|NOT WORKING");
+                     break;
 
-               case FTP_ACTIVE :
-                  (void)fprintf(stdout, "|    FTP    ");
-                  break;
+                  case FTP_ACTIVE :
+                     (void)fprintf(stdout, "|    FTP    ");
+                     break;
 
-               case FTP_BURST2_TRANSFER_ACTIVE :
-                  (void)fprintf(stdout, "| FTP BURST ");
-                  break;
+                  case FTP_BURST2_TRANSFER_ACTIVE :
+                     (void)fprintf(stdout, "| FTP BURST ");
+                     break;
 
-               case FTP_RETRIEVE_ACTIVE :
-                  (void)fprintf(stdout, "| FTP RETR  ");
-                  break;
+                  case FTP_RETRIEVE_ACTIVE :
+                     (void)fprintf(stdout, "| FTP RETR  ");
+                     break;
 
-               case SFTP_ACTIVE :
+                  case SFTP_ACTIVE :
 #ifdef _WITH_MAP_SUPPORT
-                  /* or MAP_ACTIVE */
-                  (void)fprintf(stdout, "| SFTP/MAP  ");
+                     /* or MAP_ACTIVE */
+                     (void)fprintf(stdout, "| SFTP/MAP  ");
 #else
-                  (void)fprintf(stdout, "|    SFTP   ");
+                     (void)fprintf(stdout, "|    SFTP   ");
 #endif
-                  break;
+                     break;
 
-               case SFTP_BURST_TRANSFER_ACTIVE :
-                  (void)fprintf(stdout, "| SFTP BURST");
-                  break;
+                  case SFTP_BURST_TRANSFER_ACTIVE :
+                     (void)fprintf(stdout, "| SFTP BURST");
+                     break;
 
-               case SFTP_RETRIEVE_ACTIVE :
+                  case SFTP_RETRIEVE_ACTIVE :
 #ifdef _WITH_SCP_SUPPORT
-                  if (fsa[j].protocol & SFTP_FLAG)
-                  {
+                     if (fsa[j].protocol & SFTP_FLAG)
+                     {
+                        (void)fprintf(stdout, "| SFTP RETR ");
+                     }
+                     else
+                     {
+                        (void)fprintf(stdout, "| SCP BURST");
+                     }
+#else
                      (void)fprintf(stdout, "| SFTP RETR ");
-                  }
-                  else
-                  {
-                     (void)fprintf(stdout, "| SCP BURST");
-                  }
-#else
-                  (void)fprintf(stdout, "| SFTP RETR ");
 #endif
-                  break;
+                     break;
 
-               case LOC_ACTIVE :
-                  (void)fprintf(stdout, "|    LOC    ");
-                  break;
+                  case LOC_ACTIVE :
+                     (void)fprintf(stdout, "|    LOC    ");
+                     break;
 
-               case HTTP_ACTIVE :
-                  (void)fprintf(stdout, "|    HTTP   ");
-                  break;
+                  case HTTP_ACTIVE :
+                     (void)fprintf(stdout, "|    HTTP   ");
+                     break;
 
-               case HTTP_RETRIEVE_ACTIVE :
-                  (void)fprintf(stdout, "| HTTP RETR ");
-                  break;
+                  case HTTP_RETRIEVE_ACTIVE :
+                     (void)fprintf(stdout, "| HTTP RETR ");
+                     break;
 
-               case SMTP_BURST_TRANSFER_ACTIVE :
-                  (void)fprintf(stdout, "| SMTP BURST");
-                  break;
+                  case SMTP_BURST_TRANSFER_ACTIVE :
+                     (void)fprintf(stdout, "| SMTP BURST");
+                     break;
 
-               case SMTP_ACTIVE :
-                  (void)fprintf(stdout, "|    SMTP   ");
-                  break;
+                  case SMTP_ACTIVE :
+                     (void)fprintf(stdout, "|    SMTP   ");
+                     break;
 
 #ifdef _WITH_SCP_SUPPORT
-               case SCP_ACTIVE :
-                  (void)fprintf(stdout, "| SCP ACTIV");
-                  break;
+                  case SCP_ACTIVE :
+                     (void)fprintf(stdout, "| SCP ACTIV");
+                     break;
 #endif
 #ifdef _WITH_WMO_SUPPORT
-               case WMO_BURST_TRANSFER_ACTIVE :
-                  (void)fprintf(stdout, "| WMO BURST ");
-                  break;
+                  case WMO_BURST_TRANSFER_ACTIVE :
+                     (void)fprintf(stdout, "| WMO BURST ");
+                     break;
 
-               case WMO_ACTIVE :
-                  (void)fprintf(stdout, "| WMO ACTIV ");
-                  break;
+                  case WMO_ACTIVE :
+                     (void)fprintf(stdout, "| WMO ACTIV ");
+                     break;
 #endif
 
-               case CLOSING_CONNECTION :
-                  (void)fprintf(stdout, "|CLOSING CON");
-                  break;
+                  case CLOSING_CONNECTION :
+                     (void)fprintf(stdout, "|CLOSING CON");
+                     break;
 
-               default :
-                  (void)fprintf(stdout, "|  Unknown  ");
-                  break;
-            }
-            if (max_digits > 10)
-            {
-               int m;
-
-               for (m = 0; m < (max_digits - 10); m++)
+                  default :
+                     (void)fprintf(stdout, "|  Unknown  ");
+                     break;
+               }
+               if (max_digits > 10)
                {
-                  (void)fprintf(stdout, " ");
+                  int m;
+
+                  for (m = 0; m < (max_digits - 10); m++)
+                  {
+                     (void)fprintf(stdout, " ");
+                  }
                }
             }
-         }
-         (void)fprintf(stdout, "\n");
-         (void)fprintf(stdout, "Number of files     ");
-         for (i = 0; i < sfsa.allowed_transfers; i++)
-         {
-            (void)fprintf(stdout, "|%*d ",
-                          max_digits, sfsa.job_status[i].no_of_files);
-         }
-         (void)fprintf(stdout, "\n");
-         (void)fprintf(stdout, "No. of files done   ");
-         for (i = 0; i < sfsa.allowed_transfers; i++)
-         {
-            (void)fprintf(stdout, "|%*d ",
-                          max_digits, sfsa.job_status[i].no_of_files_done);
-         }
-         (void)fprintf(stdout, "\n");
-         (void)fprintf(stdout, "File size           ");
-         for (i = 0; i < sfsa.allowed_transfers; i++)
-         {
+            (void)fprintf(stdout, "\n");
+            (void)fprintf(stdout, "Number of files     ");
+            for (i = 0; i < sfsa.allowed_transfers; i++)
+            {
+               (void)fprintf(stdout, "|%*d ",
+                             max_digits, sfsa.job_status[i].no_of_files);
+            }
+            (void)fprintf(stdout, "\n");
+            (void)fprintf(stdout, "No. of files done   ");
+            for (i = 0; i < sfsa.allowed_transfers; i++)
+            {
+               (void)fprintf(stdout, "|%*d ",
+                             max_digits, sfsa.job_status[i].no_of_files_done);
+            }
+            (void)fprintf(stdout, "\n");
+            (void)fprintf(stdout, "File size           ");
+            for (i = 0; i < sfsa.allowed_transfers; i++)
+            {
 #if SIZEOF_OFF_T == 4
-            (void)fprintf(stdout, "|%*d ", max_digits,
+               (void)fprintf(stdout, "|%*d ", max_digits,
 #else
-            (void)fprintf(stdout, "|%*lld ", max_digits,
+               (void)fprintf(stdout, "|%*lld ", max_digits,
 #endif
-                          (pri_off_t)sfsa.job_status[i].file_size);
-         }
-         (void)fprintf(stdout, "\n");
-         (void)fprintf(stdout, "File size done      ");
-         for (i = 0; i < sfsa.allowed_transfers; i++)
-         {
+                             (pri_off_t)sfsa.job_status[i].file_size);
+            }
+            (void)fprintf(stdout, "\n");
+            (void)fprintf(stdout, "File size done      ");
+            for (i = 0; i < sfsa.allowed_transfers; i++)
+            {
 #if SIZEOF_OFF_T == 4
-            (void)fprintf(stdout, "|%*lu ", max_digits,
+               (void)fprintf(stdout, "|%*lu ", max_digits,
 #else
-            (void)fprintf(stdout, "|%*llu ", max_digits,
+               (void)fprintf(stdout, "|%*llu ", max_digits,
 #endif
-                          sfsa.job_status[i].file_size_done);
-         }
-         (void)fprintf(stdout, "\n");
-         (void)fprintf(stdout, "Bytes send          ");
-         for (i = 0; i < sfsa.allowed_transfers; i++)
-         {
+                             sfsa.job_status[i].file_size_done);
+            }
+            (void)fprintf(stdout, "\n");
+            (void)fprintf(stdout, "Bytes send          ");
+            for (i = 0; i < sfsa.allowed_transfers; i++)
+            {
 #if SIZEOF_OFF_T == 4
-            (void)fprintf(stdout, "|%*lu ", max_digits,
+               (void)fprintf(stdout, "|%*lu ", max_digits,
 #else
-            (void)fprintf(stdout, "|%*llu ", max_digits,
+               (void)fprintf(stdout, "|%*llu ", max_digits,
 #endif
-                          sfsa.job_status[i].bytes_send);
-         }
-         (void)fprintf(stdout, "\n");
-         (void)fprintf(stdout, "File name in use    ");
-         for (i = 0; i < sfsa.allowed_transfers; i++)
-         {
-            (void)fprintf(stdout, "|%*.*s", max_digits + 1, max_digits + 1,
-                          sfsa.job_status[i].file_name_in_use);
-         }
-         (void)fprintf(stdout, "\n");
-         (void)fprintf(stdout, "File size in use    ");
-         for (i = 0; i < sfsa.allowed_transfers; i++)
-         {
+                             sfsa.job_status[i].bytes_send);
+            }
+            (void)fprintf(stdout, "\n");
+            (void)fprintf(stdout, "File name in use    ");
+            for (i = 0; i < sfsa.allowed_transfers; i++)
+            {
+               (void)fprintf(stdout, "|%*.*s", max_digits + 1, max_digits + 1,
+                             sfsa.job_status[i].file_name_in_use);
+            }
+            (void)fprintf(stdout, "\n");
+            (void)fprintf(stdout, "File size in use    ");
+            for (i = 0; i < sfsa.allowed_transfers; i++)
+            {
 #if SIZEOF_OFF_T == 4
-            (void)fprintf(stdout, "|%*d ", max_digits,
+               (void)fprintf(stdout, "|%*d ", max_digits,
 #else
-            (void)fprintf(stdout, "|%*lld ", max_digits,
+               (void)fprintf(stdout, "|%*lld ", max_digits,
 #endif
-                          (pri_off_t)sfsa.job_status[i].file_size_in_use);
-         }
-         (void)fprintf(stdout, "\n");
-         (void)fprintf(stdout, "Filesize in use done");
-         for (i = 0; i < sfsa.allowed_transfers; i++)
-         {
+                             (pri_off_t)sfsa.job_status[i].file_size_in_use);
+            }
+            (void)fprintf(stdout, "\n");
+            (void)fprintf(stdout, "Filesize in use done");
+            for (i = 0; i < sfsa.allowed_transfers; i++)
+            {
 #if SIZEOF_OFF_T == 4
-            (void)fprintf(stdout, "|%*d ", max_digits,
+               (void)fprintf(stdout, "|%*d ", max_digits,
 #else
-            (void)fprintf(stdout, "|%*lld ", max_digits,
+               (void)fprintf(stdout, "|%*lld ", max_digits,
 #endif
-                          (pri_off_t)sfsa.job_status[i].file_size_in_use_done);
-         }
-         (void)fprintf(stdout, "\n");
+                             (pri_off_t)sfsa.job_status[i].file_size_in_use_done);
+            }
+            (void)fprintf(stdout, "\n");
 #ifdef _WITH_BURST_2
-         (void)fprintf(stdout, "Unique name         ");
-         for (i = 0; i < sfsa.allowed_transfers; i++)
-         {
-            if ((sfsa.job_status[i].unique_name[1] == '\0') ||
-                (sfsa.job_status[i].unique_name[2] == '\0'))
+            (void)fprintf(stdout, "Unique name         ");
+            for (i = 0; i < sfsa.allowed_transfers; i++)
             {
-               (void)fprintf(stdout, "|%*.*s", max_digits + 1, max_digits + 1,
-                             " ");
+               if ((sfsa.job_status[i].unique_name[1] == '\0') ||
+                   (sfsa.job_status[i].unique_name[2] == '\0'))
+               {
+                  (void)fprintf(stdout, "|%*.*s", max_digits + 1, max_digits + 1,
+                                " ");
+               }
+               else
+               {
+                  (void)fprintf(stdout, "|%*.*s", max_digits + 1, max_digits + 1,
+                                sfsa.job_status[i].unique_name);
+               }
             }
-            else
+            (void)fprintf(stdout, "\n");
+            (void)fprintf(stdout, "Job ID              ");
+            for (i = 0; i < sfsa.allowed_transfers; i++)
             {
-               (void)fprintf(stdout, "|%*.*s", max_digits + 1, max_digits + 1,
-                             sfsa.job_status[i].unique_name);
+               (void)fprintf(stdout, "|%*x ",
+                             max_digits, (int)sfsa.job_status[i].job_id);
             }
-         }
-         (void)fprintf(stdout, "\n");
-         (void)fprintf(stdout, "Job ID              ");
-         for (i = 0; i < sfsa.allowed_transfers; i++)
-         {
-            (void)fprintf(stdout, "|%*x ",
-                          max_digits, (int)sfsa.job_status[i].job_id);
-         }
-         (void)fprintf(stdout, "\n");
+            (void)fprintf(stdout, "\n");
 #endif
-      }
-      else
-      {
-         for (i = 0; i < fsa[j].allowed_transfers; i++)
+         }
+         else
          {
-            (void)fprintf(stdout,
-                          "-------- Job %2d -----+------------------------------------------------------\n",
-                          i);
+            for (i = 0; i < fsa[j].allowed_transfers; i++)
+            {
+               (void)fprintf(stdout,
+                             "-------- Job %2d -----+------------------------------------------------------\n",
+                             i);
 #if SIZEOF_PID_T == 4
-            (void)fprintf(stdout, "PID                  : %d\n",
+               (void)fprintf(stdout, "PID                  : %d\n",
 #else
-            (void)fprintf(stdout, "PID                  : %lld\n",
+               (void)fprintf(stdout, "PID                  : %lld\n",
 #endif
-                          (pri_pid_t)fsa[j].job_status[i].proc_id);
-            switch (fsa[j].job_status[i].connect_status)
-            {
-               case CONNECTING :
-                  if (fsa[j].protocol & LOC_FLAG)
-                  {
-                     if ((fsa[j].protocol & FTP_FLAG) ||
-                         (fsa[j].protocol & SFTP_FLAG) ||
-                         (fsa[j].protocol & HTTP_FLAG) ||
+                             (pri_pid_t)fsa[j].job_status[i].proc_id);
+               switch (fsa[j].job_status[i].connect_status)
+               {
+                  case CONNECTING :
+                     if (fsa[j].protocol & LOC_FLAG)
+                     {
+                        if ((fsa[j].protocol & FTP_FLAG) ||
+                            (fsa[j].protocol & SFTP_FLAG) ||
+                            (fsa[j].protocol & HTTP_FLAG) ||
 #ifdef _WITH_MAP_SUPPORT
-                         (fsa[j].protocol & MAP_FLAG) ||
+                            (fsa[j].protocol & MAP_FLAG) ||
 #endif
 #ifdef _WITH_SCP_SUPPORT
-                         (fsa[j].protocol & SCP_FLAG) ||
+                            (fsa[j].protocol & SCP_FLAG) ||
 #endif
 #ifdef _WITH_WMO_SUPPORT
-                         (fsa[j].protocol & WMO_FLAG) ||
+                            (fsa[j].protocol & WMO_FLAG) ||
 #endif
-                         (fsa[j].protocol & SMTP_FLAG))
-                     {
-                        (void)fprintf(stdout, "Connect status       : CONNECTING or LOC burst\n");
+                            (fsa[j].protocol & SMTP_FLAG))
+                        {
+                           (void)fprintf(stdout, "Connect status       : CONNECTING or LOC burst\n");
+                        }
+                        else
+                        {
+                           (void)fprintf(stdout, "Connect status       : CONNECTING\n");
+                        }
                      }
                      else
                      {
                         (void)fprintf(stdout, "Connect status       : CONNECTING\n");
                      }
-                  }
-                  else
-                  {
-                     (void)fprintf(stdout, "Connect status       : CONNECTING\n");
-                  }
-                  break;
+                     break;
 
-               case DISCONNECT :
-                  (void)fprintf(stdout, "Connect status       : DISCONNECT\n");
-                  break;
+                  case DISCONNECT :
+                     (void)fprintf(stdout, "Connect status       : DISCONNECT\n");
+                     break;
 
-               case NOT_WORKING :
-                  (void)fprintf(stdout, "Connect status       : NOT working\n");
-                  break;
+                  case NOT_WORKING :
+                     (void)fprintf(stdout, "Connect status       : NOT working\n");
+                     break;
 
-               case FTP_ACTIVE :
-                  (void)fprintf(stdout, "Connect status       : FTP active\n");
-                  break;
+                  case FTP_ACTIVE :
+                     (void)fprintf(stdout, "Connect status       : FTP active\n");
+                     break;
 
-               case FTP_BURST2_TRANSFER_ACTIVE :
-                  (void)fprintf(stdout, "Connect status       : FTP burst active\n");
-                  break;
+                  case FTP_BURST2_TRANSFER_ACTIVE :
+                     (void)fprintf(stdout, "Connect status       : FTP burst active\n");
+                     break;
 
-               case SFTP_ACTIVE :
+                  case SFTP_ACTIVE :
 #ifdef _WITH_MAP_SUPPORT
-                  /* or MAP_ACTIVE */
-                  (void)fprintf(stdout, "Connect status       : SFTP/MAP active\n");
+                     /* or MAP_ACTIVE */
+                     (void)fprintf(stdout, "Connect status       : SFTP/MAP active\n");
 #else
-                  (void)fprintf(stdout, "Connect status       : SFTP active\n");
+                     (void)fprintf(stdout, "Connect status       : SFTP active\n");
 #endif
-                  break;
+                     break;
 
-               case SFTP_BURST_TRANSFER_ACTIVE :
-                  (void)fprintf(stdout, "Connect status       : SFTP burst active\n");
-                  break;
+                  case SFTP_BURST_TRANSFER_ACTIVE :
+                     (void)fprintf(stdout, "Connect status       : SFTP burst active\n");
+                     break;
 
-               case LOC_ACTIVE :
-                  (void)fprintf(stdout, "Connect status       : LOC active\n");
-                  break;
+                  case LOC_ACTIVE :
+                     (void)fprintf(stdout, "Connect status       : LOC active\n");
+                     break;
 
-               case HTTP_ACTIVE :
-                  (void)fprintf(stdout, "Connect status       : HTTP active\n");
-                  break;
+                  case HTTP_ACTIVE :
+                     (void)fprintf(stdout, "Connect status       : HTTP active\n");
+                     break;
 
-               case HTTP_RETRIEVE_ACTIVE :
-                  (void)fprintf(stdout, "Connect status       : HTTP retrieve active\n");
-                  break;
+                  case HTTP_RETRIEVE_ACTIVE :
+                     (void)fprintf(stdout, "Connect status       : HTTP retrieve active\n");
+                     break;
 
-               case SMTP_BURST_TRANSFER_ACTIVE :
-                  (void)fprintf(stdout, "Connect status       : SMTP burst active\n");
-                  break;
+                  case SMTP_BURST_TRANSFER_ACTIVE :
+                     (void)fprintf(stdout, "Connect status       : SMTP burst active\n");
+                     break;
 
-               case SMTP_ACTIVE :
-                  (void)fprintf(stdout, "Connect status       : SMTP active\n");
-                  break;
+                  case SMTP_ACTIVE :
+                     (void)fprintf(stdout, "Connect status       : SMTP active\n");
+                     break;
 
 #ifdef _WITH_SCP_SUPPORT
-               case SCP_BURST_TRANSFER_ACTIVE :
-                  (void)fprintf(stdout, "Connect status       : SCP burst active\n");
-                  break;
+                  case SCP_BURST_TRANSFER_ACTIVE :
+                     (void)fprintf(stdout, "Connect status       : SCP burst active\n");
+                     break;
 
-               case SCP_ACTIVE :
-                  (void)fprintf(stdout, "Connect status       : SCP active\n");
-                  break;
+                  case SCP_ACTIVE :
+                     (void)fprintf(stdout, "Connect status       : SCP active\n");
+                     break;
 #endif
 #ifdef _WITH_WMO_SUPPORT
-               case WMO_BURST_TRANSFER_ACTIVE :
-                  (void)fprintf(stdout, "Connect status       : WMO burst active\n");
-                  break;
+                  case WMO_BURST_TRANSFER_ACTIVE :
+                     (void)fprintf(stdout, "Connect status       : WMO burst active\n");
+                     break;
 
-               case WMO_ACTIVE :
-                  (void)fprintf(stdout, "Connect status       : WMO active\n");
-                  break;
+                  case WMO_ACTIVE :
+                     (void)fprintf(stdout, "Connect status       : WMO active\n");
+                     break;
 #endif
 
-               case CLOSING_CONNECTION :
-                  (void)fprintf(stdout, "Connect status       : Closing connection\n");
-                  break;
+                  case CLOSING_CONNECTION :
+                     (void)fprintf(stdout, "Connect status       : Closing connection\n");
+                     break;
 
-               default :
-                  (void)fprintf(stdout, "Connect status       : Unknown status\n");
-                  break;
-            }
-            (void)fprintf(stdout, "Number of files      : %d\n",
-                          fsa[j].job_status[i].no_of_files);
-            (void)fprintf(stdout, "No. of files done    : %d\n",
-                          fsa[j].job_status[i].no_of_files_done);
+                  default :
+                     (void)fprintf(stdout, "Connect status       : Unknown status\n");
+                     break;
+               }
+               (void)fprintf(stdout, "Number of files      : %d\n",
+                             fsa[j].job_status[i].no_of_files);
+               (void)fprintf(stdout, "No. of files done    : %d\n",
+                             fsa[j].job_status[i].no_of_files_done);
 #if SIZEOF_OFF_T == 4
-            (void)fprintf(stdout, "File size            : %ld\n",
+               (void)fprintf(stdout, "File size            : %ld\n",
 #else
-            (void)fprintf(stdout, "File size            : %lld\n",
+               (void)fprintf(stdout, "File size            : %lld\n",
 #endif
-                          (pri_off_t)fsa[j].job_status[i].file_size);
+                             (pri_off_t)fsa[j].job_status[i].file_size);
 #if SIZEOF_OFF_T == 4
-            (void)fprintf(stdout, "File size done       : %lu\n",
+               (void)fprintf(stdout, "File size done       : %lu\n",
 #else
-            (void)fprintf(stdout, "File size done       : %llu\n",
+               (void)fprintf(stdout, "File size done       : %llu\n",
 #endif
-                          fsa[j].job_status[i].file_size_done);
+                             fsa[j].job_status[i].file_size_done);
 #if SIZEOF_OFF_T == 4
-            (void)fprintf(stdout, "Bytes send           : %lu\n",
+               (void)fprintf(stdout, "Bytes send           : %lu\n",
 #else
-            (void)fprintf(stdout, "Bytes send           : %llu\n",
+               (void)fprintf(stdout, "Bytes send           : %llu\n",
 #endif
-                          fsa[j].job_status[i].bytes_send);
-            (void)fprintf(stdout, "File name in use     : %s\n",
-                          fsa[j].job_status[i].file_name_in_use);
+                             fsa[j].job_status[i].bytes_send);
+               (void)fprintf(stdout, "File name in use     : %s\n",
+                             fsa[j].job_status[i].file_name_in_use);
 #if SIZEOF_OFF_T == 4
-            (void)fprintf(stdout, "File size in use     : %ld\n",
+               (void)fprintf(stdout, "File size in use     : %ld\n",
 #else
-            (void)fprintf(stdout, "File size in use     : %lld\n",
+               (void)fprintf(stdout, "File size in use     : %lld\n",
 #endif
-                          (pri_off_t)fsa[j].job_status[i].file_size_in_use);
+                             (pri_off_t)fsa[j].job_status[i].file_size_in_use);
 #if SIZEOF_OFF_T == 4
-            (void)fprintf(stdout, "File size in use done: %ld\n",
+               (void)fprintf(stdout, "File size in use done: %ld\n",
 #else
-            (void)fprintf(stdout, "File size in use done: %lld\n",
+               (void)fprintf(stdout, "File size in use done: %lld\n",
 #endif
-                          (pri_off_t)fsa[j].job_status[i].file_size_in_use_done);
+                             (pri_off_t)fsa[j].job_status[i].file_size_in_use_done);
 #ifdef _WITH_BURST_2
-            if ((fsa[j].job_status[i].unique_name[1] == '\0') ||
-                (fsa[j].job_status[i].unique_name[2] == '\0'))
-            {
-               (void)fprintf(stdout, "Unique name          : \n");
-            }
-            else
-            {
-               (void)fprintf(stdout, "Unique name          : %s\n",
-                             fsa[j].job_status[i].unique_name);
-            }
-            (void)fprintf(stdout, "Job ID               : %x\n",
-                          fsa[j].job_status[i].job_id);
+               if ((fsa[j].job_status[i].unique_name[1] == '\0') ||
+                   (fsa[j].job_status[i].unique_name[2] == '\0'))
+               {
+                  (void)fprintf(stdout, "Unique name          : \n");
+               }
+               else
+               {
+                  (void)fprintf(stdout, "Unique name          : %s\n",
+                                fsa[j].job_status[i].unique_name);
+               }
+               (void)fprintf(stdout, "Job ID               : %x\n",
+                             fsa[j].job_status[i].job_id);
 #endif
+            }
          }
       }
    }

@@ -1,7 +1,7 @@
 /*
  *  write_host_config.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -62,6 +62,7 @@ DESCR__S_M3
  **   12.04.2012 H.Kiehl Added check size.
  **   14.07.2013 H.Kiehl Added transfer timeout, keep connected no fetching
  **                      and no sending.
+ **   04.03.2017 H.Kiehl Added group support.
  **
  */
 DESCR__E_M3
@@ -462,80 +463,88 @@ write_host_config(int              no_of_hosts,
    /* Commit data line by line. */
    for (i = 0; i < no_of_hosts; i++)
    {
-      store_real_hostname(tmp_real_hostname[0], p_hl[i].real_hostname[0]);
-      store_real_hostname(tmp_real_hostname[1], p_hl[i].real_hostname[1]);
-      length = snprintf(line_buffer,
-                        MAX_HOSTNAME_LENGTH +
-                        (2 * MAX_REAL_HOSTNAME_LENGTH) +
-                        MAX_TOGGLE_STR_LENGTH +
-                        MAX_PROXY_NAME_LENGTH +
-                        MAX_INT_LENGTH +
-                        MAX_INT_LENGTH +
-                        MAX_INT_LENGTH +
-                        MAX_INT_LENGTH +
-                        MAX_INT_LENGTH +
-                        MAX_INT_LENGTH +
-                        MAX_INT_LENGTH +
-                        MAX_INT_LENGTH +
-                        MAX_INT_LENGTH +
-                        MAX_INT_LENGTH +
-                        MAX_INT_LENGTH +
-                        MAX_INT_LENGTH +
-                        MAX_INT_LENGTH +
-                        MAX_INT_LENGTH +
+      if (p_hl[i].real_hostname[0][0] == 1)
+      {
+         length = snprintf(line_buffer, MAX_HOSTNAME_LENGTH + 1,
+                           "%s\n", p_hl[i].host_alias);
+      }
+      else
+      {
+         store_real_hostname(tmp_real_hostname[0], p_hl[i].real_hostname[0]);
+         store_real_hostname(tmp_real_hostname[1], p_hl[i].real_hostname[1]);
+         length = snprintf(line_buffer,
+                           MAX_HOSTNAME_LENGTH +
+                           (2 * MAX_REAL_HOSTNAME_LENGTH) +
+                           MAX_TOGGLE_STR_LENGTH +
+                           MAX_PROXY_NAME_LENGTH +
+                           MAX_INT_LENGTH +
+                           MAX_INT_LENGTH +
+                           MAX_INT_LENGTH +
+                           MAX_INT_LENGTH +
+                           MAX_INT_LENGTH +
+                           MAX_INT_LENGTH +
+                           MAX_INT_LENGTH +
+                           MAX_INT_LENGTH +
+                           MAX_INT_LENGTH +
+                           MAX_INT_LENGTH +
+                           MAX_INT_LENGTH +
+                           MAX_INT_LENGTH +
+                           MAX_INT_LENGTH +
+                           MAX_INT_LENGTH +
 #ifdef WITH_DUP_CHECK
-                        MAX_LONG_LENGTH +
-                        MAX_INT_LENGTH +
+                           MAX_LONG_LENGTH +
+                           MAX_INT_LENGTH +
 #endif
-                        MAX_INT_LENGTH +
+                           MAX_INT_LENGTH +
 #ifdef WITH_DUP_CHECK
-                        21 +
+                           21 +
 #else
-                        19 +
+                           19 +
 #endif
-                        2,
+                           2,
 #ifdef WITH_DUP_CHECK
 # if SIZEOF_TIME_T == 4
-                        "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%ld:%u:%u:%ld\n",
+                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%ld:%u:%u:%ld\n",
 # else
-                        "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%lld:%u:%u:%lld\n",
+                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%lld:%u:%u:%lld\n",
 # endif
 #else
 # if SIZEOF_TIME_T == 4
-                        "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%u:%ld\n",
+                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%u:%ld\n",
 # else
-                        "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%u:%lld\n",
+                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%u:%lld\n",
 # endif
 #endif
-                        p_hl[i].host_alias,
-                        tmp_real_hostname[0],
-                        tmp_real_hostname[1],
-                        p_hl[i].host_toggle_str,
-                        p_hl[i].proxy_name,
-                        p_hl[i].allowed_transfers,
-                        p_hl[i].max_errors,
-                        p_hl[i].retry_interval,
-                        p_hl[i].transfer_blksize,
-                        p_hl[i].successful_retries,
-                        (int)p_hl[i].file_size_offset,
-                        p_hl[i].transfer_timeout,
+                           p_hl[i].host_alias,
+                           tmp_real_hostname[0],
+                           tmp_real_hostname[1],
+                           p_hl[i].host_toggle_str,
+                           p_hl[i].proxy_name,
+                           p_hl[i].allowed_transfers,
+                           p_hl[i].max_errors,
+                           p_hl[i].retry_interval,
+                           p_hl[i].transfer_blksize,
+                           p_hl[i].successful_retries,
+                           (int)p_hl[i].file_size_offset,
+                           p_hl[i].transfer_timeout,
 #ifdef WHEN_WE_USE_FOR_THIS
-                        (int)p_hl[i].number_of_no_bursts,
+                           (int)p_hl[i].number_of_no_bursts,
 #else
-                        0,
+                           0,
 #endif
-                        p_hl[i].host_status,
-                        p_hl[i].protocol_options,
-                        p_hl[i].transfer_rate_limit,
-                        p_hl[i].ttl,
-                        p_hl[i].socksnd_bufsize,
-                        p_hl[i].sockrcv_bufsize,
+                           p_hl[i].host_status,
+                           p_hl[i].protocol_options,
+                           p_hl[i].transfer_rate_limit,
+                           p_hl[i].ttl,
+                           p_hl[i].socksnd_bufsize,
+                           p_hl[i].sockrcv_bufsize,
 #ifdef WITH_DUP_CHECK
-                        (pri_time_t)p_hl[i].dup_check_timeout,
-                        p_hl[i].dup_check_flag,
+                           (pri_time_t)p_hl[i].dup_check_timeout,
+                           p_hl[i].dup_check_flag,
 #endif
-                        p_hl[i].keep_connected,
-                        (pri_time_t)p_hl[i].warn_time);
+                           p_hl[i].keep_connected,
+                           (pri_time_t)p_hl[i].warn_time);
+      }
 
       if (write(fd, line_buffer, length) != length)
       {
