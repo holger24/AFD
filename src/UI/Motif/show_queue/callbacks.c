@@ -489,7 +489,7 @@ close_button(Widget w, XtPointer client_data, XtPointer call_data)
 
       for (i = 0; i < total_no_files; i++)
       {
-            free(qfl[i].file_name);
+         free(qfl[i].file_name);
       }
       free(qfl);
    }

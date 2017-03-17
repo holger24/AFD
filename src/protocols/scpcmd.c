@@ -130,7 +130,8 @@ scp_connect(char          *hostname,
    {
       if ((data_fd = open("/dev/null", O_RDWR)) == -1)
       {
-         system_log(ERROR_SIGN, __FILE__, __LINE__, "scp_connect", "Simulated scp_connect()",
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "scp_connect", "Simulated scp_connect()",
                     _("Failed to open() /dev/null : %s"), strerror(errno));
          return(INCORRECT);
       }
