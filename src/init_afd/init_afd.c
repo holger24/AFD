@@ -70,6 +70,7 @@ DESCR__S_M1
  **   20.12.2010 H.Kiehl Log some data to transfer log not system log.
  **   13.05.2012 H.Kiehl Do not exit() if we fail to stat() the files
  **                      directory.
+ **   17.03.2017 H.Kiehl Remove some work to a new process init_afd_worker.
  **
  */
 DESCR__E_M1
@@ -95,26 +96,14 @@ DESCR__E_M1
 #include <dirent.h>              /* opendir(), readdir(), closedir(),    */
                                  /* DIR, struct dirent                   */
 #include <errno.h>
-#include "amgdefs.h"
 #include "version.h"
 
 #define BLOCK_SIGNALS
-#define NO_OF_SAVED_CORE_FILES      10
-#define FULL_DIR_CHECK_INTERVAL     300   /* Every 5 minutes. */
-#define ACTION_DIR_CHECK_INTERVAL   60
-#ifdef WITH_IP_DB
-# define IP_DB_RESET_CHECK_INTERVAL 21600 /* Every 6 hours. */
-#endif
-#define WITH_ACKNOWLEDGED_OFFLINE_CHECK
+#define NO_OF_SAVED_CORE_FILES 10
 
 /* Global definitions. */
 int                        sys_log_fd = STDERR_FILENO,
                            event_log_fd = STDERR_FILENO,
-                           trans_db_log_fd = STDERR_FILENO,
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-                           trans_db_log_readfd,
-#endif
-                           transfer_log_fd = STDERR_FILENO,
                            afd_cmd_fd,
                            afd_resp_fd,
                            amg_cmd_fd,
@@ -155,9 +144,7 @@ static pid_t               make_process(char *, char *, sigset_t *);
 static void                afd_exit(void),
                            check_dirs(char *),
                            delete_old_afd_status_files(void),
-                           get_afd_config_value(int *, int *, unsigned int *,
-                                                int *, int *),
-                           init_afd_check_fsa(void),
+                           get_afd_config_value(int *, unsigned int *, int *),
                            sig_exit(int),
                            sig_bus(int),
                            sig_segv(int),
@@ -171,8 +158,6 @@ main(int argc, char *argv[])
 {
    int            afdd_port,
                   afd_status_fd,
-                  amg_rescan_time,
-                  danger_no_of_files,
                   current_month,
 #ifdef AFDBENCH_CONFIG
                   pause_dir_scan,
@@ -186,20 +171,13 @@ main(int argc, char *argv[])
                   *heartbeat;
    long           link_max;
    off_t          afd_active_size;
-   time_t         action_dir_check_time,
-                  full_dir_check_time,
-#ifdef WITH_IP_DB
-                  ip_db_reset_time,
-#endif
-                  last_action_success_dir_time,
+   time_t         
                   month_check_time,
                   now;
    fd_set         rset;
    signed char    stop_typ = STARTUP_ID,
                   char_value;
-   char           afd_action_dir[MAX_PATH_LENGTH],
-                  afd_file_dir[MAX_PATH_LENGTH],
-                  *p_afd_action_dir,
+   char           afd_file_dir[MAX_PATH_LENGTH],
                   *ptr = NULL,
                   *shared_shutdown,
                   work_dir[MAX_PATH_LENGTH];
@@ -243,14 +221,11 @@ main(int argc, char *argv[])
    i = strlen(afd_status_file);
    (void)strcpy(afd_active_file, afd_status_file);
    (void)strcpy(afd_active_file + i, AFD_ACTIVE_FILE);
-   (void)sprintf(afd_status_file + i, "/%s.%x", AFD_STATUS_FILE, get_afd_status_struct_size());
+   (void)sprintf(afd_status_file + i, "/%s.%x",
+                 AFD_STATUS_FILE, get_afd_status_struct_size());
 
    (void)strcpy(afd_file_dir, work_dir);
    (void)strcat(afd_file_dir, AFD_FILE_DIR);
-
-   p_afd_action_dir = afd_action_dir + snprintf(afd_action_dir, MAX_PATH_LENGTH,
-                                                "%s%s%s/",
-                                                p_work_dir, ETC_DIR, ACTION_DIR);
 
    /* Make sure that no other AFD is running in this directory. */
    if (check_afd_heartbeat(DEFAULT_HEARTBEAT_TIMEOUT, YES) == 1)
@@ -484,6 +459,7 @@ main(int argc, char *argv[])
 #ifdef _TRANSFER_RATE_LOG
       p_afd_status->transfer_rate_log = 0;
 #endif
+      p_afd_status->afd_worker        = 0;
       p_afd_status->no_of_transfers   = 0;
       p_afd_status->start_time        = 0L;
    }
@@ -624,6 +600,11 @@ main(int argc, char *argv[])
             (void)strcpy(proc_table[i].proc_name, TRLOG);
             break;
 #endif
+         case AFD_WORKER_NO :
+            proc_table[i].status = &p_afd_status->afd_worker;
+            (void)strcpy(proc_table[i].proc_name, AFD_WORKER);
+            break;
+
 #if ALDAD_OFFSET != 0
          case ALDAD_NO :
             proc_table[i].status = &p_afd_status->aldad;
@@ -637,8 +618,7 @@ main(int argc, char *argv[])
             exit(INCORRECT);
       }
    }
-   get_afd_config_value(&afdd_port, &danger_no_of_files, &default_age_limit,
-                        &amg_rescan_time, &in_global_filesystem);
+   get_afd_config_value(&afdd_port, &default_age_limit, &in_global_filesystem);
 
    /* Do some cleanups when we exit */
    if (atexit(afd_exit) != 0)
@@ -682,16 +662,6 @@ main(int argc, char *argv[])
       current_month = bd_time->tm_mon;
    }
    month_check_time = ((now / 86400) * 86400) + 86400;
-   full_dir_check_time = ((now / FULL_DIR_CHECK_INTERVAL) *
-                          FULL_DIR_CHECK_INTERVAL) + FULL_DIR_CHECK_INTERVAL;
-   action_dir_check_time = ((now / ACTION_DIR_CHECK_INTERVAL) *
-                            ACTION_DIR_CHECK_INTERVAL) +
-                           ACTION_DIR_CHECK_INTERVAL;
-#ifdef WITH_IP_DB
-   ip_db_reset_time = ((now / IP_DB_RESET_CHECK_INTERVAL) *
-                       IP_DB_RESET_CHECK_INTERVAL) + IP_DB_RESET_CHECK_INTERVAL;
-#endif
-   last_action_success_dir_time = 0L;
 
    /* Initialise communication flag FD <-> AMG. */
 #ifdef AFDBENCH_CONFIG
@@ -929,6 +899,11 @@ main(int argc, char *argv[])
                  _("Failed to sync AFD_ACTIVE file : %s"), strerror(errno));
    }
 
+   /* Start init_afd_worker to help this process. */
+   proc_table[AFD_WORKER_NO].pid = make_process(AFD_WORKER, work_dir, NULL);
+   *(pid_t *)(pid_list + ((AFD_WORKER_NO + 1) * sizeof(pid_t))) = proc_table[AFD_WORKER_NO].pid;
+   *proc_table[AFD_WORKER_NO].status = ON;
+
    /*
     * Watch if any of the two process (AMG, FD) dies.
     * While doing this wait and see if any commands or replies
@@ -1024,143 +999,6 @@ main(int argc, char *argv[])
          }
          month_check_time = ((now / 86400) * 86400) + 86400;
       }
-
-      if (now > full_dir_check_time)
-      {
-         if (fra_attach() == SUCCESS)
-         {
-            for (i = 0; i < no_of_dirs; i++)
-            {
-               if ((fra[i].fsa_pos == -1) && (fra[i].dir_flag & MAX_COPIED) &&
-                   ((now - fra[i].last_retrieval) < (2 * amg_rescan_time)))
-               {
-                  count_files(fra[i].url, &fra[i].files_in_dir,
-                              &fra[i].bytes_in_dir);
-
-                  /* Bail out if the scans take to long. */
-                  if ((time(NULL) - now) > 30)
-                  {
-                     i = no_of_dirs;
-                  }
-               }
-               (*heartbeat)++;
-            }
-            (void)fra_detach();
-         }
-         full_dir_check_time = ((now / FULL_DIR_CHECK_INTERVAL) *
-                                FULL_DIR_CHECK_INTERVAL) +
-                               FULL_DIR_CHECK_INTERVAL;
-      }
-
-      if (now > action_dir_check_time)
-      {
-         *p_afd_action_dir = '\0';
-         if (stat(afd_action_dir, &stat_buf) == -1)
-         {
-            if (errno != ENOENT)
-            {
-               system_log(WARN_SIGN, __FILE__, __LINE__,
-                          _("Failed to look at directory `%s' : %s"),
-                          afd_action_dir, strerror(errno));
-            }
-         }
-         else
-         {
-            if (S_ISDIR(stat_buf.st_mode))
-            {
-               char *p_script;
-
-               p_script = p_afd_action_dir +
-                          snprintf(p_afd_action_dir,
-                                   MAX_PATH_LENGTH - (p_afd_action_dir - afd_action_dir),
-                                   "%s%s/",
-                                   ACTION_TARGET_DIR, ACTION_SUCCESS_DIR);
-               if (stat(afd_action_dir, &stat_buf) == -1)
-               {
-                  if (errno != ENOENT)
-                  {
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                _("Failed to look at directory `%s' : %s"),
-                                afd_action_dir, strerror(errno));
-                  }
-               }
-               else
-               {
-                  if ((S_ISDIR(stat_buf.st_mode)) &&
-                      (last_action_success_dir_time < stat_buf.st_mtime))
-                  {
-                     last_action_success_dir_time = stat_buf.st_mtime;
-                     for (i = 0; i < no_of_hosts; i++)
-                     {
-                        (void)strcpy(p_script, fsa[i].host_alias);
-                        if (eaccess(afd_action_dir, (R_OK | X_OK)) == 0)
-                        {
-                           fsa[i].host_status |= HOST_ACTION_SUCCESS;
-                        }
-                        else
-                        {
-                           fsa[i].host_status &= ~HOST_ACTION_SUCCESS;
-                        }
-                     }
-                  }
-               }
-            }
-         }
-         action_dir_check_time = ((now / ACTION_DIR_CHECK_INTERVAL) *
-                                  ACTION_DIR_CHECK_INTERVAL) +
-                                 ACTION_DIR_CHECK_INTERVAL;
-      }
-
-#ifdef WITH_IP_DB
-      if (now > ip_db_reset_time)
-      {
-         int  j,
-              no_of_ip_hl;
-         char *ip_hl = NULL,
-              *p_ip_hl;
-
-         no_of_ip_hl = get_current_ip_hl(&ip_hl, NULL);
-         for (i = 0; i < no_of_hosts; i++)
-         {
-            p_ip_hl = ip_hl;
-            for (j = 0; j < no_of_ip_hl; j++)
-            {
-               if (my_strcmp(fsa[i].real_hostname[0], p_ip_hl) == 0)
-               {
-                  if (j != (no_of_ip_hl - 1))
-                  {
-                     size_t move_size;
-
-                     move_size = (no_of_ip_hl - 1 - j) * MAX_REAL_HOSTNAME_LENGTH;
-                     (void)memmove(p_ip_hl, p_ip_hl + MAX_REAL_HOSTNAME_LENGTH,
-                                   move_size);
-                  }
-                  no_of_ip_hl--;
-                  break;
-               }
-               p_ip_hl += MAX_REAL_HOSTNAME_LENGTH;
-            }
-            fsa[i].host_status |= STORE_IP;
-         }
-         if (no_of_ip_hl > 0)
-         {
-            if (attach_ip_db() == SUCCESS)
-            {
-               p_ip_hl = ip_hl;
-               for (i = 0; i < no_of_ip_hl; i++)
-               {
-                  (void)remove_from_ip_db(p_ip_hl);
-                  p_ip_hl += MAX_REAL_HOSTNAME_LENGTH;
-               }
-               (void)detach_ip_db();
-            }
-         }
-         free(ip_hl);
-         ip_db_reset_time = ((now / IP_DB_RESET_CHECK_INTERVAL) *
-                             IP_DB_RESET_CHECK_INTERVAL) +
-                            IP_DB_RESET_CHECK_INTERVAL;
-      }
-#endif /* WITH_IP_DB */
 
       /* Initialise descriptor set and timeout. */
       FD_SET(afd_cmd_fd, &rset);
@@ -1275,351 +1113,6 @@ main(int argc, char *argv[])
                }
             }
          }
-
-         /*
-          * If the number of errors are larger then max_errors
-          * stop the queue for this host.
-          */
-         if (fsa != NULL)
-         {
-            unsigned char special_flag;
-            unsigned int  host_status,
-                          protocol;
-            int           active_transfers,
-                          error_counter,
-                          host_counter,
-                          host_disabled_counter,
-                          j,
-                          jobs_in_queue = 0,
-                          k,
-                          lock_set = NO,
-                          max_errors,
-                          total_file_counter;
-            off_t         total_file_size;
-            u_off_t       bytes_send[MAX_NO_PARALLEL_JOBS];
-
-            (*heartbeat)++;
-            init_afd_check_fsa();
-            (*heartbeat)++;
-#ifdef HAVE_MMAP
-            if (msync(pid_list, afd_active_size, MS_ASYNC) == -1)
-#else
-            if (msync_emu(pid_list) == -1)
-#endif
-            {
-               system_log(WARN_SIGN, __FILE__, __LINE__,
-                          _("msync() error : %s"), strerror(errno));
-            }
-#ifdef HAVE_FDATASYNC
-            if (in_global_filesystem)
-            {
-               if (fdatasync(afd_active_fd) == -1)
-               {
-                  system_log(WARN_SIGN, __FILE__, __LINE__,
-                             _("fdatasync() error : %s"), strerror(errno));
-               }
-            }
-#endif
-
-            for (i = 0; i < no_of_hosts; i++)
-            {
-               jobs_in_queue += fsa[i].jobs_queued;
-
-               /* Update group summary. */
-               if (fsa[i].real_hostname[0][0] == 1)
-               {
-                  active_transfers = 0;
-                  (void)memset(bytes_send, 0,
-                               (MAX_NO_PARALLEL_JOBS * sizeof(u_off_t)));
-                  error_counter = 0;
-                  host_status = 0;
-                  max_errors = 0;
-                  protocol = 0;
-                  special_flag = 0;
-                  total_file_counter = 0;
-                  total_file_size = 0;
-                  host_counter = 0;
-                  host_disabled_counter = 0;
-                  for (j = i + 1; ((j < no_of_hosts) &&
-                                   (fsa[j].real_hostname[0][0] != 1)); j++)
-                  {
-                     active_transfers += fsa[j].active_transfers;
-                     error_counter += fsa[j].error_counter;
-                     host_status |= fsa[j].host_status;
-                     max_errors += fsa[j].max_errors;
-                     protocol |= fsa[j].protocol;
-                     special_flag |= fsa[j].special_flag;
-                     if (fsa[j].special_flag & HOST_DISABLED)
-                     {
-                        host_disabled_counter++;
-                     }
-                     total_file_counter += fsa[j].total_file_counter;
-                     total_file_size += fsa[j].total_file_size;
-                     for (k = 0; k < fsa[j].allowed_transfers; k++)
-                     {
-                        bytes_send[k] += fsa[j].job_status[k].bytes_send;
-                     }
-                     host_counter++;
-                  }
-                  fsa[i].active_transfers = active_transfers;
-                  for (k = 0; k < MAX_NO_PARALLEL_JOBS; k++)
-                  {
-                     fsa[i].job_status[k].bytes_send = bytes_send[k];
-                  }
-                  fsa[i].error_counter = error_counter;
-                  fsa[i].host_status = host_status;
-                  fsa[i].max_errors = max_errors;
-                  fsa[i].protocol = protocol;
-                  if ((host_disabled_counter != host_counter) &&
-                      (special_flag & HOST_DISABLED))
-                  {
-                     /*
-                      * Don't show white status if not all host in group
-                      * are disabled.
-                      */
-                     special_flag &= ~HOST_DISABLED;
-                  }
-                  fsa[i].special_flag = special_flag;
-                  fsa[i].total_file_counter = total_file_counter;
-                  fsa[i].total_file_size = total_file_size;
-                  i = j - 1;
-               }
-            }
-            p_afd_status->jobs_in_queue = jobs_in_queue;
-
-            for (i = 0; i < no_of_hosts; i++)
-            {
-               if (fsa[i].real_hostname[0][0] != 1)
-               {
-                  (*heartbeat)++;
-                  if (((fsa[i].error_counter >= fsa[i].max_errors) &&
-                       ((fsa[i].host_status & AUTO_PAUSE_QUEUE_STAT) == 0)) ||
-                      ((fsa[i].error_counter < fsa[i].max_errors) &&
-                       (fsa[i].host_status & AUTO_PAUSE_QUEUE_STAT)))
-                  {
-                     char *sign;
-
-#ifdef LOCK_DEBUG
-                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                     lock_set = YES;
-                     fsa[i].host_status ^= AUTO_PAUSE_QUEUE_STAT;
-                     if (fsa[i].error_counter >= fsa[i].max_errors)
-                     {
-                        if ((fsa[i].host_status & HOST_ERROR_OFFLINE_STATIC) ||
-                            (fsa[i].host_status & HOST_ERROR_OFFLINE) ||
-                            (fsa[i].host_status & HOST_ERROR_OFFLINE_T))
-                        {
-                           sign = OFFLINE_SIGN;
-                        }
-                        else
-                        {
-                           sign = WARN_SIGN;
-                        }
-                        if ((fsa[i].host_status & PENDING_ERRORS) == 0)
-                        {
-                           fsa[i].host_status |= PENDING_ERRORS;
-                           event_log(0L, EC_HOST, ET_EXT, EA_ERROR_START, "%s",
-                                     fsa[i].host_alias);
-                           error_action(fsa[i].host_alias, "start", HOST_ERROR_ACTION);
-                        }
-                        ia_trans_log(sign, __FILE__, __LINE__, i,
-                                     _("Stopped input queue, since there are to many errors."));
-                        event_log(0L, EC_HOST, ET_AUTO, EA_STOP_QUEUE,
-                                  "%s%cErrors %d >= max errors %d",
-                                  fsa[i].host_alias, SEPARATOR_CHAR,
-                                  fsa[i].error_counter, fsa[i].max_errors);
-                     }
-                     else
-                     {
-                        if ((fsa[i].host_status & HOST_ERROR_OFFLINE_STATIC) ||
-                            (fsa[i].host_status & HOST_ERROR_OFFLINE) ||
-                            (fsa[i].host_status & HOST_ERROR_OFFLINE_T))
-                        {
-                           sign = OFFLINE_SIGN;
-                        }
-                        else
-                        {
-                           sign = INFO_SIGN;
-                        }
-                        if (fsa[i].last_connection > fsa[i].first_error_time)
-                        {
-                           if (now > fsa[i].end_event_handle)
-                           {
-                              fsa[i].host_status &= ~EVENT_STATUS_FLAGS;
-                              if (fsa[i].end_event_handle > 0L)
-                              {
-                                 fsa[i].end_event_handle = 0L;
-                              }
-                              if (fsa[i].start_event_handle > 0L)
-                              {
-                                 fsa[i].start_event_handle = 0L;
-                              }
-                           }
-                           else
-                           {
-                              fsa[i].host_status &= ~EVENT_STATUS_STATIC_FLAGS;
-                           }
-                           event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",
-                                     fsa[i].host_alias);
-                           error_action(fsa[i].host_alias, "stop", HOST_ERROR_ACTION);
-                        }
-                        ia_trans_log(sign, __FILE__, __LINE__, i,
-                                     _("Started input queue that has been stopped due to too many errors."));
-                        event_log(0L, EC_HOST, ET_AUTO, EA_START_QUEUE, "%s",
-                                  fsa[i].host_alias);
-                     }
-                  }
-#ifdef WITH_ACKNOWLEDGED_OFFLINE_CHECK
-                  if ((fsa[i].error_counter == 0) &&
-                      (fsa[i].host_status & (HOST_ERROR_OFFLINE | HOST_ERROR_OFFLINE_T | HOST_ERROR_ACKNOWLEDGED | HOST_ERROR_ACKNOWLEDGED_T)))
-                  {
-                     if (fsa[i].host_status & HOST_ERROR_OFFLINE)
-                     {
-                        fsa[i].host_status &= ~HOST_ERROR_OFFLINE;
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   "Hmm, removing HOST_ERROR_OFFLINE flag from %s",
-                                   fsa[i].host_alias);
-                     }
-                     if ((fsa[i].host_status & HOST_ERROR_OFFLINE_T) &&
-                         (now > fsa[i].end_event_handle))
-                     {
-                        fsa[i].host_status &= ~HOST_ERROR_OFFLINE_T;
-                        fsa[i].end_event_handle = 0L;
-                        fsa[i].start_event_handle = 0L;
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   "Hmm, removing HOST_ERROR_OFFLINE_T flag from %s",
-                                   fsa[i].host_alias);
-                     }
-                     if (fsa[i].host_status & HOST_ERROR_ACKNOWLEDGED)
-                     {
-                        fsa[i].host_status &= ~HOST_ERROR_ACKNOWLEDGED;
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   "Hmm, removing HOST_ERROR_ACKNOWLEDGED flag from %s",
-                                   fsa[i].host_alias);
-                     }
-                     if ((fsa[i].host_status & HOST_ERROR_ACKNOWLEDGED_T) &&
-                         (now > fsa[i].end_event_handle))
-                     {
-                        fsa[i].host_status &= ~HOST_ERROR_ACKNOWLEDGED_T;
-                        fsa[i].end_event_handle = 0L;
-                        fsa[i].start_event_handle = 0L;
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   "Hmm, removing HOST_ERROR_ACKNOWLEDGED_T flag from %s",
-                                   fsa[i].host_alias);
-                     }
-                  }
-#endif /* WITH_ACKNOWLEDGED_OFFLINE_CHECK */
-                  if (((*(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) & DISABLE_HOST_WARN_TIME) == 0) &&
-                      (fsa[i].warn_time > 0L) &&
-                      ((now - fsa[i].last_connection) >= fsa[i].warn_time))
-                  {
-                     if ((fsa[i].host_status & HOST_WARN_TIME_REACHED) == 0)
-                     {
-                        char *sign;
-
-                        if (lock_set == NO)
-                        {
-#ifdef LOCK_DEBUG
-                           lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                           lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                           lock_set = YES;
-                        }
-                        fsa[i].host_status |= HOST_WARN_TIME_REACHED;
-                        if ((fsa[i].host_status & HOST_ERROR_OFFLINE_STATIC) ||
-                            (fsa[i].host_status & HOST_ERROR_OFFLINE) ||
-                            (fsa[i].host_status & HOST_ERROR_OFFLINE_T))
-                        {
-                           sign = OFFLINE_SIGN;
-                        }
-                        else
-                        {
-                           sign = WARN_SIGN;
-                        }
-                        system_log(sign, __FILE__, __LINE__,
-                                   _("%-*s: Warn time reached."),
-                                   MAX_HOSTNAME_LENGTH, fsa[i].host_dsp_name);
-                        error_action(fsa[i].host_alias, "start", HOST_WARN_ACTION);
-                        event_log(0L, EC_HOST, ET_AUTO, EA_WARN_TIME_SET, "%s",
-                                  fsa[i].host_alias);
-                     }
-                  }
-                  else
-                  {
-                     if (fsa[i].host_status & HOST_WARN_TIME_REACHED)
-                     {
-                        if (lock_set == NO)
-                        {
-#ifdef LOCK_DEBUG
-                           lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                           lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                           lock_set = YES;
-                        }
-                        fsa[i].host_status &= ~HOST_WARN_TIME_REACHED;
-                        error_action(fsa[i].host_alias, "stop", HOST_WARN_ACTION);
-                        event_log(0L, EC_HOST, ET_AUTO, EA_WARN_TIME_UNSET, "%s",
-                                  fsa[i].host_alias);
-                     }
-                  }
-                  if ((p_afd_status->jobs_in_queue >= (link_max / 2)) &&
-                      ((fsa[i].host_status & DANGER_PAUSE_QUEUE_STAT) == 0) &&
-                      (fsa[i].total_file_counter > danger_no_of_files))
-                  {
-                     if (lock_set == NO)
-                     {
-#ifdef LOCK_DEBUG
-                        lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                        lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                        lock_set = YES;
-                     }
-                     fsa[i].host_status |= DANGER_PAUSE_QUEUE_STAT;
-                     ia_trans_log(WARN_SIGN, __FILE__, __LINE__, i,
-                                  _("Stopped input queue, since there are to many jobs in the input queue."));
-                     event_log(0L, EC_HOST, ET_AUTO, EA_STOP_QUEUE,
-                               _("%s%cNumber of files %d > file threshold %d"),
-                               fsa[i].host_alias, SEPARATOR_CHAR,
-                               fsa[i].total_file_counter, danger_no_of_files);
-                  }
-                  else if ((fsa[i].host_status & DANGER_PAUSE_QUEUE_STAT) &&
-                           ((fsa[i].total_file_counter < (danger_no_of_files / 2)) ||
-                            (p_afd_status->jobs_in_queue < (link_max / 4))))
-                       {
-                          if (lock_set == NO)
-                          {
-#ifdef LOCK_DEBUG
-                             lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                             lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                             lock_set = YES;
-                          }
-                          fsa[i].host_status &= ~DANGER_PAUSE_QUEUE_STAT;
-                          ia_trans_log(INFO_SIGN, __FILE__, __LINE__, i,
-                                       _("Started input queue, that was stopped due to too many jobs in the input queue."));
-                          event_log(0L, EC_HOST, ET_AUTO, EA_START_QUEUE, "%s",
-                                    fsa[i].host_alias);
-                       }
-
-                  if (lock_set == YES)
-                  {
-#ifdef LOCK_DEBUG
-                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (i * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                     lock_set = NO;
-                  }
-               }
-            } /* for (i = 0; i < no_of_hosts; i++) */
-         } /* if (fsa != NULL) */
       }
            /* Did we get a message from the process */
            /* that controls the AFD?                */
@@ -1648,6 +1141,94 @@ main(int argc, char *argv[])
                              system_log(ERROR_SIGN, __FILE__, __LINE__,
                                         _("Failed to send ACKN : %s"),
                                         strerror(errno));
+                          }
+
+                          if (proc_table[AFD_WORKER_NO].pid > 0)
+                          {
+                             int  fd;
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                             int  writefd;
+#endif
+                             char afd_worker_cmd[MAX_PATH_LENGTH];
+
+                             (void)snprintf(afd_worker_cmd, MAX_PATH_LENGTH,
+                                            "%s%s%s", p_work_dir, FIFO_DIR, AFD_WORKER_CMD_FIFO);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                             if (open_fifo_rw(afd_worker_cmd, &fd, &write_fd) == -1)
+#else
+                             if ((fd = coe_open(afd_worker_cmd, O_RDWR)) == -1)
+#endif
+                             {
+                                system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                           "Failed to open %s to send %s SHUTDOWN command : %s",
+                                           afd_worker_cmd, AFD_WORKER, strerror(errno));
+                             }
+                             else
+                             {
+                                int   j;
+                                pid_t pid;
+
+                                p_afd_status->afd_worker = SHUTDOWN;
+                                if (send_cmd(SHUTDOWN, fd) < 0)
+                                {
+                                   system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                              _("Failed to send SHUTDOWN to %s : %s"),
+                                              AFD_WORKER, strerror(errno));
+                                }
+                                for (j = 0; j < MAX_SHUTDOWN_TIME; j++)
+                                {
+                                   if ((pid = waitpid(proc_table[AFD_WORKER_NO].pid, NULL, WNOHANG)) > 0)
+                                   {
+                                      if (pid == proc_table[AFD_WORKER_NO].pid)
+                                      {
+                                         proc_table[AFD_WORKER_NO].pid = 0;
+                                         p_afd_status->afd_worker = STOPPED;
+                                      }
+                                      else
+                                      {
+                                         int gotcha = NO,
+                                             k;
+
+                                         for (k = 0; k < NO_OF_PROCESS; k++)
+                                         {
+                                            (*heartbeat)++;
+                                            if (proc_table[k].pid == pid)
+                                            {
+                                               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
+                                                          _("Premature end of process %s (PID=%d), while waiting for %s."),
+#else
+                                                          _("Premature end of process %s (PID=%lld), while waiting for %s."),
+#endif
+                                                          proc_table[k].proc_name,
+                                                          (pri_pid_t)proc_table[k].pid),
+                                               proc_table[k].pid = 0;
+                                               gotcha = YES;
+                                               break;
+                                            }
+                                         }
+                                         if (gotcha == NO)
+                                         {
+                                            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
+                                                       _("Caught some unknown zombie with PID %d while waiting for FD."),
+#else
+                                                       _("Caught some unknown zombie with PID ll%d while waiting for FD."),
+#endif
+                                                       (pri_pid_t)pid);
+                                         }
+                                      }
+                                   }
+                                   else
+                                   {
+                                      my_usleep(100000L);
+                                   }
+                                   if (proc_table[AFD_WORKER_NO].pid == 0)
+                                   {
+                                      break;
+                                   }
+                                }
+                             }
                           }
 
                           if (proc_table[AMG_NO].pid > 0)
@@ -2009,9 +1590,7 @@ main(int argc, char *argv[])
 /*+++++++++++++++++++++++++ get_afd_config_value() ++++++++++++++++++++++*/
 static void
 get_afd_config_value(int          *afdd_port,
-                     int          *danger_no_of_files,
                      unsigned int *default_age_limit,
-                     int          *amg_rescan_time,
                      int          *in_global_filesystem)
 {
    char *buffer,
@@ -2047,20 +1626,6 @@ get_afd_config_value(int          *afdd_port,
       {
          *afdd_port = -1;
       }
-      if (get_definition(buffer, MAX_COPIED_FILES_DEF,
-                         value, MAX_INT_LENGTH) != NULL)
-      {
-         *danger_no_of_files = atoi(value);
-         if (*danger_no_of_files < 1)
-         {
-            *danger_no_of_files = MAX_COPIED_FILES;
-         }
-         *danger_no_of_files = *danger_no_of_files + *danger_no_of_files;
-      }
-      else
-      {
-         *danger_no_of_files = MAX_COPIED_FILES + MAX_COPIED_FILES;
-      }
       if (get_definition(buffer, DEFAULT_AGE_LIMIT_DEF,
                          value, MAX_INT_LENGTH) != NULL)
       {
@@ -2069,15 +1634,6 @@ get_afd_config_value(int          *afdd_port,
       else
       {
          *default_age_limit = DEFAULT_AGE_LIMIT;
-      }
-      if (get_definition(buffer, AMG_DIR_RESCAN_TIME_DEF,
-                         value, MAX_INT_LENGTH) != NULL)
-      {
-         *amg_rescan_time = atoi(value);
-      }
-      else
-      {
-         *amg_rescan_time = DEFAULT_RESCAN_TIME;
       }
       if (get_definition(buffer, IN_GLOBAL_FILESYSTEM_DEF,
                          value, MAX_INT_LENGTH) != NULL)
@@ -2104,9 +1660,7 @@ get_afd_config_value(int          *afdd_port,
    else
    {
       *afdd_port = -1;
-      *danger_no_of_files = MAX_COPIED_FILES + MAX_COPIED_FILES;
       *default_age_limit = DEFAULT_AGE_LIMIT;
-      *amg_rescan_time = DEFAULT_RESCAN_TIME;
       *in_global_filesystem = NO;
    }
 
@@ -2509,7 +2063,8 @@ delete_old_afd_status_files(void)
          {
             continue;
          }
-         if ((strncmp(p_dir->d_name, AFD_STATUS_FILE, AFD_STATUS_FILE_LENGTH - 1) == 0) &&
+         if ((strncmp(p_dir->d_name, AFD_STATUS_FILE,
+                      AFD_STATUS_FILE_LENGTH - 1) == 0) &&
              (memcmp(p_dir->d_name, current_afd_status_file,
                      current_afd_status_file_length + 1) != 0))
          {
@@ -2699,7 +2254,8 @@ zombie_check(void)
                          (i == ALDAD_NO) ||
 #endif
                          (i == TDBLOG_NO) || (i == AW_NO) ||
-                         (i == AFDD_NO) || (i == STAT_NO))
+                         (i == AFDD_NO) || (i == STAT_NO) ||
+                         (i == AFD_WORKER_NO))
                      {
                         proc_table[i].pid = make_process(proc_table[i].proc_name,
 #ifdef BLOCK_SIGNALS
@@ -2815,7 +2371,7 @@ stuck_transfer_check(time_t current_time)
    {
       int i, j;
 
-      init_afd_check_fsa();
+      (void)check_fsa(NO, AFD);
 
       for (i = 0; i < no_of_hosts; i++)
       {
@@ -2861,46 +2417,6 @@ stuck_transfer_check(time_t current_time)
       }
    }
 #endif
-
-   return;
-}
-
-
-/*####################### init_afd_check_fsa() ##########################*/
-static void
-init_afd_check_fsa(void)
-{
-   if (fsa != NULL)
-   {
-      char *ptr;
-
-      ptr = (char *)fsa;
-      ptr -= AFD_WORD_OFFSET;
-
-      if (*(int *)ptr == STALE)
-      {
-#ifdef HAVE_MMAP
-         if (munmap(ptr, fsa_size) == -1)
-         {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       _("Failed to munmap() from FSA [fsa_id = %d fsa_size = %d] : %s"),
-                       fsa_id, fsa_size, strerror(errno));
-         }
-#else
-         if (munmap_emu(ptr) == -1)
-         {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       _("Failed to munmap_emu() from FSA (%d)"), fsa_id);
-         }
-#endif
-
-         if (fsa_attach(AFD) != SUCCESS)
-         {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       _("Failed to attach to FSA."));
-         }
-      }
-   }
 
    return;
 }
@@ -3047,7 +2563,7 @@ afd_exit(void)
        * As the last step store all important values in a machine
        * indepandant format.
        */
-      init_afd_check_fsa();
+      (void)check_fsa(NO, AFD);
       if (fsa != NULL)
       {
          (void)fra_attach_passive();

@@ -226,6 +226,8 @@ typedef unsigned long       u_long_64;
 #endif
 #define AFD                        "init_afd"
 #define AFD_LENGTH                 (sizeof(AFD) - 1)
+#define AFD_WORKER                 "init_afd_worker"
+#define AFD_WORKER_LENGTH          (sizeof(AFD_WORKER) - 1)
 #define AMG                        "amg"
 #define AMG_LENGTH                 (sizeof(AMG) - 1)
 #define FD                         "fd"
@@ -602,13 +604,14 @@ typedef unsigned long       u_long_64;
 # define TRANSFER_RATE_OFFSET      0
 #endif
 #define MAINTAINER_LOG_NO          (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1)
+#define AFD_WORKER_NO              (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1 + 1)
 #if defined (_INPUT_LOG) || defined (_OUTPUT_LOG) || defined (_CONFIRMATION_LOG) || defined (_DELETE_LOG) || defined (_PRODUCTION_LOG) || defined (_DISTRIBUTION_LOG)
 # define ALDAD_OFFSET              1
-# define ALDAD_NO                  (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1 + ALDAD_OFFSET)
+# define ALDAD_NO                  (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1 + 1 + ALDAD_OFFSET)
 #else
 # define ALDAD_OFFSET              0
 #endif
-#define NO_OF_PROCESS              (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1 + ALDAD_OFFSET + 1)
+#define NO_OF_PROCESS              (AFDD_NO + ATPD_OFFSET + WMOD_OFFSET + DEMCD_OFFSET + MAPPER_OFFSET + INPUT_OFFSET + OUTPUT_OFFSET + CONFIRMATION_OFFSET + DELETE_OFFSET + PRODUCTION_OFFSET + DISTRIBUTION_OFFSET + TRANSFER_RATE_OFFSET + 1 + 1 + ALDAD_OFFSET + 1)
 #define SHOW_OLOG_NO               30
 
 #define NA                         -1
@@ -1808,6 +1811,7 @@ typedef unsigned long       u_long_64;
 #define MON_LOG_FIFO               "/monitor_log.fifo"
 #define AFD_CMD_FIFO               "/afd_cmd.fifo"
 #define AFD_RESP_FIFO              "/afd_resp.fifo"
+#define AFD_WORKER_CMD_FIFO        "/afd_worker_cmd.fifo"
 #define AMG_CMD_FIFO               "/amg_cmd.fifo"
 #define DB_UPDATE_FIFO             "/db_update.fifo"
 #define DB_UPDATE_REPLY_FIFO       "/db_update_reply.fifo."
@@ -3059,6 +3063,7 @@ struct afd_status
 #if defined (_INPUT_LOG) || defined (_OUTPUT_LOG) || defined (_CONFIRMATION_LOG) || defined (_DELETE_LOG) || defined (_PRODUCTION_LOG) || defined (_DISTRIBUTION_LOG)
           signed char    aldad;
 #endif
+          signed char    afd_worker;
           unsigned int   sys_log_ec;         /* System log entry counter. */
           char           sys_log_fifo[LOG_FIFO_SIZE + 1];
           char           sys_log_history[MAX_LOG_HISTORY];
