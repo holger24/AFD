@@ -138,7 +138,7 @@ window_size(int *window_width, int *window_height)
                }
             }
             pos++;
-            if (pos >= no_of_hosts)
+            if (pos >= no_of_hosts_visible)
             {
                break;
             }
