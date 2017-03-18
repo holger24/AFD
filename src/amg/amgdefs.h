@@ -1,6 +1,6 @@
 /*
  *  amgdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -417,6 +417,14 @@ struct dir_data
                                             /* Storage for the local     */
                                             /* remote directory.         */
 #ifdef NEW_FRA
+          char          ls_data_alias[MAX_DIR_ALIAS_LENGTH + 1];
+                                            /* This allows the user to   */
+                                            /* specify the same alias for*/
+                                            /* two or more retrieve dirs.*/
+                                            /* Usefull when the dir name */
+                                            /* has the %T time modifier  */
+                                            /* and the time frame is     */
+                                            /* across a new day.         */
           char          timezone[MAX_TIMEZONE_LENGTH + 1];
                                             /* The name of the timezone  */
                                             /* is stored here when set.  */

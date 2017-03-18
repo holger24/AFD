@@ -1,7 +1,7 @@
 /*
  *  eval_dir_options.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,6 +53,7 @@ DESCR__S_M3
  **        store retrieve list [once]
  **        priority <value>                      [DEFAULT 9]
  **        force reread
+ **        ls data filename <file name>
  **        max process <value>                   [DEFAULT 10]
  **        max files <value>                     [DEFAULT ?]
  **        max size <value>                      [DEFAULT ?]
@@ -101,6 +102,8 @@ DESCR__S_M3
  **   22.04.2016 H.Kiehl Added "local remote dir" option.
  **   23.06.2016 H.Kiehl Function now returns SUCCESS if no problems where
  **                      encountered during evaluation.
+ **   18.03.2017 H.Kiehl Added "ls data filename" to allow user to set
+ **                      this name.
  **
  */
 DESCR__E_M3
@@ -179,8 +182,9 @@ extern struct dir_data *dd;
 #define DEL_UNREADABLE_FILES_FLAG        2
 #ifdef NEW_FRA
 #define TIMEZONE_FLAG                    4
+#define LS_DATA_FILENAME_FLAG            8
 #endif
-#define LOCAL_REMOTE_DIR_FLAG            8
+#define LOCAL_REMOTE_DIR_FLAG            16
 
 
 /*########################## eval_dir_options() #########################*/
@@ -243,6 +247,7 @@ eval_dir_options(int dir_pos, char *dir_options)
 #ifdef NEW_FRA
    dd[dir_pos].info_time = default_info_time;
    dd[dir_pos].timezone[0] = '\0';
+   dd[dir_pos].ls_data_alias[0] = '\0';
 #endif
    dd[dir_pos].warn_time = default_warn_time;
    dd[dir_pos].keep_connected = DEFAULT_KEEP_CONNECTED_TIME;
@@ -1147,6 +1152,42 @@ eval_dir_options(int dir_pos, char *dir_options)
               dd[dir_pos].create_source_dir = YES;
            }
 #ifdef NEW_FRA
+      else if (((used2 & LS_DATA_FILENAME_FLAG) == 0) &&
+               (strncmp(ptr, LS_DATA_FILENAME_ID,
+                        LS_DATA_FILENAME_ID_LENGTH) == 0))
+           {
+              int  length = 0;
+
+              used2 |= LS_DATA_FILENAME_FLAG;
+              ptr += LS_DATA_FILENAME_ID_LENGTH;
+              while ((*ptr == ' ') || (*ptr == '\t'))
+              {
+                 ptr++;
+              }
+              while ((length < MAX_DIR_ALIAS_LENGTH) && (*ptr != '\n') &&
+                     (*ptr != '\0'))
+              {
+                 dd[dir_pos].ls_data_alias[length] = *ptr;
+                 ptr++; length++;
+              }
+              if ((length > 0) && (length != MAX_DIR_ALIAS_LENGTH))
+              {
+                 dd[dir_pos].ls_data_alias[length] = '\0';
+              }
+              else
+              {
+                 dd[dir_pos].ls_data_alias[0] = '\0';
+                 system_log(WARN_SIGN, __FILE__, __LINE__,
+                           "For directory option `%s' for directory `%s', the value is to long. May only be %d bytes long.",
+                           LS_DATA_FILENAME_ID, dd[dir_pos].dir_name,
+                           MAX_DIR_ALIAS_LENGTH);
+                 problems_found++;
+              }
+              while ((*ptr != '\n') && (*ptr != '\0'))
+              {
+                 ptr++;
+              }
+           }
       else if (((used2 & TIMEZONE_FLAG) == 0) &&
                (strncmp(ptr, TIMEZONE_ID, TIMEZONE_ID_LENGTH) == 0))
            {

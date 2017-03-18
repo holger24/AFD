@@ -1021,6 +1021,8 @@ typedef unsigned long       u_long_64;
 #define DO_NOT_PARALLELIZE_ID_LENGTH     (sizeof(DO_NOT_PARALLELIZE_ID) - 1)
 #define TIMEZONE_ID                      "timezone"
 #define TIMEZONE_ID_LENGTH               (sizeof(TIMEZONE_ID) - 1)
+#define LS_DATA_FILENAME_ID              "ls data filename"
+#define LS_DATA_FILENAME_ID_LENGTH       (sizeof(LS_DATA_FILENAME_ID) - 1)
 #define LOCAL_REMOTE_DIR_ID              "local remote dir"
 #define LOCAL_REMOTE_DIR_ID_LENGTH       (sizeof(LOCAL_REMOTE_DIR_ID) - 1)
 #define UNKNOWN_FILES                    1
@@ -2699,6 +2701,14 @@ struct fileretrieve_status
                                             /*       mrz_mf              */
           char          url[MAX_RECIPIENT_LENGTH];
 #ifdef NEW_FRA
+          char          ls_data_alias[MAX_DIR_ALIAS_LENGTH + 1];
+                                            /* This allows the user to   */
+                                            /* specify the same alias for*/
+                                            /* two or more retrieve dirs.*/
+                                            /* Usefull when the dir name */
+                                            /* has the %T time modifier  */
+                                            /* and the time frame is     */
+                                            /* across a new day.         */
           char          retrieve_work_dir[MAX_FILENAME_LENGTH];
                                             /* Other work dir for        */
                                             /* retrieving data.          */

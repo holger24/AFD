@@ -1,6 +1,6 @@
 /*
  *  create_fra.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -379,6 +379,7 @@ create_fra(int no_of_dirs)
          (void)strcpy(fra[i].host_alias, dd[i].host_alias);
          (void)strcpy(fra[i].url, dd[i].url);
 #ifdef NEW_FRA
+         (void)strcpy(fra[i].ls_data_alias, dd[i].ls_data_alias);
          (void)strcpy(fra[i].retrieve_work_dir, dd[i].retrieve_work_dir);
 #endif
          (void)strcpy(fra[i].wait_for_filename, dd[i].wait_for_filename);
@@ -524,6 +525,7 @@ create_fra(int no_of_dirs)
          (void)strcpy(fra[i].host_alias, dd[i].host_alias);
          (void)strcpy(fra[i].url, dd[i].url);
 #ifdef NEW_FRA
+         (void)strcpy(fra[i].ls_data_alias, dd[i].ls_data_alias);
          (void)strcpy(fra[i].retrieve_work_dir, dd[i].retrieve_work_dir);
 #endif
          (void)strcpy(fra[i].wait_for_filename, dd[i].wait_for_filename);

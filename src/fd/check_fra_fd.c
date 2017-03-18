@@ -1,6 +1,6 @@
 /*
  *  check_fra_fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -104,6 +104,7 @@ struct old_retrieve_data
           char          dir_alias[MAX_DIR_ALIAS_LENGTH + 1];
           char          url[MAX_RECIPIENT_LENGTH];
 #ifdef NEW_FRA
+          char          ls_data_alias[MAX_DIR_ALIAS_LENGTH + 1];
           char          retrieve_work_dir[MAX_FILENAME_LENGTH];
 #endif
           char          fullname[MAX_PATH_LENGTH];
@@ -189,6 +190,8 @@ check_fra_fd(void)
                {
                   (void)strcpy(ord[i].url, fra[retrieve_list[i]].url);
 #ifdef NEW_FRA
+                  (void)strcpy(ord[i].ls_data_alias,
+                               fra[retrieve_list[i]].ls_data_alias);
                   (void)strcpy(ord[i].retrieve_work_dir,
                                fra[retrieve_list[i]].retrieve_work_dir);
 #else
@@ -248,27 +251,52 @@ check_fra_fd(void)
                if (get_url_pos(ord[i].url,
                                ord[i].dir_alias, &pos) == INCORRECT)
                {
-                  char fullname[MAX_PATH_LENGTH];
-
                   if ((ord[i].stupid_mode != YES) && (ord[i].remove == NO))
                   {
-                     (void)snprintf(fullname, MAX_PATH_LENGTH, "%s%s%s%s/%s",
-                                    p_work_dir, AFD_FILE_DIR, INCOMING_DIR,
-                                    LS_DATA_DIR, ord[i].dir_alias);
-                     if (unlink(fullname) == -1)
+#ifdef NEW_FRA
+                     int delete_it = YES;
+
+                     if (ord[i].ls_data_alias[0] != '\0')
                      {
-                        if (errno != ENOENT)
+                        /*
+                         * Lets first check if the alias is not still in
+                         * use at another directory entry.
+                         */
+                        for (k = 0; k < no_of_dirs; k++)
                         {
-                           system_log(WARN_SIGN, __FILE__, __LINE__,
-                                      "Failed to unlink() old ls data file %s : %s",
-                                      fullname, strerror(errno));
+                           if ((CHECK_STRCMP(fra[i].dir_alias, ord[i].ls_data_alias) == 0) ||
+                               (CHECK_STRCMP(fra[i].ls_data_alias, ord[i].ls_data_alias) == 0))
+                           {
+                              delete_it = NO;
+                              break;
+                           }
                         }
                      }
-                     else
+                     if (delete_it == YES)
                      {
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   "Remove old ls data file %s.", fullname);
+#endif
+                        char fullname[MAX_PATH_LENGTH];
+
+                        (void)snprintf(fullname, MAX_PATH_LENGTH, "%s%s%s%s/%s",
+                                       p_work_dir, AFD_FILE_DIR, INCOMING_DIR,
+                                       LS_DATA_DIR, ord[i].dir_alias);
+                        if (unlink(fullname) == -1)
+                        {
+                           if (errno != ENOENT)
+                           {
+                              system_log(WARN_SIGN, __FILE__, __LINE__,
+                                         "Failed to unlink() old ls data file %s : %s",
+                                         fullname, strerror(errno));
+                           }
+                        }
+                        else
+                        {
+                           system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                      "Removed old ls data file %s.", fullname);
+                        }
+#ifdef NEW_FRA
                      }
+#endif
                   }
 
                   /*

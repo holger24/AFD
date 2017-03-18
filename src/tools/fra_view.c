@@ -1,6 +1,6 @@
 /*
  *  fra_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -210,6 +210,7 @@ main(int argc, char *argv[])
          (void)fprintf(stdout, "Directory ID         : %x\n", fra[i].dir_id);
          (void)fprintf(stdout, "URL                  : %s\n", fra[i].url);
 #ifdef NEW_FRA
+         (void)fprintf(stdout, "ls data alias        : %s\n", fra[i].ls_data_alias);
          (void)fprintf(stdout, "Retrieve work dir    : %s\n", fra[i].retrieve_work_dir);
 #endif
          (void)fprintf(stdout, "Host alias           : %s\n", fra[i].host_alias);
