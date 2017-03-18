@@ -310,12 +310,12 @@ draw_mon_line_status(int pos, signed char delta, int x, int y)
    {
       draw_plus_minus(pos, x, y);
 
-      draw_afd_identifier(pos, x + (3 * glyph_width), y);
+      draw_afd_identifier(pos, x - DEFAULT_FRAME_SPACE + (3 * glyph_width), y);
 
       /* Draw status LED's of remote AFD. */
-      draw_mon_proc_led(AMG_LED, connect_data[pos].amg, x + (3 * glyph_width), y);
-      draw_mon_proc_led(FD_LED, connect_data[pos].fd, x + (3 * glyph_width), y);
-      draw_mon_proc_led(AW_LED, connect_data[pos].archive_watch, x + (3 * glyph_width), y);
+      draw_mon_proc_led(AMG_LED, connect_data[pos].amg, x - DEFAULT_FRAME_SPACE + (3 * glyph_width), y);
+      draw_mon_proc_led(FD_LED, connect_data[pos].fd, x - DEFAULT_FRAME_SPACE + (3 * glyph_width), y);
+      draw_mon_proc_led(AW_LED, connect_data[pos].archive_watch, x - DEFAULT_FRAME_SPACE + (3 * glyph_width), y);
    }
    else
    {
@@ -456,11 +456,11 @@ draw_plus_minus(int pos, int x, int y)
 #endif
 
    XDrawImageString(display, line_window, color_letter_gc,
-                    DEFAULT_FRAME_SPACE + x,
+                    x,
                     y + text_offset + SPACE_ABOVE_LINE,
                     plus_minus_str, 3);
    XDrawImageString(display, line_pixmap, color_letter_gc,
-                    DEFAULT_FRAME_SPACE + x,
+                    x,
                     y + text_offset + SPACE_ABOVE_LINE,
                     plus_minus_str, 3);
 

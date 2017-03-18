@@ -590,12 +590,11 @@ in_pm_area(XEvent *event)
 #ifdef _DEBUG
    (void)fprintf(stderr,
                  "x_offset=%d y_offset=%d X:%d-%d Y:%d-%d\n",
-                 x_offset, y_offset,
-                 DEFAULT_FRAME_SPACE, (DEFAULT_FRAME_SPACE + (3 * glyph_width)),
+                 x_offset, y_offset, 0, (3 * glyph_width),
                  SPACE_ABOVE_LINE, (line_height - SPACE_BELOW_LINE));
 #endif
-   if ((x_offset > DEFAULT_FRAME_SPACE) &&
-       (x_offset < (DEFAULT_FRAME_SPACE + (3 * glyph_width))) &&
+   if ((x_offset > 0) &&
+       (x_offset < (3 * glyph_width)) &&
        (y_offset > SPACE_ABOVE_LINE) &&
        (y_offset < (line_height - SPACE_BELOW_LINE)))
    {
