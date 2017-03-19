@@ -1,6 +1,6 @@
 /*
  *  dir_ctrl.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,8 +26,6 @@
 #define DEFAULT_NO_OF_ROWS             50
 #define DEFAULT_OTHER_OPTIONS          0
 #define BAR_LENGTH_MODIFIER            7
-
-#define FORCE_SHIFT_SELECT_W           0
 
 /* Redraw times for dir_ctrl. */
 #define STARTING_DIR_REDRAW_TIME       150

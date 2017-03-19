@@ -148,8 +148,6 @@
 #define JOB_STYLE_COMPACT               5
 #define JOB_STYLE_NONE                  6
 
-#define FORCE_SHIFT_SELECT_W            0
-
 #define QUEUE_COUNTER_CHARS             4
 
 /* Structure definitions. */
@@ -351,6 +349,7 @@ extern void        calc_but_coord(int),
                    popup_event_reason(int, int, int),
                    popup_menu_cb(Widget, XtPointer, XEvent *),
                    redraw_all(void),
+                   save_setup(void),
                    save_setup_cb(Widget, XtPointer, XtPointer),
                    select_host_dialog(Widget, XtPointer, XtPointer),
                    setup_tv_window(void),

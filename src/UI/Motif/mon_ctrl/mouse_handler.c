@@ -634,6 +634,16 @@ save_mon_setup_cb(Widget    w,
                   XtPointer client_data,
                   XtPointer call_data)
 {
+   save_mon_setup();
+
+   return;
+}
+
+
+/*########################## save_mon_setup() ###########################*/
+void
+save_mon_setup(void)
+{
    int  i,
         invisible_group_counter = 0;
 
@@ -961,7 +971,6 @@ mon_popup_cb(Widget    w,
          {
             FREE_RT_ARRAY(mcp.edit_hc_list);
          }
-         free(connect_data);
          free(args);
          FREE_RT_ARRAY(hosts);
          exit(SUCCESS);
@@ -2647,6 +2656,9 @@ change_mon_history_cb(Widget    w,
 void
 change_mon_other_cb(Widget w, XtPointer client_data, XtPointer call_data)
 {
+   int         i,
+               x,
+               y;
    XT_PTR_TYPE item_no = (XT_PTR_TYPE)client_data;
 
    switch (item_no)
@@ -2661,6 +2673,41 @@ change_mon_other_cb(Widget w, XtPointer client_data, XtPointer call_data)
          {
             other_options |= FORCE_SHIFT_SELECT;
             XtVaSetValues(oow[FORCE_SHIFT_SELECT_W], XmNset, True, NULL);
+         }
+         break;
+
+      case AUTO_SAVE_W :
+         if (other_options & AUTO_SAVE)
+         {
+            other_options &= ~AUTO_SAVE;
+            XtVaSetValues(oow[AUTO_SAVE_W], XmNset, False, NULL);
+         }
+         else
+         {
+            other_options |= AUTO_SAVE;
+            XtVaSetValues(oow[AUTO_SAVE_W], XmNset, True, NULL);
+         }
+         save_mon_setup();
+         break;
+
+      case FRAMED_GROUPS_W :
+         if (other_options & FRAMED_GROUPS)
+         {
+            other_options &= ~FRAMED_GROUPS;
+            XtVaSetValues(oow[FRAMED_GROUPS_W], XmNset, False, NULL);
+         }
+         else
+         {
+            other_options |= FRAMED_GROUPS;
+            XtVaSetValues(oow[FRAMED_GROUPS_W], XmNset, True, NULL);
+         }
+         for (i = 0; i < no_of_afds_visible; i++)
+         {
+            if (connect_data[vpl[i]].rcmd == '\0')
+            {
+               locate_xy(i, &x, &y);
+               draw_mon_line_status(vpl[i], 1, x, y);
+            }
          }
          break;
 
@@ -2684,6 +2731,28 @@ change_mon_other_cb(Widget w, XtPointer client_data, XtPointer call_data)
          else
          {
             (void)fprintf(stderr, "Removing force shift select.\n");
+         }
+         break;
+
+      case AUTO_SAVE_W :
+         if (other_options & AUTO_SAVE)
+         {
+            (void)fprintf(stderr, "Adding auto save.\n");
+         }
+         else
+         {
+            (void)fprintf(stderr, "Removing auto save.\n");
+         }
+         break;
+
+      case FRAMED_GROUPS_W :
+         if (other_options & FRAMED_GROUPS)
+         {
+            (void)fprintf(stderr, "Adding framed groups.\n");
+         }
+         else
+         {
+            (void)fprintf(stderr, "Removing framed groups.\n");
          }
          break;
 

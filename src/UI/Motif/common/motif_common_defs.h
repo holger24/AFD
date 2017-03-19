@@ -1,6 +1,6 @@
 /*
  *  motif_common_defs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,6 +22,11 @@
 
 #include <Xm/Xm.h>
 #include "ui_common_defs.h"
+
+/* Setup->Other Options. */
+#define FORCE_SHIFT_SELECT_W            0
+#define AUTO_SAVE_W                     1
+#define FRAMED_GROUPS_W                 2
 
 /* The following definitions are for show_ilog and show_olog only. */
 #define CHECK_TIME_INTERVAL             10

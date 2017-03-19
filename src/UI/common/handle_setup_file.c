@@ -383,7 +383,7 @@ read_setup(char *file_name,
       }
       tmp_buffer[i] = '\0';
       other_options = atoi(tmp_buffer);
-      if (other_options > FORCE_SHIFT_SELECT)
+      if (other_options > (FRAMED_GROUPS | AUTO_SAVE | FORCE_SHIFT_SELECT))
       {
          other_options = DEFAULT_OTHER_OPTIONS;
       }

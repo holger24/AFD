@@ -130,6 +130,8 @@
 /* Bits to indicate what other options are set. */
 #define DEFAULT_OTHER_OPTIONS            0
 #define FORCE_SHIFT_SELECT               1
+#define AUTO_SAVE                        2
+#define FRAMED_GROUPS                    4
 
 /* Definitions for the Setup pulldown. */
 #define FONT_W                           0

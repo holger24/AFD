@@ -124,7 +124,7 @@ Widget                     appshell,
                            rw[NO_OF_ROWS],       /* Select rows */
                            lw[4],                /* AFD load */
                            lsw[3],               /* Select line style */
-                           oow[1],               /* Other options */
+                           oow[3],               /* Other options */
                            transviewshell = NULL;
 Window                     label_window,
                            line_window;
@@ -417,6 +417,14 @@ main(int argc, char *argv[])
       if (other_options & FORCE_SHIFT_SELECT)
       {
          XtVaSetValues(oow[FORCE_SHIFT_SELECT_W], XmNset, True, NULL);
+      }
+      if (other_options & AUTO_SAVE)
+      {
+         XtVaSetValues(oow[AUTO_SAVE_W], XmNset, True, NULL);
+      }
+      if (other_options & FRAMED_GROUPS)
+      {
+         XtVaSetValues(oow[FRAMED_GROUPS_W], XmNset, True, NULL);
       }
 
       /* Setup popup menu. */
@@ -1561,6 +1569,30 @@ create_pullright_other(Widget pullright_other_options)
    XtAddCallback(oow[FORCE_SHIFT_SELECT_W], XmNvalueChangedCallback,
                  change_dir_other_cb, (XtPointer)FORCE_SHIFT_SELECT_W);
    XtManageChild(oow[FORCE_SHIFT_SELECT_W]);
+   XmStringFree(x_string);
+
+   argcount = 0;
+   x_string = XmStringCreateLocalized("Auto save");
+   XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
+   XtSetArg(args[argcount], XmNindicatorType, XmN_OF_MANY); argcount++;
+   XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
+   oow[AUTO_SAVE_W] = XmCreateToggleButton(pullright_other_options,
+                                            "other_1", args, argcount);
+   XtAddCallback(oow[AUTO_SAVE_W], XmNvalueChangedCallback,
+                 change_dir_other_cb, (XtPointer)AUTO_SAVE_W);
+   XtManageChild(oow[AUTO_SAVE_W]);
+   XmStringFree(x_string);
+
+   argcount = 0;
+   x_string = XmStringCreateLocalized("Force shift select");
+   XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
+   XtSetArg(args[argcount], XmNindicatorType, XmN_OF_MANY); argcount++;
+   XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
+   oow[FRAMED_GROUPS_W] = XmCreateToggleButton(pullright_other_options,
+                                            "other_2", args, argcount);
+   XtAddCallback(oow[FRAMED_GROUPS_W], XmNvalueChangedCallback,
+                 change_dir_other_cb, (XtPointer)FRAMED_GROUPS_W);
+   XtManageChild(oow[FRAMED_GROUPS_W]);
    XmStringFree(x_string);
 
    return;

@@ -25,8 +25,6 @@
 
 #define BAR_LENGTH_MODIFIER            7
 #define DEFAULT_NO_OF_ROWS             50
-#define DEFAULT_OTHER_OPTIONS          0
-#define FORCE_SHIFT_SELECT_W           0
 
 /* Definitions for the menu bar items. */
 #define MON_W                          0
@@ -260,6 +258,7 @@ void        calc_mon_but_coord(int),
             popup_error_history(int, int, int),
             popup_mon_menu_cb(Widget, XtPointer, XEvent *),
             redraw_all(void),
+            save_mon_setup(void),
             save_mon_setup_cb(Widget, XtPointer, XtPointer),
             select_afd_dialog(Widget, XtPointer, XtPointer),
             setup_mon_window(char *),

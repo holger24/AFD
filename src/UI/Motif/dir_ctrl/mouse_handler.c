@@ -1831,6 +1831,32 @@ change_dir_other_cb(Widget w, XtPointer client_data, XtPointer call_data)
          }
          break;
 
+      case AUTO_SAVE_W :
+         if (other_options & AUTO_SAVE)
+         {
+            other_options &= ~AUTO_SAVE;
+            XtVaSetValues(oow[AUTO_SAVE_W], XmNset, False, NULL);
+         }
+         else
+         {
+            other_options |= AUTO_SAVE;
+            XtVaSetValues(oow[AUTO_SAVE_W], XmNset, True, NULL);
+         }
+         break;
+
+      case FRAMED_GROUPS_W :
+         if (other_options & FRAMED_GROUPS)
+         {
+            other_options &= ~FRAMED_GROUPS;
+            XtVaSetValues(oow[FRAMED_GROUPS_W], XmNset, False, NULL);
+         }
+         else
+         {
+            other_options |= FRAMED_GROUPS;
+            XtVaSetValues(oow[FRAMED_GROUPS_W], XmNset, True, NULL);
+         }
+         break;
+
       default  :
 #if SIZEOF_LONG == 4
          (void)xrec(WARN_DIALOG, "Impossible other selection (%d).", item_no);
@@ -1851,6 +1877,28 @@ change_dir_other_cb(Widget w, XtPointer client_data, XtPointer call_data)
          else
          {
             (void)fprintf(stderr, "Removing force shift select.\n");
+         }
+         break;
+
+      case AUTO_SAVE_W :
+         if (other_options & AUTO_SAVE)
+         {
+            (void)fprintf(stderr, "Adding auto save.\n");
+         }
+         else
+         {
+            (void)fprintf(stderr, "Removing auto save.\n");
+         }
+         break;
+
+      case FRAMED_GROUPS_W :
+         if (other_options & FRAMED_GROUPS)
+         {
+            (void)fprintf(stderr, "Adding framed groups.\n");
+         }
+         else
+         {
+            (void)fprintf(stderr, "Removing framed groups.\n");
          }
          break;
 

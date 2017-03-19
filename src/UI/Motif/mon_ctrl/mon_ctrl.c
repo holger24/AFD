@@ -131,7 +131,7 @@ Widget                  appshell,
                         hlw[NO_OF_HISTORY_LOGS],
                         lw[4],          /* AFD load */
                         lsw[3],         /* Select line style */
-                        oow[1],         /* Other options */
+                        oow[3],         /* Other options */
                         pw[6];          /* Popup menu */
 Window                  button_window,
                         label_window,
@@ -483,6 +483,14 @@ main(int argc, char *argv[])
       if (other_options & FORCE_SHIFT_SELECT)
       {
          XtVaSetValues(oow[FORCE_SHIFT_SELECT_W], XmNset, True, NULL);
+      }
+      if (other_options & AUTO_SAVE)
+      {
+         XtVaSetValues(oow[AUTO_SAVE_W], XmNset, True, NULL);
+      }
+      if (other_options & FRAMED_GROUPS)
+      {
+         XtVaSetValues(oow[FRAMED_GROUPS_W], XmNset, True, NULL);
       }
       XtVaSetValues(hlw[current_his_log], XmNset, True, NULL);
 
@@ -2142,6 +2150,30 @@ create_pullright_other_options(Widget pullright_other_options)
    XtManageChild(oow[FORCE_SHIFT_SELECT_W]);
    XmStringFree(x_string);
 
+   argcount = 0;
+   x_string = XmStringCreateLocalized("Auto save");
+   XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
+   XtSetArg(args[argcount], XmNindicatorType, XmN_OF_MANY); argcount++;
+   XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
+   oow[AUTO_SAVE_W] = XmCreateToggleButton(pullright_other_options,
+                                            "other_1", args, argcount);
+   XtAddCallback(oow[AUTO_SAVE_W], XmNvalueChangedCallback,
+                 change_mon_other_cb, (XtPointer)AUTO_SAVE_W);
+   XtManageChild(oow[AUTO_SAVE_W]);
+   XmStringFree(x_string);
+
+   argcount = 0;
+   x_string = XmStringCreateLocalized("Framed groups");
+   XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
+   XtSetArg(args[argcount], XmNindicatorType, XmN_OF_MANY); argcount++;
+   XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
+   oow[FRAMED_GROUPS_W] = XmCreateToggleButton(pullright_other_options,
+                                            "other_2", args, argcount);
+   XtAddCallback(oow[FRAMED_GROUPS_W], XmNvalueChangedCallback,
+                 change_mon_other_cb, (XtPointer)FRAMED_GROUPS_W);
+   XtManageChild(oow[FRAMED_GROUPS_W]);
+   XmStringFree(x_string);
+
    return;
 }
 
@@ -2632,6 +2664,12 @@ mon_ctrl_exit(void)
          (void)kill(apps_list[i].pid, SIGKILL);
       }
    }
+
+   if (other_options & AUTO_SAVE)
+   {
+      save_mon_setup();
+   }
+   free(connect_data);
 
    return;
 }

@@ -79,8 +79,6 @@ DESCR__E_M3
 #include <X11/cursorfont.h>
 #include "mafd_ctrl.h"
 
-#define OUTLINE_GROUP
-
 extern Display                    *display;
 extern Pixmap                     button_pixmap,
                                   label_pixmap,
@@ -104,7 +102,8 @@ extern GC                         letter_gc,
                                   white_line_gc,
                                   led_gc;
 extern Colormap                   default_cmap;
-extern char                       line_style;
+extern char                       line_style,
+                                  other_options;
 extern unsigned char              saved_feature_flag;
 extern unsigned long              color_pool[];
 extern float                      max_bar_length;
@@ -424,8 +423,7 @@ draw_line_status(int pos, signed char delta)
                 x + x_offset_bars - (max_line_length - line_length[column]) + (int)max_bar_length, y + glyph_height);
    }
 
-#ifdef OUTLINE_GROUP
-   if (connect_data[vpl[pos]].type == 1)
+   if ((connect_data[vpl[pos]].type == 1) && (other_options & FRAMED_GROUPS))
    {
       XDrawLine(display, line_window, black_line_gc,
                 x,
@@ -468,7 +466,6 @@ draw_line_status(int pos, signed char delta)
                 x + line_length[column] - 1,
                 y + line_height - 2);
    }
-#endif
 
    return;
 }

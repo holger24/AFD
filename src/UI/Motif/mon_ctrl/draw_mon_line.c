@@ -91,7 +91,8 @@ extern GC                    letter_gc,
                              white_line_gc,
                              led_gc;
 extern Colormap              default_cmap;
-extern char                  line_style;
+extern char                  line_style,
+                             other_options;
 extern unsigned long         color_pool[];
 extern float                 max_bar_length;
 extern int                   line_length,
@@ -390,6 +391,50 @@ draw_mon_line_status(int pos, signed char delta, int x, int y)
                 x + x_offset_bars + (int)max_bar_length,
                 y + SPACE_ABOVE_LINE,
                 x + x_offset_bars + (int)max_bar_length, y + glyph_height);
+   }
+
+   if ((connect_data[pos].rcmd == '\0') && (other_options & FRAMED_GROUPS))
+   {
+      XDrawLine(display, line_window, black_line_gc,
+                x,
+                y,
+                x,
+                y + line_height - 2);
+      XDrawLine(display, line_pixmap, black_line_gc,
+                x,
+                y,
+                x,
+                y + line_height - 2);
+      XDrawLine(display, line_window, black_line_gc,
+                x,
+                y,
+                x + line_length,
+                y);
+      XDrawLine(display, line_pixmap, black_line_gc,
+                x,
+                y,
+                x + line_length,
+                y);
+      XDrawLine(display, line_window, black_line_gc,
+                x,
+                y + line_height - 2,
+                x + line_length,
+                y + line_height - 2);
+      XDrawLine(display, line_pixmap, black_line_gc,
+                x,
+                y + line_height - 2,
+                x + line_length,
+                y + line_height - 2);
+      XDrawLine(display, line_window, black_line_gc,
+                x + line_length - 1,
+                y,
+                x + line_length - 1,
+                y + line_height - 2);
+      XDrawLine(display, line_pixmap, black_line_gc,
+                x + line_length - 1,
+                y,
+                x + line_length - 1,
+                y + line_height - 2);
    }
 
    return;
