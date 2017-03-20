@@ -887,16 +887,9 @@ check_afd_status(Widget w)
           */
          if (connect_data[i].host_error_counter != msa[i].host_error_counter)
          {
-            /*
-             * If line_style is CHARACTERS and BARS don't update
-             * the connect_data structure. Otherwise when we draw the bar
-             * we will not notice any change. There we will then update
-             * the structure member host_error_counter.
-             */
-            if (line_style == CHARACTERS_ONLY)
-            {
-               connect_data[i].host_error_counter = msa[i].host_error_counter;
-            }
+            int tmp_host_error_counter = connect_data[i].host_error_counter;
+
+            connect_data[i].host_error_counter = msa[i].host_error_counter;
             CREATE_EC_STRING(connect_data[i].str_hec, msa[i].host_error_counter);
 
             if ((i < location_where_changed) &&
@@ -906,6 +899,17 @@ check_afd_status(Widget w)
                draw_mon_chars(i, ERROR_HOSTS,
                               x + (30 * glyph_width), y);
                flush = YES;
+            }
+
+            /*
+             * If line_style is CHARACTERS and BARS don't update
+             * the connect_data structure. Otherwise when we draw the bar
+             * we will not notice any change. There we will then update
+             * the structure member host_error_counter.
+             */
+            if (line_style != CHARACTERS_ONLY)
+            {
+               connect_data[i].host_error_counter = tmp_host_error_counter;
             }
          }
       }

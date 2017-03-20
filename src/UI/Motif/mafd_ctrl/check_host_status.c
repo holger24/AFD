@@ -1393,21 +1393,14 @@ check_host_status(Widget w)
           */
          if (connect_data[i].error_counter != fsa[i].error_counter)
          {
+            int tmp_error_counter = connect_data[i].error_counter;
+
             if (x == -1)
             {
                locate_xy_column(i, &x, &y, &column);
             }
 
-            /*
-             * If line_style is CHARACTERS and BARS don't update
-             * the connect_data structure. Otherwise when we draw the bar
-             * we will not notice any change. There we will then update
-             * the structure member error_counter.
-             */
-            if ((line_style & SHOW_BARS) == 0)
-            {
-               connect_data[i].error_counter = fsa[i].error_counter;
-            }
+            connect_data[i].error_counter = fsa[i].error_counter;
             CREATE_EC_STRING(connect_data[i].str_ec, fsa[i].error_counter);
 
             if ((i < location_where_changed) && (redraw_everything == NO))
@@ -1415,6 +1408,16 @@ check_host_status(Widget w)
                draw_chars(i, ERROR_COUNTER, x + (15 * glyph_width),
                           y, column);
                flush = YES;
+            }
+            /*
+             * If line_style is CHARACTERS and BARS don't update
+             * the connect_data structure. Otherwise when we draw the bar
+             * we will not notice any change. There we will then update
+             * the structure member error_counter.
+             */
+            if (line_style & SHOW_BARS)
+            {
+               connect_data[i].error_counter = tmp_error_counter;
             }
          }
       } /* if (line_style & SHOW_CHARACTERS) */
