@@ -1,6 +1,6 @@
 /*
  *  edit_hc.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -194,23 +194,26 @@ struct parallel_transfers
        {
           XT_PTR_TYPE value[MAX_NO_PARALLEL_JOBS];
           Widget      button_w[MAX_NO_PARALLEL_JOBS];
+          Widget      label_w;
           Widget      option_menu_w;
        };
 struct transfer_blocksize
        {
           int    value[MAX_TB_BUTTONS];
           Widget button_w[MAX_TB_BUTTONS];
+          Widget label_w;
           Widget option_menu_w;
        };
 struct file_size_offset
        {
           XT_PTR_TYPE value[MAX_FSO_BUTTONS];
           Widget      button_w[MAX_FSO_BUTTONS];
+          Widget      label_w;
           Widget      option_menu_w;
        };
 
 /* Function prototypes. */
-extern int  remove_host(char *);
+extern int  remove_host(char *, int);
 extern void accept_drop(Widget, XtPointer, XmDropProcCallback),
             close_button(Widget, XtPointer, XtPointer),
 #ifdef WITH_DUP_CHECK

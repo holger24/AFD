@@ -47,6 +47,7 @@ DESCR__S_M3
  **   28.02.2006 H.Kiehl Added option for setting the keep connected
  **                      parameter.
  **   24.11.2012 H.Kiehl Added support for selecting CRC type.
+ **   20.03.2017 H.Kiehl Add support for groups.
  **
  */
 DESCR__E_M3
@@ -84,6 +85,7 @@ extern Widget                     active_mode_w,
                                   dc_filecontent_w,
                                   dc_filenamecontent_w,
                                   dc_filename_w,
+                                  dc_label_w,
                                   dc_namesize_w,
                                   dc_nosuffix_w,
                                   dc_recipient_w,
@@ -121,22 +123,27 @@ extern Widget                     active_mode_w,
                                   host_list_w,
                                   host_switch_toggle_w,
                                   ignore_errors_toggle_w,
+                                  interrupt_w,
                                   kc_both_w,
                                   kc_fetch_w,
                                   kc_send_w,
                                   keep_connected_w,
+                                  keep_connected_label_w,
                                   keep_time_stamp_w,
                                   match_size_w,
                                   max_errors_w,
+                                  max_errors_label_w,
                                   mode_label_w,
                                   no_ageing_jobs_w,
                                   no_source_icon_w,
                                   passive_mode_w,
                                   passive_redirect_w,
+                                  proxy_label_w,
                                   proxy_name_w,
                                   real_hostname_1_w,
                                   real_hostname_2_w,
                                   retry_interval_w,
+                                  retry_interval_label_w,
                                   rm_button_w,
                                   second_label_w,
                                   sequence_locking_w,
@@ -157,7 +164,6 @@ extern Widget                     active_mode_w,
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
                                   tcp_keepalive_w,
 #endif
-                                  timeout_transfer_w,
                                   transfer_timeout_label_w,
                                   transfer_timeout_w,
                                   transfer_rate_limit_label_w,
@@ -165,9 +171,14 @@ extern Widget                     active_mode_w,
                                   use_file_when_local_w,
                                   use_list_w,
                                   warn_time_days_w,
+                                  warn_time_days_label_w,
                                   warn_time_hours_w,
+                                  warn_time_hours_label_w,
+                                  warn_time_label_w,
                                   warn_time_mins_w,
-                                  warn_time_secs_w;
+                                  warn_time_mins_label_w,
+                                  warn_time_secs_w,
+                                  warn_time_secs_label_w;
 extern XtInputId                  db_update_cmd_id;
 extern int                        fsa_fd,
                                   fsa_id,
@@ -250,23 +261,40 @@ remove_button(Widget w, XtPointer client_data, XtPointer call_data)
          }
          else
          {
-            if (fsa[fsa_pos].special_flag & HOST_IN_DIR_CONFIG)
-            {
-               (void)xrec(WARN_DIALOG,
-                          "Host %s is still in the DIR_CONFIG. Will NOT remove it! (%s %d)",
-                          host_selected, __FILE__, __LINE__);
-            }
-            else
+            if (fsa[fsa_pos].real_hostname[0][0] == 1)
             {
                if (xrec(QUESTION_DIALOG,
-                        "Removing host %s will destroy all statistic information for it!\nAre you really sure?",
+                        "Removing host %s!\nAre you really sure?",
                         host_selected) == YES)
                {
-                  if (remove_host(host_selected) == SUCCESS)
+                  if (remove_host(host_selected, YES) == SUCCESS)
                   {
                      last_removed_position = XmListItemPos(host_list_w, all_items[select_list[i] - 1]);
                      XmListDeleteItem(host_list_w, all_items[select_list[i] - 1]);
                      removed_hosts++;
+                  }
+               }
+            }
+            else
+            {
+               if (fsa[fsa_pos].special_flag & HOST_IN_DIR_CONFIG)
+               {
+                  (void)xrec(WARN_DIALOG,
+                             "Host %s is still in the DIR_CONFIG. Will NOT remove it! (%s %d)",
+                             host_selected, __FILE__, __LINE__);
+               }
+               else
+               {
+                  if (xrec(QUESTION_DIALOG,
+                           "Removing host %s will destroy all statistic information for it!\nAre you really sure?",
+                           host_selected) == YES)
+                  {
+                     if (remove_host(host_selected, NO) == SUCCESS)
+                     {
+                        last_removed_position = XmListItemPos(host_list_w, all_items[select_list[i] - 1]);
+                        XmListDeleteItem(host_list_w, all_items[select_list[i] - 1]);
+                        removed_hosts++;
+                     }
                   }
                }
             }
@@ -1318,286 +1346,9 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
     */
    if (cur_pos != last_selected)
    {
-      int          choice;
-      unsigned int value;
-      time_t       warn_time;
-      char         *tmp_ptr,
-                   numeric_str[MAX_LONG_LENGTH];
-      XmString     xstr;
-
       last_selected = cur_pos;
 
-      if ((fsa[cur_pos].protocol & FTP_FLAG) ||
-          (fsa[cur_pos].protocol & SFTP_FLAG) ||
-          (fsa[cur_pos].protocol & HTTP_FLAG) ||
-#ifdef _WITH_SCP_SUPPORT
-          (fsa[cur_pos].protocol & SCP_FLAG) ||
-#endif
-#ifdef _WITH_WMO_SUPPORT
-          (fsa[cur_pos].protocol & WMO_FLAG) ||
-#endif
-#ifdef _WITH_MAP_SUPPORT
-          (fsa[cur_pos].protocol & MAP_FLAG) ||
-#endif
-#ifdef _WITH_DFAX_SUPPORT
-          (fsa[cur_pos].protocol & DFAX_FLAG) ||
-#endif
-#ifdef _WITH_DE_MAIL_SUPPORT
-          (fsa[cur_pos].protocol & DE_MAIL_FLAG) ||
-#endif
-          (fsa[cur_pos].protocol & SMTP_FLAG))
-      {
-         char label_1_str[] = { 'H', 'o', 's', 't', '/', 'I', 'P', ' ', '1', ':', '\0' },
-              label_2_str[] = { '2', ':', '\0' };
-
-         XtSetSensitive(host_switch_toggle_w, True);
-         XtSetSensitive(real_hostname_1_w, True);
-         XtSetSensitive(transfer_timeout_w, True);
-         XtSetSensitive(use_file_when_local_w, True);
-
-         /* Activate/Deactivate 2nd host name string. */
-         if (fsa[cur_pos].host_toggle_str[0] == '\0')
-         {
-            XtSetSensitive(second_label_w, False);
-            XtSetSensitive(real_hostname_2_w, False);
-            label_1_str[8] = '1';
-            xstr = XmStringCreateLtoR(label_1_str, XmFONTLIST_DEFAULT_TAG);
-            XtVaSetValues(first_label_w, XmNlabelString, xstr, NULL);
-            XmStringFree(xstr);
-            label_2_str[0] = '2';
-            xstr = XmStringCreateLtoR(label_2_str, XmFONTLIST_DEFAULT_TAG);
-            XtVaSetValues(second_label_w, XmNlabelString, xstr, NULL);
-            XmStringFree(xstr);
-
-            ce[cur_pos].host_switch_toggle = OFF;
-            XtSetSensitive(host_1_label_w, False);
-            XtSetSensitive(host_1_w, False);
-            XtSetSensitive(host_2_label_w, False);
-            XtSetSensitive(host_2_w, False);
-            XtSetSensitive(auto_toggle_w, False);
-            XtVaSetValues(host_switch_toggle_w, XmNset, False, NULL);
-         }
-         else
-         {
-            char toggle_str[2];
-
-            XtSetSensitive(second_label_w, True);
-            XtSetSensitive(real_hostname_2_w, True);
-            label_1_str[8] = fsa[cur_pos].host_toggle_str[HOST_ONE];
-            xstr = XmStringCreateLtoR(label_1_str, XmFONTLIST_DEFAULT_TAG);
-            XtVaSetValues(first_label_w, XmNlabelString, xstr, NULL);
-            XmStringFree(xstr);
-            label_2_str[0] = fsa[cur_pos].host_toggle_str[HOST_TWO];
-            xstr = XmStringCreateLtoR(label_2_str, XmFONTLIST_DEFAULT_TAG);
-            XtVaSetValues(second_label_w, XmNlabelString, xstr, NULL);
-            XmStringFree(xstr);
-
-            XtVaSetValues(host_switch_toggle_w, XmNset, True, NULL);
-            ce[cur_pos].host_switch_toggle = ON;
-            XtSetSensitive(host_1_label_w, True);
-            XtSetSensitive(host_1_w, True);
-            toggle_str[1] = '\0';
-            toggle_str[0] = fsa[cur_pos].host_toggle_str[HOST_ONE];
-            XtVaSetValues(host_1_w, XmNvalue, toggle_str, NULL);
-            XtSetSensitive(host_2_label_w, True);
-            XtSetSensitive(host_2_w, True);
-            toggle_str[0] = fsa[cur_pos].host_toggle_str[HOST_TWO];
-            XtVaSetValues(host_2_w, XmNvalue, toggle_str, NULL);
-            XtSetSensitive(auto_toggle_w, True);
-         }
-
-         if (ce[cur_pos].value_changed & REAL_HOSTNAME_1_CHANGED)
-         {
-            tmp_ptr = ce[cur_pos].real_hostname[0];
-         }
-         else
-         {
-            tmp_ptr = fsa[cur_pos].real_hostname[0];
-         }
-         XtVaSetValues(real_hostname_1_w, XmNvalue, tmp_ptr, NULL);
-
-         if (ce[cur_pos].value_changed & REAL_HOSTNAME_2_CHANGED)
-         {
-            tmp_ptr = ce[cur_pos].real_hostname[1];
-         }
-         else
-         {
-            tmp_ptr = fsa[cur_pos].real_hostname[1];
-         }
-         XtVaSetValues(real_hostname_2_w, XmNvalue, tmp_ptr, NULL);
-
-         if (ce[cur_pos].value_changed2 & FILE_WHEN_LOCAL_CHANGED)
-         {
-            if (fsa[cur_pos].protocol_options & FILE_WHEN_LOCAL_FLAG)
-            {
-               XtVaSetValues(use_file_when_local_w, XmNset, False, NULL);
-            }
-            else
-            {
-               XtVaSetValues(use_file_when_local_w, XmNset, True, NULL);
-            }
-         }
-         else
-         {
-            if (fsa[cur_pos].protocol_options & FILE_WHEN_LOCAL_FLAG)
-            {
-               XtVaSetValues(use_file_when_local_w, XmNset, True, NULL);
-            }
-            else
-            {
-               XtVaSetValues(use_file_when_local_w, XmNset, False, NULL);
-            }
-         }
-
-         if (ce[cur_pos].value_changed2 & TIMEOUT_TRANSFER_CHANGED)
-         {
-            if (fsa[cur_pos].protocol_options & TIMEOUT_TRANSFER)
-            {
-               XtVaSetValues(timeout_transfer_w, XmNset, False, NULL);
-            }
-            else
-            {
-               XtVaSetValues(timeout_transfer_w, XmNset, True, NULL);
-            }
-         }
-         else
-         {
-            if (fsa[cur_pos].protocol_options & TIMEOUT_TRANSFER)
-            {
-               XtVaSetValues(timeout_transfer_w, XmNset, True, NULL);
-            }
-            else
-            {
-               XtVaSetValues(timeout_transfer_w, XmNset, False, NULL);
-            }
-         }
-
-         if (fsa[cur_pos].auto_toggle == ON)
-         {
-            XtSetSensitive(successful_retries_label_w, True);
-            XtSetSensitive(successful_retries_w, True);
-            XtVaSetValues(auto_toggle_w, XmNset, True, NULL);
-            ce[cur_pos].auto_toggle = ON;
-            if (ce[cur_pos].value_changed & SUCCESSFUL_RETRIES_CHANGED)
-            {
-               (void)sprintf(numeric_str, "%d",
-                             ce[cur_pos].max_successful_retries);
-            }
-            else
-            {
-               (void)sprintf(numeric_str, "%d",
-                             fsa[cur_pos].max_successful_retries);
-            }
-            XtVaSetValues(successful_retries_w, XmNvalue, numeric_str, NULL);
-         }
-         else
-         {
-            XtSetSensitive(successful_retries_label_w, False);
-            XtSetSensitive(successful_retries_w, False);
-            XtVaSetValues(auto_toggle_w, XmNset, False, NULL);
-            ce[cur_pos].auto_toggle = OFF;
-         }
-
-         XtSetSensitive(transfer_rate_limit_label_w, True);
-         XtSetSensitive(transfer_rate_limit_w, True);
-         if (ce[cur_pos].value_changed & TRANSFER_RATE_LIMIT_CHANGED)
-         {
-            if (ce[cur_pos].transfer_rate_limit < 1024)
-            {
-               numeric_str[0] = '0';
-               numeric_str[1] = '\0';
-            }
-            else
-            {
-#if SIZEOF_OFF_T == 4
-               (void)sprintf(numeric_str, "%ld",
-#else
-               (void)sprintf(numeric_str, "%lld",
-#endif
-                             (pri_off_t)(ce[cur_pos].transfer_rate_limit / 1024));
-            }
-         }
-         else
-         {
-            if (fsa[cur_pos].transfer_rate_limit < 1024)
-            {
-               numeric_str[0] = '0';
-               numeric_str[1] = '\0';
-            }
-            else
-            {
-#if SIZEOF_OFF_T == 4
-               (void)sprintf(numeric_str, "%ld",
-#else
-               (void)sprintf(numeric_str, "%lld",
-#endif
-                             (pri_off_t)(fsa[cur_pos].transfer_rate_limit / 1024));
-            }
-         }
-         XtVaSetValues(transfer_rate_limit_w, XmNvalue, numeric_str, NULL);
-
-         XtSetSensitive(socket_send_buffer_size_label_w, True);
-         XtSetSensitive(socket_send_buffer_size_w, True);
-         if (ce[cur_pos].value_changed & SOCKET_SEND_BUFFER_CHANGED)
-         {
-            if (ce[cur_pos].sndbuf_size < 1024)
-            {
-               numeric_str[0] = '0';
-               numeric_str[1] = '\0';
-            }
-            else
-            {
-               (void)sprintf(numeric_str, "%u",
-                             ce[cur_pos].sndbuf_size / 1024U);
-            }
-         }
-         else
-         {
-            if (fsa[cur_pos].socksnd_bufsize < 1024)
-            {
-               numeric_str[0] = '0';
-               numeric_str[1] = '\0';
-            }
-            else
-            {
-               (void)sprintf(numeric_str, "%u",
-                             fsa[cur_pos].socksnd_bufsize / 1024U);
-            }
-         }
-         XtVaSetValues(socket_send_buffer_size_w, XmNvalue, numeric_str, NULL);
-
-         XtSetSensitive(socket_receive_buffer_size_label_w, True);
-         XtSetSensitive(socket_receive_buffer_size_w, True);
-         if (ce[cur_pos].value_changed & SOCKET_SEND_BUFFER_CHANGED)
-         {
-            if (ce[cur_pos].rcvbuf_size < 1024)
-            {
-               numeric_str[0] = '0';
-               numeric_str[1] = '\0';
-            }
-            else
-            {
-               (void)sprintf(numeric_str, "%u",
-                             ce[cur_pos].rcvbuf_size / 1024U);
-            }
-         }
-         else
-         {
-            if (fsa[cur_pos].sockrcv_bufsize < 1024)
-            {
-               numeric_str[0] = '0';
-               numeric_str[1] = '\0';
-            }
-            else
-            {
-               (void)sprintf(numeric_str, "%u",
-                             fsa[cur_pos].sockrcv_bufsize / 1024U);
-            }
-         }
-         XtVaSetValues(socket_receive_buffer_size_w, XmNvalue,
-                       numeric_str, NULL);
-      }
-      else
+      if (fsa[cur_pos].real_hostname[0][0] == 1)
       {
          XtSetSensitive(host_switch_toggle_w, False);
          XtSetSensitive(host_1_label_w, False);
@@ -1606,194 +1357,71 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(host_2_w, False);
          XtSetSensitive(use_file_when_local_w, False);
          XtSetSensitive(auto_toggle_w, False);
+         XtSetSensitive(first_label_w, False);
          XtSetSensitive(real_hostname_1_w, False);
+         XtSetSensitive(second_label_w, False);
          XtSetSensitive(real_hostname_2_w, False);
+         XtSetSensitive(proxy_label_w, False);
+         XtSetSensitive(proxy_name_w, False);
+         XtSetSensitive(transfer_timeout_w, False);
+         XtSetSensitive(transfer_timeout_label_w, False);
+         XtSetSensitive(interrupt_w, False);
+         XtSetSensitive(ignore_errors_toggle_w, False);
+         XtSetSensitive(do_not_delete_data_toggle_w, False);
+         XtSetSensitive(max_errors_label_w, False);
+         XtSetSensitive(max_errors_w, False);
          XtSetSensitive(successful_retries_label_w, False);
          XtSetSensitive(successful_retries_w, False);
+         XtSetSensitive(retry_interval_label_w, False);
+         XtSetSensitive(retry_interval_w, False);
+         XtSetSensitive(keep_connected_label_w, False);
+         XtSetSensitive(keep_connected_w, False);
+         XtSetSensitive(kc_both_w, False);
+         XtSetSensitive(kc_fetch_w, False);
+         XtSetSensitive(kc_send_w, False);
+         XtSetSensitive(disconnect_w, False);
+         XtSetSensitive(warn_time_label_w, False);
+         XtSetSensitive(warn_time_days_w, False);
+         XtSetSensitive(warn_time_days_label_w, False);
+         XtSetSensitive(warn_time_hours_w, False);
+         XtSetSensitive(warn_time_hours_label_w, False);
+         XtSetSensitive(warn_time_mins_w, False);
+         XtSetSensitive(warn_time_mins_label_w, False);
+         XtSetSensitive(warn_time_secs_w, False);
+         XtSetSensitive(warn_time_secs_label_w, False);
          XtSetSensitive(transfer_rate_limit_label_w, False);
          XtSetSensitive(transfer_rate_limit_w, False);
          XtSetSensitive(socket_send_buffer_size_label_w, False);
          XtSetSensitive(socket_send_buffer_size_w, False);
          XtSetSensitive(socket_receive_buffer_size_label_w, False);
          XtSetSensitive(socket_receive_buffer_size_w, False);
-      }
-
-      if ((fsa[cur_pos].protocol & FTP_FLAG) ||
-          (fsa[cur_pos].protocol & SFTP_FLAG) ||
-          (fsa[cur_pos].protocol & HTTP_FLAG) ||
-#ifdef _WITH_SCP_SUPPORT
-          (fsa[cur_pos].protocol & SCP_FLAG) ||
+#ifdef WITH_DUP_CHECK
+         XtSetSensitive(dc_label_w, False);
+         XtSetSensitive(dc_enable_w, False);
+         XtSetSensitive(dc_disable_w, False);
+         XtSetSensitive(dc_timeout_w, False);
+         XtSetSensitive(dc_timeout_label_w, False);
+         XtSetSensitive(dc_timeout_fixed_w, False);
+         XtSetSensitive(dc_type_w, False);
+         XtSetSensitive(dc_delete_w, False);
+         XtSetSensitive(dc_store_w, False);
+         XtSetSensitive(dc_warn_w, False);
+         XtSetSensitive(dc_reference_w, False);
+         XtSetSensitive(dc_ref_label_w, False);
+         XtSetSensitive(dc_alias_w, False);
+         XtSetSensitive(dc_recipient_w, False);
+         XtSetSensitive(dc_crc_w, False);
+         XtSetSensitive(dc_crc_label_w, False);
+         XtSetSensitive(dc_crc32_w, False);
+         XtSetSensitive(dc_crc32c_w, False);
+         XmToggleButtonSetState(dc_disable_w, True, True);
 #endif
-#ifdef _WITH_WMO_SUPPORT
-          (fsa[cur_pos].protocol & WMO_FLAG) ||
-#endif
-#ifdef _WITH_MAP_SUPPORT
-          (fsa[cur_pos].protocol & MAP_FLAG) ||
-#endif
-#ifdef _WITH_DFAX_SUPPORT
-          (fsa[cur_pos].protocol & DFAX_FLAG) ||
-#endif
-#ifdef _WITH_DE_MAIL_SUPPORT
-          (fsa[cur_pos].protocol & DE_MAIL_FLAG) ||
-#endif
-          (fsa[cur_pos].protocol & SMTP_FLAG) ||
-          (fsa[cur_pos].protocol & EXEC_FLAG))
-      {
-         if (ce[cur_pos].value_changed & TRANSFER_TIMEOUT_CHANGED)
-         {
-            (void)sprintf(numeric_str, "%ld", ce[cur_pos].transfer_timeout);
-         }
-         else
-         {
-            (void)sprintf(numeric_str, "%ld", fsa[cur_pos].transfer_timeout);
-         }
-         XtVaSetValues(transfer_timeout_w, XmNvalue, numeric_str, NULL);
-         XtSetSensitive(transfer_timeout_label_w, True);
-      }
-      else
-      {
-         XtSetSensitive(transfer_timeout_w, False);
-         XtSetSensitive(transfer_timeout_label_w, False);
-      }
-
-      if (ce[cur_pos].value_changed & PROXY_NAME_CHANGED)
-      {
-         tmp_ptr = ce[cur_pos].proxy_name;
-      }
-      else
-      {
-         tmp_ptr = fsa[cur_pos].proxy_name;
-      }
-      XtVaSetValues(proxy_name_w, XmNvalue, tmp_ptr, NULL);
-
-      if (fsa[cur_pos].protocol & FTP_FLAG)
-      {
-         XtSetSensitive(mode_label_w, True);
-         XtSetSensitive(extended_mode_w, True);
-         if (fsa[cur_pos].protocol_options & FTP_EXTENDED_MODE)
-         {
-            XtVaSetValues(extended_mode_w, XmNset, True, NULL);
-         }
-         else
-         {
-            XtVaSetValues(extended_mode_w, XmNset, False, NULL);
-         }
-         XtSetSensitive(ftp_mode_w, True);
-         if (fsa[cur_pos].protocol_options & FTP_PASSIVE_MODE)
-         {
-            XtVaSetValues(passive_mode_w, XmNset, True, NULL);
-            XtVaSetValues(active_mode_w, XmNset, False, NULL);
-            if ((fsa[cur_pos].protocol_options & FTP_EXTENDED_MODE) == 0)
-            {
-               XtSetSensitive(passive_redirect_w, True);
-               if (fsa[cur_pos].protocol_options & FTP_ALLOW_DATA_REDIRECT)
-               {
-                  XtVaSetValues(passive_redirect_w, XmNset, True, NULL);
-               }
-               else
-               {
-                  XtVaSetValues(passive_redirect_w, XmNset, False, NULL);
-               }
-            }
-            else
-            {
-               XtSetSensitive(passive_redirect_w, False);
-               XtVaSetValues(passive_redirect_w, XmNset, False, NULL);
-            }
-         }
-         else
-         {
-            XtSetSensitive(passive_redirect_w, False);
-            XtVaSetValues(passive_mode_w, XmNset, False, NULL);
-            XtVaSetValues(active_mode_w, XmNset, True, NULL);
-         }
-         XtSetSensitive(ftps_label_w, True);
-         XtSetSensitive(use_list_w, True);
-         if (fsa[cur_pos].protocol_options & FTP_USE_LIST)
-         {
-            XtVaSetValues(use_list_w, XmNset, True, NULL);
-         }
-         else
-         {
-            XtVaSetValues(use_list_w, XmNset, False, NULL);
-         }
-         XtSetSensitive(disable_mlst_w, True);
-         if (fsa[cur_pos].protocol_options & FTP_DISABLE_MLST)
-         {
-            XtVaSetValues(disable_mlst_w, XmNset, True, NULL);
-         }
-         else
-         {
-            XtVaSetValues(disable_mlst_w, XmNset, False, NULL);
-         }
-         XtSetSensitive(ssl_ccc_w, True);
-         if (fsa[cur_pos].protocol_options & FTP_CCC_OPTION)
-         {
-            XtVaSetValues(ssl_ccc_w, XmNset, True, NULL);
-         }
-         else
-         {
-            XtVaSetValues(ssl_ccc_w, XmNset, False, NULL);
-         }
-         XtSetSensitive(ftp_idle_time_w, True);
-         if (fsa[cur_pos].protocol_options & SET_IDLE_TIME)
-         {
-            XtVaSetValues(ftp_idle_time_w, XmNset, True, NULL);
-         }
-         else
-         {
-            XtVaSetValues(ftp_idle_time_w, XmNset, False, NULL);
-         }
-#ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
-         XtSetSensitive(ftp_keepalive_w, True);
-         if (fsa[cur_pos].protocol_options & STAT_KEEPALIVE)
-         {
-            XtVaSetValues(ftp_keepalive_w, XmNset, True, NULL);
-         }
-         else
-         {
-            XtVaSetValues(ftp_keepalive_w, XmNset, False, NULL);
-         }
-#endif
-         XtSetSensitive(ftp_fast_rename_w, True);
-         if (fsa[cur_pos].protocol_options & FTP_FAST_MOVE)
-         {
-            XtVaSetValues(ftp_fast_rename_w, XmNset, True, NULL);
-         }
-         else
-         {
-            XtVaSetValues(ftp_fast_rename_w, XmNset, False, NULL);
-         }
-         XtSetSensitive(ftp_fast_cd_w, True);
-         if (fsa[cur_pos].protocol_options & FTP_FAST_CD)
-         {
-            XtVaSetValues(ftp_fast_cd_w, XmNset, True, NULL);
-         }
-         else
-         {
-            XtVaSetValues(ftp_fast_cd_w, XmNset, False, NULL);
-         }
-         XtSetSensitive(ftp_ignore_bin_w, True);
-         if (fsa[cur_pos].protocol_options & FTP_IGNORE_BIN)
-         {
-            XtVaSetValues(ftp_ignore_bin_w, XmNset, True, NULL);
-         }
-         else
-         {
-            XtVaSetValues(ftp_ignore_bin_w, XmNset, False, NULL);
-         }
-         XtSetSensitive(match_size_w, True);
-         if (fsa[cur_pos].protocol_options & CHECK_SIZE)
-         {
-            XtVaSetValues(match_size_w, XmNset, True, NULL);
-         }
-         else
-         {
-            XtVaSetValues(match_size_w, XmNset, False, NULL);
-         }
-      }
-      else
-      {
+         XtSetSensitive(pt.label_w, False);
+         XtSetSensitive(pt.option_menu_w, False);
+         XtSetSensitive(tb.label_w, False);
+         XtSetSensitive(tb.option_menu_w, False);
+         XtSetSensitive(fso.label_w, False);
+         XtSetSensitive(fso.option_menu_w, False);
          XtSetSensitive(mode_label_w, False);
          XtSetSensitive(extended_mode_w, False);
          XtSetSensitive(ftp_mode_w, False);
@@ -1807,8 +1435,515 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(ftp_keepalive_w, False);
 #endif
          XtSetSensitive(ftp_fast_rename_w, False);
-         if (fsa[cur_pos].protocol & SFTP_FLAG)
+         XtSetSensitive(ftp_fast_cd_w, False);
+         XtSetSensitive(match_size_w, False);
+         XtSetSensitive(ftp_ignore_bin_w, False);
+#ifdef _WITH_BURST_2
+         XtSetSensitive(allow_burst_w, False);
+#endif
+#ifdef WITH_SSL
+         XtSetSensitive(strict_tls_w, False);
+#endif
+         XtSetSensitive(fso.option_menu_w, False);
+#ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
+         XtSetSensitive(tcp_keepalive_w, False);
+#endif
+         XtSetSensitive(sequence_locking_w, False);
+         XtSetSensitive(keep_time_stamp_w, False);
+         XtSetSensitive(sort_file_names_w, False);
+         XtSetSensitive(no_ageing_jobs_w, False);
+         XtSetSensitive(compression_w, False);
+         XtSetSensitive(rm_button_w, True);
+      }
+      else
+      {
+         int          choice;
+         unsigned int value;
+         time_t       warn_time;
+         char         *tmp_ptr,
+                      numeric_str[MAX_LONG_LENGTH];
+         XmString     xstr;
+
+         XtSetSensitive(first_label_w, True);
+         XtSetSensitive(second_label_w, True);
+         XtSetSensitive(proxy_label_w, True);
+         XtSetSensitive(proxy_name_w, True);
+         XtSetSensitive(interrupt_w, True);
+         XtSetSensitive(ignore_errors_toggle_w, True);
+         XtSetSensitive(do_not_delete_data_toggle_w, True);
+         XtSetSensitive(max_errors_label_w, True);
+         XtSetSensitive(max_errors_w, True);
+         XtSetSensitive(retry_interval_label_w, True);
+         XtSetSensitive(retry_interval_w, True);
+         XtSetSensitive(keep_connected_label_w, True);
+         XtSetSensitive(keep_connected_w, True);
+         XtSetSensitive(kc_both_w, True);
+         XtSetSensitive(kc_fetch_w, True);
+         XtSetSensitive(kc_send_w, True);
+         XtSetSensitive(disconnect_w, True);
+         XtSetSensitive(warn_time_label_w, True);
+         XtSetSensitive(warn_time_days_w, True);
+         XtSetSensitive(warn_time_days_label_w, True);
+         XtSetSensitive(warn_time_hours_w, True);
+         XtSetSensitive(warn_time_hours_label_w, True);
+         XtSetSensitive(warn_time_mins_w, True);
+         XtSetSensitive(warn_time_mins_label_w, True);
+         XtSetSensitive(warn_time_secs_w, True);
+         XtSetSensitive(warn_time_secs_label_w, True);
+#ifdef WITH_DUP_CHECK
+         XtSetSensitive(dc_label_w, True);
+         XtSetSensitive(dc_enable_w, True);
+         XtSetSensitive(dc_disable_w, True);
+#endif
+         XtSetSensitive(pt.label_w, True);
+         XtSetSensitive(pt.option_menu_w, True);
+         XtSetSensitive(tb.label_w, True);
+         XtSetSensitive(tb.option_menu_w, True);
+         XtSetSensitive(fso.label_w, True);
+         XtSetSensitive(fso.option_menu_w, True);
+#ifdef _WITH_BURST_2
+         XtSetSensitive(allow_burst_w, True);
+#endif
+         XtSetSensitive(sort_file_names_w, True);
+         XtSetSensitive(no_ageing_jobs_w, True);
+
+         if ((fsa[cur_pos].protocol & FTP_FLAG) ||
+             (fsa[cur_pos].protocol & SFTP_FLAG) ||
+             (fsa[cur_pos].protocol & HTTP_FLAG) ||
+#ifdef _WITH_SCP_SUPPORT
+             (fsa[cur_pos].protocol & SCP_FLAG) ||
+#endif
+#ifdef _WITH_WMO_SUPPORT
+             (fsa[cur_pos].protocol & WMO_FLAG) ||
+#endif
+#ifdef _WITH_MAP_SUPPORT
+             (fsa[cur_pos].protocol & MAP_FLAG) ||
+#endif
+#ifdef _WITH_DFAX_SUPPORT
+             (fsa[cur_pos].protocol & DFAX_FLAG) ||
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+             (fsa[cur_pos].protocol & DE_MAIL_FLAG) ||
+#endif
+             (fsa[cur_pos].protocol & SMTP_FLAG))
          {
+            char label_1_str[] = { 'H', 'o', 's', 't', '/', 'I', 'P', ' ', '1', ':', '\0' },
+                 label_2_str[] = { '2', ':', '\0' };
+
+            XtSetSensitive(host_switch_toggle_w, True);
+            XtSetSensitive(real_hostname_1_w, True);
+            XtSetSensitive(transfer_timeout_w, True);
+            XtSetSensitive(use_file_when_local_w, True);
+
+            /* Activate/Deactivate 2nd host name string. */
+            if (fsa[cur_pos].host_toggle_str[0] == '\0')
+            {
+               XtSetSensitive(second_label_w, False);
+               XtSetSensitive(real_hostname_2_w, False);
+               label_1_str[8] = '1';
+               xstr = XmStringCreateLtoR(label_1_str, XmFONTLIST_DEFAULT_TAG);
+               XtVaSetValues(first_label_w, XmNlabelString, xstr, NULL);
+               XmStringFree(xstr);
+               label_2_str[0] = '2';
+               xstr = XmStringCreateLtoR(label_2_str, XmFONTLIST_DEFAULT_TAG);
+               XtVaSetValues(second_label_w, XmNlabelString, xstr, NULL);
+               XmStringFree(xstr);
+
+               ce[cur_pos].host_switch_toggle = OFF;
+               XtSetSensitive(host_1_label_w, False);
+               XtSetSensitive(host_1_w, False);
+               XtSetSensitive(host_2_label_w, False);
+               XtSetSensitive(host_2_w, False);
+               XtSetSensitive(auto_toggle_w, False);
+               XtVaSetValues(host_switch_toggle_w, XmNset, False, NULL);
+            }
+            else
+            {
+               char toggle_str[2];
+
+               XtSetSensitive(second_label_w, True);
+               XtSetSensitive(real_hostname_2_w, True);
+               label_1_str[8] = fsa[cur_pos].host_toggle_str[HOST_ONE];
+               xstr = XmStringCreateLtoR(label_1_str, XmFONTLIST_DEFAULT_TAG);
+               XtVaSetValues(first_label_w, XmNlabelString, xstr, NULL);
+               XmStringFree(xstr);
+               label_2_str[0] = fsa[cur_pos].host_toggle_str[HOST_TWO];
+               xstr = XmStringCreateLtoR(label_2_str, XmFONTLIST_DEFAULT_TAG);
+               XtVaSetValues(second_label_w, XmNlabelString, xstr, NULL);
+               XmStringFree(xstr);
+
+               XtVaSetValues(host_switch_toggle_w, XmNset, True, NULL);
+               ce[cur_pos].host_switch_toggle = ON;
+               XtSetSensitive(host_1_label_w, True);
+               XtSetSensitive(host_1_w, True);
+               toggle_str[1] = '\0';
+               toggle_str[0] = fsa[cur_pos].host_toggle_str[HOST_ONE];
+               XtVaSetValues(host_1_w, XmNvalue, toggle_str, NULL);
+               XtSetSensitive(host_2_label_w, True);
+               XtSetSensitive(host_2_w, True);
+               toggle_str[0] = fsa[cur_pos].host_toggle_str[HOST_TWO];
+               XtVaSetValues(host_2_w, XmNvalue, toggle_str, NULL);
+               XtSetSensitive(auto_toggle_w, True);
+            }
+
+            if (ce[cur_pos].value_changed & REAL_HOSTNAME_1_CHANGED)
+            {
+               tmp_ptr = ce[cur_pos].real_hostname[0];
+            }
+            else
+            {
+               tmp_ptr = fsa[cur_pos].real_hostname[0];
+            }
+            XtVaSetValues(real_hostname_1_w, XmNvalue, tmp_ptr, NULL);
+
+            if (ce[cur_pos].value_changed & REAL_HOSTNAME_2_CHANGED)
+            {
+               tmp_ptr = ce[cur_pos].real_hostname[1];
+            }
+            else
+            {
+               tmp_ptr = fsa[cur_pos].real_hostname[1];
+            }
+            XtVaSetValues(real_hostname_2_w, XmNvalue, tmp_ptr, NULL);
+
+            if (ce[cur_pos].value_changed2 & FILE_WHEN_LOCAL_CHANGED)
+            {
+               if (fsa[cur_pos].protocol_options & FILE_WHEN_LOCAL_FLAG)
+               {
+                  XtVaSetValues(use_file_when_local_w, XmNset, False, NULL);
+               }
+               else
+               {
+                  XtVaSetValues(use_file_when_local_w, XmNset, True, NULL);
+               }
+            }
+            else
+            {
+               if (fsa[cur_pos].protocol_options & FILE_WHEN_LOCAL_FLAG)
+               {
+                  XtVaSetValues(use_file_when_local_w, XmNset, True, NULL);
+               }
+               else
+               {
+                  XtVaSetValues(use_file_when_local_w, XmNset, False, NULL);
+               }
+            }
+
+            if (ce[cur_pos].value_changed2 & TIMEOUT_TRANSFER_CHANGED)
+            {
+               if (fsa[cur_pos].protocol_options & TIMEOUT_TRANSFER)
+               {
+                  XtVaSetValues(transfer_timeout_w, XmNset, False, NULL);
+               }
+               else
+               {
+                  XtVaSetValues(transfer_timeout_w, XmNset, True, NULL);
+               }
+            }
+            else
+            {
+               if (fsa[cur_pos].protocol_options & TIMEOUT_TRANSFER)
+               {
+                  XtVaSetValues(transfer_timeout_w, XmNset, True, NULL);
+               }
+               else
+               {
+                  XtVaSetValues(transfer_timeout_w, XmNset, False, NULL);
+               }
+            }
+
+            if (fsa[cur_pos].auto_toggle == ON)
+            {
+               XtSetSensitive(successful_retries_label_w, True);
+               XtSetSensitive(successful_retries_w, True);
+               XtVaSetValues(auto_toggle_w, XmNset, True, NULL);
+               ce[cur_pos].auto_toggle = ON;
+               if (ce[cur_pos].value_changed & SUCCESSFUL_RETRIES_CHANGED)
+               {
+                  (void)sprintf(numeric_str, "%d",
+                                ce[cur_pos].max_successful_retries);
+               }
+               else
+               {
+                  (void)sprintf(numeric_str, "%d",
+                                fsa[cur_pos].max_successful_retries);
+               }
+               XtVaSetValues(successful_retries_w, XmNvalue, numeric_str, NULL);
+            }
+            else
+            {
+               XtSetSensitive(successful_retries_label_w, False);
+               XtSetSensitive(successful_retries_w, False);
+               XtVaSetValues(auto_toggle_w, XmNset, False, NULL);
+               ce[cur_pos].auto_toggle = OFF;
+            }
+
+            XtSetSensitive(transfer_rate_limit_label_w, True);
+            XtSetSensitive(transfer_rate_limit_w, True);
+            if (ce[cur_pos].value_changed & TRANSFER_RATE_LIMIT_CHANGED)
+            {
+               if (ce[cur_pos].transfer_rate_limit < 1024)
+               {
+                  numeric_str[0] = '0';
+                  numeric_str[1] = '\0';
+               }
+               else
+               {
+#if SIZEOF_OFF_T == 4
+                  (void)sprintf(numeric_str, "%ld",
+#else
+                  (void)sprintf(numeric_str, "%lld",
+#endif
+                                (pri_off_t)(ce[cur_pos].transfer_rate_limit / 1024));
+               }
+            }
+            else
+            {
+               if (fsa[cur_pos].transfer_rate_limit < 1024)
+               {
+                  numeric_str[0] = '0';
+                  numeric_str[1] = '\0';
+               }
+               else
+               {
+#if SIZEOF_OFF_T == 4
+                  (void)sprintf(numeric_str, "%ld",
+#else
+                  (void)sprintf(numeric_str, "%lld",
+#endif
+                                (pri_off_t)(fsa[cur_pos].transfer_rate_limit / 1024));
+               }
+            }
+            XtVaSetValues(transfer_rate_limit_w, XmNvalue, numeric_str, NULL);
+
+            XtSetSensitive(socket_send_buffer_size_label_w, True);
+            XtSetSensitive(socket_send_buffer_size_w, True);
+            if (ce[cur_pos].value_changed & SOCKET_SEND_BUFFER_CHANGED)
+            {
+               if (ce[cur_pos].sndbuf_size < 1024)
+               {
+                  numeric_str[0] = '0';
+                  numeric_str[1] = '\0';
+               }
+               else
+               {
+                  (void)sprintf(numeric_str, "%u",
+                                ce[cur_pos].sndbuf_size / 1024U);
+               }
+            }
+            else
+            {
+               if (fsa[cur_pos].socksnd_bufsize < 1024)
+               {
+                  numeric_str[0] = '0';
+                  numeric_str[1] = '\0';
+               }
+               else
+               {
+                  (void)sprintf(numeric_str, "%u",
+                                fsa[cur_pos].socksnd_bufsize / 1024U);
+               }
+            }
+            XtVaSetValues(socket_send_buffer_size_w, XmNvalue, numeric_str, NULL);
+
+            XtSetSensitive(socket_receive_buffer_size_label_w, True);
+            XtSetSensitive(socket_receive_buffer_size_w, True);
+            if (ce[cur_pos].value_changed & SOCKET_SEND_BUFFER_CHANGED)
+            {
+               if (ce[cur_pos].rcvbuf_size < 1024)
+               {
+                  numeric_str[0] = '0';
+                  numeric_str[1] = '\0';
+               }
+               else
+               {
+                  (void)sprintf(numeric_str, "%u",
+                                ce[cur_pos].rcvbuf_size / 1024U);
+               }
+            }
+            else
+            {
+               if (fsa[cur_pos].sockrcv_bufsize < 1024)
+               {
+                  numeric_str[0] = '0';
+                  numeric_str[1] = '\0';
+               }
+               else
+               {
+                  (void)sprintf(numeric_str, "%u",
+                                fsa[cur_pos].sockrcv_bufsize / 1024U);
+               }
+            }
+            XtVaSetValues(socket_receive_buffer_size_w, XmNvalue,
+                          numeric_str, NULL);
+         }
+         else
+         {
+            XtSetSensitive(host_switch_toggle_w, False);
+            XtSetSensitive(host_1_label_w, False);
+            XtSetSensitive(host_1_w, False);
+            XtSetSensitive(host_2_label_w, False);
+            XtSetSensitive(host_2_w, False);
+            XtSetSensitive(use_file_when_local_w, False);
+            XtSetSensitive(auto_toggle_w, False);
+            XtSetSensitive(real_hostname_1_w, False);
+            XtSetSensitive(real_hostname_2_w, False);
+            XtSetSensitive(successful_retries_label_w, False);
+            XtSetSensitive(successful_retries_w, False);
+            XtSetSensitive(transfer_rate_limit_label_w, False);
+            XtSetSensitive(transfer_rate_limit_w, False);
+            XtSetSensitive(socket_send_buffer_size_label_w, False);
+            XtSetSensitive(socket_send_buffer_size_w, False);
+            XtSetSensitive(socket_receive_buffer_size_label_w, False);
+            XtSetSensitive(socket_receive_buffer_size_w, False);
+         }
+
+         if ((fsa[cur_pos].protocol & FTP_FLAG) ||
+             (fsa[cur_pos].protocol & SFTP_FLAG) ||
+             (fsa[cur_pos].protocol & HTTP_FLAG) ||
+#ifdef _WITH_SCP_SUPPORT
+             (fsa[cur_pos].protocol & SCP_FLAG) ||
+#endif
+#ifdef _WITH_WMO_SUPPORT
+             (fsa[cur_pos].protocol & WMO_FLAG) ||
+#endif
+#ifdef _WITH_MAP_SUPPORT
+             (fsa[cur_pos].protocol & MAP_FLAG) ||
+#endif
+#ifdef _WITH_DFAX_SUPPORT
+             (fsa[cur_pos].protocol & DFAX_FLAG) ||
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+             (fsa[cur_pos].protocol & DE_MAIL_FLAG) ||
+#endif
+             (fsa[cur_pos].protocol & SMTP_FLAG) ||
+             (fsa[cur_pos].protocol & EXEC_FLAG))
+         {
+            if (ce[cur_pos].value_changed & TRANSFER_TIMEOUT_CHANGED)
+            {
+               (void)sprintf(numeric_str, "%ld", ce[cur_pos].transfer_timeout);
+            }
+            else
+            {
+               (void)sprintf(numeric_str, "%ld", fsa[cur_pos].transfer_timeout);
+            }
+            XtVaSetValues(transfer_timeout_w, XmNvalue, numeric_str, NULL);
+            XtSetSensitive(transfer_timeout_label_w, True);
+         }
+         else
+         {
+            XtSetSensitive(transfer_timeout_w, False);
+            XtSetSensitive(transfer_timeout_label_w, False);
+         }
+
+         if (ce[cur_pos].value_changed & PROXY_NAME_CHANGED)
+         {
+            tmp_ptr = ce[cur_pos].proxy_name;
+         }
+         else
+         {
+            tmp_ptr = fsa[cur_pos].proxy_name;
+         }
+         XtVaSetValues(proxy_name_w, XmNvalue, tmp_ptr, NULL);
+
+         if (fsa[cur_pos].protocol & FTP_FLAG)
+         {
+            XtSetSensitive(mode_label_w, True);
+            XtSetSensitive(extended_mode_w, True);
+            if (fsa[cur_pos].protocol_options & FTP_EXTENDED_MODE)
+            {
+               XtVaSetValues(extended_mode_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(extended_mode_w, XmNset, False, NULL);
+            }
+            XtSetSensitive(ftp_mode_w, True);
+            if (fsa[cur_pos].protocol_options & FTP_PASSIVE_MODE)
+            {
+               XtVaSetValues(passive_mode_w, XmNset, True, NULL);
+               XtVaSetValues(active_mode_w, XmNset, False, NULL);
+               if ((fsa[cur_pos].protocol_options & FTP_EXTENDED_MODE) == 0)
+               {
+                  XtSetSensitive(passive_redirect_w, True);
+                  if (fsa[cur_pos].protocol_options & FTP_ALLOW_DATA_REDIRECT)
+                  {
+                     XtVaSetValues(passive_redirect_w, XmNset, True, NULL);
+                  }
+                  else
+                  {
+                     XtVaSetValues(passive_redirect_w, XmNset, False, NULL);
+                  }
+               }
+               else
+               {
+                  XtSetSensitive(passive_redirect_w, False);
+                  XtVaSetValues(passive_redirect_w, XmNset, False, NULL);
+               }
+            }
+            else
+            {
+               XtSetSensitive(passive_redirect_w, False);
+               XtVaSetValues(passive_mode_w, XmNset, False, NULL);
+               XtVaSetValues(active_mode_w, XmNset, True, NULL);
+            }
+            XtSetSensitive(ftps_label_w, True);
+            XtSetSensitive(use_list_w, True);
+            if (fsa[cur_pos].protocol_options & FTP_USE_LIST)
+            {
+               XtVaSetValues(use_list_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(use_list_w, XmNset, False, NULL);
+            }
+            XtSetSensitive(disable_mlst_w, True);
+            if (fsa[cur_pos].protocol_options & FTP_DISABLE_MLST)
+            {
+               XtVaSetValues(disable_mlst_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(disable_mlst_w, XmNset, False, NULL);
+            }
+            XtSetSensitive(ssl_ccc_w, True);
+            if (fsa[cur_pos].protocol_options & FTP_CCC_OPTION)
+            {
+               XtVaSetValues(ssl_ccc_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(ssl_ccc_w, XmNset, False, NULL);
+            }
+            XtSetSensitive(ftp_idle_time_w, True);
+            if (fsa[cur_pos].protocol_options & SET_IDLE_TIME)
+            {
+               XtVaSetValues(ftp_idle_time_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(ftp_idle_time_w, XmNset, False, NULL);
+            }
+#ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
+            XtSetSensitive(ftp_keepalive_w, True);
+            if (fsa[cur_pos].protocol_options & STAT_KEEPALIVE)
+            {
+               XtVaSetValues(ftp_keepalive_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(ftp_keepalive_w, XmNset, False, NULL);
+            }
+#endif
+            XtSetSensitive(ftp_fast_rename_w, True);
+            if (fsa[cur_pos].protocol_options & FTP_FAST_MOVE)
+            {
+               XtVaSetValues(ftp_fast_rename_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(ftp_fast_rename_w, XmNset, False, NULL);
+            }
             XtSetSensitive(ftp_fast_cd_w, True);
             if (fsa[cur_pos].protocol_options & FTP_FAST_CD)
             {
@@ -1817,6 +1952,15 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
             else
             {
                XtVaSetValues(ftp_fast_cd_w, XmNset, False, NULL);
+            }
+            XtSetSensitive(ftp_ignore_bin_w, True);
+            if (fsa[cur_pos].protocol_options & FTP_IGNORE_BIN)
+            {
+               XtVaSetValues(ftp_ignore_bin_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(ftp_ignore_bin_w, XmNset, False, NULL);
             }
             XtSetSensitive(match_size_w, True);
             if (fsa[cur_pos].protocol_options & CHECK_SIZE)
@@ -1830,612 +1974,650 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
          }
          else
          {
-            XtSetSensitive(ftp_fast_cd_w, False);
-            XtSetSensitive(match_size_w, False);
+            XtSetSensitive(mode_label_w, False);
+            XtSetSensitive(extended_mode_w, False);
+            XtSetSensitive(ftp_mode_w, False);
+            XtSetSensitive(passive_redirect_w, False);
+            XtSetSensitive(ftps_label_w, False);
+            XtSetSensitive(use_list_w, False);
+            XtSetSensitive(disable_mlst_w, False);
+            XtSetSensitive(ssl_ccc_w, False);
+            XtSetSensitive(ftp_idle_time_w, False);
+#ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
+            XtSetSensitive(ftp_keepalive_w, False);
+#endif
+            XtSetSensitive(ftp_fast_rename_w, False);
+            if (fsa[cur_pos].protocol & SFTP_FLAG)
+            {
+               XtSetSensitive(ftp_fast_cd_w, True);
+               if (fsa[cur_pos].protocol_options & FTP_FAST_CD)
+               {
+                  XtVaSetValues(ftp_fast_cd_w, XmNset, True, NULL);
+               }
+               else
+               {
+                  XtVaSetValues(ftp_fast_cd_w, XmNset, False, NULL);
+               }
+               XtSetSensitive(match_size_w, True);
+               if (fsa[cur_pos].protocol_options & CHECK_SIZE)
+               {
+                  XtVaSetValues(match_size_w, XmNset, True, NULL);
+               }
+               else
+               {
+                  XtVaSetValues(match_size_w, XmNset, False, NULL);
+               }
+            }
+            else
+            {
+               XtSetSensitive(ftp_fast_cd_w, False);
+               XtSetSensitive(match_size_w, False);
+            }
+            XtSetSensitive(ftp_ignore_bin_w, False);
          }
-         XtSetSensitive(ftp_ignore_bin_w, False);
-      }
 
 #ifdef WITH_SSL
-      if ((fsa[cur_pos].protocol & FTP_FLAG) ||
-          (fsa[cur_pos].protocol & SMTP_FLAG) ||
-          (fsa[cur_pos].protocol & HTTP_FLAG))
-      {
-         XtSetSensitive(strict_tls_w, True);
-         if (fsa[cur_pos].protocol_options & TLS_STRICT_VERIFY)
+         if ((fsa[cur_pos].protocol & FTP_FLAG) ||
+             (fsa[cur_pos].protocol & SMTP_FLAG) ||
+             (fsa[cur_pos].protocol & HTTP_FLAG))
          {
-            XtVaSetValues(strict_tls_w, XmNset, True, NULL);
+            XtSetSensitive(strict_tls_w, True);
+            if (fsa[cur_pos].protocol_options & TLS_STRICT_VERIFY)
+            {
+               XtVaSetValues(strict_tls_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(strict_tls_w, XmNset, False, NULL);
+            }
          }
          else
          {
-            XtVaSetValues(strict_tls_w, XmNset, False, NULL);
+            XtSetSensitive(strict_tls_w, False);
          }
-      }
-      else
-      {
-         XtSetSensitive(strict_tls_w, False);
-      }
 #endif
 
 #ifdef _WITH_BURST_2
-      if (fsa[cur_pos].protocol_options & DISABLE_BURSTING)
-      {
-         XtVaSetValues(allow_burst_w, XmNset, False, NULL);
-      }
-      else
-      {
-         XtVaSetValues(allow_burst_w, XmNset, True, NULL);
-      }
+         if (fsa[cur_pos].protocol_options & DISABLE_BURSTING)
+         {
+            XtVaSetValues(allow_burst_w, XmNset, False, NULL);
+         }
+         else
+         {
+            XtVaSetValues(allow_burst_w, XmNset, True, NULL);
+         }
 #endif
-      if (fsa[cur_pos].protocol_options & SORT_FILE_NAMES)
-      {
-         XtVaSetValues(sort_file_names_w, XmNset, True, NULL);
-      }
-      else
-      {
-         XtVaSetValues(sort_file_names_w, XmNset, False, NULL);
-      }
-      if (fsa[cur_pos].protocol_options & NO_AGEING_JOBS)
-      {
-         XtVaSetValues(no_ageing_jobs_w, XmNset, True, NULL);
-      }
-      else
-      {
-         XtVaSetValues(no_ageing_jobs_w, XmNset, False, NULL);
-      }
-
-      if (ce[cur_pos].value_changed & RETRY_INTERVAL_CHANGED)
-      {
-         (void)sprintf(numeric_str, "%d", ce[cur_pos].retry_interval);
-      }
-      else
-      {
-         (void)sprintf(numeric_str, "%d", fsa[cur_pos].retry_interval);
-      }
-      XtVaSetValues(retry_interval_w, XmNvalue, numeric_str, NULL);
-
-      if (ce[cur_pos].value_changed & MAX_ERRORS_CHANGED)
-      {
-         (void)sprintf(numeric_str, "%d", ce[cur_pos].max_errors);
-      }
-      else
-      {
-         (void)sprintf(numeric_str, "%d", fsa[cur_pos].max_errors);
-      }
-      XtVaSetValues(max_errors_w, XmNvalue, numeric_str, NULL);
-
-      if (ce[cur_pos].value_changed2 & ERROR_OFFLINE_STATIC_CHANGED)
-      {
-         if (fsa[cur_pos].host_status & HOST_ERROR_OFFLINE_STATIC)
+         if (fsa[cur_pos].protocol_options & SORT_FILE_NAMES)
          {
-            XtVaSetValues(ignore_errors_toggle_w, XmNset, False, NULL);
+            XtVaSetValues(sort_file_names_w, XmNset, True, NULL);
          }
          else
          {
-            XtVaSetValues(ignore_errors_toggle_w, XmNset, True, NULL);
+            XtVaSetValues(sort_file_names_w, XmNset, False, NULL);
          }
-      }
-      else
-      {
-         if (fsa[cur_pos].host_status & HOST_ERROR_OFFLINE_STATIC)
+         if (fsa[cur_pos].protocol_options & NO_AGEING_JOBS)
          {
-            XtVaSetValues(ignore_errors_toggle_w, XmNset, True, NULL);
+            XtVaSetValues(no_ageing_jobs_w, XmNset, True, NULL);
          }
          else
          {
-            XtVaSetValues(ignore_errors_toggle_w, XmNset, False, NULL);
+            XtVaSetValues(no_ageing_jobs_w, XmNset, False, NULL);
          }
-      }
 
-      if (ce[cur_pos].value_changed2 & DO_NOT_DELETE_DATA_CHANGED)
-      {
-         if (fsa[cur_pos].host_status & DO_NOT_DELETE_DATA)
+         if (ce[cur_pos].value_changed & RETRY_INTERVAL_CHANGED)
          {
-            XtVaSetValues(do_not_delete_data_toggle_w, XmNset, False, NULL);
+            (void)sprintf(numeric_str, "%d", ce[cur_pos].retry_interval);
          }
          else
          {
-            XtVaSetValues(do_not_delete_data_toggle_w, XmNset, True, NULL);
+            (void)sprintf(numeric_str, "%d", fsa[cur_pos].retry_interval);
          }
-      }
-      else
-      {
-         if (fsa[cur_pos].host_status & DO_NOT_DELETE_DATA)
+         XtVaSetValues(retry_interval_w, XmNvalue, numeric_str, NULL);
+
+         if (ce[cur_pos].value_changed & MAX_ERRORS_CHANGED)
          {
-            XtVaSetValues(do_not_delete_data_toggle_w, XmNset, True, NULL);
+            (void)sprintf(numeric_str, "%d", ce[cur_pos].max_errors);
          }
          else
          {
-            XtVaSetValues(do_not_delete_data_toggle_w, XmNset, False, NULL);
+            (void)sprintf(numeric_str, "%d", fsa[cur_pos].max_errors);
          }
-      }
+         XtVaSetValues(max_errors_w, XmNvalue, numeric_str, NULL);
 
-      if (ce[cur_pos].value_changed & KEEP_CONNECTED_CHANGED)
-      {
-         (void)sprintf(numeric_str, "%u", ce[cur_pos].keep_connected);
-      }
-      else
-      {
-         (void)sprintf(numeric_str, "%u", fsa[cur_pos].keep_connected);
-      }
-      XtVaSetValues(keep_connected_w, XmNvalue, numeric_str, NULL);
-
-      if (fsa[cur_pos].protocol_options & KEEP_CONNECTED_DISCONNECT)
-      {
-         XtVaSetValues(disconnect_w, XmNset, True, NULL);
-      }
-      else
-      {
-         XtVaSetValues(disconnect_w, XmNset, False, NULL);
-      }
-
-      warn_time = fsa[cur_pos].warn_time;
-      value = warn_time / 86400;
-      if (value)
-      {
-         warn_time -= (value * 86400);
-      }
-      if ((ce[cur_pos].value_changed2 & WARN_TIME_DAYS_CHANGED) == 0)
-      {
-         ce[cur_pos].warn_time_days = value;
-      }
-      value = warn_time / 3600;
-      if (value)
-      {
-         warn_time -= (value * 3600);
-      }
-      if ((ce[cur_pos].value_changed2 & WARN_TIME_HOURS_CHANGED) == 0)
-      {
-         ce[cur_pos].warn_time_hours = (unsigned short)value;
-      }
-      value = warn_time / 60;
-      if (value)
-      {
-         warn_time -= (value * 60);
-      }
-      if ((ce[cur_pos].value_changed2 & WARN_TIME_MINS_CHANGED) == 0)
-      {
-         ce[cur_pos].warn_time_mins = (unsigned short)value;
-      }
-      if ((ce[cur_pos].value_changed2 & WARN_TIME_SECS_CHANGED) == 0)
-      {
-         ce[cur_pos].warn_time_secs = (unsigned short)warn_time;
-      }
-
-      (void)sprintf(numeric_str, "%u", ce[cur_pos].warn_time_days);
-      XtVaSetValues(warn_time_days_w, XmNvalue, numeric_str, NULL);
-      (void)sprintf(numeric_str, "%u",
-                    (unsigned int)ce[cur_pos].warn_time_hours);
-      XtVaSetValues(warn_time_hours_w, XmNvalue, numeric_str, NULL);
-      (void)sprintf(numeric_str, "%u",
-                    (unsigned int)ce[cur_pos].warn_time_mins);
-      XtVaSetValues(warn_time_mins_w, XmNvalue, numeric_str, NULL);
-      (void)sprintf(numeric_str, "%u",
-                    (unsigned int)ce[cur_pos].warn_time_secs);
-      XtVaSetValues(warn_time_secs_w, XmNvalue, numeric_str, NULL);
-
-      if ((ce[cur_pos].value_changed2 & KC_DIRECTION_CHANGED) == 0)
-      {
-         if (((fsa[cur_pos].special_flag & KEEP_CON_NO_FETCH) == 0) &&
-             ((fsa[cur_pos].special_flag & KEEP_CON_NO_SEND) == 0))
+         if (ce[cur_pos].value_changed2 & ERROR_OFFLINE_STATIC_CHANGED)
          {
-            XtVaSetValues(kc_both_w, XmNset, True, NULL);
-            XtVaSetValues(kc_fetch_w, XmNset, False, NULL);
-            XtVaSetValues(kc_send_w, XmNset, False, NULL);
+            if (fsa[cur_pos].host_status & HOST_ERROR_OFFLINE_STATIC)
+            {
+               XtVaSetValues(ignore_errors_toggle_w, XmNset, False, NULL);
+            }
+            else
+            {
+               XtVaSetValues(ignore_errors_toggle_w, XmNset, True, NULL);
+            }
          }
-         else if (fsa[cur_pos].special_flag & KEEP_CON_NO_FETCH)
-              {
-                 XtVaSetValues(kc_both_w, XmNset, False, NULL);
-                 XtVaSetValues(kc_fetch_w, XmNset, False, NULL);
-                 XtVaSetValues(kc_send_w, XmNset, True, NULL);
-              }
-              else
-              {
-                 XtVaSetValues(kc_both_w, XmNset, False, NULL);
-                 XtVaSetValues(kc_fetch_w, XmNset, True, NULL);
-                 XtVaSetValues(kc_send_w, XmNset, False, NULL);
-              }
-      }
+         else
+         {
+            if (fsa[cur_pos].host_status & HOST_ERROR_OFFLINE_STATIC)
+            {
+               XtVaSetValues(ignore_errors_toggle_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(ignore_errors_toggle_w, XmNset, False, NULL);
+            }
+         }
+
+         if (ce[cur_pos].value_changed2 & DO_NOT_DELETE_DATA_CHANGED)
+         {
+            if (fsa[cur_pos].host_status & DO_NOT_DELETE_DATA)
+            {
+               XtVaSetValues(do_not_delete_data_toggle_w, XmNset, False, NULL);
+            }
+            else
+            {
+               XtVaSetValues(do_not_delete_data_toggle_w, XmNset, True, NULL);
+            }
+         }
+         else
+         {
+            if (fsa[cur_pos].host_status & DO_NOT_DELETE_DATA)
+            {
+               XtVaSetValues(do_not_delete_data_toggle_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(do_not_delete_data_toggle_w, XmNset, False, NULL);
+            }
+         }
+
+         if (ce[cur_pos].value_changed & KEEP_CONNECTED_CHANGED)
+         {
+            (void)sprintf(numeric_str, "%u", ce[cur_pos].keep_connected);
+         }
+         else
+         {
+            (void)sprintf(numeric_str, "%u", fsa[cur_pos].keep_connected);
+         }
+         XtVaSetValues(keep_connected_w, XmNvalue, numeric_str, NULL);
+
+         if (fsa[cur_pos].protocol_options & KEEP_CONNECTED_DISCONNECT)
+         {
+            XtVaSetValues(disconnect_w, XmNset, True, NULL);
+         }
+         else
+         {
+            XtVaSetValues(disconnect_w, XmNset, False, NULL);
+         }
+
+         warn_time = fsa[cur_pos].warn_time;
+         value = warn_time / 86400;
+         if (value)
+         {
+            warn_time -= (value * 86400);
+         }
+         if ((ce[cur_pos].value_changed2 & WARN_TIME_DAYS_CHANGED) == 0)
+         {
+            ce[cur_pos].warn_time_days = value;
+         }
+         value = warn_time / 3600;
+         if (value)
+         {
+            warn_time -= (value * 3600);
+         }
+         if ((ce[cur_pos].value_changed2 & WARN_TIME_HOURS_CHANGED) == 0)
+         {
+            ce[cur_pos].warn_time_hours = (unsigned short)value;
+         }
+         value = warn_time / 60;
+         if (value)
+         {
+            warn_time -= (value * 60);
+         }
+         if ((ce[cur_pos].value_changed2 & WARN_TIME_MINS_CHANGED) == 0)
+         {
+            ce[cur_pos].warn_time_mins = (unsigned short)value;
+         }
+         if ((ce[cur_pos].value_changed2 & WARN_TIME_SECS_CHANGED) == 0)
+         {
+            ce[cur_pos].warn_time_secs = (unsigned short)warn_time;
+         }
+
+         (void)sprintf(numeric_str, "%u", ce[cur_pos].warn_time_days);
+         XtVaSetValues(warn_time_days_w, XmNvalue, numeric_str, NULL);
+         (void)sprintf(numeric_str, "%u",
+                       (unsigned int)ce[cur_pos].warn_time_hours);
+         XtVaSetValues(warn_time_hours_w, XmNvalue, numeric_str, NULL);
+         (void)sprintf(numeric_str, "%u",
+                       (unsigned int)ce[cur_pos].warn_time_mins);
+         XtVaSetValues(warn_time_mins_w, XmNvalue, numeric_str, NULL);
+         (void)sprintf(numeric_str, "%u",
+                       (unsigned int)ce[cur_pos].warn_time_secs);
+         XtVaSetValues(warn_time_secs_w, XmNvalue, numeric_str, NULL);
+
+         if ((ce[cur_pos].value_changed2 & KC_DIRECTION_CHANGED) == 0)
+         {
+            if (((fsa[cur_pos].special_flag & KEEP_CON_NO_FETCH) == 0) &&
+                ((fsa[cur_pos].special_flag & KEEP_CON_NO_SEND) == 0))
+            {
+               XtVaSetValues(kc_both_w, XmNset, True, NULL);
+               XtVaSetValues(kc_fetch_w, XmNset, False, NULL);
+               XtVaSetValues(kc_send_w, XmNset, False, NULL);
+            }
+            else if (fsa[cur_pos].special_flag & KEEP_CON_NO_FETCH)
+                 {
+                    XtVaSetValues(kc_both_w, XmNset, False, NULL);
+                    XtVaSetValues(kc_fetch_w, XmNset, False, NULL);
+                    XtVaSetValues(kc_send_w, XmNset, True, NULL);
+                 }
+                 else
+                 {
+                    XtVaSetValues(kc_both_w, XmNset, False, NULL);
+                    XtVaSetValues(kc_fetch_w, XmNset, True, NULL);
+                    XtVaSetValues(kc_send_w, XmNset, False, NULL);
+                 }
+         }
 
 #ifdef WITH_DUP_CHECK
-      if (((ce[cur_pos].value_changed & DC_TYPE_CHANGED) == 0) &&
-          ((ce[cur_pos].value_changed & DC_DELETE_CHANGED) == 0) &&
-          ((ce[cur_pos].value_changed & DC_STORE_CHANGED) == 0) &&
-          ((ce[cur_pos].value_changed & DC_WARN_CHANGED) == 0) &&
-          ((ce[cur_pos].value_changed & DC_TIMEOUT_CHANGED) == 0) &&
-          ((ce[cur_pos].value_changed2 & DC_CRC_CHANGED) == 0) &&
-          ((ce[cur_pos].value_changed2 & DC_REF_CHANGED) == 0))
-      {
-         if (fsa[cur_pos].dup_check_timeout == 0L)
+         if (((ce[cur_pos].value_changed & DC_TYPE_CHANGED) == 0) &&
+             ((ce[cur_pos].value_changed & DC_DELETE_CHANGED) == 0) &&
+             ((ce[cur_pos].value_changed & DC_STORE_CHANGED) == 0) &&
+             ((ce[cur_pos].value_changed & DC_WARN_CHANGED) == 0) &&
+             ((ce[cur_pos].value_changed & DC_TIMEOUT_CHANGED) == 0) &&
+             ((ce[cur_pos].value_changed2 & DC_CRC_CHANGED) == 0) &&
+             ((ce[cur_pos].value_changed2 & DC_REF_CHANGED) == 0))
          {
-            ce[cur_pos].dup_check_timeout = 0L;
-            ce[cur_pos].dup_check_flag = 0;
-            XtSetSensitive(dc_timeout_w, False);
-            XtSetSensitive(dc_timeout_label_w, False);
-            XtSetSensitive(dc_timeout_fixed_w, False);
-            XtSetSensitive(dc_type_w, False);
-            XtSetSensitive(dc_delete_w, False);
-            XtSetSensitive(dc_store_w, False);
-            XtSetSensitive(dc_warn_w, False);
-            XtSetSensitive(dc_reference_w, False);
-            XtSetSensitive(dc_ref_label_w, False);
-            XtSetSensitive(dc_alias_w, False);
-            XtSetSensitive(dc_recipient_w, False);
-            XtSetSensitive(dc_crc_w, False);
-            XtSetSensitive(dc_crc_label_w, False);
-            XtSetSensitive(dc_crc32_w, False);
-            XtSetSensitive(dc_crc32c_w, False);
-            XmToggleButtonSetState(dc_disable_w, True, True);
+            if (fsa[cur_pos].dup_check_timeout == 0L)
+            {
+               ce[cur_pos].dup_check_timeout = 0L;
+               ce[cur_pos].dup_check_flag = 0;
+               XtSetSensitive(dc_timeout_w, False);
+               XtSetSensitive(dc_timeout_label_w, False);
+               XtSetSensitive(dc_timeout_fixed_w, False);
+               XtSetSensitive(dc_type_w, False);
+               XtSetSensitive(dc_delete_w, False);
+               XtSetSensitive(dc_store_w, False);
+               XtSetSensitive(dc_warn_w, False);
+               XtSetSensitive(dc_reference_w, False);
+               XtSetSensitive(dc_ref_label_w, False);
+               XtSetSensitive(dc_alias_w, False);
+               XtSetSensitive(dc_recipient_w, False);
+               XtSetSensitive(dc_crc_w, False);
+               XtSetSensitive(dc_crc_label_w, False);
+               XtSetSensitive(dc_crc32_w, False);
+               XtSetSensitive(dc_crc32c_w, False);
+               XmToggleButtonSetState(dc_disable_w, True, True);
+            }
+            else
+            {
+               ce[cur_pos].dup_check_timeout = fsa[cur_pos].dup_check_timeout;
+               ce[cur_pos].dup_check_flag = fsa[cur_pos].dup_check_flag;
+               XtSetSensitive(dc_timeout_w, True);
+               XtSetSensitive(dc_timeout_label_w, True);
+               XtSetSensitive(dc_timeout_fixed_w, True);
+               XtSetSensitive(dc_type_w, True);
+               XtSetSensitive(dc_delete_w, True);
+               XtSetSensitive(dc_store_w, True);
+               XtSetSensitive(dc_warn_w, True);
+               XtSetSensitive(dc_reference_w, True);
+               XtSetSensitive(dc_ref_label_w, True);
+               XtSetSensitive(dc_alias_w, True);
+               XtSetSensitive(dc_recipient_w, True);
+               XtSetSensitive(dc_crc_w, True);
+               XtSetSensitive(dc_crc_label_w, True);
+               XtSetSensitive(dc_crc32_w, True);
+               XtSetSensitive(dc_crc32c_w, True);
+               XmToggleButtonSetState(dc_enable_w, True, True);
+            }
+         }
+
+         if ((ce[cur_pos].value_changed & DC_TYPE_CHANGED) == 0)
+         {
+            if (fsa[cur_pos].dup_check_flag & DC_FILE_CONTENT)
+            {
+               XtVaSetValues(dc_filename_w, XmNset, False, NULL);
+               XtVaSetValues(dc_namesize_w, XmNset, False, NULL);
+               XtVaSetValues(dc_nosuffix_w, XmNset, False, NULL);
+               XtVaSetValues(dc_filecontent_w, XmNset, True, NULL);
+               XtVaSetValues(dc_filenamecontent_w, XmNset, False, NULL);
+            }
+            else if (fsa[cur_pos].dup_check_flag & DC_FILE_CONT_NAME)
+                 {
+                    XtVaSetValues(dc_filename_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_namesize_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_nosuffix_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_filecontent_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_filenamecontent_w, XmNset, True, NULL);
+                 }
+            else if (fsa[cur_pos].dup_check_flag & DC_NAME_NO_SUFFIX)
+                 {
+                    XtVaSetValues(dc_filename_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_namesize_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_nosuffix_w, XmNset, True, NULL);
+                    XtVaSetValues(dc_filecontent_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_filenamecontent_w, XmNset, False, NULL);
+                 }
+            else if (fsa[cur_pos].dup_check_flag & DC_FILENAME_AND_SIZE)
+                 {
+                    XtVaSetValues(dc_filename_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_namesize_w, XmNset, True, NULL);
+                    XtVaSetValues(dc_nosuffix_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_filecontent_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_filenamecontent_w, XmNset, False, NULL);
+                 }
+                 else
+                 {
+                    XtVaSetValues(dc_filename_w, XmNset, True, NULL);
+                    XtVaSetValues(dc_namesize_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_nosuffix_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_filecontent_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_filenamecontent_w, XmNset, False, NULL);
+                 }
+         }
+
+         if ((ce[cur_pos].value_changed & DC_DELETE_CHANGED) == 0)
+         {
+            if (fsa[cur_pos].dup_check_flag & DC_DELETE)
+            {
+               XtVaSetValues(dc_delete_w, XmNset, True, NULL);
+               XtVaSetValues(dc_store_w, XmNset, False, NULL);
+               XtSetSensitive(dc_store_w, False);
+            }
+            else
+            {
+               XtVaSetValues(dc_delete_w, XmNset, False, NULL);
+            }
+         }
+
+         if ((ce[cur_pos].value_changed & DC_STORE_CHANGED) == 0)
+         {
+            if (fsa[cur_pos].dup_check_flag & DC_STORE)
+            {
+               XtVaSetValues(dc_store_w, XmNset, True, NULL);
+               XtVaSetValues(dc_delete_w, XmNset, False, NULL);
+               XtSetSensitive(dc_delete_w, False);
+            }
+            else
+            {
+               XtVaSetValues(dc_store_w, XmNset, False, NULL);
+            }
+         }
+
+         if ((ce[cur_pos].value_changed & DC_WARN_CHANGED) == 0)
+         {
+            if (fsa[cur_pos].dup_check_flag & DC_WARN)
+            {
+               XtVaSetValues(dc_warn_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(dc_warn_w, XmNset, False, NULL);
+            }
+         }
+
+         if (ce[cur_pos].value_changed & DC_TIMEOUT_CHANGED)
+         {
+            (void)sprintf(numeric_str, "%ld", ce[cur_pos].dup_check_timeout);
          }
          else
          {
-            ce[cur_pos].dup_check_timeout = fsa[cur_pos].dup_check_timeout;
-            ce[cur_pos].dup_check_flag = fsa[cur_pos].dup_check_flag;
-            XtSetSensitive(dc_timeout_w, True);
-            XtSetSensitive(dc_timeout_label_w, True);
-            XtSetSensitive(dc_timeout_fixed_w, True);
-            XtSetSensitive(dc_type_w, True);
-            XtSetSensitive(dc_delete_w, True);
-            XtSetSensitive(dc_store_w, True);
-            XtSetSensitive(dc_warn_w, True);
-            XtSetSensitive(dc_reference_w, True);
-            XtSetSensitive(dc_ref_label_w, True);
-            XtSetSensitive(dc_alias_w, True);
-            XtSetSensitive(dc_recipient_w, True);
-            XtSetSensitive(dc_crc_w, True);
-            XtSetSensitive(dc_crc_label_w, True);
-            XtSetSensitive(dc_crc32_w, True);
-            XtSetSensitive(dc_crc32c_w, True);
-            XmToggleButtonSetState(dc_enable_w, True, True);
+            (void)sprintf(numeric_str, "%ld", fsa[cur_pos].dup_check_timeout);
          }
-      }
+         XtVaSetValues(dc_timeout_w, XmNvalue, numeric_str, NULL);
 
-      if ((ce[cur_pos].value_changed & DC_TYPE_CHANGED) == 0)
-      {
-         if (fsa[cur_pos].dup_check_flag & DC_FILE_CONTENT)
+         if ((ce[cur_pos].value_changed2 & DC_REF_CHANGED) == 0)
          {
-            XtVaSetValues(dc_filename_w, XmNset, False, NULL);
-            XtVaSetValues(dc_namesize_w, XmNset, False, NULL);
-            XtVaSetValues(dc_nosuffix_w, XmNset, False, NULL);
-            XtVaSetValues(dc_filecontent_w, XmNset, True, NULL);
-            XtVaSetValues(dc_filenamecontent_w, XmNset, False, NULL);
+            if (fsa[cur_pos].dup_check_flag & USE_RECIPIENT_ID)
+            {
+               XtVaSetValues(dc_alias_w, XmNset, False, NULL);
+               XtVaSetValues(dc_recipient_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(dc_alias_w, XmNset, True, NULL);
+               XtVaSetValues(dc_recipient_w, XmNset, False, NULL);
+            }
          }
-         else if (fsa[cur_pos].dup_check_flag & DC_FILE_CONT_NAME)
-              {
-                 XtVaSetValues(dc_filename_w, XmNset, False, NULL);
-                 XtVaSetValues(dc_namesize_w, XmNset, False, NULL);
-                 XtVaSetValues(dc_nosuffix_w, XmNset, False, NULL);
-                 XtVaSetValues(dc_filecontent_w, XmNset, False, NULL);
-                 XtVaSetValues(dc_filenamecontent_w, XmNset, True, NULL);
-              }
-         else if (fsa[cur_pos].dup_check_flag & DC_NAME_NO_SUFFIX)
-              {
-                 XtVaSetValues(dc_filename_w, XmNset, False, NULL);
-                 XtVaSetValues(dc_namesize_w, XmNset, False, NULL);
-                 XtVaSetValues(dc_nosuffix_w, XmNset, True, NULL);
-                 XtVaSetValues(dc_filecontent_w, XmNset, False, NULL);
-                 XtVaSetValues(dc_filenamecontent_w, XmNset, False, NULL);
-              }
-         else if (fsa[cur_pos].dup_check_flag & DC_FILENAME_AND_SIZE)
-              {
-                 XtVaSetValues(dc_filename_w, XmNset, False, NULL);
-                 XtVaSetValues(dc_namesize_w, XmNset, True, NULL);
-                 XtVaSetValues(dc_nosuffix_w, XmNset, False, NULL);
-                 XtVaSetValues(dc_filecontent_w, XmNset, False, NULL);
-                 XtVaSetValues(dc_filenamecontent_w, XmNset, False, NULL);
-              }
-              else
-              {
-                 XtVaSetValues(dc_filename_w, XmNset, True, NULL);
-                 XtVaSetValues(dc_namesize_w, XmNset, False, NULL);
-                 XtVaSetValues(dc_nosuffix_w, XmNset, False, NULL);
-                 XtVaSetValues(dc_filecontent_w, XmNset, False, NULL);
-                 XtVaSetValues(dc_filenamecontent_w, XmNset, False, NULL);
-              }
-      }
 
-      if ((ce[cur_pos].value_changed & DC_DELETE_CHANGED) == 0)
-      {
-         if (fsa[cur_pos].dup_check_flag & DC_DELETE)
+         if ((ce[cur_pos].value_changed2 & DC_CRC_CHANGED) == 0)
          {
-            XtVaSetValues(dc_delete_w, XmNset, True, NULL);
-            XtVaSetValues(dc_store_w, XmNset, False, NULL);
-            XtSetSensitive(dc_store_w, False);
+            if (fsa[cur_pos].dup_check_flag & DC_CRC32C)
+            {
+               XtVaSetValues(dc_crc32_w, XmNset, False, NULL);
+               XtVaSetValues(dc_crc32c_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(dc_crc32_w, XmNset, True, NULL);
+               XtVaSetValues(dc_crc32c_w, XmNset, False, NULL);
+            }
          }
-         else
-         {
-            XtVaSetValues(dc_delete_w, XmNset, False, NULL);
-         }
-      }
 
-      if ((ce[cur_pos].value_changed & DC_STORE_CHANGED) == 0)
-      {
-         if (fsa[cur_pos].dup_check_flag & DC_STORE)
+         if ((ce[cur_pos].value_changed2 & DC_TIMEOUT_FIXED_CHANGED) == 0)
          {
-            XtVaSetValues(dc_store_w, XmNset, True, NULL);
-            XtVaSetValues(dc_delete_w, XmNset, False, NULL);
-            XtSetSensitive(dc_delete_w, False);
+            if (fsa[cur_pos].dup_check_flag & TIMEOUT_IS_FIXED)
+            {
+               XtVaSetValues(dc_timeout_fixed_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(dc_timeout_fixed_w, XmNset, False, NULL);
+            }
          }
-         else
-         {
-            XtVaSetValues(dc_store_w, XmNset, False, NULL);
-         }
-      }
-
-      if ((ce[cur_pos].value_changed & DC_WARN_CHANGED) == 0)
-      {
-         if (fsa[cur_pos].dup_check_flag & DC_WARN)
-         {
-            XtVaSetValues(dc_warn_w, XmNset, True, NULL);
-         }
-         else
-         {
-            XtVaSetValues(dc_warn_w, XmNset, False, NULL);
-         }
-      }
-
-      if (ce[cur_pos].value_changed & DC_TIMEOUT_CHANGED)
-      {
-         (void)sprintf(numeric_str, "%ld", ce[cur_pos].dup_check_timeout);
-      }
-      else
-      {
-         (void)sprintf(numeric_str, "%ld", fsa[cur_pos].dup_check_timeout);
-      }
-      XtVaSetValues(dc_timeout_w, XmNvalue, numeric_str, NULL);
-
-      if ((ce[cur_pos].value_changed2 & DC_REF_CHANGED) == 0)
-      {
-         if (fsa[cur_pos].dup_check_flag & USE_RECIPIENT_ID)
-         {
-            XtVaSetValues(dc_alias_w, XmNset, False, NULL);
-            XtVaSetValues(dc_recipient_w, XmNset, True, NULL);
-         }
-         else
-         {
-            XtVaSetValues(dc_alias_w, XmNset, True, NULL);
-            XtVaSetValues(dc_recipient_w, XmNset, False, NULL);
-         }
-      }
-
-      if ((ce[cur_pos].value_changed2 & DC_CRC_CHANGED) == 0)
-      {
-         if (fsa[cur_pos].dup_check_flag & DC_CRC32C)
-         {
-            XtVaSetValues(dc_crc32_w, XmNset, False, NULL);
-            XtVaSetValues(dc_crc32c_w, XmNset, True, NULL);
-         }
-         else
-         {
-            XtVaSetValues(dc_crc32_w, XmNset, True, NULL);
-            XtVaSetValues(dc_crc32c_w, XmNset, False, NULL);
-         }
-      }
-
-      if ((ce[cur_pos].value_changed2 & DC_TIMEOUT_FIXED_CHANGED) == 0)
-      {
-         if (fsa[cur_pos].dup_check_flag & TIMEOUT_IS_FIXED)
-         {
-            XtVaSetValues(dc_timeout_fixed_w, XmNset, True, NULL);
-         }
-         else
-         {
-            XtVaSetValues(dc_timeout_fixed_w, XmNset, False, NULL);
-         }
-      }
 #endif /* WITH_DUP_CHECK */
 
-      /* Set option menu for Parallel Transfers. */
-      if (ce[cur_pos].value_changed & ALLOWED_TRANSFERS_CHANGED)
-      {
-         choice = ce[cur_pos].allowed_transfers - 1;
-      }
-      else
-      {
-         choice = fsa[cur_pos].allowed_transfers - 1;
-      }
-      if (choice < 0)
-      {
-         choice = 0;
-      }
-      XtVaSetValues(pt.option_menu_w, XmNmenuHistory, pt.button_w[choice], NULL);
-      XmUpdateDisplay(pt.option_menu_w);
-
-      /* Set option menu for Transfer Blocksize. */
-      choice = 4;
-      if (ce[cur_pos].value_changed & BLOCK_SIZE_CHANGED)
-      {
-         int i;
-
-         for (i = 0; i < MAX_TB_BUTTONS; i++)
+         /* Set option menu for Parallel Transfers. */
+         if (ce[cur_pos].value_changed & ALLOWED_TRANSFERS_CHANGED)
          {
-            if (ce[cur_pos].block_size == tb.value[i])
-            {
-               choice = i;
-               break;
-            }
-         }
-      }
-      else
-      {
-         int i;
-
-         for (i = 0; i < MAX_TB_BUTTONS; i++)
-         {
-            if (fsa[cur_pos].block_size == tb.value[i])
-            {
-               choice = i;
-               break;
-            }
-         }
-      }
-      XtVaSetValues(tb.option_menu_w, XmNmenuHistory, tb.button_w[choice], NULL);
-      XmUpdateDisplay(tb.option_menu_w);
-
-      /* Set option menu for Filesize Offset. */
-      if ((fsa[cur_pos].protocol & FTP_FLAG) ||
-          (fsa[cur_pos].protocol & SFTP_FLAG))
-      {
-         int     i,
-                 max_fso_buttons;
-         Boolean sensitive;
-
-         XtSetSensitive(fso.button_w[0], True);
-         XtSetSensitive(fso.button_w[1], True);
-         if (fsa[cur_pos].protocol & FTP_FLAG)
-         {
-            max_fso_buttons = MAX_FSO_BUTTONS;
-            sensitive = True;
+            choice = ce[cur_pos].allowed_transfers - 1;
          }
          else
          {
-            max_fso_buttons = MAX_FSO_SFTP_BUTTONS;
-            sensitive = False;
+            choice = fsa[cur_pos].allowed_transfers - 1;
          }
-         for (i = 2; i < MAX_FSO_BUTTONS; i++)
+         if (choice < 0)
          {
-            XtSetSensitive(fso.button_w[i], sensitive);
+            choice = 0;
          }
-         XtSetSensitive(fso.option_menu_w, True);
-         if (ce[cur_pos].value_changed & FILE_SIZE_OFFSET_CHANGED)
-         {
-            if ((ce[cur_pos].file_size_offset == -1) ||
-                (ce[cur_pos].file_size_offset > (max_fso_buttons - 1)))
-            {
-               choice = 0;
-            }
-            else if (ce[cur_pos].file_size_offset == AUTO_SIZE_DETECT)
-                 {
-                    choice = 1;
-                 }
-                 else
-                 {
-                    choice = ce[cur_pos].file_size_offset;
-                 }
-         }
-         else
-         {
-            if ((fsa[cur_pos].file_size_offset == -1) ||
-                (fsa[cur_pos].file_size_offset > (max_fso_buttons - 1)))
-            {
-               choice = 0;
-            }
-            else if (fsa[cur_pos].file_size_offset == AUTO_SIZE_DETECT)
-                 {
-                    choice = 1;
-                 }
-                 else
-                 {
-                    choice = fsa[cur_pos].file_size_offset;
-                 }
-         }
-         XtVaSetValues(fso.option_menu_w, XmNmenuHistory, fso.button_w[choice],
+         XtVaSetValues(pt.option_menu_w, XmNmenuHistory, pt.button_w[choice],
                        NULL);
-         XmUpdateDisplay(fso.option_menu_w);
-      }
-      else
-      {
-         XtSetSensitive(fso.option_menu_w, False);
-      }
+         XmUpdateDisplay(pt.option_menu_w);
+
+         /* Set option menu for Transfer Blocksize. */
+         choice = 4;
+         if (ce[cur_pos].value_changed & BLOCK_SIZE_CHANGED)
+         {
+            int i;
+
+            for (i = 0; i < MAX_TB_BUTTONS; i++)
+            {
+               if (ce[cur_pos].block_size == tb.value[i])
+               {
+                  choice = i;
+                  break;
+               }
+            }
+         }
+         else
+         {
+            int i;
+
+            for (i = 0; i < MAX_TB_BUTTONS; i++)
+            {
+               if (fsa[cur_pos].block_size == tb.value[i])
+               {
+                  choice = i;
+                  break;
+               }
+            }
+         }
+         XtVaSetValues(tb.option_menu_w, XmNmenuHistory, tb.button_w[choice], NULL);
+         XmUpdateDisplay(tb.option_menu_w);
+
+         /* Set option menu for Filesize Offset. */
+         if ((fsa[cur_pos].protocol & FTP_FLAG) ||
+             (fsa[cur_pos].protocol & SFTP_FLAG))
+         {
+            int     i,
+                    max_fso_buttons;
+            Boolean sensitive;
+
+            XtSetSensitive(fso.button_w[0], True);
+            XtSetSensitive(fso.button_w[1], True);
+            if (fsa[cur_pos].protocol & FTP_FLAG)
+            {
+               max_fso_buttons = MAX_FSO_BUTTONS;
+               sensitive = True;
+            }
+            else
+            {
+               max_fso_buttons = MAX_FSO_SFTP_BUTTONS;
+               sensitive = False;
+            }
+            for (i = 2; i < MAX_FSO_BUTTONS; i++)
+            {
+               XtSetSensitive(fso.button_w[i], sensitive);
+            }
+            XtSetSensitive(fso.option_menu_w, True);
+            if (ce[cur_pos].value_changed & FILE_SIZE_OFFSET_CHANGED)
+            {
+               if ((ce[cur_pos].file_size_offset == -1) ||
+                   (ce[cur_pos].file_size_offset > (max_fso_buttons - 1)))
+               {
+                  choice = 0;
+               }
+               else if (ce[cur_pos].file_size_offset == AUTO_SIZE_DETECT)
+                    {
+                       choice = 1;
+                    }
+                    else
+                    {
+                       choice = ce[cur_pos].file_size_offset;
+                    }
+            }
+            else
+            {
+               if ((fsa[cur_pos].file_size_offset == -1) ||
+                   (fsa[cur_pos].file_size_offset > (max_fso_buttons - 1)))
+               {
+                  choice = 0;
+               }
+               else if (fsa[cur_pos].file_size_offset == AUTO_SIZE_DETECT)
+                    {
+                       choice = 1;
+                    }
+                    else
+                    {
+                       choice = fsa[cur_pos].file_size_offset;
+                    }
+            }
+            XtVaSetValues(fso.option_menu_w, XmNmenuHistory, fso.button_w[choice],
+                          NULL);
+            XmUpdateDisplay(fso.option_menu_w);
+         }
+         else
+         {
+            XtSetSensitive(fso.option_menu_w, False);
+         }
 
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
-      /* Set TCP_KEEPALIVE option or not. */
-      if ((fsa[cur_pos].protocol & FTP_FLAG) ||
+         /* Set TCP_KEEPALIVE option or not. */
+         if ((fsa[cur_pos].protocol & FTP_FLAG) ||
 # ifdef _WITH_WMO_SUPPORT
-          (fsa[cur_pos].protocol & WMO_FLAG) ||
+             (fsa[cur_pos].protocol & WMO_FLAG) ||
 # endif
-          (fsa[cur_pos].protocol & HTTP_FLAG) ||
+             (fsa[cur_pos].protocol & HTTP_FLAG) ||
 # ifdef _WITH_DE_MAIL_SUPPORT
-          (fsa[cur_pos].protocol & DE_MAIL_FLAG) ||
+             (fsa[cur_pos].protocol & DE_MAIL_FLAG) ||
 # endif
-          (fsa[cur_pos].protocol & SMTP_FLAG))
-      {
-         XtSetSensitive(tcp_keepalive_w, True);
-         if (fsa[cur_pos].protocol_options & AFD_TCP_KEEPALIVE)
+             (fsa[cur_pos].protocol & SMTP_FLAG))
          {
-            XtVaSetValues(tcp_keepalive_w, XmNset, True, NULL);
+            XtSetSensitive(tcp_keepalive_w, True);
+            if (fsa[cur_pos].protocol_options & AFD_TCP_KEEPALIVE)
+            {
+               XtVaSetValues(tcp_keepalive_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(tcp_keepalive_w, XmNset, False, NULL);
+            }
          }
          else
          {
-            XtVaSetValues(tcp_keepalive_w, XmNset, False, NULL);
+            XtSetSensitive(tcp_keepalive_w, False);
          }
-      }
-      else
-      {
-         XtSetSensitive(tcp_keepalive_w, False);
-      }
 #endif
 
-      /* Set USE_SEQUENCE_LOCKING option or not. */
-      if ((fsa[cur_pos].protocol & FTP_FLAG) ||
-          (fsa[cur_pos].protocol & SFTP_FLAG))
-      {
-         XtSetSensitive(sequence_locking_w, True);
-         if (fsa[cur_pos].protocol_options & USE_SEQUENCE_LOCKING)
+         /* Set USE_SEQUENCE_LOCKING option or not. */
+         if ((fsa[cur_pos].protocol & FTP_FLAG) ||
+             (fsa[cur_pos].protocol & SFTP_FLAG))
          {
-            XtVaSetValues(sequence_locking_w, XmNset, True, NULL);
+            XtSetSensitive(sequence_locking_w, True);
+            if (fsa[cur_pos].protocol_options & USE_SEQUENCE_LOCKING)
+            {
+               XtVaSetValues(sequence_locking_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(sequence_locking_w, XmNset, False, NULL);
+            }
          }
          else
          {
-            XtVaSetValues(sequence_locking_w, XmNset, False, NULL);
+            XtSetSensitive(sequence_locking_w, False);
          }
-      }
-      else
-      {
-         XtSetSensitive(sequence_locking_w, False);
-      }
 
-      /* Set KEEP_TIME_STAMP option or not. */
-      if ((fsa[cur_pos].protocol & FTP_FLAG) ||
-          (fsa[cur_pos].protocol & SFTP_FLAG) ||
-          (fsa[cur_pos].protocol & LOC_FLAG))
-      {
-         XtSetSensitive(keep_time_stamp_w, True);
-         if (fsa[cur_pos].protocol_options & KEEP_TIME_STAMP)
+         /* Set KEEP_TIME_STAMP option or not. */
+         if ((fsa[cur_pos].protocol & FTP_FLAG) ||
+             (fsa[cur_pos].protocol & SFTP_FLAG) ||
+             (fsa[cur_pos].protocol & LOC_FLAG))
          {
-            XtVaSetValues(keep_time_stamp_w, XmNset, True, NULL);
+            XtSetSensitive(keep_time_stamp_w, True);
+            if (fsa[cur_pos].protocol_options & KEEP_TIME_STAMP)
+            {
+               XtVaSetValues(keep_time_stamp_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(keep_time_stamp_w, XmNset, False, NULL);
+            }
          }
          else
          {
-            XtVaSetValues(keep_time_stamp_w, XmNset, False, NULL);
+            XtSetSensitive(keep_time_stamp_w, False);
          }
-      }
-      else
-      {
-         XtSetSensitive(keep_time_stamp_w, False);
-      }
 
-      /* Enable or disable compression. */
-      if ((fsa[cur_pos].protocol & SFTP_FLAG)
+         /* Enable or disable compression. */
+         if ((fsa[cur_pos].protocol & SFTP_FLAG)
 #ifdef _WITH_SCP_SUPPORT
-          || (fsa[cur_pos].protocol & SCP_FLAG))
+             || (fsa[cur_pos].protocol & SCP_FLAG))
 #else
-         )
+            )
 #endif
-      {
-         XtSetSensitive(compression_w, True);
-         if (fsa[cur_pos].protocol_options & ENABLE_COMPRESSION)
          {
-            XtVaSetValues(compression_w, XmNset, True, NULL);
+            XtSetSensitive(compression_w, True);
+            if (fsa[cur_pos].protocol_options & ENABLE_COMPRESSION)
+            {
+               XtVaSetValues(compression_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(compression_w, XmNset, False, NULL);
+            }
          }
          else
          {
-            XtVaSetValues(compression_w, XmNset, False, NULL);
+            XtSetSensitive(compression_w, False);
          }
-      }
-      else
-      {
-         XtSetSensitive(compression_w, False);
-      }
 
-      /* See if we need to disable the remove button. */
-      if (fsa[cur_pos].special_flag & HOST_IN_DIR_CONFIG)
-      {
-         XtSetSensitive(rm_button_w, False);
-      }
-      else
-      {
-         XtSetSensitive(rm_button_w, True);
+         /* See if we need to disable the remove button. */
+         if (fsa[cur_pos].special_flag & HOST_IN_DIR_CONFIG)
+         {
+            XtSetSensitive(rm_button_w, False);
+         }
+         else
+         {
+            XtSetSensitive(rm_button_w, True);
+         }
       }
    } /* if (cur_pos != last_selected) */
 

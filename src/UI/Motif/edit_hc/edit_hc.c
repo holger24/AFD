@@ -1,6 +1,6 @@
 /*
  *  edit_hc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -147,6 +147,7 @@ Widget                     active_mode_w,
                            dc_filecontent_w,
                            dc_filenamecontent_w,
                            dc_filename_w,
+                           dc_label_w,
                            dc_namesize_w,
                            dc_nosuffix_w,
                            dc_recipient_w,
@@ -181,25 +182,30 @@ Widget                     active_mode_w,
                            host_list_w,
                            host_switch_toggle_w,
                            ignore_errors_toggle_w,
+                           interrupt_w,
                            kc_both_w,
                            kc_fetch_w,
                            kc_send_w,
                            keep_connected_w,
+                           keep_connected_label_w,
                            keep_time_stamp_w,
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
                            ftp_keepalive_w,
 #endif
                            match_size_w,
                            max_errors_w,
+                           max_errors_label_w,
                            mode_label_w,
                            no_ageing_jobs_w,
                            no_source_icon_w,
                            passive_mode_w,
                            passive_redirect_w,
+                           proxy_label_w,
                            proxy_name_w,
                            real_hostname_1_w,
                            real_hostname_2_w,
                            retry_interval_w,
+                           retry_interval_label_w,
                            rm_button_w,
                            second_label_w,
                            sequence_locking_w,
@@ -220,7 +226,6 @@ Widget                     active_mode_w,
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
                            tcp_keepalive_w,
 #endif
-                           timeout_transfer_w,
                            transfer_rate_limit_label_w,
                            transfer_rate_limit_w,
                            transfer_timeout_label_w,
@@ -228,9 +233,14 @@ Widget                     active_mode_w,
                            use_file_when_local_w,
                            use_list_w,
                            warn_time_days_w,
+                           warn_time_days_label_w,
                            warn_time_hours_w,
+                           warn_time_hours_label_w,
+                           warn_time_label_w,
                            warn_time_mins_w,
-                           warn_time_secs_w;
+                           warn_time_mins_label_w,
+                           warn_time_secs_w,
+                           warn_time_secs_label_w;
 Atom                       compound_text;
 XtInputId                  db_update_cmd_id;
 int                        event_log_fd = STDERR_FILENO,
@@ -272,9 +282,9 @@ static XtActionsRec        action_table[] =
                            };
 
 /* Local function prototypes. */
-static void                create_option_menu_fso(Widget, Widget, XmFontList),
-                           create_option_menu_pt(Widget, Widget, XmFontList),
-                           create_option_menu_tb(Widget, Widget, XmFontList),
+static void                create_option_menu_fso(Widget, XmFontList),
+                           create_option_menu_pt(Widget, XmFontList),
+                           create_option_menu_tb(Widget, XmFontList),
                            init_edit_hc(int *, char **, char *),
                            init_widget_data(void),
                            sig_bus(int),
@@ -841,7 +851,7 @@ main(int argc, char *argv[])
    XtAddCallback(real_hostname_2_w, XmNlosingFocusCallback, save_input,
                  (XtPointer)REAL_HOST_NAME_2);
 
-   label_w = XtVaCreateManagedWidget("Proxy Name:",
+   proxy_label_w = XtVaCreateManagedWidget("Proxy Name:",
                        xmLabelGadgetClass,  box_w,
                        XmNfontList,         fontlist,
                        XmNtopAttachment,    XmATTACH_POSITION,
@@ -862,7 +872,7 @@ main(int argc, char *argv[])
                        XmNtopAttachment,    XmATTACH_POSITION,
                        XmNtopPosition,      1,
                        XmNleftAttachment,   XmATTACH_WIDGET,
-                       XmNleftWidget,       label_w,
+                       XmNleftWidget,       proxy_label_w,
                        XmNbottomAttachment, XmATTACH_POSITION,
                        XmNbottomPosition,   61,
                        XmNrightAttachment,  XmATTACH_FORM,
@@ -976,7 +986,7 @@ main(int argc, char *argv[])
                  NULL);
    XtAddCallback(transfer_timeout_w, XmNlosingFocusCallback, save_input,
                  (XtPointer)TRANSFER_TIMEOUT);
-   timeout_transfer_w = XtVaCreateManagedWidget("Interrupt",
+   interrupt_w = XtVaCreateManagedWidget("Interrupt",
                            xmToggleButtonGadgetClass, box_w,
                            XmNfontList,               fontlist,
                            XmNtopAttachment,          XmATTACH_POSITION,
@@ -987,7 +997,7 @@ main(int argc, char *argv[])
                            XmNbottomPosition,         20,
                            XmNset,                    False,
                            NULL);
-   XtAddCallback(timeout_transfer_w, XmNvalueChangedCallback,
+   XtAddCallback(interrupt_w, XmNvalueChangedCallback,
                  (XtCallbackProc)toggle_button2,
                  (XtPointer)TIMEOUT_TRANSFER_CHANGED);
 
@@ -1023,7 +1033,7 @@ main(int argc, char *argv[])
                  (XtPointer)DO_NOT_DELETE_DATA_CHANGED);
 
 
-   label_w = XtVaCreateManagedWidget("Maximum errors  :",
+   max_errors_label_w = XtVaCreateManagedWidget("Maximum errors  :",
                            xmLabelGadgetClass,  box_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_POSITION,
@@ -1044,7 +1054,7 @@ main(int argc, char *argv[])
                            XmNtopAttachment,    XmATTACH_POSITION,
                            XmNtopPosition,      21,
                            XmNleftAttachment,   XmATTACH_WIDGET,
-                           XmNleftWidget,       label_w,
+                           XmNleftWidget,       max_errors_label_w,
                            XmNdropSiteActivity, XmDROP_SITE_INACTIVE,
                            NULL);
    XtAddCallback(max_errors_w, XmNmodifyVerifyCallback, check_nummeric, NULL);
@@ -1084,7 +1094,7 @@ main(int argc, char *argv[])
    XtAddCallback(successful_retries_w, XmNlosingFocusCallback, save_input,
                  (XtPointer)SUCCESSFUL_RETRIES);
 
-   label_w = XtVaCreateManagedWidget("Retry interval :",
+   retry_interval_label_w = XtVaCreateManagedWidget("Retry interval :",
                            xmLabelGadgetClass,  box_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_POSITION,
@@ -1106,7 +1116,7 @@ main(int argc, char *argv[])
                            XmNtopAttachment,    XmATTACH_POSITION,
                            XmNtopPosition,      21,
                            XmNleftAttachment,   XmATTACH_WIDGET,
-                           XmNleftWidget,       label_w,
+                           XmNleftWidget,       retry_interval_label_w,
                            XmNdropSiteActivity, XmDROP_SITE_INACTIVE,
                            NULL);
    XtAddCallback(retry_interval_w, XmNmodifyVerifyCallback, check_nummeric,
@@ -1116,7 +1126,7 @@ main(int argc, char *argv[])
    XtAddCallback(retry_interval_w, XmNlosingFocusCallback, save_input,
                  (XtPointer)RETRY_INTERVAL);
 
-   label_w = XtVaCreateManagedWidget("Keep connected  :",
+   keep_connected_label_w = XtVaCreateManagedWidget("Keep connected  :",
                            xmLabelGadgetClass,  box_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_POSITION,
@@ -1137,7 +1147,7 @@ main(int argc, char *argv[])
                            XmNtopAttachment,    XmATTACH_POSITION,
                            XmNtopPosition,      41,
                            XmNleftAttachment,   XmATTACH_WIDGET,
-                           XmNleftWidget,       label_w,
+                           XmNleftWidget,       keep_connected_label_w,
                            XmNdropSiteActivity, XmDROP_SITE_INACTIVE,
                            NULL);
    XtAddCallback(keep_connected_w, XmNmodifyVerifyCallback, check_nummeric,
@@ -1208,7 +1218,7 @@ main(int argc, char *argv[])
                  (XtCallbackProc)toggle_button2,
                  (XtPointer)DISCONNECT_CHANGED);
 
-   label_w = XtVaCreateManagedWidget("Warn time :",
+   warn_time_label_w = XtVaCreateManagedWidget("Warn time :",
                            xmLabelGadgetClass,  box_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_POSITION,
@@ -1229,7 +1239,7 @@ main(int argc, char *argv[])
                            XmNtopAttachment,    XmATTACH_POSITION,
                            XmNtopPosition,      41,
                            XmNleftAttachment,   XmATTACH_WIDGET,
-                           XmNleftWidget,       label_w,
+                           XmNleftWidget,       warn_time_label_w,
                            XmNdropSiteActivity, XmDROP_SITE_INACTIVE,
                            NULL);
    XtAddCallback(warn_time_days_w, XmNmodifyVerifyCallback, check_nummeric,
@@ -1238,7 +1248,7 @@ main(int argc, char *argv[])
                  NULL);
    XtAddCallback(warn_time_days_w, XmNlosingFocusCallback, save_input,
                  (XtPointer)WARN_TIME_DAYS);
-   label_w = XtVaCreateManagedWidget("days ",
+   warn_time_days_label_w = XtVaCreateManagedWidget("days ",
                            xmLabelGadgetClass,  box_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_POSITION,
@@ -1259,7 +1269,7 @@ main(int argc, char *argv[])
                            XmNtopAttachment,    XmATTACH_POSITION,
                            XmNtopPosition,      41,
                            XmNleftAttachment,   XmATTACH_WIDGET,
-                           XmNleftWidget,       label_w,
+                           XmNleftWidget,       warn_time_days_label_w,
                            XmNdropSiteActivity, XmDROP_SITE_INACTIVE,
                            NULL);
    XtAddCallback(warn_time_hours_w, XmNmodifyVerifyCallback, check_nummeric,
@@ -1268,7 +1278,7 @@ main(int argc, char *argv[])
                  NULL);
    XtAddCallback(warn_time_hours_w, XmNlosingFocusCallback, save_input,
                  (XtPointer)WARN_TIME_HOURS);
-   label_w = XtVaCreateManagedWidget("hours ",
+   warn_time_hours_label_w = XtVaCreateManagedWidget("hours ",
                            xmLabelGadgetClass,  box_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_POSITION,
@@ -1289,7 +1299,7 @@ main(int argc, char *argv[])
                            XmNtopAttachment,    XmATTACH_POSITION,
                            XmNtopPosition,      41,
                            XmNleftAttachment,   XmATTACH_WIDGET,
-                           XmNleftWidget,       label_w,
+                           XmNleftWidget,       warn_time_hours_label_w,
                            XmNdropSiteActivity, XmDROP_SITE_INACTIVE,
                            NULL);
    XtAddCallback(warn_time_mins_w, XmNmodifyVerifyCallback, check_nummeric,
@@ -1298,7 +1308,7 @@ main(int argc, char *argv[])
                  NULL);
    XtAddCallback(warn_time_mins_w, XmNlosingFocusCallback, save_input,
                  (XtPointer)WARN_TIME_MINS);
-   label_w = XtVaCreateManagedWidget("mins ",
+   warn_time_mins_label_w = XtVaCreateManagedWidget("mins ",
                            xmLabelGadgetClass,  box_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_POSITION,
@@ -1319,7 +1329,7 @@ main(int argc, char *argv[])
                            XmNtopAttachment,    XmATTACH_POSITION,
                            XmNtopPosition,      41,
                            XmNleftAttachment,   XmATTACH_WIDGET,
-                           XmNleftWidget,       label_w,
+                           XmNleftWidget,       warn_time_mins_label_w,
                            XmNdropSiteActivity, XmDROP_SITE_INACTIVE,
                            NULL);
    XtAddCallback(warn_time_secs_w, XmNmodifyVerifyCallback, check_nummeric,
@@ -1328,7 +1338,7 @@ main(int argc, char *argv[])
                  NULL);
    XtAddCallback(warn_time_secs_w, XmNlosingFocusCallback, save_input,
                  (XtPointer)WARN_TIME_SECS);
-   label_w = XtVaCreateManagedWidget("secs",
+   warn_time_secs_label_w = XtVaCreateManagedWidget("secs",
                            xmLabelGadgetClass,  box_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_POSITION,
@@ -1534,7 +1544,7 @@ main(int argc, char *argv[])
    argcount++;
    box_w = XmCreateForm(form_w, "dupcheck_box_w", args, argcount);
 
-   label_w = XtVaCreateManagedWidget("Check for duplicates :",
+   dc_label_w = XtVaCreateManagedWidget("Check for duplicates :",
                             xmLabelGadgetClass,  box_w,
                             XmNfontList,         fontlist,
                             XmNalignment,        XmALIGNMENT_END,
@@ -1548,7 +1558,7 @@ main(int argc, char *argv[])
    argcount++;
    XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
    argcount++;
-   XtSetArg(args[argcount], XmNleftWidget,       label_w);
+   XtSetArg(args[argcount], XmNleftWidget,       dc_label_w);
    argcount++;
    XtSetArg(args[argcount], XmNorientation,      XmHORIZONTAL);
    argcount++;
@@ -1864,7 +1874,7 @@ main(int argc, char *argv[])
    box_w = XmCreateForm(form_w, "text_input_box", args, argcount);
 
    /* Parallel transfers. */
-   label_w = XtVaCreateManagedWidget("Max. parallel transfers:",
+   pt.label_w = XtVaCreateManagedWidget("Max. parallel transfers:",
                                      xmLabelGadgetClass,  box_w,
                                      XmNfontList,         fontlist,
                                      XmNtopAttachment,    XmATTACH_POSITION,
@@ -1874,10 +1884,10 @@ main(int argc, char *argv[])
                                      XmNleftAttachment,   XmATTACH_POSITION,
                                      XmNleftPosition,     0,
                                      NULL);
-   create_option_menu_pt(box_w, label_w, fontlist);
+   create_option_menu_pt(box_w, fontlist);
 
    /* Transfer blocksize. */
-   label_w = XtVaCreateManagedWidget("Transfer Blocksize:",
+   tb.label_w = XtVaCreateManagedWidget("Transfer Blocksize:",
                                      xmLabelGadgetClass,  box_w,
                                      XmNfontList,         fontlist,
                                      XmNtopAttachment,    XmATTACH_POSITION,
@@ -1887,10 +1897,10 @@ main(int argc, char *argv[])
                                      XmNleftAttachment,   XmATTACH_POSITION,
                                      XmNleftPosition,     19,
                                      NULL);
-   create_option_menu_tb(box_w, label_w, fontlist);
+   create_option_menu_tb(box_w, fontlist);
 
    /* File size offset. */
-   label_w = XtVaCreateManagedWidget("File size offset for append:",
+   fso.label_w = XtVaCreateManagedWidget("File size offset for append:",
                                      xmLabelGadgetClass,  box_w,
                                      XmNfontList,         fontlist,
                                      XmNtopAttachment,    XmATTACH_POSITION,
@@ -1900,7 +1910,7 @@ main(int argc, char *argv[])
                                      XmNleftAttachment,   XmATTACH_POSITION,
                                      XmNleftPosition,     39,
                                      NULL);
-   create_option_menu_fso(box_w, label_w, fontlist);
+   create_option_menu_fso(box_w, fontlist);
    XtManageChild(box_w);
 
 /*-----------------------------------------------------------------------*/
@@ -2540,7 +2550,7 @@ usage(char *progname)
 
 /*++++++++++++++++++++++++ create_option_menu_pt() +++++++++++++++++++++++*/
 static void
-create_option_menu_pt(Widget parent, Widget label_w, XmFontList fontlist)
+create_option_menu_pt(Widget parent, XmFontList fontlist)
 {
    XT_PTR_TYPE i;
    char        button_name[MAX_INT_LENGTH];
@@ -2565,7 +2575,7 @@ create_option_menu_pt(Widget parent, Widget label_w, XmFontList fontlist)
    argcount++;
    XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
    argcount++;
-   XtSetArg(args[argcount], XmNleftWidget,       label_w);
+   XtSetArg(args[argcount], XmNleftWidget,       pt.label_w);
    argcount++;
    pt.option_menu_w = XmCreateOptionMenu(parent, "parallel_transfer",
                                          args, argcount);
@@ -2598,7 +2608,7 @@ create_option_menu_pt(Widget parent, Widget label_w, XmFontList fontlist)
 
 /*++++++++++++++++++++++++ create_option_menu_tb() +++++++++++++++++++++++*/
 static void
-create_option_menu_tb(Widget parent, Widget label_w, XmFontList fontlist)
+create_option_menu_tb(Widget parent, XmFontList fontlist)
 {
    XT_PTR_TYPE i;
    char        *blocksize_name[MAX_TB_BUTTONS] =
@@ -2639,7 +2649,7 @@ create_option_menu_tb(Widget parent, Widget label_w, XmFontList fontlist)
    argcount++;
    XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
    argcount++;
-   XtSetArg(args[argcount], XmNleftWidget,       label_w);
+   XtSetArg(args[argcount], XmNleftWidget,       tb.label_w);
    argcount++;
    tb.option_menu_w = XmCreateOptionMenu(parent, "transfer_blocksize",
                                          args, argcount);
@@ -2672,7 +2682,7 @@ create_option_menu_tb(Widget parent, Widget label_w, XmFontList fontlist)
 
 /*+++++++++++++++++++++++ create_option_menu_fso() +++++++++++++++++++++++*/
 static void
-create_option_menu_fso(Widget parent, Widget label_w, XmFontList fontlist)
+create_option_menu_fso(Widget parent, XmFontList fontlist)
 {
    XT_PTR_TYPE i;
    char        button_name[MAX_INT_LENGTH];
@@ -2696,7 +2706,7 @@ create_option_menu_fso(Widget parent, Widget label_w, XmFontList fontlist)
    argcount++;
    XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
    argcount++;
-   XtSetArg(args[argcount], XmNleftWidget,       label_w);
+   XtSetArg(args[argcount], XmNleftWidget,       fso.label_w);
    argcount++;
    fso.option_menu_w = XmCreateOptionMenu(parent, "file_size_offset",
                                           args, argcount);

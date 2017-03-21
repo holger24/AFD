@@ -1,6 +1,6 @@
 /*
  *  remove_host.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -26,7 +26,7 @@ DESCR__S_M3
  **   remove_host - removes a host from the HOST_CONFIG file
  **
  ** SYNOPSIS
- **   int remove_host(char *host_name)
+ **   int remove_host(char *host_name, int is_group_name)
  **
  ** DESCRIPTION
  **   The function remove_host() removes any NNN files created via
@@ -43,6 +43,7 @@ DESCR__S_M3
  ** HISTORY
  **   22.10.1998 H.Kiehl Created
  **   19.08.2013 H.Kiehl Added removing of NNN files.
+ **   20.03.2017 H.Kiehl Add support for deleting group names.
  **
  */
 DESCR__E_M3
@@ -66,7 +67,7 @@ extern char *p_work_dir;
 
 /*############################ remove_host() ############################*/
 int
-remove_host(char *host_name)
+remove_host(char *host_name, int is_group_name)
 {
    int  fd,
         length;
@@ -76,8 +77,11 @@ remove_host(char *host_name)
         *ptr_start,
         search_string[MAX_HOSTNAME_LENGTH + 3];
 
-   /* First remove any nnn counter files for this host. */
-   remove_nnn_files(get_str_checksum(host_name));
+   if (is_group_name == NO)
+   {
+      /* First remove any nnn counter files for this host. */
+      remove_nnn_files(get_str_checksum(host_name));
+   }
 
    (void)sprintf(host_config_file, "%s%s%s",
                  p_work_dir, ETC_DIR, DEFAULT_HOST_CONFIG_FILE);
@@ -93,7 +97,16 @@ remove_host(char *host_name)
       return(INCORRECT);
    }
    (void)strcpy(&search_string[1], host_name);
-   (void)strcat(&search_string[1], ":");
+   length = strlen(host_name);
+   if (is_group_name == NO)
+   {
+      search_string[1 + length] = ':';
+   }
+   else
+   {
+      search_string[1 + length] = '\n';
+   }
+   search_string[1 + length + 1] = '\0';
    search_string[0] = '\n';
 
    if ((ptr = posi(file_buffer, search_string)) == NULL)
@@ -104,9 +117,14 @@ remove_host(char *host_name)
       (void)xrec(ERROR_DIALOG,
                  "Failed to locate %s in %s, thus unable to remove host.",
                  host_name, &tmp_file[1]);
+      free(file_buffer);
       return(INCORRECT);
    }
-   ptr_start = ptr - (strlen(host_name) + 1); /* + 1 => ':' */
+   ptr_start = ptr - (length + 1); /* + 1 => ':' or '\n' */
+   if (is_group_name == YES)
+   {
+      ptr -= 2;
+   }
    while ((*ptr != '\n') && (*ptr != '\0'))
    {
       ptr++;
@@ -141,10 +159,11 @@ remove_host(char *host_name)
       (void)xrec(ERROR_DIALOG,
                  "Failed to open %s, thus unable to remove host %s : %s (%s %d)",
                  &tmp_file[1], host_name, strerror(errno), __FILE__, __LINE__);
+      free(file_buffer);
       return(INCORRECT);
    }
-   length = strlen(file_buffer);
-   if (write(fd, file_buffer, length) != length)
+   length = strlen(file_buffer) - 1;
+   if (writen(fd, file_buffer + 1, length, 0) != length)
    {
       char tmp_file[256];
 
@@ -153,6 +172,7 @@ remove_host(char *host_name)
                  "Failed to write to %s, thus unable to remove host %s : %s (%s %d)!",
                  &tmp_file[1], host_name, strerror(errno), __FILE__, __LINE__);
       (void)close(fd);
+      free(file_buffer);
       return(INCORRECT);
    }
    if (close(fd) == -1)
