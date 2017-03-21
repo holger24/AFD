@@ -438,22 +438,22 @@ draw_line_status(int pos, signed char delta)
       XDrawLine(display, line_window, black_line_gc,
                 x,
                 y,
-                x + line_length[column],
+                x + line_length[column] - 1,
                 y);
       XDrawLine(display, line_pixmap, black_line_gc,
                 x,
                 y,
-                x + line_length[column],
+                x + line_length[column] - 1,
                 y);
       XDrawLine(display, line_window, black_line_gc,
                 x,
                 y + line_height - 2,
-                x + line_length[column],
+                x + line_length[column] - 1,
                 y + line_height - 2);
       XDrawLine(display, line_pixmap, black_line_gc,
                 x,
                 y + line_height - 2,
-                x + line_length[column],
+                x + line_length[column] - 1,
                 y + line_height - 2);
       XDrawLine(display, line_window, black_line_gc,
                 x + line_length[column] - 1,

@@ -408,22 +408,22 @@ draw_mon_line_status(int pos, signed char delta, int x, int y)
       XDrawLine(display, line_window, black_line_gc,
                 x,
                 y,
-                x + line_length,
+                x + line_length - 1,
                 y);
       XDrawLine(display, line_pixmap, black_line_gc,
                 x,
                 y,
-                x + line_length,
+                x + line_length - 1,
                 y);
       XDrawLine(display, line_window, black_line_gc,
                 x,
                 y + line_height - 2,
-                x + line_length,
+                x + line_length - 1,
                 y + line_height - 2);
       XDrawLine(display, line_pixmap, black_line_gc,
                 x,
                 y + line_height - 2,
-                x + line_length,
+                x + line_length - 1,
                 y + line_height - 2);
       XDrawLine(display, line_window, black_line_gc,
                 x + line_length - 1,
