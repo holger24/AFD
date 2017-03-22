@@ -485,7 +485,8 @@ main(int argc, char *argv[])
             {
                if (fsa[i].real_hostname[0][0] != 1)
                {
-                  if (((fsa[i].error_counter >= fsa[i].max_errors) &&
+                  if ((fsa[i].max_errors > 0) &&
+                      ((fsa[i].error_counter >= fsa[i].max_errors) &&
                        ((fsa[i].host_status & AUTO_PAUSE_QUEUE_STAT) == 0)) ||
                       ((fsa[i].error_counter < fsa[i].max_errors) &&
                        (fsa[i].host_status & AUTO_PAUSE_QUEUE_STAT)))
