@@ -281,7 +281,6 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         error_flag = YES;
 
          if (*ptr == '\n')
          {
