@@ -1,6 +1,6 @@
 /*
  *  ftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1125,7 +1125,10 @@ ftp_ssl_disable_ctrl_encrytion(void)
       {
          if (ssl_con != NULL)
          {
-            SSL_shutdown(ssl_con);
+            if (SSL_shutdown(ssl_con) == 0)
+            {
+               (void)SSL_shutdown(ssl_con);
+            }
             SSL_free(ssl_con);
             ssl_con = NULL;
          }
@@ -2702,7 +2705,7 @@ ftp_list(int mode, int type, ...)
       } /* mode == ACTIVE_MODE */
 
 #ifdef WITH_SSL
-      if (type & ENCRYPT_DATA)
+      if ((type & ENCRYPT_DATA) && (ssl_con != NULL))
       {
          encrypt_data_connection(new_sock_fd);
       }
@@ -3831,7 +3834,11 @@ try_again:
 int
 ftp_auth_data(void)
 {
-   return(encrypt_data_connection(data_fd));
+   if (ssl_con != NULL)
+   {
+      return(encrypt_data_connection(data_fd));
+   }
+   return(SUCCESS);
 }
 #endif
 
@@ -5087,7 +5094,10 @@ try_again_read_msg:
                            */
                           if (ssl_ret == SSL_ERROR_SSL)
                           {
-                             SSL_shutdown(ssl_con);
+                             if (SSL_shutdown(ssl_con) == 0)
+                             {
+                                (void)SSL_shutdown(ssl_con);
+                             }
                              SSL_free(ssl_con);
                              ssl_con = NULL;
                              goto try_again_read_msg;
