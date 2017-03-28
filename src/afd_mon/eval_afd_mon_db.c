@@ -1,6 +1,6 @@
 /*
  *  eval_afd_mon_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -302,7 +302,7 @@ eval_afd_mon_db(struct mon_list **nml)
          (*nml)[no_of_afds].connect_time = DEFAULT_CONNECT_TIME;
          (*nml)[no_of_afds].disconnect_time = DEFAULT_DISCONNECT_TIME;
          (*nml)[no_of_afds].options = DEFAULT_OPTION_ENTRY;
-         (void)strcpy((*nml)[no_of_afds].rcmd, DEFAULT_REMOTE_CMD);
+         (*nml)[no_of_afds].rcmd[0] = '\0';
 
          if (*ptr == '\n')
          {
