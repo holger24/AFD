@@ -2022,8 +2022,25 @@ check_pool_dir(time_t now)
    {
       int           dir_counter = 0;
       char          *work_ptr;
+#ifdef MULTI_FS_SUPPORT
+      char          str_dev_self[MAX_INT_HEX_LENGTH + 1];
+      struct stat   stat_buf;
+#endif
       struct dirent *p_dir;
 
+#ifdef MULTI_FS_SUPPORT
+      if (stat(pool_dir, &stat_buf) == -1)
+      {
+         system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                    "Failed to stat() `%s' : %s", pool_dir, strerror(errno));
+         str_dev_self[0] = '\0';
+      }
+      else
+      {
+         (void)snprintf(str_dev_self, MAX_INT_HEX_LENGTH, "%x",
+                        (unsigned int)stat_buf.st_dev);
+      }
+#endif
       work_ptr = pool_dir + strlen(pool_dir);
       *(work_ptr++) = '/';
       errno = 0;
@@ -2032,19 +2049,90 @@ check_pool_dir(time_t now)
          if (p_dir->d_name[0] != '.')
          {
             (void)strcpy(work_ptr, p_dir->d_name);
-            (void)strcat(work_ptr, "/");
-#ifdef _WITH_PTHREAD
-            (void)handle_dir(-1, &now, NULL, pool_dir,
-                             data->file_size_pool, data->file_mtime_pool,
-                             data->file_name_pool, data->file_length_pool);
-#else
-            (void)handle_dir(-1, &now, NULL, pool_dir,
-# ifdef WITH_INOTIFY
-                             NULL,
+#ifdef MULTI_FS_SUPPORT
+            if ((lstat(pool_dir, &stat_buf) != -1) &&
+                (S_ISLNK(stat_buf.st_mode)))
+            {
+               if (strcmp(str_dev_self, p_dir->d_name) != 0)
+               {
+                  DIR *dp2;
+
+                  (void)strcat(work_ptr, "/");
+                  if ((dp2 = opendir(pool_dir)) == NULL)
+                  {
+                     system_log(WARN_SIGN, __FILE__, __LINE__,
+                                "Failed to opendir() %s : %s",
+                                pool_dir, strerror(errno));
+                  }
+                  else
+                  {
+                     char          *work_ptr2 = work_ptr + strlen(p_dir->d_name) + 1;
+                     struct dirent *p_dir2;
+
+                     errno = 0;
+                     while ((p_dir2 = readdir(dp2)) != NULL)
+                     {
+                        if (p_dir2->d_name[0] != '.')
+                        {
+                           (void)strcpy(work_ptr2, p_dir2->d_name);
+                           (void)strcat(work_ptr2, "/");
+
+                           system_log(DEBUG_SIGN, NULL, 0,
+                                      "Handle unfinished job in extra dir `%s'",
+                                      pool_dir);
+# ifdef _WITH_PTHREAD
+                           (void)handle_dir(-1, &now, NULL, pool_dir,
+                                            data->file_size_pool, data->file_mtime_pool,
+                                            data->file_name_pool, data->file_length_pool);
+# else
+                           (void)handle_dir(-1, &now, NULL, pool_dir,
+#  ifdef WITH_INOTIFY
+                                            NULL,
+#  endif
+                                            NULL);
 # endif
-                             NULL);
+                           dir_counter++;
+                        }
+                        errno = 0;
+                     }
+                     work_ptr2[-1] = '\0';
+
+                     if (errno)
+                     {
+                        system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                   "Could not readdir() %s : %s",
+                                   pool_dir, strerror(errno));
+                     }
+                     if (closedir(dp2) == -1)
+                     {
+                        system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                   "Could not close directory %s : %s",
+                                   pool_dir, strerror(errno));
+                     }
+                  }
+               }
+            }
+            else
+            {
+#endif /* MULTI_FS_SUPPORT */
+               system_log(DEBUG_SIGN, NULL, 0,
+                          "Handle unfinished job in `%s'", pool_dir);
+               (void)strcat(work_ptr, "/");
+#ifdef _WITH_PTHREAD
+               (void)handle_dir(-1, &now, NULL, pool_dir,
+                                data->file_size_pool, data->file_mtime_pool,
+                                data->file_name_pool, data->file_length_pool);
+#else
+               (void)handle_dir(-1, &now, NULL, pool_dir,
+# ifdef WITH_INOTIFY
+                                NULL,
+# endif
+                                NULL);
 #endif
-            dir_counter++;
+               dir_counter++;
+#ifdef MULTI_FS_SUPPORT
+            }
+#endif
          }
          errno = 0;
       }

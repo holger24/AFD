@@ -150,7 +150,7 @@ clear_pool_dir(void)
 
             (void)strcpy(work_ptr, p_dir->d_name);
 #ifdef MULTI_FS_SUPPORT
-            if ((stat(pool_dir, &stat_buf) != -1) &&
+            if ((lstat(pool_dir, &stat_buf) != -1) &&
                 (S_ISLNK(stat_buf.st_mode)))
             {
 #endif
