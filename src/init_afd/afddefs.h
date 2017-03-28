@@ -1535,6 +1535,8 @@ typedef unsigned long       u_long_64;
 # define STORE_IP                  131072
 #endif
 #define SIMULATE_SEND_MODE         262144
+#define ERROR_HOSTS_IN_GROUP       524288
+#define WARN_HOSTS_IN_GROUP        1048576
 
 #define EVENT_STATUS_STATIC_FLAGS  (PENDING_ERRORS | HOST_ERROR_ACKNOWLEDGED | HOST_ERROR_OFFLINE)
 #define EVENT_STATUS_FLAGS         (EVENT_STATUS_STATIC_FLAGS | HOST_ERROR_ACKNOWLEDGED_T | HOST_ERROR_OFFLINE_T)
@@ -2466,7 +2468,9 @@ struct filetransfer_status
                                             /*+-----+-------------------------+*/
                                             /*| Bit |     Meaning             |*/
                                             /*+-----+-------------------------+*/
-                                            /*|20-32|Not used.                |*/
+                                            /*|22-32|Not used.                |*/
+                                            /*|   21|WARN_HOSTS_IN_GROUP      |*/
+                                            /*|   20|ERROR_HOSTS_IN_GROUP     |*/
                                             /*|   19|SIMULATE_SEND_MODE       |*/
                                             /*|   18|STORE_IP                 |*/
                                             /*|   17|HOST_ACTION_SUCCESS      |*/

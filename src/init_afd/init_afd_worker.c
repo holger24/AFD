@@ -244,7 +244,7 @@ main(int argc, char *argv[])
    FD_ZERO(&rset);
    for (;;)
    {
-      if (now > full_dir_check_time)
+      if (time(&now) > full_dir_check_time)
       {
          if (fra_attach() == SUCCESS)
          {
@@ -402,6 +402,7 @@ main(int argc, char *argv[])
                           protocol;
             int           active_transfers,
                           error_counter,
+                          error_hosts,
                           host_counter,
                           host_disabled_counter,
                           j,
@@ -409,7 +410,8 @@ main(int argc, char *argv[])
                           k,
                           lock_set = NO,
                           max_errors,
-                          total_file_counter;
+                          total_file_counter,
+                          warn_hosts;
             off_t         total_file_size;
             u_off_t       bytes_send[MAX_NO_PARALLEL_JOBS];
 
@@ -434,6 +436,7 @@ main(int argc, char *argv[])
                   total_file_size = 0;
                   host_counter = 0;
                   host_disabled_counter = 0;
+                  error_hosts = warn_hosts = 0;
                   for (j = i + 1; ((j < no_of_hosts) &&
                                    (fsa[j].real_hostname[0][0] != 1)); j++)
                   {
@@ -453,6 +456,28 @@ main(int argc, char *argv[])
                      {
                         bytes_send[k] += fsa[j].job_status[k].bytes_send;
                      }
+
+                     if ((fsa[j].error_counter >= fsa[j].max_errors) &&
+                         ((fsa[j].host_status & HOST_ERROR_ACKNOWLEDGED) == 0) &&
+                         ((fsa[j].host_status & HOST_ERROR_ACKNOWLEDGED_T) == 0) &&
+                         ((fsa[j].host_status & HOST_ERROR_OFFLINE) == 0) &&
+                         ((fsa[j].host_status & HOST_ERROR_OFFLINE_T) == 0) &&
+                         ((fsa[j].host_status & HOST_ERROR_OFFLINE_STATIC) == 0))
+                     {
+                        /* NOT_WORKING2 */
+                        error_hosts++;
+                     }
+                     else if ((fsa[j].host_status & HOST_WARN_TIME_REACHED) &&
+                              ((fsa[j].host_status & HOST_ERROR_ACKNOWLEDGED) == 0) &&
+                              ((fsa[j].host_status & HOST_ERROR_ACKNOWLEDGED_T) == 0) &&
+                              ((fsa[j].host_status & HOST_ERROR_OFFLINE) == 0) &&
+                              ((fsa[j].host_status & HOST_ERROR_OFFLINE_T) == 0) &&
+                              ((fsa[j].host_status & HOST_ERROR_OFFLINE_STATIC) == 0))
+                          {
+                             /* WARNING_ID */
+                             warn_hosts++;
+                          }
+
                      host_counter++;
                   }
                   fsa[i].active_transfers = active_transfers;
@@ -461,6 +486,22 @@ main(int argc, char *argv[])
                      fsa[i].job_status[k].bytes_send = bytes_send[k];
                   }
                   fsa[i].error_counter = error_counter;
+                  if (error_hosts > 0)
+                  {
+                     host_status |= ERROR_HOSTS_IN_GROUP;
+                  }
+                  else
+                  {
+                     host_status &= ~ERROR_HOSTS_IN_GROUP;
+                  }
+                  if (warn_hosts > 0)
+                  {
+                     host_status |= WARN_HOSTS_IN_GROUP;
+                  }
+                  else
+                  {
+                     host_status &= ~WARN_HOSTS_IN_GROUP;
+                  }
                   fsa[i].host_status = host_status;
                   fsa[i].max_errors = max_errors;
                   fsa[i].protocol = protocol;

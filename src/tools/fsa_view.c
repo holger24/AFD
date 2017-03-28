@@ -663,24 +663,68 @@ main(int argc, char *argv[])
       {
          (void)fprintf(stdout, "SIMULATE_SEND_MODE ");
       }
-      if ((fsa[j].error_counter >= fsa[j].max_errors) &&
-          ((fsa[j].host_status & HOST_ERROR_ACKNOWLEDGED) == 0) &&
-          ((fsa[j].host_status & HOST_ERROR_ACKNOWLEDGED_T) == 0) &&
-          ((fsa[j].host_status & HOST_ERROR_OFFLINE) == 0) &&
-          ((fsa[j].host_status & HOST_ERROR_OFFLINE_T) == 0) &&
-          ((fsa[j].host_status & HOST_ERROR_OFFLINE_STATIC) == 0))
+      if (fsa[j].host_status & ERROR_HOSTS_IN_GROUP)
       {
-         (void)fprintf(stdout, "NOT_WORKING ");
+         (void)fprintf(stdout, "ERROR_HOSTS_IN_GROUP ");
       }
-      if (fsa[j].active_transfers > 0)
+      if (fsa[j].host_status & WARN_HOSTS_IN_GROUP)
       {
-         (void)fprintf(stdout, "TRANSFER_ACTIVE");
+         (void)fprintf(stdout, "WARN_HOSTS_IN_GROUP ");
+      }
+      if (fsa[j].real_hostname[0][0] == 1)
+      {
+         if (fsa[j].host_status & ERROR_HOSTS_IN_GROUP)
+         {
+            (void)fprintf(stdout, "NOT_WORKING\n");
+         }
+         else if (fsa[j].host_status & WARN_HOSTS_IN_GROUP)
+              {
+                 (void)fprintf(stdout, "WARNING_STATUS\n");
+              }
+              else
+              {
+                 if (fsa[j].active_transfers > 0)
+                 {
+                    (void)fprintf(stdout, "TRANSFER_ACTIVE\n");
+                 }
+                 else
+                 {
+                    (void)fprintf(stdout, "NORMAL_STATUS\n");
+                 }
+              }
       }
       else
       {
-         (void)fprintf(stdout, "NORMAL_STATUS");
+         if ((fsa[j].error_counter >= fsa[j].max_errors) &&
+             ((fsa[j].host_status & HOST_ERROR_ACKNOWLEDGED) == 0) &&
+             ((fsa[j].host_status & HOST_ERROR_ACKNOWLEDGED_T) == 0) &&
+             ((fsa[j].host_status & HOST_ERROR_OFFLINE) == 0) &&
+             ((fsa[j].host_status & HOST_ERROR_OFFLINE_T) == 0) &&
+             ((fsa[j].host_status & HOST_ERROR_OFFLINE_STATIC) == 0))
+         {
+            (void)fprintf(stdout, "NOT_WORKING\n");
+         }
+         else if ((fsa[j].host_status & HOST_WARN_TIME_REACHED) &&
+                  ((fsa[j].host_status & HOST_ERROR_ACKNOWLEDGED) == 0) &&
+                  ((fsa[j].host_status & HOST_ERROR_ACKNOWLEDGED_T) == 0) &&
+                  ((fsa[j].host_status & HOST_ERROR_OFFLINE) == 0) &&
+                  ((fsa[j].host_status & HOST_ERROR_OFFLINE_T) == 0) &&
+                  ((fsa[j].host_status & HOST_ERROR_OFFLINE_STATIC) == 0))
+              {
+                 (void)fprintf(stdout, "WARNING_STATUS\n");
+              }
+              else
+              {
+                 if (fsa[j].active_transfers > 0)
+                 {
+                    (void)fprintf(stdout, "TRANSFER_ACTIVE\n");
+                 }
+                 else
+                 {
+                    (void)fprintf(stdout, "NORMAL_STATUS\n");
+                 }
+              }
       }
-      (void)fprintf(stdout, "\n");
 
       (void)fprintf(stdout, "Transfer timeout     : %ld\n",
                     fsa[j].transfer_timeout);
