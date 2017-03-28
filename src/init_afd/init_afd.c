@@ -802,12 +802,6 @@ main(int argc, char *argv[])
    *proc_table[ALDAD_NO].status = ON;
 #endif
 
-#ifdef _TRANSFER_RATE_LOG
-   proc_table[TRANSFER_RATE_LOG_NO].pid = make_process(TRLOG, work_dir, NULL);
-   *(pid_t *)(pid_list + ((TRANSFER_RATE_LOG_NO + 1) * sizeof(pid_t))) = proc_table[TRANSFER_RATE_LOG_NO].pid;
-   *proc_table[TRANSFER_RATE_LOG_NO].status = ON;
-#endif
-
    /*
     * Before starting the FD lets initialise all critical values
     * for this process.
@@ -1519,6 +1513,12 @@ main(int argc, char *argv[])
                                   proc_table[STAT_NO].pid = make_process(AFD_STAT, work_dir, NULL);
                                   *(pid_t *)(pid_list + ((STAT_NO + 1) * sizeof(pid_t))) = proc_table[STAT_NO].pid;
                                   *proc_table[STAT_NO].status = ON;
+
+#ifdef _TRANSFER_RATE_LOG
+                                  proc_table[TRANSFER_RATE_LOG_NO].pid = make_process(TRLOG, work_dir, NULL);
+                                  *(pid_t *)(pid_list + ((TRANSFER_RATE_LOG_NO + 1) * sizeof(pid_t))) = proc_table[TRANSFER_RATE_LOG_NO].pid;
+                                  *proc_table[TRANSFER_RATE_LOG_NO].status = ON;
+#endif
 
                                   /* Attach to the FSA */
                                   if (fsa_attach(AFD) != SUCCESS)
