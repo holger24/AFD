@@ -782,8 +782,15 @@ draw_selections(void)
 
       for (i = 0; i < redraw_counter; i++)
       {
-         locate_xy(vpl[redraw_line[i]], &x, &y);
-         draw_mon_line_status(redraw_line[i], 1, x, y);
+         for (j = 0; j < no_of_afds; j++)
+         {
+            if (redraw_line[i] == vpl[j])
+            {
+               locate_xy(j, &x, &y);
+               draw_mon_line_status(redraw_line[i], 1, x, y);
+               break;
+            }
+         }
       }
    }
 
