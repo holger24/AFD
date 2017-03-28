@@ -103,7 +103,7 @@
 #define YEAR_SUM                 5
 #define DEFAULT_POLL_INTERVAL    5
 #define DEFAULT_OPTION_ENTRY     0
-#define DEFAULT_REMOTE_CMD       "rsh"
+#define DEFAULT_REMOTE_CMD       "ssh"
 #define DEFAULT_CONNECT_TIME     0
 #define DEFAULT_DISCONNECT_TIME  0
 #define RETRY_INTERVAL           60   /* Interval at which the mon       */
