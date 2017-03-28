@@ -25,7 +25,11 @@ DESCR__S_M3
  **   locate_xy_column - calculates x and y coordinates for a certain position
  **
  ** SYNOPSIS
- **   void locate_xy_column(int pos, int *x, int *y, int *column)
+ **   void locate_xy_column(int vpl_pos,
+ **                         int fsa_pos,
+ **                         int *x,
+ **                         int *y,
+ **                         int *column)
  **
  ** DESCRIPTION
  **
@@ -44,6 +48,7 @@ DESCR__E_M3
 
 #include "mafd_ctrl.h"
 
+/* External global variables. */
 extern int *line_length,
            line_height,
            no_of_columns,
@@ -52,24 +57,32 @@ extern int *line_length,
 
 /*########################## locate_xy_column() ##########################*/
 void
-locate_xy_column(int pos, int *x, int *y, int *column)
+locate_xy_column(int vpl_pos, int fsa_pos, int *x, int *y, int *column)
 {
+   if (vpl_pos == -1)
+   {
+      if ((fsa_pos == -1) ||
+          ((vpl_pos = get_vpl_pos(fsa_pos)) == INCORRECT))
+      {
+         return;
+      }
+   }
    int column_no;
 
    /* First check that we do not divide by zero. */
    if (no_of_rows <= 1)
    {
-      column_no = (pos + 1);
+      column_no = (vpl_pos + 1);
    }
    else
    {
-      column_no = (pos + 1) / no_of_rows;
+      column_no = (vpl_pos + 1) / no_of_rows;
    }
 
-   if (((pos + 1) % no_of_rows) != 0)
+   if (((vpl_pos + 1) % no_of_rows) != 0)
    {
       column_no += 1;
-      *y = line_height * (pos % no_of_rows);
+      *y = line_height * (vpl_pos % no_of_rows);
    }
    else
    {

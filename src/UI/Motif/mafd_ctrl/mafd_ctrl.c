@@ -646,7 +646,6 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
                 j,
                 no_of_invisible_members = 0,
                 prev_plus_minus,
-                reduce_val,
                 user_offset;
    unsigned int new_bar_length;
    time_t       current_time,
@@ -1014,8 +1013,6 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
    read_setup(AFD_CTRL, profile, &hostname_display_length,
               &filename_display_length, NULL,
               &no_of_invisible_members, &invisible_members);
-   prev_plus_minus = PM_OPEN_STATE;
-   reduce_val = 0;
 
    /* Determine the default bar length. */
    max_bar_length  = 6 * BAR_LENGTH_MODIFIER;
@@ -1046,8 +1043,6 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
                if (strcmp(connect_data[i].hostname, invisible_members[j]) == 0)
                {
                   connect_data[i].plus_minus = PM_CLOSE_STATE;
-                  prev_plus_minus = PM_CLOSE_STATE;
-                  reduce_val = 1;
                   gotcha = YES;
                   break;
                }
@@ -1055,14 +1050,11 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
             if (gotcha == NO)
             {
                connect_data[i].plus_minus = PM_OPEN_STATE;
-               prev_plus_minus = PM_OPEN_STATE;
-               reduce_val = 0;
             }
          }
          else
          {
-            connect_data[i].plus_minus = prev_plus_minus;
-            no_of_hosts_invisible += reduce_val;
+            connect_data[i].plus_minus = PM_OPEN_STATE;
          }
       }
       else
@@ -1245,18 +1237,28 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
    {
       FREE_RT_ARRAY(invisible_members);
    }
-   no_of_hosts_visible = no_of_hosts - no_of_hosts_invisible;
 
-   j = 0;
+   prev_plus_minus = PM_OPEN_STATE;
+   no_of_hosts_visible = 0;
    for (i = 0; i < no_of_hosts; i++)
    {
+      if (connect_data[i].type == 1)
+      {
+         prev_plus_minus = connect_data[i].plus_minus;
+      }
+      else
+      {
+         connect_data[i].plus_minus = prev_plus_minus;
+      }
+
       if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
           (connect_data[i].type == 1))
       {
-         vpl[j] = i;
-         j++;
+         vpl[no_of_hosts_visible] = i;
+         no_of_hosts_visible++;
       }
    }
+   no_of_hosts_invisible = no_of_hosts - no_of_hosts_visible;
 
    /*
     * Initialise all data for AFD status area.

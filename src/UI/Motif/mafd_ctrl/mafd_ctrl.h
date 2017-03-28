@@ -343,7 +343,7 @@ extern void        calc_but_coord(int),
                    init_gcs(void),
                    init_jd_structure(struct job_data *, int, int),
                    input(Widget, XtPointer, XEvent *),
-                   locate_xy_column(int, int *, int *, int *),
+                   locate_xy_column(int, int, int *, int *, int *),
                    popup_cb(Widget, XtPointer, XtPointer),
                    popup_error_history(int, int, int),
                    popup_event_reason(int, int, int),
@@ -355,7 +355,8 @@ extern void        calc_but_coord(int),
                    setup_tv_window(void),
                    setup_window(char *, int),
                    tv_locate_xy(int, int *, int *);
-extern int         get_job_priority(unsigned int);
+extern int         get_job_priority(unsigned int),
+                   get_vpl_pos(int);
 extern signed char resize_tv_window(void),
                    resize_window(void),
                    tv_window_size(Dimension *, Dimension *),

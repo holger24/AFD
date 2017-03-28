@@ -300,7 +300,7 @@ draw_line_status(int pos, signed char delta)
    GC  tmp_gc;
 
    /* First locate position of x and y. */
-   locate_xy_column(pos, &x, &y, &column);
+   locate_xy_column(pos, -1, &x, &y, &column);
 
 #ifdef _DEBUG
    (void)printf("Drawing line %d %d  x = %d  y = %d\n",
@@ -527,7 +527,7 @@ draw_blank_line(int pos)
    int column,
        x, y;
 
-   locate_xy_column(pos, &x, &y, &column);
+   locate_xy_column(pos, -1, &x, &y, &column);
    XFillRectangle(display, line_window, default_bg_gc, x, y,
                   line_length[column], line_height);
    XFillRectangle(display, line_pixmap, default_bg_gc, x, y,

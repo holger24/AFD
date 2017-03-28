@@ -658,7 +658,7 @@ input(Widget w, XtPointer client_data, XEvent *event)
                   if (x_pos <= 0)
                   {
                      handle_tv_line(w, vpl[select_no], job_no);
-                     locate_xy_column(select_no, &x, &y, NULL);
+                     locate_xy_column(select_no, -1, &x, &y, NULL);
                      draw_detailed_selection(vpl[select_no], job_no, x, y);
                      break;
                   }
@@ -693,7 +693,7 @@ input(Widget w, XtPointer client_data, XEvent *event)
                     {
                        handle_tv_line(w, vpl[select_no], job_no);
                     }
-                    locate_xy_column(select_no, &x, &y, NULL);
+                    locate_xy_column(select_no, -1, &x, &y, NULL);
                     draw_detailed_selection(vpl[select_no],
                                             fsa[vpl[select_no]].allowed_transfers,
                                             x, y);

@@ -106,7 +106,8 @@ extern struct line                *connect_data;
 extern struct filetransfer_status *fsa;
 
 /* Local function prototypes. */
-static void                       calc_transfer_rate(int, clock_t);
+static void                       calc_transfer_rate(int, clock_t),
+                                  check_for_removed_groups(int);
 static int                        check_fsa_data(unsigned int),
                                   check_disp_data(unsigned int, int);
 
@@ -159,6 +160,13 @@ check_host_status(Widget w)
       size_t      new_size = (no_of_hosts + 1) * sizeof(struct line);
       struct line *new_connect_data,
                   *tmp_connect_data;
+
+      /*
+       * Let us first check if all the group identifiers are still
+       * in the new FSA. If not we must check if we must set set the
+       * plus_minus to PM_OPEN_STATE.
+       */
+      check_for_removed_groups(prev_no_of_hosts);
 
       p_feature_flag = (unsigned char *)fsa - AFD_FEATURE_FLAG_OFFSET_END;
       if ((new_connect_data = calloc((no_of_hosts + 1),
@@ -407,10 +415,23 @@ check_host_status(Widget w)
          }
       }
 
-      /* Count number of invisible hosts. */
+      /*
+       * Check when groups are used that all new or moved hosts
+       * are in correct open or close state and count number of
+       * invisible hosts.
+       */
       no_of_hosts_invisible = no_of_hosts_visible = 0;
+      prev_plus_minus = PM_OPEN_STATE;
       for (i = 0; i < no_of_hosts; i++)
       {
+         if (new_connect_data[i].type == 1)
+         {
+            prev_plus_minus = new_connect_data[i].plus_minus;
+         }
+         else
+         {
+            new_connect_data[i].plus_minus = prev_plus_minus;
+         }
          if ((new_connect_data[i].plus_minus == PM_CLOSE_STATE) &&
              (new_connect_data[i].type != 1))
          {
@@ -448,12 +469,14 @@ check_host_status(Widget w)
             location_where_changed = 0;
          }
       }
-
-      /* When no. of channels have been reduced, then delete */
-      /* removed channels from end of list.                  */
-      for (i = prev_no_of_hosts_visible; i > no_of_hosts_visible; i--)
+      else
       {
-         draw_blank_line(i - 1);
+         /* When no. of channels have been reduced, then delete */
+         /* removed channels from end of list.                  */
+         for (i = prev_no_of_hosts_visible; i > no_of_hosts_visible; i--)
+         {
+            draw_blank_line(i - 1);
+         }
       }
 
       /*
@@ -596,7 +619,7 @@ check_host_status(Widget w)
    }
 
    /* Change information for each remote host if necessary. */
-   for (i = 0; i < no_of_hosts; i++)
+   for (i = 0; ((i < no_of_hosts) && (redraw_everything == NO)); i++)
    {
       x = y = -1;
 
@@ -612,7 +635,7 @@ check_host_status(Widget w)
                    max_no_parallel_jobs,
                    start;
 
-               locate_xy_column(i, &x, &y, &column);
+               locate_xy_column(-1, i, &x, &y, &column);
 
                /*
                 * Lets determine if this does change the column length.
@@ -889,7 +912,7 @@ check_host_status(Widget w)
                      connect_data[i].no_of_files[j] = fsa[i].job_status[j].no_of_files - fsa[i].job_status[j].no_of_files_done;
                   }
 
-                  locate_xy_column(i, &x, &y, &column);
+                  locate_xy_column(-1, i, &x, &y, &column);
 
                   /* Draw changed process file counter button. */
                   draw_proc_stat(i, j, x, y);
@@ -902,7 +925,7 @@ check_host_status(Widget w)
 
                        if (line_style & SHOW_JOBS)
                        {
-                          locate_xy_column(i, &x, &y, &column);
+                          locate_xy_column(-1, i, &x, &y, &column);
 
                           /* Draw changed process file counter button. */
                           draw_proc_stat(i, j, x, y);
@@ -1028,6 +1051,14 @@ check_host_status(Widget w)
            {
               new_color = NORMAL_STATUS; /* Nothing to do but connection active. */
            }
+      if (connect_data[i].host_status & ERROR_HOSTS_IN_GROUP)
+      {
+         new_color = NOT_WORKING2;
+      }
+      else if (connect_data[i].host_status & WARN_HOSTS_IN_GROUP)
+           {
+              new_color = WARNING_ID;
+           }
       if (connect_data[i].stat_color_no != new_color)
       {
          connect_data[i].stat_color_no = new_color;
@@ -1038,19 +1069,22 @@ check_host_status(Widget w)
          {
             if (x == -1)
             {
-               locate_xy_column(i, &x, &y, &column);
+               locate_xy_column(-1, i, &x, &y, &column);
             }
-            if (connect_data[i].type == 1)
+            if (x != -1)
             {
-               draw_dest_identifier(line_window, line_pixmap, i,
-                                    x - DEFAULT_FRAME_SPACE + (3 * glyph_width),
-                                    y);
+               if (connect_data[i].type == 1)
+               {
+                  draw_dest_identifier(line_window, line_pixmap, i,
+                                       x - DEFAULT_FRAME_SPACE + (3 * glyph_width),
+                                       y);
+               }
+               else
+               {
+                  draw_dest_identifier(line_window, line_pixmap, i, x, y);
+               }
+               flush = YES;
             }
-            else
-            {
-               draw_dest_identifier(line_window, line_pixmap, i, x, y);
-            }
-            flush = YES;
          }
       }
 
@@ -1070,10 +1104,13 @@ check_host_status(Widget w)
             {
                if (x == -1)
                {
-                  locate_xy_column(i, &x, &y, &column);
+                  locate_xy_column(-1, i, &x, &y, &column);
                }
-               draw_dest_identifier(line_window, line_pixmap, i, x, y);
-               flush = YES;
+               if (x != -1)
+               {
+                  draw_dest_identifier(line_window, line_pixmap, i, x, y);
+                  flush = YES;
+               }
             }
 
             /* Don't forget to redraw display name of tv window. */
@@ -1121,10 +1158,13 @@ check_host_status(Widget w)
          {
             if (x == -1)
             {
-               locate_xy_column(i, &x, &y, &column);
+               locate_xy_column(-1, i, &x, &y, &column);
             }
-            draw_dest_identifier(line_window, line_pixmap, i, x, y);
-            flush = YES;
+            if (x != -1)
+            {
+               draw_dest_identifier(line_window, line_pixmap, i, x, y);
+               flush = YES;
+            }
          }
 
          /* Don't forget to redraw display name of tv window. */
@@ -1171,10 +1211,13 @@ check_host_status(Widget w)
             {
                if (x == -1)
                {
-                  locate_xy_column(i, &x, &y, &column);
+                  locate_xy_column(-1, i, &x, &y, &column);
                }
-               draw_debug_led(i, x, y);
-               flush = YES;
+               if (x != -1)
+               {
+                  draw_debug_led(i, x, y);
+                  flush = YES;
+               }
             }
          }
 
@@ -1252,34 +1295,37 @@ check_host_status(Widget w)
             {
                if (x == -1)
                {
-                  locate_xy_column(i, &x, &y, &column);
+                  locate_xy_column(-1, i, &x, &y, &column);
                }
-               if (led_changed & LED_ONE)
+               if (x != -1)
                {
-                  if (connect_data[i].type == 0)
+                  if (led_changed & LED_ONE)
                   {
-                     draw_led(i, 0, x, y);
+                     if (connect_data[i].type == 0)
+                     {
+                        draw_led(i, 0, x, y);
+                     }
+                     else
+                     {
+                        draw_led(i, 0, x + glyph_width + (glyph_width / 2) - DEFAULT_FRAME_SPACE, y);
+                     }
                   }
-                  else
+                  if ((led_changed & LED_TWO) ||
+                      (disable_retrieve_flag_changed == YES))
                   {
-                     draw_led(i, 0, x + glyph_width + (glyph_width / 2) - DEFAULT_FRAME_SPACE, y);
+                     if (connect_data[i].type == 0)
+                     {
+                        draw_led(i, 1, x + led_width + LED_SPACING, y);
+                     }
+                     else
+                     {
+                        draw_led(i, 1, x + glyph_width + (glyph_width / 2) - DEFAULT_FRAME_SPACE + led_width + LED_SPACING,
+                                 y);
+                     }
                   }
+                  led_changed = 0;
+                  flush = YES;
                }
-               if ((led_changed & LED_TWO) ||
-                   (disable_retrieve_flag_changed == YES))
-               {
-                  if (connect_data[i].type == 0)
-                  {
-                     draw_led(i, 1, x + led_width + LED_SPACING, y);
-                  }
-                  else
-                  {
-                     draw_led(i, 1, x + glyph_width + (glyph_width / 2) - DEFAULT_FRAME_SPACE + led_width + LED_SPACING,
-                              y);
-                  }
-               }
-               led_changed = 0;
-               flush = YES;
             }
          }
       }
@@ -1300,14 +1346,15 @@ check_host_status(Widget w)
          {
             if (x == -1)
             {
-               locate_xy_column(i, &x, &y, &column);
+               locate_xy_column(-1, i, &x, &y, &column);
             }
 
             connect_data[i].total_file_counter = fsa[i].total_file_counter;
             CREATE_FC_STRING(connect_data[i].str_tfc,
                              connect_data[i].total_file_counter);
 
-            if ((i < location_where_changed) && (redraw_everything == NO))
+            if ((i < location_where_changed) && (redraw_everything == NO) &&
+                (x != -1))
             {
                draw_chars(i, NO_OF_FILES, x, y, column);
                flush = YES;
@@ -1323,7 +1370,7 @@ check_host_status(Widget w)
 
             if (x == -1)
             {
-               locate_xy_column(i, &x, &y, &column);
+               locate_xy_column(-1, i, &x, &y, &column);
             }
 
             connect_data[i].total_file_size = fsa[i].total_file_size;
@@ -1339,7 +1386,8 @@ check_host_status(Widget w)
                connect_data[i].str_tfs[2] = tmp_string[2];
                connect_data[i].str_tfs[3] = tmp_string[3];
 
-               if ((i < location_where_changed) && (redraw_everything == NO))
+               if ((i < location_where_changed) && (redraw_everything == NO) &&
+                   (x != -1))
                {
                   draw_chars(i, TOTAL_FILE_SIZE, x + (5 * glyph_width),
                              y, column);
@@ -1364,7 +1412,7 @@ check_host_status(Widget w)
 
             if (x == -1)
             {
-               locate_xy_column(i, &x, &y, &column);
+               locate_xy_column(-1, i, &x, &y, &column);
             }
 
             CREATE_FS_STRING(tmp_string, connect_data[i].bytes_per_sec);
@@ -1379,7 +1427,8 @@ check_host_status(Widget w)
                connect_data[i].str_tr[2] = tmp_string[2];
                connect_data[i].str_tr[3] = tmp_string[3];
 
-               if ((i < location_where_changed) && (redraw_everything == NO))
+               if ((i < location_where_changed) && (redraw_everything == NO) &&
+                   (x != -1))
                {
                   draw_chars(i, TRANSFER_RATE, x + (10 * glyph_width),
                              y, column);
@@ -1397,13 +1446,14 @@ check_host_status(Widget w)
 
             if (x == -1)
             {
-               locate_xy_column(i, &x, &y, &column);
+               locate_xy_column(-1, i, &x, &y, &column);
             }
 
             connect_data[i].error_counter = fsa[i].error_counter;
             CREATE_EC_STRING(connect_data[i].str_ec, fsa[i].error_counter);
 
-            if ((i < location_where_changed) && (redraw_everything == NO))
+            if ((i < location_where_changed) && (redraw_everything == NO) &&
+                (x != -1))
             {
                draw_chars(i, ERROR_COUNTER, x + (15 * glyph_width),
                           y, column);
@@ -1467,21 +1517,24 @@ check_host_status(Widget w)
             {
                if (x == -1)
                {
-                  locate_xy_column(i, &x, &y, &column);
+                  locate_xy_column(-1, i, &x, &y, &column);
                }
 
-               if (old_bar_length < new_bar_length)
+               if (x != -1)
                {
-                  draw_bar(i, 1, TR_BAR_NO, x, y, column);
-               }
-               else
-               {
-                  draw_bar(i, -1, TR_BAR_NO, x, y, column);
-               }
+                  if (old_bar_length < new_bar_length)
+                  {
+                     draw_bar(i, 1, TR_BAR_NO, x, y, column);
+                  }
+                  else
+                  {
+                     draw_bar(i, -1, TR_BAR_NO, x, y, column);
+                  }
 
-               if (flush != YES)
-               {
-                  flush = YUP;
+                  if (flush != YES)
+                  {
+                     flush = YUP;
+                  }
                }
             }
          }
@@ -1494,14 +1547,17 @@ check_host_status(Widget w)
                  {
                     if (x == -1)
                     {
-                       locate_xy_column(i, &x, &y, &column);
+                       locate_xy_column(-1, i, &x, &y, &column);
                     }
 
-                    draw_bar(i, 1, TR_BAR_NO, x, y, column);
-
-                    if (flush != YES)
+                    if (x != -1)
                     {
-                       flush = YUP;
+                       draw_bar(i, 1, TR_BAR_NO, x, y, column);
+
+                       if (flush != YES)
+                       {
+                          flush = YUP;
+                       }
                     }
                  }
               }
@@ -1533,20 +1589,23 @@ check_host_status(Widget w)
                {
                   if (x == -1)
                   {
-                     locate_xy_column(i, &x, &y, &column);
+                     locate_xy_column(-1, i, &x, &y, &column);
                   }
 
-                  if (connect_data[i].bar_length[ERROR_BAR_NO] < new_bar_length)
+                  if (x != -1)
                   {
-                     connect_data[i].bar_length[ERROR_BAR_NO] = new_bar_length;
-                     draw_bar(i, 1, ERROR_BAR_NO, x, y + bar_thickness_2, column);
+                     if (connect_data[i].bar_length[ERROR_BAR_NO] < new_bar_length)
+                     {
+                        connect_data[i].bar_length[ERROR_BAR_NO] = new_bar_length;
+                        draw_bar(i, 1, ERROR_BAR_NO, x, y + bar_thickness_2, column);
+                     }
+                     else
+                     {
+                        connect_data[i].bar_length[ERROR_BAR_NO] = new_bar_length;
+                        draw_bar(i, -1, ERROR_BAR_NO, x, y + bar_thickness_2, column);
+                     }
+                     flush = YES;
                   }
-                  else
-                  {
-                     connect_data[i].bar_length[ERROR_BAR_NO] = new_bar_length;
-                     draw_bar(i, -1, ERROR_BAR_NO, x, y + bar_thickness_2, column);
-                  }
-                  flush = YES;
                }
             }
          }
@@ -1558,8 +1617,15 @@ check_host_status(Widget w)
 #ifdef _DEBUG
          (void)fprintf(stderr, "count_channels: i = %d\n", i);
 #endif
-         flush = YES;
-         draw_line_status(i, 1);
+         if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+             (connect_data[i].type == 1))
+         {
+            if ((j = get_vpl_pos(i)) != INCORRECT)
+            {
+               draw_line_status(j, 1);
+               flush = YES;
+            }
+         }
       }
    }
    if (redraw_everything == YES)
@@ -1687,6 +1753,65 @@ check_fsa_data(unsigned int host_id)
    }
 
    return(INCORRECT);
+}
+
+
+/*+++++++++++++++++++++ check_for_removed_groups() ++++++++++++++++++++++*/
+static void
+check_for_removed_groups(int prev_no_of_hosts)
+{
+   int gotcha,
+       i,
+       j,
+       prev_plus_minus;
+
+   for (i = 0; i < prev_no_of_hosts; i++)
+   {
+      if (connect_data[i].type == 1)
+      {
+         gotcha = NO;
+         for (j = 0; j < no_of_hosts; j++)
+         {
+            if ((fsa[j].host_id == connect_data[i].host_id) &&
+                (fsa[j].real_hostname[0][0] == 1))
+            {
+               gotcha = YES;
+               break;
+            }
+         }
+         if (gotcha == NO)
+         {
+            /* Group has been removed. */
+            if (i == 0)
+            {
+               prev_plus_minus = PM_OPEN_STATE;
+            }
+            else
+            {
+               prev_plus_minus = connect_data[i - 1].plus_minus;
+            }
+
+#ifdef _DEBUG
+            (void)fprintf(stderr, "\nSetting Group %s for %s\n",
+                          (prev_plus_minus == PM_OPEN_STATE) ? "PM_OPEN_STATE" : "PM_CLOSE_STATE",
+                          connect_data[i].hostname);
+#endif
+            connect_data[i].plus_minus = prev_plus_minus;
+            for (j = i + 1; ((j < prev_no_of_hosts) &&
+                             (connect_data[j].type != 1)); j++)
+            {
+#ifdef _DEBUG
+               (void)fprintf(stderr, "Setting %s for %s\n",
+                             (prev_plus_minus == PM_OPEN_STATE) ? "PM_OPEN_STATE" : "PM_CLOSE_STATE",
+                             connect_data[j].hostname);
+#endif
+               connect_data[j].plus_minus = prev_plus_minus;
+            }
+         }
+      }
+   }
+
+   return;
 }
 
 
