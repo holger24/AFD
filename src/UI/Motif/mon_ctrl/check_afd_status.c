@@ -82,6 +82,7 @@ extern struct mon_line        *connect_data;
 extern struct mon_status_area *msa;
 
 /* Local function prototypes. */
+static void                   check_for_removed_groups(int);
 static int                    check_msa_data(char *),
                               check_disp_data(char *, int);
 
@@ -119,6 +120,12 @@ check_afd_status(Widget w)
       size_t          new_size = no_of_afds * sizeof(struct mon_line);
       struct mon_line *new_connect_data,
                       *tmp_connect_data;
+      /*
+       * Let us first check if all the group identifiers are still
+       * in the new MSA. If not we must check if we must set the
+       * plus_minus to PM_OPEN_STATE.
+       */
+      check_for_removed_groups(prev_no_of_afds);
 
       if ((new_connect_data = calloc(no_of_afds,
                                      sizeof(struct mon_line))) == NULL)
@@ -404,13 +411,15 @@ check_afd_status(Widget w)
             location_where_changed = 0;
          }
       }
-
-      /* When no. of AFD's have been reduced, then delete */
-      /* removed AFD's from end of list.                  */
-      for (i = prev_no_of_afds_visible; i > no_of_afds_visible; i--)
+      else
       {
-         locate_xy(i, &x, &y);
-         draw_mon_blank_line(x, y);
+         /* When no. of AFD's have been reduced, then delete */
+         /* removed AFD's from end of list.                  */
+         for (i = prev_no_of_afds_visible; i > no_of_afds_visible; i--)
+         {
+            locate_xy(i, &x, &y);
+            draw_mon_blank_line(x, y);
+         }
       }
 
       /* Make sure changes are drawn !!! */
@@ -488,8 +497,9 @@ check_afd_status(Widget w)
 #endif
       }
 
-      if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-          (connect_data[i].rcmd == '\0'))
+      if ((i < location_where_changed) && (redraw_everything == NO) &&
+          ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+           (connect_data[i].rcmd == '\0')))
       {
          if (draw_identifier == YES)
          {
@@ -648,8 +658,9 @@ check_afd_status(Widget w)
          (void)memcpy(connect_data[i].sys_log_fifo,
                       msa[i].sys_log_fifo,
                       LOG_FIFO_SIZE + 1);
-         if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-             (connect_data[i].rcmd == '\0'))
+         if ((i < location_where_changed) && (redraw_everything == NO) &&
+             ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+              (connect_data[i].rcmd == '\0')))
          {
             draw_remote_log_status(i,
                                    connect_data[i].sys_log_ec % LOG_FIFO_SIZE,
@@ -669,8 +680,9 @@ check_afd_status(Widget w)
          {
             (void)memcpy(connect_data[i].log_history[RECEIVE_HISTORY],
                          msa[i].log_history[RECEIVE_HISTORY], MAX_LOG_HISTORY);
-            if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                (connect_data[i].rcmd == '\0'))
+            if ((i < location_where_changed) && (redraw_everything == NO) &&
+                ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                 (connect_data[i].rcmd == '\0')))
             {
                draw_remote_history(i, RECEIVE_HISTORY, x, y);
                flush = YES;
@@ -681,8 +693,9 @@ check_afd_status(Widget w)
          {
             (void)memcpy(connect_data[i].log_history[SYSTEM_HISTORY],
                          msa[i].log_history[SYSTEM_HISTORY], MAX_LOG_HISTORY);
-            if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                (connect_data[i].rcmd == '\0'))
+            if ((i < location_where_changed) && (redraw_everything == NO) &&
+                ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                 (connect_data[i].rcmd == '\0')))
             {
                draw_remote_history(i, SYSTEM_HISTORY, x, y + bar_thickness_3);
                flush = YES;
@@ -693,8 +706,9 @@ check_afd_status(Widget w)
          {
             (void)memcpy(connect_data[i].log_history[TRANSFER_HISTORY],
                          msa[i].log_history[TRANSFER_HISTORY], MAX_LOG_HISTORY);
-            if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                (connect_data[i].rcmd == '\0'))
+            if ((i < location_where_changed) && (redraw_everything == NO) &&
+                ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                 (connect_data[i].rcmd == '\0')))
             {
                draw_remote_history(i, TRANSFER_HISTORY, x,
                                    y + bar_thickness_3 + bar_thickness_3);
@@ -720,7 +734,7 @@ check_afd_status(Widget w)
             connect_data[i].fc = msa[i].fc;
             CREATE_FC_STRING(connect_data[i].str_fc, connect_data[i].fc);
 
-            if ((i < location_where_changed) &&
+            if ((i < location_where_changed) && (redraw_everything == NO) &&
                 ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
                  (connect_data[i].rcmd == '\0')))
             {
@@ -749,7 +763,7 @@ check_afd_status(Widget w)
                connect_data[i].str_fs[2] = tmp_string[2];
                connect_data[i].str_fs[3] = tmp_string[3];
 
-               if ((i < location_where_changed) &&
+               if ((i < location_where_changed) && (redraw_everything == NO) &&
                    ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
                     (connect_data[i].rcmd == '\0')))
                {
@@ -780,7 +794,7 @@ check_afd_status(Widget w)
                connect_data[i].str_tr[2] = tmp_string[2];
                connect_data[i].str_tr[3] = tmp_string[3];
 
-               if ((i < location_where_changed) &&
+               if ((i < location_where_changed) && (redraw_everything == NO) &&
                    ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
                     (connect_data[i].rcmd == '\0')))
                {
@@ -799,7 +813,7 @@ check_afd_status(Widget w)
             connect_data[i].fr = msa[i].fr;
             CREATE_JQ_STRING(connect_data[i].str_fr, connect_data[i].fr);
 
-            if ((i < location_where_changed) &&
+            if ((i < location_where_changed) && (redraw_everything == NO) &&
                 ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
                  (connect_data[i].rcmd == '\0')))
             {
@@ -818,7 +832,7 @@ check_afd_status(Widget w)
             CREATE_JQ_STRING(connect_data[i].str_jq,
                              connect_data[i].jobs_in_queue);
 
-            if ((i < location_where_changed) &&
+            if ((i < location_where_changed) && (redraw_everything == NO) &&
                 ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
                  (connect_data[i].rcmd == '\0')))
             {
@@ -836,7 +850,7 @@ check_afd_status(Widget w)
             connect_data[i].danger_no_of_jobs = msa[i].danger_no_of_jobs;
             connect_data[i].link_max = connect_data[i].danger_no_of_jobs * 2;
 
-            if ((i < location_where_changed) &&
+            if ((i < location_where_changed) && (redraw_everything == NO) &&
                 ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
                  (connect_data[i].rcmd == '\0')))
             {
@@ -854,7 +868,7 @@ check_afd_status(Widget w)
             connect_data[i].no_of_transfers = msa[i].no_of_transfers;
             CREATE_JQ_STRING(connect_data[i].str_at, msa[i].no_of_transfers);
 
-            if ((i < location_where_changed) &&
+            if ((i < location_where_changed) && (redraw_everything == NO) &&
                 ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
                  (connect_data[i].rcmd == '\0')))
             {
@@ -872,7 +886,7 @@ check_afd_status(Widget w)
             connect_data[i].ec = msa[i].ec;
             CREATE_EC_STRING(connect_data[i].str_ec, connect_data[i].ec);
 
-            if ((i < location_where_changed) &&
+            if ((i < location_where_changed) && (redraw_everything == NO) &&
                 ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
                  (connect_data[i].rcmd == '\0')))
             {
@@ -892,7 +906,7 @@ check_afd_status(Widget w)
             connect_data[i].host_error_counter = msa[i].host_error_counter;
             CREATE_EC_STRING(connect_data[i].str_hec, msa[i].host_error_counter);
 
-            if ((i < location_where_changed) &&
+            if ((i < location_where_changed) && (redraw_everything == NO) &&
                 ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
                  (connect_data[i].rcmd == '\0')))
             {
@@ -967,7 +981,7 @@ check_afd_status(Widget w)
             old_bar_length = connect_data[i].bar_length[MON_TR_BAR_NO];
             connect_data[i].bar_length[MON_TR_BAR_NO] = new_bar_length;
 
-            if ((i < location_where_changed) &&
+            if ((i < location_where_changed) && (redraw_everything == NO) &&
                 ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
                  (connect_data[i].rcmd == '\0')))
             {
@@ -991,6 +1005,7 @@ check_afd_status(Widget w)
               {
                  connect_data[i].bar_length[MON_TR_BAR_NO] = max_bar_length;
                  if ((i < location_where_changed) &&
+                     (redraw_everything == NO) &&
                      ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
                       (connect_data[i].rcmd == '\0')))
                  {
@@ -1087,7 +1102,7 @@ check_afd_status(Widget w)
           (connect_data[i].rcmd == '\0'))
       {
          /* Redraw the line. */
-         if (i >= location_where_changed)
+         if ((i >= location_where_changed) && (redraw_everything == NO))
          {
 #ifdef _DEBUG
             (void)fprintf(stderr, "count_channels: i = %d\n", i);
@@ -1131,6 +1146,65 @@ check_afd_status(Widget w)
    (void)XtAppAddTimeOut(app, redraw_time_line,
                          (XtTimerCallbackProc)check_afd_status, w);
  
+   return;
+}
+
+
+/*+++++++++++++++++++++ check_for_removed_groups() ++++++++++++++++++++++*/
+static void
+check_for_removed_groups(int prev_no_of_afds)
+{
+   int gotcha,
+       i,
+       j,
+       prev_plus_minus;
+
+   for (i = 0; i < prev_no_of_afds; i++)
+   {
+      if (connect_data[i].rcmd == '\0')
+      {
+         gotcha = NO;
+         for (j = 0; j < no_of_afds; j++)
+         {
+            if ((my_strcmp(msa[j].afd_alias, connect_data[i].afd_alias) == 0) &&
+                (msa[j].rcmd == '\0'))
+            {
+               gotcha = YES;
+               break;
+            }
+         }
+         if (gotcha == NO)
+         {
+            /* Group has been removed. */
+            if (i == 0)
+            {
+               prev_plus_minus = PM_OPEN_STATE;
+            }
+            else
+            {
+               prev_plus_minus = connect_data[i - 1].plus_minus;
+            }
+
+#ifdef _DEBUG
+            (void)fprintf(stderr, "\nSetting Group %s for %s\n",
+                          (prev_plus_minus == PM_OPEN_STATE) ? "PM_OPEN_STATE" : "PM_CLOSE_STATE",
+                          connect_data[i].afd_alias);
+#endif
+            connect_data[i].plus_minus = prev_plus_minus;
+            for (j = i + 1; ((j < prev_no_of_afds) &&
+                             (connect_data[j].rcmd != '\0')); j++)
+            {
+#ifdef _DEBUG
+               (void)fprintf(stderr, "Setting %s for %s\n",
+                             (prev_plus_minus == PM_OPEN_STATE) ? "PM_OPEN_STATE" : "PM_CLOSE_STATE",
+                             connect_data[j].afd_alias);
+#endif
+               connect_data[j].plus_minus = prev_plus_minus;
+            }
+         }
+      }
+   }
+
    return;
 }
 
