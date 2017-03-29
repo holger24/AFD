@@ -151,7 +151,7 @@ clear_pool_dir(void)
             (void)strcpy(work_ptr, p_dir->d_name);
 #ifdef MULTI_FS_SUPPORT
             if ((lstat(pool_dir, &stat_buf) != -1) &&
-                (S_ISLNK(stat_buf.st_mode)))
+                (S_ISLNK(stat_buf.st_mode) == 0))
             {
 #endif
                if (get_source_dir(p_dir->d_name, orig_dir, &dir_id) == INCORRECT)
