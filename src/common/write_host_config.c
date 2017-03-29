@@ -465,7 +465,7 @@ write_host_config(int              no_of_hosts,
    {
       if (p_hl[i].real_hostname[0][0] == 1)
       {
-         length = snprintf(line_buffer, MAX_HOSTNAME_LENGTH + 1,
+         length = snprintf(line_buffer, MAX_HOSTNAME_LENGTH + 2,
                            "%s\n", p_hl[i].host_alias);
       }
       else

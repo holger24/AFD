@@ -234,7 +234,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].host_alias[i] = *ptr;
          ptr++; i++;
       }
-      if ((i == MAX_HOSTNAME_LENGTH) && (*ptr != ':'))
+      if ((i == MAX_HOSTNAME_LENGTH) && (*ptr != ':') && (*ptr != '\n'))
       {
          error_flag = YES;
          system_log(WARN_SIGN, __FILE__, __LINE__,
