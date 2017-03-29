@@ -1153,8 +1153,8 @@ check_host_status(Widget w)
          }
 
          if ((i < location_where_changed) && (redraw_everything == NO) &&
-             ((connect_data[i].plus_minus == PM_OPEN_STATE) &&
-              (connect_data[i].type == 0)))
+             (connect_data[i].plus_minus == PM_OPEN_STATE) &&
+             (connect_data[i].type == 0))
          {
             if (x == -1)
             {
@@ -1206,8 +1206,8 @@ check_host_status(Widget w)
             connect_data[i].debug = fsa[i].debug;
 
             if ((i < location_where_changed) && (redraw_everything == NO) &&
-                ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                 (connect_data[i].type == 0)))
+                (connect_data[i].plus_minus == PM_OPEN_STATE) &&
+                (connect_data[i].type == 0))
             {
                if (x == -1)
                {
@@ -1289,7 +1289,9 @@ check_host_status(Widget w)
             connect_data[i].status_led[2] = (connect_data[i].protocol >> 30);
             led_changed |= LED_TWO;
          }
-         if ((i < location_where_changed) && (redraw_everything == NO))
+         if ((i < location_where_changed) && (redraw_everything == NO) &&
+             ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+              (connect_data[i].type == 1)))
          {
             if ((led_changed > 0) || (disable_retrieve_flag_changed == YES))
             {
@@ -1354,6 +1356,8 @@ check_host_status(Widget w)
                              connect_data[i].total_file_counter);
 
             if ((i < location_where_changed) && (redraw_everything == NO) &&
+                ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                 (connect_data[i].type == 1)) &&
                 (x != -1))
             {
                draw_chars(i, NO_OF_FILES, x, y, column);
@@ -1387,6 +1391,8 @@ check_host_status(Widget w)
                connect_data[i].str_tfs[3] = tmp_string[3];
 
                if ((i < location_where_changed) && (redraw_everything == NO) &&
+                   ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                    (connect_data[i].type == 1)) &&
                    (x != -1))
                {
                   draw_chars(i, TOTAL_FILE_SIZE, x + (5 * glyph_width),
@@ -1428,6 +1434,8 @@ check_host_status(Widget w)
                connect_data[i].str_tr[3] = tmp_string[3];
 
                if ((i < location_where_changed) && (redraw_everything == NO) &&
+                   ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                    (connect_data[i].type == 1)) &&
                    (x != -1))
                {
                   draw_chars(i, TRANSFER_RATE, x + (10 * glyph_width),
@@ -1453,6 +1461,8 @@ check_host_status(Widget w)
             CREATE_EC_STRING(connect_data[i].str_ec, fsa[i].error_counter);
 
             if ((i < location_where_changed) && (redraw_everything == NO) &&
+                ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                 (connect_data[i].type == 1)) &&
                 (x != -1))
             {
                draw_chars(i, ERROR_COUNTER, x + (15 * glyph_width),
@@ -1513,7 +1523,9 @@ check_host_status(Widget w)
             old_bar_length = connect_data[i].bar_length[TR_BAR_NO];
             connect_data[i].bar_length[TR_BAR_NO] = new_bar_length;
 
-            if ((i < location_where_changed) && (redraw_everything == NO))
+            if ((i < location_where_changed) && (redraw_everything == NO) &&
+                ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                 (connect_data[i].type == 1)))
             {
                if (x == -1)
                {
@@ -1542,8 +1554,9 @@ check_host_status(Widget w)
                   (connect_data[i].bar_length[TR_BAR_NO] < max_bar_length))
               {
                  connect_data[i].bar_length[TR_BAR_NO] = max_bar_length;
-                 if ((i < location_where_changed) &&
-                     (redraw_everything == NO))
+                 if ((i < location_where_changed) && (redraw_everything == NO) &&
+                     ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                      (connect_data[i].type == 1)))
                  {
                     if (x == -1)
                     {
@@ -1585,7 +1598,9 @@ check_host_status(Widget w)
                connect_data[i].red_color_offset = new_bar_length * step_size;
                connect_data[i].green_color_offset = MAX_INTENSITY - connect_data[i].red_color_offset;
 
-               if ((i < location_where_changed) && (redraw_everything == NO))
+               if ((i < location_where_changed) && (redraw_everything == NO) &&
+                   ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
+                    (connect_data[i].type == 1)))
                {
                   if (x == -1)
                   {
