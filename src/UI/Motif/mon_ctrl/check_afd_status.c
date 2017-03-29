@@ -372,8 +372,17 @@ check_afd_status(Widget w)
 
       /* Count number of invisible AFD's. */
       no_of_afds_invisible = no_of_afds_visible = 0;
+      prev_plus_minus = PM_OPEN_STATE;
       for (i = 0; i < no_of_afds; i++)
       {
+         if (new_connect_data[i].rcmd == '\0')
+         {
+            prev_plus_minus = new_connect_data[i].plus_minus;
+         }
+         else
+         {
+            new_connect_data[i].plus_minus = prev_plus_minus;
+         }
          if ((new_connect_data[i].plus_minus == PM_CLOSE_STATE) &&
              (new_connect_data[i].rcmd != '\0'))
          {
