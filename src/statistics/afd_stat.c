@@ -1,6 +1,6 @@
 /*
  *  afd_stat.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ DESCR__S_M1
  **   23.02.2003 H.Kiehl Added input statistics.
  **   01.01.2006 H.Kiehl Catch leap seconds when we store an old year.
  **   03.01.2009 H.Kiehl Catch another leap second bug.
+ **   30.03.2017 H.Kiehl Do not count the values of group elements.
  **
  */
 DESCR__E_M1
@@ -402,79 +403,82 @@ main(int argc, char *argv[])
           */
          for (i = 0; i < no_of_hosts; i++)
          {
-            /***********************************/
-            /* Handle structure entry for day. */
-            /***********************************/
+            if (fsa[i].real_hostname[0][0] != 1)
+            {
+               /***********************************/
+               /* Handle structure entry for day. */
+               /***********************************/
 
-            /* Store number of files send. */
-            ui_value = fsa[i].file_counter_done;
-            if (ui_value >= stat_db[i].prev_nfs)
-            {
-               stat_db[i].hour[stat_db[i].sec_counter].nfs = ui_value - stat_db[i].prev_nfs;
-            }
-            else
-            {
-               /* Check if an overflow has occured */
-               if ((UINT_MAX - stat_db[i].prev_nfs) <= MAX_FILES_PER_SCAN)
+               /* Store number of files send. */
+               ui_value = fsa[i].file_counter_done;
+               if (ui_value >= stat_db[i].prev_nfs)
                {
-                  stat_db[i].hour[stat_db[i].sec_counter].nfs = ui_value + UINT_MAX - stat_db[i].prev_nfs;
-               }
-               else /* To large. Lets assume it was a reset of the AFD. */
-               {
-                  stat_db[i].hour[stat_db[i].sec_counter].nfs = ui_value;
-               }
-            }
-            stat_db[i].day[stat_db[i].hour_counter].nfs += stat_db[i].hour[stat_db[i].sec_counter].nfs;
-            stat_db[i].prev_nfs = ui_value;
-
-            /* Store number of bytes send. */
-            stat_db[i].hour[stat_db[i].sec_counter].nbs = 0.0;
-            for (j = 0; j < MAX_NO_PARALLEL_JOBS; j++)
-            {
-               d_value[j] = (double)fsa[i].job_status[j].bytes_send;
-               if (d_value[j] >= stat_db[i].prev_nbs[j])
-               {
-                  stat_db[i].hour[stat_db[i].sec_counter].nbs += d_value[j] - stat_db[i].prev_nbs[j];
+                  stat_db[i].hour[stat_db[i].sec_counter].nfs = ui_value - stat_db[i].prev_nfs;
                }
                else
                {
-                  stat_db[i].hour[stat_db[i].sec_counter].nbs += d_value[j];
+                  /* Check if an overflow has occured */
+                  if ((UINT_MAX - stat_db[i].prev_nfs) <= MAX_FILES_PER_SCAN)
+                  {
+                     stat_db[i].hour[stat_db[i].sec_counter].nfs = ui_value + UINT_MAX - stat_db[i].prev_nfs;
+                  }
+                  else /* To large. Lets assume it was a reset of the AFD. */
+                  {
+                     stat_db[i].hour[stat_db[i].sec_counter].nfs = ui_value;
+                  }
                }
-               stat_db[i].prev_nbs[j] = d_value[j];
-            }
-            if (stat_db[i].hour[stat_db[i].sec_counter].nbs < 0.0)
-            {
+               stat_db[i].day[stat_db[i].hour_counter].nfs += stat_db[i].hour[stat_db[i].sec_counter].nfs;
+               stat_db[i].prev_nfs = ui_value;
+
+               /* Store number of bytes send. */
                stat_db[i].hour[stat_db[i].sec_counter].nbs = 0.0;
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Hmm.... Byte counter less then zero?!? [%d]", i);
-            }
-            stat_db[i].day[stat_db[i].hour_counter].nbs += stat_db[i].hour[stat_db[i].sec_counter].nbs;
+               for (j = 0; j < MAX_NO_PARALLEL_JOBS; j++)
+               {
+                  d_value[j] = (double)fsa[i].job_status[j].bytes_send;
+                  if (d_value[j] >= stat_db[i].prev_nbs[j])
+                  {
+                     stat_db[i].hour[stat_db[i].sec_counter].nbs += d_value[j] - stat_db[i].prev_nbs[j];
+                  }
+                  else
+                  {
+                     stat_db[i].hour[stat_db[i].sec_counter].nbs += d_value[j];
+                  }
+                  stat_db[i].prev_nbs[j] = d_value[j];
+               }
+               if (stat_db[i].hour[stat_db[i].sec_counter].nbs < 0.0)
+               {
+                  stat_db[i].hour[stat_db[i].sec_counter].nbs = 0.0;
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Hmm.... Byte counter less then zero?!? [%d]", i);
+               }
+               stat_db[i].day[stat_db[i].hour_counter].nbs += stat_db[i].hour[stat_db[i].sec_counter].nbs;
 
-            /* Store number of errors. */
-            ui_value = fsa[i].total_errors;
-            if (ui_value >= stat_db[i].prev_ne)
-            {
-               stat_db[i].hour[stat_db[i].sec_counter].ne = ui_value - stat_db[i].prev_ne;
-            }
-            else
-            {
-               stat_db[i].hour[stat_db[i].sec_counter].ne = ui_value;
-            }
-            stat_db[i].day[stat_db[i].hour_counter].ne += stat_db[i].hour[stat_db[i].sec_counter].ne;
-            stat_db[i].prev_ne = ui_value;
+               /* Store number of errors. */
+               ui_value = fsa[i].total_errors;
+               if (ui_value >= stat_db[i].prev_ne)
+               {
+                  stat_db[i].hour[stat_db[i].sec_counter].ne = ui_value - stat_db[i].prev_ne;
+               }
+               else
+               {
+                  stat_db[i].hour[stat_db[i].sec_counter].ne = ui_value;
+               }
+               stat_db[i].day[stat_db[i].hour_counter].ne += stat_db[i].hour[stat_db[i].sec_counter].ne;
+               stat_db[i].prev_ne = ui_value;
 
-            /* Store number of connections. */
-            ui_value = fsa[i].connections;
-            if (ui_value >= stat_db[i].prev_nc)
-            {
-               stat_db[i].hour[stat_db[i].sec_counter].nc = ui_value - stat_db[i].prev_nc;
-            }
-            else
-            {
-               stat_db[i].hour[stat_db[i].sec_counter].nc = ui_value;
-            }
-            stat_db[i].day[stat_db[i].hour_counter].nc += stat_db[i].hour[stat_db[i].sec_counter].nc;
-            stat_db[i].prev_nc = ui_value;
+               /* Store number of connections. */
+               ui_value = fsa[i].connections;
+               if (ui_value >= stat_db[i].prev_nc)
+               {
+                  stat_db[i].hour[stat_db[i].sec_counter].nc = ui_value - stat_db[i].prev_nc;
+               }
+               else
+               {
+                  stat_db[i].hour[stat_db[i].sec_counter].nc = ui_value;
+               }
+               stat_db[i].day[stat_db[i].hour_counter].nc += stat_db[i].hour[stat_db[i].sec_counter].nc;
+               stat_db[i].prev_nc = ui_value;
+            } /* (fsa[i].real_hostname[0][0] != 1) */
             stat_db[i].sec_counter++;
          } /* for (i = 0; i < no_of_hosts; i++) */
 
