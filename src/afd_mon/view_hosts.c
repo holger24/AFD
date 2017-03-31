@@ -1,6 +1,6 @@
 /*
  *  view_hosts.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,11 @@ DESCR__S_M1
  **   view_hosts - lists all hosts served by all AFD's in MSA
  **
  ** SYNOPSIS
- **   view_hosts [working directory] -A|-C|-a|-r <host name>
+ **   view_hosts [working directory] <option> <host name>
+ **                                   -a  search alias names
+ **                                   -r  search real names
+ **                                   -A  search AFD alias names
+ **                                   -C  same as -A, just show first found
  **
  ** DESCRIPTION
  **
@@ -37,6 +41,8 @@ DESCR__S_M1
  **
  ** HISTORY
  **   05.06.1999 H.Kiehl Created
+ **   31.03.2017 H.Kiehl Show better help text.
+ **                      Handle group names.
  **
  */
 DESCR__E_M1
@@ -231,50 +237,71 @@ main(int argc, char *argv[])
                         if (show_afd_name == YES)
                         {
                            show_afd_name = NO;
-                           if (ahl[i][j].real_hostname[1][0] == '\0')
+                           if (ahl[i][j].real_hostname[0][0] == 1)
                            {
-                              (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s\n",
+                              (void)fprintf(stdout, "%-*s %-4d: %-*s\n",
                                             MAX_AFDNAME_LENGTH,
                                             msa[i].afd_alias, j,
                                             MAX_HOSTNAME_LENGTH,
-                                            ahl[i][j].host_alias,
-                                            25,
-                                            ahl[i][j].real_hostname[0]);
+                                            ahl[i][j].host_alias);
                            }
                            else
                            {
-                              (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s %-*s\n",
-                                            MAX_AFDNAME_LENGTH,
-                                            msa[i].afd_alias, j,
-                                            MAX_HOSTNAME_LENGTH,
-                                            ahl[i][j].host_alias,
-                                            25,
-                                            ahl[i][j].real_hostname[0],
-                                            25,
-                                            ahl[i][j].real_hostname[1]);
+                              if (ahl[i][j].real_hostname[1][0] == '\0')
+                              {
+                                 (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s\n",
+                                               MAX_AFDNAME_LENGTH,
+                                               msa[i].afd_alias, j,
+                                               MAX_HOSTNAME_LENGTH,
+                                               ahl[i][j].host_alias,
+                                               25,
+                                               ahl[i][j].real_hostname[0]);
+                              }
+                              else
+                              {
+                                 (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s %-*s\n",
+                                               MAX_AFDNAME_LENGTH,
+                                               msa[i].afd_alias, j,
+                                               MAX_HOSTNAME_LENGTH,
+                                               ahl[i][j].host_alias,
+                                               25,
+                                               ahl[i][j].real_hostname[0],
+                                               25,
+                                               ahl[i][j].real_hostname[1]);
+                              }
                            }
                         }
                         else
                         {
-                           if (ahl[i][j].real_hostname[1][0] == '\0')
+                           if (ahl[i][j].real_hostname[0][0] == 1)
                            {
-                              (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s\n",
+                              (void)fprintf(stdout, "%-*s %-4d: %-*s\n",
                                             MAX_AFDNAME_LENGTH, " ", j,
                                             MAX_HOSTNAME_LENGTH,
-                                            ahl[i][j].host_alias,
-                                            25,
-                                            ahl[i][j].real_hostname[0]);
+                                            ahl[i][j].host_alias);
                            }
                            else
                            {
-                              (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s %-*s\n",
-                                            MAX_AFDNAME_LENGTH, " ", j,
-                                            MAX_HOSTNAME_LENGTH,
-                                            ahl[i][j].host_alias,
-                                            25,
-                                            ahl[i][j].real_hostname[0],
-                                            25,
-                                            ahl[i][j].real_hostname[1]);
+                              if (ahl[i][j].real_hostname[1][0] == '\0')
+                              {
+                                 (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s\n",
+                                               MAX_AFDNAME_LENGTH, " ", j,
+                                               MAX_HOSTNAME_LENGTH,
+                                               ahl[i][j].host_alias,
+                                               25,
+                                               ahl[i][j].real_hostname[0]);
+                              }
+                              else
+                              {
+                                 (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s %-*s\n",
+                                               MAX_AFDNAME_LENGTH, " ", j,
+                                               MAX_HOSTNAME_LENGTH,
+                                               ahl[i][j].host_alias,
+                                               25,
+                                               ahl[i][j].real_hostname[0],
+                                               25,
+                                               ahl[i][j].real_hostname[1]);
+                              }
                            }
                         }
 
@@ -297,75 +324,78 @@ main(int argc, char *argv[])
                {
                   for (k = 0; k < no_of_filters; k++)
                   {
-                     if ((pmatch(argv[k + 2], ahl[i][j].real_hostname[0], NULL) == 0) ||
-                         ((ahl[i][j].real_hostname[1][0] != '\0') &&
-                          (pmatch(argv[k + 2], ahl[i][j].real_hostname[1], NULL) == 0)))
+                     if (ahl[i][j].real_hostname[0][0] != 1)
                      {
-                        if (show_header == YES)
+                        if ((pmatch(argv[k + 2], ahl[i][j].real_hostname[0], NULL) == 0) ||
+                            ((ahl[i][j].real_hostname[1][0] != '\0') &&
+                             (pmatch(argv[k + 2], ahl[i][j].real_hostname[1], NULL) == 0)))
                         {
-                           (void)fprintf(stdout, "%-*s Pos   %-*s %-*s %-*s\n",
-                                                 MAX_AFDNAME_LENGTH,
-                                                 "AFD Alias",
-                                                 MAX_HOSTNAME_LENGTH,
-                                                 "alias",
-                                                 25,
-                                                 "real hostname 1",
-                                                 25,
-                                                 "real hostname 2");
-                           show_header = NO;
-                        }
-                        if (show_afd_name == YES)
-                        {
-                           show_afd_name = NO;
-                           if (ahl[i][j].real_hostname[1][0] == '\0')
+                           if (show_header == YES)
                            {
-                              (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s\n",
-                                            MAX_AFDNAME_LENGTH,
-                                            msa[i].afd_alias, j,
-                                            MAX_HOSTNAME_LENGTH,
-                                            ahl[i][j].host_alias,
-                                            25,
-                                            ahl[i][j].real_hostname[0]);
+                              (void)fprintf(stdout, "%-*s Pos   %-*s %-*s %-*s\n",
+                                                    MAX_AFDNAME_LENGTH,
+                                                    "AFD Alias",
+                                                    MAX_HOSTNAME_LENGTH,
+                                                    "alias",
+                                                    25,
+                                                    "real hostname 1",
+                                                    25,
+                                                    "real hostname 2");
+                              show_header = NO;
+                           }
+                           if (show_afd_name == YES)
+                           {
+                              show_afd_name = NO;
+                              if (ahl[i][j].real_hostname[1][0] == '\0')
+                              {
+                                 (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s\n",
+                                               MAX_AFDNAME_LENGTH,
+                                               msa[i].afd_alias, j,
+                                               MAX_HOSTNAME_LENGTH,
+                                               ahl[i][j].host_alias,
+                                               25,
+                                               ahl[i][j].real_hostname[0]);
+                           }
+                              else
+                              {
+                                 (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s %-*s\n",
+                                               MAX_AFDNAME_LENGTH,
+                                               msa[i].afd_alias, j,
+                                               MAX_HOSTNAME_LENGTH,
+                                               ahl[i][j].host_alias,
+                                               25,
+                                               ahl[i][j].real_hostname[0],
+                                               25,
+                                               ahl[i][j].real_hostname[1]);
+                              }
                            }
                            else
                            {
-                              (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s %-*s\n",
-                                            MAX_AFDNAME_LENGTH,
-                                            msa[i].afd_alias, j,
-                                            MAX_HOSTNAME_LENGTH,
-                                            ahl[i][j].host_alias,
-                                            25,
-                                            ahl[i][j].real_hostname[0],
-                                            25,
-                                            ahl[i][j].real_hostname[1]);
+                              if (ahl[i][j].real_hostname[1][0] == '\0')
+                              {
+                                 (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s\n",
+                                               MAX_AFDNAME_LENGTH, " ", j,
+                                               MAX_HOSTNAME_LENGTH,
+                                               ahl[i][j].host_alias,
+                                               25,
+                                               ahl[i][j].real_hostname[0]);
+                              }
+                              else
+                              {
+                                 (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s %-*s\n",
+                                               MAX_AFDNAME_LENGTH, " ", j,
+                                               MAX_HOSTNAME_LENGTH,
+                                               ahl[i][j].host_alias,
+                                               25,
+                                               ahl[i][j].real_hostname[0],
+                                               25,
+                                               ahl[i][j].real_hostname[1]);
+                              }
                            }
-                        }
-                        else
-                        {
-                           if (ahl[i][j].real_hostname[1][0] == '\0')
-                           {
-                              (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s\n",
-                                            MAX_AFDNAME_LENGTH, " ", j,
-                                            MAX_HOSTNAME_LENGTH,
-                                            ahl[i][j].host_alias,
-                                            25,
-                                            ahl[i][j].real_hostname[0]);
-                           }
-                           else
-                           {
-                              (void)fprintf(stdout, "%-*s %-4d: %-*s %-*s %-*s\n",
-                                            MAX_AFDNAME_LENGTH, " ", j,
-                                            MAX_HOSTNAME_LENGTH,
-                                            ahl[i][j].host_alias,
-                                            25,
-                                            ahl[i][j].real_hostname[0],
-                                            25,
-                                            ahl[i][j].real_hostname[1]);
-                           }
-                        }
 
-                        /* No need to check the other filters. */
-                        break;
+                           /* No need to check the other filters. */
+                           break;
+                        }
                      }
                   }
                }
@@ -384,6 +414,14 @@ static void
 usage(void)
 {
    (void)fprintf(stderr,
-                 "SYNTAX  : view_hosts [-w working directory] -A|-C|-a|-r <host name 1> [.. <host name n>]\n");
+                 "SYNTAX : view_hosts [-w working directory] <option> <host name 1> [.. <host name n>]\n");
+   (void)fprintf(stderr,
+                 "                                            -a  search alias names\n");
+   (void)fprintf(stderr,
+                 "                                            -r  search real names\n");
+   (void)fprintf(stderr,
+                 "                                            -A  search AFD alias names\n");
+   (void)fprintf(stderr,
+                 "                                            -C  same as -A, just show first found\n");
    return;
 }
