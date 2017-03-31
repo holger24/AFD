@@ -547,7 +547,8 @@ select_host_dialog(Widget w, XtPointer client_data, XtPointer call_data)
                                 XmNset,                    False,
                                 NULL);
       XtAddCallback(alias_toggle_w, XmNvalueChangedCallback,
-                    (XtCallbackProc)select_callback, (XtPointer)STATIC_SELECT_CB);
+                    (XtCallbackProc)select_callback,
+                    (XtPointer)STATIC_SELECT_CB);
       dialog_w = XtVaCreateManagedWidget("Deselect",
                                 xmToggleButtonGadgetClass, togglebox_w,
                                 XmNfontList,               p_fontlist,
@@ -618,14 +619,16 @@ select_host_dialog(Widget w, XtPointer client_data, XtPointer call_data)
                                    XmNset,                    True,
                                    NULL);
       XtAddCallback(dialog_w, XmNdisarmCallback,
-                    (XtCallbackProc)select_callback, (XtPointer)ALIAS_HOSTNAME_CB);
+                    (XtCallbackProc)select_callback,
+                    (XtPointer)ALIAS_HOSTNAME_CB);
       dialog_w = XtVaCreateManagedWidget("Real",
                                    xmToggleButtonGadgetClass, host_radiobox_w,
                                    XmNfontList,               p_fontlist,
                                    XmNset,                    False,
                                    NULL);
       XtAddCallback(dialog_w, XmNdisarmCallback,
-                    (XtCallbackProc)select_callback, (XtPointer)REAL_HOSTNAME_CB);
+                    (XtCallbackProc)select_callback,
+                    (XtPointer)REAL_HOSTNAME_CB);
       hostname_type = ALIAS_NAME;
       XtManageChild(host_radiobox_w);
       XtManageChild(criteriabox_w);
@@ -634,7 +637,8 @@ select_host_dialog(Widget w, XtPointer client_data, XtPointer call_data)
       XmFontListFree(p_fontlist);
 
 #ifdef WITH_EDITRES
-      XtAddEventHandler(findshell, (EventMask)0, True, _XEditResCheckMessages, NULL);
+      XtAddEventHandler(findshell, (EventMask)0, True, _XEditResCheckMessages,
+                        NULL);
 #endif
    }
    XtPopup(findshell, XtGrabNone);
@@ -747,8 +751,10 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
          if (((fsa[i].protocol & FTP_FLAG) && (toggles_set & SHOW_FTP)) ||
              ((fsa[i].protocol & SFTP_FLAG) && (toggles_set & SHOW_SFTP)) ||
 #ifdef WITH_SSL
-             ((fsa[i].protocol & FTP_FLAG) && (fsa[i].protocol & SSL_FLAG) && (toggles_set & SHOW_FTPS)) ||
-             ((fsa[i].protocol & HTTP_FLAG) && (fsa[i].protocol & SSL_FLAG) && (toggles_set & SHOW_HTTPS)) ||
+             ((fsa[i].protocol & FTP_FLAG) && (fsa[i].protocol & SSL_FLAG) &&
+              (toggles_set & SHOW_FTPS)) ||
+             ((fsa[i].protocol & HTTP_FLAG) && (fsa[i].protocol & SSL_FLAG) &&
+              (toggles_set & SHOW_HTTPS)) ||
 #endif
              ((fsa[i].protocol & LOC_FLAG) && (toggles_set & SHOW_FILE)) ||
              ((fsa[i].protocol & EXEC_FLAG) && (toggles_set & SHOW_EXEC)) ||
@@ -777,20 +783,28 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
             }
             else
             {
-               if ((fsa[i].toggle_pos > 0) && (fsa[i].host_toggle_str[0] != '\0'))
+               if (fsa[i].real_hostname[0][0] == 1)
                {
-                  if (fsa[i].host_toggle == HOST_ONE)
-                  {
-                     match = pmatch((text[0] == '\0') ? "*" : text, fsa[i].real_hostname[HOST_ONE - 1], NULL);
-                  }
-                  else
-                  {
-                     match = pmatch((text[0] == '\0') ? "*" : text, fsa[i].real_hostname[HOST_TWO - 1], NULL);
-                  }
+                  match = 1;
                }
                else
                {
-                  match = pmatch((text[0] == '\0') ? "*" : text, fsa[i].real_hostname[HOST_ONE - 1], NULL);
+                  if ((fsa[i].toggle_pos > 0) &&
+                      (fsa[i].host_toggle_str[0] != '\0'))
+                  {
+                     if (fsa[i].host_toggle == HOST_ONE)
+                     {
+                        match = pmatch((text[0] == '\0') ? "*" : text, fsa[i].real_hostname[HOST_ONE - 1], NULL);
+                     }
+                     else
+                     {
+                        match = pmatch((text[0] == '\0') ? "*" : text, fsa[i].real_hostname[HOST_TWO - 1], NULL);
+                     }
+                  }
+                  else
+                  {
+                     match = pmatch((text[0] == '\0') ? "*" : text, fsa[i].real_hostname[HOST_ONE - 1], NULL);
+                  }
                }
             }
             if (match == 0)

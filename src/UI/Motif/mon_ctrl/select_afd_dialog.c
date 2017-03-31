@@ -607,7 +607,8 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
             {
                for (j = 0; j < msa[i].no_of_hosts; j++)
                {
-                  if ((pmatch((text[0] == '\0') ? "*" : text, ahl[i][j].real_hostname[0], NULL) == 0) ||
+                  if (((ahl[i][j].real_hostname[0][0] != 1) &&
+                       (pmatch((text[0] == '\0') ? "*" : text, ahl[i][j].real_hostname[0], NULL) == 0)) ||
                       ((ahl[i][j].real_hostname[1][0] != '\0') &&
                        (pmatch((text[0] == '\0') ? "*" : text,  ahl[i][j].real_hostname[1], NULL) == 0)))
                   {
