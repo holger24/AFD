@@ -498,56 +498,53 @@ get_ip_data(int *fsa_ip_counter)
       }
       for (i = 0; i < no_of_hosts; i++)
       {
-         if (fsa[i].real_hostname[0][0] != 1)
+         p_ip_hl = ip_hl;
+         p_ip_ips = ip_ips;
+         for (j = 0; j < no_of_ips; j++)
          {
-            p_ip_hl = ip_hl;
-            p_ip_ips = ip_ips;
-            for (j = 0; j < no_of_ips; j++)
+            fsa_ip_pos[i] = -1;
+            if ((my_strcmp(fsa[i].real_hostname[0], p_ip_hl) == 0) ||
+                ((fsa[i].real_hostname[1][0] != '\0') &&
+                 (my_strcmp(fsa[i].real_hostname[1], p_ip_hl) == 0)))
             {
-               fsa_ip_pos[i] = -1;
-               if ((my_strcmp(fsa[i].real_hostname[0], p_ip_hl) == 0) ||
-                   ((fsa[i].real_hostname[1][0] != '\0') &&
-                    (my_strcmp(fsa[i].real_hostname[1], p_ip_hl) == 0)))
+               gotcha = NO;
+               for (k = 0; k < *fsa_ip_counter; k++)
                {
-                  gotcha = NO;
-                  for (k = 0; k < *fsa_ip_counter; k++)
+                  if (my_strcmp(p_ip_ips, prip[k].ip_str) == 0)
                   {
-                     if (my_strcmp(p_ip_ips, prip[k].ip_str) == 0)
-                     {
-                        gotcha = YES;
-                        break;
-                     }
+                     gotcha = YES;
+                     break;
                   }
-                  if (gotcha == YES)
-                  {
-                     fsa_ip_pos[i] = k;
-                     prip[k].bytes_send += fsa[i].bytes_send;
-                  }
-                  else
-                  {
-                     if ((*fsa_ip_counter % 10) == 0)
-                     {
-                        size_t new_size = ((*fsa_ip_counter / 10) + 1) * 10 *
-                                          sizeof(struct prev_rate_ip);
-
-                        if ((prip = realloc(prip, new_size)) == NULL)
-                        {
-                           system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                      _("realloc() error"));
-                           exit(INCORRECT);
-                        }
-                     }
-                     fsa_ip_pos[i] = *fsa_ip_counter;
-                     (void)strcpy(prip[*fsa_ip_counter].ip_str, p_ip_ips);
-                     prip[*fsa_ip_counter].bytes_send = fsa[i].bytes_send;
-                     prip[*fsa_ip_counter].tmp_bytes_send = 0;
-                     (*fsa_ip_counter)++;
-                  }
-                  break;
                }
-               p_ip_hl += MAX_REAL_HOSTNAME_LENGTH;
-               p_ip_ips += MAX_AFD_INET_ADDRSTRLEN;
+               if (gotcha == YES)
+               {
+                  fsa_ip_pos[i] = k;
+                  prip[k].bytes_send += fsa[i].bytes_send;
+               }
+               else
+               {
+                  if ((*fsa_ip_counter % 10) == 0)
+                  {
+                     size_t new_size = ((*fsa_ip_counter / 10) + 1) * 10 *
+                                       sizeof(struct prev_rate_ip);
+
+                     if ((prip = realloc(prip, new_size)) == NULL)
+                     {
+                        system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                   _("realloc() error"));
+                        exit(INCORRECT);
+                     }
+                  }
+                  fsa_ip_pos[i] = *fsa_ip_counter;
+                  (void)strcpy(prip[*fsa_ip_counter].ip_str, p_ip_ips);
+                  prip[*fsa_ip_counter].bytes_send = fsa[i].bytes_send;
+                  prip[*fsa_ip_counter].tmp_bytes_send = 0;
+                  (*fsa_ip_counter)++;
+               }
+               break;
             }
+            p_ip_hl += MAX_REAL_HOSTNAME_LENGTH;
+            p_ip_ips += MAX_AFD_INET_ADDRSTRLEN;
          }
       }
    }
