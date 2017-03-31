@@ -1,6 +1,6 @@
 /*
  *  show_summary_stat.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2007 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ DESCR__S_M3
  ** HISTORY
  **   22.08.1998 H.Kiehl Created
  **   30.07.2006 H.Kiehl Send totals of what AFD did on input and output.
+ **   31.03.2017 H.Kiehl Do not count the data from group identifiers.
  **
  */
 DESCR__E_M3
@@ -85,28 +86,31 @@ show_summary_stat(FILE *p_data)
 
    for (i = 0; i < no_of_hosts; i++)
    {
-      files_to_be_send += fsa[i].total_file_counter;
-      bytes_to_be_send += fsa[i].total_file_size;
-      for (j = 0; j < MAX_NO_PARALLEL_JOBS; j++)
+      if (fsa[i].real_hostname[0][0] != 1)
       {
-         bytes_send += (double)fsa[i].job_status[j].bytes_send;
-      }
-      files_send += (double)fsa[i].file_counter_done;
-      if (((fsa[i].host_status & HOST_ERROR_OFFLINE) == 0) &&
-          ((fsa[i].host_status & HOST_ERROR_OFFLINE_T) == 0) &&
-          ((fsa[i].host_status & HOST_ERROR_OFFLINE_STATIC) == 0))
-      {
-         if (fsa[i].error_counter >= fsa[i].max_errors)
+         files_to_be_send += fsa[i].total_file_counter;
+         bytes_to_be_send += fsa[i].total_file_size;
+         for (j = 0; j < MAX_NO_PARALLEL_JOBS; j++)
          {
-            error_hosts++;
+            bytes_send += (double)fsa[i].job_status[j].bytes_send;
          }
-         else
+         files_send += (double)fsa[i].file_counter_done;
+         if (((fsa[i].host_status & HOST_ERROR_OFFLINE) == 0) &&
+             ((fsa[i].host_status & HOST_ERROR_OFFLINE_T) == 0) &&
+             ((fsa[i].host_status & HOST_ERROR_OFFLINE_STATIC) == 0))
          {
-            errors += fsa[i].error_counter;
+            if (fsa[i].error_counter >= fsa[i].max_errors)
+            {
+               error_hosts++;
+            }
+            else
+            {
+               errors += fsa[i].error_counter;
+            }
          }
+         connections += fsa[i].connections;
+         total_errors += fsa[i].total_errors;
       }
-      connections += fsa[i].connections;
-      total_errors += fsa[i].total_errors;
    }
    if (prev_bytes_send > bytes_send)
    {

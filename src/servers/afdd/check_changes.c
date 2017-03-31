@@ -1,6 +1,6 @@
 /*
  *  check_changes.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ DESCR__S_M3
  **   17.01.1999 H.Kiehl Created
  **   03.09.2000 H.Kiehl Addition of log history.
  **   26.06.2004 H.Kiehl Added error history for each host.
+ **   31.03.2017 H.Kiehl Do not count the data from group identifiers.
  **
  */
 DESCR__E_M3
@@ -121,8 +122,15 @@ retry_check:
                unsigned char);
       for (i = 0; i < no_of_hosts; i++)
       {
-         (void)memcpy(old_error_history[i], fsa[i].error_history,
-                      ERROR_HISTORY_LENGTH);
+         if (fsa[i].real_hostname[0][0] == 1)
+         {
+            (void)memset(old_error_history[i], 0, ERROR_HISTORY_LENGTH);
+         }
+         else
+         {
+            (void)memcpy(old_error_history[i], fsa[i].error_history,
+                         ERROR_HISTORY_LENGTH);
+         }
       }
       host_config_counter = (int)*(unsigned char *)((char *)fsa - AFD_WORD_OFFSET + SIZEOF_INT);
       show_host_list(p_data);
@@ -137,8 +145,15 @@ retry_check:
                   unsigned char);
          for (i = 0; i < no_of_hosts; i++)
          {
-            (void)memcpy(old_error_history[i], fsa[i].error_history,
-                         ERROR_HISTORY_LENGTH);
+            if (fsa[i].real_hostname[0][0] == 1)
+            {
+               (void)memset(old_error_history[i], 0, ERROR_HISTORY_LENGTH);
+            }
+            else
+            {
+               (void)memcpy(old_error_history[i], fsa[i].error_history,
+                            ERROR_HISTORY_LENGTH);
+            }
          }
          host_config_counter = (int)*(unsigned char *)((char *)fsa - AFD_WORD_OFFSET + SIZEOF_INT);
          show_host_list(p_data);
@@ -262,19 +277,22 @@ retry_check:
    }
    for (i = 0; i < no_of_hosts; i++)
    {
-      if (memcmp(old_error_history[i], fsa[i].error_history,
-                 ERROR_HISTORY_LENGTH) != 0)
+      if (fsa[i].real_hostname[0][0] != 1)
       {
-         int k;
-
-         (void)memcpy(old_error_history[i], fsa[i].error_history,
-                      ERROR_HISTORY_LENGTH);
-         (void)fprintf(p_data, "EL %d %d", i, old_error_history[i][0]);
-         for (k = 1; k < ERROR_HISTORY_LENGTH; k++)
+         if (memcmp(old_error_history[i], fsa[i].error_history,
+                    ERROR_HISTORY_LENGTH) != 0)
          {
-            (void)fprintf(p_data, " %d", old_error_history[i][k]);
+            int k;
+
+            (void)memcpy(old_error_history[i], fsa[i].error_history,
+                         ERROR_HISTORY_LENGTH);
+            (void)fprintf(p_data, "EL %d %d", i, old_error_history[i][0]);
+            for (k = 1; k < ERROR_HISTORY_LENGTH; k++)
+            {
+               (void)fprintf(p_data, " %d", old_error_history[i][k]);
+            }
+            (void)fprintf(p_data, "\r\n");
          }
-         (void)fprintf(p_data, "\r\n");
       }
    }
 

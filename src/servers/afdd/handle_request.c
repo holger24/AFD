@@ -1,6 +1,6 @@
 /*
  *  handle_request.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ DESCR__S_M3
  **   06.04.2005 H.Kiehl Open FSA here and not in afdd.c.
  **   23.11.2008 H.Kiehl Added danger_no_of_jobs.
  **   22.03.2014 H.Kiehl Added typesize data information (TD).
+ **   31.03.2017 H.Kiehl Do not count the data from group identifiers.
  */
 DESCR__E_M3
 
@@ -147,8 +148,15 @@ handle_request(int  sock_sd,
             unsigned char);
    for (i = 0; i < no_of_hosts; i++)
    {
-      (void)memcpy(old_error_history[i], fsa[i].error_history,
-                   ERROR_HISTORY_LENGTH);
+      if (fsa[i].real_hostname[0][0] == 1)
+      {
+         (void)memset(old_error_history[i], 0, ERROR_HISTORY_LENGTH);
+      }
+      else
+      {
+         (void)memcpy(old_error_history[i], fsa[i].error_history,
+                      ERROR_HISTORY_LENGTH);
+      }
    }
    if (fra_attach_passive() != SUCCESS)
    {
