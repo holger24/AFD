@@ -1,6 +1,6 @@
 /*
  *  mafdcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ DESCR__S_M1
  ** HISTORY
  **   16.11.2002 H.Kiehl Created
  **   27.02.2005 H.Kiehl Option to switch between two AFD's.
+ **   31.03.2017 H.Kiehl Do not allow to set things on group identifier.
  **
  */
 DESCR__E_M1
@@ -298,286 +299,298 @@ main(int argc, char *argv[])
          }
       }
 
-      /*
-       * ENABLE AFD
-       */
-      if (options & ENABLE_AFD_OPTION)
+      if (msa[position].rcmd[0] == '\0')
       {
-         if (msa[position].connect_status == DISABLED)
-         {
-            int  fd;
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-            int  readfd;
-#endif
-            char mon_cmd_fifo[MAX_PATH_LENGTH];
-
-            (void)sprintf(mon_cmd_fifo, "%s%s%s",
-                          p_work_dir, FIFO_DIR, MON_CMD_FIFO);
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-            if (open_fifo_rw(mon_cmd_fifo, &readfd, &fd) == -1)
-#else
-            if ((fd = open(mon_cmd_fifo, O_RDWR)) == -1)
-#endif
-            {
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          "Failed to open() %s : %s",
-                          mon_cmd_fifo, strerror(errno));
-               errors++;
-            }
-            else
-            {
-               char cmd[1 + SIZEOF_INT];
-
-               cmd[0] = ENABLE_MON;
-               (void)memcpy(&cmd[1], &position, SIZEOF_INT);
-               if (write(fd, cmd, (1 + SIZEOF_INT)) != (1 + SIZEOF_INT))
-               {
-                  system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             "Failed to write() to %s : %s",
-                             mon_cmd_fifo, strerror(errno));
-                  errors++;
-               }
-               else
-               {
-                  system_log(DEBUG_SIGN, NULL, 0,
-                             "%-*s: ENABLED (%s) [mafdcmd].",
-                             MAX_AFD_NAME_LENGTH, msa[position].afd_alias, user);
-               }
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-               if (close(readfd) == -1)
-               {
-                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                             "Failed to close() FIFO %s : %s",
-                             mon_cmd_fifo, strerror(errno));
-               }
-#endif
-               if (close(fd) == -1)
-               {
-                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                             "Failed to close() FIFO %s : %s",
-                             mon_cmd_fifo, strerror(errno));
-               }
-            }
-         }
-         else
-         {
-            (void)fprintf(stderr,
-                          "INFO    : AFD %s is already enabled.\n",
-                          msa[position].afd_alias);
-         }
+         (void)fprintf(stderr,
+                       "WARNING : This action is not possible on group identifier %s (%s %d)\n",
+                       msa[position].afd_alias, __FILE__, __LINE__);
+         errors++;
       }
-
-      /*
-       * DISABLE AFD
-       */
-      if (options & DISABLE_AFD_OPTION)
+      else
       {
-         if (msa[position].connect_status == DISABLED)
+         /*
+          * ENABLE AFD
+          */
+         if (options & ENABLE_AFD_OPTION)
          {
-            (void)fprintf(stderr,
-                          "INFO    : AFD %s is already disabled.\n",
-                          msa[position].afd_alias);
-         }
-         else
-         {
-            int  fd;
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-            int  readfd;
-#endif
-            char mon_cmd_fifo[MAX_PATH_LENGTH];
-
-            (void)sprintf(mon_cmd_fifo, "%s%s%s",
-                          p_work_dir, FIFO_DIR, MON_CMD_FIFO);
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-            if (open_fifo_rw(mon_cmd_fifo, &readfd, &fd) == -1)
-#else
-            if ((fd = open(mon_cmd_fifo, O_RDWR)) == -1)
-#endif
-            {
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          "Failed to open() %s : %s",
-                          mon_cmd_fifo, strerror(errno));
-               errors++;
-            }
-            else
-            {
-               char cmd[1 + SIZEOF_INT];
-
-               cmd[0] = DISABLE_MON;
-               (void)memcpy(&cmd[1], &position, SIZEOF_INT);
-               if (write(fd, cmd, (1 + SIZEOF_INT)) != (1 + SIZEOF_INT))
-               {
-                  system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             "Failed to write() to %s : %s",
-                             mon_cmd_fifo, strerror(errno));
-                  errors++;
-               }
-               else
-               {
-                  system_log(DEBUG_SIGN, NULL, 0,
-                             "%-*s: DISABLED (%s) [mafdcmd].",
-                             MAX_AFD_NAME_LENGTH, msa[position].afd_alias, user);
-               }
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-               if (close(readfd) == -1)
-               {
-                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                             "Failed to close() FIFO %s : %s",
-                             mon_cmd_fifo, strerror(errno));
-               }
-#endif
-               if (close(fd) == -1)
-               {
-                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                             "Failed to close() FIFO %s : %s",
-                             mon_cmd_fifo, strerror(errno));
-               }
-            }
-         }
-      }
-
-      /*
-       * ENABLE or DISABLE a AFD.
-       */
-      if (options & TOGGLE_AFD_OPTION)
-      {
-         int  fd;
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-         int  readfd;
-#endif
-         char mon_cmd_fifo[MAX_PATH_LENGTH];
-
-         (void)sprintf(mon_cmd_fifo, "%s%s%s",
-                       p_work_dir, FIFO_DIR, MON_CMD_FIFO);
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-         if (open_fifo_rw(mon_cmd_fifo, &readfd, &fd) == -1)
-#else
-         if ((fd = open(mon_cmd_fifo, O_RDWR)) == -1)
-#endif
-         {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "Failed to open() %s : %s",
-                       mon_cmd_fifo, strerror(errno));
-            errors++;
-         }
-         else
-         {
-            char cmd[1 + SIZEOF_INT];
-
             if (msa[position].connect_status == DISABLED)
             {
-               cmd[0] = ENABLE_MON;
-            }
-            else /* DISABLE AFD */
-            {
-               cmd[0] = DISABLE_MON;
-            }
-            (void)memcpy(&cmd[1], &position, SIZEOF_INT);
-            if (write(fd, cmd, (1 + SIZEOF_INT)) != (1 + SIZEOF_INT))
-            {
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          "Failed to write() to %s : %s",
-                          mon_cmd_fifo, strerror(errno));
-               errors++;
+               int  fd;
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+               int  readfd;
+#endif
+               char mon_cmd_fifo[MAX_PATH_LENGTH];
+
+               (void)sprintf(mon_cmd_fifo, "%s%s%s",
+                             p_work_dir, FIFO_DIR, MON_CMD_FIFO);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+               if (open_fifo_rw(mon_cmd_fifo, &readfd, &fd) == -1)
+#else
+               if ((fd = open(mon_cmd_fifo, O_RDWR)) == -1)
+#endif
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "Failed to open() %s : %s",
+                             mon_cmd_fifo, strerror(errno));
+                  errors++;
+               }
+               else
+               {
+                  char cmd[1 + SIZEOF_INT];
+
+                  cmd[0] = ENABLE_MON;
+                  (void)memcpy(&cmd[1], &position, SIZEOF_INT);
+                  if (write(fd, cmd, (1 + SIZEOF_INT)) != (1 + SIZEOF_INT))
+                  {
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                "Failed to write() to %s : %s",
+                                mon_cmd_fifo, strerror(errno));
+                     errors++;
+                  }
+                  else
+                  {
+                     system_log(DEBUG_SIGN, NULL, 0,
+                                "%-*s: ENABLED (%s) [mafdcmd].",
+                                MAX_AFD_NAME_LENGTH, msa[position].afd_alias,
+                                user);
+                  }
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                  if (close(readfd) == -1)
+                  {
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "Failed to close() FIFO %s : %s",
+                                mon_cmd_fifo, strerror(errno));
+                  }
+#endif
+                  if (close(fd) == -1)
+                  {
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "Failed to close() FIFO %s : %s",
+                                mon_cmd_fifo, strerror(errno));
+                  }
+               }
             }
             else
-            {
-               system_log(DEBUG_SIGN, NULL, 0,
-                          "%-*s: %s (%s) [mafdcmd].",
-                          MAX_AFD_NAME_LENGTH, msa[position].afd_alias,
-                          (cmd[0] == DISABLE_MON) ? "DISABLE" : "ENABLE", user);
-            }
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-            if (close(readfd) == -1)
-            {
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Failed to close() FIFO %s : %s",
-                          mon_cmd_fifo, strerror(errno));
-            }
-#endif
-            if (close(fd) == -1)
-            {
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Failed to close() FIFO %s : %s",
-                          mon_cmd_fifo, strerror(errno));
-            }
-         }
-      }
-
-      if (options & RETRY_OPTION)
-      {
-         int  fd;
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-         int  readfd;
-#endif
-         char retry_fifo[MAX_PATH_LENGTH];
-
-         (void)sprintf(retry_fifo, "%s%s%s%d",
-                       p_work_dir, FIFO_DIR, RETRY_MON_FIFO, position);
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-         if (open_fifo_rw(retry_fifo, &readfd, &fd) == -1)
-#else
-         if ((fd = open(retry_fifo, O_RDWR)) == -1)
-#endif
-         {
-            (void)fprintf(stderr,
-                          "WARNING : Failed to open() %s : %s (%s %d)\n",
-                          retry_fifo, strerror(errno),
-                          __FILE__, __LINE__);
-            errors++;
-         }
-         else
-         {
-            if (write(fd, &position, sizeof(int)) != sizeof(int))
             {
                (void)fprintf(stderr,
-                             "WARNING : Failed to write() to %s : %s (%s %d)\n",
-                             retry_fifo, strerror(errno),
-                             __FILE__, __LINE__);
-               errors++;
-            }
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-            if (close(readfd) == -1)
-            {
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Failed to close() FIFO %s : %s"
-                          RETRY_FD_FIFO, strerror(errno));
-            }
-#endif
-            if (close(fd) == -1)
-            {
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Failed to close() FIFO %s : %s"
-                          RETRY_FD_FIFO, strerror(errno));
+                             "INFO    : AFD %s is already enabled.\n",
+                             msa[position].afd_alias);
             }
          }
-      }
 
-      /*
-       * Switch AFD
-       */
-      if (options & SWITCH_AFD_OPTION)
-      {
-         if (msa[position].afd_switching == NO_SWITCHING)
+         /*
+          * DISABLE AFD
+          */
+         if (options & DISABLE_AFD_OPTION)
          {
-            (void)fprintf(stderr,
-                          "INFO    : AFD %s cannot be switched.\n",
-                          msa[position].afd_alias);
-            errors++;
-         }
-         else
-         {
-            if (msa[position].afd_toggle == (HOST_ONE - 1))
+            if (msa[position].connect_status == DISABLED)
             {
-               msa[position].afd_toggle = (HOST_TWO - 1);
+               (void)fprintf(stderr,
+                             "INFO    : AFD %s is already disabled.\n",
+                             msa[position].afd_alias);
             }
             else
             {
-               msa[position].afd_toggle = (HOST_ONE - 1);
+               int  fd;
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+               int  readfd;
+#endif
+               char mon_cmd_fifo[MAX_PATH_LENGTH];
+
+               (void)sprintf(mon_cmd_fifo, "%s%s%s",
+                             p_work_dir, FIFO_DIR, MON_CMD_FIFO);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+               if (open_fifo_rw(mon_cmd_fifo, &readfd, &fd) == -1)
+#else
+               if ((fd = open(mon_cmd_fifo, O_RDWR)) == -1)
+#endif
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "Failed to open() %s : %s",
+                             mon_cmd_fifo, strerror(errno));
+                  errors++;
+               }
+               else
+               {
+                  char cmd[1 + SIZEOF_INT];
+
+                  cmd[0] = DISABLE_MON;
+                  (void)memcpy(&cmd[1], &position, SIZEOF_INT);
+                  if (write(fd, cmd, (1 + SIZEOF_INT)) != (1 + SIZEOF_INT))
+                  {
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                "Failed to write() to %s : %s",
+                                mon_cmd_fifo, strerror(errno));
+                     errors++;
+                  }
+                  else
+                  {
+                     system_log(DEBUG_SIGN, NULL, 0,
+                                "%-*s: DISABLED (%s) [mafdcmd].",
+                                MAX_AFD_NAME_LENGTH, msa[position].afd_alias,
+                                user);
+                  }
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                  if (close(readfd) == -1)
+                  {
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "Failed to close() FIFO %s : %s",
+                                mon_cmd_fifo, strerror(errno));
+                  }
+#endif
+                  if (close(fd) == -1)
+                  {
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "Failed to close() FIFO %s : %s",
+                                mon_cmd_fifo, strerror(errno));
+                  }
+               }
             }
-            system_log(DEBUG_SIGN, NULL, 0,
-                       "%-*s: SWITCHED (%s) [mafdcmd].",
-                       MAX_AFD_NAME_LENGTH, msa[position].afd_alias, user);
+         }
+
+         /*
+          * ENABLE or DISABLE a AFD.
+          */
+         if (options & TOGGLE_AFD_OPTION)
+         {
+            int  fd;
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+            int  readfd;
+#endif
+            char mon_cmd_fifo[MAX_PATH_LENGTH];
+
+            (void)sprintf(mon_cmd_fifo, "%s%s%s",
+                          p_work_dir, FIFO_DIR, MON_CMD_FIFO);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+            if (open_fifo_rw(mon_cmd_fifo, &readfd, &fd) == -1)
+#else
+            if ((fd = open(mon_cmd_fifo, O_RDWR)) == -1)
+#endif
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "Failed to open() %s : %s",
+                          mon_cmd_fifo, strerror(errno));
+               errors++;
+            }
+            else
+            {
+               char cmd[1 + SIZEOF_INT];
+
+               if (msa[position].connect_status == DISABLED)
+               {
+                  cmd[0] = ENABLE_MON;
+               }
+               else /* DISABLE AFD */
+               {
+                  cmd[0] = DISABLE_MON;
+               }
+               (void)memcpy(&cmd[1], &position, SIZEOF_INT);
+               if (write(fd, cmd, (1 + SIZEOF_INT)) != (1 + SIZEOF_INT))
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "Failed to write() to %s : %s",
+                             mon_cmd_fifo, strerror(errno));
+                  errors++;
+               }
+               else
+               {
+                  system_log(DEBUG_SIGN, NULL, 0,
+                             "%-*s: %s (%s) [mafdcmd].",
+                             MAX_AFD_NAME_LENGTH, msa[position].afd_alias,
+                             (cmd[0] == DISABLE_MON) ? "DISABLE" : "ENABLE",
+                             user);
+               }
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+               if (close(readfd) == -1)
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Failed to close() FIFO %s : %s",
+                             mon_cmd_fifo, strerror(errno));
+               }
+#endif
+               if (close(fd) == -1)
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Failed to close() FIFO %s : %s",
+                             mon_cmd_fifo, strerror(errno));
+               }
+            }
+         }
+
+         if (options & RETRY_OPTION)
+         {
+            int  fd;
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+            int  readfd;
+#endif
+            char retry_fifo[MAX_PATH_LENGTH];
+
+            (void)sprintf(retry_fifo, "%s%s%s%d",
+                          p_work_dir, FIFO_DIR, RETRY_MON_FIFO, position);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+            if (open_fifo_rw(retry_fifo, &readfd, &fd) == -1)
+#else
+            if ((fd = open(retry_fifo, O_RDWR)) == -1)
+#endif
+            {
+               (void)fprintf(stderr,
+                             "WARNING : Failed to open() %s : %s (%s %d)\n",
+                             retry_fifo, strerror(errno), __FILE__, __LINE__);
+               errors++;
+            }
+            else
+            {
+               if (write(fd, &position, sizeof(int)) != sizeof(int))
+               {
+                  (void)fprintf(stderr,
+                                "WARNING : Failed to write() to %s : %s (%s %d)\n",
+                                retry_fifo, strerror(errno),
+                                __FILE__, __LINE__);
+                  errors++;
+               }
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+               if (close(readfd) == -1)
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Failed to close() FIFO %s : %s"
+                             RETRY_FD_FIFO, strerror(errno));
+               }
+#endif
+               if (close(fd) == -1)
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Failed to close() FIFO %s : %s"
+                             RETRY_FD_FIFO, strerror(errno));
+               }
+            }
+         }
+
+         /*
+          * Switch AFD
+          */
+         if (options & SWITCH_AFD_OPTION)
+         {
+            if (msa[position].afd_switching == NO_SWITCHING)
+            {
+               (void)fprintf(stderr,
+                             "INFO    : AFD %s cannot be switched.\n",
+                             msa[position].afd_alias);
+               errors++;
+            }
+            else
+            {
+               if (msa[position].afd_toggle == (HOST_ONE - 1))
+               {
+                  msa[position].afd_toggle = (HOST_TWO - 1);
+               }
+               else
+               {
+                  msa[position].afd_toggle = (HOST_ONE - 1);
+               }
+               system_log(DEBUG_SIGN, NULL, 0,
+                          "%-*s: SWITCHED (%s) [mafdcmd].",
+                          MAX_AFD_NAME_LENGTH, msa[position].afd_alias, user);
+            }
          }
       }
    } /* for (i = 0; i < no_of_afd_names; i++) */

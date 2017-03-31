@@ -1,6 +1,6 @@
 /*
  *  afdcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -83,6 +83,7 @@ DESCR__S_M1
  **   06.08.2009 H.Kiehl Added options to start, stop and toggle starting/
  **                      stopping of a directory.
  **   15.09.2014 H.Kiehl Added -I option to simulate sending files.
+ **   31.03.2017 H.Kiehl Do not allow to set things on group identifier.
  **
  */
 DESCR__E_M1
@@ -1181,787 +1182,801 @@ main(int argc, char *argv[])
             }
          }
 
-         /*
-          * START OUEUE
-          */
-         if (ehc == NO)
+         if (fsa[position].real_hostname[0][0] == 1)
          {
-            if (options & START_QUEUE_OPTION)
-            {
-               if (fsa[position].host_status & PAUSE_QUEUE_STAT)
-               {
-                  system_log(DEBUG_SIGN, NULL, 0,
-                             _("%-*s: STARTED queue (%s) [afdcmd]."),
-                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                             user);
-                  event_log(0L, EC_HOST, ET_MAN, EA_START_QUEUE, "%s%c%s",
-                            fsa[position].host_alias, SEPARATOR_CHAR, user);
-#ifdef LOCK_DEBUG
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                  fsa[position].host_status ^= PAUSE_QUEUE_STAT;
-#ifdef LOCK_DEBUG
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                  hl[position].host_status &= ~PAUSE_QUEUE_STAT;
-                  change_host_config = YES;
-               }
-               else
-               {
-                  (void)fprintf(stdout,
-                                _("INFO    : Queue for host %s is already started.\n"),
-                                fsa[position].host_dsp_name);
-               }
-            }
-
+            (void)fprintf(stderr,
+                          _("WARNING : Action not possible on group identifier %s (%s %d)\n"),
+                          fsa[position].host_alias, __FILE__, __LINE__);
+            errors++;
+         }
+         else
+         {
             /*
-             * STOP OUEUE
+             * START OUEUE
              */
-            if (options & STOP_QUEUE_OPTION)
+            if (ehc == NO)
             {
-               if (fsa[position].host_status & PAUSE_QUEUE_STAT)
+               if (options & START_QUEUE_OPTION)
                {
-                  (void)fprintf(stdout,
-                                _("INFO    : Queue for host %s is already stopped.\n"),
-                                fsa[position].host_dsp_name);
-               }
-               else
-               {
-                  system_log(DEBUG_SIGN, NULL, 0,
-                             _("%-*s: STOPPED queue (%s) [afdcmd]."),
-                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                             user);
-                  event_log(0L, EC_HOST, ET_MAN, EA_STOP_QUEUE, "%s%c%s",
-                            fsa[position].host_alias, SEPARATOR_CHAR, user);
-#ifdef LOCK_DEBUG
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                  fsa[position].host_status ^= PAUSE_QUEUE_STAT;
-#ifdef LOCK_DEBUG
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                  hl[position].host_status |= PAUSE_QUEUE_STAT;
-                  change_host_config = YES;
-               }
-            }
-
-            /*
-             * START TRANSFER
-             */
-            if (options & START_TRANSFER_OPTION)
-            {
-               if (fsa[position].host_status & STOP_TRANSFER_STAT)
-               {
-                  int  fd;
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-                  int  readfd;
-#endif
-                  char wake_up_fifo[MAX_PATH_LENGTH];
-
-                  (void)sprintf(wake_up_fifo, "%s%s%s",
-                                p_work_dir, FIFO_DIR, FD_WAKE_UP_FIFO);
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-                  if (open_fifo_rw(wake_up_fifo, &readfd, &fd) == -1)
-#else
-                  if ((fd = open(wake_up_fifo, O_RDWR)) == -1)
-#endif
+                  if (fsa[position].host_status & PAUSE_QUEUE_STAT)
                   {
-                     (void)fprintf(stderr,
-                                   _("WARNING : Failed to open() `%s' : %s (%s %d)\n"),
-                                   FD_WAKE_UP_FIFO, strerror(errno),
-                                   __FILE__, __LINE__);
-                     errors++;
+                     system_log(DEBUG_SIGN, NULL, 0,
+                                _("%-*s: STARTED queue (%s) [afdcmd]."),
+                                MAX_HOSTNAME_LENGTH,
+                                fsa[position].host_dsp_name, user);
+                     event_log(0L, EC_HOST, ET_MAN, EA_START_QUEUE, "%s%c%s",
+                               fsa[position].host_alias, SEPARATOR_CHAR, user);
+#ifdef LOCK_DEBUG
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                     fsa[position].host_status ^= PAUSE_QUEUE_STAT;
+#ifdef LOCK_DEBUG
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                     hl[position].host_status &= ~PAUSE_QUEUE_STAT;
+                     change_host_config = YES;
                   }
                   else
                   {
-                     if (write(fd, "", 1) != 1)
+                     (void)fprintf(stdout,
+                                   _("INFO    : Queue for host %s is already started.\n"),
+                                   fsa[position].host_dsp_name);
+                  }
+               }
+
+               /*
+                * STOP OUEUE
+                */
+               if (options & STOP_QUEUE_OPTION)
+               {
+                  if (fsa[position].host_status & PAUSE_QUEUE_STAT)
+                  {
+                     (void)fprintf(stdout,
+                                   _("INFO    : Queue for host %s is already stopped.\n"),
+                                   fsa[position].host_dsp_name);
+                  }
+                  else
+                  {
+                     system_log(DEBUG_SIGN, NULL, 0,
+                                _("%-*s: STOPPED queue (%s) [afdcmd]."),
+                                MAX_HOSTNAME_LENGTH,
+                                fsa[position].host_dsp_name, user);
+                     event_log(0L, EC_HOST, ET_MAN, EA_STOP_QUEUE, "%s%c%s",
+                               fsa[position].host_alias, SEPARATOR_CHAR, user);
+#ifdef LOCK_DEBUG
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                     fsa[position].host_status ^= PAUSE_QUEUE_STAT;
+#ifdef LOCK_DEBUG
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                     hl[position].host_status |= PAUSE_QUEUE_STAT;
+                     change_host_config = YES;
+                  }
+               }
+
+               /*
+                * START TRANSFER
+                */
+               if (options & START_TRANSFER_OPTION)
+               {
+                  if (fsa[position].host_status & STOP_TRANSFER_STAT)
+                  {
+                     int  fd;
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                     int  readfd;
+#endif
+                     char wake_up_fifo[MAX_PATH_LENGTH];
+
+                     (void)sprintf(wake_up_fifo, "%s%s%s",
+                                   p_work_dir, FIFO_DIR, FD_WAKE_UP_FIFO);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                     if (open_fifo_rw(wake_up_fifo, &readfd, &fd) == -1)
+#else
+                     if ((fd = open(wake_up_fifo, O_RDWR)) == -1)
+#endif
                      {
                         (void)fprintf(stderr,
-                                      _("WARNING : Failed to write() to `%s' : %s (%s %d)\n"),
+                                      _("WARNING : Failed to open() `%s' : %s (%s %d)\n"),
                                       FD_WAKE_UP_FIFO, strerror(errno),
                                       __FILE__, __LINE__);
                         errors++;
                      }
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-                     if (close(readfd) == -1)
+                     else
                      {
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   _("Failed to close() `%s' : %s"),
-                                   FD_WAKE_UP_FIFO, strerror(errno));
-                     }
-#endif
-                     if (close(fd) == -1)
-                     {
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   _("Failed to close() `%s' : %s"),
-                                   FD_WAKE_UP_FIFO, strerror(errno));
-                     }
-                  }
-                  system_log(DEBUG_SIGN, NULL, 0,
-                             _("%-*s: STARTED transfer (%s) [afdcmd]."),
-                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                             user);
-                  event_log(0L, EC_HOST, ET_MAN, EA_START_TRANSFER, "%s%c%s",
-                            fsa[position].host_alias, SEPARATOR_CHAR, user);
-#ifdef LOCK_DEBUG
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                  fsa[position].host_status ^= STOP_TRANSFER_STAT;
-#ifdef LOCK_DEBUG
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                  hl[position].host_status &= ~STOP_TRANSFER_STAT;
-                  change_host_config = YES;
-               }
-               else
-               {
-                  (void)fprintf(stdout,
-                                _("INFO    : Transfer for host %s is already started.\n"),
-                                fsa[position].host_dsp_name);
-               }
-            }
-
-            /*
-             * STOP TRANSFER
-             */
-            if (options & STOP_TRANSFER_OPTION)
-            {
-               if (fsa[position].host_status & STOP_TRANSFER_STAT)
-               {
-                  (void)fprintf(stdout,
-                                _("INFO    : Transfer for host %s is already stopped.\n"),
-                                fsa[position].host_dsp_name);
-               }
-               else
-               {
-                  system_log(DEBUG_SIGN, NULL, 0,
-                             _("%-*s: STOPPED transfer (%s) [afdcmd]."),
-                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                             user);
-                  event_log(0L, EC_HOST, ET_MAN, EA_STOP_TRANSFER, "%s%c%s",
-                            fsa[position].host_alias, SEPARATOR_CHAR, user);
-#ifdef LOCK_DEBUG
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                  fsa[position].host_status ^= STOP_TRANSFER_STAT;
-#ifdef LOCK_DEBUG
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                  if (fsa[position].active_transfers > 0)
-                  {
-                     int m;
-
-                     for (m = 0; m < fsa[position].allowed_transfers; m++)
-                     {
-                        if (fsa[position].job_status[m].proc_id > 0)
+                        if (write(fd, "", 1) != 1)
                         {
-                           if ((kill(fsa[position].job_status[m].proc_id, SIGINT) == -1) &&
-                               (errno != ESRCH))
+                           (void)fprintf(stderr,
+                                         _("WARNING : Failed to write() to `%s' : %s (%s %d)\n"),
+                                         FD_WAKE_UP_FIFO, strerror(errno),
+                                         __FILE__, __LINE__);
+                           errors++;
+                        }
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                        if (close(readfd) == -1)
+                        {
+                           system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                      _("Failed to close() `%s' : %s"),
+                                      FD_WAKE_UP_FIFO, strerror(errno));
+                        }
+#endif
+                        if (close(fd) == -1)
+                        {
+                           system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                      _("Failed to close() `%s' : %s"),
+                                      FD_WAKE_UP_FIFO, strerror(errno));
+                        }
+                     }
+                     system_log(DEBUG_SIGN, NULL, 0,
+                                _("%-*s: STARTED transfer (%s) [afdcmd]."),
+                                MAX_HOSTNAME_LENGTH,
+                                fsa[position].host_dsp_name, user);
+                     event_log(0L, EC_HOST, ET_MAN, EA_START_TRANSFER, "%s%c%s",
+                               fsa[position].host_alias, SEPARATOR_CHAR, user);
+#ifdef LOCK_DEBUG
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                     fsa[position].host_status ^= STOP_TRANSFER_STAT;
+#ifdef LOCK_DEBUG
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                     hl[position].host_status &= ~STOP_TRANSFER_STAT;
+                     change_host_config = YES;
+                  }
+                  else
+                  {
+                     (void)fprintf(stdout,
+                                   _("INFO    : Transfer for host %s is already started.\n"),
+                                   fsa[position].host_dsp_name);
+                  }
+               }
+
+               /*
+                * STOP TRANSFER
+                */
+               if (options & STOP_TRANSFER_OPTION)
+               {
+                  if (fsa[position].host_status & STOP_TRANSFER_STAT)
+                  {
+                     (void)fprintf(stdout,
+                                   _("INFO    : Transfer for host %s is already stopped.\n"),
+                                   fsa[position].host_dsp_name);
+                  }
+                  else
+                  {
+                     system_log(DEBUG_SIGN, NULL, 0,
+                                _("%-*s: STOPPED transfer (%s) [afdcmd]."),
+                                MAX_HOSTNAME_LENGTH,
+                                fsa[position].host_dsp_name, user);
+                     event_log(0L, EC_HOST, ET_MAN, EA_STOP_TRANSFER, "%s%c%s",
+                               fsa[position].host_alias, SEPARATOR_CHAR, user);
+#ifdef LOCK_DEBUG
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                     fsa[position].host_status ^= STOP_TRANSFER_STAT;
+#ifdef LOCK_DEBUG
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                     if (fsa[position].active_transfers > 0)
+                     {
+                        int m;
+
+                        for (m = 0; m < fsa[position].allowed_transfers; m++)
+                        {
+                           if (fsa[position].job_status[m].proc_id > 0)
                            {
-                              system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                         "Failed to kill process %d : %s",
-                                         fsa[position].job_status[m].proc_id,
-                                         strerror(errno));
+                              if ((kill(fsa[position].job_status[m].proc_id,
+                                        SIGINT) == -1) && (errno != ESRCH))
+                              {
+                                 system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                            "Failed to kill process %d : %s",
+                                            fsa[position].job_status[m].proc_id,
+                                            strerror(errno));
+                              }
                            }
                         }
                      }
+                     hl[position].host_status |= STOP_TRANSFER_STAT;
+                     change_host_config = YES;
                   }
-                  hl[position].host_status |= STOP_TRANSFER_STAT;
-                  change_host_config = YES;
                }
-            }
 
-            /*
-             * ENABLE HOST
-             */
-            if (options & ENABLE_HOST_OPTION)
-            {
-               if (fsa[position].special_flag & HOST_DISABLED)
+               /*
+                * ENABLE HOST
+                */
+               if (options & ENABLE_HOST_OPTION)
                {
-                  system_log(DEBUG_SIGN, NULL, 0,
-                             _("%-*s: ENABLED (%s) [afdcmd]."),
-                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                             user);
-                  event_log(0L, EC_HOST, ET_MAN, EA_ENABLE_HOST, "%s%c%s",
-                            fsa[position].host_alias, SEPARATOR_CHAR, user);
-                  fsa[position].special_flag ^= HOST_DISABLED;
-                  hl[position].host_status &= ~HOST_CONFIG_HOST_DISABLED;
-                  change_host_config = YES;
-               }
-               else
-               {
-                  (void)fprintf(stdout,
-                                _("INFO    : Host %s is already enabled.\n"),
-                                fsa[position].host_dsp_name);
-               }
-            }
-
-            /*
-             * DISABLE HOST
-             */
-            if (options & DISABLE_HOST_OPTION)
-            {
-               if (fsa[position].special_flag & HOST_DISABLED)
-               {
-                  (void)fprintf(stdout,
-                                _("INFO    : Host %s is already disabled.\n"),
-                                fsa[position].host_dsp_name);
-               }
-               else
-               {
-                  int    fd;
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-                  int    readfd;
-#endif
-                  size_t length;
-                  char   delete_jobs_host_fifo[MAX_PATH_LENGTH];
-
-                  system_log(DEBUG_SIGN, NULL, 0,
-                             _("%-*s: DISABLED (%s) [afdcmd]."),
-                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                             user);
-                  event_log(0L, EC_HOST, ET_MAN, EA_DISABLE_HOST, "%s%c%s",
-                            fsa[position].host_alias, SEPARATOR_CHAR, user);
-#ifdef LOCK_DEBUG
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                  if (time(NULL) > fsa[position].end_event_handle)
+                  if (fsa[position].special_flag & HOST_DISABLED)
                   {
-                     fsa[position].host_status &= ~(EVENT_STATUS_FLAGS | AUTO_PAUSE_QUEUE_STAT);
-                     if (fsa[position].end_event_handle > 0L)
-                     {
-                        fsa[position].end_event_handle = 0L;
-                     }
-                     if (fsa[position].start_event_handle > 0L)
-                     {
-                        fsa[position].start_event_handle = 0L;
-                     }
+                     system_log(DEBUG_SIGN, NULL, 0,
+                                _("%-*s: ENABLED (%s) [afdcmd]."),
+                                MAX_HOSTNAME_LENGTH,
+                                fsa[position].host_dsp_name, user);
+                     event_log(0L, EC_HOST, ET_MAN, EA_ENABLE_HOST, "%s%c%s",
+                               fsa[position].host_alias, SEPARATOR_CHAR, user);
+                     fsa[position].special_flag ^= HOST_DISABLED;
+                     hl[position].host_status &= ~HOST_CONFIG_HOST_DISABLED;
+                     change_host_config = YES;
                   }
                   else
                   {
-                     fsa[position].host_status &= ~(EVENT_STATUS_STATIC_FLAGS | AUTO_PAUSE_QUEUE_STAT);
+                     (void)fprintf(stdout,
+                                   _("INFO    : Host %s is already enabled.\n"),
+                                   fsa[position].host_dsp_name);
                   }
-#ifdef LOCK_DEBUG
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                  fsa[position].special_flag ^= HOST_DISABLED;
-                  hl[position].host_status |= HOST_CONFIG_HOST_DISABLED;
-                  change_host_config = YES;
-                  length = strlen(fsa[position].host_alias) + 1;
+               }
 
-                  (void)sprintf(delete_jobs_host_fifo, "%s%s%s",
-                                p_work_dir, FIFO_DIR, FD_DELETE_FIFO);
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-                  if (open_fifo_rw(delete_jobs_host_fifo, &readfd, &fd) == -1)
-#else
-                  if ((fd = open(delete_jobs_host_fifo, O_RDWR)) == -1)
-#endif
+               /*
+                * DISABLE HOST
+                */
+               if (options & DISABLE_HOST_OPTION)
+               {
+                  if (fsa[position].special_flag & HOST_DISABLED)
                   {
-                     (void)fprintf(stderr,
-                                   _("Failed to open() `%s' : %s (%s %d)\n"),
-                                   FD_DELETE_FIFO, strerror(errno),
-                                   __FILE__, __LINE__);
-                     errors++;
+                     (void)fprintf(stdout,
+                                   _("INFO    : Host %s is already disabled.\n"),
+                                   fsa[position].host_dsp_name);
                   }
                   else
                   {
-                     char wbuf[MAX_HOSTNAME_LENGTH + 2];
+                     int    fd;
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                     int    readfd;
+#endif
+                     size_t length;
+                     char   delete_jobs_host_fifo[MAX_PATH_LENGTH];
 
-                     wbuf[0] = DELETE_ALL_JOBS_FROM_HOST;
-                     (void)strcpy(&wbuf[1], fsa[position].host_alias);
-                     if (write(fd, wbuf, (length + 1)) != (length + 1))
+                     system_log(DEBUG_SIGN, NULL, 0,
+                                _("%-*s: DISABLED (%s) [afdcmd]."),
+                                MAX_HOSTNAME_LENGTH,
+                                fsa[position].host_dsp_name, user);
+                     event_log(0L, EC_HOST, ET_MAN, EA_DISABLE_HOST, "%s%c%s",
+                               fsa[position].host_alias, SEPARATOR_CHAR, user);
+#ifdef LOCK_DEBUG
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                     if (time(NULL) > fsa[position].end_event_handle)
+                     {
+                        fsa[position].host_status &= ~(EVENT_STATUS_FLAGS |
+                                                       AUTO_PAUSE_QUEUE_STAT);
+                        if (fsa[position].end_event_handle > 0L)
+                        {
+                           fsa[position].end_event_handle = 0L;
+                        }
+                        if (fsa[position].start_event_handle > 0L)
+                        {
+                           fsa[position].start_event_handle = 0L;
+                        }
+                     }
+                     else
+                     {
+                        fsa[position].host_status &= ~(EVENT_STATUS_STATIC_FLAGS |
+                                                       AUTO_PAUSE_QUEUE_STAT);
+                     }
+#ifdef LOCK_DEBUG
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                     fsa[position].special_flag ^= HOST_DISABLED;
+                     hl[position].host_status |= HOST_CONFIG_HOST_DISABLED;
+                     change_host_config = YES;
+                     length = strlen(fsa[position].host_alias) + 1;
+
+                     (void)sprintf(delete_jobs_host_fifo, "%s%s%s",
+                                   p_work_dir, FIFO_DIR, FD_DELETE_FIFO);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                     if (open_fifo_rw(delete_jobs_host_fifo, &readfd, &fd) == -1)
+#else
+                     if ((fd = open(delete_jobs_host_fifo, O_RDWR)) == -1)
+#endif
                      {
                         (void)fprintf(stderr,
-                                      _("Failed to write() to `%s' : %s (%s %d)\n"),
-                                      FD_DELETE_FIFO,
-                                      strerror(errno), __FILE__, __LINE__);
-                         errors++;
+                                      _("Failed to open() `%s' : %s (%s %d)\n"),
+                                      FD_DELETE_FIFO, strerror(errno),
+                                      __FILE__, __LINE__);
+                        errors++;
                      }
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-                     if (close(readfd) == -1)
+                     else
                      {
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   _("Failed to close() `%s' : %s"),
-                                   FD_DELETE_FIFO, strerror(errno));
-                     }
+                        char wbuf[MAX_HOSTNAME_LENGTH + 2];
+
+                        wbuf[0] = DELETE_ALL_JOBS_FROM_HOST;
+                        (void)strcpy(&wbuf[1], fsa[position].host_alias);
+                        if (write(fd, wbuf, (length + 1)) != (length + 1))
+                        {
+                           (void)fprintf(stderr,
+                                         _("Failed to write() to `%s' : %s (%s %d)\n"),
+                                         FD_DELETE_FIFO,
+                                         strerror(errno), __FILE__, __LINE__);
+                            errors++;
+                        }
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                        if (close(readfd) == -1)
+                        {
+                           system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                      _("Failed to close() `%s' : %s"),
+                                      FD_DELETE_FIFO, strerror(errno));
+                        }
 #endif
-                     if (close(fd) == -1)
-                     {
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   _("Failed to close() `%s' : %s"),
-                                   FD_DELETE_FIFO, strerror(errno));
+                        if (close(fd) == -1)
+                        {
+                           system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                      _("Failed to close() `%s' : %s"),
+                                      FD_DELETE_FIFO, strerror(errno));
+                        }
                      }
-                  }
-                  (void)sprintf(delete_jobs_host_fifo, "%s%s%s",
-                                p_work_dir, FIFO_DIR, DEL_TIME_JOB_FIFO);
+                     (void)sprintf(delete_jobs_host_fifo, "%s%s%s",
+                                   p_work_dir, FIFO_DIR, DEL_TIME_JOB_FIFO);
 #ifdef WITHOUT_FIFO_RW_SUPPORT
-                  if (open_fifo_rw(delete_jobs_host_fifo, &readfd, &fd) == -1)
+                     if (open_fifo_rw(delete_jobs_host_fifo, &readfd, &fd) == -1)
 #else
-                  if ((fd = open(delete_jobs_host_fifo, O_RDWR)) == -1)
+                     if ((fd = open(delete_jobs_host_fifo, O_RDWR)) == -1)
 #endif
-                  {
-                     (void)fprintf(stderr,
-                                   _("Failed to open() `%s' : %s (%s %d)\n"),
-                                   DEL_TIME_JOB_FIFO, strerror(errno),
-                                   __FILE__, __LINE__);
-                     errors++;
-                  }
-                  else
-                  {
-                     if (write(fd, fsa[position].host_alias, length) != length)
                      {
                         (void)fprintf(stderr,
-                                      _("Failed to write() to `%s' : %s (%s %d)\n"),
+                                      _("Failed to open() `%s' : %s (%s %d)\n"),
                                       DEL_TIME_JOB_FIFO, strerror(errno),
                                       __FILE__, __LINE__);
                         errors++;
                      }
+                     else
+                     {
+                        if (write(fd, fsa[position].host_alias, length) != length)
+                        {
+                           (void)fprintf(stderr,
+                                         _("Failed to write() to `%s' : %s (%s %d)\n"),
+                                         DEL_TIME_JOB_FIFO, strerror(errno),
+                                         __FILE__, __LINE__);
+                           errors++;
+                        }
 #ifdef WITHOUT_FIFO_RW_SUPPORT
-                     if (close(readfd) == -1)
-                     {
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   _("Failed to close() `%s' : %s"),
-                                   DEL_TIME_JOB_FIFO, strerror(errno));
-                     }
+                        if (close(readfd) == -1)
+                        {
+                           system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                      _("Failed to close() `%s' : %s"),
+                                      DEL_TIME_JOB_FIFO, strerror(errno));
+                        }
 #endif
-                     if (close(fd) == -1)
-                     {
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   _("Failed to close() `%s' : %s"),
-                                   DEL_TIME_JOB_FIFO, strerror(errno));
+                        if (close(fd) == -1)
+                        {
+                           system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                      _("Failed to close() `%s' : %s"),
+                                      DEL_TIME_JOB_FIFO, strerror(errno));
+                        }
                      }
                   }
                }
-            }
 
-            /*
-             * ENABLE or DISABLE a host.
-             */
-            if (options & TOGGLE_HOST_OPTION)
-            {
-               if (fsa[position].special_flag & HOST_DISABLED)
+               /*
+                * ENABLE or DISABLE a host.
+                */
+               if (options & TOGGLE_HOST_OPTION)
                {
-                  /*
-                   * ENABLE HOST
-                   */
-                  system_log(DEBUG_SIGN, NULL, 0,
-                             _("%-*s: ENABLED (%s) [afdcmd]."),
-                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                             user);
-                  event_log(0L, EC_HOST, ET_MAN, EA_ENABLE_HOST, "%s%c%s",
-                            fsa[position].host_alias, SEPARATOR_CHAR, user);
-                  fsa[position].special_flag ^= HOST_DISABLED;
-                  hl[position].host_status &= ~HOST_CONFIG_HOST_DISABLED;
-               }
-               else /* DISABLE HOST */
-               {
-                  int    fd;
+                  if (fsa[position].special_flag & HOST_DISABLED)
+                  {
+                     /*
+                      * ENABLE HOST
+                      */
+                     system_log(DEBUG_SIGN, NULL, 0,
+                                _("%-*s: ENABLED (%s) [afdcmd]."),
+                                MAX_HOSTNAME_LENGTH,
+                                fsa[position].host_dsp_name, user);
+                     event_log(0L, EC_HOST, ET_MAN, EA_ENABLE_HOST, "%s%c%s",
+                               fsa[position].host_alias, SEPARATOR_CHAR, user);
+                     fsa[position].special_flag ^= HOST_DISABLED;
+                     hl[position].host_status &= ~HOST_CONFIG_HOST_DISABLED;
+                  }
+                  else /* DISABLE HOST */
+                  {
+                     int    fd;
 #ifdef WITHOUT_FIFO_RW_SUPPORT
-                  int    readfd;
+                     int    readfd;
 #endif
-                  size_t length;
-                  char   delete_jobs_host_fifo[MAX_PATH_LENGTH];
+                     size_t length;
+                     char   delete_jobs_host_fifo[MAX_PATH_LENGTH];
 
-                  system_log(DEBUG_SIGN, NULL, 0,
-                             _("%-*s: DISABLED (%s) [afdcmd]."),
-                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                             user);
-                  event_log(0L, EC_HOST, ET_MAN, EA_DISABLE_HOST, "%s%c%s",
-                            fsa[position].host_alias, SEPARATOR_CHAR, user);
+                     system_log(DEBUG_SIGN, NULL, 0,
+                                _("%-*s: DISABLED (%s) [afdcmd]."),
+                                MAX_HOSTNAME_LENGTH,
+                                fsa[position].host_dsp_name, user);
+                     event_log(0L, EC_HOST, ET_MAN, EA_DISABLE_HOST, "%s%c%s",
+                               fsa[position].host_alias, SEPARATOR_CHAR, user);
 #ifdef LOCK_DEBUG
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
 #else
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
 #endif
-                  if (time(NULL) > fsa[position].end_event_handle)
-                  {
-                     fsa[position].host_status &= ~(EVENT_STATUS_FLAGS | AUTO_PAUSE_QUEUE_STAT);
-                     if (fsa[position].end_event_handle > 0L)
+                     if (time(NULL) > fsa[position].end_event_handle)
                      {
-                        fsa[position].end_event_handle = 0L;
+                        fsa[position].host_status &= ~(EVENT_STATUS_FLAGS |
+                                                       AUTO_PAUSE_QUEUE_STAT);
+                        if (fsa[position].end_event_handle > 0L)
+                        {
+                           fsa[position].end_event_handle = 0L;
+                        }
+                        if (fsa[position].start_event_handle > 0L)
+                        {
+                           fsa[position].start_event_handle = 0L;
+                        }
                      }
-                     if (fsa[position].start_event_handle > 0L)
+                     else
                      {
-                        fsa[position].start_event_handle = 0L;
+                        fsa[position].host_status &= ~(EVENT_STATUS_STATIC_FLAGS |
+                                                       AUTO_PAUSE_QUEUE_STAT);
                      }
-                  }
-                  else
-                  {
-                     fsa[position].host_status &= ~(EVENT_STATUS_STATIC_FLAGS | AUTO_PAUSE_QUEUE_STAT);
-                  }
 #ifdef LOCK_DEBUG
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
 #else
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
 #endif
-                  fsa[position].special_flag ^= HOST_DISABLED;
-                  hl[position].host_status |= HOST_CONFIG_HOST_DISABLED;
-                  length = strlen(fsa[position].host_alias) + 1;
+                     fsa[position].special_flag ^= HOST_DISABLED;
+                     hl[position].host_status |= HOST_CONFIG_HOST_DISABLED;
+                     length = strlen(fsa[position].host_alias) + 1;
 
-                  (void)sprintf(delete_jobs_host_fifo, "%s%s%s",
-                                p_work_dir, FIFO_DIR, FD_DELETE_FIFO);
+                     (void)sprintf(delete_jobs_host_fifo, "%s%s%s",
+                                   p_work_dir, FIFO_DIR, FD_DELETE_FIFO);
 #ifdef WITHOUT_FIFO_RW_SUPPORT
-                  if (open_fifo_rw(delete_jobs_host_fifo, &readfd, &fd) == -1)
+                     if (open_fifo_rw(delete_jobs_host_fifo, &readfd, &fd) == -1)
 #else
-                  if ((fd = open(delete_jobs_host_fifo, O_RDWR)) == -1)
+                     if ((fd = open(delete_jobs_host_fifo, O_RDWR)) == -1)
 #endif
-                  {
-                     (void)fprintf(stderr,
-                                   _("Failed to open() `%s' : %s (%s %d)\n"),
-                                   FD_DELETE_FIFO, strerror(errno),
-                                   __FILE__, __LINE__);
-                     errors++;
-                  }
-                  else
-                  {
-                     char wbuf[MAX_HOSTNAME_LENGTH + 2];
-
-                     wbuf[0] = DELETE_ALL_JOBS_FROM_HOST;
-                     (void)strcpy(&wbuf[1], fsa[position].host_alias);
-                     if (write(fd, wbuf, (length + 1)) != (length + 1))
                      {
                         (void)fprintf(stderr,
-                                      _("Failed to write() to `%s' : %s (%s %d)\n"),
-                                      FD_DELETE_FIFO,
-                                      strerror(errno), __FILE__, __LINE__);
-                         errors++;
+                                      _("Failed to open() `%s' : %s (%s %d)\n"),
+                                      FD_DELETE_FIFO, strerror(errno),
+                                      __FILE__, __LINE__);
+                        errors++;
                      }
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-                     if (close(readfd) == -1)
+                     else
                      {
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   _("Failed to close() `%s' : %s"),
-                                   FD_DELETE_FIFO, strerror(errno));
-                     }
+                        char wbuf[MAX_HOSTNAME_LENGTH + 2];
+
+                        wbuf[0] = DELETE_ALL_JOBS_FROM_HOST;
+                        (void)strcpy(&wbuf[1], fsa[position].host_alias);
+                        if (write(fd, wbuf, (length + 1)) != (length + 1))
+                        {
+                           (void)fprintf(stderr,
+                                         _("Failed to write() to `%s' : %s (%s %d)\n"),
+                                         FD_DELETE_FIFO,
+                                         strerror(errno), __FILE__, __LINE__);
+                            errors++;
+                        }
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                        if (close(readfd) == -1)
+                        {
+                           system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                      _("Failed to close() `%s' : %s"),
+                                      FD_DELETE_FIFO, strerror(errno));
+                        }
 #endif
-                     if (close(fd) == -1)
-                     {
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   _("Failed to close() `%s' : %s"),
-                                   FD_DELETE_FIFO, strerror(errno));
+                        if (close(fd) == -1)
+                        {
+                           system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                      _("Failed to close() `%s' : %s"),
+                                      FD_DELETE_FIFO, strerror(errno));
+                        }
                      }
-                  }
-                  (void)sprintf(delete_jobs_host_fifo, "%s%s%s",
-                                p_work_dir, FIFO_DIR, DEL_TIME_JOB_FIFO);
+                     (void)sprintf(delete_jobs_host_fifo, "%s%s%s",
+                                   p_work_dir, FIFO_DIR, DEL_TIME_JOB_FIFO);
 #ifdef WITHOUT_FIFO_RW_SUPPORT
-                  if (open_fifo_rw(delete_jobs_host_fifo, &readfd, &fd) == -1)
+                     if (open_fifo_rw(delete_jobs_host_fifo, &readfd, &fd) == -1)
 #else
-                  if ((fd = open(delete_jobs_host_fifo, O_RDWR)) == -1)
+                     if ((fd = open(delete_jobs_host_fifo, O_RDWR)) == -1)
 #endif
-                  {
-                     (void)fprintf(stderr,
-                                   _("Failed to open() `%s' : %s (%s %d)\n"),
-                                   DEL_TIME_JOB_FIFO, strerror(errno),
-                                   __FILE__, __LINE__);
-                     errors++;
-                  }
-                  else
-                  {
-                     if (write(fd, fsa[position].host_alias, length) != length)
                      {
                         (void)fprintf(stderr,
-                                      _("Failed to write() to `%s' : %s (%s %d)\n"),
+                                      _("Failed to open() `%s' : %s (%s %d)\n"),
                                       DEL_TIME_JOB_FIFO, strerror(errno),
                                       __FILE__, __LINE__);
                         errors++;
                      }
+                     else
+                     {
+                        if (write(fd, fsa[position].host_alias, length) != length)
+                        {
+                           (void)fprintf(stderr,
+                                         _("Failed to write() to `%s' : %s (%s %d)\n"),
+                                         DEL_TIME_JOB_FIFO, strerror(errno),
+                                         __FILE__, __LINE__);
+                           errors++;
+                        }
 #ifdef WITHOUT_FIFO_RW_SUPPORT
-                     if (close(readfd) == -1)
-                     {
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   _("Failed to close() `%s' : %s"),
-                                   DEL_TIME_JOB_FIFO, strerror(errno));
-                     }
+                        if (close(readfd) == -1)
+                        {
+                           system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                      _("Failed to close() `%s' : %s"),
+                                      DEL_TIME_JOB_FIFO, strerror(errno));
+                        }
 #endif
-                     if (close(fd) == -1)
-                     {
-                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                                   _("Failed to close() `%s' : %s"),
-                                   DEL_TIME_JOB_FIFO, strerror(errno));
+                        if (close(fd) == -1)
+                        {
+                           system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                      _("Failed to close() `%s' : %s"),
+                                      DEL_TIME_JOB_FIFO, strerror(errno));
+                        }
                      }
                   }
-               }
-               change_host_config = YES;
-            }
-
-            /*
-             * ENABLE DELETE DATA
-             */
-            if (options & ENABLE_DELETE_DATA)
-            {
-               if (fsa[position].host_status & DO_NOT_DELETE_DATA)
-               {
-                  system_log(DEBUG_SIGN, NULL, 0,
-                             _("%-*s: ENABLED delete data (%s) [afdcmd]."),
-                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                             user);
-                  event_log(0L, EC_HOST, ET_MAN, EA_ENABLE_DELETE_DATA,
-                            "%s%c%s",
-                            fsa[position].host_alias, SEPARATOR_CHAR, user);
-#ifdef LOCK_DEBUG
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                  fsa[position].host_status &= ~DO_NOT_DELETE_DATA;
-#ifdef LOCK_DEBUG
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                  hl[position].host_status &= ~DO_NOT_DELETE_DATA;
                   change_host_config = YES;
                }
-               else
+
+               /*
+                * ENABLE DELETE DATA
+                */
+               if (options & ENABLE_DELETE_DATA)
                {
-                  (void)fprintf(stdout,
-                                _("INFO    : Data deletion for host %s is already enabled.\n"),
-                                fsa[position].host_dsp_name);
+                  if (fsa[position].host_status & DO_NOT_DELETE_DATA)
+                  {
+                     system_log(DEBUG_SIGN, NULL, 0,
+                                _("%-*s: ENABLED delete data (%s) [afdcmd]."),
+                                MAX_HOSTNAME_LENGTH,
+                                fsa[position].host_dsp_name, user);
+                     event_log(0L, EC_HOST, ET_MAN, EA_ENABLE_DELETE_DATA,
+                               "%s%c%s",
+                               fsa[position].host_alias, SEPARATOR_CHAR, user);
+#ifdef LOCK_DEBUG
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                     fsa[position].host_status &= ~DO_NOT_DELETE_DATA;
+#ifdef LOCK_DEBUG
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                     hl[position].host_status &= ~DO_NOT_DELETE_DATA;
+                     change_host_config = YES;
+                  }
+                  else
+                  {
+                     (void)fprintf(stdout,
+                                   _("INFO    : Data deletion for host %s is already enabled.\n"),
+                                   fsa[position].host_dsp_name);
+                  }
+               }
+
+               /*
+                * DISABLE DELETE DATA
+                */
+               if (options & DISABLE_DELETE_DATA)
+               {
+                  if ((fsa[position].host_status & DO_NOT_DELETE_DATA) == 0)
+                  {
+                     system_log(DEBUG_SIGN, NULL, 0,
+                                _("%-*s: DISABLED delete data (%s) [afdcmd]."),
+                                MAX_HOSTNAME_LENGTH,
+                                fsa[position].host_dsp_name, user);
+                     event_log(0L, EC_HOST, ET_MAN, EA_DISABLE_DELETE_DATA,
+                               "%s%c%s",
+                               fsa[position].host_alias, SEPARATOR_CHAR, user);
+#ifdef LOCK_DEBUG
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                     lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                     fsa[position].host_status |= DO_NOT_DELETE_DATA;
+#ifdef LOCK_DEBUG
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+#else
+                     unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+#endif
+                     hl[position].host_status |= DO_NOT_DELETE_DATA;
+                     change_host_config = YES;
+                  }
+                  else
+                  {
+                     (void)fprintf(stdout,
+                                   _("INFO    : Data deletion for host %s is already disabled.\n"),
+                                   fsa[position].host_dsp_name);
+                  }
                }
             }
 
-            /*
-             * DISABLE DELETE DATA
-             */
-            if (options & DISABLE_DELETE_DATA)
+            if (options & SWITCH_OPTION)
             {
-               if ((fsa[position].host_status & DO_NOT_DELETE_DATA) == 0)
+               if ((fsa[position].toggle_pos > 0) &&
+                   (fsa[position].host_toggle_str[0] != '\0'))
                {
+                  char tmp_host_alias[MAX_HOSTNAME_LENGTH + 2];
+
                   system_log(DEBUG_SIGN, NULL, 0,
-                             _("%-*s: DISABLED delete data (%s) [afdcmd]."),
-                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                             user);
-                  event_log(0L, EC_HOST, ET_MAN, EA_DISABLE_DELETE_DATA,
-                            "%s%c%s",
-                            fsa[position].host_alias, SEPARATOR_CHAR, user);
-#ifdef LOCK_DEBUG
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                  lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                  fsa[position].host_status |= DO_NOT_DELETE_DATA;
-#ifdef LOCK_DEBUG
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
-#else
-                  unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
-#endif
-                  hl[position].host_status |= DO_NOT_DELETE_DATA;
+                             _("Host Switch initiated for host %s (%s) [afdcmd]"),
+                             fsa[position].host_dsp_name, user);
+                  if (fsa[position].host_toggle == HOST_ONE)
+                  {
+                     fsa[position].host_toggle = HOST_TWO;
+                     hl[position].host_status |= HOST_TWO_FLAG;
+                  }
+                  else
+                  {
+                     fsa[position].host_toggle = HOST_ONE;
+                     hl[position].host_status &= ~HOST_TWO_FLAG;
+                  }
                   change_host_config = YES;
+                  (void)strcpy(tmp_host_alias, fsa[position].host_dsp_name);
+                  fsa[position].host_dsp_name[(int)fsa[position].toggle_pos] = fsa[position].host_toggle_str[(int)fsa[position].host_toggle];
+                  event_log(0L, EC_HOST, ET_MAN, EA_SWITCH_HOST,
+                            "%s%c%s%c%s -> %s",
+                            fsa[position].host_alias, SEPARATOR_CHAR,
+                            user, SEPARATOR_CHAR, tmp_host_alias,
+                            fsa[position].host_dsp_name);
                }
                else
-               {
-                  (void)fprintf(stdout,
-                                _("INFO    : Data deletion for host %s is already disabled.\n"),
-                                fsa[position].host_dsp_name);
-               }
-            }
-         }
-
-         if (options & SWITCH_OPTION)
-         {
-            if ((fsa[position].toggle_pos > 0) &&
-                (fsa[position].host_toggle_str[0] != '\0'))
-            {
-               char tmp_host_alias[MAX_HOSTNAME_LENGTH + 2];
-
-               system_log(DEBUG_SIGN, NULL, 0,
-                          _("Host Switch initiated for host %s (%s) [afdcmd]"),
-                          fsa[position].host_dsp_name, user);
-               if (fsa[position].host_toggle == HOST_ONE)
-               {
-                  fsa[position].host_toggle = HOST_TWO;
-                  hl[position].host_status |= HOST_TWO_FLAG;
-               }
-               else
-               {
-                  fsa[position].host_toggle = HOST_ONE;
-                  hl[position].host_status &= ~HOST_TWO_FLAG;
-               }
-               change_host_config = YES;
-               (void)strcpy(tmp_host_alias, fsa[position].host_dsp_name);
-               fsa[position].host_dsp_name[(int)fsa[position].toggle_pos] = fsa[position].host_toggle_str[(int)fsa[position].host_toggle];
-               event_log(0L, EC_HOST, ET_MAN, EA_SWITCH_HOST,
-                         "%s%c%s%c%s -> %s",
-                         fsa[position].host_alias, SEPARATOR_CHAR,
-                         user, SEPARATOR_CHAR, tmp_host_alias,
-                         fsa[position].host_dsp_name);
-            }
-            else
-            {
-               (void)fprintf(stderr,
-                             _("WARNING : Host %s cannot be switched!"),
-                             fsa[position].host_dsp_name);
-            }
-         }
-
-         if (options & RETRY_OPTION)
-         {
-            int  fd;
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-            int  readfd;
-#endif
-            char retry_fifo[MAX_PATH_LENGTH];
-
-            (void)sprintf(retry_fifo, "%s%s%s",
-                          p_work_dir, FIFO_DIR, RETRY_FD_FIFO);
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-            if (open_fifo_rw(retry_fifo, &readfd, &fd) == -1)
-#else
-            if ((fd = open(retry_fifo, O_RDWR)) == -1)
-#endif
-            {
-               (void)fprintf(stderr,
-                             _("WARNING : Failed to open() `%s' : %s (%s %d)\n"),
-                             RETRY_FD_FIFO, strerror(errno),
-                             __FILE__, __LINE__);
-               errors++;
-            }
-            else
-            {
-               event_log(0L, EC_HOST, ET_MAN, EA_RETRY_HOST, "%s%c%s",
-                         fsa[position].host_alias, SEPARATOR_CHAR, user);
-               if (write(fd, &position, sizeof(int)) != sizeof(int))
                {
                   (void)fprintf(stderr,
-                                _("WARNING : Failed to write() to `%s' : %s (%s %d)\n"),
+                                _("WARNING : Host %s cannot be switched!"),
+                                fsa[position].host_dsp_name);
+               }
+            }
+
+            if (options & RETRY_OPTION)
+            {
+               int  fd;
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+               int  readfd;
+#endif
+               char retry_fifo[MAX_PATH_LENGTH];
+
+               (void)sprintf(retry_fifo, "%s%s%s",
+                             p_work_dir, FIFO_DIR, RETRY_FD_FIFO);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+               if (open_fifo_rw(retry_fifo, &readfd, &fd) == -1)
+#else
+               if ((fd = open(retry_fifo, O_RDWR)) == -1)
+#endif
+               {
+                  (void)fprintf(stderr,
+                                _("WARNING : Failed to open() `%s' : %s (%s %d)\n"),
                                 RETRY_FD_FIFO, strerror(errno),
                                 __FILE__, __LINE__);
                   errors++;
                }
+               else
+               {
+                  event_log(0L, EC_HOST, ET_MAN, EA_RETRY_HOST, "%s%c%s",
+                            fsa[position].host_alias, SEPARATOR_CHAR, user);
+                  if (write(fd, &position, sizeof(int)) != sizeof(int))
+                  {
+                     (void)fprintf(stderr,
+                                   _("WARNING : Failed to write() to `%s' : %s (%s %d)\n"),
+                                   RETRY_FD_FIFO, strerror(errno),
+                                   __FILE__, __LINE__);
+                     errors++;
+                  }
 #ifdef WITHOUT_FIFO_RW_SUPPORT
-               if (close(readfd) == -1)
-               {
-                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                             _("Failed to close() `%s' : %s"),
-                             RETRY_FD_FIFO, strerror(errno));
-               }
+                  if (close(readfd) == -1)
+                  {
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                _("Failed to close() `%s' : %s"),
+                                RETRY_FD_FIFO, strerror(errno));
+                  }
 #endif
-               if (close(fd) == -1)
-               {
-                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                             _("Failed to close() `%s' : %s"),
-                             RETRY_FD_FIFO, strerror(errno));
+                  if (close(fd) == -1)
+                  {
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                _("Failed to close() `%s' : %s"),
+                                RETRY_FD_FIFO, strerror(errno));
+                  }
                }
             }
-         }
 
-         if (options & DEBUG_OPTION)
-         {
-            if (fsa[position].debug == NORMAL_MODE)
+            if (options & DEBUG_OPTION)
             {
-               system_log(DEBUG_SIGN, NULL, 0,
-                          _("%-*s: Enabled DEBUG mode by user %s [afdcmd]."),
-                          MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                          user);
-               event_log(0L, EC_HOST, ET_MAN, EA_ENABLE_DEBUG_HOST, "%s%c%s",
-                         fsa[position].host_alias, SEPARATOR_CHAR, user);
-               fsa[position].debug = DEBUG_MODE;
+               if (fsa[position].debug == NORMAL_MODE)
+               {
+                  system_log(DEBUG_SIGN, NULL, 0,
+                             _("%-*s: Enabled DEBUG mode by user %s [afdcmd]."),
+                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
+                             user);
+                  event_log(0L, EC_HOST, ET_MAN, EA_ENABLE_DEBUG_HOST, "%s%c%s",
+                            fsa[position].host_alias, SEPARATOR_CHAR, user);
+                  fsa[position].debug = DEBUG_MODE;
+               }
+               else
+               {
+                  system_log(DEBUG_SIGN, NULL, 0,
+                             _("%-*s: Disabled DEBUG mode by user %s [afdcmd]."),
+                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
+                             user);
+                  event_log(0L, EC_HOST, ET_MAN, EA_DISABLE_DEBUG_HOST, "%s%c%s",
+                            fsa[position].host_alias, SEPARATOR_CHAR, user);
+                  fsa[position].debug = NORMAL_MODE;
+               }
             }
-            else
-            {
-               system_log(DEBUG_SIGN, NULL, 0,
-                          _("%-*s: Disabled DEBUG mode by user %s [afdcmd]."),
-                          MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                          user);
-               event_log(0L, EC_HOST, ET_MAN, EA_DISABLE_DEBUG_HOST, "%s%c%s",
-                         fsa[position].host_alias, SEPARATOR_CHAR, user);
-               fsa[position].debug = NORMAL_MODE;
-            }
-         }
 
-         if (options & TRACE_OPTION)
-         {
-            if (fsa[position].debug == NORMAL_MODE)
+            if (options & TRACE_OPTION)
             {
-               system_log(DEBUG_SIGN, NULL, 0,
-                          _("%-*s: Enabled TRACE mode by user %s [afdcmd]."),
-                          MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                          user);
-               event_log(0L, EC_HOST, ET_MAN, EA_ENABLE_TRACE_HOST, "%s%c%s",
-                         fsa[position].host_alias, SEPARATOR_CHAR, user);
-               fsa[position].debug = TRACE_MODE;
+               if (fsa[position].debug == NORMAL_MODE)
+               {
+                  system_log(DEBUG_SIGN, NULL, 0,
+                             _("%-*s: Enabled TRACE mode by user %s [afdcmd]."),
+                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
+                             user);
+                  event_log(0L, EC_HOST, ET_MAN, EA_ENABLE_TRACE_HOST, "%s%c%s",
+                            fsa[position].host_alias, SEPARATOR_CHAR, user);
+                  fsa[position].debug = TRACE_MODE;
+               }
+               else
+               {
+                  system_log(DEBUG_SIGN, NULL, 0,
+                             _("%-*s: Disabled TRACE mode by user %s [afdcmd]."),
+                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
+                             user);
+                  event_log(0L, EC_HOST, ET_MAN, EA_DISABLE_TRACE_HOST, "%s%c%s",
+                            fsa[position].host_alias, SEPARATOR_CHAR, user);
+                  fsa[position].debug = NORMAL_MODE;
+               }
             }
-            else
-            {
-               system_log(DEBUG_SIGN, NULL, 0,
-                          _("%-*s: Disabled TRACE mode by user %s [afdcmd]."),
-                          MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                          user);
-               event_log(0L, EC_HOST, ET_MAN, EA_DISABLE_TRACE_HOST, "%s%c%s",
-                         fsa[position].host_alias, SEPARATOR_CHAR, user);
-               fsa[position].debug = NORMAL_MODE;
-            }
-         }
 
-         if (options & FULL_TRACE_OPTION)
-         {
-            if (fsa[position].debug == NORMAL_MODE)
+            if (options & FULL_TRACE_OPTION)
             {
-               system_log(DEBUG_SIGN, NULL, 0,
-                          _("%-*s: Enabled FULL TRACE MODE by user %s [afdcmd]."),
-                          MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                          user);
-               event_log(0L, EC_HOST, ET_MAN, EA_ENABLE_FULL_TRACE_HOST,
-                         "%s%c%s",
-                         fsa[position].host_alias, SEPARATOR_CHAR, user);
-               fsa[position].debug = FULL_TRACE_MODE;
+               if (fsa[position].debug == NORMAL_MODE)
+               {
+                  system_log(DEBUG_SIGN, NULL, 0,
+                             _("%-*s: Enabled FULL TRACE MODE by user %s [afdcmd]."),
+                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
+                             user);
+                  event_log(0L, EC_HOST, ET_MAN, EA_ENABLE_FULL_TRACE_HOST,
+                            "%s%c%s",
+                            fsa[position].host_alias, SEPARATOR_CHAR, user);
+                  fsa[position].debug = FULL_TRACE_MODE;
+               }
+               else
+               {
+                  system_log(DEBUG_SIGN, NULL, 0,
+                             _("%-*s: Disabled FULL TRACE mode by user %s [afdcmd]."),
+                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
+                             user);
+                  event_log(0L, EC_HOST, ET_MAN, EA_DISABLE_FULL_TRACE_HOST,
+                            "%s%c%s",
+                            fsa[position].host_alias, SEPARATOR_CHAR, user);
+                  fsa[position].debug = NORMAL_MODE;
+               }
             }
-            else
-            {
-               system_log(DEBUG_SIGN, NULL, 0,
-                          _("%-*s: Disabled FULL TRACE mode by user %s [afdcmd]."),
-                          MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                          user);
-               event_log(0L, EC_HOST, ET_MAN, EA_DISABLE_FULL_TRACE_HOST,
-                         "%s%c%s",
-                         fsa[position].host_alias, SEPARATOR_CHAR, user);
-               fsa[position].debug = NORMAL_MODE;
-            }
-         }
 
-         if (options2 & SIMULATE_SEND_MODE_OPTION)
-         {
-            if ((fsa[position].host_status & SIMULATE_SEND_MODE) == 0)
+            if (options2 & SIMULATE_SEND_MODE_OPTION)
             {
-               system_log(DEBUG_SIGN, NULL, 0,
-                          _("%-*s: Enabled SIMULATE SEND MODE by user %s [afdcmd]."),
-                          MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                          user);
-               event_log(0L, EC_HOST, ET_MAN, EA_ENABLE_SIMULATE_SEND_HOST,
-                         "%s%c%s",
-                         fsa[position].host_alias, SEPARATOR_CHAR, user);
-               fsa[position].host_status |= SIMULATE_SEND_MODE;
-            }
-            else
-            {
-               system_log(DEBUG_SIGN, NULL, 0,
-                          _("%-*s: Disabled SIMULATE SEND mode by user %s [afdcmd]."),
-                          MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
-                          user);
-               event_log(0L, EC_HOST, ET_MAN, EA_DISABLE_SIMULATE_SEND_HOST,
-                         "%s%c%s",
-                         fsa[position].host_alias, SEPARATOR_CHAR, user);
-               fsa[position].host_status &= ~SIMULATE_SEND_MODE;
+               if ((fsa[position].host_status & SIMULATE_SEND_MODE) == 0)
+               {
+                  system_log(DEBUG_SIGN, NULL, 0,
+                             _("%-*s: Enabled SIMULATE SEND MODE by user %s [afdcmd]."),
+                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
+                             user);
+                  event_log(0L, EC_HOST, ET_MAN, EA_ENABLE_SIMULATE_SEND_HOST,
+                            "%s%c%s",
+                            fsa[position].host_alias, SEPARATOR_CHAR, user);
+                  fsa[position].host_status |= SIMULATE_SEND_MODE;
+               }
+               else
+               {
+                  system_log(DEBUG_SIGN, NULL, 0,
+                             _("%-*s: Disabled SIMULATE SEND mode by user %s [afdcmd]."),
+                             MAX_HOSTNAME_LENGTH, fsa[position].host_dsp_name,
+                             user);
+                  event_log(0L, EC_HOST, ET_MAN, EA_DISABLE_SIMULATE_SEND_HOST,
+                            "%s%c%s",
+                            fsa[position].host_alias, SEPARATOR_CHAR, user);
+                  fsa[position].host_status &= ~SIMULATE_SEND_MODE;
+               }
             }
          }
       } /* for (i = 0; i < no_of_host_names; i++) */
