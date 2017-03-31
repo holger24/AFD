@@ -1,6 +1,6 @@
 /*
  *  get_dc_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -962,12 +962,15 @@ show_data(struct job_id_data *p_jd,
    (void)strcpy(value, p_jd->recipient);
    url_insert_password(value, (view_passwd == YES) ? NULL : "XXXXX");
    (void)fprintf(stdout, "Recipient     : %s\n", value);
-   (void)fprintf(stdout, "Real hostname : %s\n",
-                 fsa[position].real_hostname[0]);
-   if (fsa[position].real_hostname[1][0] != '\0')
+   if (fsa[position].real_hostname[0][0] != 1)
    {
-      (void)fprintf(stdout, "                %s\n",
-                    fsa[position].real_hostname[1]);
+      (void)fprintf(stdout, "Real hostname : %s\n",
+                    fsa[position].real_hostname[0]);
+      if (fsa[position].real_hostname[1][0] != '\0')
+      {
+         (void)fprintf(stdout, "                %s\n",
+                       fsa[position].real_hostname[1]);
+      }
    }
 
    /* Show all AMG options. */

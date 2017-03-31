@@ -1,6 +1,6 @@
 /*
  *  afd_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -375,22 +375,23 @@ main(int argc, char *argv[])
    XtManageChild(rowcol1);
 
    /* Fill up the text widget with some values. */
-   if ((fsa[host_position].protocol & FTP_FLAG) ||
-       (fsa[host_position].protocol & SFTP_FLAG) ||
+   if ((fsa[host_position].real_hostname[0][0] != 1) &&
+       ((fsa[host_position].protocol & FTP_FLAG) ||
+        (fsa[host_position].protocol & SFTP_FLAG) ||
 #ifdef _WITH_SCP_SUPPORT
-       (fsa[host_position].protocol & SCP_FLAG) ||
+        (fsa[host_position].protocol & SCP_FLAG) ||
 #endif
 #ifdef _WITH_WMO_SUPPORT
-       (fsa[host_position].protocol & WMO_FLAG) ||
+        (fsa[host_position].protocol & WMO_FLAG) ||
 #endif
 #ifdef _WITH_MAP_SUPPORT
-       (fsa[host_position].protocol & MAP_FLAG) ||
+        (fsa[host_position].protocol & MAP_FLAG) ||
 #endif
-       (fsa[host_position].protocol & HTTP_FLAG) ||
+        (fsa[host_position].protocol & HTTP_FLAG) ||
 #ifdef _WITH_DE_MAIL_SUPPORT
-       (fsa[host_position].protocol & DE_MAIL_FLAG) ||
+        (fsa[host_position].protocol & DE_MAIL_FLAG) ||
 #endif
-       (fsa[host_position].protocol & SMTP_FLAG))
+        (fsa[host_position].protocol & SMTP_FLAG)))
    {
       get_ip_no(fsa[host_position].real_hostname[0], tmp_str_line);
    }
@@ -522,22 +523,23 @@ main(int argc, char *argv[])
    /* Fill up the text widget with some values. */
    if (prev.toggle_pos != 0)
    {
-      if ((fsa[host_position].protocol & FTP_FLAG) ||
-          (fsa[host_position].protocol & SFTP_FLAG) ||
+      if ((fsa[host_position].real_hostname[0][0] != 1) &&
+          ((fsa[host_position].protocol & FTP_FLAG) ||
+           (fsa[host_position].protocol & SFTP_FLAG) ||
 #ifdef _WITH_SCP_SUPPORT
-          (fsa[host_position].protocol & SCP_FLAG) ||
+           (fsa[host_position].protocol & SCP_FLAG) ||
 #endif
 #ifdef _WITH_WMO_SUPPORT
-          (fsa[host_position].protocol & WMO_FLAG) ||
+           (fsa[host_position].protocol & WMO_FLAG) ||
 #endif
 #ifdef _WITH_MAP_SUPPORT
-          (fsa[host_position].protocol & MAP_FLAG) ||
+           (fsa[host_position].protocol & MAP_FLAG) ||
 #endif
-          (fsa[host_position].protocol & HTTP_FLAG) ||
+           (fsa[host_position].protocol & HTTP_FLAG) ||
 #ifdef _WITH_DE_MAIL_SUPPORT
-          (fsa[host_position].protocol & DE_MAIL_FLAG) ||
+           (fsa[host_position].protocol & DE_MAIL_FLAG) ||
 #endif
-          (fsa[host_position].protocol & SMTP_FLAG))
+           (fsa[host_position].protocol & SMTP_FLAG)))
       {
          get_ip_no(fsa[host_position].real_hostname[1], tmp_str_line);
       }
@@ -984,8 +986,16 @@ init_afd_info(int *argc, char *argv[])
    }
 
    /* Initialize values in FSA structure. */
-   (void)strcpy(prev.real_hostname[0], fsa[host_position].real_hostname[0]);
-   (void)strcpy(prev.real_hostname[1], fsa[host_position].real_hostname[1]);
+   if (fsa[host_position].real_hostname[0][0] == 1)
+   {
+      prev.real_hostname[0][0] = '\0';
+      prev.real_hostname[1][0] = '\0';
+   }
+   else
+   {
+      (void)strcpy(prev.real_hostname[0], fsa[host_position].real_hostname[0]);
+      (void)strcpy(prev.real_hostname[1], fsa[host_position].real_hostname[1]);
+   }
    prev.retry_interval = fsa[host_position].retry_interval;
    prev.files_send = fsa[host_position].file_counter_done;
    prev.bytes_send = fsa[host_position].bytes_send;

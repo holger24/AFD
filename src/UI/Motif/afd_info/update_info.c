@@ -1,6 +1,6 @@
 /*
  *  update_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -182,20 +182,23 @@ update_info(Widget w)
       XmStringFree(text);
    }
 
-   if (my_strcmp(prev.real_hostname[0], fsa[host_position].real_hostname[0]) != 0)
+   if (fsa[host_position].real_hostname[0][0] != 1)
    {
-      (void)strcpy(prev.real_hostname[0], fsa[host_position].real_hostname[0]);
-      (void)sprintf(str_line, "%*s", AFD_INFO_STR_LENGTH, prev.real_hostname[0]);
-      XmTextSetString(text_wl[1], str_line);
-      flush = YES;
-   }
+      if (my_strcmp(prev.real_hostname[0], fsa[host_position].real_hostname[0]) != 0)
+      {
+         (void)strcpy(prev.real_hostname[0], fsa[host_position].real_hostname[0]);
+         (void)sprintf(str_line, "%*s", AFD_INFO_STR_LENGTH, prev.real_hostname[0]);
+         XmTextSetString(text_wl[1], str_line);
+         flush = YES;
+      }
 
-   if (my_strcmp(prev.real_hostname[1], fsa[host_position].real_hostname[1]) != 0)
-   {
-      (void)strcpy(prev.real_hostname[1], fsa[host_position].real_hostname[1]);
-      (void)sprintf(str_line, "%*s", AFD_INFO_STR_LENGTH, prev.real_hostname[1]);
-      XmTextSetString(text_wr[1], str_line);
-      flush = YES;
+      if (my_strcmp(prev.real_hostname[1], fsa[host_position].real_hostname[1]) != 0)
+      {
+         (void)strcpy(prev.real_hostname[1], fsa[host_position].real_hostname[1]);
+         (void)sprintf(str_line, "%*s", AFD_INFO_STR_LENGTH, prev.real_hostname[1]);
+         XmTextSetString(text_wr[1], str_line);
+         flush = YES;
+      }
    }
 
    if (prev.retry_interval != fsa[host_position].retry_interval)
@@ -253,7 +256,8 @@ update_info(Widget w)
       flush = YES;
    }
 
-   if (prev.toggle_pos != fsa[host_position].toggle_pos)
+   if ((fsa[host_position].real_hostname[0][0] != 1) &&
+       (prev.toggle_pos != fsa[host_position].toggle_pos))
    {
       prev.toggle_pos = fsa[host_position].toggle_pos;
 

@@ -1,6 +1,6 @@
 /*
  *  get_real_hostname.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -97,14 +97,21 @@ get_real_hostname(char *host_alias, int current_toggle, char *real_hostname)
          {
             if (my_strcmp(host_alias, fsa[i].host_alias) == 0)
             {
-               if (current_toggle == -1)
+               if (fsa[i].real_hostname[0][0] == 1)
                {
-                  (void)strcpy(real_hostname, fsa[i].real_hostname[0]);
+                  real_hostname[0] = '\0';
                }
                else
                {
-                  (void)strcpy(real_hostname,
-                               fsa[i].real_hostname[current_toggle]);
+                  if (current_toggle == -1)
+                  {
+                     (void)strcpy(real_hostname, fsa[i].real_hostname[0]);
+                  }
+                  else
+                  {
+                     (void)strcpy(real_hostname,
+                                  fsa[i].real_hostname[current_toggle]);
+                  }
                }
                ret = i;
 
@@ -126,14 +133,21 @@ get_real_hostname(char *host_alias, int current_toggle, char *real_hostname)
       {
          if (my_strcmp(host_alias, ahl[i].host_alias) == 0)
          {
-            if (current_toggle == -1)
+            if (ahl[i].real_hostname[0][0] == 1)
             {
-               (void)strcpy(real_hostname, ahl[i].real_hostname[0]);
+               real_hostname[0] = '\0';
             }
             else
             {
-               (void)strcpy(real_hostname,
-                            ahl[i].real_hostname[current_toggle]);
+               if (current_toggle == -1)
+               {
+                  (void)strcpy(real_hostname, ahl[i].real_hostname[0]);
+               }
+               else
+               {
+                  (void)strcpy(real_hostname,
+                               ahl[i].real_hostname[current_toggle]);
+               }
             }
             ret = i;
 

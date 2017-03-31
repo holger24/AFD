@@ -340,25 +340,28 @@ main(int argc, char *argv[])
          no_of_ip_hl = get_current_ip_hl(&ip_hl, NULL);
          for (i = 0; i < no_of_hosts; i++)
          {
-            p_ip_hl = ip_hl;
-            for (j = 0; j < no_of_ip_hl; j++)
+            if (fsa[i].real_hostname[0][0] != 1)
             {
-               if (my_strcmp(fsa[i].real_hostname[0], p_ip_hl) == 0)
+               p_ip_hl = ip_hl;
+               for (j = 0; j < no_of_ip_hl; j++)
                {
-                  if (j != (no_of_ip_hl - 1))
+                  if (my_strcmp(fsa[i].real_hostname[0], p_ip_hl) == 0)
                   {
-                     size_t move_size;
+                     if (j != (no_of_ip_hl - 1))
+                     {
+                        size_t move_size;
 
-                     move_size = (no_of_ip_hl - 1 - j) * MAX_REAL_HOSTNAME_LENGTH;
-                     (void)memmove(p_ip_hl, p_ip_hl + MAX_REAL_HOSTNAME_LENGTH,
-                                   move_size);
+                        move_size = (no_of_ip_hl - 1 - j) * MAX_REAL_HOSTNAME_LENGTH;
+                        (void)memmove(p_ip_hl, p_ip_hl + MAX_REAL_HOSTNAME_LENGTH,
+                                      move_size);
+                     }
+                     no_of_ip_hl--;
+                     break;
                   }
-                  no_of_ip_hl--;
-                  break;
+                  p_ip_hl += MAX_REAL_HOSTNAME_LENGTH;
                }
-               p_ip_hl += MAX_REAL_HOSTNAME_LENGTH;
+               fsa[i].host_status |= STORE_IP;
             }
-            fsa[i].host_status |= STORE_IP;
          }
          if (no_of_ip_hl > 0)
          {

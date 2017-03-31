@@ -1,6 +1,6 @@
 /*
  *  check_host_alias.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,9 +25,9 @@ DESCR__S_M1
  **   check_host_alias - checks if given host_alias matches
  **
  ** SYNOPSIS
- **   int check_host_alias(char *host_alias, char *real_hostname, int current_toggle)
- **   int  get_real_hostname(char *host_alias, int current_toggle,
- **                          char *real_hostname)
+ **   int check_host_alias(char *host_alias,
+ **                        char *real_hostname,
+ **                        int  current_toggle)
  **
  ** DESCRIPTION
  **
@@ -152,56 +152,59 @@ check_host_alias(char *host_alias, char *real_hostname, int current_toggle)
 
                   for (j = 0; j < search_host_name_counter; j++)
                   {
-                     if (current_toggle == -1)
+                     if (fsa[i].real_hostname[0][0] != 1)
                      {
-                        if ((ret = pmatch(search_host_name[j],
-                                          fsa[i].real_hostname[0],
-                                          NULL)) == 0)
+                        if (current_toggle == -1)
                         {
-                           return(SUCCESS);
-                        }
-                        else if (ret == 1)
-                             {
-                                /*
-                                 * This alias is definitly not wanted,
-                                 * so no need to check the other filters.
-                                 */
-                                j = search_host_alias_counter;
-                             }
-                        else if (fsa[i].host_toggle_str[0] != '\0')
-                             {
-                                if ((ret = pmatch(search_host_name[j],
-                                                  fsa[i].real_hostname[1],
-                                                  NULL)) == 0)
+                           if ((ret = pmatch(search_host_name[j],
+                                             fsa[i].real_hostname[0],
+                                             NULL)) == 0)
+                           {
+                              return(SUCCESS);
+                           }
+                           else if (ret == 1)
                                 {
-                                   return(SUCCESS);
+                                   /*
+                                    * This alias is definitly not wanted,
+                                    * so no need to check the other filters.
+                                    */
+                                   j = search_host_alias_counter;
                                 }
-                                else if (ret == 1)
-                                     {
-                                        /*
-                                         * This alias is definitly not wanted,
-                                         * so no need to check the other filters.
-                                         */
-                                        j = search_host_alias_counter;
-                                     }
-                             }
-                     }
-                     else
-                     {
-                        if ((ret = pmatch(search_host_name[j],
-                                          fsa[i].real_hostname[current_toggle],
-                                          NULL)) == 0)
-                        {
-                           return(SUCCESS);
+                           else if (fsa[i].host_toggle_str[0] != '\0')
+                                {
+                                   if ((ret = pmatch(search_host_name[j],
+                                                     fsa[i].real_hostname[1],
+                                                     NULL)) == 0)
+                                   {
+                                      return(SUCCESS);
+                                   }
+                                   else if (ret == 1)
+                                        {
+                                           /*
+                                            * This alias is definitly not wanted,
+                                            * so no need to check the other filters.
+                                            */
+                                           j = search_host_alias_counter;
+                                        }
+                                }
                         }
-                        else if (ret == 1)
-                             {
-                                /*
-                                 * This alias is definitly not wanted,
-                                 * so no need to check the other filters.
-                                 */
-                                j = search_host_alias_counter;
-                             }
+                        else
+                        {
+                           if ((ret = pmatch(search_host_name[j],
+                                             fsa[i].real_hostname[current_toggle],
+                                             NULL)) == 0)
+                           {
+                              return(SUCCESS);
+                           }
+                           else if (ret == 1)
+                                {
+                                   /*
+                                    * This alias is definitly not wanted,
+                                    * so no need to check the other filters.
+                                    */
+                                   j = search_host_alias_counter;
+                                }
+                        }
                      }
                   }
                }
@@ -258,56 +261,59 @@ check_host_alias(char *host_alias, char *real_hostname, int current_toggle)
 
                for (j = 0; j < start_name_counter; j++)
                {
-                  if (current_toggle == -1)
+                  if (ahl[i].real_hostname[0][0] != 1)
                   {
-                     if ((ret = pmatch(start_name[j],
-                                       ahl[i].real_hostname[0],
-                                       NULL)) == 0)
+                     if (current_toggle == -1)
                      {
-                        return(SUCCESS);
-                     }
-                     else if (ret == 1)
-                          {
-                             /*
-                              * This alias is definitly not wanted,
-                              * so no need to check the other filters.
-                              */
-                             j = search_host_alias_counter;
-                          }
-                     else if (fsa[i].host_toggle_str[0] != '\0')
-                          {
-                             if ((ret = pmatch(start_name[j],
-                                               ahl[i].real_hostname[1],
-                                               NULL)) == 0)
+                        if ((ret = pmatch(start_name[j],
+                                          ahl[i].real_hostname[0],
+                                          NULL)) == 0)
+                        {
+                           return(SUCCESS);
+                        }
+                        else if (ret == 1)
                              {
-                                return(SUCCESS);
+                                /*
+                                 * This alias is definitly not wanted,
+                                 * so no need to check the other filters.
+                                 */
+                                j = search_host_alias_counter;
                              }
-                             else if (ret == 1)
-                                  {
-                                     /*
-                                      * This alias is definitly not wanted,
-                                      * so no need to check the other filters.
-                                      */
-                                     j = search_host_alias_counter;
-                                  }
-                          }
-                  }
-                  else
-                  {
-                     if ((ret = pmatch(start_name[j],
-                                       ahl[i].real_hostname[current_toggle],
-                                       NULL)) == 0)
-                     {
-                        return(SUCCESS);
+                        else if (fsa[i].host_toggle_str[0] != '\0')
+                             {
+                                if ((ret = pmatch(start_name[j],
+                                                  ahl[i].real_hostname[1],
+                                                  NULL)) == 0)
+                                {
+                                   return(SUCCESS);
+                                }
+                                else if (ret == 1)
+                                     {
+                                        /*
+                                         * This alias is definitly not wanted,
+                                         * so no need to check the other filters.
+                                         */
+                                        j = search_host_alias_counter;
+                                     }
+                             }
                      }
-                     else if (ret == 1)
-                          {
-                             /*
-                              * This alias is definitly not wanted,
-                              * so no need to check the other filters.
-                              */
-                             j = start_name_counter;
-                          }
+                     else
+                     {
+                        if ((ret = pmatch(start_name[j],
+                                          ahl[i].real_hostname[current_toggle],
+                                          NULL)) == 0)
+                        {
+                           return(SUCCESS);
+                        }
+                        else if (ret == 1)
+                             {
+                                /*
+                                 * This alias is definitly not wanted,
+                                 * so no need to check the other filters.
+                                 */
+                                j = start_name_counter;
+                             }
+                     }
                   }
                }
             }
