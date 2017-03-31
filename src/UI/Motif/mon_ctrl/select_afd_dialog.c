@@ -587,7 +587,7 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
       {
          for (i = 0; i < no_of_afds; i++)
          {
-            if (ahl[i] != NULL)
+            if ((msa[i].rcmd[0] != '\0') && (ahl[i] != NULL))
             {
                for (j = 0; j < msa[i].no_of_hosts; j++)
                {
@@ -603,7 +603,7 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
       {
          for (i = 0; i < no_of_afds; i++)
          {
-            if (ahl[i] != NULL)
+            if ((msa[i].rcmd[0] != '\0') && (ahl[i] != NULL))
             {
                for (j = 0; j < msa[i].no_of_hosts; j++)
                {
