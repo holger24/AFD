@@ -146,8 +146,8 @@ check_afd_status(Widget w)
        * First try to copy the connect data from the old structure
        * so long as the hostnames are the same.
        */
-      for (i = 0, location_where_changed = 0;
-           i < prev_no_of_afds; i++, location_where_changed++)
+      for (i = 0, location_where_changed = 0; i < prev_no_of_afds;
+           i++, location_where_changed++)
       {
          if (my_strcmp(connect_data[i].afd_alias, msa[i].afd_alias) == 0)
          {
@@ -341,7 +341,7 @@ check_afd_status(Widget w)
              */
             if ((i < prev_no_of_afds) && (connect_data[i].inverse == ON))
             {
-               if ((pos = check_msa_data(connect_data[i].afd_alias)) == INCORRECT)
+               if (check_msa_data(connect_data[i].afd_alias) == INCORRECT)
                {
                   /* Host has been deleted. */
                   ABS_REDUCE_GLOBAL(no_selected);
@@ -358,9 +358,9 @@ check_afd_status(Widget w)
       {
          while (i < prev_no_of_afds)
          {
-            if (connect_data[i].inverse == ON)
+            if (check_msa_data(connect_data[i].afd_alias) == INCORRECT)
             {
-               if ((pos = check_msa_data(connect_data[i].afd_alias)) == INCORRECT)
+               if (connect_data[i].inverse == ON)
                {
                   /* Host has been deleted. */
                   ABS_REDUCE_GLOBAL(no_selected);
@@ -370,7 +370,11 @@ check_afd_status(Widget w)
          }
       }
 
-      /* Count number of invisible AFD's. */
+      /*
+       * Check when groups are used that all new or moved hosts
+       * are in correct open or close state and count number of
+       * invisible AFD's.
+       */
       no_of_afds_invisible = no_of_afds_visible = 0;
       prev_plus_minus = PM_OPEN_STATE;
       for (i = 0; i < no_of_afds; i++)
@@ -1147,7 +1151,8 @@ check_afd_status(Widget w)
          redraw_time_line += REDRAW_STEP_TIME;
       }
 #ifdef _DEBUG
-      (void)fprintf(stderr, "count_channels: Redraw time = %d\n", redraw_time_line);
+      (void)fprintf(stderr, "count_channels: Redraw time = %d\n",
+                    redraw_time_line);
 #endif
    }
 
@@ -1175,8 +1180,8 @@ check_for_removed_groups(int prev_no_of_afds)
          gotcha = NO;
          for (j = 0; j < no_of_afds; j++)
          {
-            if ((my_strcmp(msa[j].afd_alias, connect_data[i].afd_alias) == 0) &&
-                (msa[j].rcmd == '\0'))
+            if ((msa[j].rcmd[0] == '\0') &&
+                (my_strcmp(msa[j].afd_alias, connect_data[i].afd_alias) == 0))
             {
                gotcha = YES;
                break;
