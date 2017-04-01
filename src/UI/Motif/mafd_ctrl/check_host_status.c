@@ -181,7 +181,8 @@ check_host_status(Widget w)
        * First try to copy the connect data from the old structure
        * so long as the hostnames are the same.
        */
-      for (i = 0, location_where_changed = 0; i < prev_no_of_hosts; i++, location_where_changed++)
+      for (i = 0, location_where_changed = 0; i < prev_no_of_hosts;
+           i++, location_where_changed++)
       {
          if (connect_data[i].host_id == fsa[i].host_id)
          {
