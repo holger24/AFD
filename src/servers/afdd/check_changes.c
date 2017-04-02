@@ -122,7 +122,7 @@ retry_check:
                unsigned char);
       for (i = 0; i < no_of_hosts; i++)
       {
-         if (fsa[i].real_hostname[0][0] == 1)
+         if (fsa[i].real_hostname[0][0] == GROUP_IDENTIFIER)
          {
             (void)memset(old_error_history[i], 0, ERROR_HISTORY_LENGTH);
          }
@@ -145,7 +145,7 @@ retry_check:
                   unsigned char);
          for (i = 0; i < no_of_hosts; i++)
          {
-            if (fsa[i].real_hostname[0][0] == 1)
+            if (fsa[i].real_hostname[0][0] == GROUP_IDENTIFIER)
             {
                (void)memset(old_error_history[i], 0, ERROR_HISTORY_LENGTH);
             }
@@ -277,7 +277,7 @@ retry_check:
    }
    for (i = 0; i < no_of_hosts; i++)
    {
-      if (fsa[i].real_hostname[0][0] != 1)
+      if (fsa[i].real_hostname[0][0] != GROUP_IDENTIFIER)
       {
          if (memcmp(old_error_history[i], fsa[i].error_history,
                     ERROR_HISTORY_LENGTH) != 0)

@@ -182,7 +182,7 @@ update_info(Widget w)
       XmStringFree(text);
    }
 
-   if (fsa[host_position].real_hostname[0][0] != 1)
+   if (fsa[host_position].real_hostname[0][0] != GROUP_IDENTIFIER)
    {
       if (my_strcmp(prev.real_hostname[0], fsa[host_position].real_hostname[0]) != 0)
       {
@@ -256,7 +256,7 @@ update_info(Widget w)
       flush = YES;
    }
 
-   if ((fsa[host_position].real_hostname[0][0] != 1) &&
+   if ((fsa[host_position].real_hostname[0][0] != GROUP_IDENTIFIER) &&
        (prev.toggle_pos != fsa[host_position].toggle_pos))
    {
       prev.toggle_pos = fsa[host_position].toggle_pos;

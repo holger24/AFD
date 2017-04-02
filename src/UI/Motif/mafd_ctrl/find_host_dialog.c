@@ -783,7 +783,7 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
             }
             else
             {
-               if (fsa[i].real_hostname[0][0] == 1)
+               if (fsa[i].real_hostname[0][0] == GROUP_IDENTIFIER)
                {
                   match = 1;
                }

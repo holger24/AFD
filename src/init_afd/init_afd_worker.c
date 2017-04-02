@@ -340,7 +340,7 @@ main(int argc, char *argv[])
          no_of_ip_hl = get_current_ip_hl(&ip_hl, NULL);
          for (i = 0; i < no_of_hosts; i++)
          {
-            if (fsa[i].real_hostname[0][0] != 1)
+            if (fsa[i].real_hostname[0][0] != GROUP_IDENTIFIER)
             {
                p_ip_hl = ip_hl;
                for (j = 0; j < no_of_ip_hl; j++)
@@ -425,7 +425,7 @@ main(int argc, char *argv[])
                jobs_in_queue += fsa[i].jobs_queued;
 
                /* Update group summary. */
-               if (fsa[i].real_hostname[0][0] == 1)
+               if (fsa[i].real_hostname[0][0] == GROUP_IDENTIFIER)
                {
                   active_transfers = 0;
                   (void)memset(bytes_send, 0,
@@ -441,7 +441,7 @@ main(int argc, char *argv[])
                   host_disabled_counter = 0;
                   error_hosts = warn_hosts = 0;
                   for (j = i + 1; ((j < no_of_hosts) &&
-                                   (fsa[j].real_hostname[0][0] != 1)); j++)
+                                   (fsa[j].real_hostname[0][0] != GROUP_IDENTIFIER)); j++)
                   {
                      active_transfers += fsa[j].active_transfers;
                      error_counter += fsa[j].error_counter;
@@ -527,7 +527,7 @@ main(int argc, char *argv[])
 
             for (i = 0; i < no_of_hosts; i++)
             {
-               if (fsa[i].real_hostname[0][0] != 1)
+               if (fsa[i].real_hostname[0][0] != GROUP_IDENTIFIER)
                {
                   if ((fsa[i].max_errors > 0) &&
                       (((fsa[i].error_counter >= fsa[i].max_errors) &&

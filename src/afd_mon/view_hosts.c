@@ -237,7 +237,7 @@ main(int argc, char *argv[])
                         if (show_afd_name == YES)
                         {
                            show_afd_name = NO;
-                           if (ahl[i][j].real_hostname[0][0] == 1)
+                           if (ahl[i][j].real_hostname[0][0] == GROUP_IDENTIFIER)
                            {
                               (void)fprintf(stdout, "%-*s %-4d: %-*s\n",
                                             MAX_AFDNAME_LENGTH,
@@ -273,7 +273,7 @@ main(int argc, char *argv[])
                         }
                         else
                         {
-                           if (ahl[i][j].real_hostname[0][0] == 1)
+                           if (ahl[i][j].real_hostname[0][0] == GROUP_IDENTIFIER)
                            {
                               (void)fprintf(stdout, "%-*s %-4d: %-*s\n",
                                             MAX_AFDNAME_LENGTH, " ", j,
@@ -324,7 +324,7 @@ main(int argc, char *argv[])
                {
                   for (k = 0; k < no_of_filters; k++)
                   {
-                     if (ahl[i][j].real_hostname[0][0] != 1)
+                     if (ahl[i][j].real_hostname[0][0] != GROUP_IDENTIFIER)
                      {
                         if ((pmatch(argv[k + 2], ahl[i][j].real_hostname[0], NULL) == 0) ||
                             ((ahl[i][j].real_hostname[1][0] != '\0') &&

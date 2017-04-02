@@ -1182,7 +1182,7 @@ main(int argc, char *argv[])
             }
          }
 
-         if (fsa[position].real_hostname[0][0] == 1)
+         if (fsa[position].real_hostname[0][0] == GROUP_IDENTIFIER)
          {
             (void)fprintf(stderr,
                           _("WARNING : Action not possible on group identifier %s (%s %d)\n"),

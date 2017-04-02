@@ -261,7 +261,7 @@ remove_button(Widget w, XtPointer client_data, XtPointer call_data)
          }
          else
          {
-            if (fsa[fsa_pos].real_hostname[0][0] == 1)
+            if (fsa[fsa_pos].real_hostname[0][0] == GROUP_IDENTIFIER)
             {
                if (xrec(QUESTION_DIALOG,
                         "Removing host %s!\nAre you really sure?",
@@ -1348,7 +1348,7 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
    {
       last_selected = cur_pos;
 
-      if (fsa[cur_pos].real_hostname[0][0] == 1)
+      if (fsa[cur_pos].real_hostname[0][0] == GROUP_IDENTIFIER)
       {
          XtSetSensitive(host_switch_toggle_w, False);
          XtSetSensitive(host_1_label_w, False);

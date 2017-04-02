@@ -463,7 +463,7 @@ write_host_config(int              no_of_hosts,
    /* Commit data line by line. */
    for (i = 0; i < no_of_hosts; i++)
    {
-      if (p_hl[i].real_hostname[0][0] == 1)
+      if (p_hl[i].real_hostname[0][0] == GROUP_IDENTIFIER)
       {
          length = snprintf(line_buffer, MAX_HOSTNAME_LENGTH + 2,
                            "%s\n", p_hl[i].host_alias);

@@ -375,7 +375,7 @@ main(int argc, char *argv[])
    XtManageChild(rowcol1);
 
    /* Fill up the text widget with some values. */
-   if ((fsa[host_position].real_hostname[0][0] != 1) &&
+   if ((fsa[host_position].real_hostname[0][0] != GROUP_IDENTIFIER) &&
        ((fsa[host_position].protocol & FTP_FLAG) ||
         (fsa[host_position].protocol & SFTP_FLAG) ||
 #ifdef _WITH_SCP_SUPPORT
@@ -523,7 +523,7 @@ main(int argc, char *argv[])
    /* Fill up the text widget with some values. */
    if (prev.toggle_pos != 0)
    {
-      if ((fsa[host_position].real_hostname[0][0] != 1) &&
+      if ((fsa[host_position].real_hostname[0][0] != GROUP_IDENTIFIER) &&
           ((fsa[host_position].protocol & FTP_FLAG) ||
            (fsa[host_position].protocol & SFTP_FLAG) ||
 #ifdef _WITH_SCP_SUPPORT
@@ -986,7 +986,7 @@ init_afd_info(int *argc, char *argv[])
    }
 
    /* Initialize values in FSA structure. */
-   if (fsa[host_position].real_hostname[0][0] == 1)
+   if (fsa[host_position].real_hostname[0][0] == GROUP_IDENTIFIER)
    {
       prev.real_hostname[0][0] = '\0';
       prev.real_hostname[1][0] = '\0';

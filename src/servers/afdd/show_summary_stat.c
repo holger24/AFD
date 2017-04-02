@@ -86,7 +86,7 @@ show_summary_stat(FILE *p_data)
 
    for (i = 0; i < no_of_hosts; i++)
    {
-      if (fsa[i].real_hostname[0][0] != 1)
+      if (fsa[i].real_hostname[0][0] != GROUP_IDENTIFIER)
       {
          files_to_be_send += fsa[i].total_file_counter;
          bytes_to_be_send += fsa[i].total_file_size;

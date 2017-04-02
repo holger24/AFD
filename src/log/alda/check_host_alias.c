@@ -152,7 +152,7 @@ check_host_alias(char *host_alias, char *real_hostname, int current_toggle)
 
                   for (j = 0; j < search_host_name_counter; j++)
                   {
-                     if (fsa[i].real_hostname[0][0] != 1)
+                     if (fsa[i].real_hostname[0][0] != GROUP_IDENTIFIER)
                      {
                         if (current_toggle == -1)
                         {
@@ -261,7 +261,7 @@ check_host_alias(char *host_alias, char *real_hostname, int current_toggle)
 
                for (j = 0; j < start_name_counter; j++)
                {
-                  if (ahl[i].real_hostname[0][0] != 1)
+                  if (ahl[i].real_hostname[0][0] != GROUP_IDENTIFIER)
                   {
                      if (current_toggle == -1)
                      {

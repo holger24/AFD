@@ -90,7 +90,7 @@ check_fsa_entries(int lock_set)
 
    for (i = 0; i < no_of_hosts; i++)
    {
-      if (fsa[i].real_hostname[0][0] != 1)
+      if (fsa[i].real_hostname[0][0] != GROUP_IDENTIFIER)
       {
 #ifdef WITH_ERROR_QUEUE
          if (fsa[i].host_status & ERROR_QUEUE_SET)
@@ -244,7 +244,7 @@ check_fsa_entries(int lock_set)
                }
             }
          } /* if (gotcha == NO) */
-      } /* if (fsa[i].real_hostname[0][0] != 1) */
+      } /* if (fsa[i].real_hostname[0][0] != GROUP_IDENTIFIER) */
    } /* for (i = 0; i < no_of_hosts; i++) */
 
 #ifdef LOCK_DEBUG

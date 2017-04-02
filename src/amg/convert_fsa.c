@@ -1917,7 +1917,7 @@ convert_fsa(int           old_fsa_fd,
            for (i = 0; i < old_no_of_hosts; i++)
            {
               (void)my_strncpy(new_fsa[i].host_alias, old_fsa[i].host_alias, MAX_HOSTNAME_LENGTH_4 + 1);
-              if (old_fsa[i].real_hostname[0][0] == 1)
+              if (old_fsa[i].real_hostname[0][0] == GROUP_IDENTIFIER)
               {
                  new_fsa[i].real_hostname[0][0] = 1;
                  new_fsa[i].real_hostname[1][0] = '\0';

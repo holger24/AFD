@@ -962,7 +962,7 @@ show_data(struct job_id_data *p_jd,
    (void)strcpy(value, p_jd->recipient);
    url_insert_password(value, (view_passwd == YES) ? NULL : "XXXXX");
    (void)fprintf(stdout, "Recipient     : %s\n", value);
-   if (fsa[position].real_hostname[0][0] != 1)
+   if (fsa[position].real_hostname[0][0] != GROUP_IDENTIFIER)
    {
       (void)fprintf(stdout, "Real hostname : %s\n",
                     fsa[position].real_hostname[0]);

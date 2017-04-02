@@ -339,7 +339,7 @@ main(int argc, char *argv[])
                     }
                     fsa[position].transfer_timeout = value;
                     break;
-         case 'a' : if (fsa[position].real_hostname[0][0] != 1)
+         case 'a' : if (fsa[position].real_hostname[0][0] != GROUP_IDENTIFIER)
                     {
                        (void)fprintf(stderr, _("\n\n     Enter hostname  : "));
                        if (scanf("%39s", fsa[position].real_hostname[0]) == EOF)
@@ -481,7 +481,7 @@ menu(int position)
    (void)fprintf(stdout, "        |  7  |Block size        | %14d |\n", fsa[position].block_size);
    (void)fprintf(stdout, "        |  8  |Allowed transfers | %14d |\n", fsa[position].allowed_transfers);
    (void)fprintf(stdout, "        |  9  |Transfer timeout  | %14ld |\n", fsa[position].transfer_timeout);
-   if (fsa[position].real_hostname[0][0] != 1)
+   if (fsa[position].real_hostname[0][0] != GROUP_IDENTIFIER)
    {
       (void)fprintf(stdout, "        |  a  |Real hostname     | %14s |\n", fsa[position].real_hostname[0]);
    }

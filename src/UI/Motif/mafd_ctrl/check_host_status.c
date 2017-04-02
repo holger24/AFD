@@ -221,7 +221,7 @@ check_host_status(Widget w)
             /* Initialise values for new host. */
             (void)strcpy(new_connect_data[i].hostname, fsa[i].host_alias);
             new_connect_data[i].host_id = fsa[i].host_id;
-            if (fsa[i].real_hostname[0][0] == 1)
+            if (fsa[i].real_hostname[0][0] == GROUP_IDENTIFIER)
             {
                new_connect_data[i].type = 1;
                new_connect_data[i].plus_minus = PM_OPEN_STATE;
@@ -1789,7 +1789,7 @@ check_for_removed_groups(int prev_no_of_hosts)
          for (j = 0; j < no_of_hosts; j++)
          {
             if ((fsa[j].host_id == connect_data[i].host_id) &&
-                (fsa[j].real_hostname[0][0] == 1))
+                (fsa[j].real_hostname[0][0] == GROUP_IDENTIFIER))
             {
                gotcha = YES;
                break;

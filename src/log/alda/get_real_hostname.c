@@ -97,7 +97,7 @@ get_real_hostname(char *host_alias, int current_toggle, char *real_hostname)
          {
             if (my_strcmp(host_alias, fsa[i].host_alias) == 0)
             {
-               if (fsa[i].real_hostname[0][0] == 1)
+               if (fsa[i].real_hostname[0][0] == GROUP_IDENTIFIER)
                {
                   real_hostname[0] = '\0';
                }
@@ -133,7 +133,7 @@ get_real_hostname(char *host_alias, int current_toggle, char *real_hostname)
       {
          if (my_strcmp(host_alias, ahl[i].host_alias) == 0)
          {
-            if (ahl[i].real_hostname[0][0] == 1)
+            if (ahl[i].real_hostname[0][0] == GROUP_IDENTIFIER)
             {
                real_hostname[0] = '\0';
             }

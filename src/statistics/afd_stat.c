@@ -403,7 +403,7 @@ main(int argc, char *argv[])
           */
          for (i = 0; i < no_of_hosts; i++)
          {
-            if (fsa[i].real_hostname[0][0] != 1)
+            if (fsa[i].real_hostname[0][0] != GROUP_IDENTIFIER)
             {
                /***********************************/
                /* Handle structure entry for day. */
@@ -478,7 +478,7 @@ main(int argc, char *argv[])
                }
                stat_db[i].day[stat_db[i].hour_counter].nc += stat_db[i].hour[stat_db[i].sec_counter].nc;
                stat_db[i].prev_nc = ui_value;
-            } /* (fsa[i].real_hostname[0][0] != 1) */
+            } /* (fsa[i].real_hostname[0][0] != GROUP_IDENTIFIER) */
             stat_db[i].sec_counter++;
          } /* for (i = 0; i < no_of_hosts; i++) */
 

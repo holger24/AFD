@@ -219,7 +219,7 @@ main(int argc, char *argv[])
       (void)fprintf(stdout, "=============================> %s (%d) <=============================\n",
                     fsa[j].host_alias, j);
       (void)fprintf(stdout, "Host alias CRC       : %x\n", fsa[j].host_id);
-      if (fsa[j].real_hostname[0][0] == 1)
+      if (fsa[j].real_hostname[0][0] == GROUP_IDENTIFIER)
       {
          (void)fprintf(stdout, "Real hostname 1      :\n");
       }
@@ -671,7 +671,7 @@ main(int argc, char *argv[])
       {
          (void)fprintf(stdout, "WARN_HOSTS_IN_GROUP ");
       }
-      if (fsa[j].real_hostname[0][0] == 1)
+      if (fsa[j].real_hostname[0][0] == GROUP_IDENTIFIER)
       {
          if (fsa[j].host_status & ERROR_HOSTS_IN_GROUP)
          {
@@ -862,7 +862,7 @@ main(int argc, char *argv[])
                     (pri_off_t)fsa[j].mc_ctrl_per_process);
 #endif
 
-      if (fsa[j].real_hostname[0][0] != 1)
+      if (fsa[j].real_hostname[0][0] != GROUP_IDENTIFIER)
       {
          if (view_type == SHORT_VIEW)
          {

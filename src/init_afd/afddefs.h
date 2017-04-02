@@ -650,6 +650,7 @@ typedef unsigned long       u_long_64;
 #define GET_ONCE_ONLY              2
 #define DATA_MOVED                 1
 #define DATA_COPIED                3
+#define GROUP_IDENTIFIER           1
 
 #define NO_PRIORITY                -100   /* So it knows it does not need */
                                           /* to create the name with      */

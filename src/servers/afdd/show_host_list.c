@@ -69,7 +69,7 @@ show_host_list(FILE *p_data)
 
    for (i = 0; i < no_of_hosts; i++)
    {
-      if (fsa[i].real_hostname[0][0] == 1)
+      if (fsa[i].real_hostname[0][0] == GROUP_IDENTIFIER)
       {
          (void)fprintf(p_data, "HL %d %s\r\n", i, fsa[i].host_alias);
       }

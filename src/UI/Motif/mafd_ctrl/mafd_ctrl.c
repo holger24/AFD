@@ -1025,7 +1025,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
    {
       (void)strcpy(connect_data[i].hostname, fsa[i].host_alias);
       connect_data[i].host_id = fsa[i].host_id;
-      if (fsa[i].real_hostname[0][0] == 1)
+      if (fsa[i].real_hostname[0][0] == GROUP_IDENTIFIER)
       {
          connect_data[i].type = 1;
       }
