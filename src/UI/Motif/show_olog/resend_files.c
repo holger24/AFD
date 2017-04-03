@@ -1159,6 +1159,16 @@ write_fsa(int add, int files_to_send, off_t file_size_to_send)
                        "Unable to update FSA due to incorrect url `%s' : %s.\n",
                        id.recipient, error_msg);
       }
+
+      /* Free all memory that was allocated in get_info(). */
+      free(id.files);
+#ifdef _WITH_DYNAMIC_MEMORY
+      if (id.loptions != NULL)
+      {
+         FREE_RT_ARRAY(id.loptions);
+      }
+#endif
+      free((void *)id.soptions);
    }
 
    return;

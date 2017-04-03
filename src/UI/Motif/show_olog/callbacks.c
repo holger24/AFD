@@ -553,9 +553,8 @@ info_click(Widget w, XtPointer client_data, XEvent *event)
          {
             FREE_RT_ARRAY(id.loptions);
          }
-#else
-         free((void *)id.soptions);
 #endif
+         free((void *)id.soptions);
       }
    }
 
