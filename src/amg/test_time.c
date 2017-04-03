@@ -1,6 +1,6 @@
 /*
  *  test_time.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ DESCR__S_M3
  ** HISTORY
  **   04.05.1999 H.Kiehl Created
  **   13.11.2006 H.Kiehl Allow for multiple time entries.
+ **   03.04.2017 H.Kiehl Added parameter -z to specify the timezone.
  **
  */
 DESCR__E_M3
@@ -61,7 +62,8 @@ main(int argc, char *argv[])
 {
    time_t current_time,
           next_time;
-   char   str_time[32];
+   char   str_time[32],
+          timezone[40];
 
    if (get_arg(&argc, argv, "-f", str_time, 32) == SUCCESS)
    {
@@ -70,6 +72,10 @@ main(int argc, char *argv[])
    else
    {
       current_time = time(NULL);
+   }
+   if (get_arg(&argc, argv, "-z", timezone, 40) != SUCCESS)
+   {
+      timezone[0] = '\0';
    }
    if (argc < 2)
    {
@@ -88,7 +94,7 @@ main(int argc, char *argv[])
          exit(INCORRECT);
       }
 
-      next_time = calc_next_time(&te, "Europe/Madrid", current_time, __FILE__, __LINE__);
+      next_time = calc_next_time(&te, timezone, current_time, __FILE__, __LINE__);
    }
    else
    {
@@ -99,7 +105,7 @@ main(int argc, char *argv[])
       new_size = (argc - 1) * sizeof(struct bd_time_entry);
       if ((te = malloc(new_size)) == NULL)
       {
-         (void)fprintf(stderr, "Failed to malloc() %d bytes : %s",
+         (void)fprintf(stderr, "Failed to malloc() %lu bytes : %s",
                        new_size, strerror(errno));
          exit(INCORRECT);
       }
@@ -111,10 +117,7 @@ main(int argc, char *argv[])
             exit(INCORRECT);
          }
       }
-      next_time = calc_next_time_array((argc - 1), te,
-#ifdef WITH_TIMEZONE
-                                       "Europe/Madrid",
-#endif
+      next_time = calc_next_time_array((argc - 1), te, timezone,
                                        current_time, __FILE__, __LINE__);
    }
 
