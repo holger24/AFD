@@ -143,6 +143,7 @@ calc_next_time(struct bd_time_entry *te,
 #ifdef WITH_TIMEZONE
    int       reset_env;
    char      *p_env;
+   time_t    new_time;
 #endif
    struct tm *bd_time;     /* Broken-down time */
 
@@ -582,10 +583,13 @@ calc_next_time(struct bd_time_entry *te,
    }
    bd_time->tm_sec = 0;
 #ifdef WITH_TIMEZONE
+   new_time = mktime(bd_time);
    reset_environment(timezone, p_env, reset_env);
-#endif
 
+   return(new_time);
+#else
    return(mktime(bd_time));
+#endif
 }
 
 
