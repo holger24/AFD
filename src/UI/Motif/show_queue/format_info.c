@@ -1,6 +1,6 @@
 /*
  *  format_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -147,9 +147,25 @@ format_output_info(char **text, int pos)
    max_x++;
    length = max_x;
 
-   /* Show message name. */
-   count = sprintf(*text + length, "Msg name   : %s%s%s/%s\n",
-                   p_work_dir, AFD_FILE_DIR, OUTGOING_DIR, qfl[pos].msg_name);
+   if (qfl[pos].queue_type == SHOW_TIME_JOBS)
+   {
+      /* Show time dir. */
+#ifdef MULTI_FS_SUPPORT
+      count = sprintf(*text + length, "Time dir   : %s%s%s/%s/%x\n",
+                      p_work_dir, AFD_FILE_DIR, AFD_TIME_DIR,
+                      qfl[pos].msg_name, qfl[pos].job_id);
+#else
+      count = sprintf(*text + length, "Time dir   : %s%s%s/%x\n",
+                      p_work_dir, AFD_FILE_DIR, AFD_TIME_DIR, qfl[pos].job_id);
+#endif
+   }
+   else
+   {
+      /* Show message name. */
+      count = sprintf(*text + length, "Msg name   : %s%s%s/%s\n",
+                      p_work_dir, AFD_FILE_DIR, OUTGOING_DIR,
+                      qfl[pos].msg_name);
+   }
    length += count;
    if (count > max_x)
    {

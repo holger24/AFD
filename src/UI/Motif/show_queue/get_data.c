@@ -124,7 +124,12 @@ static void                       get_all_input_files(void),
                                   get_input_files(void),
                                   get_output_files(void),
                                   get_retrieve_jobs(void),
+#ifdef MULTI_FS_SUPPORT
+                                  get_all_time_jobs(void),
+                                  get_time_jobs(char *, char *, char *),
+#else
                                   get_time_jobs(void),
+#endif
                                   insert_file(char *, char *, char *, char *,
                                               char, char, unsigned int, int,
                                               unsigned int, unsigned int, int),
@@ -310,7 +315,11 @@ get_data(void)
    }
    if (toggles_set & SHOW_TIME_JOBS)
    {
+#ifdef MULTI_FS_SUPPORT
+      get_all_time_jobs();
+#else
       get_time_jobs();
+#endif
    }
    (void)fra_detach();
 
@@ -1012,9 +1021,10 @@ get_all_input_files(void)
 }
 
 
-/*++++++++++++++++++++++++++++ get_time_jobs() ++++++++++++++++++++++++++*/
+#ifdef MULTI_FS_SUPPORT
+/*++++++++++++++++++++++++++ get_all_time_jobs() ++++++++++++++++++++++++*/
 static void
-get_time_jobs(void)
+get_all_time_jobs(void)
 {
    char          fullname[MAX_PATH_LENGTH],
                  *p_file,
@@ -1023,9 +1033,71 @@ get_time_jobs(void)
    struct dirent *p_dir;
    struct stat   stat_buf;
 
+   p_queue = fullname + sprintf(fullname, "%s%s%s/",
+                                p_work_dir, AFD_FILE_DIR, AFD_TIME_DIR);
+
+   if ((dp = opendir(fullname)) != NULL)
+   {
+      while (((p_dir = readdir(dp)) != NULL) && (limit_reached == NO))
+      {
+         if (p_dir->d_name[0] != '.')
+         {
+            p_file = p_queue + sprintf(p_queue, "%s", p_dir->d_name);
+            if ((lstat(fullname, &stat_buf) != -1) &&
+                (S_ISLNK(stat_buf.st_mode)))
+            {
+               get_time_jobs(fullname, p_file, p_dir->d_name);
+            }
+         }
+      }
+      if (closedir(dp) == -1)
+      {
+         (void)xrec(INFO_DIALOG, "Failed to closedir() `%s' : %s (%s %d)",
+                    fullname, strerror(errno), __FILE__, __LINE__);
+      }
+   }
+
+   return;
+}
+#endif /* MULTI_FS_SUPPORT */
+
+
+/*++++++++++++++++++++++++++++ get_time_jobs() ++++++++++++++++++++++++++*/
+static void
+#ifdef MULTI_FS_SUPPORT
+get_time_jobs(char *fullname, char *p_queue, char *sub_dir)
+#else
+get_time_jobs(void)
+#endif
+{
+#ifdef MULTI_FS_SUPPORT
+   char          *p_file,
+                 where[5 + MAX_FILENAME_LENGTH + 1];
+#else
+   char          fullname[MAX_PATH_LENGTH],
+                 *p_file,
+                 *p_queue;
+#endif
+   DIR           *dp;
+   struct dirent *p_dir;
+   struct stat   stat_buf;
+
+#ifdef MULTI_FS_SUPPORT
+   *p_queue = '/';
+   p_queue++;
+   *p_queue = '\0';
+   where[0] = 'T';
+   where[1] = 'i';
+   where[2] = 'm';
+   where[3] = 'e';
+   where[4] = ' ';
+   (void)strcpy(&where[5], sub_dir);
+   searching(where);
+#else
    searching("Time");
    p_queue = fullname + sprintf(fullname, "%s%s%s/",
                                 p_work_dir, AFD_FILE_DIR, AFD_TIME_DIR);
+#endif
 
    if ((dp = opendir(fullname)) != NULL)
    {
@@ -1106,7 +1178,11 @@ get_time_jobs(void)
                      int fra_pos;
 
                      fra_pos = lookup_fra_pos(jd[pos].dir_id);
+#ifdef MULTI_FS_SUPPORT
+                     insert_file(fullname, p_file, sub_dir, jd[pos].host_alias,
+#else
                      insert_file(fullname, p_file, "\0", jd[pos].host_alias,
+#endif
                                  SHOW_TIME_JOBS, jd[pos].priority, job_id,
                                  jd[pos].dir_id_pos, jd[pos].dir_id, 0,
                                  fra_pos);
@@ -1121,7 +1197,11 @@ get_time_jobs(void)
                     fullname, strerror(errno), __FILE__, __LINE__);
       }
    }
+#ifdef MULTI_FS_SUPPORT
+   searching(where);
+#else
    searching("Time");
+#endif
 
    return;
 }
