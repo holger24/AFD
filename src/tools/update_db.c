@@ -1,6 +1,6 @@
 /*
  *  update_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -51,7 +51,7 @@ DESCR__S_M1
  */
 DESCR__E_M1
 
-#include <stdio.h>                       /* fprintf(), stderr            */
+#include <stdio.h>                       /* fprintf(), fgets(), stderr   */
 #include <string.h>                      /* strerror()                   */
 #include <stdlib.h>                      /* exit(), atexit()             */
 #include <sys/types.h>
@@ -82,26 +82,31 @@ static void       update_db_exit(void),
 int
 main(int argc, char *argv[])
 {
-   int    db_update_fd,
-          db_update_reply_fd,
+   int            db_update_fd,
+                  db_update_reply_fd,
 #ifdef WITHOUT_FIFO_RW_SUPPORT
-          db_update_readfd,
-          db_update_reply_writefd,
+                  db_update_readfd,
+                  db_update_reply_writefd,
 #endif
-          read_reply_length,
-          ret,
-          status,
-          udc,
-          user_offset;
-   pid_t  my_pid;
-   fd_set rset;
-   char   buffer[1 + SIZEOF_PID_T],
-          db_update_fifo[MAX_PATH_LENGTH],
-          fake_user[MAX_FULL_USER_ID_LENGTH],
-          *perm_buffer,
-          profile[MAX_PROFILE_NAME_LENGTH + 1],
-          user[MAX_FULL_USER_ID_LENGTH],
-          work_dir[MAX_PATH_LENGTH];
+                  verbose_level = 1,
+                  read_reply_length,
+                  ret,
+                  status,
+                  udc,
+                  user_offset;
+   pid_t          my_pid;
+   fd_set         rset;
+   struct timeval timeout;
+   char           buffer[1 + SIZEOF_PID_T],
+                  db_update_fifo[MAX_PATH_LENGTH],
+                  fake_user[MAX_FULL_USER_ID_LENGTH],
+                  line[MAX_LINE_LENGTH],
+                  *perm_buffer,
+                  profile[MAX_PROFILE_NAME_LENGTH + 1],
+                  uc_reply_name[MAX_PATH_LENGTH],
+                  user[MAX_FULL_USER_ID_LENGTH],
+                  work_dir[MAX_PATH_LENGTH];
+   FILE           *debug_fp = NULL;
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -127,6 +132,14 @@ main(int argc, char *argv[])
       profile[0] = '\0';
       user_offset = 0;
    }
+   if (get_arg(&argc, argv, "-v", NULL, 0) == SUCCESS)
+   {
+      verbose_level = 2;
+   }
+/*   if (get_arg(&argc, argv, "-vv", NULL, 0) == SUCCESS)
+   {
+      verbose_level = 3;
+   } */
 #ifdef WITH_SETUID_PROGS
    set_afd_euid(work_dir);
 #endif
@@ -238,8 +251,8 @@ main(int argc, char *argv[])
       exit(INCORRECT);
    }
 
-   (void)sprintf(db_update_fifo, "%s%s%s",
-                 p_work_dir, FIFO_DIR, DB_UPDATE_FIFO);
+   (void)snprintf(db_update_fifo, MAX_PATH_LENGTH, "%s%s%s",
+                  p_work_dir, FIFO_DIR, DB_UPDATE_FIFO);
 #ifdef WITHOUT_FIFO_RW_SUPPORT
    if (open_fifo_rw(db_update_fifo, &db_update_readfd, &db_update_fd) == -1)
 #else
@@ -272,9 +285,9 @@ main(int argc, char *argv[])
    }
    my_pid = getpid();
 #if SIZEOF_PID_T == 4
-   (void)sprintf(db_update_reply_fifo, "%s%s%s%d",
+   (void)snprintf(db_update_reply_fifo, MAX_PATH_LENGTH, "%s%s%s%d",
 #else
-   (void)sprintf(db_update_reply_fifo, "%s%s%s%lld",
+   (void)snprintf(db_update_reply_fifo, MAX_PATH_LENGTH, "%s%s%s%lld",
 #endif
                  p_work_dir, FIFO_DIR, DB_UPDATE_REPLY_FIFO, (pri_pid_t)my_pid);
    umask(0);
@@ -303,7 +316,18 @@ main(int argc, char *argv[])
    get_user(user, fake_user, user_offset);
    if (udc == YES)
    {
-      buffer[0] = REREAD_DIR_CONFIG;
+      if (verbose_level == 1)
+      {
+         buffer[0] = REREAD_DIR_CONFIG_VERBOSE1;
+      }
+      else if (verbose_level == 2)
+           {
+              buffer[0] = REREAD_DIR_CONFIG_VERBOSE2;
+           }
+           else
+           {
+              buffer[0] = REREAD_DIR_CONFIG;
+           }
       (void)memcpy(&buffer[1], &my_pid, SIZEOF_PID_T);
       if (write(db_update_fd, buffer, (1 + SIZEOF_PID_T)) != (1 + SIZEOF_PID_T))
       {
@@ -320,7 +344,18 @@ main(int argc, char *argv[])
    }
    else
    {
-      buffer[0] = REREAD_HOST_CONFIG;
+      if (verbose_level == 1)
+      {
+         buffer[0] = REREAD_HOST_CONFIG_VERBOSE1;
+      }
+      else if (verbose_level == 2)
+           {
+              buffer[0] = REREAD_HOST_CONFIG_VERBOSE2;
+           }
+           else
+           {
+              buffer[0] = REREAD_HOST_CONFIG;
+           }
       (void)memcpy(&buffer[1], &my_pid, SIZEOF_PID_T);
       if (write(db_update_fd, buffer, (1 + SIZEOF_PID_T)) != (1 + SIZEOF_PID_T))
       {
@@ -336,89 +371,169 @@ main(int argc, char *argv[])
       read_reply_length = MAX_UHC_RESPONCE_LENGTH;
    }
 
+   if (verbose_level > 0)
+   {
+#if SIZEOF_PID_T == 4
+      (void)snprintf(uc_reply_name, MAX_PATH_LENGTH, "%s%s%s.%d",
+#else
+      (void)snprintf(uc_reply_name, MAX_PATH_LENGTH, "%s%s%s.%lld",
+#endif
+                     p_work_dir, FIFO_DIR, DB_UPDATE_REPLY_DEBUG_FILE,
+                     (pri_pid_t)my_pid);
+   }
+   else
+   {
+      uc_reply_name[0] = '\0';
+   }
+
    /* Wait for the responce from AMG and get the result code. */
    FD_ZERO(&rset);
-   FD_SET(db_update_reply_fd, &rset);
-   status = select(db_update_reply_fd + 1, &rset, NULL, NULL, NULL);
-
-   if ((status > 0) && (FD_ISSET(db_update_reply_fd, &rset)))
+   for (;;)
    {
-      int  n;
-      char rbuffer[MAX_UDC_RESPONCE_LENGTH];
+      FD_SET(db_update_reply_fd, &rset);
+      timeout.tv_usec = 50000;
+      timeout.tv_sec = 0;
+      status = select(db_update_reply_fd + 1, &rset, NULL, NULL, &timeout);
 
-      if ((n = read(db_update_reply_fd, rbuffer, read_reply_length)) >= MAX_UHC_RESPONCE_LENGTH)
+      if ((status > 0) && (FD_ISSET(db_update_reply_fd, &rset)))
       {
-         int          hc_result,
-                      see_sys_log;
-         unsigned int hc_warn_counter;
-         char         hc_result_str[MAX_UPDATE_REPLY_STR_LENGTH];
+         int  n;
+         char rbuffer[MAX_UDC_RESPONCE_LENGTH];
 
-         see_sys_log = NO;
-         (void)memcpy(&hc_result, rbuffer, SIZEOF_INT);
-         (void)memcpy(&hc_warn_counter, &rbuffer[SIZEOF_INT], SIZEOF_INT);
-         if (read_reply_length == MAX_UDC_RESPONCE_LENGTH)
+         /* Check if we have any information we can show to the user. */
+         if (verbose_level > 0)
          {
-            if (n == MAX_UDC_RESPONCE_LENGTH)
+            if ((debug_fp == NULL) && (uc_reply_name[0] != '\0'))
             {
-               int          dc_result;
-               unsigned int dc_warn_counter;
-               char         dc_result_str[MAX_UPDATE_REPLY_STR_LENGTH];
+               if ((debug_fp = fopen(uc_reply_name, "r")) == NULL)
+               {
+                  if (errno != ENOENT)
+                  {
+                     (void)fprintf(stderr,
+                                   "Failed to fopen() `%s' : %s (%s %d)\n",
+                                   uc_reply_name, strerror(errno),
+                                   __FILE__, __LINE__);
+                  }
+               }
+            }
+            if (debug_fp != NULL)
+            {
+               while (fgets(line, MAX_LINE_LENGTH, debug_fp) != NULL)
+               {
+                  (void)fprintf(stdout, "%s", line);
+               }
+               fflush(stdout);
+            }
+         }
 
-               n = 0;
-               (void)memcpy(&dc_result, &rbuffer[SIZEOF_INT + SIZEOF_INT],
-                            SIZEOF_INT);
-               (void)memcpy(&dc_warn_counter,
-                            &rbuffer[SIZEOF_INT + SIZEOF_INT + SIZEOF_INT],
-                            SIZEOF_INT);
-               if (hc_result != NO_CHANGE_IN_HOST_CONFIG)
+         if ((n = read(db_update_reply_fd, rbuffer, read_reply_length)) >= MAX_UHC_RESPONCE_LENGTH)
+         {
+            int          hc_result;
+            unsigned int hc_warn_counter;
+            char         hc_result_str[MAX_UPDATE_REPLY_STR_LENGTH];
+
+            (void)memcpy(&hc_result, rbuffer, SIZEOF_INT);
+            (void)memcpy(&hc_warn_counter, &rbuffer[SIZEOF_INT], SIZEOF_INT);
+            if (read_reply_length == MAX_UDC_RESPONCE_LENGTH)
+            {
+               if (n == MAX_UDC_RESPONCE_LENGTH)
                {
-                  get_hc_result_str(hc_result_str, hc_result,
-                                    hc_warn_counter, &see_sys_log, &n);
-                  (void)fprintf(stdout, "%s\n", hc_result_str);
+                  int          dc_result;
+                  unsigned int dc_warn_counter;
+                  char         dc_result_str[MAX_UPDATE_REPLY_STR_LENGTH];
+
+                  n = 0;
+                  (void)memcpy(&dc_result, &rbuffer[SIZEOF_INT + SIZEOF_INT],
+                               SIZEOF_INT);
+                  (void)memcpy(&dc_warn_counter,
+                               &rbuffer[SIZEOF_INT + SIZEOF_INT + SIZEOF_INT],
+                               SIZEOF_INT);
+                  if (hc_result != NO_CHANGE_IN_HOST_CONFIG)
+                  {
+                     get_hc_result_str(hc_result_str, hc_result,
+                                       hc_warn_counter, NULL, &n);
+                     (void)fprintf(stdout, "%s\n", hc_result_str);
+                  }
+                  get_dc_result_str(dc_result_str, dc_result, dc_warn_counter,
+                                    NULL, &ret);
+                  (void)fprintf(stdout, "%s\n", dc_result_str);
+                  if (n > ret)
+                  {
+                     ret = n;
+                  }
+                  ret -= 1;
                }
-               get_dc_result_str(dc_result_str, dc_result, dc_warn_counter,
-                                 &see_sys_log, &ret);
-               (void)fprintf(stdout, "%s\n", dc_result_str);
-               if (n > ret)
+               else
                {
-                  ret = n;
+                  (void)fprintf(stderr,
+                                "ERROR   : Unable to evaluate reply since it is to short (%d, should be %d).",
+                                n, MAX_UDC_RESPONCE_LENGTH);
+                  ret = -1;
                }
-               ret -= 1;
             }
             else
             {
-               (void)fprintf(stderr,
-                             "ERROR   : Unable to evaluate reply since it is to short (%d, should be %d).",
-                             n, MAX_UDC_RESPONCE_LENGTH);
-               ret = -1;
+               get_hc_result_str(hc_result_str, hc_result, hc_warn_counter,
+                                 NULL, &ret);
+               (void)fprintf(stdout, "%s\n", hc_result_str);
+               ret -= 1;
             }
          }
          else
          {
-            get_hc_result_str(hc_result_str, hc_result, hc_warn_counter,
-                              &see_sys_log, &ret);
-            (void)fprintf(stdout, "%s\n", hc_result_str);
-            ret -= 1;
+            (void)fprintf(stderr, "Failed to read() responce : %s (%s %d)\n",
+                          strerror(errno), __FILE__, __LINE__);
+            exit(INCORRECT);
          }
-         if (see_sys_log == YES)
-         {
-            (void)fprintf(stdout,
-                          "--> See %s0 for more details about warnings and/or errors. <--\n",
-                          SYSTEM_LOG_NAME);
-         }
+         break;
       }
-      else
-      {
-         (void)fprintf(stderr, "Failed to read() responce : %s (%s %d)\n",
-                       strerror(errno), __FILE__, __LINE__);
-         exit(INCORRECT);
-      }
+      else if (status == 0)
+           {
+              /* Check if we have any information we can show to the user. */
+              if (verbose_level > 0)
+              {
+                 if ((debug_fp == NULL) && (uc_reply_name[0] != '\0'))
+                 {
+                    if ((debug_fp = fopen(uc_reply_name, "r")) == NULL)
+                    {
+                       if (errno != ENOENT)
+                       {
+                          (void)fprintf(stderr,
+                                        "Failed to fopen() `%s' : %s (%s %d)\n",
+                                        uc_reply_name, strerror(errno),
+                                        __FILE__, __LINE__);
+                       }
+                    }
+                 }
+                 if (debug_fp != NULL)
+                 {
+                    while (fgets(line, MAX_LINE_LENGTH, debug_fp) != NULL)
+                    {
+                       (void)fprintf(stdout, "%s", line);
+                    }
+                    fflush(stdout);
+                 }
+              }
+           }
+           else
+           {
+              (void)fprintf(stderr, "select() error : %s (%s %d)\n",
+                            strerror(errno), __FILE__, __LINE__);
+              exit(INCORRECT);
+           }
    }
-   else
+
+   if (debug_fp != NULL)
    {
-      (void)fprintf(stderr, "select() error : %s (%s %d)\n",
-                    strerror(errno), __FILE__, __LINE__);
-      exit(INCORRECT);
+      while (fgets(line, MAX_LINE_LENGTH, debug_fp) != NULL)
+      {
+         (void)fprintf(stdout, "%s", line);
+      }
+      fflush(stdout);
+   }
+   if ((verbose_level > 0) && (uc_reply_name[0] != '\0'))
+   {
+      (void)unlink(uc_reply_name);
    }
 
 #ifdef WITHOUT_FIFO_RW_SUPPORT

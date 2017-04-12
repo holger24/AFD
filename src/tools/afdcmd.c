@@ -1135,7 +1135,8 @@ main(int argc, char *argv[])
       {
          (void)sprintf(host_config_file, "%s%s%s",
                        p_work_dir, ETC_DIR, DEFAULT_HOST_CONFIG_FILE);
-         ehc = eval_host_config(&hosts_found, host_config_file, &hl, NULL, NO);
+         ehc = eval_host_config(&hosts_found, host_config_file, &hl, NULL,
+                               NULL, NO);
          if ((ehc == NO) && (no_of_hosts != hosts_found))
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,

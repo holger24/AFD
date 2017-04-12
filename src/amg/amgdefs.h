@@ -908,9 +908,9 @@ extern int    amg_zombie_check(pid_t *, int),
               check_process_list(int),
               create_db(void),
 #ifdef WITH_ONETIME
-              eval_dir_config(off_t, unsigned int *, int),
+              eval_dir_config(off_t, unsigned int *, FILE *, int),
 #else
-              eval_dir_config(off_t, unsigned int *),
+              eval_dir_config(off_t, unsigned int *, FILE *),
 #endif
               eval_dir_options(int, char *),
               get_last_char(char *, off_t),
@@ -927,9 +927,11 @@ extern int    amg_zombie_check(pid_t *, int),
 # endif
                            off_t *),
               reread_dir_config(int, off_t, time_t *, int, int, size_t,
-                                int, int, unsigned int *, struct host_list *),
+                                int, int, unsigned int *, FILE *,
+                                struct host_list *),
               reread_host_config(time_t *, int *, int *, size_t *,
-                                 struct host_list **, unsigned int *, int);
+                                 struct host_list **, unsigned int *,
+                                 FILE *, int);
 extern pid_t  make_process_amg(char *, char *, int, int, mode_t);
 extern off_t  fax2gts(char *, char *, int);
 extern char   *check_paused_dir(struct directory_entry *, int *, int *, int *),

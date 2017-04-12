@@ -1,6 +1,6 @@
 /*
  *  reread_dir_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ DESCR__S_M3
  **                         int              rescan_time,
  **                         int              max_no_proc,
  **                         unsigned int     *warn_counter,
+ **                         FILE             *debug_fp,
  **                         struct host_list *old_hl)
  **                                                         
  ** DESCRIPTION
@@ -52,6 +53,8 @@ DESCR__S_M3
  **                      field fromt the HOST_CONFIG file.
  **   16.05.2002 H.Kiehl Removed shared memory stuff.
  **   03.05.2007 H.Kiehl Changed function that it returns what was done.
+ **   10.04.2017 H.Kiehl Added debug_fp parameter to print warnings and
+ **                      errors.
  **
  */
 DESCR__E_M3
@@ -92,6 +95,7 @@ reread_dir_config(int              dc_changed,
                   int              rescan_time,
                   int              max_no_proc,
                   unsigned int     *warn_counter,
+                  FILE             *debug_fp,
                   struct host_list *old_hl)
 {
    int new_fsa = NO,
@@ -223,9 +227,9 @@ reread_dir_config(int              dc_changed,
             hl[i].protocol = 0;
          }
 #ifdef WITH_ONETIME
-         if (eval_dir_config(db_size, warn_counter, NO) < 0)
+         if (eval_dir_config(db_size, warn_counter, debug_fp, NO) < 0)
 #else
-         if (eval_dir_config(db_size, warn_counter) < 0)
+         if (eval_dir_config(db_size, warn_counter, debug_fp) < 0)
 #endif
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,

@@ -562,7 +562,7 @@ main(int argc, char *argv[])
       /* Evaluate HOST_CONFIG file. */
       hl = NULL;
       if ((eval_host_config(&no_of_hosts, host_config_file,
-                            &hl, NULL, first_time) == NO_ACCESS) &&
+                            &hl, NULL, NULL, first_time) == NO_ACCESS) &&
           (first_time == NO))
       {
          /*
@@ -723,9 +723,9 @@ main(int argc, char *argv[])
 
       /* Evaluate database. */
 #ifdef WITH_ONETIME
-      if (eval_dir_config(db_size, NULL, NO) != SUCCESS)
+      if (eval_dir_config(db_size, NULL, NULL, NO) != SUCCESS)
 #else
-      if (eval_dir_config(db_size, NULL) != SUCCESS)
+      if (eval_dir_config(db_size, NULL, NULL) != SUCCESS)
 #endif
       {
          system_log(FATAL_SIGN, __FILE__, __LINE__,
@@ -1076,6 +1076,8 @@ main(int argc, char *argv[])
                           break;
 
                        case REREAD_HOST_CONFIG :
+                       case REREAD_HOST_CONFIG_VERBOSE1 :
+                       case REREAD_HOST_CONFIG_VERBOSE2 :
                           {
                              count++;
                              if ((n - count) < SIZEOF_PID_T)
@@ -1094,7 +1096,10 @@ main(int argc, char *argv[])
 #endif
                                 unsigned int hc_warn_counter;
                                 pid_t        ret_pid;
-                                char         db_update_reply_fifo[MAX_PATH_LENGTH];
+                                char         db_update_reply_fifo[MAX_PATH_LENGTH],
+                                             flag = fifo_buffer[count - 1],
+                                             uc_reply_name[MAX_PATH_LENGTH];
+                                FILE         *uc_reply_fp = NULL;
 
                                 (void)memcpy(&ret_pid, &fifo_buffer[count],
                                              SIZEOF_PID_T);
@@ -1131,12 +1136,47 @@ main(int argc, char *argv[])
                                     */
                                 }
 
+                                /*
+                                 * Check if user wants more information, that
+                                 * is REREAD_HOST_CONFIG_VERBOSE1 or more.
+                                 */
+                                if (flag > REREAD_HOST_CONFIG)
+                                {
+                                   (void)snprintf(uc_reply_name,
+                                                  MAX_PATH_LENGTH,
+#if SIZEOF_PID_T == 4
+                                                  "%s%s%s.%d",
+#else
+                                                  "%s%s%s.%lld",
+#endif
+                                                  p_work_dir, FIFO_DIR,
+                                                  DB_UPDATE_REPLY_DEBUG_FILE,
+                                                  (pri_pid_t)ret_pid);
+
+                                   /* Ensure file will be created as 644. */
+                                   (void)umask(S_IWGRP | S_IWOTH);
+                                   if ((uc_reply_fp = fopen(uc_reply_name,
+                                                            "w")) == NULL)
+                                   {
+                                      system_log(WARN_SIGN, __FILE__, __LINE__,
+                                                 _("Failed to fopen() `%s' : %s"),
+                                                 uc_reply_name,
+                                                 strerror(errno));
+                                   }
+                                   (void)umask(0);
+                                }
+                                else
+                                {
+                                   uc_reply_name[0] = '\0';
+                                }
+
                                 hc_warn_counter = 0;
                                 hc_result = NO_CHANGE_IN_HOST_CONFIG;
                                 hc_result = reread_host_config(&hc_old_time,
                                                                NULL, NULL, NULL,
                                                                NULL,
                                                                &hc_warn_counter,
+                                                               uc_reply_fp,
                                                                YES);
                                 if (hc_result == NO_CHANGE_IN_HOST_CONFIG)
                                 {
@@ -1172,6 +1212,22 @@ main(int argc, char *argv[])
                                    system_log(INFO_SIGN, __FILE__, __LINE__,
                                               _("Restarted %s."), DC_PROC_NAME);
                                 }
+
+                                if (flag > REREAD_HOST_CONFIG)
+                                {
+                                   if (uc_reply_fp != NULL)
+                                   {
+                                      (void)fflush(uc_reply_fp);
+                                      if (fclose(uc_reply_fp) == EOF)
+                                      {
+                                         system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                                    "Failed to fclose() `%s' : %s",
+                                                    uc_reply_name,
+                                                    strerror(errno));
+                                      }
+                                   }
+                                }
+
                                 if (db_update_reply_fd != -1)
                                 {
                                    char reply_buffer[MAX_UHC_RESPONCE_LENGTH];
@@ -1214,6 +1270,8 @@ main(int argc, char *argv[])
                           break;
 
                        case REREAD_DIR_CONFIG :
+                       case REREAD_DIR_CONFIG_VERBOSE1 :
+                       case REREAD_DIR_CONFIG_VERBOSE2 :
                           {
                              count++;
                              if ((n - count) < SIZEOF_PID_T)
@@ -1237,8 +1295,11 @@ main(int argc, char *argv[])
                                              hc_warn_counter;
                                 off_t        db_size = 0;
                                 pid_t        ret_pid;
-                                char         db_update_reply_fifo[MAX_PATH_LENGTH];
+                                char         db_update_reply_fifo[MAX_PATH_LENGTH],
+                                             flag = fifo_buffer[count - 1],
+                                             uc_reply_name[MAX_PATH_LENGTH];
                                 struct stat  stat_buf;
+                                FILE         *uc_reply_fp = NULL;
 
                                 (void)memcpy(&ret_pid, &fifo_buffer[count],
                                              SIZEOF_PID_T);
@@ -1273,6 +1334,40 @@ main(int argc, char *argv[])
                                     * to send a responce to the process that
                                     * initiated the update.
                                     */
+                                }
+
+                                /*
+                                 * Check if user wants more information, that
+                                 * is REREAD_DIR_CONFIG_VERBOSE1 or more.
+                                 */
+                                if (flag > REREAD_DIR_CONFIG)
+                                {
+                                   (void)snprintf(uc_reply_name,
+                                                  MAX_PATH_LENGTH,
+#if SIZEOF_PID_T == 4
+                                                  "%s%s%s.%d",
+#else
+                                                  "%s%s%s.%lld",
+#endif
+                                                  p_work_dir, FIFO_DIR,
+                                                  DB_UPDATE_REPLY_DEBUG_FILE,
+                                                  (pri_pid_t)ret_pid);
+
+                                   /* Ensure file will be created as 644. */
+                                   (void)umask(S_IWGRP | S_IWOTH);
+                                   if ((uc_reply_fp = fopen(uc_reply_name,
+                                                            "w")) == NULL)
+                                   {
+                                      system_log(WARN_SIGN, __FILE__, __LINE__,
+                                                 _("Failed to fopen() `%s' : %s"),
+                                                 uc_reply_name,
+                                                 strerror(errno));
+                                   }
+                                   (void)umask(0);
+                                }
+                                else
+                                {
+                                   uc_reply_name[0] = '\0';
                                 }
 
                                 hc_warn_counter = 0;
@@ -1314,6 +1409,20 @@ main(int argc, char *argv[])
                                       {
                                          if (dc_dcl[i].dc_old_time != stat_buf.st_mtime)
                                          {
+                                            if ((flag > REREAD_DIR_CONFIG_VERBOSE1) &&
+                                                (uc_reply_fp != NULL))
+                                            {
+                                               (void)fprintf(uc_reply_fp,
+#if SIZEOF_TIME_T == 4
+                                                             "%s %s modification time changed %ld -> %ld\n",
+#else
+                                                             "%s %s modification time changed %lld -> %lld\n",
+#endif
+                                                             DEBUG_SIGN,
+                                                             dc_dcl[i].dir_config_file,
+                                                             (pri_time_t)dc_dcl[i].dc_old_time,
+                                                             (pri_time_t)stat_buf.st_mtime);
+                                            }
                                             dc_dcl[i].dc_old_time = stat_buf.st_mtime;
                                             dc_changed = YES;
                                          }
@@ -1341,6 +1450,7 @@ main(int argc, char *argv[])
                                                                      &rewrite_host_config,
                                                                      &old_size, &old_hl,
                                                                      &hc_warn_counter,
+                                                                     uc_reply_fp,
                                                                      NO);
                                       event_log(0L, EC_GLOB, ET_AUTO, EA_REREAD_HOST_CONFIG,
                                                 "with %d warnings", hc_warn_counter);
@@ -1354,6 +1464,7 @@ main(int argc, char *argv[])
                                                                     rescan_time,
                                                                     max_no_proc,
                                                                     &dc_warn_counter,
+                                                                    uc_reply_fp,
                                                                     old_hl);
                                       event_log(0L, EC_GLOB, ET_MAN, EA_REREAD_DIR_CONFIG,
                                                 "with %d warnings", dc_warn_counter);
@@ -1400,6 +1511,22 @@ main(int argc, char *argv[])
                                                 "no access to DIR_CONFIG");
                                    }
                                 }
+
+                                if (flag > REREAD_DIR_CONFIG)
+                                {
+                                   if (uc_reply_fp != NULL)
+                                   {
+                                      (void)fflush(uc_reply_fp);
+                                      if (fclose(uc_reply_fp) == EOF)
+                                      {
+                                         system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                                    "Failed to fclose() `%s' : %s",
+                                                    uc_reply_name,
+                                                    strerror(errno));
+                                      }
+                                   }
+                                }
+
                                 if (db_update_reply_fd != -1)
                                 {
                                    char reply_buffer[MAX_UDC_RESPONCE_LENGTH];

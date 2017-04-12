@@ -480,10 +480,14 @@ typedef unsigned long       u_long_64;
 #endif
 
 /* Commands that can be send to DB_UPDATE_FIFO of the AMG. */
-#define HOST_CONFIG_UPDATE         4
-#define DIR_CONFIG_UPDATE          5
-#define REREAD_HOST_CONFIG         6
-#define REREAD_DIR_CONFIG          7
+#define HOST_CONFIG_UPDATE          4
+#define DIR_CONFIG_UPDATE           5
+#define REREAD_HOST_CONFIG          6
+#define REREAD_HOST_CONFIG_VERBOSE1 7
+#define REREAD_HOST_CONFIG_VERBOSE2 8
+#define REREAD_DIR_CONFIG           9
+#define REREAD_DIR_CONFIG_VERBOSE1  10
+#define REREAD_DIR_CONFIG_VERBOSE2  11
 
 #define WORK_DIR_ID                "-w"
 #define WORK_DIR_ID_LENGTH         (sizeof(WORK_DIR_ID) - 1)
@@ -1803,6 +1807,7 @@ typedef unsigned long       u_long_64;
 # define DEMCD_QUEUE_FILE          "/demcd_queue"
 #endif
 #define JIS_FILE                   "/jis_data"
+#define DB_UPDATE_REPLY_DEBUG_FILE "/db_update_reply_debug"
 
 /* Definitions of fifo names. */
 #define SYSTEM_LOG_FIFO            "/system_log.fifo"
@@ -3946,7 +3951,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     eaccess(char *, int),
 #endif
                     eval_host_config(int *, char *, struct host_list **,
-                                     unsigned int *, int),
+                                     unsigned int *, FILE *, int),
                     eval_timeout(int),
                     eval_time_str(char *, struct bd_time_entry *),
                     exec_cmd(char *, char **, int, char *, int,
@@ -4197,6 +4202,8 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
                     unlock_region(const int, const off_t),
 #endif
                     unmap_data(int, void **),
+                    update_db_log(char *, char *, int, FILE *, unsigned int *,
+                                  char *, ...),
                     url_get_error(int, char *, int),
                     url_insert_password(char *, char *),
 #ifdef WITH_ERROR_QUEUE

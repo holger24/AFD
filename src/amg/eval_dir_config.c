@@ -1,6 +1,6 @@
 /*
  *  eval_dir_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -26,7 +26,9 @@ DESCR__S_M3
  **   eval_dir_config - reads the DIR_CONFIG file and evaluates it
  **
  ** SYNOPSIS
- **   int eval_dir_config(off_t db_size, unsigend int *warn_counter)
+ **   int eval_dir_config(off_t        db_size,
+ **                       unsigend int *warn_counter,
+ **                       FILE         *debug_fp)
  **
  ** DESCRIPTION
  **   The function eval_dir_config() reads the DIR_CONFIG file of the
@@ -111,6 +113,8 @@ DESCR__S_M3
  **   20.04.2008 H.Kiehl Let url_evaluate() handle the URL parts once.
  **   17.01.2010 H.Kiehl Give url_evaluate() dummy variables for values we
  **                      do not need, to fool it to do syntax checking.
+ **   10.04.2017 H.Kiehl Added debug_fp parameter to print warnings and
+ **                      errors.
  **
  */
 DESCR__E_M3
@@ -248,9 +252,9 @@ static char                   *posi_identifier(char *, char *, size_t);
 /*########################## eval_dir_config() ##########################*/
 int
 #ifdef WITH_ONETIME
-eval_dir_config(off_t db_size, unsigned int *warn_counter, int onetime)
+eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp, int onetime)
 #else
-eval_dir_config(off_t db_size, unsigned int *warn_counter)
+eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp)
 #endif
 {
    unsigned int          error_mask;
@@ -447,21 +451,17 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
       {
          if (database == NULL)
          {
-            system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "Configuration file `%s' could not be read.",
-                       dcl[dcd].dir_config_file);
+            update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                          "Configuration file `%s' could not be read.",
+                          dcl[dcd].dir_config_file);
          }
          else if (database[0] == '\0')
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Configuration file `%s' is empty.",
-                            dcl[dcd].dir_config_file);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                               "Configuration file `%s' is empty.",
+                               dcl[dcd].dir_config_file);
               }
          dcd++;
-         if (warn_counter != NULL)
-         {
-            (*warn_counter)++;
-         }
          continue;
       }
       ptr = database;
@@ -542,14 +542,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
          {
             /* Generate warning, that last dir entry does not */
             /* have a destination.                            */
-            system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "In %s line %d, directory entry does not have a directory.",
-                       dcl[dcd].dir_config_file,
-                       count_new_lines(database, search_ptr));
-            if (warn_counter != NULL)
-            {
-               (*warn_counter)++;
-            }
+            update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                          "In %s line %d, directory entry does not have a directory.",
+                          dcl[dcd].dir_config_file,
+                          count_new_lines(database, search_ptr));
             ptr++;
 
             continue;
@@ -659,15 +655,11 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
          }
          else if (i >= (MAX_PATH_LENGTH - 2))
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "In `%s' line %d, directory entry longer then %d, unable to store it.",
-                            dcl[dcd].dir_config_file,
-                            count_new_lines(database, search_ptr),
-                            (MAX_PATH_LENGTH - 2));
-                 if (warn_counter != NULL)
-                 {
-                    (*warn_counter)++;
-                 }
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                               "In `%s' line %d, directory entry longer then %d, unable to store it.",
+                               dcl[dcd].dir_config_file,
+                               count_new_lines(database, search_ptr),
+                               (MAX_PATH_LENGTH - 2));
                  continue;
               }
          dir->location[i] = '\0';
@@ -712,14 +704,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                   {
                      if ((pwd = getpwuid(current_uid)) == NULL)
                      {
-                        system_log(WARN_SIGN, __FILE__, __LINE__,
-                                   "Cannot find working directory for user with the user ID %d in /etc/passwd (ignoring directory from %s) : %s",
-                                   current_uid, dcl[dcd].dir_config_file,
-                                   strerror(errno));
-                        if (warn_counter != NULL)
-                        {
-                           (*warn_counter)++;
-                        }
+                        update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                      "Cannot find working directory for user with the user ID %d in /etc/passwd (ignoring directory from %s) : %s",
+                                      current_uid, dcl[dcd].dir_config_file,
+                                      strerror(errno));
                         *tmp_ptr = tmp_char;
                         continue;
                      }
@@ -728,14 +716,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                   {
                      if ((pwd = getpwnam(&dir->location[1])) == NULL)
                      {
-                        system_log(WARN_SIGN, __FILE__, __LINE__,
-                                   "Cannot find users %s working directory in /etc/passwd (ignoring directory from %s) : %s",
-                                   &dir->location[1], dcl[dcd].dir_config_file,
-                                   strerror(errno));
-                        if (warn_counter != NULL)
-                        {
-                           (*warn_counter)++;
-                        }
+                        update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                      "Cannot find users %s working directory in /etc/passwd (ignoring directory from %s) : %s",
+                                      &dir->location[1], dcl[dcd].dir_config_file,
+                                      strerror(errno));
                         *tmp_ptr = tmp_char;
                         continue;
                      }
@@ -827,14 +811,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                                   {
                                      if ((pwd = getpwuid(current_uid)) == NULL)
                                      {
-                                        system_log(WARN_SIGN, __FILE__, __LINE__,
-                                                   "Cannot find working directory for user with the user ID %d in /etc/passwd (ignoring directory from %s) : %s",
-                                                   current_uid, dcl[dcd].dir_config_file,
-                                                   strerror(errno));
-                                        if (warn_counter != NULL)
-                                        {
-                                           (*warn_counter)++;
-                                        }
+                                        update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                                      "Cannot find working directory for user with the user ID %d in /etc/passwd (ignoring directory from %s) : %s",
+                                                      current_uid, dcl[dcd].dir_config_file,
+                                                      strerror(errno));
                                         continue;
                                      }
                                   }
@@ -842,14 +822,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                                   {
                                      if ((pwd = getpwnam(dir_user)) == NULL)
                                      {
-                                        system_log(WARN_SIGN, __FILE__, __LINE__,
+                                        update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
                                                    "Cannot find users %s working directory in /etc/passwd (ignoring directory from %s) : %s",
                                                    dir_user, dcl[dcd].dir_config_file,
                                                    strerror(errno));
-                                        if (warn_counter != NULL)
-                                        {
-                                           (*warn_counter)++;
-                                        }
                                         continue;
                                      }
                                   }
@@ -925,13 +901,9 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                          }
                          else
                          {
-                            system_log(WARN_SIGN, __FILE__, __LINE__,
-                                       "Unknown or unsupported scheme, ignoring directory %s from %s",
-                                       dir->location, dcl[dcd].dir_config_file);
-                            if (warn_counter != NULL)
-                            {
-                               (*warn_counter)++;
-                            }
+                            update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                          "Unknown or unsupported scheme, ignoring directory %s from %s",
+                                          dir->location, dcl[dcd].dir_config_file);
                             continue;
                          }
                  }
@@ -940,14 +912,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                     char error_msg[MAX_URL_ERROR_MSG];
 
                     url_get_error(error_mask, error_msg, MAX_URL_ERROR_MSG);
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               "Incorrect url `%s' in %s line %d. Error is: %s.",
-                               dir->location, dcl[dcd].dir_config_file,
-                               count_new_lines(database, search_ptr), error_msg);
-                    if (warn_counter != NULL)
-                    {
-                       (*warn_counter)++;
-                    }
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                  "Incorrect url `%s' in %s line %d. Error is: %s.",
+                                  dir->location, dcl[dcd].dir_config_file,
+                                  count_new_lines(database, search_ptr), error_msg);
                     continue;
                  }
             dir_ptr = ptr - 1;
@@ -1125,15 +1093,11 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                   if (*ptr == '\0')
                   {
                      /* Generate warning that this file entry is faulty. */
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                "In %s line %d, directory %s does not have a destination entry.",
-                                dcl[dcd].dir_config_file,
-                                count_new_lines(database, search_ptr),
-                                dir->location);
-                     if (warn_counter != NULL)
-                     {
-                        (*warn_counter)++;
-                     }
+                     update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                   "In %s line %d, directory %s does not have a destination entry.",
+                                   dcl[dcd].dir_config_file,
+                                   count_new_lines(database, search_ptr),
+                                   dir->location);
 
                      /* To read the next file entry, put back the char    */
                      /* that was torn out to mark end of this file entry. */
@@ -1366,14 +1330,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                      {
                         /* Generate warning message, that no destination */
                         /* has been defined.                             */
-                        system_log(WARN_SIGN, __FILE__, __LINE__,
-                                   "Directory %s in %s at line %d does not have a destination entry for file group no. %d.",
-                                   dir->location, dcl[dcd].dir_config_file,
-                                   count_new_lines(database, ptr), dir->fgc);
-                        if (warn_counter != NULL)
-                        {
-                           (*warn_counter)++;
-                        }
+                        update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                      "Directory %s in %s at line %d does not have a destination entry for file group no. %d.",
+                                      dir->location, dcl[dcd].dir_config_file,
+                                      count_new_lines(database, ptr), dir->fgc);
 
                         /* To read the next destination entry, put back the */
                         /* char that was torn out to mark end of this       */
@@ -1649,19 +1609,15 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter)
                               char error_msg[MAX_URL_ERROR_MSG];
 
                               url_get_error(error_mask, error_msg, MAX_URL_ERROR_MSG);
-                              system_log(WARN_SIGN, __FILE__, __LINE__,
-                                         "Incorrect url `%s'. Error is: %s. Ignoring the recipient in %s at line %d.",
-                                         dir->file[dir->fgc].\
-                                         dest[dir->file[dir->fgc].dgc].\
-                                         rec[dir->file[dir->fgc].\
-                                         dest[dir->file[dir->fgc].dgc].rc].\
-                                         recipient, error_msg,
-                                         dcl[dcd].dir_config_file,
-                                         count_new_lines(database, search_ptr));
-                              if (warn_counter != NULL)
-                              {
-                                 (*warn_counter)++;
-                              }
+                              update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                            "Incorrect url `%s'. Error is: %s. Ignoring the recipient in %s at line %d.",
+                                            dir->file[dir->fgc].\
+                                            dest[dir->file[dir->fgc].dgc].\
+                                            rec[dir->file[dir->fgc].\
+                                            dest[dir->file[dir->fgc].dgc].rc].\
+                                            recipient, error_msg,
+                                            dcl[dcd].dir_config_file,
+                                            count_new_lines(database, search_ptr));
                            }
                         } /* if (i != 0) */
 
@@ -1688,15 +1644,11 @@ check_dummy_line:
                      }
 
                      /* Generate warning message. */
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                "No recipient specified for %s from %s at line %d.",
-                                dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].dest_group_name,
-                                dcl[dcd].dir_config_file,
-                                count_new_lines(database, search_ptr));
-                     if (warn_counter != NULL)
-                     {
-                        (*warn_counter)++;
-                     }
+                     update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                   "No recipient specified for %s from %s at line %d.",
+                                   dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].dest_group_name,
+                                   dcl[dcd].dir_config_file,
+                                   count_new_lines(database, search_ptr));
 
                      /* To read the next destination entry, put back the */
                      /* char that was torn out to mark end of this       */
@@ -1760,15 +1712,11 @@ check_dummy_line:
                            {
                               ptr++;
                            }
-                           system_log(WARN_SIGN, __FILE__, __LINE__,
-                                      "Option at line %d in %s longer then %d, ignoring this option.",
-                                      count_new_lines(database, ptr),
-                                      dcl[dcd].dir_config_file,
-                                      MAX_OPTION_LENGTH);
-                           if (warn_counter != NULL)
-                           {
-                              (*warn_counter)++;
-                           }
+                           update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                         "Option at line %d in %s longer then %d, ignoring this option.",
+                                         count_new_lines(database, ptr),
+                                         dcl[dcd].dir_config_file,
+                                         MAX_OPTION_LENGTH);
                         }
                         else
                         {
@@ -1788,15 +1736,11 @@ check_dummy_line:
                               }
                               else
                               {
-                                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                                            "Removing option `%s' at line %d in %s",
-                                            dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].options[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].oc],
-                                            count_new_lines(database, ptr),
-                                            dcl[dcd].dir_config_file);
-                                 if (warn_counter != NULL)
-                                 {
-                                    (*warn_counter)++;
-                                 }
+                                 update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                               "Removing option `%s' at line %d in %s",
+                                               dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].options[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].oc],
+                                               count_new_lines(database, ptr),
+                                               dcl[dcd].dir_config_file);
                               }
                            }
                         }
@@ -1819,14 +1763,11 @@ check_dummy_line:
 
                      if (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].oc >= MAX_NO_OPTIONS)
                      {
-                        system_log(WARN_SIGN, __FILE__, __LINE__,
-                                   "Exceeded the number of total options (max = %d) at line %d in %s. Ignoring.",
-                                   MAX_NO_OPTIONS, count_new_lines(database, ptr),
-                                   dcl[dcd].dir_config_file);
-                        if (warn_counter != NULL)
-                        {
-                           (*warn_counter)++;
-                        }
+                        update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                      "Exceeded the number of total options (max = %d) at line %d in %s. Ignoring.",
+                                      MAX_NO_OPTIONS,
+                                      count_new_lines(database, ptr),
+                                      dcl[dcd].dir_config_file);
                      }
                   }
 
@@ -1846,13 +1787,10 @@ check_dummy_line:
                if (dir->file[dir->fgc].dgc == 0)
                {
                   /* Generate error message. */
-                  system_log(WARN_SIGN, __FILE__, __LINE__,
-                             "Directory %s in %s does not have a destination entry for file group no. %d.",
-                             dir->location, dcl[dcd].dir_config_file, dir->fgc);
-                  if (warn_counter != NULL)
-                  {
-                     (*warn_counter)++;
-                  }
+                  update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                "Directory %s in %s does not have a destination entry for file group no. %d.",
+                                dir->location, dcl[dcd].dir_config_file,
+                                dir->fgc);
 
                   /* Reduce file counter, since this one is faulty. */
                   dir->fgc--;
@@ -1913,14 +1851,10 @@ check_dummy_line:
                {
                   end_ptr = search_ptr;
                }
-               system_log(WARN_SIGN, __FILE__, __LINE__,
-                          "In %s at line %d, no destination defined.",
-                          dcl[dcd].dir_config_file,
-                          count_new_lines(database, end_ptr));
-               if (warn_counter != NULL)
-               {
-                  (*warn_counter)++;
-               }
+               update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                             "In %s at line %d, no destination defined.",
+                             dcl[dcd].dir_config_file,
+                             count_new_lines(database, end_ptr));
             }
             else
             {
@@ -2009,13 +1943,9 @@ check_dummy_line:
                   {
                      if (dcl[dcd].dc_id == dd[j].dir_config_id)
                      {
-                        system_log(WARN_SIGN, __FILE__, __LINE__,
-                                   "Ignoring duplicate directory entry %s in %s.",
-                                   dir->location, dcl[dcd].dir_config_file);
-                        if (warn_counter != NULL)
-                        {
-                           (*warn_counter)++;
-                        }
+                        update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                      "Ignoring duplicate directory entry %s in %s.",
+                                      dir->location, dcl[dcd].dir_config_file);
                         duplicate = YES;
                      }
                      else
@@ -2055,14 +1985,10 @@ check_dummy_line:
                                              "%x",
                                              dnb[dd[no_of_local_dirs].dir_pos].dir_id);
                               gotcha = YES;
-                              system_log(WARN_SIGN, __FILE__, __LINE__,
-                                         "Duplicate directory alias `%s' in `%s', giving it another alias: `%s'",
-                                         dd[j].dir_alias,
-                                         dcl[dcd].dir_config_file, dir->alias);
-                              if (warn_counter != NULL)
-                              {
-                                 (*warn_counter)++;
-                              }
+                              update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                            "Duplicate directory alias `%s' in `%s', giving it another alias: `%s'",
+                                            dd[j].dir_alias,
+                                            dcl[dcd].dir_config_file, dir->alias);
                               break;
                            }
                         }
@@ -2171,28 +2097,24 @@ check_dummy_line:
                              {
                                 *error_ptr = '\0';
                              }
-                             if (warn_counter != NULL)
-                             {
-                                (*warn_counter)++;
-                             }
                              if (dir->type == REMOTE_DIR)
                              {
-                                system_log(WARN_SIGN, __FILE__, __LINE__,
-                                           "Cannot access directory `%s' at line %d from %s (Ignoring this entry) : %s",
-                                           dir->location,
-                                           count_new_lines(database, dir_ptr),
-                                           dcl[dcd].dir_config_file,
-                                           strerror(errno));
+                                update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                              "Cannot access directory `%s' at line %d from %s (Ignoring this entry) : %s",
+                                              dir->location,
+                                              count_new_lines(database, dir_ptr),
+                                              dcl[dcd].dir_config_file,
+                                              strerror(errno));
                                 continue;
                              }
                              else
                              {
-                                system_log(WARN_SIGN, __FILE__, __LINE__,
-                                           "Cannot access directory `%s' or create a subdirectory in it at line %d from %s : %s",
-                                           dir->location,
-                                           count_new_lines(database, dir_ptr),
-                                           dcl[dcd].dir_config_file,
-                                           strerror(errno));
+                                update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                              "Cannot access directory `%s' or create a subdirectory in it at line %d from %s : %s",
+                                              dir->location,
+                                              count_new_lines(database, dir_ptr),
+                                              dcl[dcd].dir_config_file,
+                                              strerror(errno));
                              }
                              if (error_ptr != NULL)
                              {
@@ -2205,28 +2127,24 @@ check_dummy_line:
                              {
                                 *error_ptr = '\0';
                              }
-                             if (warn_counter != NULL)
-                             {
-                                (*warn_counter)++;
-                             }
                              if (dir->type == REMOTE_DIR)
                              {
-                                system_log(WARN_SIGN, __FILE__, __LINE__,
-                                           "Failed to create directory `%s' at line %d from %s (Ignoring this entry) : %s",
-                                           dir->location,
-                                           count_new_lines(database, dir_ptr),
-                                           dcl[dcd].dir_config_file,
-                                           strerror(errno));
+                                update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                              "Failed to create directory `%s' at line %d from %s (Ignoring this entry) : %s",
+                                              dir->location,
+                                              count_new_lines(database, dir_ptr),
+                                              dcl[dcd].dir_config_file,
+                                              strerror(errno));
                                 continue;
                              }
                              else
                              {
-                                system_log(WARN_SIGN, __FILE__, __LINE__,
-                                           "Failed to create directory `%s' at line %d from %s : %s",
-                                           dir->location,
-                                           count_new_lines(database, dir_ptr),
-                                           dcl[dcd].dir_config_file,
-                                           strerror(errno));
+                                update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                              "Failed to create directory `%s' at line %d from %s : %s",
+                                              dir->location,
+                                              count_new_lines(database, dir_ptr),
+                                              dcl[dcd].dir_config_file,
+                                              strerror(errno));
                              }
                              if (error_ptr != NULL)
                              {
@@ -2239,16 +2157,12 @@ check_dummy_line:
                              {
                                 *error_ptr = '\0';
                              }
-                             system_log(WARN_SIGN, __FILE__, __LINE__,
-                                        "Failed to stat() `%s' at line %d from %s : %s",
-                                        dir->location,
-                                        count_new_lines(database, dir_ptr),
-                                        dcl[dcd].dir_config_file,
-                                        strerror(errno));
-                             if (warn_counter != NULL)
-                             {
-                                (*warn_counter)++;
-                             }
+                             update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                           "Failed to stat() `%s' at line %d from %s : %s",
+                                           dir->location,
+                                           count_new_lines(database, dir_ptr),
+                                           dcl[dcd].dir_config_file,
+                                           strerror(errno));
                              if (error_ptr != NULL)
                              {
                                 *error_ptr = '/';

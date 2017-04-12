@@ -1,7 +1,7 @@
 /*
  *  reread_host_config.c - Part of AFD, an automatic file distribution
  *                         program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ DESCR__S_M3
  **                          size_t           *old_size,
  **                          struct host_list **old_hl,
  **                          unsigned int     *warn_counter,
+ **                          FILE             *debug_fp,
  **                          int              inform_fd)
  **
  ** DESCRIPTION
@@ -88,6 +89,7 @@ reread_host_config(time_t           *hc_old_time,
                    size_t           *old_size,
                    struct host_list **old_hl,
                    unsigned int     *warn_counter,
+                   FILE             *debug_fp,
                    int              inform_fd)
 {
    int         ret = NO_CHANGE_IN_HOST_CONFIG;
@@ -178,7 +180,7 @@ reread_host_config(time_t           *hc_old_time,
        * will overwrite no_of_hosts! Store it somewhere save.
        */
       *rewrite_host_config = eval_host_config(&no_of_hosts, host_config_file,
-                                              &hl, warn_counter, NO);
+                                              &hl, warn_counter, debug_fp, NO);
       new_no_of_hosts = no_of_hosts;
       if (fsa_attach(AMG) != SUCCESS)
       {
