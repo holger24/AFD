@@ -25,7 +25,11 @@ DESCR__S_M3
  **   get_dc_data - gets all data out of the DIR_CONFIG for a host
  **
  ** SYNOPSIS
- **   get_dc_data [-h <host alias>] [-d <dir alias>] [-D <dir id>]
+ **   get_dc_data [-C <config hex id>]
+ **               [-d <dir alias>]
+ **               [-D <dir hex id>]
+ **               [-h <host alias> [--only_list_target_dirs]]
+ **               [-H <host alias 0> [.. <host alias n>]]
  **
  ** DESCRIPTION
  **
@@ -151,11 +155,30 @@ main(int argc, char *argv[])
 #endif
 
    if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
-       (get_arg(&argc, argv, "--help", NULL, 0) == SUCCESS) ||
-       ((argc == 2) && (get_arg(&argc, argv, "-h", NULL, 0) == SUCCESS)))
+       (get_arg(&argc, argv, "--help", NULL, 0) == SUCCESS))
    {
       usage(stdout, argv[0]);
       exit(0);
+   }
+   if (argc > 1)
+   {
+      if ((argv[1][0] != '-') ||
+          ((argv[1][0] == '-') &&
+           ((argv[1][1] == 'C') || (argv[1][1] == 'd') || (argv[1][1] == 'D') ||
+            (argv[1][1] == 'h') || (argv[1][1] == 'H')) &&
+           (argv[1][2] == '\0') && (argc == 2)) ||
+          ((argv[1][0] == '-') &&
+           ((argv[1][1] == 'C') || (argv[1][1] == 'd') || (argv[1][1] == 'D')) &&
+           (argv[1][2] == '\0') && (argc > 3)) ||
+          ((strcmp(argv[1], "--only_list_target_dirs") == 0) &&
+           (argc != 4) && (strcmp(argv[2], "-h") == 0)) ||
+          ((argc > 3) && (strcmp(argv[1], "-h") == 0) &&
+           (((strcmp(argv[3], "--only_list_target_dirs") == 0) && (argc > 4)) ||
+            (strcmp(argv[3], "--only_list_target_dirs") != 0))))
+      {
+         usage(stdout, argv[0]);
+         exit(0);
+      }
    }
 
    if (get_arg(&argc, argv, "-p", profile, MAX_PROFILE_NAME_LENGTH) == INCORRECT)
@@ -1524,8 +1547,13 @@ check_dir_options(int fra_pos)
 static void
 usage(FILE *stream, char *progname)
 {
-   (void)fprintf(stream,
-                 _("Usage: %s [-d <dir alias>] [-h <host alias> [--only_list_target_dirs]] [-H <host alias 0> [.. <host alias n>]] [-D <dir hex id>]\n"),
-                 progname);
+   int length = strlen(progname);
+
+   (void)fprintf(stream, _("Usage: %s [-C <config hex id>]\n"), progname);
+   (void)fprintf(stream, "       %*s [-d <dir alias>]\n", length, "");
+   (void)fprintf(stream, "       %*s [-D <dir hex id>]\n", length, "");
+   (void)fprintf(stream, "       %*s [-h <host alias> [--only_list_target_dirs]]\n", length, "");
+   (void)fprintf(stream, "       %*s [-H <host alias 0> [.. <host alias n>]]\n", length, "");
+
    return;
 }
