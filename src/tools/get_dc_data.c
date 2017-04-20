@@ -25,7 +25,8 @@ DESCR__S_M3
  **   get_dc_data - gets all data out of the DIR_CONFIG for a host
  **
  ** SYNOPSIS
- **   get_dc_data [-C <config hex id>]
+ **   get_dc_data [-c <config name> [.. <config name n>]]
+ **               [-C <config hex id> [.. <config hex id n>]]
  **               [-d <dir alias>]
  **               [-D <dir hex id>]
  **               [-h <host alias> [--only_list_target_dirs]]
@@ -53,6 +54,8 @@ DESCR__S_M3
  **   08.10.2014 H.Kiehl Expand file filters if they are expandable
  **                      as a comment.
  **   06.02.2016 H.Kiehl Added -H option.
+ **   19.04.2017 H.Kiehl Added -c and -C option, to view job ID's per
+ **                      config.
  **
  */
 DESCR__E_M3
@@ -112,6 +115,7 @@ static struct passwd_buf      *pwb = NULL;
 static void                   check_dir_options(int),
                               get_dc_data(char *, char *, unsigned int, int,
                                           char **),
+                              get_job_ids_per_config(int, int, char **),
                               show_data(struct job_id_data *, char *, char *,
                                         int, struct passwd_buf *, int),
                               show_dir_data(int, int, int, char **),
@@ -164,11 +168,11 @@ main(int argc, char *argv[])
    {
       if ((argv[1][0] != '-') ||
           ((argv[1][0] == '-') &&
-           ((argv[1][1] == 'C') || (argv[1][1] == 'd') || (argv[1][1] == 'D') ||
-            (argv[1][1] == 'h') || (argv[1][1] == 'H')) &&
+           ((argv[1][1] == 'c') || (argv[1][1] == 'C') || (argv[1][1] == 'd') ||
+            (argv[1][1] == 'D') || (argv[1][1] == 'h') || (argv[1][1] == 'H')) &&
            (argv[1][2] == '\0') && (argc == 2)) ||
           ((argv[1][0] == '-') &&
-           ((argv[1][1] == 'C') || (argv[1][1] == 'd') || (argv[1][1] == 'D')) &&
+           ((argv[1][1] == 'd') || (argv[1][1] == 'D')) &&
            (argv[1][2] == '\0') && (argc > 3)) ||
           ((strcmp(argv[1], "--only_list_target_dirs") == 0) &&
            (argc != 4) && (strcmp(argv[2], "-h") == 0)) ||
@@ -195,30 +199,53 @@ main(int argc, char *argv[])
                      MAX_INT_HEX_LENGTH) != SUCCESS)
          {
             if (get_arg_array(&argc, argv, "-H", &search_host_alias,
-                              &no_of_search_host_alias) == INCORRECT)
+                              &no_of_search_host_alias) != SUCCESS)
             {
-               dir_id = 0;
-               dir_alias[0] = '\0';
-               no_of_search_host_alias = 0;
-               search_host_alias = NULL;
-               if (argc == 2)
+               int  no_of_elements = 0;
+               char **search_str = NULL;
+
+               if (get_arg_array(&argc, argv, "-c", &search_str,
+                                 &no_of_elements) == INCORRECT)
                {
-                  if (my_strncpy(host_name, argv[1],
-                                 MAX_HOSTNAME_LENGTH + 1) == -1)
+                  if (get_arg_array(&argc, argv, "-C", &search_str,
+                                 &no_of_elements) == INCORRECT)
                   {
-                     usage(stderr, argv[0]);
-                     if (strlen(argv[1]) >= MAX_HOSTNAME_LENGTH)
+                     dir_id = 0;
+                     dir_alias[0] = '\0';
+                     no_of_search_host_alias = 0;
+                     search_host_alias = NULL;
+                     if (argc == 2)
                      {
-                        (void)fprintf(stderr,
-                                      _("Given host_alias `%s' is to long (> %d)\n"),
-                                      argv[1], MAX_HOSTNAME_LENGTH);
+                        if (my_strncpy(host_name, argv[1],
+                                       MAX_HOSTNAME_LENGTH + 1) == -1)
+                        {
+                           usage(stderr, argv[0]);
+                           if (strlen(argv[1]) >= MAX_HOSTNAME_LENGTH)
+                           {
+                              (void)fprintf(stderr,
+                                            _("Given host_alias `%s' is to long (> %d)\n"),
+                                            argv[1], MAX_HOSTNAME_LENGTH);
+                           }
+                           exit(INCORRECT);
+                        }
                      }
-                     exit(INCORRECT);
+                     else
+                     {
+                        host_name[0] = '\0';
+                     }
+                  }
+                  else
+                  {
+                     get_job_ids_per_config(YES, no_of_elements, search_str);
+                     FREE_RT_ARRAY(search_str);
+                     exit(SUCCESS);
                   }
                }
                else
                {
-                  host_name[0] = '\0';
+                  get_job_ids_per_config(NO, no_of_elements, search_str);
+                  FREE_RT_ARRAY(search_str);
+                  exit(SUCCESS);
                }
             }
             else
@@ -841,6 +868,285 @@ get_dc_data(char         *host_name,
    if (dnb_size > 0)
    {
       if (munmap(((char *)dnb - AFD_WORD_OFFSET), dnb_size) < 0)
+      {
+         (void)fprintf(stderr, _("munmap() error : %s (%s %d)\n"),
+                       strerror(errno), __FILE__, __LINE__);
+      }
+   }
+   if (jid_size > 0)
+   {
+      if (munmap(((char *)jd - AFD_WORD_OFFSET), jid_size) < 0)
+      {
+         (void)fprintf(stderr, _("munmap() error : %s (%s %d)\n"),
+                       strerror(errno), __FILE__, __LINE__);
+      }
+   }
+
+   return;
+}
+
+
+/*###################### get_job_ids_per_config() #######################*/
+static void
+get_job_ids_per_config(int  is_id,
+                       int  no_of_elements,
+                       char **search_str)
+{
+   int          i,
+                j,
+                k,
+                jd_fd,
+                no_of_job_ids_to_show;
+   size_t       dcl_size = 0,
+                jid_size = 0;
+   unsigned int *dir_config_id,
+                *job_id_list;
+   char         **dir_config_name = NULL,
+                file[MAX_PATH_LENGTH],
+                separator;
+   struct stat  stat_buf;
+
+   current_jid_list = NULL;
+   no_of_current_jobs = 0;
+   (void)get_current_jid_list();
+
+   /* Map to JID database. */
+   (void)sprintf(file, "%s%s%s", p_work_dir, FIFO_DIR, JOB_ID_DATA_FILE);
+   if ((jd_fd = open(file, O_RDONLY)) == -1)
+   {
+      (void)fprintf(stderr,
+                 _("Failed to open() `%s' : %s (%s %d)\n"),
+                 file, strerror(errno), __FILE__, __LINE__);
+      free(current_jid_list);
+      return;
+   }
+   if (fstat(jd_fd, &stat_buf) == -1)
+   {
+      (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
+                    file, strerror(errno), __FILE__, __LINE__);
+      (void)close(jd_fd);
+      free(current_jid_list);
+      return;
+   }
+   if (stat_buf.st_size > 0)
+   {
+      char *ptr;
+
+      jid_size = stat_buf.st_size;
+      if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+                      MAP_SHARED, jd_fd, 0)) == (caddr_t) -1)
+      {
+         (void)fprintf(stderr, _("Failed to mmap() to %s : %s (%s %d)\n"),
+                       file, strerror(errno), __FILE__, __LINE__);
+         (void)close(jd_fd);
+         free(current_jid_list);
+         return;
+      }
+      if (*(ptr + SIZEOF_INT + 1 + 1 + 1) != CURRENT_JID_VERSION)
+      {
+         (void)fprintf(stderr,
+                       _("Incorrect JID version (data=%d current=%d)!\n"),
+                       *(ptr + SIZEOF_INT + 1 + 1 + 1), CURRENT_JID_VERSION);
+         (void)close(jd_fd);
+         free(current_jid_list);
+         return;
+      }
+      no_of_job_ids = *(int *)ptr;
+      ptr += AFD_WORD_OFFSET;
+      jd = (struct job_id_data *)ptr;
+   }
+   else
+   {
+      (void)fprintf(stderr, _("Job ID database file is empty. (%s %d)\n"),
+                    __FILE__, __LINE__);
+      (void)close(jd_fd);
+      free(current_jid_list);
+      return;
+   }
+   if (close(jd_fd) == -1)
+   {
+      (void)fprintf(stderr, _("close() error : %s (%s %d)\n"),
+                    strerror(errno), __FILE__, __LINE__);
+   }
+
+   if ((dir_config_id = malloc((no_of_elements * sizeof(unsigned int)))) == NULL)
+   {
+      (void)fprintf(stderr, _("malloc() error : %s (%s %d)\n"),
+                    strerror(errno), __FILE__, __LINE__);
+      free(current_jid_list);
+      return;
+   }
+
+   if ((no_of_elements > 1) || (is_id != YES))
+   {
+      int    dcl_fd;
+
+      /* Map to DIR_CONFIG name database. */
+      (void)sprintf(file, "%s%s%s", p_work_dir, FIFO_DIR, DC_LIST_FILE);
+      if ((dcl_fd = open(file, O_RDONLY)) != -1)
+      {
+         if (fstat(dcl_fd, &stat_buf) != -1)
+         {
+            if (stat_buf.st_size > 0)
+            {
+               char *ptr;
+
+               if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+                               MAP_SHARED, dcl_fd, 0)) != (caddr_t) -1)
+               {
+                  dcl_size = stat_buf.st_size;
+                  no_of_dc_ids = *(int *)ptr;
+                  ptr += AFD_WORD_OFFSET;
+                  dcl = (struct dir_config_list *)ptr;
+               }
+               else
+               {
+                  (void)fprintf(stderr,
+                                _("Failed to mmap() to `%s' : %s (%s %d)\n"),
+                                file, strerror(errno), __FILE__, __LINE__);
+               }
+            }
+            else
+            {
+               (void)fprintf(stderr,
+                             _("File mask database file is empty. (%s %d)\n"),
+                             __FILE__, __LINE__);
+            }
+         }
+         else
+         {
+            (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
+                          file, strerror(errno), __FILE__, __LINE__);
+         }
+         if (close(dcl_fd) == -1)
+         {
+            (void)fprintf(stderr, _("close() error : %s (%s %d)\n"),
+                          strerror(errno), __FILE__, __LINE__);
+         }
+      }
+      else
+      {
+         (void)fprintf(stderr, _("Failed to open() `%s' : %s (%s %d)\n"),
+                       file, strerror(errno), __FILE__, __LINE__);
+      }
+   }
+
+   if (no_of_elements > 1)
+   {
+      RT_ARRAY(dir_config_name, no_of_elements, (MAX_PATH_LENGTH + 1), char);
+   }
+
+   if (is_id == YES)
+   {
+      for (i = 0; i < no_of_elements; i++)
+      {
+         dir_config_id[i] = (unsigned int)strtoul(search_str[i], NULL, 16);
+         if (no_of_elements > 1)
+         {
+            for (j = 0; j < no_of_dc_ids; j++)
+            {
+               if (dir_config_id[i] == dcl[j].dc_id)
+               {
+                  (void)strcpy(dir_config_name[i], dcl[j].dir_config_file);
+                  break;
+               }
+            }
+         }
+      }
+   }
+   else
+   {
+      for (i = 0; i < no_of_elements; i++)
+      {
+         dir_config_id[i] = 0;
+         for (j = 0; j < no_of_dc_ids; j++)
+         {
+            if (my_strcmp(search_str[i], dcl[j].dir_config_file) == 0)
+            {
+               dir_config_id[i] = dcl[j].dc_id;
+               if (no_of_elements > 1)
+               {
+                  (void)strcpy(dir_config_name[i], search_str[i]);
+               }
+               break;
+            }
+         }
+      }
+   }
+
+   if ((job_id_list = malloc((no_of_job_ids * sizeof(unsigned int)))) == NULL)
+   {
+      (void)fprintf(stderr, _("malloc() error : %s (%s %d)\n"),
+                    strerror(errno), __FILE__, __LINE__);
+      free(dir_config_id);
+      free(current_jid_list);
+      return;
+   }
+
+   /* Now let's get what we need, the job ID's. */
+   for (i = 0; i < no_of_elements; i++)
+   {
+      no_of_job_ids_to_show = 0;
+      for (j = 0; j < no_of_current_jobs; j++)
+      {
+         for (k = 0; k < no_of_job_ids; k++)
+         {
+            if (jd[k].job_id == current_jid_list[j])
+            {
+               if (dir_config_id[i] == jd[k].dir_config_id)
+               {
+                  job_id_list[no_of_job_ids_to_show] = jd[k].job_id;
+                  no_of_job_ids_to_show++;
+               }
+               break;
+            }
+         }
+      }
+
+      if (no_of_job_ids_to_show > 0)
+      {
+         if (no_of_elements > 1)
+         {
+            (void)fprintf(stdout, "%s (%x) with %d Job ID's:\n#%x",
+                          dir_config_name[i], dir_config_id[i],
+                          no_of_job_ids_to_show, job_id_list[0]);
+         }
+         else
+         {
+            (void)fprintf(stdout, "#%x", job_id_list[0]);
+         }
+         for (k = 1; k < no_of_job_ids_to_show; k++)
+         {
+            if ((k % 8) == 0)
+            {
+               separator = '\n';
+            }
+            else
+            {
+               separator = ' ';
+            }
+            (void)fprintf(stdout, "%c#%x", separator, job_id_list[k]);
+         }
+         (void)fprintf(stdout, "\n");
+      }
+      else
+      {
+         (void)fprintf(stdout, "Error, %s not a config in use.\n",
+                       search_str[i]);
+      }
+   }
+
+   /* Free all memory that was allocated or mapped. */
+   if (no_of_elements > 1)
+   {
+      FREE_RT_ARRAY(dir_config_name);
+   }
+   free(job_id_list);
+   free(dir_config_id);
+   free(current_jid_list);
+   if (dcl_size > 0)
+   {
+      if (munmap(((char *)dcl - AFD_WORD_OFFSET), dcl_size) < 0)
       {
          (void)fprintf(stderr, _("munmap() error : %s (%s %d)\n"),
                        strerror(errno), __FILE__, __LINE__);
@@ -1549,7 +1855,8 @@ usage(FILE *stream, char *progname)
 {
    int length = strlen(progname);
 
-   (void)fprintf(stream, _("Usage: %s [-C <config hex id>]\n"), progname);
+   (void)fprintf(stream, _("Usage: %s [-c <config name 0> [.. <config name n>]]\n"), progname);
+   (void)fprintf(stream, "       %*s [-C <config hex id 0> [.. <config hex id n>]]\n", length, "");
    (void)fprintf(stream, "       %*s [-d <dir alias>]\n", length, "");
    (void)fprintf(stream, "       %*s [-D <dir hex id>]\n", length, "");
    (void)fprintf(stream, "       %*s [-h <host alias> [--only_list_target_dirs]]\n", length, "");

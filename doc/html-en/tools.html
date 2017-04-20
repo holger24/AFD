@@ -445,9 +445,27 @@ possible errors in DIR_CONFIG or HOST_CONFIG.
 </p>
 <h3 align=center><a name="get_dc_data"><u>Get DIR_CONFIG data (get_dc_data)</u></a></h3>
 <p>
-The program get_dc_data shows what AFD has stored internally for the
-given host alias. The output looks as follows when a host alias is given
-as the first argument:
+The program get_dc_data shows what AFD has stored internally that it has
+found in the given configuration (<a href="dir_config.html">DIR_CONFIG</a>).
+<p>
+The syntax is as follows:
+</p>
+<pre>
+   Usage: get_dc_data [-c &lt;config name 0&gt; [.. &lt;config name n&gt;]]
+                      [-C &lt;config hex id 0&gt; [.. &lt;config hex id n&gt;]]
+                      [-d &lt;dir alias&gt;]
+                      [-D &lt;dir hex id&gt;]
+                      [-h &lt;host alias&gt; [--only_list_target_dirs]]
+                      [-H &lt;host alias 0&gt; [.. &lt;host alias n&gt;]]
+</pre>
+<p>
+If no argument is given, the content of all DIR_CONFIG's as stored
+within AFD will be printed to stdout. So with this command you can
+reconstruct the DIR_CONFIG if you lost it or it is damaged and AFD
+is still active.
+</p>
+The output looks as follows when a host alias is given with the -h
+parameter and the alias name:
 </p>
 <pre>
     DIR_CONFIG    : /home/afd/etc/DIR_CONFIG
@@ -466,10 +484,25 @@ as the first argument:
     Job-ID        : 1c7eafb9
 </pre>
 <p>
-If no argument is given, the whole DIR_CONFIG as stored within AFD
-will be printed to stdout. So with this command you can reconstruct
-the DIR_CONFIG if you lost it or it is damaged and AFD is still active.
+If the alias has more then one job, they will be listed one after the
+other each separated by an empty line.
 </p>
+<p>
+Showing the content of a specific directory (parameter -d or -D) will
+show the data in a format as used in DIR_CONFIG.
+</p>
+<p>
+The parameters -c and -C are used to show just the job ID's that are used
+in the given DIR_CONFIG. The output will look as follows when calling
+it as follows: get_dc_data -c ~/oper/etc/DIR_CONFIG.timezone ~/oper/etc/configs/my.dir
+</p>
+<pre>
+   /home/afd/oper/etc/DIR_CONFIG.timezone (352c2d39) with 13 Job ID's:
+   #1b5fb339 #95b838e5 #cab145eb #acd279b7 #d68e550e #84800b9 #6b4c484a #9672a4b
+   #aa4601a9 #534b2ee4 #f9ba30f #58739be4 #e591c849
+   /home/afd/oper/etc/configs/my.dir (e71e0201) with 1 Job ID's:
+   #4fff828a
+</pre>
 <h3 align=center><a name="jid_view"><u>Get job data (jid_view)</u></a></h3>
 <p>
 The program jid_view shows all parameters of an internal AFD job.
@@ -789,9 +822,9 @@ user interaction, so it can be used from any shell scripts or programs such as
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 2001 - 2015 by H.Kiehl<br>
+   Copyright &copy; 2001 - 2017 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 23.03.2015
+   Last updated: 20.04.2017
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
