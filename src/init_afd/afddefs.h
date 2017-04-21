@@ -342,6 +342,7 @@ typedef unsigned long       u_long_64;
 #define AFD_CMD                    "afdcmd"
 #define VIEW_DC                    "view_dc"
 #define GET_DC_DATA                "get_dc_data"
+#define GET_DC_DATA_LENGTH         (sizeof(GET_DC_DATA) - 1)
 #define JID_VIEW                   "jid_view"
 #define DIR_CTRL                   "dir_ctrl"
 #define DIR_INFO                   "dir_info"

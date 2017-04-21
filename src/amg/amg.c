@@ -1414,11 +1414,12 @@ main(int argc, char *argv[])
                                             {
                                                (void)fprintf(uc_reply_fp,
 #if SIZEOF_TIME_T == 4
-                                                             "%s %s modification time changed %ld -> %ld\n",
+                                                             "%s [!%x] %s modification time changed %ld -> %ld\n",
 #else
-                                                             "%s %s modification time changed %lld -> %lld\n",
+                                                             "%s [!%x] %s modification time changed %lld -> %lld\n",
 #endif
                                                              DEBUG_SIGN,
+                                                             dc_dcl[i].dc_id,
                                                              dc_dcl[i].dir_config_file,
                                                              (pri_time_t)dc_dcl[i].dc_old_time,
                                                              (pri_time_t)stat_buf.st_mtime);

@@ -27,8 +27,17 @@ DESCR__S_M1
  **   udc - update DIR_CONFIG
  **
  ** SYNOPSIS
- **   uhc [-w working directory][ -p <profile>][ -u[ <fake user>]]
- **   udc [-w working directory][ -p <profile>][ -u[ <fake user>]]
+ **   uhc [<options>]
+ **          -w <AFD work dir>
+ **          -p <role>\
+ **          -u[ <fake user>]
+ **          -v   More verbose output.
+ **   udc [<options>]
+ **          -w <AFD work dir>
+ **          -p <role>\
+ **          -u[ <fake user>]
+ **          -v   More verbose output.
+ **          -j   Show job ID's of changed configs.
  **
  ** DESCRIPTION
  **   Program to update the DIR_CONFIG or HOST_CONFIG after they have
@@ -47,6 +56,8 @@ DESCR__S_M1
  **   01.05.2007 H.Kiehl Wait and return responce when we exit.
  **   26.06.2007 H.Kiehl Do permission check and added parameters
  **                      -u and -p.
+ **   20.04.2017 H.Kiehl Added parameter -j to list the job ID's of
+ **                      changed configs.
  **
  */
 DESCR__E_M1
@@ -64,10 +75,16 @@ DESCR__E_M1
 #include "permission.h"
 #include "version.h"
 
+#define DC_ID_STEP_SIZE 1
+
+
 /* Global variables. */
-int               event_log_fd = STDERR_FILENO,
+int               cmd_length = 0,
+                  cmd_pos = 0,
+                  event_log_fd = STDERR_FILENO,
                   sys_log_fd = STDERR_FILENO;
 char              db_update_reply_fifo[MAX_PATH_LENGTH],
+                  *get_dc_data_cmd = NULL,
                   *p_work_dir;
 struct afd_status *p_afd_status;
 const char        *sys_log_name = SYSTEM_LOG_FIFO;
@@ -75,7 +92,8 @@ const char        *sys_log_name = SYSTEM_LOG_FIFO;
 /* Local function prototypes. */
 static void       update_db_exit(void),
                   usage(char *),
-                  sig_exit(int);
+                  sig_exit(int),
+                  show_debug_data(int, int, FILE **, char *);
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$ update_db() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
@@ -91,6 +109,7 @@ main(int argc, char *argv[])
                   verbose_level = 1,
                   read_reply_length,
                   ret,
+                  show_job_ids = NO,
                   status,
                   udc,
                   user_offset;
@@ -100,7 +119,6 @@ main(int argc, char *argv[])
    char           buffer[1 + SIZEOF_PID_T],
                   db_update_fifo[MAX_PATH_LENGTH],
                   fake_user[MAX_FULL_USER_ID_LENGTH],
-                  line[MAX_LINE_LENGTH],
                   *perm_buffer,
                   profile[MAX_PROFILE_NAME_LENGTH + 1],
                   uc_reply_name[MAX_PATH_LENGTH],
@@ -135,6 +153,21 @@ main(int argc, char *argv[])
    if (get_arg(&argc, argv, "-v", NULL, 0) == SUCCESS)
    {
       verbose_level = 2;
+   }
+   if (get_arg(&argc, argv, "-j", NULL, 0) == SUCCESS)
+   {
+      verbose_level = 2;
+      show_job_ids = YES;
+      cmd_length = GET_DC_DATA_LENGTH +
+                   1 + 2 + 1 + /* -C */ 
+                   (DC_ID_STEP_SIZE * (MAX_INT_HEX_LENGTH + 1));
+      if ((get_dc_data_cmd = malloc(cmd_length)) == NULL)
+      {
+         (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
+                       strerror(errno), __FILE__, __LINE__);
+         exit(INCORRECT);
+      }
+      cmd_pos = snprintf(get_dc_data_cmd, cmd_length, "%s -C ", GET_DC_DATA);
    }
 /*   if (get_arg(&argc, argv, "-vv", NULL, 0) == SUCCESS)
    {
@@ -401,30 +434,7 @@ main(int argc, char *argv[])
          char rbuffer[MAX_UDC_RESPONCE_LENGTH];
 
          /* Check if we have any information we can show to the user. */
-         if (verbose_level > 0)
-         {
-            if ((debug_fp == NULL) && (uc_reply_name[0] != '\0'))
-            {
-               if ((debug_fp = fopen(uc_reply_name, "r")) == NULL)
-               {
-                  if (errno != ENOENT)
-                  {
-                     (void)fprintf(stderr,
-                                   "Failed to fopen() `%s' : %s (%s %d)\n",
-                                   uc_reply_name, strerror(errno),
-                                   __FILE__, __LINE__);
-                  }
-               }
-            }
-            if (debug_fp != NULL)
-            {
-               while (fgets(line, MAX_LINE_LENGTH, debug_fp) != NULL)
-               {
-                  (void)fprintf(stdout, "%s", line);
-               }
-               fflush(stdout);
-            }
-         }
+         show_debug_data(verbose_level, show_job_ids, &debug_fp, uc_reply_name);
 
          if ((n = read(db_update_reply_fd, rbuffer, read_reply_length)) >= MAX_UHC_RESPONCE_LENGTH)
          {
@@ -490,30 +500,8 @@ main(int argc, char *argv[])
       else if (status == 0)
            {
               /* Check if we have any information we can show to the user. */
-              if (verbose_level > 0)
-              {
-                 if ((debug_fp == NULL) && (uc_reply_name[0] != '\0'))
-                 {
-                    if ((debug_fp = fopen(uc_reply_name, "r")) == NULL)
-                    {
-                       if (errno != ENOENT)
-                       {
-                          (void)fprintf(stderr,
-                                        "Failed to fopen() `%s' : %s (%s %d)\n",
-                                        uc_reply_name, strerror(errno),
-                                        __FILE__, __LINE__);
-                       }
-                    }
-                 }
-                 if (debug_fp != NULL)
-                 {
-                    while (fgets(line, MAX_LINE_LENGTH, debug_fp) != NULL)
-                    {
-                       (void)fprintf(stdout, "%s", line);
-                    }
-                    fflush(stdout);
-                 }
-              }
+              show_debug_data(verbose_level, show_job_ids,
+                              &debug_fp, uc_reply_name);
            }
            else
            {
@@ -523,17 +511,33 @@ main(int argc, char *argv[])
            }
    }
 
-   if (debug_fp != NULL)
-   {
-      while (fgets(line, MAX_LINE_LENGTH, debug_fp) != NULL)
-      {
-         (void)fprintf(stdout, "%s", line);
-      }
-      fflush(stdout);
-   }
+   show_debug_data(verbose_level, show_job_ids, &debug_fp, uc_reply_name);
    if ((verbose_level > 0) && (uc_reply_name[0] != '\0'))
    {
       (void)unlink(uc_reply_name);
+   }
+
+   if ((show_job_ids == YES) && (get_dc_data_cmd != NULL))
+   {
+      char *text = NULL;
+
+      get_dc_data_cmd[cmd_pos] = '\0';
+      if ((exec_cmd(get_dc_data_cmd, &text, -1, NULL, 0,
+#ifdef HAVE_SETPRIORITY
+                    NO_PRIORITY,
+#endif
+                    "", NULL, NULL, 0, 0L, NO, NO) != 0) ||
+          (text == NULL))
+      {
+         (void)fprintf(stderr, "Failed to execute command: %s\n",
+                       get_dc_data_cmd);
+      }
+      else
+      {
+         (void)fprintf(stdout, "%s", text);
+      }
+      free(text);
+      free(get_dc_data_cmd);
    }
 
 #ifdef WITHOUT_FIFO_RW_SUPPORT
@@ -551,6 +555,83 @@ main(int argc, char *argv[])
    }
 
    exit(ret);
+}
+
+
+/*++++++++++++++++++++++++++ show_debug_data() ++++++++++++++++++++++++++*/
+static void
+show_debug_data(int  verbose_level,
+                int  show_job_ids,
+                FILE **debug_fp,
+                char *uc_reply_name)
+{
+   if (verbose_level > 0)
+   {
+      if ((*debug_fp == NULL) && (uc_reply_name[0] != '\0'))
+      {
+         if ((*debug_fp = fopen(uc_reply_name, "r")) == NULL)
+         {
+            if (errno != ENOENT)
+            {
+               (void)fprintf(stderr,
+                             "Failed to fopen() `%s' : %s (%s %d)\n",
+                             uc_reply_name, strerror(errno),
+                             __FILE__, __LINE__);
+            }
+         }
+      }
+      if (*debug_fp != NULL)
+      {
+         int  i;
+         char line[MAX_LINE_LENGTH];
+
+         while (fgets(line, MAX_LINE_LENGTH, *debug_fp) != NULL)
+         {
+            if (show_job_ids == YES)
+            {
+               if ((line[0] == '<') && (line[1] == 'D') && (line[2] == '>') &&
+                   (line[3] == ' ') && (line[4] == '[') && (line[5] == '!'))
+               {
+                  i = 0;
+                  while ((i < MAX_INT_HEX_LENGTH) && (line[6 + i] != ']') &&
+                         (line[6 + i] != '\n') && (line[6 + i] != '\0'))
+                  {
+                     get_dc_data_cmd[cmd_pos + i] = line[6 + i];
+                     i++;
+                  }
+                  if (line[6 + i] == ']')
+                  {
+                     get_dc_data_cmd[cmd_pos + i] = ' ';
+                     cmd_pos += i;
+                     if ((cmd_length - cmd_pos) < (DC_ID_STEP_SIZE * (MAX_INT_HEX_LENGTH + 1)))
+                     {
+                        cmd_length += (DC_ID_STEP_SIZE * (MAX_INT_HEX_LENGTH + 1));
+                        if ((get_dc_data_cmd = realloc(get_dc_data_cmd,
+                                                       cmd_length)) == NULL)
+                        {
+                           (void)fprintf(stderr,
+                                         "Failed to realloc() memory : %s (%s %d)\n",
+                                         strerror(errno), __FILE__, __LINE__);
+                           exit(INCORRECT);
+                        }
+                     }
+                  }
+               }
+               else
+               {
+                  (void)fprintf(stdout, "%s", line);
+               }
+            }
+            else
+            {
+               (void)fprintf(stdout, "%s", line);
+            }
+         }
+         fflush(stdout);
+      }
+   }
+
+   return;
 }
 
 
@@ -575,9 +656,16 @@ sig_exit(int signo)
 static void                                                                
 usage(char *progname)
 {
-   (void)fprintf(stderr,
-                  "Usage : %s[ -w <AFD work dir>][ -p <role>][ -u[ <fake user>]]\n",
-                  progname);
+   int length = strlen(progname);
+
+   (void)fprintf(stderr, "Usage : %s [<options>]\n", progname);
+   (void)fprintf(stderr, "        %*s   -w <AFD work dir>\n", length, "");
+   (void)fprintf(stderr, "        %*s   -p <role>\n", length, "");
+   (void)fprintf(stderr, "        %*s   -u[ <fake user>]\n", length, "");
+   (void)fprintf(stderr, "        %*s   -v   More verbose output.\n",
+                 length, "");
+   (void)fprintf(stderr, "        %*s   -j   Show job ID's of changed configs.\n",
+                 length, "");
    (void)fprintf(stderr, "        The following values are returned on exit:\n");
    (void)fprintf(stderr, "                0 - Config file updated or no changes found.\n");
    (void)fprintf(stderr, "                2 - Config file updated with warnings.\n");
