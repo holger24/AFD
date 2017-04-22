@@ -416,6 +416,21 @@ check_host_status(Widget w)
          }
       }
 
+      if (prev_no_of_hosts != no_of_hosts)
+      {
+         if ((vpl = realloc(vpl, (no_of_hosts * sizeof(int)))) == NULL)
+         {
+            int tmp_errno = errno;
+
+            free(connect_data);
+            (void)xrec(FATAL_DIALOG,
+                       "Failed to realloc() %ld bytes : %s (%s %d)",
+                       (no_of_hosts * sizeof(int)), strerror(tmp_errno),
+                       __FILE__, __LINE__);
+            return;
+         }
+      }
+
       /*
        * Check when groups are used that all new or moved hosts
        * are in correct open or close state and count number of
