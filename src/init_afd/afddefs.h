@@ -1177,6 +1177,11 @@ typedef unsigned long       u_long_64;
 #ifdef _WITH_DE_MAIL_SUPPORT
 # define DEFAULT_DE_MAIL_CONF_TIMEUP     172800L /* 2 days */
 #endif
+#ifdef ERROR_OFFLINE_FOR_NEW_HOST
+# define DEFAULT_FSA_HOST_STATUS         HOST_ERROR_OFFLINE_STATIC
+#else
+# define DEFAULT_FSA_HOST_STATUS         0
+#endif
 
 /* Definitions to be read from the AFD_CONFIG file. */
 #define AFD_TCP_PORT_DEF                 "AFD_TCP_PORT"

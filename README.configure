@@ -147,6 +147,8 @@
 --enable-with_archive_copy_info      - Inform when files are being copied
                                        instead of being moved in TRANSFER_LOG.
                                        [Default: disabled]
+--enable-error_offline_for_new_host  - New host will have the flag
+                                       'error + warnings offline' set.
 --enable-setuid_progs                - Enables setting setuid flag for the
                                        programms afdcmd, afd, init_afd, mafd,
                                        afd_ctrl, dir_ctrl, mon_ctrl and

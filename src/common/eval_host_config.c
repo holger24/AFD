@@ -269,7 +269,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].file_size_offset    = 0;
          (*hl)[host_counter].transfer_timeout    = 0;
          (*hl)[host_counter].number_of_no_bursts = 0;
-         (*hl)[host_counter].host_status         = 0;
+         (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
          (*hl)[host_counter].protocol_options    = 0;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
@@ -343,7 +343,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].file_size_offset    = (char)DEFAULT_FILE_SIZE_OFFSET;
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
-         (*hl)[host_counter].host_status         = 0;
+         (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
          (*hl)[host_counter].protocol_options    = 0;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
@@ -417,7 +417,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].file_size_offset    = (char)DEFAULT_FILE_SIZE_OFFSET;
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
-         (*hl)[host_counter].host_status         = 0;
+         (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
          (*hl)[host_counter].protocol_options    = 0;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
@@ -489,7 +489,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].file_size_offset    = (char)DEFAULT_FILE_SIZE_OFFSET;
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
-         (*hl)[host_counter].host_status         = 0;
+         (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
          (*hl)[host_counter].protocol_options    = 0;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
@@ -549,7 +549,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].file_size_offset    = (char)DEFAULT_FILE_SIZE_OFFSET;
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
-         (*hl)[host_counter].host_status         = 0;
+         (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
          (*hl)[host_counter].protocol_options    = 0;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
@@ -648,7 +648,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].file_size_offset    = (char)DEFAULT_FILE_SIZE_OFFSET;
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
-         (*hl)[host_counter].host_status         = 0;
+         (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
          (*hl)[host_counter].protocol_options    = 0;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
@@ -736,7 +736,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].file_size_offset    = (char)DEFAULT_FILE_SIZE_OFFSET;
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
-         (*hl)[host_counter].host_status         = 0;
+         (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
          (*hl)[host_counter].protocol_options    = 0;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
@@ -823,7 +823,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].file_size_offset    = (char)DEFAULT_FILE_SIZE_OFFSET;
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
-         (*hl)[host_counter].host_status         = 0;
+         (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
          (*hl)[host_counter].protocol_options    = 0;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
@@ -928,7 +928,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].file_size_offset    = (char)DEFAULT_FILE_SIZE_OFFSET;
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
-         (*hl)[host_counter].host_status         = 0;
+         (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
          (*hl)[host_counter].protocol_options    = 0;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
@@ -1013,7 +1013,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].file_size_offset    = (char)DEFAULT_FILE_SIZE_OFFSET;
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
-         (*hl)[host_counter].host_status         = 0;
+         (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
          (*hl)[host_counter].protocol_options    = 0;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
@@ -1097,7 +1097,7 @@ eval_host_config(int              *hosts_found,
          /* Initialise all other values with DEFAULTS. */
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
-         (*hl)[host_counter].host_status         = 0;
+         (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
          (*hl)[host_counter].protocol_options    = 0;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
@@ -1180,7 +1180,7 @@ eval_host_config(int              *hosts_found,
       {
          /* Initialise rest with DEFAULTS. */
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
-         (*hl)[host_counter].host_status         = 0;
+         (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
          (*hl)[host_counter].protocol_options    = 0;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
@@ -1275,7 +1275,7 @@ eval_host_config(int              *hosts_found,
           * that hosts that are disabled or have transfer/queue stopped
           * suddenly have them enabled.
           */
-         (*hl)[host_counter].host_status = 0;
+         (*hl)[host_counter].host_status = DEFAULT_FSA_HOST_STATUS;
          if (first_time == NO)
          {
             if (fsa == NULL)
@@ -1378,8 +1378,9 @@ eval_host_config(int              *hosts_found,
          {
             error_flag = YES;
             update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
-                          _("Non numeric character <%d> in host status field for host %s, using default 0."),
-                          (int)*ptr, (*hl)[host_counter].host_alias);
+                          _("Non numeric character <%d> in host status field for host %s, using default %d."),
+                          (int)*ptr, (*hl)[host_counter].host_alias,
+                          DEFAULT_FSA_HOST_STATUS);
 
             /* Ignore this entry. */
             i = 0;
@@ -1393,15 +1394,16 @@ eval_host_config(int              *hosts_found,
       if (i == 0)
       {
          error_flag = YES;
-         (*hl)[host_counter].host_status = 0;
+         (*hl)[host_counter].host_status = DEFAULT_FSA_HOST_STATUS;
       }
       else if (i == MAX_INT_LENGTH)
            {
               error_flag = YES;
               update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
-                            _("Numeric value for host status to large (>%d characters) for host %s to store as integer. Setting to 0."),
-                            MAX_INT_LENGTH, (*hl)[host_counter].host_alias);
-              (*hl)[host_counter].host_status = 0;
+                            _("Numeric value for host status to large (>%d characters) for host %s to store as integer. Setting to %d."),
+                            MAX_INT_LENGTH, (*hl)[host_counter].host_alias,
+                            DEFAULT_FSA_HOST_STATUS);
+              (*hl)[host_counter].host_status = DEFAULT_FSA_HOST_STATUS;
               while ((*ptr != ':') && (*ptr != '\n') && (*ptr != '\0'))
               {
                  ptr++;
@@ -1413,11 +1415,12 @@ eval_host_config(int              *hosts_found,
               {
                  error_flag = YES;
                  update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
-                               _("Unknown host status <%d> for host %s, largest value is %d. Setting to 0."),
+                               _("Unknown host status <%d> for host %s, largest value is %d. Setting to %d."),
                                (*hl)[host_counter].host_status,
                                (*hl)[host_counter].host_alias,
-                               (PAUSE_QUEUE_STAT|STOP_TRANSFER_STAT|HOST_ERROR_OFFLINE_STATIC|HOST_CONFIG_HOST_DISABLED|HOST_NOT_IN_DIR_CONFIG|HOST_TWO_FLAG|DO_NOT_DELETE_DATA));
-                 (*hl)[host_counter].host_status = 0;
+                               (PAUSE_QUEUE_STAT|STOP_TRANSFER_STAT|HOST_ERROR_OFFLINE_STATIC|HOST_CONFIG_HOST_DISABLED|HOST_NOT_IN_DIR_CONFIG|HOST_TWO_FLAG|DO_NOT_DELETE_DATA),
+                               DEFAULT_FSA_HOST_STATUS);
+                 (*hl)[host_counter].host_status = DEFAULT_FSA_HOST_STATUS;
               }
            }
 

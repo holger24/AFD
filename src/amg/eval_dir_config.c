@@ -2572,7 +2572,7 @@ check_hostname_list(char         *recipient,
       hl[no_of_hosts].protocol            = scheme | flag;
       hl[no_of_hosts].protocol_options    = 0;
       hl[no_of_hosts].transfer_rate_limit = 0;
-      hl[no_of_hosts].host_status         = 0;
+      hl[no_of_hosts].host_status         = DEFAULT_FSA_HOST_STATUS;
       i = no_of_hosts;
       no_of_hosts++;
    }

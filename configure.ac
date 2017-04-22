@@ -262,6 +262,12 @@ AC_ARG_ENABLE(with_archive_copy_info,
       AC_DEFINE([WITH_ARCHIVE_COPY_INFO], [], [Inform when files are copied when archived])
    fi])
 
+AC_ARG_ENABLE(error_offline_for_new_host,
+   [  --enable-error_offline_for_new_host  new host have error offline set],
+   [if test x$enableval = xyes; then
+      AC_DEFINE([ERROR_OFFLINE_FOR_NEW_HOST], [], [New host have error offline set])
+   fi])
+
 AC_ARG_ENABLE(with_afdbench_settings,
    [  --enable-with_afdbench_settings enables settings for running afdbench],
    [AC_DEFINE([AFDBENCH_CONFIG], [], [Enables settings for running afdbench])
