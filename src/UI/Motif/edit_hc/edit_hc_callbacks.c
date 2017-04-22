@@ -1633,22 +1633,22 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
             {
                if (fsa[cur_pos].protocol_options & TIMEOUT_TRANSFER)
                {
-                  XtVaSetValues(transfer_timeout_w, XmNset, False, NULL);
+                  XtVaSetValues(interrupt_w, XmNset, False, NULL);
                }
                else
                {
-                  XtVaSetValues(transfer_timeout_w, XmNset, True, NULL);
+                  XtVaSetValues(interrupt_w, XmNset, True, NULL);
                }
             }
             else
             {
                if (fsa[cur_pos].protocol_options & TIMEOUT_TRANSFER)
                {
-                  XtVaSetValues(transfer_timeout_w, XmNset, True, NULL);
+                  XtVaSetValues(interrupt_w, XmNset, True, NULL);
                }
                else
                {
-                  XtVaSetValues(transfer_timeout_w, XmNset, False, NULL);
+                  XtVaSetValues(interrupt_w, XmNset, False, NULL);
                }
             }
 
