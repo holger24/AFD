@@ -134,12 +134,15 @@ check_afd_status(Widget w)
                     strerror(errno), __FILE__, __LINE__);
          return;
       }
-      if ((vpl = realloc(vpl, (no_of_afds * sizeof(int)))) == NULL)
+      if (prev_no_of_afds != no_of_afds)
       {
-         (void)xrec(FATAL_DIALOG, "Failed to realloc() %d bytes : %s (%s %d)",
-                    (no_of_afds * sizeof(int)), strerror(errno),
-                    __FILE__, __LINE__);
-         return;
+         if ((vpl = realloc(vpl, (no_of_afds * sizeof(int)))) == NULL)
+         {
+            (void)xrec(FATAL_DIALOG, "Failed to realloc() %d bytes : %s (%s %d)",
+                       (no_of_afds * sizeof(int)), strerror(errno),
+                       __FILE__, __LINE__);
+            return;
+         }
       }
 
       /*
