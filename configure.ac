@@ -1363,11 +1363,16 @@ then
       echo
       exit 1
    fi
-   PKG_CHECK_MODULES(AFD_GTK, gtk+-2.0 >= 2.2 glib-2.0 >= 2.2)
-
-   GUIS_STRING="$GUIS_STRING Gtk+"
    AC_SUBST(AFD_GTK_CFLAGS)
    AC_SUBST(AFD_GTK_LIBS)
+   if pkg-config --atleast-version=2.2 gtk+-2.0
+   then
+      AFD_GTK_CFLAGS=`pkg-config --cflags gtk+-2.0`
+      AFD_GTK_LIBS=`pkg-config --libs gtk+-2.0`
+   else
+      AC_MSG_ERROR(gtk+-2.0 not found)
+   fi
+   GUIS_STRING="$GUIS_STRING Gtk+"
 else
    AM_CONDITIONAL(WITH_XPM, true)
    compile_with_gtk=false
