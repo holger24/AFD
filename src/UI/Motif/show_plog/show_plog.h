@@ -1,6 +1,6 @@
 /*
  *  show_plog.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2016, 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -112,6 +112,8 @@ struct info_data
        {
           unsigned int       job_id;
           unsigned int       dir_id;
+          unsigned int       unique_id;
+          unsigned int       split_job_counter;
           int                ratio_1;
           int                ratio_2;
           int                no_of_files;
@@ -147,6 +149,27 @@ struct info_data
           char               priority;
           unsigned char      dir[MAX_PATH_LENGTH];
           struct dir_options d_o;
+       };
+
+/* Structure where we remember the different ratio elements, so the */
+/* size is calculated correctly.                                    */
+struct ratio_n_list
+       {
+          time_t       time_when_produced;
+          unsigned int unique_id;
+          unsigned int split_job_counter;
+       };
+struct ratio_nn_list
+       {
+          time_t       time_when_produced;
+          unsigned int unique_id;
+          unsigned int split_job_counter;
+          int          ratio_1;
+          int          ratio_2;
+          int          counted_orig_names;
+          int          counted_new_names;
+          char         **original_filename;
+          char         **new_filename;
        };
 
 /* Permission structure for show_plog. */

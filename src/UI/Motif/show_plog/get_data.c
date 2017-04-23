@@ -943,20 +943,27 @@ collect_data(register char *ptr,
              char          *p_start_log_file,
              off_t         offset)
 {
-   register int i,
-                j;
-   int          item_counter = il[file_no].no_of_items,
-                onefoureigth_or_greater,
-                prev_item_counter = il[file_no].no_of_items,
+   register int         i,
+                        j;
+   int                  count_cpu_production_time,
+                        item_counter = il[file_no].no_of_items,
+                        no_of_r1nl = 0,
+                        no_of_rn1l = 0,
+                        no_of_rnnl = 0,
+                        onefoureigth_or_greater,
+                        prev_item_counter = il[file_no].no_of_items,
 #ifndef LESSTIF_WORKAROUND
-                unmanaged,
+                        unmanaged,
 #endif
-                loops = 0;
-   time_t       prev_time_val = 0L,
-                now;
-   char         numeric_str[MAX_DOUBLE_LENGTH + 1],
-                *ptr_start_line;
-   struct tm    *p_ts;
+                        loops = 0;
+   time_t               prev_time_val = 0L,
+                        now;
+   char                 numeric_str[MAX_DOUBLE_LENGTH + 1],
+                        *ptr_start_line;
+   struct tm            *p_ts;
+   struct ratio_n_list  *r1nl = NULL,
+                        *rn1l = NULL;
+   struct ratio_nn_list *rnnl = NULL;
 
 #ifndef LESSTIF_WORKAROUND
    if (item_counter == 0)
@@ -976,6 +983,7 @@ collect_data(register char *ptr,
          /* Allocate memory for offset to job ID. */
          REALLOC_OFFSET_BUFFER();
 
+         count_cpu_production_time = YES;
          if (((i % 200) == 0) &&
              ((time(&now) - prev_time_val) > CHECK_TIME_INTERVAL))
          {
@@ -1251,20 +1259,47 @@ collect_data(register char *ptr,
                }
             }
 
-            /* Away with unique number + split job counter. */
-            while ((*ptr != SEPARATOR_CHAR) && (*ptr != '\n'))
+            /* Store unique number. */
+            j = 0;
+            while ((j < MAX_DOUBLE_LENGTH) && (*ptr != '_') && (*ptr != '\n'))
             {
+               numeric_str[j] = *ptr;
+               j++; ptr++;
+            }
+            if (*ptr == '_')
+            {
+               numeric_str[j] = '\0';
+               id.unique_id = (unsigned int)strtoul(numeric_str, NULL, 16);
                ptr++;
+            }
+            else
+            {
+               IGNORE_ENTRY();
+            }
+
+            /* Store split job counter. */
+            j = 0;
+            while ((j < MAX_DOUBLE_LENGTH) && (*ptr != SEPARATOR_CHAR) &&
+                   (*ptr != '\n'))
+            {
+               numeric_str[j] = *ptr;
+               j++; ptr++;
             }
             if (*ptr == SEPARATOR_CHAR)
             {
+               numeric_str[j] = '\0';
+               id.split_job_counter = (unsigned int)strtoul(numeric_str, NULL, 16);
                ptr++;
+            }
+            else
+            {
+               IGNORE_ENTRY();
             }
 
             /* Store directory ID. */
             j = 0;
-            while ((*ptr != SEPARATOR_CHAR) && (*ptr != '\n') &&
-                   (j < MAX_DOUBLE_LENGTH))
+            while ((j < MAX_DOUBLE_LENGTH) && (*ptr != SEPARATOR_CHAR) &&
+                   (*ptr != '\n'))
             {
                numeric_str[j] = *ptr;
                j++; ptr++;
@@ -1822,22 +1857,203 @@ collect_data(register char *ptr,
             }
          }
 
-         /* Show original file size. */
+         /*
+          * Show original file size. When adding the total together
+          * we can only add it once when we have a 1:n or n:n ratio.
+          */
          if (id.orig_file_size == -1)
          {
             *(p_orig_file_size + MAX_DISPLAYED_FILE_SIZE - 1) = '?';
          }
          else
          {
+            int gotcha;
+
             print_file_size(p_orig_file_size, id.orig_file_size);
-            orig_file_size += id.orig_file_size;
+            if ((id.ratio_1 == 1) && (id.ratio_2 > 1))
+            {
+               gotcha = NO;
+               for (j = 0; j < no_of_r1nl; j++)
+               {
+                  if ((r1nl[j].unique_id == id.unique_id) &&
+                      (r1nl[j].time_when_produced == id.time_when_produced) &&
+                      (r1nl[j].split_job_counter == id.split_job_counter))
+                  {
+                     gotcha = YES;
+                     count_cpu_production_time = NO;
+                     break;
+                  }
+               }
+               if (gotcha == NO)
+               {
+                  orig_file_size += id.orig_file_size;
+                  j = (no_of_r1nl + 1) * sizeof(struct ratio_n_list);
+                  if ((r1nl = realloc(r1nl, j)) == NULL)
+                  {
+                     (void)xrec(FATAL_DIALOG, "realloc() error : %s (%s %d)",
+                                strerror(errno), __FILE__, __LINE__);
+                     return;
+                  }
+                  r1nl[no_of_r1nl].unique_id = id.unique_id;
+                  r1nl[no_of_r1nl].time_when_produced = id.time_when_produced;
+                  r1nl[no_of_r1nl].split_job_counter = id.split_job_counter;
+                  no_of_r1nl++;
+               }
+            }
+            else if ((id.ratio_1 > 1) && (id.ratio_2 > 1))
+                 {
+                    int gotcha2,
+                        k;
+
+                    gotcha = NO;
+                    for (j = 0; j < no_of_rnnl; j++)
+                    {
+                       if ((rnnl[j].unique_id == id.unique_id) &&
+                           (rnnl[j].time_when_produced == id.time_when_produced) &&
+                           (rnnl[j].split_job_counter == id.split_job_counter) &&
+                           (rnnl[j].ratio_1 == id.ratio_1) &&
+                           (rnnl[j].ratio_2 == id.ratio_2))
+                       {
+                          gotcha2 = NO;
+                          count_cpu_production_time = NO;
+                          for (k = 0; k < rnnl[j].counted_orig_names; k++)
+                          {
+                             if (my_strcmp(rnnl[j].original_filename[k],
+                                           id.original_filename) == 0)
+                             {
+                                gotcha2 = YES;
+                                break;
+                             }
+                          }
+                          if (gotcha2 == NO)
+                          {
+                             if (rnnl[j].counted_orig_names < rnnl[j].ratio_1)
+                             {
+                                (void)memcpy(rnnl[j].original_filename[rnnl[j].counted_orig_names],
+                                             id.original_filename,
+                                             MAX_FILENAME_LENGTH);
+                                rnnl[j].counted_orig_names++;
+                             }
+                             orig_file_size += id.orig_file_size;
+                          }
+
+                          /* Also do the check for the new file names here. */
+                          gotcha2 = NO;
+                          for (k = 0; k < rnnl[j].counted_new_names; k++)
+                          {
+                             if (my_strcmp(rnnl[j].new_filename[k],
+                                           id.new_filename) == 0)
+                             {
+                                gotcha2 = YES;
+                                break;
+                             }
+                          }
+                          if (gotcha2 == NO)
+                          {
+                             if (rnnl[j].counted_new_names < rnnl[j].ratio_2)
+                             {
+                                (void)memcpy(rnnl[j].new_filename[rnnl[j].counted_new_names],
+                                             id.new_filename,
+                                             MAX_FILENAME_LENGTH);
+                                rnnl[j].counted_new_names++;
+                             }
+                             if (id.new_file_size != -1)
+                             {
+                                new_file_size += id.new_file_size;
+                             }
+                          }
+                          gotcha = YES;
+                          break;
+                       }
+                    }
+                    if (gotcha == NO)
+                    {
+                       orig_file_size += id.orig_file_size;
+                       j = (no_of_rnnl + 1) * sizeof(struct ratio_nn_list);
+                       if ((rnnl = realloc(rnnl, j)) == NULL)
+                       {
+                          (void)xrec(FATAL_DIALOG, "realloc() error : %s (%s %d)",
+                                     strerror(errno), __FILE__, __LINE__);
+                          return;
+                       }
+                       rnnl[no_of_rnnl].unique_id = id.unique_id;
+                       rnnl[no_of_rnnl].time_when_produced = id.time_when_produced;
+                       rnnl[no_of_rnnl].split_job_counter = id.split_job_counter;
+                       rnnl[no_of_rnnl].ratio_1 = id.ratio_1;
+                       rnnl[no_of_rnnl].ratio_2 = id.ratio_2;
+                       rnnl[no_of_rnnl].original_filename = NULL;
+                       RT_ARRAY(rnnl[no_of_rnnl].original_filename, id.ratio_1,
+                                MAX_FILENAME_LENGTH, char);
+                       (void)memcpy(rnnl[no_of_rnnl].original_filename[0],
+                                    id.original_filename,
+                                    MAX_FILENAME_LENGTH);
+                       rnnl[no_of_rnnl].counted_orig_names = 1;
+                       rnnl[no_of_rnnl].new_filename = NULL;
+                       RT_ARRAY(rnnl[no_of_rnnl].new_filename, id.ratio_2,
+                                MAX_FILENAME_LENGTH, char);
+                       (void)memcpy(rnnl[no_of_rnnl].new_filename[0],
+                                    id.new_filename, MAX_FILENAME_LENGTH);
+                       rnnl[no_of_rnnl].counted_new_names = 1;
+                       if (id.new_file_size != -1)
+                       {
+                          new_file_size += id.new_file_size;
+                       }
+                       no_of_rnnl++;
+                    }
+                 }
+                 else
+                 {
+                    orig_file_size += id.orig_file_size;
+                 }
          }
 
-         /* Show new file size. */
+         /*
+          * Show new file size. When adding the total together,
+          * again we can only add it once when we have a n:1 ratio.
+          */
          if (id.new_file_size != -1)
          {
+            int gotcha;
+
             print_file_size(p_new_file_size, id.new_file_size);
-            new_file_size += id.new_file_size;
+            if ((id.ratio_1 > 1) && (id.ratio_2 == 1))
+            {
+               gotcha = NO;
+               for (j = 0; j < no_of_rn1l; j++)
+               {
+                  if ((rn1l[j].unique_id == id.unique_id) &&
+                      (rn1l[j].time_when_produced == id.time_when_produced) &&
+                      (rn1l[j].split_job_counter == id.split_job_counter))
+                  {
+                     gotcha = YES;
+                     count_cpu_production_time = NO;
+                     break;
+                  }
+               }
+               if (gotcha == NO)
+               {
+                  new_file_size += id.new_file_size;
+                  j = (no_of_rn1l + 1) * sizeof(struct ratio_n_list);
+                  if ((rn1l = realloc(rn1l, j)) == NULL)
+                  {
+                     (void)xrec(FATAL_DIALOG, "realloc() error : %s (%s %d)",
+                                strerror(errno), __FILE__, __LINE__);
+                     return;
+                  }
+                  rn1l[no_of_rn1l].unique_id = id.unique_id;
+                  rn1l[no_of_rn1l].time_when_produced = id.time_when_produced;
+                  rn1l[no_of_rn1l].split_job_counter = id.split_job_counter;
+                  no_of_rn1l++;
+               }
+            }
+            else if ((id.ratio_1 > 1) && (id.ratio_2 > 1))
+                 {
+                    /* This is already checked above in original size. */;
+                 }
+                 else
+                 {
+                    new_file_size += id.new_file_size;
+                 }
          }
 
          /* Show return code. */
@@ -1958,10 +2174,13 @@ collect_data(register char *ptr,
                  *(p_cpu_time + MAX_DISPLAYED_PROD_TIME - 1) = '>';
               }
 
-         prod_time += id.production_time;
-         if (id.cpu_time != -1.0)
+         if (count_cpu_production_time == YES)
          {
-            cpu_time += id.cpu_time;
+            prod_time += id.production_time;
+            if (id.cpu_time != -1.0)
+            {
+               cpu_time += id.cpu_time;
+            }
          }
          str_list[i] = XmStringCreateLocalized(line);
          item_counter++;
@@ -1990,6 +2209,18 @@ collect_data(register char *ptr,
 #endif
 
    il[file_no].no_of_items = item_counter;
+
+   free(r1nl);
+   free(rn1l);
+   if (no_of_rnnl > 0)
+   {
+      for (i = 0; i < no_of_rnnl; i++)
+      {
+         FREE_RT_ARRAY(rnnl[i].original_filename);
+         FREE_RT_ARRAY(rnnl[i].new_filename);
+      }
+      free(rnnl);
+   }
 
    return;
 }
