@@ -378,14 +378,10 @@ create_fra(int no_of_dirs)
          (void)strcpy(fra[i].dir_alias, dd[i].dir_alias);
          (void)strcpy(fra[i].host_alias, dd[i].host_alias);
          (void)strcpy(fra[i].url, dd[i].url);
-#ifdef NEW_FRA
          (void)strcpy(fra[i].ls_data_alias, dd[i].ls_data_alias);
          (void)strcpy(fra[i].retrieve_work_dir, dd[i].retrieve_work_dir);
-#endif
          (void)strcpy(fra[i].wait_for_filename, dd[i].wait_for_filename);
-#ifdef NEW_FRA
          (void)strcpy(fra[i].timezone, dd[i].timezone);
-#endif
          fra[i].fsa_pos                = dd[i].fsa_pos;
          fra[i].protocol               = dd[i].protocol;
          fra[i].priority               = dd[i].priority;
@@ -393,9 +389,7 @@ create_fra(int no_of_dirs)
          fra[i].unknown_file_time      = dd[i].unknown_file_time;
          fra[i].queued_file_time       = dd[i].queued_file_time;
          fra[i].locked_file_time       = dd[i].locked_file_time;
-#ifdef NEW_FRA
          fra[i].unreadable_file_time   = dd[i].unreadable_file_time;
-#endif
          fra[i].report_unknown_files   = dd[i].report_unknown_files;
          fra[i].end_character          = dd[i].end_character;
          fra[i].important_dir          = dd[i].important_dir;
@@ -417,9 +411,7 @@ create_fra(int no_of_dirs)
          fra[i].dup_check_timeout      = dd[i].dup_check_timeout;
          fra[i].dup_check_flag         = dd[i].dup_check_flag;
 #endif
-#ifdef NEW_FRA
          fra[i].dir_mode               = dd[i].dir_mode;
-#endif
          fra[i].warn_time              = dd[i].warn_time;
          fra[i].max_errors             = dd[i].max_errors;
          fra[i].in_dc_flag             = dd[i].in_dc_flag;
@@ -458,21 +450,15 @@ create_fra(int no_of_dirs)
          }
          if (dd[i].create_source_dir == YES)
          {
-#ifdef NEW_FRA
             if (fra[i].dir_mode == 0)
             {
                fra[i].dir_mode = DIR_MODE;
             }
-#else
-            fra[i].dir_flag |= CREATE_R_SRC_DIR;
-#endif
          }
-#ifdef NEW_FRA
          else
          {
             fra[i].dir_mode = 0;
          }
-#endif
 #ifdef WITH_INOTIFY
          if (dd[i].inotify_flag & INOTIFY_RENAME_FLAG)
          {
@@ -494,11 +480,7 @@ create_fra(int no_of_dirs)
             fra[i].next_check_time = calc_next_time_array(fra[i].no_of_time_entries,
                                                           &fra[i].te[0],
 #ifdef WITH_TIMEZONE
-# ifdef NEW_FRA
                                                           fra[i].timezone,
-# else
-                                                          "",
-# endif
 #endif
                                                           current_time,
                                                           __FILE__, __LINE__);
@@ -524,14 +506,10 @@ create_fra(int no_of_dirs)
          (void)strcpy(fra[i].dir_alias, dd[i].dir_alias);
          (void)strcpy(fra[i].host_alias, dd[i].host_alias);
          (void)strcpy(fra[i].url, dd[i].url);
-#ifdef NEW_FRA
          (void)strcpy(fra[i].ls_data_alias, dd[i].ls_data_alias);
          (void)strcpy(fra[i].retrieve_work_dir, dd[i].retrieve_work_dir);
-#endif
          (void)strcpy(fra[i].wait_for_filename, dd[i].wait_for_filename);
-#ifdef NEW_FRA
          (void)strcpy(fra[i].timezone, dd[i].timezone);
-#endif
          fra[i].fsa_pos                = dd[i].fsa_pos;
          fra[i].protocol               = dd[i].protocol;
          fra[i].priority               = dd[i].priority;
@@ -539,9 +517,7 @@ create_fra(int no_of_dirs)
          fra[i].unknown_file_time      = dd[i].unknown_file_time;
          fra[i].queued_file_time       = dd[i].queued_file_time;
          fra[i].locked_file_time       = dd[i].locked_file_time;
-#ifdef NEW_FRA
          fra[i].unreadable_file_time   = dd[i].unreadable_file_time;
-#endif
          fra[i].report_unknown_files   = dd[i].report_unknown_files;
          fra[i].end_character          = dd[i].end_character;
          fra[i].important_dir          = dd[i].important_dir;
@@ -563,9 +539,7 @@ create_fra(int no_of_dirs)
          fra[i].dup_check_timeout      = dd[i].dup_check_timeout;
          fra[i].dup_check_flag         = dd[i].dup_check_flag;
 #endif
-#ifdef NEW_FRA
          fra[i].dir_mode               = dd[i].dir_mode;
-#endif
          fra[i].warn_time              = dd[i].warn_time;
          fra[i].in_dc_flag             = dd[i].in_dc_flag;
          fra[i].max_errors             = dd[i].max_errors;
@@ -578,11 +552,7 @@ create_fra(int no_of_dirs)
             fra[i].next_check_time = calc_next_time_array(fra[i].no_of_time_entries,
                                                           &fra[i].te[0],
 #ifdef WITH_TIMEZONE
-# ifdef NEW_FRA
                                                           fra[i].timezone,
-# else
-                                                          "",
-# endif
 #endif
                                                           current_time,
                                                           __FILE__, __LINE__);
@@ -650,7 +620,6 @@ create_fra(int no_of_dirs)
             {
                fra[i].dir_flag ^= DONT_GET_DIR_LIST;
             }
-#ifdef NEW_FRA
             if ((dd[i].create_source_dir == NO) &&
                 (fra[i].dir_mode != 0))
             {
@@ -661,16 +630,6 @@ create_fra(int no_of_dirs)
                  {
                     fra[i].dir_mode = DIR_MODE;
                  }
-#else
-            if (((fra[i].dir_flag & CREATE_R_SRC_DIR) &&
-                 (dd[i].create_source_dir == NO)) ||
-                (((fra[i].dir_flag & CREATE_R_SRC_DIR) == 0) &&
-                 (dd[i].create_source_dir == YES)))
-            {
-               fra[i].dir_flag ^= CREATE_R_SRC_DIR;
-            }
-#endif
-#ifdef NEW_FRA
             if ((fra[i].dir_flag & INFO_TIME_REACHED) &&
                 ((fra[i].info_time < 1) ||
                  ((current_time - fra[i].last_retrieval) < fra[i].info_time)))
@@ -685,7 +644,6 @@ create_fra(int no_of_dirs)
                event_log(0L, EC_DIR, ET_AUTO, EA_INFO_TIME_UNSET, "%s",
                          fra[i].dir_alias);
             }
-#endif
             if ((fra[i].dir_flag & WARN_TIME_REACHED) &&
                 ((fra[i].warn_time < 1) ||
                  ((current_time - fra[i].last_retrieval) < fra[i].warn_time)))
@@ -771,21 +729,15 @@ create_fra(int no_of_dirs)
             }
             if (dd[i].create_source_dir == YES)
             {
-#ifdef NEW_FRA
                if (fra[i].dir_mode == 0)
                {
                   fra[i].dir_mode = DIR_MODE;
                }
-#else
-               fra[i].dir_flag |= CREATE_R_SRC_DIR;
-#endif
             }
-#ifdef NEW_FRA
             else
             {
                fra[i].dir_mode = 0;
             }
-#endif
 #ifdef WITH_INOTIFY
             if (dd[i].inotify_flag & INOTIFY_RENAME_FLAG)
             {

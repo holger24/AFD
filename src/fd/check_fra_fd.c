@@ -103,19 +103,13 @@ struct old_retrieve_data
        {
           char          dir_alias[MAX_DIR_ALIAS_LENGTH + 1];
           char          url[MAX_RECIPIENT_LENGTH];
-#ifdef NEW_FRA
           char          ls_data_alias[MAX_DIR_ALIAS_LENGTH + 1];
           char          retrieve_work_dir[MAX_FILENAME_LENGTH];
-#endif
           char          fullname[MAX_PATH_LENGTH];
           int           fullname_length;
           unsigned char remove;
           unsigned char stupid_mode;
           signed char   remove_dir;
-#ifndef NEW_FRA
-          signed char   local_remote_dir_idc;
-          unsigned int  dir_id;
-#endif
        };
 
 
@@ -189,30 +183,16 @@ check_fra_fd(void)
                for (i = 0; i < no_of_retrieves; i++)
                {
                   (void)strcpy(ord[i].url, fra[retrieve_list[i]].url);
-#ifdef NEW_FRA
                   (void)strcpy(ord[i].ls_data_alias,
                                fra[retrieve_list[i]].ls_data_alias);
                   (void)strcpy(ord[i].retrieve_work_dir,
                                fra[retrieve_list[i]].retrieve_work_dir);
-#else
-                  ord[i].dir_id = fra[retrieve_list[i]].dir_id;
-#endif
                   ord[i].fullname[0] = '\0';
                   (void)strcpy(ord[i].dir_alias,
                                fra[retrieve_list[i]].dir_alias);
                   ord[i].remove = fra[retrieve_list[i]].remove;
                   ord[i].stupid_mode = fra[retrieve_list[i]].stupid_mode;
                   ord[i].remove_dir = NO;
-#ifndef NEW_FRA
-                  if (fra[retrieve_list[i]].in_dc_flag & LOCAL_REMOTE_DIR_IDC)
-                  {
-                     ord[i].local_remote_dir_idc = YES;
-                  }
-                  else
-                  {
-                     ord[i].local_remote_dir_idc = NO;
-                  }
-#endif
                }
             }
          }
@@ -253,7 +233,6 @@ check_fra_fd(void)
                {
                   if ((ord[i].stupid_mode != YES) && (ord[i].remove == NO))
                   {
-#ifdef NEW_FRA
                      int delete_it = YES;
 
                      if (ord[i].ls_data_alias[0] != '\0')
@@ -274,7 +253,6 @@ check_fra_fd(void)
                      }
                      if (delete_it == YES)
                      {
-#endif
                         char fullname[MAX_PATH_LENGTH];
 
                         (void)snprintf(fullname, MAX_PATH_LENGTH, "%s%s%s%s/%s",
@@ -294,9 +272,7 @@ check_fra_fd(void)
                            system_log(DEBUG_SIGN, __FILE__, __LINE__,
                                       "Removed old ls data file %s.", fullname);
                         }
-#ifdef NEW_FRA
                      }
-#endif
                   }
 
                   /*
@@ -454,21 +430,7 @@ check_fra_fd(void)
                {
                   if (ord[i].fullname[0] == '\0')
                   {
-#ifdef NEW_FRA
                      if (create_remote_dir(ord[i].url, ord[i].retrieve_work_dir,
-#else
-                     char local_work_dir[MAX_PATH_LENGTH];
-
-                     if (ord[i].local_remote_dir_idc == YES)
-                     {
-                        get_local_remote_part(ord[i].dir_id, local_work_dir);
-                     }
-                     else
-                     {
-                        (void)strcpy(local_work_dir, p_work_dir);
-                     }
-                     if (create_remote_dir(ord[i].url, local_work_dir,
-#endif
                                            NULL, NULL, NULL, ord[i].fullname,
                                            &ord[i].fullname_length) == INCORRECT)
                      {
@@ -485,22 +447,8 @@ check_fra_fd(void)
                         {
                            if (ord[j].fullname[0] == '\0')
                            {
-#ifdef NEW_FRA
                               if (create_remote_dir(ord[j].url,
                                                     ord[j].retrieve_work_dir,
-#else
-                              char local_work_dir[MAX_PATH_LENGTH];
-
-                              if (ord[j].local_remote_dir_idc == YES)
-                              {
-                                 get_local_remote_part(ord[j].dir_id, local_work_dir);
-                              }
-                              else
-                              {
-                                 (void)strcpy(local_work_dir, p_work_dir);
-                              }
-                              if (create_remote_dir(ord[j].url, local_work_dir,
-#endif
                                                     NULL, NULL, NULL,
                                                     ord[j].fullname,
                                                     &ord[j].fullname_length) == INCORRECT)

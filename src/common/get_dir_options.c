@@ -1,6 +1,6 @@
 /*
  *  get_dir_options.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -66,7 +66,6 @@ DESCR__E_M3
 extern int                        fra_fd,
                                   no_of_dirs;
 extern struct fileretrieve_status *fra;
-
 
 
 /*+++++++++++++++++++++++++++ get_dir_options() +++++++++++++++++++++++++*/
@@ -160,11 +159,7 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                               MAX_OPTION_LENGTH,
                               "%s %d",
                               DEL_UNREADABLE_FILES_ID,
-#ifdef NEW_FRA
                               fra[i].unreadable_file_time / 3600);
-#else
-                              0);
-#endif
                d_o->no_of_dir_options++;
                if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
                {
@@ -219,17 +214,16 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
             }
          }
 #endif
-#ifdef NEW_FRA
          if ((fra[i].in_dc_flag & INFO_TIME_IDC) &&
              (fra[i].info_time != DEFAULT_DIR_INFO_TIME))
          {
             (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],
                            MAX_OPTION_LENGTH,
-# if SIZEOF_TIME_T == 4
+#if SIZEOF_TIME_T == 4
                            "%s %ld",
-# else
+#else
                            "%s %lld",
-# endif
+#endif
                            DIR_INFO_TIME_ID, (pri_time_t)fra[i].info_time);
             d_o->no_of_dir_options++;
             if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
@@ -237,7 +231,6 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
-#endif
          if ((fra[i].in_dc_flag & WARN_TIME_IDC) &&
              (fra[i].warn_time != DEFAULT_DIR_WARN_TIME))
          {
@@ -474,13 +467,10 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
          }
          if (fra[i].dir_flag & CREATE_R_SRC_DIR)
          {
-#ifdef NEW_FRA
             if (fra[i].dir_mode == 0)
             {
-#endif
                (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
                             CREATE_SOURCE_DIR_ID);
-#ifdef NEW_FRA
             }
             else
             {
@@ -494,7 +484,6 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                               "%s %s",
                               CREATE_SOURCE_DIR_ID, &str_number[length - 4]);
             }
-#endif
             d_o->no_of_dir_options++;
             if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
             {
@@ -597,7 +586,6 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
-#ifdef NEW_FRA
          if (fra[i].timezone[0] != '\0')
          {
             (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],
@@ -609,7 +597,6 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
-#endif
          if (fra[i].no_of_time_entries > 0)
          {
             int           j,
@@ -944,23 +931,13 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
-#endif
+#endif /* WITH_DUP_CHECK */
          if (fra[i].in_dc_flag & LOCAL_REMOTE_DIR_IDC)
          {
-#ifdef NEW_FRA
             (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],
                            MAX_OPTION_LENGTH,
                            "%s %s",
                            LOCAL_REMOTE_DIR_ID, fra[i].retrieve_work_dir);
-#else
-            char local_remote_part[MAX_PATH_LENGTH];
-
-            get_local_remote_part(fra[i].dir_id, local_remote_part);
-            (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],
-                           MAX_OPTION_LENGTH,
-                           "%s %s",
-                           LOCAL_REMOTE_DIR_ID, local_remote_part);
-#endif
             d_o->no_of_dir_options++;
             if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
             {

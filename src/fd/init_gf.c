@@ -1,6 +1,6 @@
 /*
  *  init_gf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -195,11 +195,7 @@ init_gf(int argc, char *argv[], int protocol)
    else
    {
       db.te = &fra[db.fra_pos].te[0];
-#ifdef NEW_FRA
       (void)strcpy(db.timezone, fra[db.fra_pos].timezone);
-#else
-      db.timezone[0] = '\0';
-#endif
    }
 #ifdef WITH_SSL
    if ((fsa->protocol & HTTP_FLAG) && (fsa->protocol & SSL_FLAG) &&

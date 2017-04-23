@@ -452,12 +452,8 @@ struct afd_job_list
 #define MAX_OPTION_LENGTH_ELEMENT        12
 #define MAX_PATH_LENGTH_ELEMENT          13
 #define MAX_USER_NAME_LENGTH_ELEMENT     14
-#ifdef NEW_FRA
-# define MAX_TIMEZONE_LENGTH_ELEMENT     15
-# define AFD_TYPESIZE_ELEMENTS           16
-#else
-# define AFD_TYPESIZE_ELEMENTS           15
-#endif
+#define MAX_TIMEZONE_LENGTH_ELEMENT      15
+#define AFD_TYPESIZE_ELEMENTS            16
 struct afd_typesize_data
        {
           int val[AFD_TYPESIZE_ELEMENTS];

@@ -120,9 +120,7 @@ DESCR__E_M3
 #endif
 #include <errno.h>
 #include "amgdefs.h"
-#ifdef NEW_FRA
-# include "version.h"
-#endif
+#include "version.h"
 
 /* External global variables. */
 extern char            *p_work_dir;
@@ -133,9 +131,7 @@ extern int             default_delete_files_flag,
                        default_old_file_time,
                        max_process_per_dir;
 extern unsigned int    max_copied_files;
-#ifdef NEW_FRA
 extern time_t          default_info_time;
-#endif
 extern time_t          default_warn_time;
 extern off_t           max_copied_file_size;
 extern struct dir_data *dd;
@@ -173,17 +169,13 @@ extern struct dir_data *dd;
 #endif
 #define CREATE_SOURCE_DIR_FLAG           134217728
 #define DONT_CREATE_SOURCE_DIR_FLAG      268435456
-#ifdef NEW_FRA
 #define DIR_INFO_TIME_FLAG               536870912
-#endif
 #define MAX_ERRORS_FLAG                  1073741824
 #define DO_NOT_PARALLELIZE_FLAG          2147483648
 #define DO_NOT_MOVE_FLAG                 1
 #define DEL_UNREADABLE_FILES_FLAG        2
-#ifdef NEW_FRA
 #define TIMEZONE_FLAG                    4
 #define LS_DATA_FILENAME_FLAG            8
-#endif
 #define LOCAL_REMOTE_DIR_FLAG            16
 
 
@@ -214,9 +206,7 @@ eval_dir_options(int dir_pos, char *dir_options)
    dd[dir_pos].unknown_file_time = -1;
    dd[dir_pos].queued_file_time = -1;
    dd[dir_pos].locked_file_time = -1;
-#ifdef NEW_FRA
    dd[dir_pos].unreadable_file_time = -1;
-#endif
    dd[dir_pos].report_unknown_files = YES;
    dd[dir_pos].end_character = -1;
 #ifndef _WITH_PTHREAD
@@ -244,11 +234,9 @@ eval_dir_options(int dir_pos, char *dir_options)
    dd[dir_pos].do_not_get_dir_list = NO;
    dd[dir_pos].create_source_dir = NO;
    dd[dir_pos].max_errors = 10;
-#ifdef NEW_FRA
    dd[dir_pos].info_time = default_info_time;
    dd[dir_pos].timezone[0] = '\0';
    dd[dir_pos].ls_data_alias[0] = '\0';
-#endif
    dd[dir_pos].warn_time = default_warn_time;
    dd[dir_pos].keep_connected = DEFAULT_KEEP_CONNECTED_TIME;
 #ifdef WITH_INOTIFY
@@ -877,9 +865,7 @@ eval_dir_options(int dir_pos, char *dir_options)
                  if ((length > 0) && (length != MAX_INT_LENGTH))
                  {
                     number[length] = '\0';
-#ifdef NEW_FRA
                     dd[dir_pos].unreadable_file_time = atoi(number) * 3600;
-#endif
                  }
                  if ((dd[dir_pos].delete_files_flag & UNREADABLE_FILES) == 0)
                  {
@@ -1151,7 +1137,6 @@ eval_dir_options(int dir_pos, char *dir_options)
               }
               dd[dir_pos].create_source_dir = YES;
            }
-#ifdef NEW_FRA
       else if (((used2 & LS_DATA_FILENAME_FLAG) == 0) &&
                (strncmp(ptr, LS_DATA_FILENAME_ID,
                         LS_DATA_FILENAME_ID_LENGTH) == 0))
@@ -1290,7 +1275,6 @@ eval_dir_options(int dir_pos, char *dir_options)
                  ptr++;
               }
            }
-#endif
       else if (((used & DIR_WARN_TIME_FLAG) == 0) &&
                (strncmp(ptr, DIR_WARN_TIME_ID, DIR_WARN_TIME_ID_LENGTH) == 0))
            {

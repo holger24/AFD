@@ -339,18 +339,14 @@ main(int argc, char *argv[])
 
       if ((in_burst_loop == NO) || (values_changed & TARGET_DIR_CHANGED))
       {
-#ifdef NEW_FRA
          if (fra[db.fra_pos].dir_mode == 0)
          {
-#endif
             dir_mode = db.dir_mode;
-#ifdef NEW_FRA
          }
          else
          {
             dir_mode = fra[db.fra_pos].dir_mode;
          }
-#endif
          if (dir_mode != 0)
          {
             if (created_path == NULL)
@@ -481,9 +477,6 @@ main(int argc, char *argv[])
             char        *buffer,
                         local_file[MAX_PATH_LENGTH],
                         local_tmp_file[MAX_PATH_LENGTH],
-#ifndef NEW_FRA
-                        local_work_dir[MAX_PATH_LENGTH],
-#endif
                         *p_local_file,
                         *p_local_tmp_file;
             struct stat stat_buf;
@@ -541,21 +534,8 @@ main(int argc, char *argv[])
 
             /* Get directory where files are to be stored and */
             /* prepare some pointers for the file names.      */
-#ifdef NEW_FRA
             if (create_remote_dir(fra[db.fra_pos].url,
                                   fra[db.fra_pos].retrieve_work_dir, NULL,
-#else
-            if (fra[db.fra_pos].in_dc_flag & LOCAL_REMOTE_DIR_IDC)
-            {
-               get_local_remote_part(fra[db.fra_pos].dir_id, local_work_dir);
-            }
-            else
-            {
-               (void)strcpy(local_work_dir, p_work_dir);
-            }
-
-            if (create_remote_dir(fra[db.fra_pos].url, local_work_dir, NULL,
-#endif
                                   NULL, NULL, local_file,
                                   &local_file_length) == INCORRECT)
             {

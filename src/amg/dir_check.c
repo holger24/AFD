@@ -1165,11 +1165,7 @@ main(int argc, char *argv[])
                   fra[de[i].fra_pos].next_check_time = calc_next_time_array(fra[de[i].fra_pos].no_of_time_entries,
                                                                             &fra[de[i].fra_pos].te[0],
 # ifdef WITH_TIMEZONE
-#  ifdef NEW_FRA
                                                                             fra[de[i].fra_pos].timezone,
-#  else
-                                                                            "",
-#  endif
 # endif
                                                                             start_time,
                                                                             __FILE__, __LINE__);
@@ -1219,7 +1215,6 @@ main(int argc, char *argv[])
                {
                   int ret;
 
-# ifdef NEW_FRA
                   if ((errno == ENOENT) &&
                       ((fra[de[i].fra_pos].dir_mode != 0) ||
                        (default_create_source_dir_mode > 0)))
@@ -1238,26 +1233,6 @@ main(int argc, char *argv[])
                         continue;
                      }
                   }
-# else
-                  if ((errno == ENOENT) &&
-                      ((fra[de[i].fra_pos].dir_flag & CREATE_R_SRC_DIR) ||
-                       (default_create_source_dir_mode > 0)))
-                  {
-                     if ((ret = check_create_path(de[i].dir,
-                                                  (default_create_source_dir_mode > 0) ? default_create_source_dir_mode : DIR_MODE,
-                                                  &error_ptr, YES, YES,
-                                                  NULL)) == CREATED_DIR)
-                     {
-                        p_fra = &fra[de[i].fra_pos];
-                        receive_log(INFO_SIGN, __FILE__, __LINE__, start_time,
-                                    "Created source directory `%s', since it has been removed. @%x",
-                                    de[i].dir, de[i].dir_id);
-
-                        /* Since it is new, there cannot be any files. */
-                        continue;
-                     }
-                  }
-# endif
                   p_fra = &fra[de[i].fra_pos];
                   receive_log(ERROR_SIGN, __FILE__, __LINE__, start_time,
                              "Can't access directory entry %d %s : %s @%x",
@@ -1408,11 +1383,7 @@ main(int argc, char *argv[])
                   fra[de[i].fra_pos].next_check_time = calc_next_time_array(fra[de[i].fra_pos].no_of_time_entries,
                                                                             &fra[de[i].fra_pos].te[0],
 # ifdef WITH_TIMEZONE
-#  ifdef NEW_FRA
                                                                             fra[de[i].fra_pos].timezone,
-#  else
-                                                                            "",
-#  endif
 # endif
                                                                             start_time,
                                                                             __FILE__, __LINE__);
@@ -1438,7 +1409,6 @@ main(int argc, char *argv[])
                event_log(0L, EC_DIR, ET_AUTO, EA_WARN_TIME_SET, "%s",
                          fra[de[i].fra_pos].dir_alias);
             }
-# ifdef NEW_FRA
             if (((*(unsigned char *)((char *)fra - AFD_FEATURE_FLAG_OFFSET_END) & DISABLE_DIR_WARN_TIME) == 0) &&
                 ((fra[de[i].fra_pos].dir_flag & INFO_TIME_REACHED) == 0) &&
                 (fra[de[i].fra_pos].info_time > 0) &&
@@ -1458,7 +1428,6 @@ main(int argc, char *argv[])
                event_log(0L, EC_DIR, ET_AUTO, EA_INFO_TIME_SET, "%s",
                          fra[de[i].fra_pos].dir_alias);
             }
-# endif
          } /* for (i = 0; i < no_of_local_dirs; i++) */
 
          /* Check if time went backwards. */

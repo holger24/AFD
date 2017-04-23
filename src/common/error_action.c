@@ -153,7 +153,6 @@ error_action(char *alias_name, char *action, int type)
                       event_action = 0;
                    }
            }
-#ifdef NEW_FRA
       else if (type == DIR_INFO_ACTION)
            {
               p_alias_name = fullname + snprintf(fullname, MAX_PATH_LENGTH,
@@ -179,7 +178,6 @@ error_action(char *alias_name, char *action, int type)
                       event_action = 0;
                    }
            }
-#endif
       else if (type == DIR_WARN_ACTION)
            {
               p_alias_name = fullname + snprintf(fullname, MAX_PATH_LENGTH,

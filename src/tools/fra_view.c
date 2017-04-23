@@ -209,10 +209,8 @@ main(int argc, char *argv[])
          (void)fprintf(stdout, "Directory alias      : %s\n", fra[i].dir_alias);
          (void)fprintf(stdout, "Directory ID         : %x\n", fra[i].dir_id);
          (void)fprintf(stdout, "URL                  : %s\n", fra[i].url);
-#ifdef NEW_FRA
          (void)fprintf(stdout, "ls data alias        : %s\n", fra[i].ls_data_alias);
          (void)fprintf(stdout, "Retrieve work dir    : %s\n", fra[i].retrieve_work_dir);
-#endif
          (void)fprintf(stdout, "Host alias           : %s\n", fra[i].host_alias);
          (void)fprintf(stdout, "Wait for             : %s\n", fra[i].wait_for_filename);
          (void)fprintf(stdout, "FSA position         : %d\n", fra[i].fsa_pos);
@@ -244,17 +242,13 @@ main(int argc, char *argv[])
 #endif
          (void)fprintf(stdout, "Accumulate           : %u\n", fra[i].accumulate);
          (void)fprintf(stdout, "gt_lt_sign           : %u\n", fra[i].gt_lt_sign);
-#ifdef NEW_FRA
          (void)fprintf(stdout, "Create Dir Mode      : %o\n", fra[i].dir_mode);
-#endif
          (void)fprintf(stdout, "Max errors           : %d\n", fra[i].max_errors);
          (void)fprintf(stdout, "Error counter        : %u\n", fra[i].error_counter);
-#ifdef NEW_FRA
-# if SIZEOF_TIME_T == 4
+#if SIZEOF_TIME_T == 4
          (void)fprintf(stdout, "Info time            : %ld\n", (pri_time_t)fra[i].info_time);
-# else
+#else
          (void)fprintf(stdout, "Info time            : %lld\n", (pri_time_t)fra[i].info_time);
-# endif
 #endif
 #if SIZEOF_TIME_T == 4
          (void)fprintf(stdout, "Warn time            : %ld\n", (pri_time_t)fra[i].warn_time);
@@ -464,12 +458,10 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "CREATE_R_SRC_DIR ");
             }
-#ifdef NEW_FRA
             if (fra[i].dir_flag & INFO_TIME_REACHED)
             {
                (void)fprintf(stdout, "INFO_TIME_REACHED ");
             }
-#endif
             if (fra[i].dir_flag & DO_NOT_PARALLELIZE)
             {
                (void)fprintf(stdout, "DO_NOT_PARALLELIZE ");
@@ -537,12 +529,10 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "MAX_PROCESS");
             }
-#ifdef NEW_FRA
             if (fra[i].in_dc_flag & INFO_TIME_IDC)
             {
                (void)fprintf(stdout, "INFO_TIME");
             }
-#endif
             if (fra[i].in_dc_flag & MAX_ERRORS_IDC)
             {
                (void)fprintf(stdout, "MAX_ERRORS");
@@ -717,13 +707,11 @@ main(int argc, char *argv[])
                                 fra[i].unknown_file_time / 3600);
                }
             }
-#ifdef NEW_FRA
             if (fra[i].delete_files_flag & UNREADABLE_FILES)
             {
                (void)fprintf(stdout, "Unreadable file time : %d (h)\n",
                              fra[i].unreadable_file_time / 3600);
             }
-#endif
             if (fra[i].delete_files_flag & QUEUED_FILES)
             {
                (void)fprintf(stdout, "Queued file time (h) : %d\n",
@@ -768,7 +756,6 @@ main(int argc, char *argv[])
          {
             int j;
 
-#ifdef NEW_FRA
             if (fra[i].timezone[0] == '\0')
             {
                (void)fprintf(stdout, "Timezone             : Not set, taking system default\n");
@@ -778,7 +765,6 @@ main(int argc, char *argv[])
                (void)fprintf(stdout, "Timezone             : %s\n",
                              fra[i].timezone);
             }
-#endif
             (void)fprintf(stdout, "Time option          : %d\n",
                           (int)fra[i].no_of_time_entries);
 

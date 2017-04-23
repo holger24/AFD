@@ -1840,7 +1840,6 @@ check_dirs(char *work_dir)
       (void)unlink(afd_active_file);
       exit(INCORRECT);
    }
-#ifdef NEW_FRA
    (void)strcpy(ptr, ACTION_INFO_DIR);
    if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
    {
@@ -1848,7 +1847,6 @@ check_dirs(char *work_dir)
       (void)unlink(afd_active_file);
       exit(INCORRECT);
    }
-#endif
    (void)strcpy(ptr, ACTION_SUCCESS_DIR);
    if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
    {
@@ -1879,7 +1877,6 @@ check_dirs(char *work_dir)
       (void)unlink(afd_active_file);
       exit(INCORRECT);
    }
-#ifdef NEW_FRA
    (void)strcpy(ptr, ACTION_INFO_DIR);
    if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
    {
@@ -1887,7 +1884,6 @@ check_dirs(char *work_dir)
       (void)unlink(afd_active_file);
       exit(INCORRECT);
    }
-#endif
    (void)strcpy(ptr, ACTION_SUCCESS_DIR);
    if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
    {

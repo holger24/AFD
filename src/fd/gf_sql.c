@@ -1,6 +1,6 @@
 /*
  *  gf_sql.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -138,9 +138,6 @@ main(int argc, char *argv[])
                     *chunkbuffer = NULL,
                     local_file[MAX_PATH_LENGTH],
                     local_tmp_file[MAX_PATH_LENGTH],
-#ifndef NEW_FRA
-                    local_work_dir[MAX_PATH_LENGTH],
-#endif
                     *p_local_file,
                     *p_local_tmp_file;
    struct stat      stat_buf;
@@ -346,21 +343,8 @@ main(int argc, char *argv[])
 
          /* Get directory where files are to be stored and */
          /* prepare some pointers for the file names.      */
-#ifdef NEW_FRA
          if (create_remote_dir(fra[db.fra_pos].url,
                                fra[db.fra_pos].retrieve_work_dir, NULL, NULL,
-#else
-         if (fra[db.fra_pos].in_dc_flag & LOCAL_REMOTE_DIR_IDC)
-         {
-            get_local_remote_part(fra[db.fra_pos].dir_id, local_work_dir);
-         }
-         else
-         {
-            (void)strcpy(local_work_dir, p_work_dir);
-         }
-
-         if (create_remote_dir(fra[db.fra_pos].url, local_work_dir, NULL, NULL,
-#endif
                                NULL, local_file,
                                &local_file_length) == INCORRECT)
          {

@@ -688,7 +688,6 @@ main(int argc, char *argv[])
       if ((in_burst_loop == NO) || (in_burst_loop == NEITHER) ||
           (values_changed & TARGET_DIR_CHANGED))
       {
-#ifdef NEW_FRA
          if (fra[db.fra_pos].dir_mode != 0)
          {
             status = snprintf(msg_str, 5, "%04o", fra[db.fra_pos].dir_mode);
@@ -696,7 +695,6 @@ main(int argc, char *argv[])
          }
          else
          {
-#endif
             if (db.dir_mode == 0)
             {
                str_mode[0] = '\0';
@@ -705,9 +703,7 @@ main(int argc, char *argv[])
             {
                (void)strcpy(str_mode, db.dir_mode_str);
             }
-#ifdef NEW_FRA
          }
-#endif
          if (str_mode[0] != '\0')
          {
             if (created_path == NULL)
@@ -858,9 +854,6 @@ main(int argc, char *argv[])
             char        *buffer,
                         local_file[MAX_PATH_LENGTH],
                         local_tmp_file[MAX_PATH_LENGTH],
-#ifndef NEW_FRA
-                        local_work_dir[MAX_PATH_LENGTH],
-#endif
                         *p_local_file,
                         *p_local_tmp_file;
             struct stat stat_buf;
@@ -918,21 +911,8 @@ main(int argc, char *argv[])
 
             /* Get directory where files are to be stored and */
             /* prepare some pointers for the file names.      */
-#ifdef NEW_FRA
             if (create_remote_dir(fra[db.fra_pos].url,
                                   fra[db.fra_pos].retrieve_work_dir, NULL,
-#else
-            if (fra[db.fra_pos].in_dc_flag & LOCAL_REMOTE_DIR_IDC)
-            {
-               get_local_remote_part(fra[db.fra_pos].dir_id, local_work_dir);
-            }
-            else
-            {
-               (void)strcpy(local_work_dir, p_work_dir);
-            }
-
-            if (create_remote_dir(fra[db.fra_pos].url, local_work_dir, NULL,
-#endif
                                   NULL, NULL, local_file,
                                   &local_file_length) == INCORRECT)
             {
@@ -1023,19 +1003,15 @@ main(int argc, char *argv[])
                   }
                   if (status == -550) /* ie. file has been deleted or is NOT a file. */
                   {
-#ifdef NEW_FRA
                      time_t diff_time = time(NULL) - rl[i].file_mtime;
 
-#endif
                      trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                "Failed to open remote file %s in %s (%d).",
                                rl[i].file_name, fra[db.fra_pos].dir_alias,
                                status);
 
                      if ((eval_timeout(OPEN_REMOTE_ERROR) == OPEN_REMOTE_ERROR) &&
-#ifdef NEW_FRA
                          (diff_time > fra[db.fra_pos].unreadable_file_time) &&
-#endif
                          (fra[db.fra_pos].delete_files_flag & UNREADABLE_FILES))
                      {
                         delete_remote_file(FTP, rl[i].file_name,

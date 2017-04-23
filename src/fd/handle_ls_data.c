@@ -134,7 +134,6 @@ attach_ls_data(void)
                return(INCORRECT);
             }
          }
-#ifdef NEW_FRA
          if (fra[db.fra_pos].ls_data_alias[0] == '\0')
          {
             ptr = fra[db.fra_pos].dir_alias;
@@ -146,11 +145,6 @@ attach_ls_data(void)
          (void)snprintf(list_file, list_file_length, "%s%s%s%s/%s",
                         p_work_dir, AFD_FILE_DIR, INCOMING_DIR, LS_DATA_DIR,
                         ptr);
-#else
-         (void)snprintf(list_file, list_file_length, "%s%s%s%s/%s",
-                        p_work_dir, AFD_FILE_DIR, INCOMING_DIR, LS_DATA_DIR,
-                        fra[db.fra_pos].dir_alias);
-#endif
          if ((rl_fd = open(list_file, O_RDWR | O_CREAT, FILE_MODE)) == -1)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -262,19 +256,11 @@ attach_ls_data(void)
                                    "malloc() error : %s", strerror(errno));
                         return(INCORRECT);
                      }
-#ifdef NEW_FRA
                      (void)snprintf(new_list_file, list_file_length + 1,
                                     "%s%s%s%s/.%s",
                                     p_work_dir, AFD_FILE_DIR,
                                     INCOMING_DIR, LS_DATA_DIR,
                                     (fra[db.fra_pos].ls_data_alias[0] == '\0') ? fra[db.fra_pos].dir_alias : fra[db.fra_pos].ls_data_alias);
-#else
-                     (void)snprintf(new_list_file, list_file_length + 1,
-                                    "%s%s%s%s/.%s",
-                                    p_work_dir, AFD_FILE_DIR,
-                                    INCOMING_DIR, LS_DATA_DIR,
-                                    fra[db.fra_pos].dir_alias);
-#endif
                      if ((new_rl_fd = open(new_list_file,
                                            O_RDWR | O_CREAT | O_TRUNC,
                                            FILE_MODE)) == -1)
@@ -423,19 +409,11 @@ attach_ls_data(void)
                                         "malloc() error : %s", strerror(errno));
                              return(INCORRECT);
                           }
-#ifdef NEW_FRA
                           (void)snprintf(new_list_file, list_file_length + 1,
                                          "%s%s%s%s/.%s",
                                          p_work_dir, AFD_FILE_DIR,
                                          INCOMING_DIR, LS_DATA_DIR,
                                          (fra[db.fra_pos].ls_data_alias[0] == '\0') ? fra[db.fra_pos].dir_alias : fra[db.fra_pos].ls_data_alias);
-#else
-                          (void)snprintf(new_list_file, list_file_length + 1,
-                                         "%s%s%s%s/.%s",
-                                         p_work_dir, AFD_FILE_DIR,
-                                         INCOMING_DIR, LS_DATA_DIR,
-                                         fra[db.fra_pos].dir_alias);
-#endif
                           if ((new_rl_fd = open(new_list_file,
                                                 O_RDWR | O_CREAT | O_TRUNC,
                                                 FILE_MODE)) == -1)

@@ -732,11 +732,7 @@ handle_request(int  sock_sd,
                       show_dir_list(p_data);
                       show_job_list(p_data);
                       (void)fprintf(p_data,
-#ifdef NEW_FRA
                                     "LC %d\r\nWD %s\r\nAV %s\r\nDJ %ld\r\nTD %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n",
-#else
-                                    "LC %d\r\nWD %s\r\nAV %s\r\nDJ %ld\r\nTD %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n",
-#endif
                                     ip_log_defs[trusted_ip_pos], p_work_dir,
                                     PACKAGE_VERSION, danger_no_of_jobs,
                                     MAX_MSG_NAME_LENGTH, MAX_FILENAME_LENGTH,
@@ -746,12 +742,7 @@ handle_request(int  sock_sd,
                                     MAX_DIR_ALIAS_LENGTH, MAX_RECIPIENT_LENGTH,
                                     MAX_WAIT_FOR_LENGTH, MAX_FRA_TIME_ENTRIES,
                                     MAX_OPTION_LENGTH, MAX_PATH_LENGTH,
-#ifdef NEW_FRA
-                                    MAX_USER_NAME_LENGTH, MAX_TIMEZONE_LENGTH
-#else
-                                    MAX_USER_NAME_LENGTH
-#endif
-                                    );
+                                    MAX_USER_NAME_LENGTH, MAX_TIMEZONE_LENGTH);
                       report_changes = YES;
                    }
               else if (strncmp(cmd, NOP_CMD, NOP_CMD_LENGTH) == 0)

@@ -1,6 +1,6 @@
 /*
  *  check_inotify_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -936,7 +936,6 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
       fra[p_de->fra_pos].files_received += files_copied;
       fra[p_de->fra_pos].bytes_received += *total_file_size;
       fra[p_de->fra_pos].last_retrieval = current_time;
-#ifdef NEW_FRA
       if (fra[p_de->fra_pos].dir_flag & INFO_TIME_REACHED)
       {
          fra[p_de->fra_pos].dir_flag &= ~INFO_TIME_REACHED;
@@ -949,7 +948,6 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
          event_log(0L, EC_DIR, ET_AUTO, EA_INFO_TIME_UNSET, "%s",
                    fra[p_de->fra_pos].dir_alias);
       }
-#endif
       if (fra[p_de->fra_pos].dir_flag & WARN_TIME_REACHED)
       {
          fra[p_de->fra_pos].dir_flag &= ~WARN_TIME_REACHED;

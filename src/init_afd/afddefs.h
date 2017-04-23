@@ -27,9 +27,9 @@
 #define DESCR__S_M3             /* Start for Subroutines Man Page.  */
 #define DESCR__E_M3             /* End for Subroutines Man Page.    */
 
-/* #define NEW_FRA */
+/* #define NEW_FRA */    /* Nothing new yet! */
 /* #define NEW_FSA */    /* Nothing new yet! */
-/* #define NEW_PWB */
+/* #define NEW_PWB */    /* Nothing new yet! */
 
 #define WITH_TIMEZONE 1
 
@@ -206,14 +206,12 @@ typedef unsigned long       u_long_64;
 /*
  * The maximum real host name or IP number length.
  * DEFAULT: 40
- * N O T E : When NEW_FRA, NEW_FSA + NEW_PWB is defined we need to
+ * N O T E : When NEW_FSA + NEW_PWB is defined we need to
  *           edit configure.ac and README.configure to correct the
  *           values there too.
- *           The file common/get_local_remote_part.c can be removed
- *           when NEW_FRA is set.
  */
 #ifndef MAX_REAL_HOSTNAME_LENGTH
-# if defined NEW_FRA && defined NEW_FSA && defined NEW_PWB
+# if defined NEW_FSA && defined NEW_PWB
 #  define MAX_REAL_HOSTNAME_LENGTH     65
 # else
 #  define MAX_REAL_HOSTNAME_LENGTH     40
@@ -1232,9 +1230,7 @@ typedef unsigned long       u_long_64;
 #endif
 #define REMOVE_UNUSED_HOSTS_DEF          "REMOVE_UNUSED_HOSTS"
 #define DELETE_STALE_ERROR_JOBS_DEF      "DELETE_STALE_ERROR_JOBS"
-#ifdef NEW_FRA
-# define DEFAULT_DIR_INFO_TIME_DEF       "DEFAULT_DIR_INFO_TIME"
-#endif
+#define DEFAULT_DIR_INFO_TIME_DEF        "DEFAULT_DIR_INFO_TIME"
 #define DEFAULT_DIR_WARN_TIME_DEF        "DEFAULT_DIR_WARN_TIME"
 #define VIEW_DATA_PROG_DEF               "VIEW_DATA_PROG"
 #define VIEW_DATA_PROG_DEF_LENGTH        (sizeof(VIEW_DATA_PROG_DEF) - 1)
@@ -1480,9 +1476,7 @@ typedef unsigned long       u_long_64;
                                             /* TTAAii_CCCC_YYGGgg[_BBB].    */
 #define MAX_TIMEZONE_LENGTH          32     /* The maximum length of a time */
                                             /* zone entry.                  */
-#ifdef NEW_FRA
-# define MAX_TIMEZONE_LENGTH_STR     "MAX_TIMEZONE_LENGTH"
-#endif
+#define MAX_TIMEZONE_LENGTH_STR      "MAX_TIMEZONE_LENGTH"
 
 /* String names for certain definitions. */
 #define MAX_HOSTNAME_LENGTH_STR      "MAX_HOSTNAME_LENGTH"
@@ -1700,9 +1694,7 @@ typedef unsigned long       u_long_64;
 #define DIR_SUCCESS_ACTION         3
 #define DIR_WARN_ACTION            4
 #define DIR_ERROR_ACTION           5
-#ifdef NEW_FRA
 #define DIR_INFO_ACTION            6
-#endif
 
 /* Directory definitions. */
 #define AFD_MSG_DIR                "/messages"
@@ -1735,9 +1727,7 @@ typedef unsigned long       u_long_64;
 #define ACTION_SOURCE_DIR_LENGTH   (sizeof(ACTION_SOURCE_DIR) - 1)
 #define ACTION_ERROR_DIR           "/error"
 #define ACTION_WARN_DIR            "/warn"
-#ifdef NEW_FRA
 #define ACTION_INFO_DIR            "/info"
-#endif
 #define ACTION_SUCCESS_DIR         "/success"
 #define MAIL_HEADER_DIR            "/mail_header"
 #define GROUP_NAME_DIR             "/groups"
@@ -1948,9 +1938,7 @@ typedef unsigned long       u_long_64;
 # define INOTIFY_NEEDS_SCAN        262144
 # define INOTIFY_CREATE            524288
 #endif
-#ifdef NEW_FRA
 #define INFO_TIME_REACHED          1048576
-#endif
 #define DO_NOT_PARALLELIZE         2097152
 #define DO_NOT_MOVE                4194304
 
@@ -2011,9 +1999,7 @@ typedef unsigned long       u_long_64;
 #endif
 #define DONT_DELUKW_FILES_IDC      2048
 #define MAX_PROCESS_IDC            4096
-#ifdef NEW_FRA
 #define INFO_TIME_IDC              8192
-#endif
 #define MAX_ERRORS_IDC             16384
 #define UNREADABLE_FILES_IDC       32768
 #define LOCAL_REMOTE_DIR_IDC       65536
@@ -2160,12 +2146,8 @@ typedef unsigned long       u_long_64;
 #define SHORT_NR                    1048576
 #define LONG_LONG_NR                2097152
 #define PID_T_NR                    4194304
-#ifdef NEW_FRA
-# define MAX_TIMEZONE_LENGTH_NR     8388608
+#define MAX_TIMEZONE_LENGTH_NR      8388608
 #define MAX_CHANGEABLE_VARS         1 + 24 /* First is used as flag*/
-#else
-#define MAX_CHANGEABLE_VARS         1 + 23 /* First is used as flag*/
-#endif
                                        /* which of the below values*/
                                        /* are set.                 */
                                        /* MAX_MSG_NAME_LENGTH      */
@@ -2694,11 +2676,7 @@ struct bd_time_entry
        };
 
 /* Structure holding all neccessary data for retrieving files. */
-#ifdef NEW_FRA
 # define CURRENT_FRA_VERSION     6
-#else
-# define CURRENT_FRA_VERSION     5
-#endif
 #define MAX_FRA_TIME_ENTRIES     12
 #define MAX_FRA_TIME_ENTRIES_STR "MAX_FRA_TIME_ENTRIES"
 #define MAX_WAIT_FOR_LENGTH      64
@@ -2716,7 +2694,6 @@ struct fileretrieve_status
                                             /* mrz_mfa + mrz_mfb =>      */
                                             /*       mrz_mf              */
           char          url[MAX_RECIPIENT_LENGTH];
-#ifdef NEW_FRA
           char          ls_data_alias[MAX_DIR_ALIAS_LENGTH + 1];
                                             /* This allows the user to   */
                                             /* specify the same alias for*/
@@ -2728,14 +2705,11 @@ struct fileretrieve_status
           char          retrieve_work_dir[MAX_FILENAME_LENGTH];
                                             /* Other work dir for        */
                                             /* retrieving data.          */
-#endif
           char          wait_for_filename[MAX_WAIT_FOR_LENGTH]; /* Wait  */
                                             /* for the given file name|  */
                                             /* pattern before we take    */
                                             /* files from this directory.*/
-#ifdef NEW_FRA
           char          timezone[MAX_TIMEZONE_LENGTH + 1];
-#endif
           struct bd_time_entry te[MAX_FRA_TIME_ENTRIES]; /* Time entry,  */
                                             /* when files are to be      */
                                             /* searched for.             */
@@ -2919,10 +2893,8 @@ struct fileretrieve_status
                                             /*|    1 | DC_FILENAME_ONLY |*/
                                             /*+------+------------------+*/
 #endif
-#ifdef NEW_FRA
           mode_t        dir_mode;           /* Permission of directory   */
                                             /* when created via AFD.     */
-#endif
           u_off_t       bytes_received;     /* No. of bytes received so  */
                                             /* far.                      */
           off_t         bytes_in_dir;       /* No. of bytes in this      */
@@ -2946,11 +2918,9 @@ struct fileretrieve_status
           time_t        last_retrieval;     /* Time of last retrieval.   */
           time_t        next_check_time;    /* Next time to check for    */
                                             /* files in directory.       */
-#ifdef NEW_FRA
           time_t        info_time;          /* Time when to inform that  */
                                             /* the directory has not     */
                                             /* received any data.        */
-#endif
           time_t        warn_time;          /* Time when to warn that the*/
                                             /* directory has not received*/
                                             /* any data.                 */
@@ -2958,11 +2928,9 @@ struct fileretrieve_status
                                             /* specified event.          */
           time_t        end_event_handle;   /* Time when to remove the   */
                                             /* specified event.          */
-#ifdef NEW_FRA
           int           unreadable_file_time; /* After how many hours    */
                                             /* can a unreadable file be  */
                                             /* deleted.                  */
-#endif
           int           unknown_file_time;  /* After how many hours can  */
                                             /* a unknown file be deleted.*/
           int           queued_file_time;   /* After how many hours can  */

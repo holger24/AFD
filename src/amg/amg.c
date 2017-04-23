@@ -1,6 +1,6 @@
 /*
  *  amg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -150,9 +150,7 @@ off_t                      fra_size,
                            max_copied_file_size = MAX_COPIED_FILE_SIZE * MAX_COPIED_FILE_SIZE_UNIT;
 mode_t                     create_source_dir_mode = DIR_MODE;
 time_t                     default_warn_time = DEFAULT_DIR_WARN_TIME;
-#ifdef NEW_FRA
 time_t                     default_info_time = DEFAULT_DIR_INFO_TIME;
-#endif
 #ifdef HAVE_MMAP
 off_t                      afd_active_size;
 #endif
@@ -184,9 +182,7 @@ static void                amg_exit(void),
 #ifdef WITH_INOTIFY
                                                 unsigned int *,
 #endif
-#ifdef NEW_FRA
                                                 time_t *,
-#endif
                                                 time_t *, int *),
                            notify_dir_check(void),
                            sig_segv(int),
@@ -497,9 +493,7 @@ main(int argc, char *argv[])
 #ifdef WITH_INOTIFY
                            &default_inotify_flag,
 #endif
-#ifdef NEW_FRA
                            &default_info_time,
-#endif
                            &default_warn_time, &create_source_dir);
 
       /* Lets check and see if create_source_dir was set via afdcfg. */
@@ -1660,9 +1654,7 @@ get_afd_config_value(int          *rescan_time,
 #ifdef WITH_INOTIFY
                      unsigned int *default_inotify_flag,
 #endif
-#ifdef NEW_FRA
                      time_t       *default_info_time,
-#endif
                      time_t       *default_warn_time,
                      int          *create_source_dir)
 {
@@ -1958,7 +1950,6 @@ get_afd_config_value(int          *rescan_time,
          alfc = 0;
          alfbl = 0;
       }
-#ifdef NEW_FRA
       if (get_definition(buffer, DEFAULT_DIR_INFO_TIME_DEF,
                          value, MAX_LONG_LENGTH) != NULL)
       {
@@ -1971,7 +1962,6 @@ get_afd_config_value(int          *rescan_time,
             *default_info_time = DEFAULT_DIR_INFO_TIME;
          }
       }
-#endif
       if (get_definition(buffer, DEFAULT_DIR_WARN_TIME_DEF,
                          value, MAX_LONG_LENGTH) != NULL)
       {

@@ -416,7 +416,6 @@ struct dir_data
           char          retrieve_work_dir[MAX_FILENAME_LENGTH];
                                             /* Storage for the local     */
                                             /* remote directory.         */
-#ifdef NEW_FRA
           char          ls_data_alias[MAX_DIR_ALIAS_LENGTH + 1];
                                             /* This allows the user to   */
                                             /* specify the same alias for*/
@@ -428,7 +427,6 @@ struct dir_data
           char          timezone[MAX_TIMEZONE_LENGTH + 1];
                                             /* The name of the timezone  */
                                             /* is stored here when set.  */
-#endif
           struct bd_time_entry te[MAX_FRA_TIME_ENTRIES];
           unsigned char no_of_time_entries;
           unsigned char remove;             /* Should the files be       */
@@ -486,11 +484,9 @@ struct dir_data
                                             /* a queued file be deleted. */
           int           locked_file_time;   /* After how many hours can  */
                                             /* a locked file be deleted. */
-#ifdef NEW_FRA
           int           unreadable_file_time;/* After how many hours can */
                                             /* a unreadable file be      */
                                             /* deleted.                  */
-#endif
           int           end_character;
           unsigned int  in_dc_flag;         /* Flag to indicate which of */
                                             /* the options have been     */
@@ -574,11 +570,9 @@ struct dir_data
                                             /* longer valid. Value is in */
                                             /* seconds.                  */
 #endif
-#ifdef NEW_FRA
           time_t        info_time;          /* Time when to inform that  */
                                             /* the directory has not     */
                                             /* received any data.        */
-#endif
           time_t        warn_time;          /* Time when to warn that the*/
                                             /* directory has not received*/
                                             /* any data.                 */
