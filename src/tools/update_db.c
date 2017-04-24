@@ -602,7 +602,7 @@ show_debug_data(int  verbose_level,
                   if (line[6 + i] == ']')
                   {
                      get_dc_data_cmd[cmd_pos + i] = ' ';
-                     cmd_pos += i;
+                     cmd_pos += i + 1;
                      if ((cmd_length - cmd_pos) < (DC_ID_STEP_SIZE * (MAX_INT_HEX_LENGTH + 1)))
                      {
                         cmd_length += (DC_ID_STEP_SIZE * (MAX_INT_HEX_LENGTH + 1));
