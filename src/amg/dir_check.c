@@ -1950,6 +1950,23 @@ do_one_dir(void *arg)
    }
 
    if (((*(unsigned char *)((char *)fra - AFD_FEATURE_FLAG_OFFSET_END) & DISABLE_DIR_WARN_TIME) == 0) &&
+       ((fra[de[data->i].fra_pos].dir_flag & INFO_TIME_REACHED) == 0) &&
+       ((start_time - fra[de[data->i].fra_pos].last_retrieval) > fra[de[data->i].fra_pos].info_time))
+   {
+      fra[de[data->i].fra_pos].dir_flag |= INFO_TIME_REACHED;
+      SET_DIR_STATUS(fra[de[data->i].fra_pos].dir_flag,
+                     now,
+                     fra[de[data->i].fra_pos].start_event_handle,
+                     fra[de[data->i].fra_pos].end_event_handle,
+                     fra[de[data->i].fra_pos].dir_status);
+      p_fra = &fra[de[data->i].fra_pos];
+      receive_log(INFO_SIGN, NULL, 0, start_time,
+                  "Info time (%ld) for directory `%s' reached. @%x",
+                  fra[de[data->i].fra_pos].info_time, de[data->i].dir,
+                  de[data->i].dir_id);
+      error_action(de[i].alias, "start", DIR_INFO_ACTION);
+   }
+   if (((*(unsigned char *)((char *)fra - AFD_FEATURE_FLAG_OFFSET_END) & DISABLE_DIR_WARN_TIME) == 0) &&
        ((fra[de[data->i].fra_pos].dir_flag & WARN_TIME_REACHED) == 0) &&
        ((start_time - fra[de[data->i].fra_pos].last_retrieval) > fra[de[data->i].fra_pos].warn_time))
    {

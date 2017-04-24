@@ -412,6 +412,7 @@ create_fra(int no_of_dirs)
          fra[i].dup_check_flag         = dd[i].dup_check_flag;
 #endif
          fra[i].dir_mode               = dd[i].dir_mode;
+         fra[i].info_time              = dd[i].info_time;
          fra[i].warn_time              = dd[i].warn_time;
          fra[i].max_errors             = dd[i].max_errors;
          fra[i].in_dc_flag             = dd[i].in_dc_flag;
@@ -540,6 +541,7 @@ create_fra(int no_of_dirs)
          fra[i].dup_check_flag         = dd[i].dup_check_flag;
 #endif
          fra[i].dir_mode               = dd[i].dir_mode;
+         fra[i].info_time              = dd[i].info_time;
          fra[i].warn_time              = dd[i].warn_time;
          fra[i].in_dc_flag             = dd[i].in_dc_flag;
          fra[i].max_errors             = dd[i].max_errors;
