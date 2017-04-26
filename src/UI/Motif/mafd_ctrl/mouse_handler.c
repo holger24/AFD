@@ -376,19 +376,22 @@ input(Widget w, XtPointer client_data, XEvent *event)
               {
                  if (event->xkey.state & ControlMask)
                  {
-                    if (connect_data[vpl[select_no]].inverse == STATIC)
+                    if (connect_data[vpl[select_no]].type == NORMAL_IDENTIFIER)
                     {
-                       connect_data[vpl[select_no]].inverse = OFF;
-                       ABS_REDUCE_GLOBAL(no_selected_static);
-                    }
-                    else
-                    {
-                       connect_data[vpl[select_no]].inverse = STATIC;
-                       no_selected_static++;
-                    }
+                       if (connect_data[vpl[select_no]].inverse == STATIC)
+                       {
+                          connect_data[vpl[select_no]].inverse = OFF;
+                          ABS_REDUCE_GLOBAL(no_selected_static);
+                       }
+                       else
+                       {
+                          connect_data[vpl[select_no]].inverse = STATIC;
+                          no_selected_static++;
+                       }
 
-                    draw_line_status(select_no, 1);
-                    XFlush(display);
+                       draw_line_status(select_no, 1);
+                       XFlush(display);
+                    }
                  }
                  else if (event->xkey.state & ShiftMask)
                       {
