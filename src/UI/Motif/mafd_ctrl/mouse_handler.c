@@ -253,7 +253,8 @@ input(Widget w, XtPointer client_data, XEvent *event)
       select_no = (event->xbutton.y / line_height) + (column * no_of_rows);
 
       if ((select_no < no_of_hosts_visible) && (last_motion_pos != select_no) &&
-          (select_no > -1))
+          (select_no > -1) &&
+          (connect_data[vpl[select_no]].type == NORMAL_IDENTIFIER))
       {
          if (event->xkey.state & ControlMask)
          {

@@ -196,7 +196,8 @@ mon_input(Widget w, XtPointer client_data, XEvent *event)
       select_no = (event->xbutton.y / line_height) +
                   ((event->xbutton.x / line_length) * no_of_rows);
 
-      if ((select_no < no_of_afds_visible) && (last_motion_pos != select_no))
+      if ((select_no < no_of_afds_visible) && (last_motion_pos != select_no) &&
+          (connect_data[vpl[select_no]].rcmd != '\0'))
       {
          if (event->xkey.state & ControlMask)
          {
