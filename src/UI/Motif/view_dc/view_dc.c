@@ -702,6 +702,7 @@ init_view_dc(int *argc, char *argv[])
       {
          size_t new_size = 30 + MAX_HOSTNAME_LENGTH;
 
+         free(data_buffer);
          if ((view_buffer = malloc(new_size)) == NULL)
          {
 #if SIZEOF_SIZE_T == 4
@@ -805,6 +806,7 @@ init_view_dc(int *argc, char *argv[])
       {
          size_t new_size = 30 + MAX_DIR_ALIAS_LENGTH;
 
+         free(data_buffer);
          if ((view_buffer = malloc(new_size)) == NULL)
          {
 #if SIZEOF_SIZE_T == 4
