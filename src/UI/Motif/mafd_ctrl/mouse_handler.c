@@ -319,7 +319,7 @@ input(Widget w, XtPointer client_data, XEvent *event)
              (event->xkey.state & Mod4Mask)) &&
              (event->xany.type == ButtonPress))
          {
-            if (connect_data[vpl[select_no]].type == 0)
+            if (connect_data[vpl[select_no]].type == NORMAL_IDENTIFIER)
             {
                int    gotcha = NO,
                       i;
@@ -392,7 +392,7 @@ input(Widget w, XtPointer client_data, XEvent *event)
                  }
                  else if (event->xkey.state & ShiftMask)
                       {
-                         if (connect_data[vpl[select_no]].type == 0)
+                         if (connect_data[vpl[select_no]].type == NORMAL_IDENTIFIER)
                          {
                             if (connect_data[vpl[select_no]].inverse == OFF)
                             {
@@ -418,7 +418,7 @@ input(Widget w, XtPointer client_data, XEvent *event)
 
                                   for (j = i + 1; j <= select_no; j++)
                                   {
-                                     if (connect_data[vpl[j]].type == 0)
+                                     if (connect_data[vpl[j]].type == NORMAL_IDENTIFIER)
                                      {
                                         connect_data[vpl[j]].inverse = connect_data[vpl[i]].inverse;
                                         no_selected++;
@@ -450,7 +450,7 @@ input(Widget w, XtPointer client_data, XEvent *event)
                             XFlush(display);
                          }
                       }
-                 else if ((connect_data[vpl[select_no]].type == 1) &&
+                 else if ((connect_data[vpl[select_no]].type == GROUP_IDENTIFIER) &&
                           (in_pm_area(column, event)))
                       {
                          int i,
@@ -468,7 +468,7 @@ input(Widget w, XtPointer client_data, XEvent *event)
                             invisible = 1;
                          }
                          for (i = vpl[select_no] + 1; ((i < no_of_hosts) &&
-                                                       (connect_data[i].type == 0)); i++)
+                                                       (connect_data[i].type == NORMAL_IDENTIFIER)); i++)
                          {
                             connect_data[i].plus_minus = connect_data[vpl[select_no]].plus_minus;
                             if ((invisible == 1) &&
@@ -485,7 +485,7 @@ input(Widget w, XtPointer client_data, XEvent *event)
                          for (i = 0; i < no_of_hosts; i++)
                          {
                             if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                                (connect_data[i].type == 1))
+                                (connect_data[i].type == GROUP_IDENTIFIER))
                             {
                                vpl[j] = i;
                                j++;
@@ -525,7 +525,7 @@ input(Widget w, XtPointer client_data, XEvent *event)
                          destroy_event_reason();
                          destroy_error_history();
                          if (((other_options & FORCE_SHIFT_SELECT) == 0) &&
-                             (connect_data[vpl[select_no]].type == 0))
+                             (connect_data[vpl[select_no]].type == NORMAL_IDENTIFIER))
                          {
                             if (connect_data[vpl[select_no]].inverse == ON)
                             {
@@ -948,7 +948,7 @@ save_setup(void)
 
    for (i = 0; i < no_of_hosts; i++)
    {
-      if ((connect_data[i].type == 1) &&
+      if ((connect_data[i].type == GROUP_IDENTIFIER) &&
           (connect_data[i].plus_minus == PM_CLOSE_STATE))
       {
          invisible_group_counter++;
@@ -976,7 +976,7 @@ save_setup(void)
 
          for (i = 0; i < no_of_hosts; i++)
          {
-            if ((connect_data[i].type == 1) &&
+            if ((connect_data[i].type == GROUP_IDENTIFIER) &&
                 (connect_data[i].plus_minus == PM_CLOSE_STATE))
             {
                length += snprintf(invisible_groups + length,
@@ -1600,7 +1600,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                   {
                      connect_data[i].inverse = OFF;
                      if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                         (connect_data[i].type == 1))
+                         (connect_data[i].type == GROUP_IDENTIFIER))
                      {
                         draw_line_status(j, -1);
                      }
@@ -1608,7 +1608,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                   break;
                }
                if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                   (connect_data[i].type == 1))
+                   (connect_data[i].type == GROUP_IDENTIFIER))
                {
                   j++;
                }
@@ -2777,7 +2777,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
          }
       }
       if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-          (connect_data[i].type == 1))
+          (connect_data[i].type == GROUP_IDENTIFIER))
       {
          m++;
       }
@@ -2969,13 +2969,13 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
       {
          connect_data[i].inverse = OFF;
          if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-             (connect_data[i].type == 1))
+             (connect_data[i].type == GROUP_IDENTIFIER))
          {
             draw_line_status(j, -1);
          }
       }
       if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-          (connect_data[i].type == 1))
+          (connect_data[i].type == GROUP_IDENTIFIER))
       {
          j++;
       }
@@ -4008,7 +4008,7 @@ change_other_cb(Widget w, XtPointer client_data, XtPointer call_data)
          }
          for (i = 0; i < no_of_hosts_visible; i++)
          {
-            if (connect_data[vpl[i]].type == 1)
+            if (connect_data[vpl[i]].type == GROUP_IDENTIFIER)
             {
                draw_line_status(i, 1);
             }

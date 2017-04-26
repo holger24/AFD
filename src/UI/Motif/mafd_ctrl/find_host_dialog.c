@@ -867,7 +867,7 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
 static void
 select_line(int i)
 {
-   if (connect_data[i].type == 0)
+   if (connect_data[i].type == NORMAL_IDENTIFIER)
    {
       if (deselect == YES)
       {
@@ -939,7 +939,7 @@ draw_selections(void)
       if (connect_data[redraw_line[i]].plus_minus == PM_CLOSE_STATE)
       {
          for (j = redraw_line[i]; ((j > 0) &&
-                                   (connect_data[j].type != 1)); j--)
+                                   (connect_data[j].type != GROUP_IDENTIFIER)); j--)
          {
 #ifdef _WITH_DEBUG
             (void)fprintf(stderr,
@@ -959,7 +959,7 @@ draw_selections(void)
 #endif
          connect_data[j].plus_minus = PM_OPEN_STATE;
          for (j = redraw_line[i] + 1; ((j < no_of_hosts) &&
-                                       (connect_data[j].type != 1)); j++)
+                                       (connect_data[j].type != GROUP_IDENTIFIER)); j++)
          {
 #ifdef _WITH_DEBUG
             (void)fprintf(stderr,
@@ -982,7 +982,7 @@ draw_selections(void)
       for (i = 0; i < no_of_hosts; i++)
       {
          if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-             (connect_data[i].type == 1))
+             (connect_data[i].type == GROUP_IDENTIFIER))
          {
             vpl[j] = i;
             j++;

@@ -1027,15 +1027,15 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
       connect_data[i].host_id = fsa[i].host_id;
       if (fsa[i].real_hostname[0][0] == GROUP_IDENTIFIER)
       {
-         connect_data[i].type = 1;
+         connect_data[i].type = GROUP_IDENTIFIER;
       }
       else
       {
-         connect_data[i].type = 0;
+         connect_data[i].type = NORMAL_IDENTIFIER;
       }
       if (no_of_invisible_members > 0)
       {
-         if (connect_data[i].type == 1)
+         if (connect_data[i].type == GROUP_IDENTIFIER)
          {
             gotcha = NO;
             for (j = 0; j < no_of_invisible_members; j++)
@@ -1242,7 +1242,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
    no_of_hosts_visible = 0;
    for (i = 0; i < no_of_hosts; i++)
    {
-      if (connect_data[i].type == 1)
+      if (connect_data[i].type == GROUP_IDENTIFIER)
       {
          prev_plus_minus = connect_data[i].plus_minus;
       }
@@ -1252,7 +1252,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
       }
 
       if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-          (connect_data[i].type == 1))
+          (connect_data[i].type == GROUP_IDENTIFIER))
       {
          vpl[no_of_hosts_visible] = i;
          no_of_hosts_visible++;

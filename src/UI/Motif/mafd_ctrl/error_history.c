@@ -1,6 +1,6 @@
 /*
  *  error_history.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -99,7 +99,7 @@ popup_error_history(int x_root, int y_root, int host_no)
    display_height = DisplayHeight(display, DefaultScreen(display));
    max_lines = display_height / glyph_height;
 
-   if (connect_data[host_no].type == 1)
+   if (connect_data[host_no].type == GROUP_IDENTIFIER)
    {
       int host_alias_shown,
           j;
@@ -117,7 +117,8 @@ popup_error_history(int x_root, int y_root, int host_no)
       }
 
       max_length = lines = 0;
-      for (i = host_no + 1; ((i < no_of_hosts) && (connect_data[i].type != 1) &&
+      for (i = host_no + 1; ((i < no_of_hosts) &&
+                             (connect_data[i].type != GROUP_IDENTIFIER) &&
                              (lines < max_lines)); i++)
       {
          host_alias_shown = NO;

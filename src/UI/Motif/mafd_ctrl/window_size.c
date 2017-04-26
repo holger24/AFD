@@ -125,12 +125,12 @@ window_size(int *window_width, int *window_height)
          group_name_in_row = NO;
          for (j = 0; j < no_of_rows; j++)
          {
-            if (connect_data[vpl[pos]].type == 1)
+            if (connect_data[vpl[pos]].type == GROUP_IDENTIFIER)
             {
                group_name_in_row = YES;
             }
             if ((connect_data[vpl[pos]].plus_minus == PM_OPEN_STATE) &&
-                (connect_data[vpl[pos]].type == 0))
+                (connect_data[vpl[pos]].type == NORMAL_IDENTIFIER))
             {
                if (max_no_parallel_jobs < connect_data[vpl[pos]].allowed_transfers)
                {

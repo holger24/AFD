@@ -204,7 +204,7 @@ check_host_status(Widget w)
          {
             (void)memcpy(&new_connect_data[i], &connect_data[pos],
                          sizeof(struct line));
-            if (new_connect_data[i].type == 1)
+            if (new_connect_data[i].type == GROUP_IDENTIFIER)
             {
                prev_plus_minus = new_connect_data[i].plus_minus;
             }
@@ -223,13 +223,13 @@ check_host_status(Widget w)
             new_connect_data[i].host_id = fsa[i].host_id;
             if (fsa[i].real_hostname[0][0] == GROUP_IDENTIFIER)
             {
-               new_connect_data[i].type = 1;
+               new_connect_data[i].type = GROUP_IDENTIFIER;
                new_connect_data[i].plus_minus = PM_OPEN_STATE;
                prev_plus_minus = PM_OPEN_STATE;
             }
             else
             {
-               new_connect_data[i].type = 0;
+               new_connect_data[i].type = NORMAL_IDENTIFIER;
                if ((i - 1) >= 0)
                {
                   new_connect_data[i].plus_minus = new_connect_data[i - 1].plus_minus;
@@ -440,7 +440,7 @@ check_host_status(Widget w)
       prev_plus_minus = PM_OPEN_STATE;
       for (i = 0; i < no_of_hosts; i++)
       {
-         if (new_connect_data[i].type == 1)
+         if (new_connect_data[i].type == GROUP_IDENTIFIER)
          {
             prev_plus_minus = new_connect_data[i].plus_minus;
          }
@@ -449,7 +449,7 @@ check_host_status(Widget w)
             new_connect_data[i].plus_minus = prev_plus_minus;
          }
          if ((new_connect_data[i].plus_minus == PM_CLOSE_STATE) &&
-             (new_connect_data[i].type != 1))
+             (new_connect_data[i].type != GROUP_IDENTIFIER))
          {
             no_of_hosts_invisible++;
          }
@@ -642,7 +642,7 @@ check_host_status(Widget w)
       if ((line_style & SHOW_JOBS) || (line_style & SHOW_JOBS_COMPACT))
       {
          if ((connect_data[i].plus_minus == PM_OPEN_STATE) &&
-             (connect_data[i].type == 0))
+             (connect_data[i].type == NORMAL_IDENTIFIER))
          {
             if (connect_data[i].allowed_transfers != fsa[i].allowed_transfers)
             {
@@ -1081,7 +1081,7 @@ check_host_status(Widget w)
 
          if ((i < location_where_changed) && (redraw_everything == NO) &&
              ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-              (connect_data[i].type == 1)))
+              (connect_data[i].type == GROUP_IDENTIFIER)))
          {
             if (x == -1)
             {
@@ -1089,7 +1089,7 @@ check_host_status(Widget w)
             }
             if (x != -1)
             {
-               if (connect_data[i].type == 1)
+               if (connect_data[i].type == GROUP_IDENTIFIER)
                {
                   draw_dest_identifier(line_window, line_pixmap, i,
                                        x - DEFAULT_FRAME_SPACE + (3 * glyph_width),
@@ -1116,7 +1116,7 @@ check_host_status(Widget w)
 
             if ((i < location_where_changed) && (redraw_everything == NO) &&
                 ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                 (connect_data[i].type == 1)))
+                 (connect_data[i].type == GROUP_IDENTIFIER)))
             {
                if (x == -1)
                {
@@ -1170,7 +1170,7 @@ check_host_status(Widget w)
 
          if ((i < location_where_changed) && (redraw_everything == NO) &&
              (connect_data[i].plus_minus == PM_OPEN_STATE) &&
-             (connect_data[i].type == 0))
+             (connect_data[i].type == NORMAL_IDENTIFIER))
          {
             if (x == -1)
             {
@@ -1223,7 +1223,7 @@ check_host_status(Widget w)
 
             if ((i < location_where_changed) && (redraw_everything == NO) &&
                 (connect_data[i].plus_minus == PM_OPEN_STATE) &&
-                (connect_data[i].type == 0))
+                (connect_data[i].type == NORMAL_IDENTIFIER))
             {
                if (x == -1)
                {
@@ -1307,7 +1307,7 @@ check_host_status(Widget w)
          }
          if ((i < location_where_changed) && (redraw_everything == NO) &&
              ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-              (connect_data[i].type == 1)))
+              (connect_data[i].type == GROUP_IDENTIFIER)))
          {
             if ((led_changed > 0) || (disable_retrieve_flag_changed == YES))
             {
@@ -1319,7 +1319,7 @@ check_host_status(Widget w)
                {
                   if (led_changed & LED_ONE)
                   {
-                     if (connect_data[i].type == 0)
+                     if (connect_data[i].type == NORMAL_IDENTIFIER)
                      {
                         draw_led(i, 0, x, y);
                      }
@@ -1331,7 +1331,7 @@ check_host_status(Widget w)
                   if ((led_changed & LED_TWO) ||
                       (disable_retrieve_flag_changed == YES))
                   {
-                     if (connect_data[i].type == 0)
+                     if (connect_data[i].type == NORMAL_IDENTIFIER)
                      {
                         draw_led(i, 1, x + led_width + LED_SPACING, y);
                      }
@@ -1373,7 +1373,7 @@ check_host_status(Widget w)
 
             if ((i < location_where_changed) && (redraw_everything == NO) &&
                 ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                 (connect_data[i].type == 1)) &&
+                 (connect_data[i].type == GROUP_IDENTIFIER)) &&
                 (x != -1))
             {
                draw_chars(i, NO_OF_FILES, x, y, column);
@@ -1408,7 +1408,7 @@ check_host_status(Widget w)
 
                if ((i < location_where_changed) && (redraw_everything == NO) &&
                    ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                    (connect_data[i].type == 1)) &&
+                    (connect_data[i].type == GROUP_IDENTIFIER)) &&
                    (x != -1))
                {
                   draw_chars(i, TOTAL_FILE_SIZE, x + (5 * glyph_width),
@@ -1451,7 +1451,7 @@ check_host_status(Widget w)
 
                if ((i < location_where_changed) && (redraw_everything == NO) &&
                    ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                    (connect_data[i].type == 1)) &&
+                    (connect_data[i].type == GROUP_IDENTIFIER)) &&
                    (x != -1))
                {
                   draw_chars(i, TRANSFER_RATE, x + (10 * glyph_width),
@@ -1478,7 +1478,7 @@ check_host_status(Widget w)
 
             if ((i < location_where_changed) && (redraw_everything == NO) &&
                 ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                 (connect_data[i].type == 1)) &&
+                 (connect_data[i].type == GROUP_IDENTIFIER)) &&
                 (x != -1))
             {
                draw_chars(i, ERROR_COUNTER, x + (15 * glyph_width),
@@ -1541,7 +1541,7 @@ check_host_status(Widget w)
 
             if ((i < location_where_changed) && (redraw_everything == NO) &&
                 ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                 (connect_data[i].type == 1)))
+                 (connect_data[i].type == GROUP_IDENTIFIER)))
             {
                if (x == -1)
                {
@@ -1572,7 +1572,7 @@ check_host_status(Widget w)
                  connect_data[i].bar_length[TR_BAR_NO] = max_bar_length;
                  if ((i < location_where_changed) && (redraw_everything == NO) &&
                      ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                      (connect_data[i].type == 1)))
+                      (connect_data[i].type == GROUP_IDENTIFIER)))
                  {
                     if (x == -1)
                     {
@@ -1616,7 +1616,7 @@ check_host_status(Widget w)
 
                if ((i < location_where_changed) && (redraw_everything == NO) &&
                    ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-                    (connect_data[i].type == 1)))
+                    (connect_data[i].type == GROUP_IDENTIFIER)))
                {
                   if (x == -1)
                   {
@@ -1649,7 +1649,7 @@ check_host_status(Widget w)
          (void)fprintf(stderr, "count_channels: i = %d\n", i);
 #endif
          if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-             (connect_data[i].type == 1))
+             (connect_data[i].type == GROUP_IDENTIFIER))
          {
             if ((j = get_vpl_pos(i)) != INCORRECT)
             {
@@ -1798,7 +1798,7 @@ check_for_removed_groups(int prev_no_of_hosts)
 
    for (i = 0; i < prev_no_of_hosts; i++)
    {
-      if (connect_data[i].type == 1)
+      if (connect_data[i].type == GROUP_IDENTIFIER)
       {
          gotcha = NO;
          for (j = 0; j < no_of_hosts; j++)
@@ -1829,7 +1829,7 @@ check_for_removed_groups(int prev_no_of_hosts)
 #endif
             connect_data[i].plus_minus = prev_plus_minus;
             for (j = i + 1; ((j < prev_no_of_hosts) &&
-                             (connect_data[j].type != 1)); j++)
+                             (connect_data[j].type != GROUP_IDENTIFIER)); j++)
             {
 #ifdef _DEBUG
                (void)fprintf(stderr, "Setting %s for %s\n",

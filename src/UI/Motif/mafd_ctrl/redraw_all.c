@@ -91,7 +91,7 @@ redraw_all(void)
    for (i = 0; i < no_of_hosts; i++)
    {
       if ((connect_data[i].plus_minus == PM_OPEN_STATE) ||
-          (connect_data[i].type == 1))
+          (connect_data[i].type == GROUP_IDENTIFIER))
       {
          vpl[j] = i;
          draw_line_status(j, 1);

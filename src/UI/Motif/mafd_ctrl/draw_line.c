@@ -327,7 +327,7 @@ draw_line_status(int pos, signed char delta)
    XFillRectangle(display, line_pixmap, tmp_gc, x, y,
                   line_length[column], line_height);
 
-   if (connect_data[vpl[pos]].type == 1)
+   if (connect_data[vpl[pos]].type == GROUP_IDENTIFIER)
    {
       draw_plus_minus(vpl[pos], x, y);
 
@@ -423,7 +423,8 @@ draw_line_status(int pos, signed char delta)
                 x + x_offset_bars - (max_line_length - line_length[column]) + (int)max_bar_length, y + glyph_height);
    }
 
-   if ((connect_data[vpl[pos]].type == 1) && (other_options & FRAMED_GROUPS))
+   if ((connect_data[vpl[pos]].type == GROUP_IDENTIFIER) &&
+       (other_options & FRAMED_GROUPS))
    {
       XDrawLine(display, line_window, black_line_gc,
                 x,
