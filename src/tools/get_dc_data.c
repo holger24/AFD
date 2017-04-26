@@ -1407,7 +1407,7 @@ show_dir_data(int  dir_pos,
 
    for (i = 0; i < no_of_job_ids; i++)
    {
-      if (jd[i].dir_id_pos == dir_pos)
+      if (jd[i].dir_id == dnb[dir_pos].dir_id)
       {
          for (j = 0; j < no_of_current_jobs; j++)
          {
