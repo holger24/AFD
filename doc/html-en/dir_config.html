@@ -818,6 +818,15 @@ The number file mask entries is unlimited, however the maximum length
 of a single entry should not exceed 256 (FILE_MASK_STEP_SIZE) characters.
 There is also no limit to the numner of file groups.
 </p>
+<p>
+To make the handling of large number of file mask entries easier, one can
+use file mask groups. The group is defined in the same syntax as those for
+directory entries, it begins with a &amp; and a group name in brackets,
+either {} or []. In case the square brackets [] are used the group name will
+be looked up in $AFD_WORK_DIR/etc/group.list and the list of file mask
+entries will be inserted. Curly brackets make it look into the file with
+the name $AFD_WORK_DIR/etc/groups/files/group_name.
+</p>
 <h3 align=center><u><a name="destination">The destination entry [destination]</a></u></h3>
 <p>
 This marks the beginning of the destination section which contains
@@ -2816,7 +2825,7 @@ section. Valid options can be taken from the following table:
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2017 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 31.03.2017
+   Last updated: 27.04.2017
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
