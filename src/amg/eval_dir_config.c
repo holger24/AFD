@@ -195,7 +195,9 @@ static void                   copy_job(int, int, struct dir_group *),
 #else
                               copy_to_file(void),
 #endif
-                              expand_file_filter(struct dir_group *, int *),
+                              expand_file_filter(struct dir_group *, int *,
+                                                 char *, char *, char *,
+                                                 unsigned int *, FILE *),
                               insert_dir(struct dir_group *),
                               insert_hostname(struct dir_group *),
                               sort_jobs(void);
@@ -500,10 +502,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp)
                     {
                        if (*search_ptr == '/')
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "In %s line %d, directory alias name has a / which is not permitted.",
-                                     dcl[dcd].dir_config_file,
-                                     count_new_lines(database, search_ptr));
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                        "In %s line %d, directory alias name has a / which is not permitted.",
+                                        dcl[dcd].dir_config_file,
+                                        count_new_lines(database, search_ptr));
                           i = 0;
                           while ((*search_ptr != '\n') && (*search_ptr != '\0'))
                           {
@@ -1232,7 +1234,10 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp)
                              ((dir->file[dir->fgc].files[total_length + 1] == SQUARE_BRACKET_OPEN) ||
                               (dir->file[dir->fgc].files[total_length + i - 1] == SQUARE_BRACKET_CLOSE))))
                         {
-                           expand_file_filter(dir, &total_length);
+                           expand_file_filter(dir, &total_length,
+                                              dcl[dcd].dir_config_file,
+                                              database, search_ptr,
+                                              warn_counter, debug_fp);
                         }
                         else
                         {
@@ -1905,10 +1910,10 @@ check_dummy_line:
                   {
                      end_ptr = search_ptr;
                   }
-                  system_log(WARN_SIGN, __FILE__, __LINE__,
-                             "%d %s problems in %s at line %d",
-                             j, DIR_OPTION_IDENTIFIER, dcl[dcd].dir_config_file,
-                             count_new_lines(database, end_ptr));
+                  update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                "%d %s problems in %s at line %d",
+                                j, DIR_OPTION_IDENTIFIER, dcl[dcd].dir_config_file,
+                                count_new_lines(database, end_ptr));
                }
                dd[no_of_local_dirs].dir_name[0] = '\0';
                if (dir->type == REMOTE_DIR)
@@ -2085,11 +2090,11 @@ check_dummy_line:
                                                   dd[no_of_local_dirs].remove,
                                                   created_path)) == CREATED_DIR)
                      {
-                        system_log(INFO_SIGN, __FILE__, __LINE__,
-                                   "Created directory `%s' [%s] at line %d from %s",
-                                   dir->location, created_path,
-                                   count_new_lines(database, ptr - 1),
-                                   dcl[dcd].dir_config_file);
+                        update_db_log(INFO_SIGN, __FILE__, __LINE__, debug_fp, NULL,
+                                      "Created directory `%s' [%s] at line %d from %s",
+                                      dir->location, created_path,
+                                      count_new_lines(database, ptr - 1),
+                                      dcl[dcd].dir_config_file);
                      }
                      else if (ret == NO_ACCESS)
                           {
@@ -2293,8 +2298,8 @@ check_dummy_line:
       {
          if (hl[i].in_dir_config != YES)
          {
-            system_log(DEBUG_SIGN, NULL, 0,
-                       "Removing unused host %s.", hl[i].host_alias);
+            update_db_log(DEBUG_SIGN, NULL, 0, debug_fp, NULL,
+                          "Removing unused host %s.", hl[i].host_alias);
 
             /* Remove any nnn counter files for this host. */
             remove_nnn_files(get_str_checksum(hl[i].host_alias));
@@ -2365,27 +2370,27 @@ check_dummy_line:
          /* Tell user what we have found in DIR_CONFIG. */
          if (no_of_local_dirs > 1)
          {
-            system_log(INFO_SIGN, NULL, 0,
-                       "Found %d directory entries with %d recipients in %d destinations.",
-                       no_of_local_dirs, t_rc, t_dgc);
+            update_db_log(INFO_SIGN, NULL, 0, debug_fp, NULL,
+                          "Found %d directory entries with %d recipients in %d destinations.",
+                          no_of_local_dirs, t_rc, t_dgc);
          }
          else if ((no_of_local_dirs == 1) && (t_rc == 1))
               {
-                 system_log(INFO_SIGN, NULL, 0,
-                           "Found one directory entry with %d recipient in %d destination.",
-                            t_rc, t_dgc);
+                 update_db_log(INFO_SIGN, NULL, 0, debug_fp, NULL,
+                               "Found one directory entry with %d recipient in %d destination.",
+                                t_rc, t_dgc);
               }
          else if ((no_of_local_dirs == 1) && (t_rc > 1) && (t_dgc == 1))
               {
-                 system_log(INFO_SIGN, NULL, 0,
-                            "Found one directory entry with %d recipients in %d destination.",
-                            t_rc, t_dgc);
+                 update_db_log(INFO_SIGN, NULL, 0, debug_fp, NULL,
+                                "Found one directory entry with %d recipients in %d destination.",
+                                t_rc, t_dgc);
               }
               else
               {
-                 system_log(INFO_SIGN, NULL, 0,
-                            "Found %d directory entry with %d recipients in %d destinations.",
-                            no_of_local_dirs, t_rc, t_dgc);
+                 update_db_log(INFO_SIGN, NULL, 0, debug_fp, NULL,
+                               "Found %d directory entry with %d recipients in %d destinations.",
+                               no_of_local_dirs, t_rc, t_dgc);
               }
          ret = SUCCESS;
       }
@@ -2427,7 +2432,13 @@ check_dummy_line:
 
 /*++++++++++++++++++++++++ expand_file_filter() ++++++++++++++++++++++++*/
 static void
-expand_file_filter(struct dir_group *dir, int *total_length)
+expand_file_filter(struct dir_group *dir,
+                   int              *total_length,
+                   char             *dir_config_file,
+                   char             *database,
+                   char             *search_ptr,
+                   unsigned int     *warn_counter,
+                   FILE             *debug_fp)
 {
    int  file_group_type,
         i = 0;
@@ -2463,8 +2474,10 @@ expand_file_filter(struct dir_group *dir, int *total_length)
       /* No end marker, so just take it as a normal file entry. */
       /* This should not happen because we did the check before */
       /* calling this function.                                 */
-      system_log(WARN_SIGN, __FILE__, __LINE__,
-                 "Hmm, this should not happen. No closing bracket found!");
+      update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                    "In %s line %d, no closing bracket found.",
+                    dir_config_file,
+                    count_new_lines(database, search_ptr));
    }
 
    return;
