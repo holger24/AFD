@@ -455,6 +455,17 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                     goto done;
                  }
               }
+         if (fra[i].ls_data_alias[0] != '\0')
+         {
+            (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],
+                           MAX_OPTION_LENGTH,
+                           "%s %s", LS_DATA_FILENAME_ID, fra[i].ls_data_alias);
+            d_o->no_of_dir_options++;
+            if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
+            {
+               goto done;
+            }
+         }
          if (fra[i].dir_flag & DONT_GET_DIR_LIST)
          {
             (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
