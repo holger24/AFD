@@ -109,7 +109,7 @@ extern struct filetransfer_status *fsa;
 static void                       calc_transfer_rate(int, clock_t),
                                   check_for_removed_groups(int);
 static int                        check_fsa_data(unsigned int),
-                                  check_disp_data(unsigned int, int);
+                                  check_disp_data(unsigned int, char, int);
 
 
 /*######################### check_host_status() #########################*/
@@ -199,7 +199,7 @@ check_host_status(Widget w)
       end_time = times(&tmsdummy);
       for (i = location_where_changed; i < no_of_hosts; i++)
       {
-         if ((pos = check_disp_data(fsa[i].host_id,
+         if ((pos = check_disp_data(fsa[i].host_id, fsa[i].real_hostname[0][0],
                                     prev_no_of_hosts)) != INCORRECT)
          {
             (void)memcpy(&new_connect_data[i], &connect_data[pos],
@@ -1848,7 +1848,7 @@ check_for_removed_groups(int prev_no_of_hosts)
 
 /*++++++++++++++++++++++++++ check_disp_data() ++++++++++++++++++++++++++*/
 static int
-check_disp_data(unsigned int host_id, int prev_no_of_hosts)
+check_disp_data(unsigned int host_id, char type, int prev_no_of_hosts)
 {
    register int i;
 
@@ -1856,7 +1856,14 @@ check_disp_data(unsigned int host_id, int prev_no_of_hosts)
    {
       if (connect_data[i].host_id == host_id)
       {
-         return(i);
+         if (connect_data[i].type == type)
+         {
+            return(i);
+         }
+         else
+         {
+            return(INCORRECT);
+         }
       }
    }
 

@@ -84,7 +84,7 @@ extern struct mon_status_area *msa;
 /* Local function prototypes. */
 static void                   check_for_removed_groups(int);
 static int                    check_msa_data(char *),
-                              check_disp_data(char *, int);
+                              check_disp_data(char *, char, int);
 
 
 /*######################### check_afd_status() ##########################*/
@@ -166,7 +166,7 @@ check_afd_status(Widget w)
       prev_plus_minus = -1;
       for (i = location_where_changed; i < no_of_afds; i++)
       {
-         if ((pos = check_disp_data(msa[i].afd_alias,
+         if ((pos = check_disp_data(msa[i].afd_alias, msa[i].rcmd[0],
                                     prev_no_of_afds)) != INCORRECT)
          {
             (void)memcpy(&new_connect_data[i], &connect_data[pos],
@@ -1246,7 +1246,7 @@ check_msa_data(char *afd_alias)
 
 /*++++++++++++++++++++++++++ check_disp_data() ++++++++++++++++++++++++++*/
 static int
-check_disp_data(char *afd_alias, int prev_no_of_afds)
+check_disp_data(char *afd_alias, char rcmd, int prev_no_of_afds)
 {
    register int i;
 
@@ -1254,7 +1254,14 @@ check_disp_data(char *afd_alias, int prev_no_of_afds)
    {
       if (my_strcmp(connect_data[i].afd_alias, afd_alias) == 0)
       {
-         return(i);
+         if (connect_data[i].rcmd == rcmd)
+         {
+            return(i);
+         }
+         else
+         {
+            return(INCORRECT);
+         }
       }
    }
 
