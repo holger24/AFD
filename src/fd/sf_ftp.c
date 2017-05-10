@@ -541,8 +541,8 @@ main(int argc, char *argv[])
             {
                if ((disconnect == YES) ||
                    ((burst_2_counter > 0) &&
-                    ((status == 331) || (status == 500) || (status == 503) ||
-                     (status == 530))))
+                    ((status == 331) || (status == 500) || (status == 501) ||
+                     (status == 503) || (status == 530))))
                {
                   /*
                    * Aaargghh..., we need to logout again! The server is
