@@ -168,7 +168,7 @@ main(int argc, char *argv[])
       switch (get_key())
       {
          
-         case 0 : /* So we do not get wrong choice in first loop. /
+         case 0 : /* So we do not get wrong choice in first loop. */
             break;
 
          case '1' : /* total_file_counter */
