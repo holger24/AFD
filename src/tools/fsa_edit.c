@@ -89,8 +89,7 @@ main(int argc, char *argv[])
                 leave_flag = NO,
                 ret;
    unsigned int value;
-   char         file_name[MAX_FILENAME_LENGTH + 1],
-                hostname[MAX_HOSTNAME_LENGTH + 1],
+   char         hostname[MAX_HOSTNAME_LENGTH + 1],
                 work_dir[MAX_PATH_LENGTH];
 
    CHECK_FOR_VERSION(argc, argv);
@@ -168,280 +167,339 @@ main(int argc, char *argv[])
 
       switch (get_key())
       {
-         case 0   : break;
-         case '1' : (void)fprintf(stderr, _("\n\n     Enter value [1] : "));
-                    if (scanf("%11u", &value) == EOF)
-                    {
-                       (void)fprintf(stderr,
-                                     _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
-                                     strerror(errno), __FILE__, __LINE__);
-                       exit(INCORRECT);
-                    }
-                    fsa[position].total_file_counter = (int)value;
-                    break;
-         case '2' : (void)fprintf(stderr, _("\n\n     Enter value [2] : "));
-                    if (scanf("%11u", &value) == EOF)
-                    {
-                       (void)fprintf(stderr,
-                                     _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
-                                     strerror(errno), __FILE__, __LINE__);
-                       exit(INCORRECT);
-                    }
-                    fsa[position].total_file_size = value;
-                    break;
-         case '3' : (void)fprintf(stderr, _("\n\n     Enter value [3] : "));
-                    if (scanf("%11u", &value) == EOF)
-                    {
-                       (void)fprintf(stderr,
-                                     _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
-                                     strerror(errno), __FILE__, __LINE__);
-                       exit(INCORRECT);
-                    }
-                    fsa[position].error_counter = value;
-                    break;
-         case '4' : (void)fprintf(stderr, _("\n\n     Enter value [4] (0 - %d): "),
-                                  fsa[position].allowed_transfers);
-                    if (scanf("%11u", &value) == EOF)
-                    {
-                       (void)fprintf(stderr,
-                                     _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
-                                     strerror(errno), __FILE__, __LINE__);
-                       exit(INCORRECT);
-                    }
-                    if (value <= fsa[position].allowed_transfers)
-                    {
-                       fsa[position].connections = value;
-                    }
-                    else
-                    {
-                       (void)printf(_("Wrong choice!\n"));
-                       break;
-                    }
-                    break;
-         case '5' : (void)fprintf(stdout, "\033[2J\033[3;1H");
-                    (void)fprintf(stdout, "\n\n\n");
-                    (void)fprintf(stdout, "     Start/Stop queue [%d]..........(1)\n",
-                                  (fsa[position].host_status & PAUSE_QUEUE_STAT) ? 1 : 0);
-                    (void)fprintf(stdout, "     Start/Stop transfer [%d].......(2)\n",
-                                  (fsa[position].host_status & STOP_TRANSFER_STAT) ? 1 : 0);
-                    (void)fprintf(stdout, "     Start/Stop auto queue [%d].....(3)\n",
-                                  (fsa[position].host_status & AUTO_PAUSE_QUEUE_STAT) ? 1 : 0);
-                    (void)fprintf(stdout, "     Start/Stop danger queue [%d]...(4)\n",
-                                  (fsa[position].host_status & DANGER_PAUSE_QUEUE_STAT) ? 1 : 0);
+         
+         case 0 : /* So we do not get wrong choice in first loop. /
+            break;
+
+         case '1' : /* total_file_counter */
+            (void)fprintf(stderr, _("\n\n     Enter value [1] : "));
+            if (scanf("%11u", &value) == EOF)
+            {
+               (void)fprintf(stderr,
+                             _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
+                             strerror(errno), __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
+            fsa[position].total_file_counter = (int)value;
+            break;
+
+         case '2' : /* total_file_size */
+            (void)fprintf(stderr, _("\n\n     Enter value [2] : "));
+            if (scanf("%11u", &value) == EOF)
+            {
+               (void)fprintf(stderr,
+                             _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
+                             strerror(errno), __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
+            fsa[position].total_file_size = value;
+            break;
+
+         case '3' : /* error counter */
+            (void)fprintf(stderr, _("\n\n     Enter value [3] : "));
+            if (scanf("%11u", &value) == EOF)
+            {
+               (void)fprintf(stderr,
+                             _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
+                             strerror(errno), __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
+            fsa[position].error_counter = value;
+            break;
+
+         case '4' : /* No. of connections */
+            (void)fprintf(stderr, _("\n\n     Enter value [4] (0 - %d): "),
+                          fsa[position].allowed_transfers);
+            if (scanf("%11u", &value) == EOF)
+            {
+               (void)fprintf(stderr,
+                             _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
+                             strerror(errno), __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
+            if (value <= fsa[position].allowed_transfers)
+            {
+               fsa[position].connections = value;
+            }
+            else
+            {
+               (void)printf(_("Wrong choice!\n"));
+               break;
+            }
+            break;
+
+         case '5' : /* host status */
+            (void)fprintf(stdout, "\033[2J\033[3;1H");
+            (void)fprintf(stdout, "\n\n\n");
+            (void)fprintf(stdout, "     Start/Stop queue [%d]..........(1)\n",
+                          (fsa[position].host_status & PAUSE_QUEUE_STAT) ? 1 : 0);
+            (void)fprintf(stdout, "     Start/Stop transfer [%d].......(2)\n",
+                          (fsa[position].host_status & STOP_TRANSFER_STAT) ? 1 : 0);
+            (void)fprintf(stdout, "     Start/Stop auto queue [%d].....(3)\n",
+                          (fsa[position].host_status & AUTO_PAUSE_QUEUE_STAT) ? 1 : 0);
+            (void)fprintf(stdout, "     Start/Stop danger queue [%d]...(4)\n",
+                          (fsa[position].host_status & DANGER_PAUSE_QUEUE_STAT) ? 1 : 0);
 #ifdef WITH_ERROR_QUEUE
-                    (void)fprintf(stdout, "     Set/Unset error queue flag [%d](5)\n",
-                                  (fsa[position].host_status & ERROR_QUEUE_SET) ? 1 : 0);
+            (void)fprintf(stdout, "     Set/Unset error queue flag [%d](5)\n",
+                          (fsa[position].host_status & ERROR_QUEUE_SET) ? 1 : 0);
 #endif
-                    (void)fprintf(stdout, "     HOST_CONFIG host disabled [%d].(6)\n",
-                                  (fsa[position].host_status & HOST_CONFIG_HOST_DISABLED) ? 1 : 0);
-                    (void)fprintf(stdout, "     Pending errors [%d]............(7)\n",
-                                  (fsa[position].host_status & PENDING_ERRORS) ? 1 : 0);
-                    (void)fprintf(stdout, "     Host errors ackn [%d]..........(8)\n",
-                                  (fsa[position].host_status & HOST_ERROR_ACKNOWLEDGED) ? 1 : 0);
-                    (void)fprintf(stdout, "     Host errors offline [%d].......(9)\n",
-                                  (fsa[position].host_status & HOST_ERROR_OFFLINE) ? 1 : 0);
-                    (void)fprintf(stdout, "     Host errors ackn time [%d].....(a)\n",
-                                  (fsa[position].host_status & HOST_ERROR_ACKNOWLEDGED_T) ? 1 : 0);
-                    (void)fprintf(stdout, "     Host errors offline time [%d]..(b)\n",
-                                  (fsa[position].host_status & HOST_ERROR_OFFLINE_T) ? 1 : 0);
-                    (void)fprintf(stdout, "     Reset integer value to 0 [%d]..(c)\n",
-                                  fsa[position].host_status);
-                    (void)fprintf(stderr, "     None..........................(d) ");
+            (void)fprintf(stdout, "     HOST_CONFIG host disabled [%d].(6)\n",
+                          (fsa[position].host_status & HOST_CONFIG_HOST_DISABLED) ? 1 : 0);
+            (void)fprintf(stdout, "     Pending errors [%d]............(7)\n",
+                          (fsa[position].host_status & PENDING_ERRORS) ? 1 : 0);
+            (void)fprintf(stdout, "     Host errors ackn [%d]..........(8)\n",
+                          (fsa[position].host_status & HOST_ERROR_ACKNOWLEDGED) ? 1 : 0);
+            (void)fprintf(stdout, "     Host errors offline [%d].......(9)\n",
+                          (fsa[position].host_status & HOST_ERROR_OFFLINE) ? 1 : 0);
+            (void)fprintf(stdout, "     Host errors ackn time [%d].....(a)\n",
+                          (fsa[position].host_status & HOST_ERROR_ACKNOWLEDGED_T) ? 1 : 0);
+            (void)fprintf(stdout, "     Host errors offline time [%d]..(b)\n",
+                          (fsa[position].host_status & HOST_ERROR_OFFLINE_T) ? 1 : 0);
+            (void)fprintf(stdout, "     Reset integer value to 0 [%d]..(c)\n",
+                          fsa[position].host_status);
+            (void)fprintf(stderr, "     None..........................(d) ");
 #ifdef LOCK_DEBUG
-                    lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+            lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
 #else
-                    lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+            lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
 #endif
-                    switch (get_key())
-                    {
-                       case '1' : fsa[position].host_status ^= PAUSE_QUEUE_STAT;
-                                  break;
-                       case '2' : fsa[position].host_status ^= STOP_TRANSFER_STAT;
-                                  break;
-                       case '3' : fsa[position].host_status ^= AUTO_PAUSE_QUEUE_STAT;
-                                  break;
-                       case '4' : fsa[position].host_status ^= DANGER_PAUSE_QUEUE_STAT;
-                                  break;
+            switch (get_key())
+            {
+               case '1' : fsa[position].host_status ^= PAUSE_QUEUE_STAT;
+                          break;
+               case '2' : fsa[position].host_status ^= STOP_TRANSFER_STAT;
+                          break;
+               case '3' : fsa[position].host_status ^= AUTO_PAUSE_QUEUE_STAT;
+                          break;
+               case '4' : fsa[position].host_status ^= DANGER_PAUSE_QUEUE_STAT;
+                          break;
 #ifdef WITH_ERROR_QUEUE
-                       case '5' : fsa[position].host_status ^= ERROR_QUEUE_SET;
+               case '5' : fsa[position].host_status ^= ERROR_QUEUE_SET;
                                   break;
 #endif
-                       case '6' : fsa[position].host_status ^= HOST_CONFIG_HOST_DISABLED;
-                                  break;
-                       case '7' : fsa[position].host_status ^= PENDING_ERRORS;
-                                  break;
-                       case '8' : fsa[position].host_status ^= HOST_ERROR_ACKNOWLEDGED;
-                                  break;
-                       case '9' : fsa[position].host_status ^= HOST_ERROR_OFFLINE;
-                                  break;
-                       case 'a' : fsa[position].host_status ^= HOST_ERROR_ACKNOWLEDGED_T;
-                                  break;
-                       case 'b' : fsa[position].host_status ^= HOST_ERROR_OFFLINE_T;
-                                  break;
-                       case 'c' : fsa[position].host_status = 0;
-                                  break;
-                       case 'd' : break;
-                       default  : (void)printf(_("Wrong choice!\n"));
-                                  (void)sleep(1);
-                                  break;
-                    }
+               case '6' : fsa[position].host_status ^= HOST_CONFIG_HOST_DISABLED;
+                          break;
+               case '7' : fsa[position].host_status ^= PENDING_ERRORS;
+                          break;
+               case '8' : fsa[position].host_status ^= HOST_ERROR_ACKNOWLEDGED;
+                          break;
+               case '9' : fsa[position].host_status ^= HOST_ERROR_OFFLINE;
+                          break;
+               case 'a' : fsa[position].host_status ^= HOST_ERROR_ACKNOWLEDGED_T;
+                          break;
+               case 'b' : fsa[position].host_status ^= HOST_ERROR_OFFLINE_T;
+                          break;
+               case 'c' : fsa[position].host_status = 0;
+                          break;
+               case 'd' : break;
+               default  : (void)printf(_("Wrong choice!\n"));
+                          (void)sleep(1);
+                          break;
+            }
 #ifdef LOCK_DEBUG
-                    unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+            unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
 #else
-                    unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+            unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
 #endif
-                    break;
-         case '6' : (void)fprintf(stderr, _("\n\n     Enter value [6] : "));
-                    if (scanf("%11u", &value) == EOF)
-                    {
-                       (void)fprintf(stderr,
-                                     _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
-                                     strerror(errno), __FILE__, __LINE__);
-                       exit(INCORRECT);
-                    }
-                    fsa[position].max_errors = value;
-                    break;
-         case '7' : (void)fprintf(stderr, _("\n\n     Enter value [7] : "));
-                    if (scanf("%11u", &value) == EOF)
-                    {
-                       (void)fprintf(stderr,
-                                     _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
-                                     strerror(errno), __FILE__, __LINE__);
-                       exit(INCORRECT);
-                    }
-                    fsa[position].block_size = value;
-                    break;
-         case '8' : (void)fprintf(stderr, _("\n\n     Enter value [8] (1 - %d): "), MAX_NO_PARALLEL_JOBS);
-                    if (scanf("%11u", &value) == EOF)
-                    {
-                       (void)fprintf(stderr,
-                                     _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
-                                     strerror(errno), __FILE__, __LINE__);
-                       exit(INCORRECT);
-                    }
-                    if ((value > 0) && (value <= MAX_NO_PARALLEL_JOBS))
-                    {
-                       fsa[position].allowed_transfers = value;
-                    }
-                    else
-                    {
-                       (void)printf(_("Wrong choice!\n"));
-                       (void)sleep(1);
-                    }
-                    break;
-         case '9' : (void)fprintf(stderr, _("\n\n     Enter value [9] : "));
-                    if (scanf("%11u", &value) == EOF)
-                    {
-                       (void)fprintf(stderr,
-                                     _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
-                                     strerror(errno), __FILE__, __LINE__);
-                       exit(INCORRECT);
-                    }
-                    fsa[position].transfer_timeout = value;
-                    break;
-         case 'a' : if (fsa[position].real_hostname[0][0] != GROUP_IDENTIFIER)
-                    {
-                       (void)fprintf(stderr, _("\n\n     Enter hostname  : "));
-                       if (scanf("%39s", fsa[position].real_hostname[0]) == EOF)
-                       {
-                          (void)fprintf(stderr,
-                                        _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
-                                        strerror(errno), __FILE__, __LINE__);
-                          exit(INCORRECT);
-                       }
-                    }
-                    break;
-         case 'b' : (void)fprintf(stderr, _("\n\nEnter hostdisplayname: "));
-                    if (scanf("%7s", fsa[position].host_dsp_name) == EOF)
-                    {
-                       (void)fprintf(stderr,
-                                     _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
-                                     strerror(errno), __FILE__, __LINE__);
-                       exit(INCORRECT);
-                    }
-                    break;
-         case 'c' : 
+            break;
+
+         case '6' : /* Max. errors */
+            (void)fprintf(stderr, _("\n\n     Enter value [6] : "));
+            if (scanf("%11u", &value) == EOF)
+            {
+               (void)fprintf(stderr,
+                             _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
+                             strerror(errno), __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
+            fsa[position].max_errors = value;
+            break;
+
+         case '7' : /* Block size */
+            (void)fprintf(stderr, _("\n\n     Enter value [7] : "));
+            if (scanf("%11u", &value) == EOF)
+            {
+               (void)fprintf(stderr,
+                             _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
+                             strerror(errno), __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
+            fsa[position].block_size = value;
+            break;
+
+         case '8' : /* Allowed transfers */
+            (void)fprintf(stderr, _("\n\n     Enter value [8] (1 - %d): "), MAX_NO_PARALLEL_JOBS);
+            if (scanf("%11u", &value) == EOF)
+            {
+               (void)fprintf(stderr,
+                             _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
+                             strerror(errno), __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
+            if ((value > 0) && (value <= MAX_NO_PARALLEL_JOBS))
+            {
+               fsa[position].allowed_transfers = value;
+            }
+            else
+            {
+               (void)printf(_("Wrong choice!\n"));
+               (void)sleep(1);
+            }
+            break;
+
+         case '9' : /* Transfer timeout */
+            (void)fprintf(stderr, _("\n\n     Enter value [9] : "));
+            if (scanf("%11u", &value) == EOF)
+            {
+               (void)fprintf(stderr,
+                             _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
+                             strerror(errno), __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
+            fsa[position].transfer_timeout = value;
+            break;
+
+         case 'a' : /* Real hostname */
+            if (fsa[position].real_hostname[0][0] != GROUP_IDENTIFIER)
+            {
+               char buffer[256];
+
+               (void)fprintf(stderr, _("\n\n     Enter hostname  : "));
+               buffer[0] = '\0';
+               if (scanf("%255s", buffer) == EOF)
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
+                                strerror(errno), __FILE__, __LINE__);
+                  exit(INCORRECT);
+               }
+               (void)memcpy(fsa[position].real_hostname[0], buffer,
+                            MAX_REAL_HOSTNAME_LENGTH);
+               fsa[position].host_dsp_name[MAX_REAL_HOSTNAME_LENGTH - 1] = '\0';
+            }
+            break;
+
+         case 'b' : /* Host display name */
+            {
+               char buffer[256];
+
+               (void)fprintf(stderr, _("\n\nEnter hostdisplayname: "));
+               buffer[0] = '\0';
+               if (scanf("%255s", buffer) == EOF)
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
+                                strerror(errno), __FILE__, __LINE__);
+                  exit(INCORRECT);
+               }
+               (void)memcpy(fsa[position].host_dsp_name, buffer,
+                            MAX_HOSTNAME_LENGTH + 2);
+               fsa[position].host_dsp_name[MAX_HOSTNAME_LENGTH + 1] = '\0';
+            }
+            break;
+
+         case 'c' :  /* Error offline stat */
 #ifdef LOCK_DEBUG
-                    lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+            lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
 #else
-                    lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+            lock_region_w(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
 #endif
-                    fsa[position].host_status ^= HOST_ERROR_OFFLINE_STATIC;
+            fsa[position].host_status ^= HOST_ERROR_OFFLINE_STATIC;
 #ifdef LOCK_DEBUG
-                    unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
+            unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS), __FILE__, __LINE__);
 #else
-                    unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
+            unlock_region(fsa_fd, (AFD_WORD_OFFSET + (position * sizeof(struct filetransfer_status)) + LOCK_HS));
 #endif
-                    break;
-         case 'd' : (void)fprintf(stderr, _("\n\n     Enter value [d] : "));
-                    if (scanf("%11u", &value) == EOF)
+            break;
+
+         case 'd' : /* Active transfers */
+            (void)fprintf(stderr, _("\n\n     Enter value [d] : "));
+            if (scanf("%11u", &value) == EOF)
+            {
+               (void)fprintf(stderr,
+                             _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
+                             strerror(errno), __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
+            if (value > MAX_NO_PARALLEL_JOBS)
+            {
+               (void)printf(_("The value must be between 0 and %d!\n"), MAX_NO_PARALLEL_JOBS);
+               (void)sleep(1);
+            }
+            else
+            {
+               fsa[position].active_transfers = value;
+            }
+            break;
+
+         case 'e' : /* File name */
+            {
+               char buffer[256];
+
+               (void)fprintf(stderr, _("\n\n     Enter value [e] : "));
+               buffer[0] = '\0';
+               if (scanf("%255s", buffer) == EOF)
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
+                                strerror(errno), __FILE__, __LINE__);
+                  exit(INCORRECT);
+               }
+               (void)memcpy(fsa[position].job_status[0].file_name_in_use,
+                            buffer, MAX_FILENAME_LENGTH);
+               fsa[position].job_status[0].file_name_in_use[MAX_FILENAME_LENGTH - 1] = '\0';
+            }
+            break;
+
+         case 'f' : /* Jobs queued */
+            (void)fprintf(stderr, _("\n\n     Enter value [f] : "));
+            if (scanf("%11u", &value) == EOF)
+            {
+               (void)fprintf(stderr,
+                             _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
+                             strerror(errno), __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
+            fsa[position].jobs_queued = value;
+            break;
+
+         case 'g' : /* Transferrate limit */
+            (void)fprintf(stderr, _("\n\n     Enter value [g] : "));
+            if (scanf("%11u", &value) == EOF)
+            {
+               (void)fprintf(stderr,
+                             _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
+                             strerror(errno), __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
+            fsa[position].transfer_rate_limit = value;
+            break;
+
+         case 'h' : /* Original toggle */
+            if ((fsa[position].auto_toggle == ON) &&
+                (fsa[position].original_toggle_pos != NONE))
+            {
+               if (fsa[position].original_toggle_pos == HOST_ONE)
+               {
+                  fsa[position].original_toggle_pos = NONE;
+               }
+               else if (fsa[position].original_toggle_pos == HOST_TWO)
                     {
-                       (void)fprintf(stderr,
-                                     _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
-                                     strerror(errno), __FILE__, __LINE__);
-                       exit(INCORRECT);
+                       fsa[position].original_toggle_pos = NONE;
                     }
-                    if (value > MAX_NO_PARALLEL_JOBS)
-                    {
-                       (void)printf(_("The value must be between 0 and %d!\n"), MAX_NO_PARALLEL_JOBS);
-                       (void)sleep(1);
-                    }
-                    else
-                    {
-                       fsa[position].active_transfers = value;
-                    }
-                    break;
-         case 'e' : (void)fprintf(stderr, _("\n\n     Enter value [e] : "));
-                    file_name[0] = '\0';
-                    if (scanf("%256s", file_name) == EOF)
-                    {
-                       (void)fprintf(stderr,
-                                     _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
-                                     strerror(errno), __FILE__, __LINE__);
-                       exit(INCORRECT);
-                    }
-                    (void)strcpy(fsa[position].job_status[0].file_name_in_use, file_name);
-                    break;
-         case 'f' : (void)fprintf(stderr, _("\n\n     Enter value [f] : "));
-                    if (scanf("%11u", &value) == EOF)
-                    {
-                       (void)fprintf(stderr,
-                                     _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
-                                     strerror(errno), __FILE__, __LINE__);
-                       exit(INCORRECT);
-                    }
-                    fsa[position].jobs_queued = value;
-                    break;
-         case 'g' : (void)fprintf(stderr, _("\n\n     Enter value [g] : "));
-                    if (scanf("%11u", &value) == EOF)
-                    {
-                       (void)fprintf(stderr,
-                                     _("ERROR   : scanf() error, failed to read input : %s (%s %d)\n"),
-                                     strerror(errno), __FILE__, __LINE__);
-                       exit(INCORRECT);
-                    }
-                    fsa[position].transfer_rate_limit = value;
-                    break;
-         case 'h' : if ((fsa[position].auto_toggle == ON) &&
-                        (fsa[position].original_toggle_pos != NONE))
-                    {
-                       if (fsa[position].original_toggle_pos == HOST_ONE)
-                       {
-                          fsa[position].original_toggle_pos = NONE;
-                       }
-                       else if (fsa[position].original_toggle_pos == HOST_TWO)
-                            {
-                               fsa[position].original_toggle_pos = NONE;
-                            }
-                    }
-                    break;
+            }
+            break;
+
          case 'x' :
          case 'Q' :
-         case 'q' : leave_flag = YES;
-                    break;
-         default  : (void)printf(_("Wrong choice!\n"));
-                    (void)sleep(1);
-                    break;
+         case 'q' :
+            leave_flag = YES;
+            break;
+
+         default  :
+            (void)printf(_("Wrong choice!\n"));
+            (void)sleep(1);
+            break;
       }
 
       if (leave_flag == YES)
