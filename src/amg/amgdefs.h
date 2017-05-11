@@ -831,8 +831,7 @@ struct wmo_rep_list
 extern int    amg_zombie_check(pid_t *, int),
               check_full_dc_name_changes(void),
               check_list(struct directory_entry *, char *, struct stat *),
-              check_option(char *),
-              check_time_str(char *),
+              check_option(char *, FILE *),
               com(char),
               convert(char *, char *, int, int, unsigned int, unsigned int,
                       off_t *),
@@ -900,13 +899,13 @@ extern int    amg_zombie_check(pid_t *, int),
                                   off_t *),
 #endif
               check_process_list(int),
-              create_db(void),
+              create_db(FILE *),
 #ifdef WITH_ONETIME
               eval_dir_config(off_t, unsigned int *, FILE *, int),
 #else
               eval_dir_config(off_t, unsigned int *, FILE *),
 #endif
-              eval_dir_options(int, char *),
+              eval_dir_options(int, char *, FILE *),
               get_last_char(char *, off_t),
               handle_options(int, time_t, unsigned int, unsigned int,
                              char *, int *, off_t *),
@@ -921,12 +920,12 @@ extern int    amg_zombie_check(pid_t *, int),
 # endif
                            off_t *),
               reread_dir_config(int, off_t, time_t *, int, int, size_t,
-                                int, int, unsigned int *, FILE *,
+                                int, int, unsigned int *, FILE *, pid_t,
                                 struct host_list *),
               reread_host_config(time_t *, int *, int *, size_t *,
                                  struct host_list **, unsigned int *,
                                  FILE *, int);
-extern pid_t  make_process_amg(char *, char *, int, int, mode_t);
+extern pid_t  make_process_amg(char *, char *, int, int, mode_t, pid_t);
 extern off_t  fax2gts(char *, char *, int);
 extern char   *check_paused_dir(struct directory_entry *, int *, int *, int *),
               *convert_fsa(int, char *, off_t *, int, unsigned char,

@@ -789,7 +789,8 @@ main(int argc, char *argv[])
    {
       dc_pid = make_process_amg(work_dir, DC_PROC_NAME, rescan_time,
                                 max_no_proc,
-                                (create_source_dir == YES) ? create_source_dir_mode : 0);
+                                (create_source_dir == YES) ? create_source_dir_mode : 0,
+                                0);
       if (pid_list != NULL)
       {
          *(pid_t *)(pid_list + ((DC_NO + 1) * sizeof(pid_t))) = dc_pid;
@@ -1198,7 +1199,8 @@ main(int argc, char *argv[])
                                                              DC_PROC_NAME,
                                                              rescan_time,
                                                              max_no_proc,
-                                                             (create_source_dir == YES) ? create_source_dir_mode : 0);
+                                                             (create_source_dir == YES) ? create_source_dir_mode : 0,
+                                                             0);
                                    if (pid_list != NULL)
                                    {
                                       *(pid_t *)(pid_list + ((DC_NO + 1) * sizeof(pid_t))) = dc_pid;
@@ -1460,6 +1462,7 @@ main(int argc, char *argv[])
                                                                     max_no_proc,
                                                                     &dc_warn_counter,
                                                                     uc_reply_fp,
+                                                                    ret_pid,
                                                                     old_hl);
                                       event_log(0L, EC_GLOB, ET_MAN, EA_REREAD_DIR_CONFIG,
                                                 "with %d warnings", dc_warn_counter);
@@ -1620,7 +1623,8 @@ main(int argc, char *argv[])
 
             dc_pid = make_process_amg(work_dir, DC_PROC_NAME,
                                       rescan_time, max_no_proc,
-                                      (create_source_dir == YES) ? create_source_dir_mode : 0);
+                                      (create_source_dir == YES) ? create_source_dir_mode : 0,
+                                      0);
             if (pid_list != NULL)
             {
                *(pid_t *)(pid_list + ((DC_NO + 1) * sizeof(pid_t))) = dc_pid;

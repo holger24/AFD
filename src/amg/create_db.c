@@ -1,6 +1,6 @@
 /*
  *  create_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ DESCR__S_M3
  **               for dir_check
  **
  ** SYNOPSIS
- **   int create_db(void)
+ **   int create_db(FILE *udc_reply_fp)
  **
  ** DESCRIPTION
  **   This function creates structure instant_db and initialises it
@@ -62,6 +62,8 @@ DESCR__S_M3
  **   13.07.2003 H.Kiehl Option "age-limit" is now used by AMG as well.
  **   24.06.2006 H.Kiehl Allow for duplicate directories when the
  **                      directories are in different DIR_CONFIGS.
+ **   11.05.2017 H.Kiehl Use update_db_log() when printing errrors so
+ **                      one sees them with udc.
  **
  */
 DESCR__E_M3
@@ -161,7 +163,7 @@ static void                       write_current_job_list(int);
 
 /*+++++++++++++++++++++++++++++ create_db() +++++++++++++++++++++++++++++*/
 int
-create_db(void)
+create_db(FILE *udc_reply_fp)
 {
    int            amg_data_fd,
                   exec_flag,
@@ -856,10 +858,10 @@ create_db(void)
                     else
                     {
                        db[i].timezone[0] = '\0';
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  "Unable to store the timezone `%s', since we can only store %d bytes. Please contact maintainer (%s) if this is a valid timezone.",
-                                  p_loptions + TIMEZONE_ID_LENGTH + 1,
-                                  MAX_TIMEZONE_LENGTH, AFD_MAINTAINER);
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, udc_reply_fp, NULL,
+                                     "Unable to store the timezone `%s', since we can only store %d bytes. Please contact maintainer (%s) if this is a valid timezone.",
+                                     p_loptions + TIMEZONE_ID_LENGTH + 1,
+                                     MAX_TIMEZONE_LENGTH, AFD_MAINTAINER);
                     }
                  }
 #endif
@@ -874,7 +876,7 @@ create_db(void)
                     {
                        ptr++;
                     }
-                    if (eval_time_str(ptr, &te) == SUCCESS)
+                    if (eval_time_str(ptr, &te, udc_reply_fp) == SUCCESS)
                     {
                        int                  new_size;
                        struct bd_time_entry *tmp_te;
@@ -898,7 +900,8 @@ create_db(void)
                     }
                     else
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__, "%s", ptr);
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__,
+                                     udc_reply_fp, NULL, "%s", ptr);
                     }
                  }
             else if ((db[i].loptions_flag & TIME_ID_FLAG) &&
@@ -911,7 +914,7 @@ create_db(void)
                     {
                        ptr++;
                     }
-                    if (eval_time_str(ptr, &te) == SUCCESS)
+                    if (eval_time_str(ptr, &te, udc_reply_fp) == SUCCESS)
                     {
                        int                  new_size;
                        struct bd_time_entry *tmp_te;
@@ -935,7 +938,8 @@ create_db(void)
                     }
                     else
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__, "%s", ptr);
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__,
+                                     udc_reply_fp, NULL, "%s", ptr);
                     }
                  }
             else if ((db[i].loptions_flag & GTS2TIFF_ID_FLAG) &&
@@ -1030,9 +1034,9 @@ create_db(void)
                                                     (char **)NULL, 10);
             if (errno == ERANGE)
             {
-               system_log(WARN_SIGN, __FILE__, __LINE__,
-                          "Option %s for directory `%s' out of range, resetting to default %u.",
-                          AGE_LIMIT_ID, db[i].dir, default_age_limit);
+               update_db_log(WARN_SIGN, __FILE__, __LINE__, udc_reply_fp, NULL,
+                             "Option %s for directory `%s' out of range, resetting to default %u.",
+                             AGE_LIMIT_ID, db[i].dir, default_age_limit);
                db[i].age_limit = default_age_limit;
             }
          }
@@ -1142,9 +1146,8 @@ create_db(void)
 #endif
            else
            {
-              system_log(FATAL_SIGN, __FILE__, __LINE__,
-                         "Unknown sheme in url: `%s'.",
-                         db[i].recipient);
+              update_db_log(FATAL_SIGN, __FILE__, __LINE__, udc_reply_fp, NULL,
+                            "Unknown sheme in url: `%s'.", db[i].recipient);
               p_afd_status->amg_jobs ^= WRITTING_JID_STRUCT;
               p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
               free(db); free(de);
@@ -1229,9 +1232,9 @@ create_db(void)
       {
          if ((db[i].job_id != 0) && (db[i].job_id == db[j].job_id))
          {
-            system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "Duplicate job entries for job %x with directory %s and recipient %s! Will ignore the duplicate entry.",
-                       db[i].job_id, db[i].dir, db[i].recipient);
+            update_db_log(WARN_SIGN, __FILE__, __LINE__, udc_reply_fp, NULL,
+                          "Duplicate job entries for job %x with directory %s and recipient %s! Will ignore the duplicate entry.",
+                          db[i].job_id, db[i].dir, db[i].recipient);
             db[j].job_id = 0;
          }
       }
@@ -1246,9 +1249,9 @@ create_db(void)
       {
          if (db[i].job_id == db[j].job_id)
          {
-            system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "Duplicate job entries for job %x with directory %s and recipient %s!",
-                       db[i].job_id, db[i].dir, db[i].recipient);
+            update_db_log(WARN_SIGN, __FILE__, __LINE__, udc_reply_fp, NULL,
+                          "Duplicate job entries for job %x with directory %s and recipient %s!",
+                          db[i].job_id, db[i].dir, db[i].recipient);
          }
       }
 # ifdef WITH_ERROR_QUEUE
@@ -1376,14 +1379,14 @@ create_db(void)
 
       if (not_in_same_file_system > 1)
       {
-         system_log(INFO_SIGN, __FILE__, __LINE__,
-                    "%d directories not in the same filesystem as AFD.",
-                    not_in_same_file_system);
+         update_db_log(INFO_SIGN, __FILE__, __LINE__, udc_reply_fp, NULL,
+                       "%d directories not in the same filesystem as AFD.",
+                       not_in_same_file_system);
       }
       else if (not_in_same_file_system == 1)
            {
-              system_log(INFO_SIGN, __FILE__, __LINE__,
-                         "One directory not in the same filesystem as AFD.");
+              update_db_log(INFO_SIGN, __FILE__, __LINE__, udc_reply_fp, NULL,
+                            "One directory not in the same filesystem as AFD.");
            }
    }
 

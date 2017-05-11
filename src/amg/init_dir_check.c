@@ -1,6 +1,6 @@
 /*
  *  init_dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -219,6 +219,7 @@ init_dir_check(int    argc,
 # endif
 #endif
    size_t      size;
+   pid_t       udc_pid;
    char        del_time_job_fifo[MAX_PATH_LENGTH],
 #ifdef _INPUT_LOG
                input_log_fifo[MAX_PATH_LENGTH],
@@ -233,11 +234,13 @@ init_dir_check(int    argc,
                other_fifo[MAX_PATH_LENGTH],
                *p_other_fifo,
                *ptr,
-               receive_log_fifo[MAX_PATH_LENGTH];
+               receive_log_fifo[MAX_PATH_LENGTH],
+               udc_reply_name[MAX_PATH_LENGTH];
    struct stat stat_buf;
+   FILE        *udc_reply_fp = NULL;
 
    /* Get call-up parameters. */
-   if (argc != 6)
+   if (argc != 7)
    {
       usage();
    }
@@ -248,6 +251,15 @@ init_dir_check(int    argc,
       max_process = atoi(argv[3]);
       no_of_local_dirs = atoi(argv[4]);
       default_create_source_dir_mode = (mode_t)strtoul(argv[5], (char **)NULL, 10);
+#if SIZEOF_PID_T == 4
+      udc_pid = atoi(argv[6]);
+#else
+# ifdef HAVE_STRTOLL
+      udc_pid = (pid_t)strtoll(argv[6], (char **)NULL, 10);
+# else
+      udc_pid = (pid_t)strtoul(argv[6], (char **)NULL, 10);
+# endif
+#endif
    }
 
 #ifdef _POSIX_SAVED_IDS
@@ -455,6 +467,29 @@ init_dir_check(int    argc,
 # endif
 #endif
 
+   /* Check if we want to write some information for udc. */
+   if (udc_pid > 0)
+   {
+      (void)snprintf(udc_reply_name, MAX_PATH_LENGTH,
+#if SIZEOF_PID_T == 4
+                     "%s%s%s.%d",
+#else
+                     "%s%s%s.%lld",
+#endif
+                     p_work_dir, FIFO_DIR, DB_UPDATE_REPLY_DEBUG_FILE,
+                     (pri_pid_t)udc_pid);
+
+      /* Ensure file will be created as 644. */
+      (void)umask(S_IWGRP | S_IWOTH);
+      if ((udc_reply_fp = fopen(udc_reply_name, "a")) == NULL)
+      {
+         system_log(WARN_SIGN, __FILE__, __LINE__,
+                    _("Failed to fopen() `%s' : %s"), 
+                    udc_reply_name, strerror(errno));
+      }
+      (void)umask(0);
+   }
+
    /* Open receive log fifo. */
    if ((stat(receive_log_fifo, &stat_buf) < 0) ||
        (!S_ISFIFO(stat_buf.st_mode)))
@@ -622,7 +657,18 @@ init_dir_check(int    argc,
    }
 
    /* Now create the internal database of this process. */
-   no_of_jobs = create_db();
+   no_of_jobs = create_db(udc_reply_fp);
+
+   if (udc_reply_fp != NULL)
+   {
+      (void)fflush(udc_reply_fp);
+      if (fclose(udc_reply_fp) == EOF)
+      {
+         system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                    "Failed to fclose() `%s' : %s",
+                    udc_reply_name, strerror(errno));
+      }
+   }
 
 #ifdef _WITH_PTHREAD
    for (i = 0; i < no_of_local_dirs; i++)
@@ -1315,6 +1361,6 @@ static void
 usage(void)
 {
    (void)fprintf(stderr,
-                 "SYNTAX  : dir_check [--version] <AFD working directory> <rescan time> <no. of. process> <no. of dirs>\n");
+                 "SYNTAX  : dir_check [--version] <AFD working directory> <rescan time> <no. of process> <no. of dirs> <create source dir mode> <udc pid>\n");
    exit(INCORRECT);
 }

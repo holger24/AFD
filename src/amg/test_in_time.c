@@ -1,6 +1,6 @@
 /*
  *  test_in_time.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2006 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -89,7 +89,7 @@ main(int argc, char *argv[])
    }
    for (i = 0; i < (argc - 1); i++)
    {
-      if (eval_time_str(argv[i + 1], &te[i]) == INCORRECT)
+      if (eval_time_str(argv[i + 1], &te[i], NULL) == INCORRECT)
       {
          exit(INCORRECT);
       }

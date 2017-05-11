@@ -1735,13 +1735,15 @@ check_dummy_line:
                               if (check_option(dir->file[dir->fgc].\
                                                dest[dir->file[dir->fgc].dgc].\
                                                options[dir->file[dir->fgc].\
-                                               dest[dir->file[dir->fgc].dgc].oc]) == SUCCESS)
+                                               dest[dir->file[dir->fgc].dgc].oc],
+                                               debug_fp) == SUCCESS)
                               {
                                  dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].oc++;
                               }
                               else
                               {
-                                 update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                 update_db_log(WARN_SIGN, __FILE__, __LINE__,
+                                               debug_fp, warn_counter,
                                                "Removing option `%s' at line %d in %s",
                                                dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].options[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].oc],
                                                count_new_lines(database, ptr),
@@ -1898,7 +1900,7 @@ check_dummy_line:
                dd[no_of_local_dirs].in_dc_flag = 0;
                (void)strcpy(dd[no_of_local_dirs].dir_name, dir->location);
                if ((j = eval_dir_options(no_of_local_dirs,
-                                         dir->dir_options)) != 0)
+                                         dir->dir_options, debug_fp)) != 0)
                {
                   char *end_ptr;
 

@@ -1405,6 +1405,13 @@ typedef unsigned long       u_long_64;
 # define MAX_TIME_T_LENGTH           21
 # define MAX_TIME_T_HEX_LENGTH       17
 #endif
+#if SIZEOF_PID_T == 4
+# define MAX_PID_T_LENGTH            11
+# define MAX_PID_T_HEX_LENGTH         9
+#else
+# define MAX_PID_T_LENGTH            21
+# define MAX_PID_T_HEX_LENGTH        17
+#endif
 #define MAX_TOGGLE_STR_LENGTH        5
 #define MAX_TOGGLE_STR_LENGTH_STR    "MAX_TOGGLE_STR_LENGTH"
 #define MAX_USER_NAME_LENGTH         80     /* Maximum length of the user   */
@@ -1903,6 +1910,7 @@ typedef unsigned long       u_long_64;
 #define REREAD_LOC_INTERFACE_FILE  30
 #define FLUSH_MSG_FIFO_DUMP_QUEUE  31
 #define CHECK_FSA_ENTRIES          32
+#define DATA_READY                 33
 
 #define DELETE_ALL_JOBS_FROM_HOST  1
 #define DELETE_MESSAGE             2
@@ -3905,6 +3913,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     check_lock(char *, char),
                     check_msa(void),
                     check_msg_name(char *),
+                    check_time_str(char *, FILE *),
                     check_typesize_data(int *, FILE *),
                     coe_open(char *, int, ...),
                     convert_grib2wmo(char *, off_t *, char *),
@@ -3928,7 +3937,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     eval_host_config(int *, char *, struct host_list **,
                                      unsigned int *, FILE *, int),
                     eval_timeout(int),
-                    eval_time_str(char *, struct bd_time_entry *),
+                    eval_time_str(char *, struct bd_time_entry *, FILE *),
                     exec_cmd(char *, char **, int, char *, int,
 #ifdef HAVE_SETPRIORITY
                              int,

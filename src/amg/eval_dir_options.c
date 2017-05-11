@@ -26,7 +26,7 @@ DESCR__S_M3
  **   eval_dir_options - evaluates the directory options
  **
  ** SYNOPSIS
- **   int eval_dir_options(int  dir_pos, char *dir_options)
+ **   int eval_dir_options(int  dir_pos, char *dir_options, FILE *cmd_fp)
  **
  ** DESCRIPTION
  **   Reads and evaluates the directory options from one directory
@@ -104,6 +104,8 @@ DESCR__S_M3
  **                      encountered during evaluation.
  **   18.03.2017 H.Kiehl Added "ls data filename" to allow user to set
  **                      this name.
+ **   11.05.2017 H.Kiehl Added parameter cmd_fp, so we can show errors
+ **                      and warnings directly when udc is called.
  **
  */
 DESCR__E_M3
@@ -181,7 +183,7 @@ extern struct dir_data *dd;
 
 /*########################## eval_dir_options() #########################*/
 int
-eval_dir_options(int dir_pos, char *dir_options)
+eval_dir_options(int dir_pos, char *dir_options, FILE *cmd_fp)
 {
    int          old_file_time,
                 problems_found = 0,
@@ -337,10 +339,10 @@ eval_dir_options(int dir_pos, char *dir_options)
                  dd[dir_pos].inotify_flag = (unsigned int)atoi(number);
                  if (dd[dir_pos].inotify_flag > (INOTIFY_RENAME_FLAG | INOTIFY_CLOSE_FLAG | INOTIFY_CREATE_FLAG))
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Incorrect parameter %u for directory option `%s' for directory `%s'. Resetting to %u.",
-                              dd[dir_pos].inotify_flag, INOTIFY_FLAG_ID,
-                              dd[dir_pos].dir_name, default_inotify_flag);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Incorrect parameter %u for directory option `%s' for directory `%s'. Resetting to %u.",
+                                  dd[dir_pos].inotify_flag, INOTIFY_FLAG_ID,
+                                  dd[dir_pos].dir_name, default_inotify_flag);
                     dd[dir_pos].inotify_flag = default_inotify_flag;
                     problems_found++;
                  }
@@ -357,18 +359,18 @@ eval_dir_options(int dir_pos, char *dir_options)
               {
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Value to long for directory option `%s' for directory `%s'.",
-                              INOTIFY_FLAG_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.",
-                              MAX_INT_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Value to long for directory option `%s' for directory `%s'.",
+                                  INOTIFY_FLAG_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.",
+                                  MAX_INT_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No value found or syntax wrong for directory option `%s' for directory `%s'.",
-                              INOTIFY_FLAG_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No value found or syntax wrong for directory option `%s' for directory `%s'.",
+                                  INOTIFY_FLAG_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -408,18 +410,18 @@ eval_dir_options(int dir_pos, char *dir_options)
               {
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Value to long for directory option `%s' for directory `%s'.",
-                              OLD_FILE_TIME_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.",
-                              MAX_INT_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Value to long for directory option `%s' for directory `%s'.",
+                                  OLD_FILE_TIME_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.",
+                                  MAX_INT_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No value found or syntax wrong for directory option `%s' for directory `%s'.",
-                              OLD_FILE_TIME_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No value found or syntax wrong for directory option `%s' for directory `%s'.",
+                                  OLD_FILE_TIME_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -488,18 +490,18 @@ eval_dir_options(int dir_pos, char *dir_options)
               {
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Value to long for directory option `%s' for directory `%s'.",
-                              END_CHARACTER_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.",
-                              MAX_INT_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Value to long for directory option `%s' for directory `%s'.",
+                                  END_CHARACTER_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.",
+                                  MAX_INT_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No value found or syntax wrong for directory option `%s' for directory `%s'.",
-                              END_CHARACTER_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No value found or syntax wrong for directory option `%s' for directory `%s'.",
+                                  END_CHARACTER_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -539,18 +541,18 @@ eval_dir_options(int dir_pos, char *dir_options)
               {
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Value to long for directory option `%s' for directory `%s'.",
-                              MAX_PROCESS_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.",
-                              MAX_INT_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Value to long for directory option `%s' for directory `%s'.",
+                                  MAX_PROCESS_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.",
+                                  MAX_INT_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No value found or syntax wrong for directory option `%s' for directory `%s'.",
-                              MAX_PROCESS_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No value found or syntax wrong for directory option `%s' for directory `%s'.",
+                                  MAX_PROCESS_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -590,18 +592,18 @@ eval_dir_options(int dir_pos, char *dir_options)
               {
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Value to long for directory option `%s' for directory `%s'.",
-                              MAX_ERRORS_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.",
-                              MAX_INT_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Value to long for directory option `%s' for directory `%s'.",
+                                  MAX_ERRORS_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.",
+                                  MAX_INT_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No value found or syntax wrong for directory option `%s' for directory `%s'.",
-                              MAX_ERRORS_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No value found or syntax wrong for directory option `%s' for directory `%s'.",
+                                  MAX_ERRORS_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -628,15 +630,17 @@ eval_dir_options(int dir_pos, char *dir_options)
                  }
                  tmp_char = *end_ptr;
                  *end_ptr = '\0';
-                 if (eval_time_str(ptr, &dd[dir_pos].te[dd[dir_pos].no_of_time_entries]) == SUCCESS)
+                 if (eval_time_str(ptr,
+                                   &dd[dir_pos].te[dd[dir_pos].no_of_time_entries],
+                                   cmd_fp) == SUCCESS)
                  {
                     dd[dir_pos].no_of_time_entries++;
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               "Invalid %s string <%s>, for directory `%s'.",
-                               TIME_ID, ptr, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Invalid %s string <%s>, for directory `%s'.",
+                                  TIME_ID, ptr, dd[dir_pos].dir_name);
                     problems_found++;
                  }
                  *end_ptr = tmp_char;
@@ -656,10 +660,10 @@ eval_dir_options(int dir_pos, char *dir_options)
                  }
                  if (to_many_time_option_warn == YES)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               "Only %d %s options may be set in DIR_CONFIG file for directory `%s'. Ignoring option.",
-                               MAX_FRA_TIME_ENTRIES, TIME_ID,
-                               dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Only %d %s options may be set in DIR_CONFIG file for directory `%s'. Ignoring option.",
+                                  MAX_FRA_TIME_ENTRIES, TIME_ID,
+                                  dd[dir_pos].dir_name);
                     to_many_time_option_warn = NO;
                     problems_found++;
                  }
@@ -722,8 +726,8 @@ eval_dir_options(int dir_pos, char *dir_options)
               {
                  dd[dir_pos].stupid_mode = NO;
               }
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "The directory option 'store remote list' is depreciated! Please use 'store retrieve list' instead.");
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "The directory option 'store remote list' is depreciated! Please use 'store retrieve list' instead.");
               problems_found++;
               while ((*ptr != '\n') && (*ptr != '\0'))
               {
@@ -797,9 +801,9 @@ eval_dir_options(int dir_pos, char *dir_options)
               }
               else
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                           "No time given for directory option `%s' for directory `%s'.",
-                           DEL_OLD_LOCKED_FILES_ID, dd[dir_pos].dir_name);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "No time given for directory option `%s' for directory `%s'.",
+                               DEL_OLD_LOCKED_FILES_ID, dd[dir_pos].dir_name);
                  problems_found++;
               }
               while ((*ptr != '\n') && (*ptr != '\0'))
@@ -875,9 +879,9 @@ eval_dir_options(int dir_pos, char *dir_options)
               }
               else
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                           "No time given for directory option `%s' for directory `%s'.",
-                           DEL_UNREADABLE_FILES_ID, dd[dir_pos].dir_name);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "No time given for directory option `%s' for directory `%s'.",
+                               DEL_UNREADABLE_FILES_ID, dd[dir_pos].dir_name);
                  problems_found++;
               }
               while ((*ptr != '\n') && (*ptr != '\0'))
@@ -989,10 +993,10 @@ eval_dir_options(int dir_pos, char *dir_options)
                        case '0' : /* Nothing to be done here. */
                           break;
                        default :
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Incorrect parameter for directory option `%s' %c%c%c%c",
-                                     CREATE_SOURCE_DIR_ID, ptr,
-                                     ptr + 1, ptr + 2, ptr + 3);
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        "Incorrect parameter for directory option `%s' %c%c%c%c",
+                                        CREATE_SOURCE_DIR_ID, ptr,
+                                        ptr + 1, ptr + 2, ptr + 3);
                            problems_found++;
                           break;
                     }
@@ -1026,17 +1030,17 @@ eval_dir_options(int dir_pos, char *dir_options)
                     default :
                        if (n == 4)
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Incorrect parameter for directory option `%s' %c%c%c%c",
-                                     CREATE_SOURCE_DIR_ID, ptr - 1, ptr,
-                                     ptr + 1, ptr + 2);
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        "Incorrect parameter for directory option `%s' %c%c%c%c",
+                                        CREATE_SOURCE_DIR_ID, ptr - 1, ptr,
+                                        ptr + 1, ptr + 2);
                        }
                        else
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Incorrect parameter for directory option `%s' %c%c%c",
-                                     CREATE_SOURCE_DIR_ID, ptr, ptr + 1,
-                                     ptr + 2);
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        "Incorrect parameter for directory option `%s' %c%c%c",
+                                        CREATE_SOURCE_DIR_ID, ptr, ptr + 1,
+                                        ptr + 2);
                        }
                        problems_found++;
                        break;
@@ -1070,17 +1074,17 @@ eval_dir_options(int dir_pos, char *dir_options)
                     default :
                        if (n == 4)
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Incorrect parameter for directory option `%s' %c%c%c%c",
-                                     CREATE_SOURCE_DIR_ID, ptr - 2, ptr - 1,
-                                     ptr, ptr + 1);
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        "Incorrect parameter for directory option `%s' %c%c%c%c",
+                                        CREATE_SOURCE_DIR_ID, ptr - 2, ptr - 1,
+                                        ptr, ptr + 1);
                        }
                        else
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Incorrect parameter for directory option `%s' %c%c%c",
-                                     CREATE_SOURCE_DIR_ID, ptr - 1, ptr,
-                                     ptr + 1);
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        "Incorrect parameter for directory option `%s' %c%c%c",
+                                        CREATE_SOURCE_DIR_ID, ptr - 1, ptr,
+                                        ptr + 1);
                        }
                        problems_found++;
                        break;
@@ -1114,17 +1118,17 @@ eval_dir_options(int dir_pos, char *dir_options)
                     default :
                        if (n == 4)
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Incorrect parameter for directory option `%s' %c%c%c%c",
-                                     CREATE_SOURCE_DIR_ID, ptr - 3, ptr - 2,
-                                     ptr - 1, ptr);
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        "Incorrect parameter for directory option `%s' %c%c%c%c",
+                                        CREATE_SOURCE_DIR_ID, ptr - 3, ptr - 2,
+                                        ptr - 1, ptr);
                        }
                        else
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Incorrect parameter for directory option `%s' %c%c%c",
-                                     CREATE_SOURCE_DIR_ID, ptr - 2, ptr - 1,
-                                     ptr);
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        "Incorrect parameter for directory option `%s' %c%c%c",
+                                        CREATE_SOURCE_DIR_ID, ptr - 2, ptr - 1,
+                                        ptr);
                        }
                        problems_found++;
                        break;
@@ -1162,10 +1166,10 @@ eval_dir_options(int dir_pos, char *dir_options)
               else
               {
                  dd[dir_pos].ls_data_alias[0] = '\0';
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                           "For directory option `%s' for directory `%s', the value is to long. May only be %d bytes long.",
-                           LS_DATA_FILENAME_ID, dd[dir_pos].dir_name,
-                           MAX_DIR_ALIAS_LENGTH);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "For directory option `%s' for directory `%s', the value is to long. May only be %d bytes long.",
+                               LS_DATA_FILENAME_ID, dd[dir_pos].dir_name,
+                               MAX_DIR_ALIAS_LENGTH);
                  problems_found++;
               }
               while ((*ptr != '\n') && (*ptr != '\0'))
@@ -1197,10 +1201,10 @@ eval_dir_options(int dir_pos, char *dir_options)
               else
               {
                  dd[dir_pos].timezone[0] = '\0';
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                           "For directory option `%s' for directory `%s', the value is to long. May only be %d bytes long. Please contact maintainer (%s) if this is a valid timezone.",
-                           TIMEZONE_ID, dd[dir_pos].dir_name,
-                           MAX_TIMEZONE_LENGTH, AFD_MAINTAINER);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "For directory option `%s' for directory `%s', the value is to long. May only be %d bytes long. Please contact maintainer (%s) if this is a valid timezone.",
+                               TIMEZONE_ID, dd[dir_pos].dir_name,
+                               MAX_TIMEZONE_LENGTH, AFD_MAINTAINER);
                  problems_found++;
               }
               while ((*ptr != '\n') && (*ptr != '\0'))
@@ -1231,14 +1235,14 @@ eval_dir_options(int dir_pos, char *dir_options)
                  dd[dir_pos].info_time = (time_t)atol(number);
                  if (dd[dir_pos].info_time < 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
 #if SIZEOF_TIME_T == 4
-                               "A value less then 0 for directory option `%s' for directory `%s' is no possible, setting default %ld.",
+                                  "A value less then 0 for directory option `%s' for directory `%s' is no possible, setting default %ld.",
 #else
-                               "A value less then 0 for directory option `%s' for directory `%s' is no possible, setting default %lld.",
+                                  "A value less then 0 for directory option `%s' for directory `%s' is no possible, setting default %lld.",
 #endif
-                               DIR_INFO_TIME_ID, dd[dir_pos].dir_name,
-                               (pri_time_t)default_info_time);
+                                  DIR_INFO_TIME_ID, dd[dir_pos].dir_name,
+                                  (pri_time_t)default_info_time);
                     problems_found++;
                     dd[dir_pos].info_time = default_info_time;
                  }
@@ -1255,18 +1259,18 @@ eval_dir_options(int dir_pos, char *dir_options)
               {
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Value to long for directory option `%s' for directory `%s'.",
-                              DIR_INFO_TIME_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.",
-                              MAX_LONG_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Value to long for directory option `%s' for directory `%s'.",
+                                  DIR_INFO_TIME_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.",
+                                  MAX_LONG_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No value found or syntax wrong for directory option `%s' for directory `%s'.",
-                              DIR_INFO_TIME_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No value found or syntax wrong for directory option `%s' for directory `%s'.",
+                                  DIR_INFO_TIME_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -1298,14 +1302,14 @@ eval_dir_options(int dir_pos, char *dir_options)
                  dd[dir_pos].warn_time = (time_t)atol(number);
                  if (dd[dir_pos].warn_time < 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
 #if SIZEOF_TIME_T == 4
-                               "A value less then 0 for directory option `%s' for directory `%s' is no possible, setting default %ld.",
+                                  "A value less then 0 for directory option `%s' for directory `%s' is no possible, setting default %ld.",
 #else
-                               "A value less then 0 for directory option `%s' for directory `%s' is no possible, setting default %lld.",
+                                  "A value less then 0 for directory option `%s' for directory `%s' is no possible, setting default %lld.",
 #endif
-                               DIR_WARN_TIME_ID, dd[dir_pos].dir_name,
-                               (pri_time_t)default_warn_time);
+                                  DIR_WARN_TIME_ID, dd[dir_pos].dir_name,
+                                  (pri_time_t)default_warn_time);
                     problems_found++;
                     dd[dir_pos].warn_time = default_warn_time;
                  }
@@ -1322,18 +1326,18 @@ eval_dir_options(int dir_pos, char *dir_options)
               {
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Value to long for directory option `%s' for directory `%s'.",
-                              DIR_WARN_TIME_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.",
-                              MAX_LONG_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Value to long for directory option `%s' for directory `%s'.",
+                                  DIR_WARN_TIME_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.",
+                                  MAX_LONG_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No value found or syntax wrong for directory option `%s' for directory `%s'.",
-                              DIR_WARN_TIME_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No value found or syntax wrong for directory option `%s' for directory `%s'.",
+                                  DIR_WARN_TIME_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -1373,18 +1377,18 @@ eval_dir_options(int dir_pos, char *dir_options)
               {
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Value to long for directory option `%s' for directory `%s'.",
-                              KEEP_CONNECTED_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.",
-                              MAX_INT_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Value to long for directory option `%s' for directory `%s'.",
+                                  KEEP_CONNECTED_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.",
+                                  MAX_INT_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No value found or syntax wrong for directory option `%s' for directory `%s'.",
-                              KEEP_CONNECTED_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No value found or syntax wrong for directory option `%s' for directory `%s'.",
+                                  KEEP_CONNECTED_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -1423,18 +1427,18 @@ eval_dir_options(int dir_pos, char *dir_options)
                  dd[dir_pos].wait_for_filename[0] = '\0';
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "File name or pattern to long for directory option `%s' for directory `%s'.",
-                              WAIT_FOR_FILENAME_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.",
-                              MAX_WAIT_FOR_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "File name or pattern to long for directory option `%s' for directory `%s'.",
+                                  WAIT_FOR_FILENAME_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.",
+                                  MAX_WAIT_FOR_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No file name or pattern for directory option `%s' for directory `%s'.",
-                              WAIT_FOR_FILENAME_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No file name or pattern for directory option `%s' for directory `%s'.",
+                                  WAIT_FOR_FILENAME_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -1473,18 +1477,18 @@ eval_dir_options(int dir_pos, char *dir_options)
               {
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Value to long for directory option `%s' for directory `%s'.",
-                              ACCUMULATE_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.",
-                              MAX_INT_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Value to long for directory option `%s' for directory `%s'.",
+                                  ACCUMULATE_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.",
+                                  MAX_INT_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No value found or syntax wrong for directory option `%s' for directory `%s'.",
-                              ACCUMULATE_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No value found or syntax wrong for directory option `%s' for directory `%s'.",
+                                  ACCUMULATE_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -1523,18 +1527,18 @@ eval_dir_options(int dir_pos, char *dir_options)
               {
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Value to long for directory option `%s' for directory `%s'.",
-                              ACCUMULATE_SIZE_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.",
-                              MAX_OFF_T_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Value to long for directory option `%s' for directory `%s'.",
+                                  ACCUMULATE_SIZE_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.",
+                                  MAX_OFF_T_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No value found or syntax wrong for directory option `%s' for directory `%s'.",
-                              ACCUMULATE_SIZE_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No value found or syntax wrong for directory option `%s' for directory `%s'.",
+                                  ACCUMULATE_SIZE_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -1611,9 +1615,9 @@ eval_dir_options(int dir_pos, char *dir_options)
 #endif
                  {
                     dd[dir_pos].ignore_size = -1;
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               "Value %s for option <%s> in DIR_CONFIG for directory `%s', to large causing overflow. Ignoring.",
-                               number, dd[dir_pos].dir_name, IGNORE_SIZE_ID);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Value %s for option <%s> in DIR_CONFIG for directory `%s', to large causing overflow. Ignoring.",
+                                  number, dd[dir_pos].dir_name, IGNORE_SIZE_ID);
                     problems_found++;
                  }
                  while ((*ptr == ' ') || (*ptr == '\t'))
@@ -1625,18 +1629,18 @@ eval_dir_options(int dir_pos, char *dir_options)
               {
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Value to long for directory option `%s' for directory `%s'.",
-                              IGNORE_SIZE_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.",
-                              MAX_OFF_T_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Value to long for directory option `%s' for directory `%s'.",
+                                  IGNORE_SIZE_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.",
+                                  MAX_OFF_T_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No value found or syntax wrong for directory option `%s' for directory `%s'.",
-                              IGNORE_SIZE_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No value found or syntax wrong for directory option `%s' for directory `%s'.",
+                                  IGNORE_SIZE_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -1697,18 +1701,18 @@ eval_dir_options(int dir_pos, char *dir_options)
               {
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Value to long for directory option `%s' for directory `%s'.",
-                              IGNORE_FILE_TIME_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.",
-                              MAX_INT_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Value to long for directory option `%s' for directory `%s'.",
+                                  IGNORE_FILE_TIME_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.",
+                                  MAX_INT_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No value found or syntax wrong for directory option `%s' for directory `%s'.",
-                              IGNORE_FILE_TIME_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No value found or syntax wrong for directory option `%s' for directory `%s'.",
+                                  IGNORE_FILE_TIME_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -1748,18 +1752,18 @@ eval_dir_options(int dir_pos, char *dir_options)
               {
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Value to long for directory option `%s' for directory `%s'.",
-                              MAX_FILES_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.",
-                              MAX_INT_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Value to long for directory option `%s' for directory `%s'.",
+                                  MAX_FILES_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.",
+                                  MAX_INT_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No value found or syntax wrong for directory option `%s' for directory `%s'.",
-                              MAX_FILES_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No value found or syntax wrong for directory option `%s' for directory `%s'.",
+                                  MAX_FILES_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -1799,18 +1803,18 @@ eval_dir_options(int dir_pos, char *dir_options)
               {
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Value to long for directory option `%s' for directory `%s'.",
-                              MAX_SIZE_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.",
-                              MAX_OFF_T_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Value to long for directory option `%s' for directory `%s'.",
+                                  MAX_SIZE_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.",
+                                  MAX_OFF_T_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No value found or syntax wrong for directory option `%s' for directory `%s'.",
-                              MAX_SIZE_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No value found or syntax wrong for directory option `%s' for directory `%s'.",
+                                  MAX_SIZE_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -1863,17 +1867,17 @@ eval_dir_options(int dir_pos, char *dir_options)
                  dd[dir_pos].retrieve_work_dir[0] = '\0';
                  if (length > 0)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "Directory option `%s' for directory `%s' to long.",
-                              LOCAL_REMOTE_DIR_ID, dd[dir_pos].dir_name);
-                    system_log(WARN_SIGN, NULL, 0,
-                              "May only be %d bytes long.", MAX_PATH_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Directory option `%s' for directory `%s' to long.",
+                                  LOCAL_REMOTE_DIR_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, NULL, 0, cmd_fp, NULL,
+                                  "May only be %d bytes long.", MAX_PATH_LENGTH);
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                              "No directory name for directory option `%s' for directory `%s'.",
-                              LOCAL_REMOTE_DIR_ID, dd[dir_pos].dir_name);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "No directory name for directory option `%s' for directory `%s'.",
+                                  LOCAL_REMOTE_DIR_ID, dd[dir_pos].dir_name);
                  }
                  problems_found++;
               }
@@ -1892,9 +1896,9 @@ eval_dir_options(int dir_pos, char *dir_options)
               }
               byte_buf = *end_ptr;
               *end_ptr = '\0';
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "Unknown or duplicate option <%s> in DIR_CONFIG file for directory `%s'.",
-                         ptr, dd[dir_pos].dir_name);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "Unknown or duplicate option <%s> in DIR_CONFIG file for directory `%s'.",
+                            ptr, dd[dir_pos].dir_name);
               problems_found++;
               *end_ptr = byte_buf;
               ptr = end_ptr;

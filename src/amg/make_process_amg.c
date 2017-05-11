@@ -1,6 +1,6 @@
 /*
  *  make_process_amg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -30,7 +30,8 @@ DESCR__S_M3
  **                          char   *prog_name,
  **                          int    rescan_time,
  **                          int    max_process,
- **                          mode_t create_source_dir_mode)
+ **                          mode_t create_source_dir_mode,
+ **                          pid_t  udc_pid)
  **
  ** DESCRIPTION
  **   The function make_process_amg() allows the AMG to generate new
@@ -68,19 +69,26 @@ make_process_amg(char   *work_dir,
                  char   *prog_name,
                  int    rescan_time,
                  int    max_process,
-                 mode_t create_source_dir_mode)
+                 mode_t create_source_dir_mode,
+                 pid_t  udc_pid)
 {
    pid_t proc_id;
    char  rt_str[MAX_INT_LENGTH],
          mp_str[MAX_INT_LENGTH],
          nd_str[MAX_INT_LENGTH],
-         sd_str[MAX_LONG_LENGTH];
+         sd_str[MAX_LONG_LENGTH],
+         up_str[MAX_PID_T_LENGTH];
 
    /* First convert int's into a char string. */
    (void)snprintf(rt_str, MAX_INT_LENGTH, "%d", rescan_time);
    (void)snprintf(mp_str, MAX_INT_LENGTH, "%d", max_process);
    (void)snprintf(nd_str, MAX_INT_LENGTH, "%d", no_of_local_dirs);
    (void)snprintf(sd_str, MAX_LONG_LENGTH, "%ld", (long)create_source_dir_mode);
+#if SIZEOF_PID_T == 4
+   (void)snprintf(up_str, MAX_PID_T_LENGTH, "%d", (pri_pid_t)udc_pid);
+#else
+   (void)snprintf(up_str, MAX_PID_T_LENGTH, "%lld", (pri_pid_t)udc_pid);
+#endif
 
    switch (proc_id = fork())
    {
@@ -92,7 +100,8 @@ make_process_amg(char   *work_dir,
 
       case  0: /* Child process. */
                if (execlp(prog_name, prog_name, work_dir,
-                          rt_str, mp_str, nd_str, sd_str, (char *)0) < 0)
+                          rt_str, mp_str, nd_str, sd_str,
+                          up_str, (char *)0) < 0)
                {                                                
                   system_log(ERROR_SIGN, __FILE__, __LINE__,
                              "Failed to start process %s : %s",

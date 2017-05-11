@@ -1,6 +1,6 @@
 /*
  *  check_option.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ DESCR__S_M3
  **   check_option - checks if the syntax of the option is correct
  **
  ** SYNOPSIS
- **   int check_option(char *option)
+ **   int check_option(char *option, FILE *cmd_fp)
  **
  ** DESCRIPTION
  **   This function checks if the syntax of the option is correct.
@@ -43,6 +43,8 @@ DESCR__S_M3
  **   17.05.2007 H.Kiehl Created
  **   07.01.2008 H.Kiehl Added check if subject or mail header file
  **                      is readable.
+ **   11.05.2017 H.Kiehl Added parameter cmd_fp, so we can return warnings/
+ **                      errors to command line tools.
  **
  */
 DESCR__E_M3
@@ -60,12 +62,12 @@ extern char        *p_work_dir;
 extern struct rule *rule;
 
 /* Local function prototypes. */
-static int         check_rule(char *);
+static int         check_rule(char *, FILE *);
 
 
 /*############################ check_option() ###########################*/
 int
-check_option(char *option)
+check_option(char *option, FILE *cmd_fp)
 {
    char *ptr;
 
@@ -79,9 +81,10 @@ check_option(char *option)
       {
          ptr++;
       }
-      if ((*ptr < '0') || (*ptr > '9'))
+      if ((*ptr < '0') || (*ptr > '9') ||
+          ((*(ptr + 1) != '\0') && (*(ptr + 1) != ' ')))
       {
-         system_log(WARN_SIGN, __FILE__, __LINE__,
+         update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
                     "Unknown priority, setting to default %c.",
                     DEFAULT_PRIORITY);
          return(INCORRECT);
@@ -98,8 +101,8 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No %s time specified.", ARCHIVE_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No %s time specified.", ARCHIVE_ID);
               return(INCORRECT);
            }
            else
@@ -113,14 +116,15 @@ check_option(char *option)
               }
               if (i == MAX_INT_LENGTH)
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Value for %s option to large.", ARCHIVE_ID);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Value for %s option to large.", ARCHIVE_ID);
                  return(INCORRECT);
               }
               if (i == 0)
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Invalid (%s) %s time specified.", ptr, ARCHIVE_ID);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Invalid (%s) %s time specified.",
+                               ptr, ARCHIVE_ID);
                  return(INCORRECT);
               }
               switch (*(ptr + i))
@@ -135,9 +139,9 @@ check_option(char *option)
                     /* OK */;
                     break;
                  default   : /* Incorrect */
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               "Unknown %s unit %c (%d).",
-                               ARCHIVE_ID, *(ptr + i), (int)(*(ptr + i)));
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Unknown %s unit %c (%d).",
+                                  ARCHIVE_ID, *(ptr + i), (int)(*(ptr + i)));
                     return(INCORRECT);
               }
            }
@@ -153,8 +157,8 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No %s type specified.", LOCK_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No %s type specified.", LOCK_ID);
               return(INCORRECT);
            }
         }
@@ -167,7 +171,7 @@ check_option(char *option)
            {
               ptr++;
            }
-           if (check_rule(ptr) == INCORRECT)
+           if (check_rule(ptr, cmd_fp) == INCORRECT)
            {
               return(INCORRECT);
            }
@@ -185,9 +189,9 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No filter and 'rename to' specified for %s",
-                         SRENAME_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No filter and 'rename to' specified for %s",
+                            SRENAME_ID);
               return(INCORRECT);
            }
            while ((*ptr != ' ') && (*ptr != '\t') && (*ptr != '\n') &&
@@ -205,14 +209,14 @@ check_option(char *option)
            {
               if (k == MAX_FILENAME_LENGTH)
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "The filter for option %s is to long (%d)",
-                            SRENAME_ID, MAX_FILENAME_LENGTH);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "The filter for option %s is to long (%d)",
+                               SRENAME_ID, MAX_FILENAME_LENGTH);
               }
               else
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "No filter specified for %s", SRENAME_ID);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "No filter specified for %s", SRENAME_ID);
               }
               return(INCORRECT);
            }
@@ -224,9 +228,9 @@ check_option(char *option)
               }
               if (*ptr == '\0')
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "No 'rename to' part specified for option %s.",
-                            SRENAME_ID);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "No 'rename to' part specified for option %s.",
+                               SRENAME_ID);
                  return(INCORRECT);
               }
               else
@@ -245,9 +249,9 @@ check_option(char *option)
                  }
                  if (k == MAX_FILENAME_LENGTH)
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               "The 'rename to' part for option %s is to long (%d)",
-                               SRENAME_ID, MAX_FILENAME_LENGTH);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "The 'rename to' part for option %s is to long (%d)",
+                                  SRENAME_ID, MAX_FILENAME_LENGTH);
                     return(INCORRECT);
                  }
               }
@@ -264,8 +268,9 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No age limit for option %s specified.", AGE_LIMIT_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No age limit for option %s specified.",
+                            AGE_LIMIT_ID);
               return(INCORRECT);
            }
            else
@@ -279,14 +284,14 @@ check_option(char *option)
               }
               if (i == MAX_INT_LENGTH)
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Value for %s option to large.", AGE_LIMIT_ID);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Value for %s option to large.", AGE_LIMIT_ID);
                  return(INCORRECT);
               }
               if (i == 0)
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Invalid (%s) age limit specified.", ptr);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Invalid (%s) age limit specified.", ptr);
                  return(INCORRECT);
               }
               switch (*(ptr + i))
@@ -297,8 +302,8 @@ check_option(char *option)
                     /* OK */;
                     break;
                  default   : /* Incorrect */
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               "Invalid age limit specified.");
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Invalid age limit specified.");
                     return(INCORRECT);
               }
            }
@@ -314,8 +319,8 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No %s type specified.", ULOCK_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No %s type specified.", ULOCK_ID);
               return(INCORRECT);
            }
         }
@@ -371,8 +376,9 @@ check_option(char *option)
               }
               else
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Unknown data behind option %s.", TRANS_RENAME_ID);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Unknown data behind option %s.",
+                               TRANS_RENAME_ID);
                  return(INCORRECT);
               }
            }
@@ -380,7 +386,7 @@ check_option(char *option)
            {
               tmp_ptr = NULL;
            }
-           if (check_rule(p_rename_rule) == INCORRECT)
+           if (check_rule(p_rename_rule, cmd_fp) == INCORRECT)
            {
               return(INCORRECT);
            }
@@ -404,14 +410,15 @@ check_option(char *option)
                  }
                  if (*ptr == '\0')
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               "Nothing to execute.");
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Nothing to execute.");
                     return(INCORRECT);
                  }
               }
               else
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__, "Unknown option.");
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Unknown option.");
                  return(INCORRECT);
               }
            }
@@ -436,9 +443,10 @@ check_option(char *option)
                           ptr += 2;
                           if ((*ptr != ' ') && (*ptr != '\t'))
                           {
-                             system_log(WARN_SIGN, __FILE__, __LINE__,
-                                        "Unknown parameter `%s' in %s option.",
-                                        ptr - 2, EXEC_ID);
+                             update_db_log(WARN_SIGN, __FILE__, __LINE__,
+                                           cmd_fp, NULL,
+                                           "Unknown parameter `%s' in %s option.",
+                                           ptr - 2, EXEC_ID);
                              return(INCORRECT);
                           }
                           break;
@@ -463,53 +471,53 @@ check_option(char *option)
                                    ptr += i;
                                    if ((*ptr != ' ') && (*ptr != '\t'))
                                    {
-                                      system_log(WARN_SIGN, __FILE__, __LINE__,
-                                                 "Nothing to execute.");
+                                      update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                                    "Nothing to execute.");
                                       return(INCORRECT);
                                    }
                                 }
                                 else
                                 {
-                                   system_log(WARN_SIGN, __FILE__, __LINE__,
-                                              "Time specified to long, may only be %d bytes long.",
-                                              MAX_INT_LENGTH - 1);
+                                   update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                                 "Time specified to long, may only be %d bytes long.",
+                                                 MAX_INT_LENGTH - 1);
                                    return(INCORRECT);
                                 }
                              }
                              else
                              {
-                                system_log(WARN_SIGN, __FILE__, __LINE__,
-                                           "No time specified.");
+                                update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                              "No time specified.");
                                 return(INCORRECT);
                              }
                           }
                           else
                           {
-                             system_log(WARN_SIGN, __FILE__, __LINE__,
-                                        "No time specified.");
+                             update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                           "No time specified.");
                              return(INCORRECT);
                           }
                           break;
 
                        default: /* Unknown option. */
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Unknown %s parameter -%c",
-                                     EXEC_ID, *(ptr + 1));
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        "Unknown %s parameter -%c",
+                                        EXEC_ID, *(ptr + 1));
                           return(INCORRECT);
                     }
                  }
                  else if (*ptr == '\0')
                       {
-                         system_log(WARN_SIGN, __FILE__, __LINE__,
-                                    "Nothing to execute.");
+                         update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                       "Nothing to execute.");
                          return(INCORRECT);
                       }
               }
 
               if (*ptr == '\0')
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Nothing to execute.");
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Nothing to execute.");
                  return(INCORRECT);
               }
            }
@@ -524,7 +532,7 @@ check_option(char *option)
            {
               ptr++;
            }
-           if (check_time_str(ptr) == INCORRECT)
+           if (check_time_str(ptr, cmd_fp) == INCORRECT)
            {
               return(INCORRECT);
            }
@@ -538,7 +546,7 @@ check_option(char *option)
            {
               ptr++;
            }
-           if (check_time_str(ptr) == INCORRECT)
+           if (check_time_str(ptr, cmd_fp) == INCORRECT)
            {
               return(INCORRECT);
            }
@@ -564,14 +572,14 @@ check_option(char *option)
            }
            if (i == MAX_TIMEZONE_LENGTH)
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "Value for %s option to large.", TIMEZONE_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "Value for %s option to large.", TIMEZONE_ID);
               return(INCORRECT);
            }
            if (i == 0)
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "Invalid (%s) %s specified.", ptr, TIMEZONE_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "Invalid (%s) %s specified.", ptr, TIMEZONE_ID);
               return(INCORRECT);
            }
         }
@@ -598,9 +606,9 @@ check_option(char *option)
                        ptr += 2;
                        if ((*ptr != ' ') && (*ptr != '\t'))
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Unknown paramter `%s' in %s option.",
-                                     ptr - 2, TRANS_EXEC_ID);
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        "Unknown paramter `%s' in %s option.",
+                                        ptr - 2, TRANS_EXEC_ID);
                           return(INCORRECT);
                        }
                        break;
@@ -625,52 +633,53 @@ check_option(char *option)
                                 ptr += i;
                                 if ((*ptr != ' ') && (*ptr != '\t'))
                                 {
-                                   system_log(WARN_SIGN, __FILE__, __LINE__,
-                                              "Nothing to execute.");
+                                   update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                                 "Nothing to execute.");
                                    return(INCORRECT);
                                 }
                              }
                              else
                              {
-                                system_log(WARN_SIGN, __FILE__, __LINE__,
-                                           "Time specified to long, may only be %d bytes long.",
-                                           MAX_INT_LENGTH - 1);
+                                update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                              "Time specified to long, may only be %d bytes long.",
+                                              MAX_INT_LENGTH - 1);
                                 return(INCORRECT);
                              }
                           }
                           else
                           {
-                             system_log(WARN_SIGN, __FILE__, __LINE__,
-                                        "No time specified.");
+                             update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                           "No time specified.");
                              return(INCORRECT);
                           }
                        }
                        else
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "No time specified.");
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        "No time specified.");
                           return(INCORRECT);
                        }
                        break;
 
                     default: /* Unknown option. */
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  "Unknown %s parameter -%c",
-                                  TRANS_EXEC_ID, *(ptr + 1));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     "Unknown %s parameter -%c",
+                                     TRANS_EXEC_ID, *(ptr + 1));
                        return(INCORRECT);
                  }
               }
               else if (*ptr == '\0')
                    {
-                      system_log(WARN_SIGN, __FILE__, __LINE__,
-                                 "Nothing to execute.");
+                      update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                    "Nothing to execute.");
                       return(INCORRECT);
                    }
            }
 
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__, "Nothing to execute.");
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "Nothing to execute.");
               return(INCORRECT);
            }
         }
@@ -686,8 +695,8 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No prefix to add found.");
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No prefix to add found.");
               return(INCORRECT);
            }
         }
@@ -702,8 +711,8 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No prefix to delete found.");
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No prefix to delete found.");
               return(INCORRECT);
            }
         }
@@ -720,7 +729,7 @@ check_option(char *option)
               {
                  ptr++;
               }
-              if (check_rule(ptr) == INCORRECT)
+              if (check_rule(ptr, cmd_fp) == INCORRECT)
               {
                  return(INCORRECT);
               }
@@ -739,7 +748,7 @@ check_option(char *option)
               {
                  ptr++;
               }
-              if (check_rule(ptr) == INCORRECT)
+              if (check_rule(ptr, cmd_fp) == INCORRECT)
               {
                  return(INCORRECT);
               }
@@ -766,8 +775,8 @@ check_option(char *option)
               }
               else
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Not a valid CCCC `%s' for %s.", ptr, GRIB2WMO_ID);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Not a valid CCCC `%s' for %s.", ptr, GRIB2WMO_ID);
                  return(INCORRECT);
               }
            }
@@ -802,8 +811,8 @@ check_option(char *option)
            }
            else
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "Unknown %s type `%s'.", ASSEMBLE_ID, ptr);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "Unknown %s type `%s'.", ASSEMBLE_ID, ptr);
               return(INCORRECT);
            }
         }
@@ -888,8 +897,8 @@ check_option(char *option)
            }
            else
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "Unknown %s type `%s'.", CONVERT_ID, ptr);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "Unknown %s type `%s'.", CONVERT_ID, ptr);
               return(INCORRECT);
            }
         }
@@ -933,31 +942,31 @@ check_option(char *option)
                        ptr += 2;
                        if ((*ptr != ' ') && (*ptr != '\t'))
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "No %s type specified.", EXTRACT_ID);
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        "No %s type specified.", EXTRACT_ID);
                           return(INCORRECT);
                        }
                        break;
 
                     default: /* Unknown option. */
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  "Unknown %s parameter -%c",
-                                  EXTRACT_ID, *(ptr + 1));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     "Unknown %s parameter -%c",
+                                     EXTRACT_ID, *(ptr + 1));
                        return(INCORRECT);
                  }
               }
               else if (*ptr == '\0')
                    {
-                      system_log(WARN_SIGN, __FILE__, __LINE__,
-                                 "No %s type specified.", EXTRACT_ID);
+                      update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                    "No %s type specified.", EXTRACT_ID);
                       return(INCORRECT);
                    }
            }
 
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No %s type specified.", EXTRACT_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No %s type specified.", EXTRACT_ID);
               return(INCORRECT);
            }
            while ((*ptr == ' ') || (*ptr == '\t'))
@@ -992,8 +1001,8 @@ check_option(char *option)
            }
            else
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "Unknown %s type `%s'.", EXTRACT_ID, ptr);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "Unknown %s type `%s'.", EXTRACT_ID, ptr);
               return(INCORRECT);
            }
         }
@@ -1008,7 +1017,8 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__, "No mode specified for option %s.", LCHMOD_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No mode specified for option %s.", LCHMOD_ID);
               return(INCORRECT);
            }
            else
@@ -1023,9 +1033,9 @@ check_option(char *option)
               }
               else
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Incorrect mode for option %s, only three or four octal numbers possible.",
-                            LCHMOD_ID);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Incorrect mode for option %s, only three or four octal numbers possible.",
+                               LCHMOD_ID);
                  return(INCORRECT);
               }
            }
@@ -1041,7 +1051,8 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__, "No mode specified for option %s.", CHMOD_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No mode specified for option %s.", CHMOD_ID);
               return(INCORRECT);
            }
            else
@@ -1056,9 +1067,9 @@ check_option(char *option)
               }
               else
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Incorrect mode for option %s, only three or four octal numbers possible.",
-                            CHMOD_ID);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Incorrect mode for option %s, only three or four octal numbers possible.",
+                               CHMOD_ID);
                  return(INCORRECT);
               }
            }
@@ -1086,9 +1097,9 @@ check_option(char *option)
               }
               else
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Incorrect mode for option %s, only three or four octal numbers possible.",
-                            CREATE_TARGET_DIR_ID);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Incorrect mode for option %s, only three or four octal numbers possible.",
+                               CREATE_TARGET_DIR_ID);
                  return(INCORRECT);
               }
            }
@@ -1104,8 +1115,8 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No user or group specified.");
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No user or group specified.");
               return(INCORRECT);
            }
         }
@@ -1121,7 +1132,7 @@ check_option(char *option)
               {
                  ptr++;
               }
-              if (check_rule(ptr) == INCORRECT)
+              if (check_rule(ptr, cmd_fp) == INCORRECT)
               {
                  return(INCORRECT);
               }
@@ -1140,7 +1151,7 @@ check_option(char *option)
               {
                  ptr++;
               }
-              if (check_rule(ptr) == INCORRECT)
+              if (check_rule(ptr, cmd_fp) == INCORRECT)
               {
                  return(INCORRECT);
               }
@@ -1164,9 +1175,9 @@ check_option(char *option)
            }
            else
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No character specified for option %s.",
-                         RENAME_FILE_BUSY_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No character specified for option %s.",
+                            RENAME_FILE_BUSY_ID);
               return(INCORRECT);
            }
         }
@@ -1211,7 +1222,7 @@ check_option(char *option)
                     }
                     if (*ptr != '\0')
                     {
-                       if (check_rule(ptr) == INCORRECT)
+                       if (check_rule(ptr, cmd_fp) == INCORRECT)
                        {
                           return(INCORRECT);
                        }
@@ -1221,14 +1232,14 @@ check_option(char *option)
                  {
                     if (*ptr == '\0')
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  "Subject line not terminated with a \" sign.");
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     "Subject line not terminated with a \" sign.");
                     }
                     else
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  "Subject line contains an illegal character (integer value = %d) that does not fit into the 7-bit ASCII character set.",
-                                  (int)((unsigned char)*ptr));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     "Subject line contains an illegal character (integer value = %d) that does not fit into the 7-bit ASCII character set.",
+                                     (int)((unsigned char)*ptr));
                     }
                     return(INCORRECT);
                  }
@@ -1251,9 +1262,9 @@ check_option(char *option)
                          *ptr = '\0';
                          if (access(p_start, R_OK) != 0)
                          {
-                            system_log(WARN_SIGN, __FILE__, __LINE__,
-                                       "Failed to access subject file `%s' : %s",
-                                       p_start, strerror(errno));
+                            update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                          "Failed to access subject file `%s' : %s",
+                                          p_start, strerror(errno));
                             *ptr = ' ';
                             return(INCORRECT);
                          }
@@ -1263,7 +1274,7 @@ check_option(char *option)
                          {
                             ptr++;
                          }
-                         if (check_rule(ptr) == INCORRECT)
+                         if (check_rule(ptr, cmd_fp) == INCORRECT)
                          {
                             return(INCORRECT);
                          }
@@ -1272,17 +1283,17 @@ check_option(char *option)
                       {
                          if (access(p_start, R_OK) != 0)
                          {
-                            system_log(WARN_SIGN, __FILE__, __LINE__,
-                                       "Failed to access subject file `%s' : %s",
-                                       p_start, strerror(errno));
+                            update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                          "Failed to access subject file `%s' : %s",
+                                          p_start, strerror(errno));
                             return(INCORRECT);
                          }
                       }
                    }
                    else
                    {
-                      system_log(WARN_SIGN, __FILE__, __LINE__,
-                                 "Unknown data behind %s.", SUBJECT_ID);
+                      update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                    "Unknown data behind %s.", SUBJECT_ID);
                       return(INCORRECT);
                    }
            }
@@ -1290,12 +1301,13 @@ check_option(char *option)
            {
               if (*(option + SUBJECT_ID_LENGTH) == '\0')
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "No %s specified.", SUBJECT_ID);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "No %s specified.", SUBJECT_ID);
               }
               else
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__, "Unknown option.");
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Unknown option.");
               }
               return(INCORRECT);
            }
@@ -1316,8 +1328,8 @@ check_option(char *option)
            }
            if ((*ptr == '\0') || (*ptr == '"'))
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No mail header file specified.");
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No mail header file specified.");
               return(INCORRECT);
            }
            else
@@ -1334,9 +1346,9 @@ check_option(char *option)
               *ptr = '\0';
               if (access(p_start, R_OK) != 0)
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Failed to access mail header file `%s' : %s",
-                            p_start, strerror(errno));
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Failed to access mail header file `%s' : %s",
+                               p_start, strerror(errno));
                  *ptr = tmp_char;
                  return(INCORRECT);
               }
@@ -1354,8 +1366,8 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No mail address specified.");
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No mail address specified.");
               return(INCORRECT);
            }
         }
@@ -1370,8 +1382,8 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No mail address specified.");
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No mail address specified.");
               return(INCORRECT);
            }
         }
@@ -1386,8 +1398,8 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No %s specified.", CHARSET_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No %s specified.", CHARSET_ID);
               return(INCORRECT);
            }
         }
@@ -1402,8 +1414,8 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No command to execute specified.");
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No command to execute specified.");
               return(INCORRECT);
            }
         }
@@ -1418,8 +1430,8 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No command to execute specified.");
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No command to execute specified.");
               return(INCORRECT);
            }
         }
@@ -1434,9 +1446,9 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No postfix specified for option %s.",
-                         LOCK_POSTFIX_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No postfix specified for option %s.",
+                            LOCK_POSTFIX_ID);
               return(INCORRECT);
            }
         }
@@ -1452,9 +1464,9 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No socket buffer size for option %s specified.",
-                         SOCKET_SEND_BUFFER_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No socket buffer size for option %s specified.",
+                            SOCKET_SEND_BUFFER_ID);
               return(INCORRECT);
            }
            else
@@ -1468,15 +1480,15 @@ check_option(char *option)
               }
               if (i == MAX_INT_LENGTH)
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Value for %s option to large.",
-                            SOCKET_SEND_BUFFER_ID);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Value for %s option to large.",
+                               SOCKET_SEND_BUFFER_ID);
                  return(INCORRECT);
               }
               if (i == 0)
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Invalid (%s) socket buffer specified.", ptr);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Invalid (%s) socket buffer specified.", ptr);
                  return(INCORRECT);
               }
               switch (*(ptr + i))
@@ -1487,8 +1499,8 @@ check_option(char *option)
                     /* OK */;
                     break;
                  default   : /* Incorrect */
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               "Invalid socket buffer specified.");
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Invalid socket buffer specified.");
                     return(INCORRECT);
               }
            }
@@ -1505,9 +1517,9 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No socket buffer size for option %s specified.",
-                         SOCKET_RECEIVE_BUFFER_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No socket buffer size for option %s specified.",
+                            SOCKET_RECEIVE_BUFFER_ID);
               return(INCORRECT);
            }
            else
@@ -1521,15 +1533,15 @@ check_option(char *option)
               }
               if (i == MAX_INT_LENGTH)
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Value for %s option to large.",
-                            SOCKET_RECEIVE_BUFFER_ID);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Value for %s option to large.",
+                               SOCKET_RECEIVE_BUFFER_ID);
                  return(INCORRECT);
               }
               if (i == 0)
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Invalid (%s) socket buffer specified.", ptr);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Invalid (%s) socket buffer specified.", ptr);
                  return(INCORRECT);
               }
               switch (*(ptr + i))
@@ -1540,8 +1552,8 @@ check_option(char *option)
                     /* OK */;
                     break;
                  default   : /* Incorrect */
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               "Invalid socket buffer specified.");
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "Invalid socket buffer specified.");
                     return(INCORRECT);
               }
            }
@@ -1619,9 +1631,9 @@ check_option(char *option)
                     ((*(ptr + 9) == '\0') || (*(ptr + 9) == ' ') ||
                      (*(ptr + 9) == '\t'))))
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Only `overwrite' is possible for %s.",
-                            BASENAME_ID);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Only `overwrite' is possible for %s.",
+                               BASENAME_ID);
                  return(INCORRECT);
               }
            }
@@ -1647,9 +1659,9 @@ check_option(char *option)
                     ((*(ptr + 9) == '\0') || (*(ptr + 9) == ' ') ||
                      (*(ptr + 9) == '\t'))))
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            "Only `overwrite' is possible for %s.",
-                            EXTENSION_ID);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "Only `overwrite' is possible for %s.",
+                               EXTENSION_ID);
                  return(INCORRECT);
               }
            }
@@ -1666,17 +1678,17 @@ check_option(char *option)
            }
            if (*ptr == '\0')
            {
-              system_log(WARN_SIGN, __FILE__, __LINE__,
-                         "No DestEnvId specified for option %s.",
-                         EUMETSAT_HEADER_ID);
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No DestEnvId specified for option %s.",
+                            EUMETSAT_HEADER_ID);
               return(INCORRECT);
            }
         }
 #endif
         else
         {
-           system_log(WARN_SIGN, __FILE__, __LINE__, "Unknown option `%s'",
-                      option);
+           update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                         "Unknown option `%s'", option);
            return(INCORRECT);
         }
 
@@ -1686,7 +1698,7 @@ check_option(char *option)
 
 /*++++++++++++++++++++++++++++ check_rule() +++++++++++++++++++++++++++++*/
 static int
-check_rule(char *rename_rule)
+check_rule(char *rename_rule, FILE *cmd_fp)
 {
    get_rename_rules(NO);
    if (no_of_rule_headers > 0)
@@ -1732,13 +1744,13 @@ check_rule(char *rename_rule)
       {
          *ptr = tmp_char;
       }
-      system_log(WARN_SIGN, __FILE__, __LINE__,
-                 "There is no rule %s in rename.rule.", rename_rule);
+      update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                    "There is no rule %s in rename.rule.", rename_rule);
    }
    else
    {
-      system_log(WARN_SIGN, __FILE__, __LINE__,
-                 "There are no rules, you need to configure rename.rule.");
+      update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                    "There are no rules, you need to configure rename.rule.");
    }
 
    return(INCORRECT);

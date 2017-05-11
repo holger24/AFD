@@ -184,7 +184,7 @@ init_gf(int argc, char *argv[], int protocol)
                     "Could not malloc() memory : %s", strerror(errno));
          exit(ALLOC_ERROR);
       }
-      if (eval_time_str("* * * * *", db.te) != SUCCESS)
+      if (eval_time_str("* * * * *", db.te, NULL) != SUCCESS)
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "Failed to evaluate time string [* * * * *].");

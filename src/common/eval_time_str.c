@@ -1,6 +1,6 @@
 /*
  *  eval_time_str.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2013 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,8 +25,8 @@ DESCR__S_M3
  **   eval_time_str - evaluates crontab like time entry
  **
  ** SYNOPSIS
- **   int eval_time_str(char *time_str, struct bd_time_entry *te);
- **   int check_time_str(char *time_str);
+ **   int eval_time_str(char *time_str, struct bd_time_entry *te, FILE *cmd_fp);
+ **   int check_time_str(char *time_str, FILE *cmd_fp);
  **
  ** DESCRIPTION
  **   Evaluates the time and date fields as follows:
@@ -60,12 +60,12 @@ DESCR__E_M3
 #include "bit_array.h"
 
 /* Local function prototypes. */
-static char *get_time_number(char *, char *);
+static char *get_time_number(char *, char *, FILE *);
 
 
 /*########################## eval_time_str() ############################*/
 int
-eval_time_str(char *time_str, struct bd_time_entry *te)
+eval_time_str(char *time_str, struct bd_time_entry *te, FILE *cmd_fp)
 {
    int  continuous = YES,
         first_number = -1,
@@ -87,7 +87,7 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
    for (;;)
    {
       if ((step_size != 0) ||
-          ((ptr = get_time_number(ptr, str_number)) != NULL))
+          ((ptr = get_time_number(ptr, str_number, cmd_fp)) != NULL))
       {
          if (*ptr == ',')
          {
@@ -125,8 +125,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                }
                else
                {
-                  system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             _("Combination of '*' and other numeric values in minute field not possible. Ignoring time entry."));
+                  update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                _("Combination of '*' and other numeric values in minute field not possible. Ignoring time entry."));
                   return(INCORRECT);
                }
             }
@@ -140,8 +140,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                {
                   if (str_number[0] > '5')
                   {
-                     system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                _("Possible values for minute field : 0-59. Ignoring time entry!"));
+                     update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("Possible values for minute field : 0-59. Ignoring time entry!"));
                      return(INCORRECT);
                   }
                   number = ((str_number[0] - '0') * 10) + str_number[1] - '0';
@@ -211,8 +211,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  {
                     if (str_number[0] > '5')
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for minute field : 0-59. Ignoring time entry!"));
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for minute field : 0-59. Ignoring time entry!"));
                        return(INCORRECT);
                     }
                     first_number = ((str_number[0] - '0') * 10) +
@@ -261,8 +261,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                     }
                     else
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Combination of '*' and other numeric values in minute field not possible. Ignoring time entry."));
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Combination of '*' and other numeric values in minute field not possible. Ignoring time entry."));
                        return(INCORRECT);
                     }
                  }
@@ -276,8 +276,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                     {
                        if (str_number[0] > '5')
                        {
-                          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                     _("Possible values for minute field : 0-59. Ignoring time entry!"));
+                          update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("Possible values for minute field : 0-59. Ignoring time entry!"));
                           return(INCORRECT);
                        }
                        number = ((str_number[0] - '0') * 10) +
@@ -345,8 +345,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
               }
          else if (*ptr == '\0')
               {
-                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                            _("Premature end of time entry. Ignoring time entry."));
+                 update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Premature end of time entry. Ignoring time entry."));
                  return(INCORRECT);
               }
          else if (*ptr == '/')
@@ -357,7 +357,7 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  tmp_str_number[1] = str_number[1];
                  tmp_str_number[2] = str_number[2];
                  ptr++;
-                 if ((ptr = get_time_number(ptr, str_number)) == NULL)
+                 if ((ptr = get_time_number(ptr, str_number, cmd_fp)) == NULL)
                  {
                     return(INCORRECT);
                  }
@@ -365,9 +365,9 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  {
                     if (isdigit((int)str_number[0]) == 0)
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Division by non numeric value <%c>. Ignoring time entry."),
-                                  str_number[0]);
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Division by non numeric value <%c>. Ignoring time entry."),
+                                     str_number[0]);
                        return(INCORRECT);
                     }
                     step_size = str_number[0] - '0';
@@ -379,9 +379,9 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  }
                  if ((step_size == 0) || (step_size > 59))
                  {
-                    system_log(ERROR_SIGN, __FILE__, __LINE__,
-                               _("Invalid step size %d in minute field. Ignoring time entry."),
-                               step_size);
+                    update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  _("Invalid step size %d in minute field. Ignoring time entry."),
+                                  step_size);
                     return(INCORRECT);
                  }
                  if (step_size == 1)
@@ -394,9 +394,9 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
               }
               else
               {
-                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                            _("Unable to handle time entry `%s'. Ignoring time entry."),
-                            time_str);
+                 update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Unable to handle time entry `%s'. Ignoring time entry."),
+                               time_str);
                  return(INCORRECT);
               }
       }
@@ -411,7 +411,7 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
    for (;;)
    {
       if ((step_size != 0) ||
-          ((ptr = get_time_number(ptr, str_number)) != NULL))
+          ((ptr = get_time_number(ptr, str_number, cmd_fp)) != NULL))
       {
          if (*ptr == ',')
          {
@@ -423,8 +423,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                }
                else
                {
-                  system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             _("Combination of '*' and other numeric values in hour field not possible. Ignoring time entry."));
+                  update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                _("Combination of '*' and other numeric values in hour field not possible. Ignoring time entry."));
                   return(INCORRECT);
                }
             }
@@ -439,8 +439,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                   if ((str_number[0] > '2') ||
                       ((str_number[0] == '2') && (str_number[1] > '3')))
                   {
-                     system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                _("Possible values for hour field : 0-23. Ignoring time entry!"));
+                     update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("Possible values for hour field : 0-23. Ignoring time entry!"));
                      return(INCORRECT);
                   }
                   number = ((str_number[0] - '0') * 10) + str_number[1] - '0';
@@ -484,8 +484,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                     if ((str_number[0] > '2') ||
                         ((str_number[0] == '2') && (str_number[1] > '3')))
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for hour field : 0-23. Ignoring time entry!"));
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for hour field : 0-23. Ignoring time entry!"));
                        return(INCORRECT);
                     }
                     first_number = ((str_number[0] - '0') * 10) +
@@ -516,8 +516,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                     }
                     else
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Combination of '*' and other numeric values in hour field not possible. Ignoring time entry."));
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Combination of '*' and other numeric values in hour field not possible. Ignoring time entry."));
                        return(INCORRECT);
                     }
                  }
@@ -532,8 +532,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                        if ((str_number[0] > '2') ||
                            ((str_number[0] == '2') && (str_number[1] > '3')))
                        {
-                          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                     _("Possible values for hour field : 0-23. Ignoring time entry!"));
+                          update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("Possible values for hour field : 0-23. Ignoring time entry!"));
                           return(INCORRECT);
                        }
                        number = ((str_number[0] - '0') * 10) +
@@ -573,8 +573,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
               }
          else if (*ptr == '\0')
               {
-                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                            _("Premature end of time entry. Ignoring time entry."));
+                 update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Premature end of time entry. Ignoring time entry."));
                  return(INCORRECT);
               }
          else if (*ptr == '/')
@@ -585,7 +585,7 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  tmp_str_number[1] = str_number[1];
                  tmp_str_number[2] = str_number[2];
                  ptr++;
-                 if ((ptr = get_time_number(ptr, str_number)) == NULL)
+                 if ((ptr = get_time_number(ptr, str_number, cmd_fp)) == NULL)
                  {
                     return(INCORRECT);
                  }
@@ -593,9 +593,9 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  {
                     if (isdigit((int)str_number[0]) == 0)
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Division by non numeric value <%c>. Ignoring time entry."),
-                                  str_number[0]);
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Division by non numeric value <%c>. Ignoring time entry."),
+                                     str_number[0]);
                        return(INCORRECT);
                     }
                     step_size = str_number[0] - '0';
@@ -607,9 +607,9 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  }
                  if ((step_size == 0) || (step_size > 23))
                  {
-                    system_log(ERROR_SIGN, __FILE__, __LINE__,
-                               _("Invalid step size %d in hour field. Ignoring time entry."),
-                               step_size);
+                    update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  _("Invalid step size %d in hour field. Ignoring time entry."),
+                                  step_size);
                     return(INCORRECT);
                  }
                  str_number[0] = tmp_str_number[0];
@@ -618,9 +618,9 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
               }
               else
               {
-                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                            _("Unable to handle time entry `%s'. Ignoring time entry."),
-                            time_str);
+                 update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Unable to handle time entry `%s'. Ignoring time entry."),
+                               time_str);
                  return(INCORRECT);
               }
       }
@@ -635,7 +635,7 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
    for (;;)
    {
       if ((step_size != 0) ||
-          ((ptr = get_time_number(ptr, str_number)) != NULL))
+          ((ptr = get_time_number(ptr, str_number, cmd_fp)) != NULL))
       {
          if (*ptr == ',')
          {
@@ -647,8 +647,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                }
                else
                {
-                  system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             _("Combination of '*' and other numeric values in day of month field not possible. Ignoring time entry."));
+                  update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                _("Combination of '*' and other numeric values in day of month field not possible. Ignoring time entry."));
                   return(INCORRECT);
                }
             }
@@ -658,8 +658,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                {
                   if (str_number[0] == '0')
                   {
-                     system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                _("Possible values for day of month field : 1-31. Ignoring time entry!"));
+                     update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("Possible values for day of month field : 1-31. Ignoring time entry!"));
                      return(INCORRECT);
                   }
                   number = str_number[0] - '0';
@@ -669,8 +669,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                   if ((str_number[0] > '3') ||
                       ((str_number[0] == '3') && (str_number[1] > '1')))
                   {
-                     system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                _("Possible values for day of month field : 1-31. Ignoring time entry!"));
+                     update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("Possible values for day of month field : 1-31. Ignoring time entry!"));
                      return(INCORRECT);
                   }
                   number = ((str_number[0] - '0') * 10) + str_number[1] - '0';
@@ -709,8 +709,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  {
                     if (str_number[0] == '0')
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for day of month field : 1-31. Ignoring time entry!"));
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for day of month field : 1-31. Ignoring time entry!"));
                        return(INCORRECT);
                     }
                     first_number = str_number[0] - '0';
@@ -720,8 +720,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                     if ((str_number[0] > '3') ||
                         ((str_number[0] == '3') && (str_number[1] > '1')))
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for day of month field : 1-31. Ignoring time entry!"));
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for day of month field : 1-31. Ignoring time entry!"));
                        return(INCORRECT);
                     }
                     first_number = ((str_number[0] - '0') * 10) +
@@ -752,8 +752,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                     }
                     else
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Combination of '*' and other numeric values in day of month field not possible. Ignoring time entry."));
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Combination of '*' and other numeric values in day of month field not possible. Ignoring time entry."));
                        return(INCORRECT);
                     }
                  }
@@ -763,8 +763,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                     {
                        if (str_number[0] == '0')
                        {
-                          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                     _("Possible values for day of month field : 1-31. Ignoring time entry!"));
+                          update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("Possible values for day of month field : 1-31. Ignoring time entry!"));
                           return(INCORRECT);
                        }
                        number = str_number[0] - '0';
@@ -774,8 +774,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                        if ((str_number[0] > '3') ||
                            ((str_number[0] == '3') && (str_number[1] > '1')))
                        {
-                          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                     _("Possible values for day of month field : 1-31. Ignoring time entry!"));
+                          update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("Possible values for day of month field : 1-31. Ignoring time entry!"));
                           return(INCORRECT);
                        }
                        number = ((str_number[0] - '0') * 10) +
@@ -815,8 +815,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
               }
          else if (*ptr == '\0')
               {
-                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                            _("Premature end of time entry. Ignoring time entry."));
+                 update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Premature end of time entry. Ignoring time entry."));
                  return(INCORRECT);
               }
          else if (*ptr == '/')
@@ -827,7 +827,7 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  tmp_str_number[1] = str_number[1];
                  tmp_str_number[2] = str_number[2];
                  ptr++;
-                 if ((ptr = get_time_number(ptr, str_number)) == NULL)
+                 if ((ptr = get_time_number(ptr, str_number, cmd_fp)) == NULL)
                  {
                     return(INCORRECT);
                  }
@@ -835,9 +835,9 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  {
                     if (isdigit((int)str_number[0]) == 0)
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Division by non numeric value <%c>. Ignoring time entry."),
-                                  str_number[0]);
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Division by non numeric value <%c>. Ignoring time entry."),
+                                     str_number[0]);
                        return(INCORRECT);
                     }
                     step_size = str_number[0] - '0';
@@ -849,9 +849,9 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  }
                  if ((step_size == 0) || (step_size > 31))
                  {
-                    system_log(ERROR_SIGN, __FILE__, __LINE__,
-                               _("Invalid step size %d in day of month field. Ignoring time entry."),
-                               step_size);
+                    update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  _("Invalid step size %d in day of month field. Ignoring time entry."),
+                                  step_size);
                     return(INCORRECT);
                  }
                  str_number[0] = tmp_str_number[0];
@@ -860,9 +860,9 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
               }
               else
               {
-                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                            _("Unable to handle time entry `%s'. Ignoring time entry."),
-                            time_str);
+                 update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Unable to handle time entry `%s'. Ignoring time entry."),
+                               time_str);
                  return(INCORRECT);
               }
       }
@@ -877,7 +877,7 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
    for (;;)
    {
       if ((step_size != 0) ||
-          ((ptr = get_time_number(ptr, str_number)) != NULL))
+          ((ptr = get_time_number(ptr, str_number, cmd_fp)) != NULL))
       {
          if (*ptr == ',')
          {
@@ -889,8 +889,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                }
                else
                {
-                  system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             _("Combination of '*' and other numeric values in time string field not possible. Ignoring time entry."));
+                  update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                _("Combination of '*' and other numeric values in time string field not possible. Ignoring time entry."));
                   return(INCORRECT);
                }
             }
@@ -900,8 +900,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                {
                   if (str_number[0] == '0')
                   {
-                     system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                _("Possible values for month field : 1-12. Ignoring time entry!"));
+                     update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("Possible values for month field : 1-12. Ignoring time entry!"));
                      return(INCORRECT);
                   }
                   number = str_number[0] - '0';
@@ -910,8 +910,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                {
                   if ((str_number[0] > '1') || (str_number[1] > '2'))
                   {
-                     system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                _("Possible values for month field : 1-12. Ignoring time entry!"));
+                     update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("Possible values for month field : 1-12. Ignoring time entry!"));
                      return(INCORRECT);
                   }
                   number = ((str_number[0] - '0') * 10) + str_number[1] - '0';
@@ -950,8 +950,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  {
                     if (str_number[0] == '0')
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for month field : 1-12. Ignoring time entry!"));
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for month field : 1-12. Ignoring time entry!"));
                        return(INCORRECT);
                     }
                     first_number = str_number[0] - '0';
@@ -960,8 +960,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  {
                     if ((str_number[0] > '1') || (str_number[1] > '2'))
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for month field : 1-12. Ignoring time entry!"));
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for month field : 1-12. Ignoring time entry!"));
                        return(INCORRECT);
                     }
                     first_number = ((str_number[0] - '0') * 10) +
@@ -992,8 +992,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                     }
                     else
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Combination of '*' and other numeric values in time string field not possible. Ignoring time entry."));
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Combination of '*' and other numeric values in time string field not possible. Ignoring time entry."));
                        return(INCORRECT);
                     }
                  }
@@ -1003,8 +1003,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                     {
                        if (str_number[0] == '0')
                        {
-                          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                     _("Possible values for month field : 1-12. Ignoring time entry!"));
+                          update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("Possible values for month field : 1-12. Ignoring time entry!"));
                           return(INCORRECT);
                        }
                        number = str_number[0] - '0';
@@ -1013,8 +1013,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                     {
                        if ((str_number[0] > '1') || (str_number[1] > '2'))
                        {
-                          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                     _("Possible values for month field : 1-12. Ignoring time entry!"));
+                          update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("Possible values for month field : 1-12. Ignoring time entry!"));
                           return(INCORRECT);
                        }
                        number = ((str_number[0] - '0') * 10) +
@@ -1054,8 +1054,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
               }
          else if (*ptr == '\0')
               {
-                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                            _("Premature end of time entry. Ignoring time entry."));
+                 update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Premature end of time entry. Ignoring time entry."));
                  return(INCORRECT);
               }
          else if (*ptr == '/')
@@ -1066,7 +1066,7 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  tmp_str_number[1] = str_number[1];
                  tmp_str_number[2] = str_number[2];
                  ptr++;
-                 if ((ptr = get_time_number(ptr, str_number)) == NULL)
+                 if ((ptr = get_time_number(ptr, str_number, cmd_fp)) == NULL)
                  {
                     return(INCORRECT);
                  }
@@ -1074,9 +1074,9 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  {
                     if (isdigit((int)str_number[0]) == 0)
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Division by non numeric value <%c>. Ignoring time entry."),
-                                  str_number[0]);
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Division by non numeric value <%c>. Ignoring time entry."),
+                                     str_number[0]);
                        return(INCORRECT);
                     }
                     step_size = str_number[0] - '0';
@@ -1088,9 +1088,9 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  }
                  if ((step_size == 0) || (step_size > 12))
                  {
-                    system_log(ERROR_SIGN, __FILE__, __LINE__,
-                               _("Invalid step size %d in month field. Ignoring time entry."),
-                               step_size);
+                    update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  _("Invalid step size %d in month field. Ignoring time entry."),
+                                  step_size);
                     return(INCORRECT);
                  }
                  str_number[0] = tmp_str_number[0];
@@ -1099,9 +1099,9 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
               }
               else
               {
-                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                            _("Unable to handle time entry `%s'. Ignoring time entry."),
-                            time_str);
+                 update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Unable to handle time entry `%s'. Ignoring time entry."),
+                               time_str);
                  return(INCORRECT);
               }
       }
@@ -1116,7 +1116,7 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
    for (;;)
    {
       if ((step_size != 0) ||
-          ((ptr = get_time_number(ptr, str_number)) != NULL))
+          ((ptr = get_time_number(ptr, str_number, cmd_fp)) != NULL))
       {
          if (*ptr == ',')
          {
@@ -1128,8 +1128,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                }
                else
                {
-                  system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             _("Combination of '*' and other numeric values in time string field not possible. Ignoring time entry."));
+                  update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                _("Combination of '*' and other numeric values in time string field not possible. Ignoring time entry."));
                   return(INCORRECT);
                }
             }
@@ -1139,16 +1139,16 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                {
                   if ((str_number[0] < '1') || (str_number[0] > '7'))
                   {
-                     system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                _("Possible values for day of week field : 1-7. Ignoring time entry!"));
+                     update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("Possible values for day of week field : 1-7. Ignoring time entry!"));
                      return(INCORRECT);
                   }
                   number = str_number[0] - '0';
                }
                else
                {
-                  system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             _("Possible values for day of week field : 1-7. Ignoring time entry!"));
+                  update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                _("Possible values for day of week field : 1-7. Ignoring time entry!"));
                   return(INCORRECT);
                }
                if (first_number == -1)
@@ -1185,16 +1185,16 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  {
                     if ((str_number[0] < '1') || (str_number[0] > '7'))
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for day of week field : 1-7. Ignoring time entry!"));
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for day of week field : 1-7. Ignoring time entry!"));
                        return(INCORRECT);
                     }
                     first_number = str_number[0] - '0';
                  }
                  else
                  {
-                    system_log(ERROR_SIGN, __FILE__, __LINE__,
-                               _("Possible values for day of week field : 1-7. Ignoring time entry!"));
+                    update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  _("Possible values for day of week field : 1-7. Ignoring time entry!"));
                     return(INCORRECT);
                  }
                  ptr++;
@@ -1222,8 +1222,8 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                     }
                     else
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Combination of '*' and other numeric values in time string field not possible. Ignoring time entry."));
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Combination of '*' and other numeric values in time string field not possible. Ignoring time entry."));
                        return(INCORRECT);
                     }
                  }
@@ -1233,16 +1233,16 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                     {
                        if ((str_number[0] < '1') || (str_number[0] > '7'))
                        {
-                          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                     _("Possible values for day of week field : 1-7. Ignoring time entry!"));
+                          update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("Possible values for day of week field : 1-7. Ignoring time entry!"));
                           return(INCORRECT);
                        }
                        number = str_number[0] - '0';
                     }
                     else
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for day of week field : 1-7. Ignoring time entry!"));
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for day of week field : 1-7. Ignoring time entry!"));
                        return(INCORRECT);
                     }
                     if (first_number == -1)
@@ -1285,7 +1285,7 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  tmp_str_number[1] = str_number[1];
                  tmp_str_number[2] = str_number[2];
                  ptr++;
-                 if ((ptr = get_time_number(ptr, str_number)) == NULL)
+                 if ((ptr = get_time_number(ptr, str_number, cmd_fp)) == NULL)
                  {
                     return(INCORRECT);
                  }
@@ -1293,25 +1293,25 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
                  {
                     if (isdigit((int)str_number[0]) == 0)
                     {
-                       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                  _("Division by non numeric value <%c>. Ignoring time entry."),
-                                  str_number[0]);
+                       update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Division by non numeric value <%c>. Ignoring time entry."),
+                                     str_number[0]);
                        return(INCORRECT);
                     }
                     step_size = str_number[0] - '0';
                  }
                  else
                  {
-                    system_log(ERROR_SIGN, __FILE__, __LINE__,
-                               _("Invalid step size %d in day of week field. Ignoring time entry."),
-                               step_size);
+                    update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  _("Invalid step size %d in day of week field. Ignoring time entry."),
+                                  step_size);
                     return(INCORRECT);
                  }
                  if ((step_size == 0) || (step_size > 7))
                  {
-                    system_log(ERROR_SIGN, __FILE__, __LINE__,
-                               _("Invalid step size %d in day of week field. Ignoring time entry."),
-                               step_size);
+                    update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  _("Invalid step size %d in day of week field. Ignoring time entry."),
+                                  step_size);
                     return(INCORRECT);
                  }
                  str_number[0] = tmp_str_number[0];
@@ -1320,9 +1320,9 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
               }
               else
               {
-                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                            _("Unable to handle time entry `%s'. Ignoring time entry."),
-                            time_str);
+                 update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Unable to handle time entry `%s'. Ignoring time entry."),
+                               time_str);
                  return(INCORRECT);
               }
       }
@@ -1338,7 +1338,7 @@ eval_time_str(char *time_str, struct bd_time_entry *te)
 
 /*########################## check_time_str() ###########################*/
 int
-check_time_str(char *time_str)
+check_time_str(char *time_str, FILE *cmd_fp)
 {
    int  continuous = YES,
         first_number = -1,
@@ -1357,7 +1357,7 @@ check_time_str(char *time_str)
    for (;;)
    {
       if ((step_size != 0) ||
-          ((ptr = get_time_number(ptr, str_number)) != NULL))
+          ((ptr = get_time_number(ptr, str_number, cmd_fp)) != NULL))
       {
          if (*ptr == ',')
          {
@@ -1377,8 +1377,8 @@ check_time_str(char *time_str)
                }
                else
                {
-                  system_log(WARN_SIGN, __FILE__, __LINE__,
-                             _("Combination of '*' and other numeric values in minute field not possible."));
+                  update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                _("Combination of '*' and other numeric values in minute field not possible."));
                   return(INCORRECT);
                }
             }
@@ -1388,8 +1388,8 @@ check_time_str(char *time_str)
                {
                   if (str_number[0] > '5')
                   {
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                _("Possible values for minute field : 0-59."));
+                     update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("Possible values for minute field : 0-59."));
                      return(INCORRECT);
                   }
                }
@@ -1411,8 +1411,8 @@ check_time_str(char *time_str)
                  {
                     if (str_number[0] > '5')
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for minute field : 0-59."));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for minute field : 0-59."));
                        return(INCORRECT);
                     }
                     first_number = ((str_number[0] - '0') * 10) +
@@ -1439,8 +1439,8 @@ check_time_str(char *time_str)
                     }
                     else
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Combination of '*' and other numeric values in minute field not possible."));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Combination of '*' and other numeric values in minute field not possible."));
                        return(INCORRECT);
                     }
                  }
@@ -1450,8 +1450,8 @@ check_time_str(char *time_str)
                     {
                        if (str_number[0] > '5')
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     _("Possible values for minute field : 0-59."));
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("Possible values for minute field : 0-59."));
                           return(INCORRECT);
                        }
                     }
@@ -1478,8 +1478,8 @@ check_time_str(char *time_str)
               }
          else if (*ptr == '\0')
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            _("Premature end of time entry."));
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Premature end of time entry."));
                  return(INCORRECT);
               }
          else if (*ptr == '/')
@@ -1490,7 +1490,7 @@ check_time_str(char *time_str)
                  tmp_str_number[1] = str_number[1];
                  tmp_str_number[2] = str_number[2];
                  ptr++;
-                 if ((ptr = get_time_number(ptr, str_number)) == NULL)
+                 if ((ptr = get_time_number(ptr, str_number, cmd_fp)) == NULL)
                  {
                     return(INCORRECT);
                  }
@@ -1498,9 +1498,9 @@ check_time_str(char *time_str)
                  {
                     if (isdigit((int)str_number[0]) == 0)
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Division by non numeric value <%c>."),
-                                  str_number[0]);
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Division by non numeric value <%c>."),
+                                     str_number[0]);
                        return(INCORRECT);
                     }
                     step_size = str_number[0] - '0';
@@ -1512,9 +1512,9 @@ check_time_str(char *time_str)
                  }
                  if ((step_size == 0) || (step_size > 59))
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               _("Invalid step size %d in minute field."),
-                               step_size);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  _("Invalid step size %d in minute field."),
+                                  step_size);
                     return(INCORRECT);
                  }
                  if (step_size == 1)
@@ -1527,8 +1527,8 @@ check_time_str(char *time_str)
               }
               else
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            _("Unable to handle time entry `%s'."), time_str);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Unable to handle time entry `%s'."), time_str);
                  return(INCORRECT);
               }
       }
@@ -1543,7 +1543,7 @@ check_time_str(char *time_str)
    for (;;)
    {
       if ((step_size != 0) ||
-          ((ptr = get_time_number(ptr, str_number)) != NULL))
+          ((ptr = get_time_number(ptr, str_number, cmd_fp)) != NULL))
       {
          if (*ptr == ',')
          {
@@ -1555,8 +1555,8 @@ check_time_str(char *time_str)
                }
                else
                {
-                  system_log(WARN_SIGN, __FILE__, __LINE__,
-                             _("Combination of '*' and other numeric values in hour field not possible."));
+                  update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                _("Combination of '*' and other numeric values in hour field not possible."));
                   return(INCORRECT);
                }
             }
@@ -1567,8 +1567,8 @@ check_time_str(char *time_str)
                   if ((str_number[0] > '2') ||
                       ((str_number[0] == '2') && (str_number[1] > '3')))
                   {
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                _("Possible values for hour field : 0-23."));
+                     update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("Possible values for hour field : 0-23."));
                      return(INCORRECT);
                   }
                }
@@ -1591,8 +1591,8 @@ check_time_str(char *time_str)
                     if ((str_number[0] > '2') ||
                         ((str_number[0] == '2') && (str_number[1] > '3')))
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for hour field : 0-23."));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for hour field : 0-23."));
                        return(INCORRECT);
                     }
                     first_number = ((str_number[0] - '0') * 10) +
@@ -1610,8 +1610,8 @@ check_time_str(char *time_str)
                     }
                     else
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Combination of '*' and other numeric values in hour field not possible."));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Combination of '*' and other numeric values in hour field not possible."));
                        return(INCORRECT);
                     }
                  }
@@ -1622,8 +1622,8 @@ check_time_str(char *time_str)
                        if ((str_number[0] > '2') ||
                            ((str_number[0] == '2') && (str_number[1] > '3')))
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     _("Possible values for hour field : 0-23."));
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("Possible values for hour field : 0-23."));
                           return(INCORRECT);
                        }
                     }
@@ -1641,8 +1641,8 @@ check_time_str(char *time_str)
               }
          else if (*ptr == '\0')
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            _("Premature end of time entry."));
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Premature end of time entry."));
                  return(INCORRECT);
               }
          else if (*ptr == '/')
@@ -1653,7 +1653,7 @@ check_time_str(char *time_str)
                  tmp_str_number[1] = str_number[1];
                  tmp_str_number[2] = str_number[2];
                  ptr++;
-                 if ((ptr = get_time_number(ptr, str_number)) == NULL)
+                 if ((ptr = get_time_number(ptr, str_number, cmd_fp)) == NULL)
                  {
                     return(INCORRECT);
                  }
@@ -1661,9 +1661,9 @@ check_time_str(char *time_str)
                  {
                     if (isdigit((int)str_number[0]) == 0)
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Division by non numeric value <%c>."),
-                                  str_number[0]);
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Division by non numeric value <%c>."),
+                                     str_number[0]);
                        return(INCORRECT);
                     }
                     step_size = str_number[0] - '0';
@@ -1675,9 +1675,9 @@ check_time_str(char *time_str)
                  }
                  if ((step_size == 0) || (step_size > 23))
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               _("Invalid step size %d in hour field."),
-                               step_size);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  _("Invalid step size %d in hour field."),
+                                  step_size);
                     return(INCORRECT);
                  }
                  str_number[0] = tmp_str_number[0];
@@ -1686,8 +1686,8 @@ check_time_str(char *time_str)
               }
               else
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            _("Unable to handle time entry `%s'."), time_str);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Unable to handle time entry `%s'."), time_str);
                  return(INCORRECT);
               }
       }
@@ -1702,7 +1702,7 @@ check_time_str(char *time_str)
    for (;;)
    {
       if ((step_size != 0) ||
-          ((ptr = get_time_number(ptr, str_number)) != NULL))
+          ((ptr = get_time_number(ptr, str_number, cmd_fp)) != NULL))
       {
          if (*ptr == ',')
          {
@@ -1714,8 +1714,8 @@ check_time_str(char *time_str)
                }
                else
                {
-                  system_log(WARN_SIGN, __FILE__, __LINE__,
-                             _("Combination of '*' and other numeric values in day of month field not possible."));
+                  update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                _("Combination of '*' and other numeric values in day of month field not possible."));
                   return(INCORRECT);
                }
             }
@@ -1725,8 +1725,8 @@ check_time_str(char *time_str)
                {
                   if (str_number[0] == '0')
                   {
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                _("Possible values for day of month field : 1-31."));
+                     update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("Possible values for day of month field : 1-31."));
                      return(INCORRECT);
                   }
                }
@@ -1735,8 +1735,8 @@ check_time_str(char *time_str)
                   if ((str_number[0] > '3') ||
                       ((str_number[0] == '3') && (str_number[1] > '1')))
                   {
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                _("Possible values for day of month field : 1-31."));
+                     update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("Possible values for day of month field : 1-31."));
                      return(INCORRECT);
                   }
                }
@@ -1754,8 +1754,8 @@ check_time_str(char *time_str)
                  {
                     if (str_number[0] == '0')
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for day of month field : 1-31."));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for day of month field : 1-31."));
                        return(INCORRECT);
                     }
                     first_number = str_number[0] - '0';
@@ -1765,8 +1765,8 @@ check_time_str(char *time_str)
                     if ((str_number[0] > '3') ||
                         ((str_number[0] == '3') && (str_number[1] > '1')))
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for day of month field : 1-31."));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for day of month field : 1-31."));
                        return(INCORRECT);
                     }
                     first_number = ((str_number[0] - '0') * 10) +
@@ -1784,8 +1784,8 @@ check_time_str(char *time_str)
                     }
                     else
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Combination of '*' and other numeric values in day of month field not possible."));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Combination of '*' and other numeric values in day of month field not possible."));
                        return(INCORRECT);
                     }
                  }
@@ -1795,8 +1795,8 @@ check_time_str(char *time_str)
                     {
                        if (str_number[0] == '0')
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     _("Possible values for day of month field : 1-31."));
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("Possible values for day of month field : 1-31."));
                           return(INCORRECT);
                        }
                     }
@@ -1805,8 +1805,8 @@ check_time_str(char *time_str)
                        if ((str_number[0] > '3') ||
                            ((str_number[0] == '3') && (str_number[1] > '1')))
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     _("Possible values for day of month field : 1-31."));
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("Possible values for day of month field : 1-31."));
                           return(INCORRECT);
                        }
                     }
@@ -1824,8 +1824,8 @@ check_time_str(char *time_str)
               }
          else if (*ptr == '\0')
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            _("Premature end of time entry."));
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Premature end of time entry."));
                  return(INCORRECT);
               }
          else if (*ptr == '/')
@@ -1836,7 +1836,7 @@ check_time_str(char *time_str)
                  tmp_str_number[1] = str_number[1];
                  tmp_str_number[2] = str_number[2];
                  ptr++;
-                 if ((ptr = get_time_number(ptr, str_number)) == NULL)
+                 if ((ptr = get_time_number(ptr, str_number, cmd_fp)) == NULL)
                  {
                     return(INCORRECT);
                  }
@@ -1844,9 +1844,9 @@ check_time_str(char *time_str)
                  {
                     if (isdigit((int)str_number[0]) == 0)
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Division by non numeric value <%c>."),
-                                  str_number[0]);
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Division by non numeric value <%c>."),
+                                     str_number[0]);
                        return(INCORRECT);
                     }
                     step_size = str_number[0] - '0';
@@ -1858,9 +1858,9 @@ check_time_str(char *time_str)
                  }
                  if ((step_size == 0) || (step_size > 31))
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               _("Invalid step size %d in day of month field."),
-                               step_size);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  _("Invalid step size %d in day of month field."),
+                                  step_size);
                     return(INCORRECT);
                  }
                  str_number[0] = tmp_str_number[0];
@@ -1869,8 +1869,8 @@ check_time_str(char *time_str)
               }
               else
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            _("Unable to handle time entry `%s'."), time_str);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Unable to handle time entry `%s'."), time_str);
                  return(INCORRECT);
               }
       }
@@ -1885,7 +1885,7 @@ check_time_str(char *time_str)
    for (;;)
    {
       if ((step_size != 0) ||
-          ((ptr = get_time_number(ptr, str_number)) != NULL))
+          ((ptr = get_time_number(ptr, str_number, cmd_fp)) != NULL))
       {
          if (*ptr == ',')
          {
@@ -1897,8 +1897,8 @@ check_time_str(char *time_str)
                }
                else
                {
-                  system_log(WARN_SIGN, __FILE__, __LINE__,
-                             _("Combination of '*' and other numeric values in time string field not possible."));
+                  update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                _("Combination of '*' and other numeric values in time string field not possible."));
                   return(INCORRECT);
                }
             }
@@ -1908,8 +1908,8 @@ check_time_str(char *time_str)
                {
                   if (str_number[0] == '0')
                   {
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                _("Possible values for month field : 1-12."));
+                     update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("Possible values for month field : 1-12."));
                      return(INCORRECT);
                   }
                }
@@ -1917,8 +1917,8 @@ check_time_str(char *time_str)
                {
                   if ((str_number[0] > '1') || (str_number[1] > '2'))
                   {
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                _("Possible values for month field : 1-12."));
+                     update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("Possible values for month field : 1-12."));
                      return(INCORRECT);
                   }
                }
@@ -1936,8 +1936,8 @@ check_time_str(char *time_str)
                  {
                     if (str_number[0] == '0')
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for month field : 1-12."));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for month field : 1-12."));
                        return(INCORRECT);
                     }
                     first_number = str_number[0] - '0';
@@ -1946,8 +1946,8 @@ check_time_str(char *time_str)
                  {
                     if ((str_number[0] > '1') || (str_number[1] > '2'))
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for month field : 1-12."));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for month field : 1-12."));
                        return(INCORRECT);
                     }
                     first_number = ((str_number[0] - '0') * 10) +
@@ -1965,8 +1965,8 @@ check_time_str(char *time_str)
                     }
                     else
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Combination of '*' and other numeric values in time string field not possible."));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Combination of '*' and other numeric values in time string field not possible."));
                        return(INCORRECT);
                     }
                  }
@@ -1976,8 +1976,8 @@ check_time_str(char *time_str)
                     {
                        if (str_number[0] == '0')
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     _("Possible values for month field : 1-12."));
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("Possible values for month field : 1-12."));
                           return(INCORRECT);
                        }
                     }
@@ -1985,8 +1985,8 @@ check_time_str(char *time_str)
                     {
                        if ((str_number[0] > '1') || (str_number[1] > '2'))
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     _("Possible values for month field : 1-12."));
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("Possible values for month field : 1-12."));
                           return(INCORRECT);
                        }
                     }
@@ -2004,8 +2004,8 @@ check_time_str(char *time_str)
               }
          else if (*ptr == '\0')
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            _("Premature end of time entry."));
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Premature end of time entry."));
                  return(INCORRECT);
               }
          else if (*ptr == '/')
@@ -2016,7 +2016,7 @@ check_time_str(char *time_str)
                  tmp_str_number[1] = str_number[1];
                  tmp_str_number[2] = str_number[2];
                  ptr++;
-                 if ((ptr = get_time_number(ptr, str_number)) == NULL)
+                 if ((ptr = get_time_number(ptr, str_number, cmd_fp)) == NULL)
                  {
                     return(INCORRECT);
                  }
@@ -2024,9 +2024,9 @@ check_time_str(char *time_str)
                  {
                     if (isdigit((int)str_number[0]) == 0)
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Division by non numeric value <%c>."),
-                                  str_number[0]);
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Division by non numeric value <%c>."),
+                                     str_number[0]);
                        return(INCORRECT);
                     }
                     step_size = str_number[0] - '0';
@@ -2038,9 +2038,9 @@ check_time_str(char *time_str)
                  }
                  if ((step_size == 0) || (step_size > 12))
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               _("Invalid step size %d in month field."),
-                               step_size);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  _("Invalid step size %d in month field."),
+                                  step_size);
                     return(INCORRECT);
                  }
                  str_number[0] = tmp_str_number[0];
@@ -2049,8 +2049,8 @@ check_time_str(char *time_str)
               }
               else
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            _("Unable to handle time entry `%s'."), time_str);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Unable to handle time entry `%s'."), time_str);
                  return(INCORRECT);
               }
       }
@@ -2065,7 +2065,7 @@ check_time_str(char *time_str)
    for (;;)
    {
       if ((step_size != 0) ||
-          ((ptr = get_time_number(ptr, str_number)) != NULL))
+          ((ptr = get_time_number(ptr, str_number, cmd_fp)) != NULL))
       {
          if (*ptr == ',')
          {
@@ -2077,8 +2077,8 @@ check_time_str(char *time_str)
                }
                else
                {
-                  system_log(WARN_SIGN, __FILE__, __LINE__,
-                             _("Combination of '*' and other numeric values in time string field not possible."));
+                  update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                _("Combination of '*' and other numeric values in time string field not possible."));
                   return(INCORRECT);
                }
             }
@@ -2088,15 +2088,15 @@ check_time_str(char *time_str)
                {
                   if ((str_number[0] < '1') || (str_number[0] > '7'))
                   {
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                _("Possible values for day of week field : 1-7."));
+                     update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("Possible values for day of week field : 1-7."));
                      return(INCORRECT);
                   }
                }
                else
                {
-                  system_log(WARN_SIGN, __FILE__, __LINE__,
-                             _("Possible values for day of week field : 1-7."));
+                  update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                _("Possible values for day of week field : 1-7."));
                   return(INCORRECT);
                }
                if (first_number != -1)
@@ -2113,16 +2113,16 @@ check_time_str(char *time_str)
                  {
                     if ((str_number[0] < '1') || (str_number[0] > '7'))
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for day of week field : 1-7."));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for day of week field : 1-7."));
                        return(INCORRECT);
                     }
                     first_number = str_number[0] - '0';
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               _("Possible values for day of week field : 1-7."));
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  _("Possible values for day of week field : 1-7."));
                     return(INCORRECT);
                  }
                  ptr++;
@@ -2137,8 +2137,8 @@ check_time_str(char *time_str)
                     }
                     else
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Combination of '*' and other numeric values in time string field not possible."));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Combination of '*' and other numeric values in time string field not possible."));
                        return(INCORRECT);
                     }
                  }
@@ -2148,15 +2148,15 @@ check_time_str(char *time_str)
                     {
                        if ((str_number[0] < '1') || (str_number[0] > '7'))
                        {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     _("Possible values for day of week field : 1-7."));
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("Possible values for day of week field : 1-7."));
                           return(INCORRECT);
                        }
                     }
                     else
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Possible values for day of week field : 1-7."));
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Possible values for day of week field : 1-7."));
                        return(INCORRECT);
                     }
                     if (first_number != -1)
@@ -2179,7 +2179,7 @@ check_time_str(char *time_str)
                  tmp_str_number[1] = str_number[1];
                  tmp_str_number[2] = str_number[2];
                  ptr++;
-                 if ((ptr = get_time_number(ptr, str_number)) == NULL)
+                 if ((ptr = get_time_number(ptr, str_number, cmd_fp)) == NULL)
                  {
                     return(INCORRECT);
                  }
@@ -2187,25 +2187,25 @@ check_time_str(char *time_str)
                  {
                     if (isdigit((int)str_number[0]) == 0)
                     {
-                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  _("Division by non numeric value <%c>."),
-                                  str_number[0]);
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     _("Division by non numeric value <%c>."),
+                                     str_number[0]);
                        return(INCORRECT);
                     }
                     step_size = str_number[0] - '0';
                  }
                  else
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               _("Invalid step size %d in day of week field."),
-                               step_size);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  _("Invalid step size %d in day of week field."),
+                                  step_size);
                     return(INCORRECT);
                  }
                  if ((step_size == 0) || (step_size > 7))
                  {
-                    system_log(WARN_SIGN, __FILE__, __LINE__,
-                               _("Invalid step size %d in day of week field."),
-                               step_size);
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  _("Invalid step size %d in day of week field."),
+                                  step_size);
                     return(INCORRECT);
                  }
                  str_number[0] = tmp_str_number[0];
@@ -2214,8 +2214,8 @@ check_time_str(char *time_str)
               }
               else
               {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            _("Unable to handle time entry `%s'."), time_str);
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               _("Unable to handle time entry `%s'."), time_str);
                  return(INCORRECT);
               }
       }
@@ -2231,7 +2231,7 @@ check_time_str(char *time_str)
 
 /*++++++++++++++++++++++++++ get_time_number() ++++++++++++++++++++++++++*/
 static char *
-get_time_number(char *ptr, char *str_number)
+get_time_number(char *ptr, char *str_number, FILE *cmd_fp)
 {
    int i = 0;
 
@@ -2242,15 +2242,15 @@ get_time_number(char *ptr, char *str_number)
       {
          if ((*ptr > ' ') && (*ptr < '?'))
          {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       _("Invalid character %c [%d] in time string! Ignoring time entry."),
-                       *ptr, *ptr);
+            update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                          _("Invalid character %c [%d] in time string! Ignoring time entry."),
+                          *ptr, *ptr);
          }
          else
          {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       _("Invalid character [%d] in time string! Ignoring time entry."),
-                       *ptr);
+            update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                          _("Invalid character [%d] in time string! Ignoring time entry."),
+                          *ptr);
          }
          return(NULL);
       }
@@ -2260,14 +2260,14 @@ get_time_number(char *ptr, char *str_number)
 
    if (i == 0)
    {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 _("Hmm, no values entered. Ignoring time entry."));
+      update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                    _("Hmm, no values entered. Ignoring time entry."));
       return(NULL);
    }
    else if (i > 2)
         {
-           system_log(ERROR_SIGN, __FILE__, __LINE__,
-                      _("Hmm, number with more then two digits. Ignoring time entry."));
+           update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                         _("Hmm, number with more then two digits. Ignoring time entry."));
            return(NULL);
         }
 

@@ -26,15 +26,17 @@ DESCR__S_M1
  **               create a job for the FD
  **
  ** SYNOPSIS
- **   dir_check [--version]         - Show version.
- **             <work_dir>          - Working directory of AFD.
- **             <rescan time>       - The time interval when to check
- **                                   whether any directories have changed.
- **             <no of process>     - The maximum number that it may fork
- **                                   to copy files.
- **             <no_of_local_dirs>  - The number of 'user' directories
- **                                   specified in the DIR_CONFIG file
- **                                   and are local.
+ **   dir_check [--version]              - Show version.
+ **             <work_dir>               - Working directory of AFD.
+ **             <rescan time>            - The time interval when to check
+ **                                        whether any directories have changed.
+ **             <no of process>          - The maximum number that it may fork
+ **                                        to copy files.
+ **             <no_of_local_dirs>       - The number of 'user' directories
+ **                                        specified in the DIR_CONFIG file
+ **                                        and are local.
+ **             <create source dir mode> - When creating source dirs, what
+ **                                        mode they should have.
  **
  ** DESCRIPTION
  **   This program waits for files to appear in the user directory
@@ -836,7 +838,7 @@ main(int argc, char *argv[])
                          * There should be no change such as a new host
                          * or a new directory entry.
                          */
-                        if (create_db() != no_of_jobs)
+                        if (create_db(NULL) != no_of_jobs)
                         {
                            system_log(ERROR_SIGN, __FILE__, __LINE__,
                                       "Unexpected change in database! Terminating.");
@@ -1087,7 +1089,7 @@ main(int argc, char *argv[])
              * section. There should be no change such as a new host
              * or a new directory entry.
              */
-            if (create_db() != no_of_jobs)
+            if (create_db(NULL) != no_of_jobs)
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           "Unexpected change in database! Terminating.");
@@ -3810,6 +3812,20 @@ check_fifo(int read_fd, int write_fd)
 
             case CHECK_FILE_DIR :
                force_check = YES;
+               break;
+
+            case DATA_READY :
+#ifdef _FIFO_DEBUG
+               cmd[0] = ACKN; cmd[1] = '\0';
+               show_fifo_data('W', "ip_resp", cmd, 1, __FILE__, __LINE__);
+#endif
+               if (send_cmd(ACKN, write_fd) < 0)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             "Could not write to fifo %s : %s",
+                             DC_CMD_FIFO, strerror(errno));
+                  exit(INCORRECT);
+               }
                break;
 
             default    : /* Most properly we are reading garbage. */

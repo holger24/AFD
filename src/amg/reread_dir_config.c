@@ -35,6 +35,7 @@ DESCR__S_M3
  **                         int              max_no_proc,
  **                         unsigned int     *warn_counter,
  **                         FILE             *debug_fp,
+ **                         pid_t            udc_pid,
  **                         struct host_list *old_hl)
  **                                                         
  ** DESCRIPTION
@@ -96,6 +97,7 @@ reread_dir_config(int              dc_changed,
                   int              max_no_proc,
                   unsigned int     *warn_counter,
                   FILE             *debug_fp,
+                  pid_t            udc_pid,
                   struct host_list *old_hl)
 {
    int new_fsa = NO,
@@ -232,9 +234,9 @@ reread_dir_config(int              dc_changed,
          if (eval_dir_config(db_size, warn_counter, debug_fp) < 0)
 #endif
          {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "Could not find any valid entries in database %s",
-                       (no_of_dir_configs > 1) ? "files" : "file");
+            update_db_log(ERROR_SIGN, __FILE__, __LINE__, debug_fp, NULL,
+                          "Could not find any valid entries in database %s",
+                          (no_of_dir_configs > 1) ? "files" : "file");
          }
 
          /* Free dir name buffer which is no longer needed. */
@@ -246,6 +248,15 @@ reread_dir_config(int              dc_changed,
          /* Start, restart or stop jobs. */
          if (data_length > 0)
          {
+            /*
+             * When dir_check is started it too will write to debug_fp!
+             * So lets flush the data now.
+             */
+            if (debug_fp != NULL)
+            {
+               (void)fflush(debug_fp);
+            }
+
             /*
              * Since there might have been an old FSA which has more
              * information then the HOST_CONFIG lets rewrite this
@@ -263,7 +274,8 @@ reread_dir_config(int              dc_changed,
                case DIED :
                   dc_pid = make_process_amg(p_work_dir, DC_PROC_NAME,
                                             rescan_time, max_no_proc,
-                                            (create_source_dir == YES) ? create_source_dir_mode : 0);
+                                            (create_source_dir == YES) ? create_source_dir_mode : 0,
+                                            udc_pid);
                   if (pid_list != NULL)
                   {
                      *(pid_t *)(pid_list + ((DC_NO + 1) * sizeof(pid_t))) = dc_pid;
@@ -299,7 +311,8 @@ reread_dir_config(int              dc_changed,
 
                   dc_pid = make_process_amg(p_work_dir, DC_PROC_NAME,
                                             rescan_time, max_no_proc,
-                                            (create_source_dir == YES) ? create_source_dir_mode : 0);
+                                            (create_source_dir == YES) ? create_source_dir_mode : 0,
+                                            udc_pid);
                   if (pid_list != NULL)
                   {
                      *(pid_t *)(pid_list + ((DC_NO + 1) * sizeof(pid_t))) = dc_pid;
@@ -313,6 +326,18 @@ reread_dir_config(int              dc_changed,
             }
             if (dc_pid > 0)
             {
+               /*
+                * Wait for dir_check to come up again and ready so in
+                * case there are warnings or errors they can be shown
+                * to the user that has used udc.
+                */
+               if (com(DATA_READY) != SUCCESS)
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Process %s did not reply on DATA_READY!",
+                             DIR_CHECK);
+               }
+
                ret = DIR_CONFIG_UPDATED;
             }
             else
@@ -324,7 +349,7 @@ reread_dir_config(int              dc_changed,
          {
             if (dc_pid > 0)
             {
-               com(STOP);
+               (void)com(STOP);
                dc_pid = NOT_RUNNING;
             }
             ret = DIR_CONFIG_NO_VALID_DATA;
@@ -524,11 +549,13 @@ reread_dir_config(int              dc_changed,
    {
       if (no_of_dir_configs > 1)
       {
-         system_log(WARN_SIGN, NULL, 0, "All DIR_CONFIG files are empty.");
+         update_db_log(WARN_SIGN, NULL, 0, debug_fp, NULL,
+                       "All DIR_CONFIG files are empty.");
       }
       else
       {
-         system_log(WARN_SIGN, NULL, 0, "DIR_CONFIG file is empty.");
+         update_db_log(WARN_SIGN, NULL, 0, debug_fp, NULL,
+                       "DIR_CONFIG file is empty.");
       }
       ret = DIR_CONFIG_EMPTY;
    }

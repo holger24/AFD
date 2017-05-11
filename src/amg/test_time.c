@@ -89,7 +89,7 @@ main(int argc, char *argv[])
    {
       struct bd_time_entry te;
 
-      if (eval_time_str(argv[1], &te) == INCORRECT)
+      if (eval_time_str(argv[1], &te, NULL) == INCORRECT)
       {
          exit(INCORRECT);
       }
@@ -112,7 +112,7 @@ main(int argc, char *argv[])
 
       for (i = 0; i < (argc - 1); i++)
       {
-         if (eval_time_str(argv[i + 1], &te[i]) == INCORRECT)
+         if (eval_time_str(argv[i + 1], &te[i], NULL) == INCORRECT)
          {
             exit(INCORRECT);
          }
