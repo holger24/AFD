@@ -1,6 +1,6 @@
 /*
  *  show_dlog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -452,7 +452,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     0,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    15,
+                           XmNrightPosition,    20,
                            XmNalignment,        XmALIGNMENT_END,
                            NULL);
    file_name_w = XtVaCreateManagedWidget("",
@@ -486,7 +486,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     0,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    15,
+                           XmNrightPosition,    20,
                            NULL);
    directory_w = XtVaCreateManagedWidget("",
                            xmTextWidgetClass,   criteriabox_w,
@@ -508,7 +508,7 @@ main(int argc, char *argv[])
    XtAddCallback(directory_w, XmNactivateCallback, save_input,
                  (XtPointer)DIRECTORY_NAME);
 
-   label_w = XtVaCreateManagedWidget("Length :",
+   label_w = XtVaCreateManagedWidget("File size :",
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNalignment,        XmALIGNMENT_END,

@@ -1,6 +1,6 @@
 /*
  *  show_queue.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -528,7 +528,7 @@ main(int argc, char *argv[])
    XtAddCallback(directory_w, XmNactivateCallback, save_input,
                  (XtPointer)DIRECTORY_NAME);
 
-   label_w = XtVaCreateManagedWidget("Length :",
+   label_w = XtVaCreateManagedWidget("File size :",
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNalignment,        XmALIGNMENT_END,

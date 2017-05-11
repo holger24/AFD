@@ -649,7 +649,7 @@ main(int argc, char *argv[])
    XtAddCallback(job_id_w, XmNactivateCallback, save_input,
                  (XtPointer)JOB_ID);
 
-   label_w = XtVaCreateManagedWidget("Length :",
+   label_w = XtVaCreateManagedWidget("File size :",
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNalignment,        XmALIGNMENT_END,

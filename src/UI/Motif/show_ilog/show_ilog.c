@@ -1,6 +1,6 @@
 /*
  *  show_ilog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -486,7 +486,7 @@ main(int argc, char *argv[])
    argcount++;
    criteriabox_w = XmCreateForm(mainform_w, "criteriabox", args, argcount);
 
-   label_w = XtVaCreateManagedWidget(" File name :",
+   label_w = XtVaCreateManagedWidget("File name :",
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_POSITION,
@@ -519,7 +519,7 @@ main(int argc, char *argv[])
    XtAddCallback(file_name_w, XmNactivateCallback, save_input,
                  (XtPointer)FILE_NAME);
 
-   label_w = XtVaCreateManagedWidget(" Directory :",
+   label_w = XtVaCreateManagedWidget("Directory :",
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNalignment,        XmALIGNMENT_END,
@@ -552,7 +552,7 @@ main(int argc, char *argv[])
    XtAddCallback(directory_w, XmNactivateCallback, save_input,
                  (XtPointer)DIRECTORY_NAME);
 
-   label_w = XtVaCreateManagedWidget("Length :",
+   label_w = XtVaCreateManagedWidget("File size :",
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNalignment,        XmALIGNMENT_END,
@@ -563,7 +563,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     26,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    34,
+                           XmNrightPosition,    36,
                            NULL);
    file_length_w = XtVaCreateManagedWidget("",
                            xmTextWidgetClass,   criteriabox_w,
@@ -585,7 +585,7 @@ main(int argc, char *argv[])
    XtAddCallback(file_length_w, XmNactivateCallback, save_input,
                  (XtPointer)FILE_LENGTH);
 
-   label_w = XtVaCreateManagedWidget("Host :",
+   label_w = XtVaCreateManagedWidget("Recipient :",
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNalignment,        XmALIGNMENT_END,
@@ -596,7 +596,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     26,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    34,
+                           XmNrightPosition,    36,
                            NULL);
    recipient_w = XtVaCreateManagedWidget("",
                            xmTextWidgetClass,   criteriabox_w,
