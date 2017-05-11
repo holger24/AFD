@@ -1,6 +1,6 @@
 /*
  *  sf_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -177,7 +177,7 @@ char                       *del_file_name_buffer = NULL,
                            *p_initial_filename,
                            msg_str[MAX_RET_MSG_LENGTH],
                            *p_work_dir = NULL,
-                           tr_hostname[MAX_HOSTNAME_LENGTH + 1];
+                           tr_hostname[MAX_HOSTNAME_LENGTH + 2];
 struct fileretrieve_status *fra = NULL;
 struct filetransfer_status *fsa = NULL;
 struct job                 db;

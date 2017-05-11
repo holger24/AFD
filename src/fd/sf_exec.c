@@ -1,6 +1,6 @@
 /*
  *  sf_exec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -136,7 +136,7 @@ off_t                      *file_size_buffer = NULL;
 time_t                     *file_mtime_buffer = NULL;
 u_off_t                    prev_file_size_done = 0;
 char                       *p_work_dir = NULL,
-                           tr_hostname[MAX_HOSTNAME_LENGTH + 1],
+                           tr_hostname[MAX_HOSTNAME_LENGTH + 2],
                            *del_file_name_buffer = NULL,
                            *file_name_buffer = NULL;
 struct fileretrieve_status *fra = NULL;

@@ -1,6 +1,6 @@
 /*
  *  sf_smtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -189,7 +189,7 @@ u_off_t                    prev_file_size_done = 0;
 long                       transfer_timeout;
 char                       *p_work_dir = NULL,
                            msg_str[MAX_RET_MSG_LENGTH],
-                           tr_hostname[MAX_HOSTNAME_LENGTH + 1],
+                           tr_hostname[MAX_HOSTNAME_LENGTH + 2],
                            *del_file_name_buffer = NULL, /* NOT USED. */
                            *file_name_buffer = NULL;
 struct fileretrieve_status *fra = NULL;

@@ -1,6 +1,6 @@
 /*
  *  sf_map.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -126,7 +126,7 @@ off_t                      *file_size_buffer = NULL;
 time_t                     *file_mtime_buffer = NULL;
 char                       msg_str[MAX_RET_MSG_LENGTH],
                            *p_work_dir = NULL,
-                           tr_hostname[MAX_HOSTNAME_LENGTH + 1],
+                           tr_hostname[MAX_HOSTNAME_LENGTH + 2],
                            *del_file_name_buffer = NULL, /* NOT USED */
                            *file_name_buffer = NULL;
 struct fileretrieve_status *fra = NULL;

@@ -1,6 +1,6 @@
 /*
  *  sf_http.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -146,7 +146,7 @@ time_t                     *file_mtime_buffer = NULL;
 u_off_t                    prev_file_size_done = 0;
 long                       transfer_timeout;
 char                       *p_work_dir = NULL,
-                           tr_hostname[MAX_HOSTNAME_LENGTH + 1],
+                           tr_hostname[MAX_HOSTNAME_LENGTH + 2],
                            line_buffer[MAX_RET_MSG_LENGTH],
                            msg_str[MAX_RET_MSG_LENGTH],
                            *del_file_name_buffer = NULL, /* NOT USED */

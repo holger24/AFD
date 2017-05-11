@@ -1,6 +1,6 @@
 /*
  *  get_file_names.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -94,7 +94,7 @@ extern clock_t                    *ol_transfer_time;
 extern off_t                      *file_size_buffer;
 extern time_t                     *file_mtime_buffer;
 extern char                       *p_work_dir,
-                                  tr_hostname[MAX_HOSTNAME_LENGTH + 1],
+                                  tr_hostname[],
                                   *del_file_name_buffer,
                                   *file_name_buffer;
 extern struct filetransfer_status *fsa;
