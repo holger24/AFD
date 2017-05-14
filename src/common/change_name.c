@@ -1,6 +1,6 @@
 /*
  *  change_name.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
  *                            Tobias Freyberg <>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -567,10 +567,12 @@ change_name(char         *orig_file_name,
 
                         if ((p_hostname = getenv("HOSTNAME")) != NULL)
                         {
+                           (void)my_strncpy(hostname, p_hostname, 40);
                            if (*ptr_rule == 'H')
                            {
                               i = 0;
-                              while ((hostname[i] != '\0') && (hostname[i] != '.'))
+                              while ((hostname[i] != '\0') &&
+                                     (hostname[i] != '.'))
                               {
                                  i++;
                               }
@@ -581,11 +583,11 @@ change_name(char         *orig_file_name,
                            }
                            else
                            {
-                              i = strlen(p_hostname);
+                              i = strlen(hostname);
                            }
                            if (((ptr_newname + i + 1) - new_name) < max_new_name_length)
                            {
-                              (void)strcpy(ptr_newname, p_hostname);
+                              (void)strcpy(ptr_newname, hostname);
                               ptr_newname += i;
                            }
                            else
