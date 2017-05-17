@@ -243,13 +243,13 @@ input(Widget w, XtPointer client_data, XEvent *event)
    {
       int column = 0,
           dummy_length = event->xbutton.x;
-      
-      do 
-      {  
+
+      do
+      {
          dummy_length -= line_length[column];
          column++;
       } while (dummy_length > 0);
-      column--; 
+      column--;
       select_no = (event->xbutton.y / line_height) + (column * no_of_rows);
 
       if ((select_no < no_of_hosts_visible) && (last_motion_pos != select_no) &&
@@ -304,13 +304,13 @@ input(Widget w, XtPointer client_data, XEvent *event)
    {
       int column = 0,
           dummy_length = event->xbutton.x;
-      
-      do 
-      {  
+
+      do
+      {
          dummy_length -= line_length[column];
          column++;
       } while (dummy_length > 0);
-      column--; 
+      column--;
       select_no = (event->xbutton.y / line_height) + (column * no_of_rows);
 
       /* Make sure that this field does contain a channel. */
@@ -504,12 +504,12 @@ input(Widget w, XtPointer client_data, XEvent *event)
                             XFlush(display);
                          }
                       }
-                 else if (((fsa[vpl[select_no]].host_status & HOST_ERROR_ACKNOWLEDGED) ||
-                           (fsa[vpl[select_no]].host_status & HOST_ERROR_OFFLINE) ||
-                           (fsa[vpl[select_no]].host_status & HOST_ERROR_ACKNOWLEDGED_T) ||
-                           (fsa[vpl[select_no]].host_status & HOST_ERROR_OFFLINE_T) ||
-                           ((fsa[vpl[select_no]].host_status & HOST_ERROR_OFFLINE_STATIC) &&
-                            (fsa[vpl[select_no]].error_counter > fsa[vpl[select_no]].max_errors))) &&
+                 else if ((((fsa[vpl[select_no]].host_status & HOST_ERROR_ACKNOWLEDGED) ||
+                            (fsa[vpl[select_no]].host_status & HOST_ERROR_OFFLINE) ||
+                            (fsa[vpl[select_no]].host_status & HOST_ERROR_ACKNOWLEDGED_T) ||
+                            (fsa[vpl[select_no]].host_status & HOST_ERROR_OFFLINE_T) ||
+                            (fsa[vpl[select_no]].host_status & HOST_ERROR_OFFLINE_STATIC)) &&
+                            (fsa[vpl[select_no]].error_counter > fsa[vpl[select_no]].max_errors)) &&
                            (in_host_area(column, event)))
                       {
                          popup_event_reason(event->xbutton.x_root,
@@ -517,6 +517,9 @@ input(Widget w, XtPointer client_data, XEvent *event)
                                             vpl[select_no]);
                       }
                  else if ((line_style & SHOW_CHARACTERS) &&
+                          ((fsa[vpl[select_no]].host_status & HOST_ERROR_OFFLINE) == 0) &&
+                          ((fsa[vpl[select_no]].host_status & HOST_ERROR_OFFLINE_T) == 0) &&
+                          ((fsa[vpl[select_no]].host_status & HOST_ERROR_OFFLINE_STATIC) == 0) &&
                           (fsa[vpl[select_no]].error_counter > 0) &&
                           (in_ec_area(column, event)))
                       {
@@ -621,13 +624,13 @@ input(Widget w, XtPointer client_data, XEvent *event)
    {
       int column = 0,
           dummy_length = event->xbutton.x;
-      
-      do 
-      {  
+
+      do
+      {
          dummy_length -= line_length[column];
          column++;
       } while (dummy_length > 0);
-      column--; 
+      column--;
       select_no = (event->xbutton.y / line_height) + (column * no_of_rows);
 
       /* Make sure that this field does contain a channel. */
