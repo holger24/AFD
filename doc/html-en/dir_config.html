@@ -2454,7 +2454,10 @@ section. Valid options can be taken from the following table:
    <td><a name="from">from &lt;mail address&gt;</a></td>
    <td>This allows to change the From: line of a mail. This can also be
        set in AFD_CONFIG with <a href="afd_config.html#default_smtp_from">
-       DEFAULT_SMTP_FROM</a> globally.</td>
+       DEFAULT_SMTP_FROM</a> globally. One can also insert the current
+       hostname, for example user.%H@ducktown.de would resolve to
+       user.node1@ducktown.de if the hostname is node1. To insert
+       the full hostname one can use %h.</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
@@ -2469,7 +2472,9 @@ section. Valid options can be taken from the following table:
    <td>This adds Reply-To: header to a mail with another mail address
        to which the recipient should reply. This can also be set in
        AFD_CONFIG with <a href="afd_config.html#default_smtp_reply_to">
-       DEFAULT_SMTP_REPLY_TO</a> globally.</td>
+       DEFAULT_SMTP_REPLY_TO</a> globally. As explained in
+       <a href="#from">from</a> above one can also use the %H or %h
+       option to insert the current hostname.</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
@@ -2825,7 +2830,7 @@ section. Valid options can be taken from the following table:
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2017 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 27.04.2017
+   Last updated: 17.05.2017
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

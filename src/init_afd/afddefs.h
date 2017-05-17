@@ -356,6 +356,7 @@ typedef unsigned long       u_long_64;
 # define AFD_AUTO_CONFIG           "afd_auto_config"
 #endif
 #define AFD_USER_NAME              "afd"
+#define AFD_USER_NAME_LENGTH       (sizeof(AFD_USER_NAME) - 1)
 
 #ifdef _OUTPUT_LOG
 /* Definitions for different output types. */

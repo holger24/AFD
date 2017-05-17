@@ -1,6 +1,6 @@
 /*
  *  eval_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -90,6 +90,8 @@ DESCR__S_M3
  **                      unknown pexec option.
  **   04.11.2011 H.Kiehl Added support for scheduling priorities.
  **   11.01.2014 H.Kiehl Added support for trans_rename with dupcheck.
+ **   14.05.2017 H.Kiehl When storing mail address allow user to place
+ **                      the current host name with the %H and %h option.
  **
  */
 DESCR__E_M3
@@ -123,6 +125,7 @@ extern char *p_work_dir;
 
 /* Local function prototypes. */
 static void store_mode(char *, struct job *, char *, int);
+static char *store_mail_address(char *, char **, char *, unsigned int);
 
 
 #define ARCHIVE_FLAG                1
@@ -342,8 +345,9 @@ eval_message(char *message_name, struct job *p_db)
 
                      default : /* Unknown. */
                         system_log(WARN_SIGN, __FILE__, __LINE__,
-                                   "Unknown unit type `%c' (%d) for %s option. Taking default.",
-                                   byte_buf, (int)byte_buf, ARCHIVE_ID);
+                                   "Unknown unit type `%c' (%d) for %s option. Taking default. #%x",
+                                   byte_buf, (int)byte_buf, ARCHIVE_ID,
+                                   p_db->id.job);
                         unit = DEFAULT_ARCHIVE_UNIT;
                         break;
                   }
@@ -408,8 +412,9 @@ eval_message(char *message_name, struct job *p_db)
                        if (length > (LOCK_NOTATION_LENGTH - 1))
                        {
                           system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Lock postfix notation `%s' in message `%s' is %d bytes long, it may only be %d bytes long.",
-                                     LOCK_POSTFIX_ID, message_name, length, LOCK_NOTATION_LENGTH);
+                                     "Lock postfix notation `%s' in message `%s' is %d bytes long, it may only be %d bytes long. #%x",
+                                     LOCK_POSTFIX_ID, message_name, length,
+                                     LOCK_NOTATION_LENGTH, p_db->id.job);
                           p_db->lock = OFF;
                        }
                        else
@@ -423,8 +428,8 @@ eval_message(char *message_name, struct job *p_db)
                     {
                        p_db->lock = OFF;
                        system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  "No postfix found for option `%s' in message `%s'.",
-                                  LOCK_POSTFIX_ID, message_name);
+                                  "No postfix found for option `%s' in message `%s'. #%x",
+                                  LOCK_POSTFIX_ID, message_name, p_db->id.job);
                     }
                     ptr = end_ptr;
                     while (*ptr == '\n')
@@ -472,9 +477,9 @@ eval_message(char *message_name, struct job *p_db)
                                                                MAX_LOCK_FILENAME_LENGTH)) == NULL)
                             {
                                system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                          "Failed to malloc() %d bytes : %s",
+                                          "Failed to malloc() %d bytes : %s #%x",
                                           (MAX_PATH_LENGTH + MAX_LOCK_FILENAME_LENGTH),
-                                          strerror(errno));
+                                          strerror(errno), p_db->id.job);
                                exit(ALLOC_ERROR);
                             }
                             p_db->lock = LOCKFILE;
@@ -538,8 +543,9 @@ eval_message(char *message_name, struct job *p_db)
                             if (length > (LOCK_NOTATION_LENGTH - 1))
                             {
                                system_log(WARN_SIGN, __FILE__, __LINE__,
-                                          "Lock notation `%s' in message `%s' is %d bytes long, it may only be %d bytes long.",
-                                          LOCK_ID, message_name, length, LOCK_NOTATION_LENGTH);
+                                          "Lock notation `%s' in message `%s' is %d bytes long, it may only be %d bytes long. #%x",
+                                          LOCK_ID, message_name, length,
+                                          LOCK_NOTATION_LENGTH, p_db->id.job);
                                p_db->lock = OFF;
                             }
                             else
@@ -756,8 +762,8 @@ eval_message(char *message_name, struct job *p_db)
                           if ((pw = getpwnam(ptr)) == NULL)
                           {
                              (void)rec(transfer_log_fd, ERROR_SIGN,
-                                       "getpwnam() error for user %s : %s (%s %d)\n",
-                                       ptr, strerror(errno),
+                                       "getpwnam() error for user %s : %s #%x (%s %d)\n",
+                                       ptr, strerror(errno), p_db->id.job,
                                        __FILE__, __LINE__);
                           }
                           else
@@ -795,8 +801,8 @@ eval_message(char *message_name, struct job *p_db)
                              if ((gr = getgrnam(ptr)) == NULL)
                              {
                                 (void)rec(transfer_log_fd, ERROR_SIGN,
-                                          "getgrnam() error for group %s : %s (%s %d)\n",
-                                          ptr, strerror(errno),
+                                          "getgrnam() error for group %s : %s #%x (%s %d)\n",
+                                          ptr, strerror(errno), p_db->id.job,
                                           __FILE__, __LINE__);
                              }
                              else
@@ -1090,15 +1096,15 @@ eval_message(char *message_name, struct job *p_db)
                              if ((*ptr == '\n') || (*ptr == '\0'))
                              {
                                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                                           "Subject line not terminated with a \" sign, igoring %s option.",
-                                           SUBJECT_ID);
+                                           "Subject line not terminated with a \" sign, igoring %s option. #%x",
+                                           SUBJECT_ID, p_db->id.job);
                              }
                              else
                              {
                                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                                           "Subject line contains an illegal character (integer value = %d)that does not fit into the 7-bit ASCII character set, igoring %s option.",
+                                           "Subject line contains an illegal character (integer value = %d)that does not fit into the 7-bit ASCII character set, igoring %s option. #%x",
                                            (int)((unsigned char)*ptr),
-                                           SUBJECT_ID);
+                                           SUBJECT_ID, p_db->id.job);
                                 while ((*ptr != '\n') && (*ptr != '\0'))
                                 {
                                    ptr++;
@@ -1589,39 +1595,13 @@ eval_message(char *message_name, struct job *p_db)
                     if (p_db->protocol & SMTP_FLAG)
 #endif
                     {
-                       size_t length = 0;
-
                        ptr += REPLY_TO_ID_LENGTH;
                        while ((*ptr == ' ') || (*ptr == '\t'))
                        {
                           ptr++;
                        }
-                       end_ptr = ptr;
-                       while ((*end_ptr != '\n') && (*end_ptr != '\0'))
-                       {
-                         end_ptr++;
-                         length++;
-                       }
-
-                       /* Discard global DEFAULT_SMTP_REPLY_TO from */
-                       /* AFD_CONFIG when set.                      */
-                       if (p_db->reply_to != NULL)
-                       {
-                          free(p_db->reply_to);
-                          p_db->reply_to = NULL;
-                       }
-                       if ((p_db->reply_to = malloc(length + 1)) == NULL)
-                       {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Failed to malloc() memory, will ignore reply-to option : %s",
-                                     strerror(errno));
-                       }
-                       else
-                       {
-                          (void)memcpy(p_db->reply_to, ptr, length);
-                          p_db->reply_to[length] = '\0';
-                       }
-                       ptr = end_ptr;
+                       ptr = store_mail_address(ptr, &p_db->reply_to,
+                                                REPLY_TO_ID, p_db->id.job);
                     }
                     else
                     {
@@ -1642,39 +1622,14 @@ eval_message(char *message_name, struct job *p_db)
                     used |= DE_MAIL_SENDER_FLAG;
                     if (p_db->protocol & DE_MAIL_FLAG)
                     {
-                       size_t length = 0;
-
                        ptr += DE_MAIL_SENDER_ID_LENGTH;
                        while ((*ptr == ' ') || (*ptr == '\t'))
                        {
                           ptr++;
                        }
-                       end_ptr = ptr;
-                       while ((*end_ptr != '\n') && (*end_ptr != '\0'))
-                       {
-                         end_ptr++;
-                         length++;
-                       }
-
-                       /* Discard global DEFAULT_DE_MAIL_SENDER from */
-                       /* AFD_CONFIG when set.                       */
-                       if (p_db->de_mail_sender != NULL)
-                       {
-                          free(p_db->de_mail_sender);
-                          p_db->de_mail_sender = NULL;
-                       }
-                       if ((p_db->de_mail_sender = malloc(length + 1)) == NULL)
-                       {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Failed to malloc() memory, will ignore DE-mail sender option : %s",
-                                     strerror(errno));
-                       }
-                       else
-                       {
-                          (void)memcpy(p_db->de_mail_sender, ptr, length);
-                          p_db->de_mail_sender[length] = '\0';
-                       }
-                       ptr = end_ptr;
+                       ptr = store_mail_address(ptr, &p_db->de_mail_sender,
+                                                DE_MAIL_SENDER_ID,
+                                                p_db->id.job);
                     }
                     else
                     {
@@ -1718,39 +1673,13 @@ eval_message(char *message_name, struct job *p_db)
                     if (p_db->protocol & SMTP_FLAG)
 #endif
                     {
-                       size_t length = 0;
-
                        ptr += FROM_ID_LENGTH;
                        while ((*ptr == ' ') || (*ptr == '\t'))
                        {
                           ptr++;
                        }
-                       end_ptr = ptr;
-                       while ((*end_ptr != '\n') && (*end_ptr != '\0'))
-                       {
-                         end_ptr++;
-                         length++;
-                       }
-
-                       /* Discard global DEFAULT_SMTP_FROM from AFD_CONFIG */
-                       /* when set.                                        */
-                       if (p_db->from != NULL)
-                       {
-                          free(p_db->from);
-                          p_db->from = NULL;
-                       }
-                       if ((p_db->from = malloc(length + 1)) == NULL)
-                       {
-                          system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Failed to malloc() memory, will ignore from option : %s",
-                                     strerror(errno));
-                       }
-                       else
-                       {
-                          (void)memcpy(p_db->from, ptr, length);
-                          p_db->from[length] = '\0';
-                       }
-                       ptr = end_ptr;
+                       ptr = store_mail_address(ptr, &p_db->from, FROM_ID,
+                                                p_db->id.job);
                     }
                     else
                     {
@@ -2064,8 +1993,8 @@ eval_message(char *message_name, struct job *p_db)
                        if ((p_db->charset = malloc(length + 1)) == NULL)
                        {
                           system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Failed to malloc() memory, will ignore charset option : %s",
-                                     strerror(errno));
+                                     "Failed to malloc() memory, will ignore charset option : %s #%x",
+                                     strerror(errno), p_db->id.job);
                        }
                        else
                        {
@@ -2186,8 +2115,9 @@ eval_message(char *message_name, struct job *p_db)
                     if ((p_db->special_ptr = malloc(4 + 1)) == NULL)
                     {
                        system_log(WARN_SIGN, __FILE__, __LINE__,
-                                  "Failed to malloc() memory, will ignore option %s : %s",
-                                  EUMETSAT_HEADER_ID, strerror(errno));
+                                  "Failed to malloc() memory, will ignore option %s : %s #%x",
+                                  EUMETSAT_HEADER_ID, strerror(errno),
+                                  p_db->id.job);
                     }
                     else
                     {
@@ -2209,8 +2139,8 @@ eval_message(char *message_name, struct job *p_db)
                            (*ptr == '\0'))
                        {
                           system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Missing/incorrect DestEnvId. Ignoring option %s.",
-                                     EUMETSAT_HEADER_ID);
+                                     "Missing/incorrect DestEnvId. Ignoring option %s. #%x",
+                                     EUMETSAT_HEADER_ID, p_db->id.job);
                           free(p_db->special_ptr);
                           p_db->special_ptr = NULL;
                        }
@@ -2223,8 +2153,9 @@ eval_message(char *message_name, struct job *p_db)
                           if (number > 255)
                           {
                              system_log(WARN_SIGN, __FILE__, __LINE__,
-                                        "DestEnvId to large (%d). Ignoring option %s.",
-                                        number, EUMETSAT_HEADER_ID);
+                                        "DestEnvId to large (%d). Ignoring option %s. #%x",
+                                        number, EUMETSAT_HEADER_ID,
+                                        p_db->id.job);
                              free(p_db->special_ptr);
                              p_db->special_ptr = NULL;
                           }
@@ -2447,8 +2378,8 @@ eval_message(char *message_name, struct job *p_db)
                                          ptr++;
                                       }
                                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                                 "pexec timeout value to long in message %s.",
-                                                 message_name);
+                                                 "pexec timeout value to long in message %s. #%x",
+                                                 message_name, p_db->id.job);
                                    }
                                 }
                              }
@@ -2498,8 +2429,9 @@ eval_message(char *message_name, struct job *p_db)
                        if ((p_db->trans_exec_cmd = malloc(length + 1)) == NULL)
                        {
                           system_log(WARN_SIGN, __FILE__, __LINE__,
-                                     "Failed to malloc() memory, will ignore %s option : %s",
-                                     TRANS_EXEC_ID, strerror(errno));
+                                     "Failed to malloc() memory, will ignore %s option : %s #%x",
+                                     TRANS_EXEC_ID, strerror(errno),
+                                     p_db->id.job);
                        }
                        else
                        {
@@ -2718,8 +2650,8 @@ eval_message(char *message_name, struct job *p_db)
                     byte_buf = *end_ptr;
                     *end_ptr = '\0';
                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                               "Unknown or duplicate option <%s> in message %s",
-                               ptr, message_name);
+                               "Unknown or duplicate option <%s> in message %s #%x",
+                               ptr, message_name, p_db->id.job);
                     *end_ptr = byte_buf;
                     ptr = end_ptr;
                     while (*ptr == '\n')
@@ -3029,4 +2961,134 @@ store_mode(char *ptr, struct job *p_db, char *option, int type)
         }
 
    return;
+}
+
+
+/*++++++++++++++++++++++++ store_mail_address() +++++++++++++++++++++++++*/
+static char *
+store_mail_address(char         *ptr,
+                   char         **mail_address,
+                   char         *option,
+                   unsigned int job_id)
+{
+   size_t length = 0;
+   char   buffer[256];
+
+   while ((length < 255) && (*ptr != '\n') && (*ptr != '\0'))
+   {
+      if ((*ptr == '%') && ((length == 0) || (*(ptr - 1) != '\\')) &&
+          ((*(ptr + 1) == 'H') || (*(ptr + 1) == 'h')))
+      {
+         char hostname[40];
+
+         if (gethostname(hostname, 40) == -1)
+         {
+            char *p_hostname;
+
+            if ((p_hostname = getenv("HOSTNAME")) != NULL)
+            {
+               int i;
+
+               (void)my_strncpy(hostname, p_hostname, 40);
+               if (*(ptr + 1) == 'H')
+               {
+                  i = 0;
+                  while ((hostname[i] != '\0') && (hostname[i] != '.'))
+                  {
+                     i++;
+                  }
+                  if (hostname[i] == '.')
+                  {
+                     hostname[i] = '\0';
+                  }
+               }
+               else
+               {
+                  i = strlen(hostname);
+               }
+               if ((length + i + 1) > 255)
+               {
+                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                             "Storage for storing hostname in mail address not large enough (%d > %d). #%x",
+                             (length + i + 1), 255, job_id);
+                  buffer[length] = '%';
+                  buffer[length + 1] = *(ptr + 1);
+                  length += 2;
+               }
+               else
+               {
+                  (void)strcpy(&buffer[length], hostname);
+                  length += i;
+               }
+            }
+            else
+            {
+               buffer[length] = '%';
+               buffer[length + 1] = *(ptr + 1);
+               length += 2;
+            }
+         }
+         else
+         {
+            int i;
+
+            if (*(ptr + 1) == 'H')
+            {
+               i = 0;
+               while ((hostname[i] != '\0') && (hostname[i] != '.'))
+               {
+                  i++;
+               }
+               if (hostname[i] == '.')
+               {
+                  hostname[i] = '\0';
+               }
+            }
+            else
+            {
+               i = strlen(hostname);
+            }
+            if ((length + i + 1) > 255)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Storage for storing hostname in mail address not large enough (%d > %d). #%x",
+                          (length + i + 1), 255, job_id);
+               buffer[length] = '%';
+               buffer[length + 1] = *(ptr + 1);
+               length += 2;
+            }
+            else
+            {
+               (void)strcpy(&buffer[length], hostname);
+               length += i;
+            }
+         }
+         ptr += 2;
+      }
+      else
+      {
+         buffer[length] = *ptr;
+         ptr++; length++;
+      }
+   }
+
+   /* Discard global value from AFD_CONFIG when set. */
+   if (*mail_address != NULL)
+   {
+      free(*mail_address);
+      *mail_address = NULL;
+   }
+   if ((*mail_address = malloc(length + 1)) == NULL)
+   {
+      system_log(WARN_SIGN, __FILE__, __LINE__,
+                 "Failed to malloc() memory, will ignore %s option : %s",
+                 option, strerror(errno));
+   }
+   else
+   {
+      (void)memcpy(*mail_address, buffer, length);
+      (*mail_address)[length] = '\0';
+   }
+
+   return(ptr);
 }

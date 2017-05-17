@@ -194,7 +194,7 @@ char                       stop_flag = 0,
                            msg_dir[MAX_PATH_LENGTH],
                            default_http_proxy[MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH],
 #ifdef _WITH_DE_MAIL_SUPPORT
-                           default_de_mail_sender[MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH],
+                           *default_de_mail_sender,
 #endif
                            *default_smtp_from,
                            *default_smtp_reply_to,
@@ -262,7 +262,8 @@ static void  check_zombie_queue(time_t, int),
              qb_pos_pid(pid_t, int *),
              sig_exit(int),
              sig_segv(int),
-             sig_bus(int);
+             sig_bus(int),
+             store_mail_address(char *, char **, char *);
 static int   check_dir_in_use(int),
              check_local_interface_names(char *),
              get_free_connection(void),
@@ -724,7 +725,7 @@ main(int argc, char *argv[])
               "FD configuration: Default SMTP server           %s",
               (default_smtp_server[0] == '\0') ? SMTP_HOST_NAME : default_smtp_server);
 #ifdef _WITH_DE_MAIL_SUPPORT
-   if (default_de_mail_sender[0] != '\0')
+   if (default_de_mail_sender != NULL)
    {
       system_log(DEBUG_SIGN, NULL, 0,
                  "FD configuration: Default DE-Mail sender        %s",
@@ -3253,7 +3254,7 @@ make_process(struct connection *con, int qb_pos)
          args[argcount] = default_smtp_server;
       }
 #ifdef _WITH_DE_MAIL_SUPPORT
-      if ((con->protocol == DE_MAIL) && (default_de_mail_sender[0] != '\0'))
+      if ((con->protocol == DE_MAIL) && (default_de_mail_sender != NULL))
       {
          argcount++;
          args[argcount] = "-D";
@@ -4384,8 +4385,8 @@ get_afd_config_value(void)
                  {
                     system_log(WARN_SIGN, __FILE__, __LINE__,
                                _("Invalid mode %u set in AFD_CONFIG for %s. Setting to default %d."),
-                               create_source_dir_mode, CREATE_REMOTE_SOURCE_DIR_DEF,
-                               DIR_MODE);
+                               create_source_dir_mode,
+                               CREATE_REMOTE_SOURCE_DIR_DEF, DIR_MODE);
                     create_source_dir_mode = DIR_MODE;
                  }
                  else /* Convert octal to decimal. */
@@ -4474,7 +4475,8 @@ get_afd_config_value(void)
          if (((config_file[0] == 'y') || (config_file[0] == 'Y')) &&
              ((config_file[1] == 'e') || (config_file[1] == 'E')) &&
              ((config_file[2] == 's') || (config_file[2] == 'S')) &&
-             ((config_file[3] == '\0') || (config_file[3] == ' ') || (config_file[3] == '\t')))
+             ((config_file[3] == '\0') || (config_file[3] == ' ') ||
+              (config_file[3] == '\t')))
          {
             *(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) |= ENABLE_CREATE_TARGET_DIR;
          }
@@ -4482,7 +4484,8 @@ get_afd_config_value(void)
          {
             if (((config_file[0] == 'n') || (config_file[0] == 'N')) &&
                 ((config_file[1] == 'o') || (config_file[1] == 'O')) &&
-                ((config_file[2] == '\0') || (config_file[2] == ' ') || (config_file[2] == '\t')))
+                ((config_file[2] == '\0') || (config_file[2] == ' ') ||
+                 (config_file[2] == '\t')))
             {
                system_log(WARN_SIGN, __FILE__, __LINE__,
                           "Only YES or NO (and not `%s') are possible for %s in AFD_CONFIG. Setting to default: NO",
@@ -4507,7 +4510,8 @@ get_afd_config_value(void)
          if (((config_file[0] == 'y') || (config_file[0] == 'Y')) &&
              ((config_file[1] == 'e') || (config_file[1] == 'E')) &&
              ((config_file[2] == 's') || (config_file[2] == 'S')) &&
-             ((config_file[3] == '\0') || (config_file[3] == ' ') || (config_file[3] == '\t')))
+             ((config_file[3] == '\0') || (config_file[3] == ' ') ||
+              (config_file[3] == '\t')))
          {
             simulate_send_mode = YES;
          }
@@ -4515,7 +4519,8 @@ get_afd_config_value(void)
          {
             if (((config_file[0] == 'n') || (config_file[0] == 'N')) &&
                 ((config_file[1] == 'o') || (config_file[1] == 'O')) &&
-                ((config_file[2] == '\0') || (config_file[2] == ' ') || (config_file[2] == '\t')))
+                ((config_file[2] == '\0') || (config_file[2] == ' ') ||
+                 (config_file[2] == '\t')))
             {
                system_log(WARN_SIGN, __FILE__, __LINE__,
                           "Only YES or NO (and not `%s') are possible for %s in AFD_CONFIG. Setting to default: NO",
@@ -4525,7 +4530,8 @@ get_afd_config_value(void)
          }
       }
       if (get_definition(buffer, DEFAULT_HTTP_PROXY_DEF,
-                         config_file, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH) != NULL)
+                         config_file,
+                         MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH) != NULL)
       {
          (void)strcpy(default_http_proxy, config_file);
       }
@@ -4534,7 +4540,8 @@ get_afd_config_value(void)
          default_http_proxy[0] = '\0';
       }
       if (get_definition(buffer, DEFAULT_SMTP_SERVER_DEF,
-                         config_file, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH) != NULL)
+                         config_file,
+                         MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH) != NULL)
       {
          (void)strcpy(default_smtp_server, config_file);
       }
@@ -4544,47 +4551,71 @@ get_afd_config_value(void)
       }
 #ifdef _WITH_DE_MAIL_SUPPORT
       if (get_definition(buffer, DEFAULT_DE_MAIL_SENDER_DEF,
-                         config_file, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH) != NULL)
+                         config_file,
+                         MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH) != NULL)
       {
-         (void)strcpy(default_de_mail_sender, config_file);
+         store_mail_address(config_file, &default_de_mail_sender,
+                            DEFAULT_DE_MAIL_SENDER_DEF);
       }
       else
       {
-         char host_name[256],
-              *ptr;
+         size_t length;
+         char   host_name[256],
+                *ptr;
 
          if (gethostname(host_name, 255) < 0)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        "gethostname() error : %s", strerror(errno));
-            exit(INCORRECT);
-         }
-         if ((ptr = getenv("LOGNAME")) != NULL)
-         {
-            (void)snprintf(default_de_mail_sender, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH,
-                           "%s@%s", ptr, host_name);
+
+            /* unknown */
+            host_name[0] = 'u'; host_name[1] = 'n'; host_name[2] = 'k';
+            host_name[3] = 'n'; host_name[4] = 'o'; host_name[5] = 'w';
+            host_name[6] = 'n'; host_name[7] = '\0';
+            length = 7;
          }
          else
          {
-            (void)snprintf(default_de_mail_sender, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH,
-                           "%s@%s", AFD_USER_NAME, host_name);
+            length = strlen(host_name);
+         }
+         if ((ptr = getenv("LOGNAME")) != NULL)
+         {
+            length = strlen(ptr) + 1 + length + 1;
+            if ((default_de_mail_sender = malloc(length)) == NULL)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "Failed to malloc() memory for default De-Mail sender : %s",
+                          strerror(errno));
+            }
+            else
+            {
+               (void)snprintf(default_de_mail_sender, length,
+                              "%s@%s", ptr, host_name);
+            }
+         }
+         else
+         {
+            length = AFD_USER_NAME_LENGTH + 1 + length + 1;
+            if ((default_de_mail_sender = malloc(length)) == NULL)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "Failed to malloc() memory for default De-Mail sender : %s",
+                          strerror(errno));
+            }
+            else
+            {
+               (void)snprintf(default_de_mail_sender,
+                              MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH,
+                              "%s@%s", AFD_USER_NAME, host_name);
+            }
          }
       }
 #endif
       if (get_definition(buffer, DEFAULT_SMTP_FROM_DEF,
                          config_file, MAX_RECIPIENT_LENGTH) != NULL)
       {
-         size_t length;
-
-         length = strlen(config_file) + 1;
-         if ((default_smtp_from = malloc(length)) == NULL)
-         {
-            system_log(FATAL_SIGN, __FILE__, __LINE__,
-                       "Failed to malloc() %d bytes : %s",
-                       length, strerror(errno));
-            exit(INCORRECT);
-         }
-         (void)strcpy(default_smtp_from, config_file);
+         store_mail_address(config_file, &default_smtp_from,
+                            DEFAULT_SMTP_FROM_DEF);
       }
       else
       {
@@ -4593,17 +4624,8 @@ get_afd_config_value(void)
       if (get_definition(buffer, DEFAULT_SMTP_REPLY_TO_DEF,
                          config_file, MAX_RECIPIENT_LENGTH) != NULL)
       {
-         size_t length;
-
-         length = strlen(config_file) + 1;
-         if ((default_smtp_reply_to = malloc(length)) == NULL)
-         {
-            system_log(FATAL_SIGN, __FILE__, __LINE__,
-                       "Failed to malloc() %d bytes : %s",
-                       length, strerror(errno));
-            exit(INCORRECT);
-         }
-         (void)strcpy(default_smtp_reply_to, config_file);
+         store_mail_address(config_file, &default_smtp_reply_to,
+                            DEFAULT_SMTP_REPLY_TO_DEF);
       }
       else
       {
@@ -4656,14 +4678,16 @@ get_afd_config_value(void)
          {
             if (((config_file[0] == 'n') || (config_file[0] == 'N')) &&
                 ((config_file[1] == 'o') || (config_file[1] == 'O')) &&
-                ((config_file[2] == '\0') || (config_file[2] == ' ') || (config_file[2] == '\t')))
+                ((config_file[2] == '\0') || (config_file[2] == ' ') ||
+                 (config_file[2] == '\t')))
             {
                add_afd_priority = NO;
             }
             else if (((config_file[0] == 'y') || (config_file[0] == 'Y')) &&
                      ((config_file[1] == 'e') || (config_file[1] == 'E')) &&
                      ((config_file[2] == 's') || (config_file[2] == 'S')) &&
-                     ((config_file[3] == '\0') || (config_file[3] == ' ') || (config_file[3] == '\t')))
+                     ((config_file[3] == '\0') || (config_file[3] == ' ') ||
+                      (config_file[3] == '\t')))
                  {
                     add_afd_priority = YES;
                  }
@@ -4696,24 +4720,55 @@ get_afd_config_value(void)
    else
    {
 #ifdef _WITH_DE_MAIL_SUPPORT
-      char host_name[256],
-           *ptr;
+      size_t length;
+      char   host_name[256],
+             *ptr;
 
       if (gethostname(host_name, 255) < 0)
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "gethostname() error : %s", strerror(errno));
-         exit(INCORRECT);
-      }
-      if ((ptr = getenv("LOGNAME")) != NULL)
-      {
-         (void)snprintf(default_de_mail_sender, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH,
-                        "%s@%s", ptr, host_name);
+
+         /* unknown */
+         host_name[0] = 'u'; host_name[1] = 'n'; host_name[2] = 'k';
+         host_name[3] = 'n'; host_name[4] = 'o'; host_name[5] = 'w';
+         host_name[6] = 'n'; host_name[7] = '\0';
+         length = 7;
       }
       else
       {
-         (void)snprintf(default_de_mail_sender, MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH,
-                        "%s@%s", AFD_USER_NAME, host_name);
+         length = strlen(host_name);
+      }
+      if ((ptr = getenv("LOGNAME")) != NULL)
+      {
+         length = strlen(ptr) + 1 + length + 1;
+         if ((default_de_mail_sender = malloc(length)) == NULL)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "Failed to malloc() memory for default De-Mail sender : %s",
+                       strerror(errno));
+         }
+         else
+         {
+            (void)snprintf(default_de_mail_sender, length,
+                           "%s@%s", ptr, host_name);
+         }
+      }
+      else
+      {
+         length = AFD_USER_NAME_LENGTH + 1 + length + 1;
+         if ((default_de_mail_sender = malloc(length)) == NULL)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "Failed to malloc() memory for default De-Mail sender : %s",
+                       strerror(errno));
+         }
+         else
+         {
+            (void)snprintf(default_de_mail_sender,
+                           MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH,
+                           "%s@%s", AFD_USER_NAME, host_name);
+         }
       }
 #endif
       default_smtp_server[0] = '\0';
@@ -4726,6 +4781,128 @@ get_afd_config_value(void)
       {
          *(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) ^= ENABLE_CREATE_TARGET_DIR;
       }
+   }
+
+   return;
+}
+
+
+/*------------------------ store_mail_address() -------------------------*/
+static void
+store_mail_address(char *config_file, char **mail_address, char *option)
+{
+   size_t length = 0;
+   char   buffer[256],
+          *ptr = config_file;
+
+   while ((length < 255) && (*ptr != '\n') && (*ptr != '\0'))
+   {
+      if ((*ptr == '%') && ((length == 0) || (*(ptr - 1) != '\\')) &&
+          ((*(ptr + 1) == 'H') || (*(ptr + 1) == 'h')))
+      {
+         char hostname[40];
+
+         if (gethostname(hostname, 40) == -1)
+         {
+            char *p_hostname;
+
+            if ((p_hostname = getenv("HOSTNAME")) != NULL)
+            {
+               int i;
+
+               (void)my_strncpy(hostname, p_hostname, 40);
+               if (*(ptr + 1) == 'H')
+               {
+                  i = 0;
+                  while ((hostname[i] != '\0') && (hostname[i] != '.'))
+                  {
+                     i++;
+                  }
+                  if (hostname[i] == '.')
+                  {
+                     hostname[i] = '\0';
+                  }
+               }
+               else
+               {
+                  i = strlen(hostname);
+               }
+               if ((length + i + 1) > 255)
+               {
+                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                             "Storage for storing hostname in mail address not large enough (%d > %d).",
+                             (length + i + 1), 255);
+                  buffer[length] = '%';
+                  buffer[length + 1] = *(ptr + 1);
+                  length += 2;
+               }
+               else
+               {
+                  (void)strcpy(&buffer[length], hostname);
+                  length += i;
+               }
+            }
+            else
+            {
+               buffer[length] = '%';
+               buffer[length + 1] = *(ptr + 1);
+               length += 2;
+            }
+         }
+         else
+         {
+            int i;
+
+            if (*(ptr + 1) == 'H')
+            {
+               i = 0;
+               while ((hostname[i] != '\0') && (hostname[i] != '.'))
+               {
+                  i++;
+               }
+               if (hostname[i] == '.')
+               {
+                  hostname[i] = '\0';
+               }
+            }
+            else
+            {
+               i = strlen(hostname);
+            }
+            if ((length + i + 1) > 255)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Storage for storing hostname in mail address not large enough (%d > %d).",
+                          (length + i + 1), 255);
+               buffer[length] = '%';
+               buffer[length + 1] = *(ptr + 1);
+               length += 2;
+            }
+            else
+            {
+               (void)strcpy(&buffer[length], hostname);
+               length += i;
+            }
+         }
+         ptr += 2;
+      }
+      else
+      {
+         buffer[length] = *ptr;
+         ptr++; length++;
+      }
+   }
+
+   if ((*mail_address = malloc(length + 1)) == NULL)
+   {
+      system_log(WARN_SIGN, __FILE__, __LINE__,
+                 "Failed to malloc() memory, will ignore %s option : %s",
+                 option, strerror(errno));
+   }
+   else
+   {
+      (void)memcpy(*mail_address, buffer, length);
+      (*mail_address)[length] = '\0';
    }
 
    return;

@@ -434,7 +434,10 @@ the new value:
    <td valign=top><a name="default_smtp_from">DEFAULT_SMTP_FROM</a></td>
    <td>The default what will be put into the from line, if the from option
        is not set under [options]. If not set it will take the user- and
-       hostname from the current system where AFD is running.</td>
+       hostname from the current system where AFD is running. One can
+       also insert the current hostname, for example user.%H@ducktown.de
+       would resolve to user.node1@ducktown.de if the hostname is
+       node1. To insert the full hostname one can use %h.</td>
    <td valign=top>&lt;current user&gt;@&lt;hostname&gt;</td>
    <td valign=top>fd</td>
 </tr>
@@ -442,7 +445,9 @@ the new value:
    <td valign=top><a name="default_smtp_reply_to">DEFAULT_SMTP_REPLY_TO</a></td>
    <td>The default what will be put into the reply-to line, if the reply-to
        option is not set under [options]. If not set it will not send
-       the reply-to line.</td>
+       the reply-to line. Here too one can insert the current hostname
+       either with %H or %h as described in <a href="#default_smtp_from">
+       DEFAULT_SMTP_FROM</a> above.</td>
    <td valign=top>Not set</td>
    <td valign=top>fd</td>
 </tr>
@@ -756,9 +761,9 @@ restarted.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1999 - 2016 by H.Kiehl<br>
+   Copyright &copy; 1999 - 2017 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 09.12.2016
+   Last updated: 17.05.2017
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
