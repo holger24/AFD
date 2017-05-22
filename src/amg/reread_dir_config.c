@@ -339,16 +339,19 @@ reread_dir_config(int              dc_changed,
                              DIR_CHECK);
                }
 
-               /*
-                * dir_check() could have written something, so we need
-                * to go to the end of the file, in case we want to write
-                * some more information.
-                */
-               if (fseek(debug_fp, 0L, SEEK_END) == -1)
+               if (debug_fp != NULL)
                {
-                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                             "fseek() to end of file failed : %s",
-                             strerror(errno));
+                  /*
+                   * dir_check() could have written something, so we need
+                   * to go to the end of the file, in case we want to write
+                   * some more information.
+                   */
+                  if (fseek(debug_fp, 0L, SEEK_END) == -1)
+                  {
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "fseek() to end of file failed : %s",
+                                strerror(errno));
+                  }
                }
 
                ret = DIR_CONFIG_UPDATED;
