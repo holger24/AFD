@@ -132,7 +132,7 @@ Widget                     mw[5],          /* Main menu */
                            ow[13],         /* Host menu */
                            vw[14],         /* View menu */
                            cw[8],          /* Control menu */
-                           sw[5],          /* Setup menu */
+                           sw[7],          /* Setup menu */
                            hw[3],          /* Help menu */
                            fw[NO_OF_FONTS],/* Select font */
                            rw[NO_OF_ROWS], /* Select rows */
@@ -286,8 +286,8 @@ static void                mafd_ctrl_exit(void),
                            create_pullright_style(Widget),
                            create_pullright_test(Widget),
                            eval_permissions(char *),
-                           init_menu_bar(Widget, Widget *),
-                           init_mafd_ctrl(int *, char **, char *),
+                           init_menu_bar(Widget, Widget *, int),
+                           init_mafd_ctrl(int *, char **, char *, int *),
                            init_popup_menu(Widget),
                            sig_bus(int),
                            sig_exit(int),
@@ -298,6 +298,7 @@ static void                mafd_ctrl_exit(void),
 int
 main(int argc, char *argv[])
 {
+   int           have_groups = NO;
    char          window_title[100];
    static String fallback_res[] =
                  {
@@ -332,7 +333,7 @@ main(int argc, char *argv[])
    CHECK_FOR_VERSION(argc, argv);
 
    /* Initialise global values. */
-   init_mafd_ctrl(&argc, argv, window_title);
+   init_mafd_ctrl(&argc, argv, window_title, &have_groups);
 
    /*
     * SSH wants to look at .Xauthority and with setuid flag
@@ -423,7 +424,7 @@ main(int argc, char *argv[])
 
    if (no_input == False)
    {
-      init_menu_bar(mainform_w, &menu_w);
+      init_menu_bar(mainform_w, &menu_w, have_groups);
    }
 
    /* Setup colors. */
@@ -638,7 +639,7 @@ main(int argc, char *argv[])
 
 /*+++++++++++++++++++++++++++ init_mafd_ctrl() ++++++++++++++++++++++++++*/
 static void
-init_mafd_ctrl(int *argc, char *argv[], char *window_title)
+init_mafd_ctrl(int *argc, char *argv[], char *window_title, int *have_groups)
 {
    int          fd,
                 gotcha,
@@ -1028,6 +1029,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
       if (fsa[i].real_hostname[0][0] == GROUP_IDENTIFIER)
       {
          connect_data[i].type = GROUP_IDENTIFIER;
+         *have_groups = YES;
       }
       else
       {
@@ -1359,7 +1361,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
 
 /*+++++++++++++++++++++++++++ init_menu_bar() +++++++++++++++++++++++++++*/
 static void
-init_menu_bar(Widget mainform_w, Widget *menu_w)
+init_menu_bar(Widget mainform_w, Widget *menu_w, int have_groups)
 {
    Arg      args[MAXARGS];
    Cardinal argcount;
@@ -1568,6 +1570,7 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                               XmNseparatorType,       XmDOUBLE_LINE,
                               NULL);
    }
+
 #ifdef WITH_CTRL_ACCELERATOR
    ow[EXIT_W] = XtVaCreateManagedWidget("Exit                 (Ctrl+x)",
 #else
@@ -1930,6 +1933,52 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                            XmNsubMenuId,               pullright_other_options,
                            NULL);
    create_pullright_other(pullright_other_options);
+
+   if (have_groups == YES)
+   {
+      XtVaCreateManagedWidget("Separator",
+                              xmSeparatorWidgetClass, pull_down_w,
+                              NULL);
+#ifdef WITH_CTRL_ACCELERATOR
+      sw[OPEN_ALL_GROUPS_W] = XtVaCreateManagedWidget("Open Groups   (Ctrl+o)",
+#else
+      sw[OPEN_ALL_GROUPS_W] = XtVaCreateManagedWidget("Open Groups   (Alt+o)",
+#endif
+                              xmPushButtonWidgetClass, pull_down_w,
+                              XmNfontList,             fontlist,
+#ifdef WHEN_WE_KNOW_HOW_TO_FIX_THIS
+                              XmNmnemonic,             'o',
+#endif
+#ifdef WITH_CTRL_ACCELERATOR
+                              XmNaccelerator,          "Ctrl<Key>o",
+#else
+                              XmNaccelerator,          "Alt<Key>o",
+#endif
+                              NULL);
+      XtAddCallback(sw[OPEN_ALL_GROUPS_W], XmNactivateCallback,
+                    open_close_all_groups, (XtPointer)OPEN_ALL_GROUPS_SEL);
+
+#ifdef WITH_CTRL_ACCELERATOR
+      sw[CLOSE_ALL_GROUPS_W] = XtVaCreateManagedWidget("Close Groups (Ctrl+c)",
+#else
+      sw[CLOSE_ALL_GROUPS_W] = XtVaCreateManagedWidget("Close Groups (Alt+c)",
+#endif
+                              xmPushButtonWidgetClass, pull_down_w,
+                              XmNfontList,             fontlist,
+#ifdef WHEN_WE_KNOW_HOW_TO_FIX_THIS
+                              XmNmnemonic,             'c',
+#endif
+#ifdef WITH_CTRL_ACCELERATOR
+                              XmNaccelerator,          "Ctrl<Key>c",
+#else
+                              XmNaccelerator,          "Alt<Key>c",
+#endif
+                              NULL);
+      XtAddCallback(sw[CLOSE_ALL_GROUPS_W], XmNactivateCallback,
+                    open_close_all_groups, (XtPointer)CLOSE_ALL_GROUPS_SEL);
+   }
+
+
    XtVaCreateManagedWidget("Separator",
                            xmSeparatorWidgetClass, pull_down_w,
                            NULL);

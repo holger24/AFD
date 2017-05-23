@@ -138,7 +138,9 @@
 #define ROWS_W                           1
 #define STYLE_W                          2
 #define OTHER_W                          3
-#define SAVE_W                           4
+#define OPEN_ALL_GROUPS_W                4
+#define CLOSE_ALL_GROUPS_W               5
+#define SAVE_W                           6
 
 /* Definitions for the Help pulldown. */
 #define ABOUT_W                          0
@@ -220,6 +222,8 @@
 #define EDIT_HC_SEL                      125
 #define STARTUP_AFD_SEL                  126
 #define SHUTDOWN_AFD_SEL                 127
+#define OPEN_ALL_GROUPS_SEL              128
+#define CLOSE_ALL_GROUPS_SEL             129
 /* NOTE: Since some of these are used by more then one */
 /*       program each may define only a certain range: */
 /*         afd_ctrl.h        0 - 39                    */

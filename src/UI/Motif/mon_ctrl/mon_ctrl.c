@@ -124,7 +124,7 @@ Widget                  appshell,
                         tw[2],          /* Test (ping, traceroute) */
                         vw[11],         /* Remote view menu */
                         cw[8],          /* Remote control menu */
-                        sw[6],          /* Setup menu */
+                        sw[7],          /* Setup menu */
                         hw[3],          /* Help menu */
                         fw[NO_OF_FONTS],/* Select font */
                         rw[NO_OF_ROWS], /* Select rows */

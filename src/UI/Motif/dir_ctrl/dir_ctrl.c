@@ -118,7 +118,7 @@ Widget                     appshell,
                            mw[4],                /* Main menu */
                            dw[NO_DIR_MENU],      /* Directory menu */
                            vw[NO_DIR_VIEW_MENU], /* View menu */
-                           sw[5],                /* Setup menu */
+                           sw[7],                /* Setup menu */
                            hw[3],                /* Help menu */
                            fw[NO_OF_FONTS],      /* Select font */
                            rw[NO_OF_ROWS],       /* Select rows */
