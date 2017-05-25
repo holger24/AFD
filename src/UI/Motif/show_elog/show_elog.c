@@ -1,6 +1,6 @@
 /*
  *  show_elog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -141,7 +141,7 @@ static void      eval_permissions(char *),
 #ifdef HAVE_SETPRIORITY
                  get_afd_config_value(void),
 #endif
-                 init_show_elog(int *, char **),
+                 init_show_elog(int *, char **, char *),
                  sig_bus(int),
                  sig_exit(int),
                  sig_segv(int),
@@ -152,7 +152,7 @@ static void      eval_permissions(char *),
 int
 main(int argc, char *argv[])
 {
-   char            window_title[100],
+   char            window_title[MAX_WNINDOW_TITLE_LENGTH],
                    work_dir[MAX_PATH_LENGTH];
    static String   fallback_res[] =
                    {
@@ -197,19 +197,10 @@ main(int argc, char *argv[])
 
    /* Initialise global values. */
    p_work_dir = work_dir;
-   init_show_elog(&argc, argv);
+   init_show_elog(&argc, argv, window_title);
 #ifdef HAVE_SETPRIORITY
    get_afd_config_value();
 #endif
-
-   (void)strcpy(window_title, "AFD Event Log ");
-   if (get_afd_name(&window_title[10]) == INCORRECT)
-   {
-      if (gethostname(&window_title[10], MAX_AFD_NAME_LENGTH) == 0)
-      {
-         window_title[10] = toupper((int)window_title[10]);
-      }
-   }
 
    /*
     * SSH uses wants to look at .Xauthority and with setuid flag
@@ -1073,7 +1064,7 @@ main(int argc, char *argv[])
 
 /*++++++++++++++++++++++++++ init_show_elog() +++++++++++++++++++++++++++*/
 static void
-init_show_elog(int *argc, char *argv[])
+init_show_elog(int *argc, char *argv[], char *window_title)
 {
    int  user_offset;
    char fake_user[MAX_FULL_USER_ID_LENGTH],
@@ -1094,6 +1085,25 @@ init_show_elog(int *argc, char *argv[])
                     __FILE__, __LINE__);
       exit(INCORRECT);
    }
+
+   /* Check if title is specified. */
+   if (get_arg(argc, argv, "-t", font_name, 40) == INCORRECT)
+   {
+      (void)strcpy(window_title, "AFD Event Log ");
+      if (get_afd_name(&window_title[14]) == INCORRECT)
+      {
+         if (gethostname(&window_title[14], MAX_AFD_NAME_LENGTH) == 0)
+         {
+            window_title[14] = toupper((int)window_title[14]);
+         }
+      }
+   }
+   else
+   {
+      (void)snprintf(window_title, MAX_WNINDOW_TITLE_LENGTH,
+                     "AFD Event Log %s", font_name);
+   }
+
    if (get_arg(argc, argv, "-f", font_name, 256) == INCORRECT)
    {
       (void)strcpy(font_name, DEFAULT_FONT);

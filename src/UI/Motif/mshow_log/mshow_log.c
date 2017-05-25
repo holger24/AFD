@@ -1,6 +1,6 @@
 /*
  *  mshow_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -149,7 +149,7 @@ static void      create_cursors(void),
 #ifdef HAVE_SETPRIORITY
                  get_afd_config_value(void),
 #endif
-                 init_log_file(int *, char **),
+                 init_log_file(int *, char **, char *),
                  mshow_log_exit(void),
                  sig_bus(int),
                  sig_segv(int),
@@ -163,8 +163,7 @@ main(int argc, char *argv[])
 #ifdef _WITH_SCROLLBAR
    int             slider_size;
 #endif
-   char            window_title[100],
-                   hostname[MAX_AFD_NAME_LENGTH],
+   char            window_title[MAX_WNINDOW_TITLE_LENGTH],
                    str_number[MAX_INT_LENGTH];
    static String   fallback_res[] =
                    {
@@ -218,25 +217,10 @@ main(int argc, char *argv[])
    CHECK_FOR_VERSION(argc, argv);
 
    p_work_dir = work_dir;
-   init_log_file(&argc, argv);
+   init_log_file(&argc, argv, window_title);
 #ifdef HAVE_SETPRIORITY
    get_afd_config_value();
 #endif
-
-   (void)strcpy(window_title, log_type);
-   (void)strcat(window_title, " Log ");
-   if (get_afd_name(hostname) == INCORRECT)
-   {
-      if (gethostname(hostname, MAX_AFD_NAME_LENGTH) == 0)
-      {
-         hostname[0] = toupper((int)hostname[0]);
-         (void)strcat(window_title, hostname);
-      }
-   }
-   else
-   {
-      (void)strcat(window_title, hostname);
-   }
 
    /*
     * SSH uses wants to look at .Xauthority and with setuid flag
@@ -945,7 +929,7 @@ main(int argc, char *argv[])
 
 /*+++++++++++++++++++++++++++ init_log_file() +++++++++++++++++++++++++++*/
 static void
-init_log_file(int *argc, char *argv[])
+init_log_file(int *argc, char *argv[], char *window_title)
 {
    int  max_alias_length;
    char log_file[MAX_PATH_LENGTH];
@@ -961,6 +945,39 @@ init_log_file(int *argc, char *argv[])
    {
       exit(INCORRECT);
    }
+
+   if (get_arg(argc, argv, "-l", log_type, MAX_FILENAME_LENGTH) == INCORRECT)
+   {
+      usage(argv[0]);
+      exit(INCORRECT);
+   }
+
+   /* Check if title is specified. */
+   if (get_arg(argc, argv, "-t", font_name, 40) == INCORRECT)
+   {
+      char hostname[MAX_AFD_NAME_LENGTH];
+
+      (void)strcpy(window_title, log_type);
+      (void)strcat(window_title, " Log ");
+      if (get_afd_name(hostname) == INCORRECT)
+      {
+         if (gethostname(hostname, MAX_AFD_NAME_LENGTH) == 0)
+         {
+            hostname[0] = toupper((int)hostname[0]);
+            (void)strcat(window_title, hostname);
+         }
+      }
+      else
+      {
+         (void)strcat(window_title, hostname);
+      }
+   }
+   else
+   {
+      (void)snprintf(window_title, MAX_WNINDOW_TITLE_LENGTH,
+                     "%s Log %s", log_type, font_name);
+   }
+
    if (get_arg(argc, argv, "-p", profile, MAX_PROFILE_NAME_LENGTH) == INCORRECT)
    {
       profile[0] = '\0';
@@ -976,11 +993,6 @@ init_log_file(int *argc, char *argv[])
    else
    {
       alias_name_length = 0;
-   }
-   if (get_arg(argc, argv, "-l", log_type, MAX_FILENAME_LENGTH) == INCORRECT)
-   {
-      usage(argv[0]);
-      exit(INCORRECT);
    }
    check_fake_user(argc, argv, AFD_CONFIG_FILE, fake_user);
 

@@ -116,6 +116,7 @@ extern float                      max_bar_length;
 extern unsigned long              color_pool[];
 extern char                       fake_user[],
                                   font_name[],
+                                  title[],
                                   line_style,
                                   other_options,
                                   profile[],
@@ -534,15 +535,21 @@ dir_popup_cb(Widget    w,
          args[2] = p_work_dir;
          args[3] = "-f";
          args[4] = font_name;
-         if (fake_user[0] != '\0')
+         if (title[0] != '\0')
          {
-            args[5] = "-u";
-            args[6] = fake_user;
+            args[5] = "-t";
+            args[6] = title;
             offset = 7;
          }
          else
          {
             offset = 5;
+         }
+         if (fake_user[0] != '\0')
+         {
+            args[offset] = "-u";
+            args[offset + 1] = fake_user;
+            offset += 2;
          }
          if (profile[0] != '\0')
          {
@@ -584,15 +591,21 @@ dir_popup_cb(Widget    w,
          args[2] = p_work_dir;
          args[3] = "-f";
          args[4] = font_name;
-         if (fake_user[0] != '\0')
+         if (title[0] != '\0')
          {
-            args[5] = "-u";
-            args[6] = fake_user;
+            args[5] = "-t";
+            args[6] = title;
             offset = 7;
          }
          else
          {
             offset = 5;
+         }
+         if (fake_user[0] != '\0')
+         {
+            args[offset] = "-u";
+            args[offset + 1] = fake_user;
+            offset += 2;
          }
          if (profile[0] != '\0')
          {
@@ -617,15 +630,21 @@ dir_popup_cb(Widget    w,
          args[2] = p_work_dir;
          args[3] = "-f";
          args[4] = font_name;
-         if (fake_user[0] != '\0')
+         if (title[0] != '\0')
          {
-            args[5] = "-u";
-            args[6] = fake_user;
+            args[5] = "-t";
+            args[6] = title;
             offset = 7;
          }
          else
          {
             offset = 5;
+         }
+         if (fake_user[0] != '\0')
+         {
+            args[offset] = "-u";
+            args[offset + 1] = fake_user;
+            offset += 2;
          }
          (void)strcpy(progname, SHOW_ELOG);
          break;
@@ -636,15 +655,21 @@ dir_popup_cb(Widget    w,
          args[2] = p_work_dir;
          args[3] = "-f";
          args[4] = font_name;
-         if (fake_user[0] != '\0')
+         if (title[0] != '\0')
          {
-            args[5] = "-u";
-            args[6] = fake_user;
+            args[5] = "-t";
+            args[6] = title;
             offset = 7;
          }
          else
          {
             offset = 5;
+         }
+         if (fake_user[0] != '\0')
+         {
+            args[offset] = "-u";
+            args[offset + 1] = fake_user;
+            offset += 2;
          }
          if (profile[0] != '\0')
          {
@@ -665,15 +690,21 @@ dir_popup_cb(Widget    w,
          args[2] = p_work_dir;
          args[3] = "-f";
          args[4] = font_name;
-         if (fake_user[0] != '\0')
+         if (title[0] != '\0')
          {
-            args[5] = "-u";
-            args[6] = fake_user;
+            args[5] = "-t";
+            args[6] = title;
             offset = 7;
          }
          else
          {
             offset = 5;
+         }
+         if (fake_user[0] != '\0')
+         {
+            args[offset] = "-u";
+            args[offset + 1] = fake_user;
+            offset += 2;
          }
          if (profile[0] != '\0')
          {
@@ -694,15 +725,21 @@ dir_popup_cb(Widget    w,
          args[2] = p_work_dir;
          args[3] = "-f";
          args[4] = font_name;
-         if (fake_user[0] != '\0')
+         if (title[0] != '\0')
          {
-            args[5] = "-u";
-            args[6] = fake_user;
+            args[5] = "-t";
+            args[6] = title;
             offset = 7;
          }
          else
          {
             offset = 5;
+         }
+         if (fake_user[0] != '\0')
+         {
+            args[offset] = "-u";
+            args[offset + 1] = fake_user;
+            offset += 2;
          }
          if (profile[0] != '\0')
          {
@@ -719,15 +756,21 @@ dir_popup_cb(Widget    w,
          args[2] = p_work_dir;
          args[3] = "-f";
          args[4] = font_name;
-         if (fake_user[0] != '\0')
+         if (title[0] != '\0')
          {
-            args[5] = "-u";
-            args[6] = fake_user;
+            args[5] = "-t";
+            args[6] = title;
             offset = 7;
          }
          else
          {
             offset = 5;
+         }
+         if (fake_user[0] != '\0')
+         {
+            args[offset] = "-u";
+            args[offset + 1] = fake_user;
+            offset += 2;
          }
          if (profile[0] != '\0')
          {
@@ -744,15 +787,21 @@ dir_popup_cb(Widget    w,
          args[2] = p_work_dir;
          args[3] = "-f";
          args[4] = font_name;
-         if (fake_user[0] != '\0')
+         if (title[0] != '\0')
          {
-            args[5] = "-u";
-            args[6] = fake_user;
+            args[5] = "-t";
+            args[6] = title;
             offset = 7;
          }
          else
          {
             offset = 5;
+         }
+         if (fake_user[0] != '\0')
+         {
+            args[offset] = "-u";
+            args[offset + 1] = fake_user;
+            offset += 2;
          }
          if (profile[0] != '\0')
          {
@@ -769,15 +818,21 @@ dir_popup_cb(Widget    w,
          args[2] = p_work_dir;
          args[3] = "-f";
          args[4] = font_name;
-         if (fake_user[0] != '\0')
+         if (title[0] != '\0')
          {
-            args[5] = "-u";
-            args[6] = fake_user;
+            args[5] = "-t";
+            args[6] = title;
             offset = 7;
          }
          else
          {
             offset = 5;
+         }
+         if (fake_user[0] != '\0')
+         {
+            args[offset] = "-u";
+            args[offset + 1] = fake_user;
+            offset += 2;
          }
          if (profile[0] != '\0')
          {
@@ -794,15 +849,21 @@ dir_popup_cb(Widget    w,
          args[2] = p_work_dir;
          args[3] = "-f";
          args[4] = font_name;
-         if (fake_user[0] != '\0')
+         if (title[0] != '\0')
          {
-            args[5] = "-u";
-            args[6] = fake_user;
+            args[5] = "-t";
+            args[6] = title;
             offset = 7;
          }
          else
          {
             offset = 5;
+         }
+         if (fake_user[0] != '\0')
+         {
+            args[offset] = "-u";
+            args[offset + 1] = fake_user;
+            offset += 2;
          }
          if (profile[0] != '\0')
          {

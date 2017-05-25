@@ -1,6 +1,6 @@
 /*
  *  handle_event.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -115,7 +115,7 @@ struct filetransfer_status *fsa;
 struct fileretrieve_status *fra;
 
 /* Local function prototypes. */
-static void                init_handle_event(int *, char **),
+static void                init_handle_event(int *, char **, char *),
                            usage(char *),
                            handle_event_exit(void);
 
@@ -124,7 +124,7 @@ static void                init_handle_event(int *, char **),
 int
 main(int argc, char *argv[])
 {
-   char            window_title[13],
+   char            window_title[MAX_WNINDOW_TITLE_LENGTH],
                    work_dir[MAX_PATH_LENGTH];
    static String   fallback_res[] =
                    {
@@ -163,7 +163,7 @@ main(int argc, char *argv[])
 
    /* Initialise global values. */
    p_work_dir = work_dir;
-   init_handle_event(&argc, argv);
+   init_handle_event(&argc, argv, window_title);
 
    /*
     * SSH uses wants to look at .Xauthority and with setuid flag
@@ -181,7 +181,6 @@ main(int argc, char *argv[])
       }
    }
 
-   (void)strcpy(window_title, "Handle Event");
    argcount = 0;
    XtSetArg(args[argcount], XmNtitle, window_title); argcount++;
    appshell = XtAppInitialize(&app, "AFD", NULL, 0,
@@ -582,7 +581,7 @@ main(int argc, char *argv[])
 
 /*+++++++++++++++++++++++++ init_handle_event() +++++++++++++++++++++++++*/
 static void
-init_handle_event(int *argc, char *argv[])
+init_handle_event(int *argc, char *argv[], char *window_title)
 {
    int  user_offset;
    char fake_user[MAX_FULL_USER_ID_LENGTH],
@@ -602,6 +601,17 @@ init_handle_event(int *argc, char *argv[])
                     "Failed to get working directory of AFD. (%s %d)\n",
                     __FILE__, __LINE__);
       exit(INCORRECT);
+   }
+
+   /* Check if title is specified. */
+   if (get_arg(argc, argv, "-t", font_name, 40) == INCORRECT)
+   {
+      (void)strcpy(window_title, "Handle Event");
+   }
+   else
+   {
+      (void)snprintf(window_title, MAX_WNINDOW_TITLE_LENGTH,
+                     "Handle Event %s", font_name);
    }
    if (get_arg(argc, argv, "-f", font_name, 40) == INCORRECT)
    {

@@ -147,7 +147,7 @@ static void                eval_permissions(char *),
 #ifdef HAVE_SETPRIORITY
                            get_afd_config_value(void),
 #endif
-                           init_show_dlog(int *, char **),
+                           init_show_dlog(int *, char **, char *),
                            sig_bus(int),
                            sig_segv(int),
                            usage(char *);
@@ -157,7 +157,7 @@ static void                eval_permissions(char *),
 int
 main(int argc, char *argv[])
 {
-   char            window_title[100],
+   char            window_title[MAX_WNINDOW_TITLE_LENGTH],
                    work_dir[MAX_PATH_LENGTH],
                    *radio_label[] = {"Short", "Med", "Long"};
    static String   fallback_res[] =
@@ -212,19 +212,10 @@ main(int argc, char *argv[])
 
    /* Initialise global values. */
    p_work_dir = work_dir;
-   init_show_dlog(&argc, argv);
+   init_show_dlog(&argc, argv, window_title);
 #ifdef HAVE_SETPRIORITY
    get_afd_config_value();
 #endif
-
-   (void)strcpy(window_title, "Delete Log ");
-   if (get_afd_name(&window_title[11]) == INCORRECT)
-   {
-      if (gethostname(&window_title[11], MAX_AFD_NAME_LENGTH) == 0)
-      {
-         window_title[11] = toupper((int)window_title[11]);
-      }
-   }
 
    /*
     * SSH uses wants to look at .Xauthority and with setuid flag
@@ -1033,7 +1024,7 @@ main(int argc, char *argv[])
 
 /*+++++++++++++++++++++++++++ init_show_dlog() ++++++++++++++++++++++++++*/
 static void
-init_show_dlog(int *argc, char *argv[])
+init_show_dlog(int *argc, char *argv[], char *window_title)
 {
    char fake_user[MAX_FULL_USER_ID_LENGTH],
         *perm_buffer,
@@ -1053,6 +1044,25 @@ init_show_dlog(int *argc, char *argv[])
                     __FILE__, __LINE__);
       exit(INCORRECT);
    }
+
+   /* Check if title is specified. */
+   if (get_arg(argc, argv, "-t", font_name, 40) == INCORRECT)
+   {
+      (void)strcpy(window_title, "Delete Log ");
+      if (get_afd_name(&window_title[11]) == INCORRECT)
+      {
+         if (gethostname(&window_title[11], MAX_AFD_NAME_LENGTH) == 0)
+         {
+            window_title[11] = toupper((int)window_title[11]);
+         }
+      }
+   }
+   else
+   {
+      (void)snprintf(window_title, MAX_WNINDOW_TITLE_LENGTH,
+                     "Delete Log %s", font_name);
+   }
+
    if (get_arg(argc, argv, "-p", profile, MAX_PROFILE_NAME_LENGTH) == INCORRECT)
    {
       profile[0] = '\0';

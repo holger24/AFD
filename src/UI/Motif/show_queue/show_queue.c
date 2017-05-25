@@ -145,7 +145,7 @@ struct fileretrieve_status *fra;
 const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 
 /* Local function prototypes. */
-static void                init_show_queue(int *, char **),
+static void                init_show_queue(int *, char **, char *),
                            eval_permissions(char *),
                            show_queue_exit(void),
                            sig_bus(int),
@@ -158,7 +158,7 @@ static void                init_show_queue(int *, char **),
 int
 main(int argc, char *argv[])
 {
-   char            window_title[100],
+   char            window_title[MAX_WNINDOW_TITLE_LENGTH],
                    work_dir[MAX_PATH_LENGTH],
                    *radio_label[] = {"Short", "Med", "Long"};
    static String   fallback_res[] =
@@ -212,16 +212,7 @@ main(int argc, char *argv[])
 
    /* Initialise global values. */
    p_work_dir = work_dir;
-   init_show_queue(&argc, argv);
-
-   (void)strcpy(window_title, "AFD Queue ");
-   if (get_afd_name(&window_title[10]) == INCORRECT)
-   {
-      if (gethostname(&window_title[10], MAX_AFD_NAME_LENGTH) == 0)
-      {
-         window_title[10] = toupper((int)window_title[10]);
-      }
-   }
+   init_show_queue(&argc, argv, window_title);
 
    /*
     * SSH uses wants to look at .Xauthority and with setuid flag
@@ -1665,7 +1656,7 @@ main(int argc, char *argv[])
 
 /*++++++++++++++++++++++++++ init_show_queue() ++++++++++++++++++++++++++*/
 static void
-init_show_queue(int *argc, char *argv[])
+init_show_queue(int *argc, char *argv[], char *window_title)
 {
    int  user_offset;
    char **dirid_str = NULL,
@@ -1690,6 +1681,25 @@ init_show_queue(int *argc, char *argv[])
 #ifdef WITH_SETUID_PROGS
    set_afd_euid(p_work_dir);
 #endif
+
+   /* Check if title is specified. */
+   if (get_arg(argc, argv, "-t", font_name, 40) == INCORRECT)
+   {
+      (void)strcpy(window_title, "AFD Queue ");
+      if (get_afd_name(&window_title[10]) == INCORRECT)
+      {
+         if (gethostname(&window_title[10], MAX_AFD_NAME_LENGTH) == 0)
+         {
+            window_title[10] = toupper((int)window_title[10]);
+         }
+      }
+   }
+   else
+   {
+      (void)snprintf(window_title, MAX_WNINDOW_TITLE_LENGTH,
+                     "AFD Queue %s", font_name);
+   }
+
    if (get_arg(argc, argv, "-f", font_name, 256) == INCORRECT)
    {
       (void)strcpy(font_name, DEFAULT_FONT);

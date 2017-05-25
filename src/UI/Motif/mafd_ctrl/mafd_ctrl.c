@@ -253,6 +253,7 @@ char                       work_dir[MAX_PATH_LENGTH],
                            other_options,
                            fake_user[MAX_FULL_USER_ID_LENGTH],
                            font_name[20],
+                           title[MAX_AFD_NAME_LENGTH],
                            *info_data = NULL,
                            tv_window = OFF,
                            blink_flag,
@@ -839,8 +840,9 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title, int *have_groups)
    window_title[3] = '_'; window_title[4] = 'C'; window_title[5] = 'T';
    window_title[6] = 'R'; window_title[7] = 'L'; window_title[8] = ' ';
    window_title[9] = '\0';
-   if (get_arg(argc, argv, "-t", hostname, MAX_AFD_NAME_LENGTH) == INCORRECT)
+   if (get_arg(argc, argv, "-t", title, MAX_AFD_NAME_LENGTH) == INCORRECT)
    {
+      title[0] = '\0';
       if (get_afd_name(hostname) == INCORRECT)
       {
          if (gethostname(hostname, MAX_AFD_NAME_LENGTH) == 0)
@@ -856,7 +858,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title, int *have_groups)
    }
    else
    {
-      (void)strcat(window_title, hostname);
+      (void)strcat(window_title, title);
    }
 
    get_user(user, fake_user, user_offset);

@@ -297,7 +297,7 @@ int
 main(int argc, char *argv[])
 {
    char            label_str[HOST_ALIAS_LABEL_LENGTH + MAX_HOSTNAME_LENGTH],
-                   window_title[100],
+                   window_title[MAX_WNINDOW_TITLE_LENGTH],
                    work_dir[MAX_PATH_LENGTH];
    static String   fallback_res[] =
                    {
@@ -2352,6 +2352,31 @@ init_edit_hc(int *argc, char *argv[], char *window_title)
    {
       exit(INCORRECT);
    }
+
+   /* Check if title is specified. */
+   if (get_arg(argc, argv, "-t", font_name, 40) == INCORRECT)
+   {
+      /* Prepare title of this window. */
+      (void)strcpy(window_title, "Host Config ");
+      if (get_afd_name(hostname) == INCORRECT)
+      {
+         if (gethostname(hostname, MAX_AFD_NAME_LENGTH) == 0)
+         {
+            hostname[0] = toupper((int)hostname[0]);
+            (void)strcat(window_title, hostname);
+         }
+      }
+      else
+      {
+         (void)strcat(window_title, hostname);
+      }
+   }
+   else
+   {
+      (void)snprintf(window_title, MAX_WNINDOW_TITLE_LENGTH,
+                     "Host Config %s", font_name);
+   }
+
 #ifdef WITH_SETUID_PROGS
    set_afd_euid(p_work_dir);
 #endif
@@ -2499,21 +2524,6 @@ init_edit_hc(int *argc, char *argv[], char *window_title)
       (void)fprintf(stderr, "ERROR   : Could not open Display : %s (%s %d)\n",
                     strerror(errno), __FILE__, __LINE__);
       exit(INCORRECT);
-   }
-
-   /* Prepare title of this window. */
-   (void)strcpy(window_title, "Host Config ");
-   if (get_afd_name(hostname) == INCORRECT)
-   {
-      if (gethostname(hostname, MAX_AFD_NAME_LENGTH) == 0)
-      {
-         hostname[0] = toupper((int)hostname[0]);
-         (void)strcat(window_title, hostname);
-      }
-   }
-   else
-   {
-      (void)strcat(window_title, hostname);
    }
 
    if (attach_afd_status(NULL, WAIT_AFD_STATUS_ATTACH) < 0)
