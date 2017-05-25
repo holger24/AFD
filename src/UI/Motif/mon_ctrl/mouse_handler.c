@@ -2764,3 +2764,89 @@ change_mon_other_cb(Widget w, XtPointer client_data, XtPointer call_data)
 
    return;
 }
+
+
+/*####################### open_close_all_groups() #######################*/
+void
+open_close_all_groups(Widget w, XtPointer client_data, XtPointer call_data)
+{
+   int         i;
+   XT_PTR_TYPE item_no = (XT_PTR_TYPE)client_data;
+
+   switch (item_no)
+   {
+      case OPEN_ALL_GROUPS_SEL : /* Open all groups. */
+         for (i = 0; i < no_of_afds; i++)
+         {
+            connect_data[i].plus_minus = PM_OPEN_STATE;
+            vpl[i] = i;
+         }
+         no_of_afds_invisible = 0;
+         no_of_afds_visible = no_of_afds;
+
+         /* Resize and redraw window. */
+         if (resize_mon_window() == YES)
+         {
+            calc_mon_but_coord(window_width);
+            redraw_all();
+            XFlush(display);
+         }
+
+         return;
+
+      case CLOSE_ALL_GROUPS_SEL : /* Close all groups. */
+         {
+            int prev_plus_minus;
+
+            no_of_afds_invisible = no_of_afds_visible = 0;
+            prev_plus_minus = PM_OPEN_STATE;
+            for (i = 0; i < no_of_afds; i++)
+            {
+               if (connect_data[i].rcmd == '\0')
+               {
+                  prev_plus_minus = connect_data[i].plus_minus = PM_CLOSE_STATE;
+               }
+               else
+               {
+                  connect_data[i].plus_minus = prev_plus_minus;
+                  if ((prev_plus_minus == PM_CLOSE_STATE) &&
+                      (connect_data[i].inverse != OFF))
+                  {
+                     connect_data[i].inverse = OFF;
+                     ABS_REDUCE_GLOBAL(no_selected);
+                  }
+               }
+               if ((connect_data[i].plus_minus == PM_CLOSE_STATE) &&
+                   (connect_data[i].rcmd != '\0'))
+               {
+                  no_of_afds_invisible++;
+               }
+               else
+               {
+                  vpl[no_of_afds_visible] = i;
+                  no_of_afds_visible++;
+               }
+            }
+         }
+
+         /* Resize and redraw window. */
+         if (resize_mon_window() == YES)
+         {
+            calc_mon_but_coord(window_width);
+            redraw_all();
+            XFlush(display);
+         }
+
+         return;
+
+      default  :
+#if SIZEOF_LONG == 4
+         (void)xrec(WARN_DIALOG, "Impossible open_close_all_groups() selection (%d).", item_no);
+#else
+         (void)xrec(WARN_DIALOG, "Impossible open_close_all_groups() selection (%ld).", item_no);
+#endif
+         return;
+   }
+
+   return;
+}

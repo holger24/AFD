@@ -236,9 +236,9 @@ static void             mon_ctrl_exit(void),
                         create_pullright_style(Widget),
                         create_pullright_test(Widget),
                         eval_permissions(char *),
-                        init_menu_bar(Widget, Widget *),
+                        init_menu_bar(Widget, Widget *, int),
                         init_popup_menu(Widget),
-                        init_mon_ctrl(int *, char **, char *),
+                        init_mon_ctrl(int *, char **, char *, int *),
                         sig_bus(int),
                         sig_exit(int),
                         sig_segv(int);
@@ -248,6 +248,7 @@ static void             mon_ctrl_exit(void),
 int
 main(int argc, char *argv[])
 {
+   int           have_groups = NO;
    char          window_title[100];
    static String fallback_res[] =
                  {
@@ -273,7 +274,7 @@ main(int argc, char *argv[])
    CHECK_FOR_VERSION(argc, argv);
 
    /* Initialise global values. */
-   init_mon_ctrl(&argc, argv, window_title);
+   init_mon_ctrl(&argc, argv, window_title, &have_groups);
 
 #ifdef _X_DEBUG
    XSynchronize(display, 1);
@@ -365,7 +366,7 @@ main(int argc, char *argv[])
 
    if (no_input == False)
    {
-      init_menu_bar(mainform_w, &menu_w);
+      init_menu_bar(mainform_w, &menu_w, have_groups);
    }
 
    /* Setup colors. */
@@ -565,7 +566,7 @@ main(int argc, char *argv[])
 
 /*++++++++++++++++++++++++++++ init_mon_ctrl() ++++++++++++++++++++++++++*/
 static void
-init_mon_ctrl(int *argc, char *argv[], char *window_title)
+init_mon_ctrl(int *argc, char *argv[], char *window_title, int *have_groups)
 {
    int           fd,
                  gotcha,
@@ -910,6 +911,10 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
       connect_data[i].fd = msa[i].fd;
       connect_data[i].archive_watch = msa[i].archive_watch;
       connect_data[i].rcmd = msa[i].rcmd[0];
+      if (connect_data[i].rcmd == '\0')
+      {
+         *have_groups = YES;
+      }
       if (no_of_invisible_members > 0)
       {
          if (connect_data[i].rcmd == '\0')
@@ -1133,7 +1138,7 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
 
 /*+++++++++++++++++++++++++++ init_menu_bar() +++++++++++++++++++++++++++*/
 static void
-init_menu_bar(Widget mainform_w, Widget *menu_w)
+init_menu_bar(Widget mainform_w, Widget *menu_w, int have_groups)
 {
    Arg      args[MAXARGS];
    Cardinal argcount;
@@ -1657,6 +1662,51 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                            XmNsubMenuId,               pullright_other_options,
                            NULL);
    create_pullright_other_options(pullright_other_options);
+
+   if (have_groups == YES)
+   {
+      XtVaCreateManagedWidget("Separator",
+                              xmSeparatorWidgetClass, pull_down_w,
+                              NULL);
+#ifdef WITH_CTRL_ACCELERATOR
+      sw[OPEN_ALL_GROUPS_W] = XtVaCreateManagedWidget("Open Groups   (Ctrl+o)",
+#else
+      sw[OPEN_ALL_GROUPS_W] = XtVaCreateManagedWidget("Open Groups   (Alt+o)",
+#endif
+                              xmPushButtonWidgetClass, pull_down_w,
+                              XmNfontList,             fontlist,
+#ifdef WHEN_WE_KNOW_HOW_TO_FIX_THIS
+                              XmNmnemonic,             'o',
+#endif
+#ifdef WITH_CTRL_ACCELERATOR
+                              XmNaccelerator,          "Ctrl<Key>o",
+#else
+                              XmNaccelerator,          "Alt<Key>o",
+#endif
+                              NULL);
+      XtAddCallback(sw[OPEN_ALL_GROUPS_W], XmNactivateCallback,
+                    open_close_all_groups, (XtPointer)OPEN_ALL_GROUPS_SEL);
+
+#ifdef WITH_CTRL_ACCELERATOR
+      sw[CLOSE_ALL_GROUPS_W] = XtVaCreateManagedWidget("Close Groups (Ctrl+c)",
+#else
+      sw[CLOSE_ALL_GROUPS_W] = XtVaCreateManagedWidget("Close Groups (Alt+c)",
+#endif
+                              xmPushButtonWidgetClass, pull_down_w,
+                              XmNfontList,             fontlist,
+#ifdef WHEN_WE_KNOW_HOW_TO_FIX_THIS
+                              XmNmnemonic,             'c',
+#endif
+#ifdef WITH_CTRL_ACCELERATOR
+                              XmNaccelerator,          "Ctrl<Key>c",
+#else
+                              XmNaccelerator,          "Alt<Key>c",
+#endif
+                              NULL);
+      XtAddCallback(sw[CLOSE_ALL_GROUPS_W], XmNactivateCallback,
+                    open_close_all_groups, (XtPointer)CLOSE_ALL_GROUPS_SEL);
+   }
+
    XtVaCreateManagedWidget("Separator",
                            xmSeparatorWidgetClass, pull_down_w,
                            NULL);

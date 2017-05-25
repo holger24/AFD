@@ -4077,7 +4077,6 @@ change_other_cb(Widget w, XtPointer client_data, XtPointer call_data)
 }
 
 
-
 /*####################### open_close_all_groups() #######################*/
 void
 open_close_all_groups(Widget w, XtPointer client_data, XtPointer call_data)
