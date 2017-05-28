@@ -152,7 +152,9 @@ main(int argc, char *argv[])
       system_log(ERROR_SIGN, __FILE__, __LINE__, _("Failed to attach to FSA."));
       exit(INCORRECT);
    }
+#ifdef WITH_IP_DB
    prev_no_of_hosts = no_of_hosts;
+#endif
 
    /* Allocate memory to cache previous values. */
    if ((pr = malloc((no_of_hosts * sizeof(struct prev_rate)))) == NULL)
