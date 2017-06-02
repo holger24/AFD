@@ -1974,7 +1974,7 @@ main(int argc, char *argv[])
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                "Buffer length for mail header to small (%d)!",
-                               buffer_size);
+                               encode_buffer_size);
                      (void)smtp_quit();
                      exit(ALLOC_ERROR);
                   }
@@ -2064,7 +2064,7 @@ main(int argc, char *argv[])
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                "Buffer length for mail header to small (%d)!",
-                               buffer_size);
+                               encode_buffer_size);
                      (void)smtp_quit();
                      exit(ALLOC_ERROR);
                   }
@@ -2077,8 +2077,70 @@ main(int argc, char *argv[])
                      exit(eval_timeout(WRITE_REMOTE_ERROR));
                   }
                   no_of_bytes += length;
-               }
+               } /* if (db.special_flag & ATTACH_FILE) */
             } /* if (mail_header_buffer != NULL) */
+            else
+            {
+               char content_type[MAX_CONTENT_TYPE_LENGTH],
+                    add_header[14 + MAX_CONTENT_TYPE_LENGTH + 2 + 1];
+
+               /* Write Content Type. */
+               if (db.trans_rename_rule[0] != '\0')
+               {
+                  int  k;
+                  char new_filename[MAX_FILENAME_LENGTH];
+
+                  new_filename[0] = '\0';
+                  for (k = 0; k < rule[db.trans_rule_pos].no_of_rules; k++)
+                  {
+                     if (pmatch(rule[db.trans_rule_pos].filter[k],
+                                final_filename, NULL) == 0)
+                     {
+                        change_name(final_filename,
+                                    rule[db.trans_rule_pos].filter[k],
+                                    rule[db.trans_rule_pos].rename_to[k],
+                                    new_filename, MAX_FILENAME_LENGTH,
+                                    &counter_fd, &unique_counter, db.id.job);
+                        break;
+                     }
+                  }
+                  if (new_filename[0] == '\0')
+                  {
+                     (void)my_strncpy(new_filename, final_filename,
+                                      MAX_FILENAME_LENGTH);
+                  }
+                  get_content_type(new_filename, content_type);
+               }
+               else
+               {
+                  get_content_type(final_filename, content_type);
+               }
+               length = snprintf(add_header, 14 + MAX_CONTENT_TYPE_LENGTH + 2 + 1,
+                                 "Content-Type: %s\r\n",
+                                 content_type);
+               if (length >= (14 + MAX_CONTENT_TYPE_LENGTH + 2 + 1))
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+#if SIZEOF_SIZE_T == 4
+                            "Buffer length for content type to small (%d > %d)!",
+#else
+                            "Buffer length for content type to small (%lld > %d)!",
+#endif
+                            (pri_size_t)length,
+                            (14 + MAX_CONTENT_TYPE_LENGTH + 2 + 1));
+                  (void)smtp_quit();
+                  exit(ALLOC_ERROR);
+               }
+
+               if (smtp_write(add_header, NULL, length) < 0)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "Failed to write the Content-Type to SMTP-server.");
+                  (void)smtp_quit();
+                  exit(eval_timeout(WRITE_REMOTE_ERROR));
+               }
+               no_of_bytes += length;
+            }
 
 #ifdef WITH_MAILER_IDENTIFIER
             /* Write mailer name. */
