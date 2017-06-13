@@ -1339,6 +1339,7 @@ main(int argc, char *argv[])
          {
             time_t current_time;
             size_t length;
+            int    added_content_type = NO;
 
             /* Write Date: field to header. */
             current_time = time(NULL);
@@ -1890,7 +1891,7 @@ main(int argc, char *argv[])
                         (void)my_strncpy(new_filename, final_filename,
                                          MAX_FILENAME_LENGTH);
                      }
-                     get_content_type(new_filename, content_type);
+                     get_content_type(new_filename, content_type, YES);
                      length = snprintf(encode_buffer, encode_buffer_size,
                                        "MIME-Version: 1.0 (produced by AFD %s)\r\nContent-Type: %s; name=\"%s\"\r\nContent-Transfer-Encoding: BASE64\r\nContent-Disposition: attachment; filename=\"%s\"\r\n",
                                        PACKAGE_VERSION, content_type,
@@ -1900,7 +1901,7 @@ main(int argc, char *argv[])
                   {
                      char content_type[MAX_CONTENT_TYPE_LENGTH];
 
-                     get_content_type(final_filename, content_type);
+                     get_content_type(final_filename, content_type, YES);
                      length = snprintf(encode_buffer, encode_buffer_size,
                                        "MIME-Version: 1.0 (produced by AFD %s)\r\nContent-Type: %s; name=\"%s\"\r\nContent-Transfer-Encoding: BASE64\r\nContent-Disposition: attachment; filename=\"%s\"\r\n",
                                        PACKAGE_VERSION, content_type,
@@ -1916,6 +1917,7 @@ main(int argc, char *argv[])
                   }
                   buffer_ptr = encode_buffer;
                }
+               added_content_type = YES;
 
                if (smtp_write(buffer_ptr, NULL, length) < 0)
                {
@@ -1939,6 +1941,7 @@ main(int argc, char *argv[])
                         (void)smtp_quit();
                         exit(ALLOC_ERROR);
                      }
+                     added_content_type = YES;
 
                     if (smtp_write(buffer, NULL, length) < 0)
                     {
@@ -1978,6 +1981,7 @@ main(int argc, char *argv[])
                      (void)smtp_quit();
                      exit(ALLOC_ERROR);
                   }
+                  added_content_type = YES;
 
                   if (smtp_write(encode_buffer, NULL, length) < 0)
                   {
@@ -2044,7 +2048,7 @@ main(int argc, char *argv[])
                         (void)my_strncpy(new_filename, final_filename,
                                          MAX_FILENAME_LENGTH);
                      }
-                     get_content_type(new_filename, content_type);
+                     get_content_type(new_filename, content_type, YES);
                      length = snprintf(encode_buffer, encode_buffer_size,
                                        "\r\n--%s\r\nContent-Type: %s; name=\"%s\"\r\nContent-Transfer-Encoding: BASE64\r\nContent-Disposition: attachment; filename=\"%s\"\r\n",
                                        multipart_boundary, content_type,
@@ -2054,12 +2058,13 @@ main(int argc, char *argv[])
                   {
                      char content_type[MAX_CONTENT_TYPE_LENGTH];
 
-                     get_content_type(final_filename, content_type);
+                     get_content_type(final_filename, content_type, YES);
                      length = snprintf(encode_buffer, encode_buffer_size,
                                        "\r\n--%s\r\nContent-Type: %s; name=\"%s\"\r\nContent-Transfer-Encoding: BASE64\r\nContent-Disposition: attachment; filename=\"%s\"\r\n",
                                        multipart_boundary, content_type,
                                        final_filename, final_filename);
                   }
+                  added_content_type = YES;
                   if (length >= encode_buffer_size)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -2079,68 +2084,68 @@ main(int argc, char *argv[])
                   no_of_bytes += length;
                } /* if (db.special_flag & ATTACH_FILE) */
             } /* if (mail_header_buffer != NULL) */
-            else
-            {
-               char content_type[MAX_CONTENT_TYPE_LENGTH],
-                    add_header[14 + MAX_CONTENT_TYPE_LENGTH + 2 + 1];
+            else if (added_content_type == NO)
+                 {
+                    char content_type[MAX_CONTENT_TYPE_LENGTH],
+                         add_header[14 + MAX_CONTENT_TYPE_LENGTH + 2 + 1];
 
-               /* Write Content Type. */
-               if (db.trans_rename_rule[0] != '\0')
-               {
-                  int  k;
-                  char new_filename[MAX_FILENAME_LENGTH];
+                    /* Write Content Type. */
+                    if (db.trans_rename_rule[0] != '\0')
+                    {
+                       int  k;
+                       char new_filename[MAX_FILENAME_LENGTH];
 
-                  new_filename[0] = '\0';
-                  for (k = 0; k < rule[db.trans_rule_pos].no_of_rules; k++)
-                  {
-                     if (pmatch(rule[db.trans_rule_pos].filter[k],
-                                final_filename, NULL) == 0)
-                     {
-                        change_name(final_filename,
-                                    rule[db.trans_rule_pos].filter[k],
-                                    rule[db.trans_rule_pos].rename_to[k],
-                                    new_filename, MAX_FILENAME_LENGTH,
-                                    &counter_fd, &unique_counter, db.id.job);
-                        break;
-                     }
-                  }
-                  if (new_filename[0] == '\0')
-                  {
-                     (void)my_strncpy(new_filename, final_filename,
-                                      MAX_FILENAME_LENGTH);
-                  }
-                  get_content_type(new_filename, content_type);
-               }
-               else
-               {
-                  get_content_type(final_filename, content_type);
-               }
-               length = snprintf(add_header, 14 + MAX_CONTENT_TYPE_LENGTH + 2 + 1,
-                                 "Content-Type: %s\r\n",
-                                 content_type);
-               if (length >= (14 + MAX_CONTENT_TYPE_LENGTH + 2 + 1))
-               {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                       new_filename[0] = '\0';
+                       for (k = 0; k < rule[db.trans_rule_pos].no_of_rules; k++)
+                       {
+                          if (pmatch(rule[db.trans_rule_pos].filter[k],
+                                     final_filename, NULL) == 0)
+                          {
+                             change_name(final_filename,
+                                         rule[db.trans_rule_pos].filter[k],
+                                         rule[db.trans_rule_pos].rename_to[k],
+                                         new_filename, MAX_FILENAME_LENGTH,
+                                         &counter_fd, &unique_counter, db.id.job);
+                             break;
+                          }
+                       }
+                       if (new_filename[0] == '\0')
+                       {
+                          (void)my_strncpy(new_filename, final_filename,
+                                           MAX_FILENAME_LENGTH);
+                       }
+                       get_content_type(new_filename, content_type, NO);
+                    }
+                    else
+                    {
+                       get_content_type(final_filename, content_type, NO);
+                    }
+                    length = snprintf(add_header, 14 + MAX_CONTENT_TYPE_LENGTH + 2 + 1,
+                                      "Content-Type: %s\r\n",
+                                      content_type);
+                    if (length >= (14 + MAX_CONTENT_TYPE_LENGTH + 2 + 1))
+                    {
+                       trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
 #if SIZEOF_SIZE_T == 4
-                            "Buffer length for content type to small (%d > %d)!",
+                                 "Buffer length for content type to small (%d > %d)!",
 #else
-                            "Buffer length for content type to small (%lld > %d)!",
+                                 "Buffer length for content type to small (%lld > %d)!",
 #endif
-                            (pri_size_t)length,
-                            (14 + MAX_CONTENT_TYPE_LENGTH + 2 + 1));
-                  (void)smtp_quit();
-                  exit(ALLOC_ERROR);
-               }
+                                 (pri_size_t)length,
+                                 (14 + MAX_CONTENT_TYPE_LENGTH + 2 + 1));
+                       (void)smtp_quit();
+                       exit(ALLOC_ERROR);
+                    }
 
-               if (smtp_write(add_header, NULL, length) < 0)
-               {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "Failed to write the Content-Type to SMTP-server.");
-                  (void)smtp_quit();
-                  exit(eval_timeout(WRITE_REMOTE_ERROR));
-               }
-               no_of_bytes += length;
-            }
+                    if (smtp_write(add_header, NULL, length) < 0)
+                    {
+                       trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                 "Failed to write the Content-Type to SMTP-server.");
+                       (void)smtp_quit();
+                       exit(eval_timeout(WRITE_REMOTE_ERROR));
+                    }
+                    no_of_bytes += length;
+                 }
 
 #ifdef WITH_MAILER_IDENTIFIER
             /* Write mailer name. */
@@ -2207,7 +2212,7 @@ main(int argc, char *argv[])
                   (void)my_strncpy(new_filename, final_filename,
                                    MAX_FILENAME_LENGTH);
                }
-               get_content_type(new_filename, content_type);
+               get_content_type(new_filename, content_type, YES);
                if (files_send == 0)
                {
 #ifdef WITH_MAILER_IDENTIFIER
@@ -2241,7 +2246,7 @@ main(int argc, char *argv[])
             }
             else
             {
-               get_content_type(final_filename, content_type);
+               get_content_type(final_filename, content_type, YES);
                if (files_send == 0)
                {
 #ifdef WITH_MAILER_IDENTIFIER

@@ -1197,7 +1197,7 @@ smtp_quit(void)
 
 /*######################### get_content_type() ##########################*/
 void
-get_content_type(char *filename, char *content_type)
+get_content_type(char *filename, char *content_type, int is_attachment)
 {
    content_type[0] = '\0';
    if (filename != NULL)
@@ -1395,7 +1395,19 @@ get_content_type(char *filename, char *content_type)
    }
    if (content_type[0] == '\0')
    {
-      (void)strcpy(content_type, "APPLICATION/octet-stream");
+      if (is_attachment == YES)
+      {
+         (void)strcpy(content_type, "APPLICATION/octet-stream");
+      }
+      else
+      {
+         /*
+          * Maybe it is better to insert "TEXT/plain" since this
+          * is what mail servers do if they do not get the Content-Type
+          * from the client.
+          */
+         (void)strcpy(content_type, "TEXT/plain");
+      }
    }
    return;
 }
