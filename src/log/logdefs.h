@@ -67,6 +67,7 @@
 #define TRANS_DB_LOG_NAME_LENGTH          (sizeof(TRANS_DB_LOG_NAME) - 1)
 #define TRANS_DB_LOG_NAME_ALL             "TRANS_DB_LOG.*"
 #ifdef _TRANSFER_RATE_LOG
+# define TRANSFER_RATE_LOG_VERSION        0
 # define TRANSFER_RATE_LOG_INTERVAL       5            /* Every 5s.      */
 # define MAX_TRANSFER_RATE_LOG_FILES      3            /* Must be > 1!   */
 # define TRANSFER_RATE_LOG_NAME           "TRANSFER_RATE_LOG."

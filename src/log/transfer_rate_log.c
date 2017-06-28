@@ -53,7 +53,6 @@ DESCR__E_M1
 #include "logdefs.h"
 #include "version.h"
 
-#define TRANSFER_RATE_LOG_VERSION 0
 struct prev_rate
        {
           u_off_t      bytes_send;
