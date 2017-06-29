@@ -194,61 +194,69 @@ get_current_ip_hl(char **ip_hl, char **ip_ips)
       detach = NO;
    }
 
-   if ((*ip_hl = malloc((*no_of_entries * MAX_REAL_HOSTNAME_LENGTH))) != NULL)
+   if (*no_of_entries == 0)
    {
-      int  i;
-      char *ptr = *ip_hl,
-           *p_ips = NULL;
-
-      if (ip_ips != NULL)
-      {
-         if ((*ip_ips = malloc((*no_of_entries * MAX_AFD_INET_ADDRSTRLEN))) == NULL)
-         {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       _("malloc() error : %s"), strerror(errno));
-         }
-         else
-         {
-            p_ips = *ip_ips;
-         }
-      }
-
-#ifdef LOCK_DEBUG
-      lock_region_w(ip_db_fd, 1, __FILE__, __LINE__);
-#else
-      lock_region_w(ip_db_fd, 1);
-#endif
-      if (p_ips != NULL)
-      {
-         for (i = 0; i < *no_of_entries; i++)
-         {
-            (void)memcpy(ptr, ipdb[i].host_name, MAX_REAL_HOSTNAME_LENGTH);
-            ptr += MAX_REAL_HOSTNAME_LENGTH;
-            (void)memcpy(p_ips, ipdb[i].ip_str, MAX_AFD_INET_ADDRSTRLEN);
-            p_ips += MAX_AFD_INET_ADDRSTRLEN;
-         }
-      }
-      else
-      {
-         for (i = 0; i < *no_of_entries; i++)
-         {
-            (void)memcpy(ptr, ipdb[i].host_name, MAX_REAL_HOSTNAME_LENGTH);
-            ptr += MAX_REAL_HOSTNAME_LENGTH;
-         }
-      }
-      ret = *no_of_entries;
-
-#ifdef LOCK_DEBUG
-      unlock_region(ip_db_fd, 1, __FILE__, __LINE__);
-#else
-      unlock_region(ip_db_fd, 1);
-#endif
+      *ip_hl = NULL;
+      *ip_ips = NULL;
    }
    else
    {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 _("malloc() error : %s"), strerror(errno));
-      ret = INCORRECT;
+      if ((*ip_hl = malloc((*no_of_entries * MAX_REAL_HOSTNAME_LENGTH))) != NULL)
+      {
+         int  i;
+         char *ptr = *ip_hl,
+              *p_ips = NULL;
+
+         if (ip_ips != NULL)
+         {
+            if ((*ip_ips = malloc((*no_of_entries * MAX_AFD_INET_ADDRSTRLEN))) == NULL)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          _("malloc() error : %s"), strerror(errno));
+            }
+            else
+            {
+               p_ips = *ip_ips;
+            }
+         }
+
+#ifdef LOCK_DEBUG
+         lock_region_w(ip_db_fd, 1, __FILE__, __LINE__);
+#else
+         lock_region_w(ip_db_fd, 1);
+#endif
+         if (p_ips != NULL)
+         {
+            for (i = 0; i < *no_of_entries; i++)
+            {
+               (void)memcpy(ptr, ipdb[i].host_name, MAX_REAL_HOSTNAME_LENGTH);
+               ptr += MAX_REAL_HOSTNAME_LENGTH;
+               (void)memcpy(p_ips, ipdb[i].ip_str, MAX_AFD_INET_ADDRSTRLEN);
+               p_ips += MAX_AFD_INET_ADDRSTRLEN;
+            }
+         }
+         else
+         {
+            for (i = 0; i < *no_of_entries; i++)
+            {
+               (void)memcpy(ptr, ipdb[i].host_name, MAX_REAL_HOSTNAME_LENGTH);
+               ptr += MAX_REAL_HOSTNAME_LENGTH;
+            }
+         }
+         ret = *no_of_entries;
+
+#ifdef LOCK_DEBUG
+         unlock_region(ip_db_fd, 1, __FILE__, __LINE__);
+#else
+         unlock_region(ip_db_fd, 1);
+#endif
+      }
+      else
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("malloc() error : %s"), strerror(errno));
+         ret = INCORRECT;
+      }
    }
 
    if (detach == YES)
