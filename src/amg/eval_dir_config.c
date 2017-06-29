@@ -363,7 +363,7 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp)
    prev_user_name[0] = '\0';
 
    /* Create temporal storage area for job. */
-   if ((p_t = calloc(db_size, sizeof(char))) == NULL)
+   if ((p_t = calloc((db_size * 2), sizeof(char))) == NULL)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "Could not allocate memory : %s", strerror(errno));
