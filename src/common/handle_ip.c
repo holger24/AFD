@@ -196,8 +196,14 @@ get_current_ip_hl(char **ip_hl, char **ip_ips)
 
    if (*no_of_entries == 0)
    {
-      *ip_hl = NULL;
-      *ip_ips = NULL;
+      if (ip_hl != NULL)
+      {
+         *ip_hl = NULL;
+      }
+      if (ip_ips != NULL)
+      {
+         *ip_ips = NULL;
+      }
       ret = 0;
    }
    else
