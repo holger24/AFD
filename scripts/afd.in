@@ -88,7 +88,7 @@ case "$1" in
               if [ "$AFD_WORK_DIR_LIST" = "" ]
               then
                  (
-                 su - $afduser -c "$AFD_WORK_DIR/etc/afd.init start > /dev/null 2>&1 ; afd -a"
+                 su - $afduser -c "\$AFD_WORK_DIR/etc/afd.init start > /dev/null 2>&1 ; afd -a"
                  case $? in
                     0) # Success
                        RETVAL=0
@@ -319,7 +319,7 @@ case "$1" in
                  RETVAL=1
                  if [ -f $SYS_LOCKDIR/restart_afd.$afduser ]
                  then
-                    su - $afduser -c "$AFD_WORK_DIR/etc/afd.init start > /dev/null 2>&1 ; afd -a"
+                    su - $afduser -c "\$AFD_WORK_DIR/etc/afd.init start > /dev/null 2>&1 ; afd -a"
                     case $? in
                        0) # Success
                           RETVAL=0
@@ -341,7 +341,7 @@ case "$1" in
                     if [ $? -eq 0 ]
                     then
                        sleep 2
-                       su - $afduser -c "$AFD_WORK_DIR/etc/afd.init start > /dev/null 2>&1 ; afd -a"
+                       su - $afduser -c "\$AFD_WORK_DIR/etc/afd.init start > /dev/null 2>&1 ; afd -a"
                        case $? in
                           0) # Success
                              RETVAL=0
@@ -442,7 +442,7 @@ case "$1" in
                     then
                        (
                        RETVAL=1
-                       su - $afduser -c "$AFD_WORK_DIR/etc/afd.init start > /dev/null 2>&1 ; afd -a"
+                       su - $afduser -c "\$AFD_WORK_DIR/etc/afd.init start > /dev/null 2>&1 ; afd -a"
                        if [ $? -eq 0 ]
                        then
                           RETVAL=0
