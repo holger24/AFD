@@ -1,6 +1,6 @@
 /*
  *  eval_input_gf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -301,7 +301,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
                                     else
                                     {
                                        (void)fprintf(stderr,
-                                                     "ERROR   : Hmm, could not find or evaluate the interval for -m option.\n");
+                                                     "ERROR   : Hmm, could not find or evaluate the mode for -m option.\n");
                                        p_db->dir_mode_str[0] = '0';
                                        p_db->dir_mode_str[1] = '\0';
                                     }
@@ -309,7 +309,7 @@ eval_input_gf(int argc, char *argv[], struct job *p_db)
                                  else
                                  {
                                     (void)fprintf(stderr,
-                                                  "ERROR   : No interval specified for -m option.\n");
+                                                  "ERROR   : No mode specified for -m option.\n");
                                     usage(argv[0]);
                                     ret = SYNTAX_ERROR;
                                  }
@@ -417,6 +417,7 @@ usage(char *name)
    (void)fprintf(stderr, "  -e <seconds>              - Disconnect after the given amount of time.\n");
    (void)fprintf(stderr, "  -h <HTTP proxy>[:<port>]  - Proxy where to send the HTTP request.\n");
    (void)fprintf(stderr, "  -i <interval>             - interval at which we should retry\n");
+   (void)fprintf(stderr, "  -m <mode>                 - mode of the created source dir\n");
    (void)fprintf(stderr, "  -o <retries>              - old/error message\n");
    (void)fprintf(stderr, "  -t                        - use other host\n");
 
