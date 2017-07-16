@@ -186,6 +186,7 @@ char                       stop_flag = 0,
                            *p_msg_dir,
                            str_age_limit[MAX_INT_LENGTH],
                            str_create_source_dir_mode[MAX_INT_LENGTH],
+                           str_create_target_dir_mode[MAX_INT_LENGTH],
                            str_fsa_id[MAX_INT_LENGTH],
                            str_gf_disconnect[MAX_INT_LENGTH],
                            str_sf_disconnect[MAX_INT_LENGTH],
@@ -386,6 +387,7 @@ main(int argc, char *argv[])
    p_file_dir = file_dir + strlen(file_dir);
    str_create_source_dir_mode[0] = '0';
    str_create_source_dir_mode[1] = '\0';
+   str_create_target_dir_mode[0] = '\0';
 
 #ifdef HAVE_UNSETENV
    /* Unset DISPLAY if exists, otherwise SSH might not work. */
@@ -712,6 +714,13 @@ main(int argc, char *argv[])
    system_log(DEBUG_SIGN, NULL, 0,
               "FD configuration: Create target dir by default  %s",
               (*(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) & ENABLE_CREATE_TARGET_DIR) ? "Yes" : "No");
+   if ((*(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) & ENABLE_CREATE_TARGET_DIR) &&
+       (str_create_target_dir_mode[0] != '\0'))
+   {
+      system_log(DEBUG_SIGN, NULL, 0,
+                 "FD configuration: Create target dir mode        %s",
+                 str_create_target_dir_mode);
+   }
    system_log(DEBUG_SIGN, NULL, 0,
               "FD configuration: Create source dir by default  %s",
               (str_create_source_dir_mode[1] == '\0') ? "No" : str_create_source_dir_mode);
@@ -2898,9 +2907,9 @@ make_process(struct connection *con, int qb_pos)
    int   argcount;
    pid_t pid;
 #ifdef HAVE_HW_CRC32
-   char  *args[22],
+   char  *args[24],
 #else
-   char  *args[21],
+   char  *args[23],
 #endif
 #ifdef USE_SPRINTF
          str_job_no[MAX_INT_LENGTH],
@@ -3196,6 +3205,13 @@ make_process(struct connection *con, int qb_pos)
       {
          argcount++;
          args[argcount] = "-S";
+      }
+      if (str_create_target_dir_mode[0] != '\0')
+      {
+         argcount++;
+         args[argcount] = "-m";
+         argcount++;
+         args[argcount] = str_create_target_dir_mode;
       }
    }
    else
@@ -4359,6 +4375,41 @@ get_afd_config_value(void)
          (void)snprintf(str_create_source_dir_mode, MAX_INT_LENGTH,
                         "%d", create_source_dir_mode);
       }
+      if (get_definition(buffer, CREATE_TARGET_DIR_MODE_DEF,
+                         config_file, MAX_INT_LENGTH) != NULL)
+      {
+         mode_t create_target_dir_mode;
+
+         create_target_dir_mode = (unsigned int)atoi(config_file);
+         if ((create_target_dir_mode < 700) ||
+             (create_target_dir_mode > 7777))
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       _("Invalid mode %u set in AFD_CONFIG for %s. Setting to default %d."),
+                       create_target_dir_mode, CREATE_TARGET_DIR_MODE_DEF,
+                       DIR_MODE);
+            create_target_dir_mode = DIR_MODE;
+         }
+         else /* Convert octal to decimal. */
+         {
+            int kk,
+                ki = 1,
+                ko = 0,
+                oct_mode;
+
+            oct_mode = create_target_dir_mode;
+            while (oct_mode > 0)
+            {
+               kk = oct_mode % 10;
+               ko = ko + (kk * ki);
+               ki = ki * 8;
+               oct_mode = oct_mode / 10;
+            }
+            create_target_dir_mode = ko;
+         }
+         (void)snprintf(str_create_target_dir_mode, MAX_INT_LENGTH,
+                        "%d", create_target_dir_mode);
+      }
       if (get_definition(buffer, CREATE_REMOTE_SOURCE_DIR_DEF,
                          config_file, MAX_INT_LENGTH) != NULL)
       {
@@ -4487,22 +4538,48 @@ get_afd_config_value(void)
                 ((config_file[2] == '\0') || (config_file[2] == ' ') ||
                  (config_file[2] == '\t')))
             {
-               system_log(WARN_SIGN, __FILE__, __LINE__,
-                          "Only YES or NO (and not `%s') are possible for %s in AFD_CONFIG. Setting to default: NO",
-                          config_file, CREATE_TARGET_DIR_DEF);
+               *(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) &= ~ENABLE_CREATE_TARGET_DIR;
             }
-            if (*(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) & ENABLE_CREATE_TARGET_DIR)
+            else
             {
-               *(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) ^= ENABLE_CREATE_TARGET_DIR;
+               mode_t create_target_dir_mode;
+
+               create_target_dir_mode = (unsigned int)atoi(config_file);
+               if ((create_target_dir_mode < 700) ||
+                   (create_target_dir_mode > 7777))
+               {
+                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                             _("Invalid mode %u set in AFD_CONFIG for %s. Setting to default %d."),
+                             create_target_dir_mode,
+                             CREATE_TARGET_DIR_DEF, DIR_MODE);
+                  create_target_dir_mode = DIR_MODE;
+               }
+               else /* Convert octal to decimal. */
+               {
+                  int kk,
+                      ki = 1,
+                      ko = 0,
+                      oct_mode;
+
+                  oct_mode = create_target_dir_mode;
+                  while (oct_mode > 0)
+                  {
+                     kk = oct_mode % 10;
+                     ko = ko + (kk * ki);
+                     ki = ki * 8;
+                     oct_mode = oct_mode / 10;
+                  }
+                  create_target_dir_mode = ko;
+               }
+               (void)snprintf(str_create_target_dir_mode, MAX_INT_LENGTH,
+                              "%04o", create_target_dir_mode);
+               *(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) |= ENABLE_CREATE_TARGET_DIR;
             }
          }
       }
       else
       {
-         if (*(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) & ENABLE_CREATE_TARGET_DIR)
-         {
-            *(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) ^= ENABLE_CREATE_TARGET_DIR;
-         }
+         *(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) &= ~ENABLE_CREATE_TARGET_DIR;
       }
       if (get_definition(buffer, SIMULATE_SEND_MODE_DEF,
                          config_file, MAX_INT_LENGTH) != NULL)

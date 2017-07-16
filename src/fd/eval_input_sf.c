@@ -1,6 +1,6 @@
 /*
  *  eval_input_sf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -41,6 +41,7 @@ DESCR__S_M3
  **          -e <seconds>              Disconnect after given time.
  **          -f <SMTP from>            Default from identifier to send.
  **          -h <HTTP proxy>[:<port>]  Proxy where to send the HTTP requests.
+ **          -m <mode>                 Create target dir mode.
  **          -o <retries>              Old/Error message and number of retries.
  **          -r                        Resend from archive (job from show_olog).
  **          -R <SMTP reply-to>        Default reply-to identifier to send.
@@ -69,6 +70,7 @@ DESCR__S_M3
  **   23.11.2012 H.Kiehl Added -c for hardware CRC-32 support.
  **   15.09.2014 H.Kiehl Added -S for simulation mode.
  **   01.07.2015 H.Kiehl Added -e for disconnect time.
+ **   16.07.2017 H.Kiehl Added -m for create target dir mode.
  **
  */
 DESCR__E_M3
@@ -409,6 +411,49 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                        ret = SYNTAX_ERROR;
                                     }
                                     break;
+                                 case 'm' : /* The mode with which remote dirs should be created. */
+                                    if (((i + 1) < argc) &&
+                                        (argv[i + 1][0] != '-'))
+                                    {
+                                       int k = 0;
+
+                                       i++;
+                                       do
+                                       {
+                                          if ((argv[i][k] >= '0') &&
+                                              (argv[i][k] <= '7'))
+                                          {
+                                             p_db->dir_mode_str[k] = argv[i][k];
+                                             k++;
+                                          }
+                                          else
+                                          {
+                                             k = 5;
+                                          }
+                                       } while ((argv[i][k] != '\0') &&
+                                                (k < 5));
+                                       if ((k > 0) && (k < 5))
+                                       {
+                                          p_db->dir_mode = (unsigned int)strtoul(argv[i], (char **)NULL, 8);
+                                          p_db->dir_mode_str[k] = '\0';
+                                          p_db->special_flag |= CREATE_TARGET_DIR;
+                                       }
+                                       else
+                                       {
+                                          (void)fprintf(stderr,
+                                                        "ERROR   : Hmm, could not find or evaluate the mode for -m option.\n");
+                                          p_db->dir_mode_str[0] = '0';
+                                          p_db->dir_mode_str[1] = '\0';
+                                       }
+                                    }
+                                    else
+                                    {
+                                       (void)fprintf(stderr,
+                                                     "ERROR   : No mode specified for -m option.\n");
+                                       usage(argv[0]);
+                                       ret = SYNTAX_ERROR;
+                                    }
+                                    break;
                                  case 'R' : /* Default SMTP reply-to. */
                                     if (((i + 1) < argc) &&
                                         (argv[i + 1][0] != '-'))
@@ -630,6 +675,7 @@ usage(char *name)
    (void)fprintf(stderr, "  -e <seconds>              - Disconnect after the given amount of time.\n");
    (void)fprintf(stderr, "  -f <SMTP from>            - Default from identifier to send.\n");
    (void)fprintf(stderr, "  -h <HTTP proxy>[:<port>]  - Proxy where to send the HTTP request.\n");
+   (void)fprintf(stderr, "  -m <mode>                 - Mode of the created target dir.\n");
    (void)fprintf(stderr, "  -o <retries>              - Old/error message and number of retries.\n");
    (void)fprintf(stderr, "  -r                        - Resend from archive.\n");
    (void)fprintf(stderr, "  -R <SMTP reply-to>        - Default reply-to identifier to send.\n");

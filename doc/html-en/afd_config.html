@@ -370,8 +370,8 @@ the new value:
 </tr>
 <tr>
    <td valign=top><a name="create_target_dir">CREATE_TARGET_DIR</a></td>
-   <td>If this is set to YES and the target directory does not exist it
-       will be created automatically, unless the option
+   <td>If this is set to YES or a mode is set and the target directory
+       does not exist it will be created automatically, unless the option
        <a href="dir_config.html#do_not_create_target_dir">do not create
        target dir</a> is set. If it is set to NO (default)
        it will not create the target directory. With the option
@@ -379,6 +379,13 @@ the new value:
        this can be overridden.</td>
     <td valign=top>NO</td>
     <td valign=top>fd</td>
+</tr>
+<tr>
+   <td valign=top><a name="create_target_dir_mode">CREATE_TARGET_DIR_MODE</a></td>
+   <td>The permission of the target directories that is found in the DIR_CONFIG
+       and created by FD if they are not there.</td>
+   <td valign=top>775</td>
+   <td valign=top>fd</td>
 </tr>
 <tr>
    <td valign=top><a name="default_age_limit">DEFAULT_AGE_LIMIT</a></td>
@@ -763,7 +770,7 @@ restarted.
    <td width="90%"><small><address>
    Copyright &copy; 1999 - 2017 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 17.05.2017
+   Last updated: 16.07.2017
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
