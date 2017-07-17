@@ -48,6 +48,13 @@
 #TRUSTED_REMOTE_IP                192.168.22.*
 
 ##########################################################################
+# The maximum number of clients that may connect to the TCP daemon of    #
+# the AFD.                                                               #
+# Default: 5                                                             #
+##########################################################################
+#MAX_AFDD_CONNECTIONS             5
+
+##########################################################################
 # Here scheduling priorities can be defined for the different AFD        #
 # process. Only  use these if you know what you are doing. See man nice  #
 # for the meaning of the values, mostly it goes from 19 (least favorable)#
@@ -292,13 +299,14 @@ MAX_CONNECTIONS                  80
 #CREATE_SOURCE_DIR_MODE           775
 
 ##########################################################################
-# If this is set to YES and the target directory does not exist it will  #
-# be created automatically, unless the option do not create target dir   #
-# is set If it is set to NO it will not create the target directory.     #
-# With the option create target dir  this can be overriden.              #
+# If this is set to YES (or you specify the mode) and the target         #
+# directory does not exist it will be created automatically, unless the  #
+# option 'do not create target dir' is set. If it is set to NO it will   #
+# not create the target directory.                                       #
+# With the option 'create target dir' this can be overriden.             #
 # Default: NO                                                            #
 ##########################################################################
-#CREATE_TARGET_DIR                NO
+#CREATE_TARGET_DIR                775
 
 ##########################################################################
 # Files older then the given seconds will be deleted by default, unless  #
