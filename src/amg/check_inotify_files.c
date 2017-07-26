@@ -783,61 +783,57 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                   }
                   else /* gotcha == NO */
                   {
+                     /*
+                      * Note, in inotify we cannot leave files lying
+                      * around for a while, since we do not scan the
+                      * directory. So if delete_files_flag ist set
+                      * to UNKNOWN_FILES, delete the file immediatly.
+                      * Otherwise they just stay forever.
+                      */
                      if (fra[p_de->fra_pos].delete_files_flag & UNKNOWN_FILES)
                      {
-                        diff_time = current_time - stat_buf.st_mtime;
-                        if ((fra[p_de->fra_pos].unknown_file_time == -2) ||
-                            ((diff_time > fra[p_de->fra_pos].unknown_file_time) &&
-                             (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
+                        if (unlink(fullname) == -1)
                         {
-                           if (unlink(fullname) == -1)
-                           {
-                              if (errno != ENOENT)
-                              {                   
-                                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                                            _("Failed to unlink() `%s' : %s"),
-                                            fullname, strerror(errno));
-                              }
+                           if (errno != ENOENT)
+                           {                   
+                              system_log(WARN_SIGN, __FILE__, __LINE__,
+                                         _("Failed to unlink() `%s' : %s"),
+                                         fullname, strerror(errno));
                            }
-                           else
-                           {
+                        }
+                        else
+                        {
 #ifdef _DELETE_LOG
-                              size_t dl_real_size;
+                           size_t dl_real_size;
 
-                              (void)my_strncpy(dl.file_name,
-                                               &p_iwl->file_name[current_fnl_pos],
-                                               p_iwl->fnl[i] + 1);
-                              (void)snprintf(dl.host_name,
-                                             MAX_HOSTNAME_LENGTH + 4 + 1,
-                                             "%-*s %03x",
-                                             MAX_HOSTNAME_LENGTH, "-",
-                                             DEL_UNKNOWN_FILE);
-                              *dl.file_size = stat_buf.st_size;
-                              *dl.dir_id = p_de->dir_id;
-                              *dl.job_id = 0;
-                              *dl.input_time = 0L;
-                              *dl.split_job_counter = 0;
-                              *dl.unique_number = 0;
-                              *dl.file_name_length = p_iwl->fnl[i];
-                              dl_real_size = *dl.file_name_length + dl.size +
-                                             snprintf((dl.file_name + *dl.file_name_length + 1),
-                                                      MAX_FILENAME_LENGTH + 1,
-# if SIZEOF_TIME_T == 4
-                                                      "%s%c>%ld (%s %d)",
-# else
-                                                      "%s%c>%lld (%s %d)",
-# endif
-                                                      DIR_CHECK, SEPARATOR_CHAR,
-                                                      (pri_time_t)diff_time,
-                                                      __FILE__, __LINE__);
-                              if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
-                              {
-                                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                            _("write() error : %s"),
-                                            strerror(errno));
-                              }
-#endif
+                           (void)my_strncpy(dl.file_name,
+                                            &p_iwl->file_name[current_fnl_pos],
+                                            p_iwl->fnl[i] + 1);
+                           (void)snprintf(dl.host_name,
+                                          MAX_HOSTNAME_LENGTH + 4 + 1,
+                                          "%-*s %03x",
+                                          MAX_HOSTNAME_LENGTH, "-",
+                                          DEL_UNKNOWN_FILE);
+                           *dl.file_size = stat_buf.st_size;
+                           *dl.dir_id = p_de->dir_id;
+                           *dl.job_id = 0;
+                           *dl.input_time = 0L;
+                           *dl.split_job_counter = 0;
+                           *dl.unique_number = 0;
+                           *dl.file_name_length = p_iwl->fnl[i];
+                           dl_real_size = *dl.file_name_length + dl.size +
+                                          snprintf((dl.file_name + *dl.file_name_length + 1),
+                                                   MAX_FILENAME_LENGTH + 1,
+                                                   "%s%cinotify immediate del (%s %d)",
+                                                   DIR_CHECK, SEPARATOR_CHAR,
+                                                   __FILE__, __LINE__);
+                           if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
+                           {
+                              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                         _("write() error : %s"),
+                                         strerror(errno));
                            }
+#endif
                         }
                      }
                   }

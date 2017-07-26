@@ -1267,6 +1267,9 @@ check_files(struct directory_entry *p_de,
                      {
                         diff_time = current_time - stat_buf.st_mtime;
                         if ((fra[p_de->fra_pos].unknown_file_time == -2) ||
+#ifdef WITH_INOTIFY
+                            (fra[p_de->fra_pos].dir_flag & INOTIFY_NEEDS_SCAN) ||
+#endif
                             ((diff_time > fra[p_de->fra_pos].unknown_file_time) &&
                              (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
                         {
@@ -1298,17 +1301,33 @@ check_files(struct directory_entry *p_de,
                               *dl.split_job_counter = 0;
                               *dl.unique_number = 0;
                               *dl.file_name_length = file_name_length;
-                              dl_real_size = *dl.file_name_length + dl.size +
-                                             snprintf((dl.file_name + *dl.file_name_length + 1),
-                                                      MAX_FILENAME_LENGTH + 1,
-# if SIZEOF_TIME_T == 4
-                                                      "%s%c>%ld (%s %d)",
-# else
-                                                      "%s%c>%lld (%s %d)",
+# ifdef WITH_INOTIFY
+                              if (fra[p_de->fra_pos].dir_flag & INOTIFY_NEEDS_SCAN)
+                              {
+                                 dl_real_size = *dl.file_name_length + dl.size +
+                                                snprintf((dl.file_name + *dl.file_name_length + 1),
+                                                         MAX_FILENAME_LENGTH + 1,
+                                                         "%s%cinotify immediate del (%s %d)",
+                                                         DIR_CHECK, SEPARATOR_CHAR,
+                                                         __FILE__, __LINE__);
+                              }
+                              else
+                              {
 # endif
-                                                      DIR_CHECK, SEPARATOR_CHAR,
-                                                      (pri_time_t)diff_time,
-                                                      __FILE__, __LINE__);
+                                 dl_real_size = *dl.file_name_length + dl.size +
+                                                snprintf((dl.file_name + *dl.file_name_length + 1),
+                                                         MAX_FILENAME_LENGTH + 1,
+# if SIZEOF_TIME_T == 4
+                                                         "%s%c>%ld (%s %d)",
+# else
+                                                         "%s%c>%lld (%s %d)",
+# endif
+                                                         DIR_CHECK, SEPARATOR_CHAR,
+                                                         (pri_time_t)diff_time,
+                                                         __FILE__, __LINE__);
+# ifdef WITH_INOTIFY
+                              }
+# endif
                               if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
                               {
                                  system_log(ERROR_SIGN, __FILE__, __LINE__,
