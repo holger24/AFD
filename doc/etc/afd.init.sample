@@ -26,8 +26,12 @@ case "$1" in
       ;;
    stop)
       ;;
+   restart)
+      $0 stop
+      $0 start
+      ;;
    *)
-      echo "Usage: afd.init [AFD_WORK_DIR] start|stop"
+      echo "Usage: afd.init [AFD_WORK_DIR] start|stop|restart"
       exit 1
       ;;
 esac
