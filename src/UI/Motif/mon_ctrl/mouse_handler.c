@@ -1373,7 +1373,7 @@ start_remote_prog(Widget    w,
                y;
    XT_PTR_TYPE item_no = (XT_PTR_TYPE)client_data;
    char        **args,
-               progname[MAX_PATH_LENGTH];
+               progname[MAX_PATH_LENGTH + 19];
 
    if ((no_selected == 0) && (no_selected_static == 0))
    {

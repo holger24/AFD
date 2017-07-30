@@ -1,6 +1,6 @@
 /*
  *  awmo.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2010 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2010 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -152,7 +152,7 @@ main(int argc, char *argv[])
 
    if (db.special_flag & WITH_SEQUENCE_NUMBER)
    {
-      char counter_file_name[MAX_FILENAME_LENGTH];
+      char counter_file_name[1 + MAX_FILENAME_LENGTH + MAX_INT_LENGTH + 1];
 
       (void)sprintf(counter_file_name, "/%s.%d", db.hostname, db.port);
       if ((wmo_counter_fd = open_counter_file(counter_file_name, &wmo_counter)) < 0)

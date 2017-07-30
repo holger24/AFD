@@ -1,6 +1,6 @@
 /*
  *  view_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -83,7 +83,7 @@ view_files(int no_selected, int *select_list)
                        select_done = 0,
                        *select_done_list;
    off_t               dnb_size;
-   char                fullname[MAX_PATH_LENGTH],
+   char                fullname[MAX_PATH_LENGTH + 1 + MAX_HOSTNAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 1],
                        user_message[256];
    struct stat         stat_buf;
    struct dir_name_buf *dnb;

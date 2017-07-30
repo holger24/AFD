@@ -901,7 +901,7 @@ ftp_ssl_auth(int strict)
             }
             else
             {
-               char             *ssl_version;
+               const char       *ssl_version;
                int              length;
                const SSL_CIPHER *ssl_cipher;
 
@@ -4001,7 +4001,7 @@ encrypt_data_connection(int fd)
    }
    else
    {
-      char             *ssl_version;
+      const char       *ssl_version;
       int              length,
                        ssl_bits;
       const SSL_CIPHER *ssl_cipher;

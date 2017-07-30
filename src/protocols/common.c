@@ -1,6 +1,6 @@
 /*
  *  common.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -330,7 +330,7 @@ ssl_connect(int sock_fd, char *func_name, int strict)
    }
    else
    {
-      char             *ssl_version;
+      const char       *ssl_version;
       int              length;
       const SSL_CIPHER *ssl_cipher;
 

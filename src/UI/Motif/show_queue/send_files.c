@@ -1,6 +1,6 @@
 /*
  *  send_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -85,7 +85,7 @@ send_files(int no_selected, int *select_list)
                        ruid; /* Real user ID. */
    char                *args[7],
                        file_name_file[MAX_PATH_LENGTH],
-                       fullname[MAX_PATH_LENGTH],
+                       fullname[MAX_PATH_LENGTH + 1 + MAX_HOSTNAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 1],
                        user_message[256];
    FILE                *fp;
    struct stat         stat_buf;

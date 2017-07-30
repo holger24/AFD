@@ -1,6 +1,6 @@
 /*
  *  format_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -451,7 +451,7 @@ format_send_info(char **text)
    /* Show archive directory if it is available. */
    if (id.archive_dir[0] != '\0')
    {
-      char archive_dir[MAX_PATH_LENGTH];
+      char archive_dir[MAX_PATH_LENGTH + AFD_ARCHIVE_DIR_LENGTH + 1 + MAX_PATH_LENGTH + 1];
 
       (void)sprintf(archive_dir, "%s%s/%s",
                     p_work_dir, AFD_ARCHIVE_DIR, id.archive_dir);

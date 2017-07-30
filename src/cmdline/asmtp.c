@@ -131,7 +131,7 @@ main(int argc, char *argv[])
                host_name[256],
                local_user[MAX_FILENAME_LENGTH],
                multipart_boundary[MAX_FILENAME_LENGTH],
-               remote_user[MAX_FILENAME_LENGTH],
+               remote_user[MAX_USER_NAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 1],
                final_filename[MAX_FILENAME_LENGTH],
                *ptr,
                *smtp_buffer;
@@ -335,7 +335,8 @@ main(int argc, char *argv[])
 
    if ((db.special_flag & FILE_NAME_IS_USER) == 0)
    {
-      (void)snprintf(remote_user, MAX_FILENAME_LENGTH,
+      (void)snprintf(remote_user,
+                     MAX_USER_NAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 1,
                      "%s@%s", db.user, db.hostname);
    }
 

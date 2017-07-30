@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -869,10 +869,11 @@ get_input_files(void)
                       (strlen(&p_dir->d_name[1]) <= MAX_HOSTNAME_LENGTH))
                   {
                      char *p_file,
-                          queue_dir[MAX_PATH_LENGTH];
+                          queue_dir[MAX_PATH_LENGTH + 1 + MAX_FILENAME_LENGTH + 2];
 
                      p_file = queue_dir + sprintf(queue_dir, "%s/%s/",
-                                                  dnb[i].dir_name, p_dir->d_name);
+                                                  dnb[i].dir_name,
+                                                  p_dir->d_name);
                      if ((stat(queue_dir, &stat_buf) != -1) &&
                          (S_ISDIR(stat_buf.st_mode)))
                      {
@@ -1003,7 +1004,7 @@ get_all_input_files(void)
          if (gotcha == YES)
          {
             int  fra_pos;
-            char input_dir[MAX_PATH_LENGTH],
+            char input_dir[MAX_PATH_LENGTH + 2],
                  *ptr_file;
 
             ptr_file = input_dir + sprintf(input_dir, "%s/",
