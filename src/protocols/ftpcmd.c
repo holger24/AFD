@@ -3891,7 +3891,8 @@ check_data_socket(int  reply,
 
          return(1);
       }
-      else if (((reply == 550) || (reply == 553)) && (create_dir == YES))
+      else if (((reply == 550) || (reply == 553)) && (create_dir == YES) &&
+               (*retries < MAX_DATA_CONNECT_RETRIES))
            {
               char *ptr,
                    to_dir[MAX_PATH_LENGTH];
@@ -3921,6 +3922,7 @@ check_data_socket(int  reply,
                     {
                        if (ftp_cd(current_dir, NO, "", NULL) == SUCCESS)
                        {
+                          (*retries)++;
                           return(1);
                        }
                        else
@@ -4847,7 +4849,7 @@ read_data_line(int read_fd, char *line)
          }
          read_ptr++;
          bytes_read--;
-      } while(bytes_read > 0);
+      } while (bytes_read > 0);
    } /* for (;;) */
 }
 
@@ -5148,7 +5150,7 @@ try_again_read_msg:
          }
          read_ptr++;
          bytes_read--;
-      } while(bytes_read > 0);
+      } while (bytes_read > 0);
    } /* for (;;) */
 }
 
