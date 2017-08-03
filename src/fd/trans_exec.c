@@ -1,6 +1,6 @@
 /*
  *  trans_exec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,8 @@ DESCR__S_M3
  ** HISTORY
  **   22.05.2001 H.Kiehl Created
  **   11.02.2007 H.Kiehl Added locking option.
+ **   03.08.2017 H.Kiehl Allow user to specify with the %n parameter
+ **                      the full new name.
  **
  */
 DESCR__E_M3
@@ -98,6 +100,7 @@ trans_exec(char    *file_path,
       char         *p_end = p_command,
                    *p_tmp_dir,
                    *insert_list[MAX_EXEC_FILE_SUBSTITUTION],
+                   insert_type[MAX_EXEC_FILE_SUBSTITUTION],
                    tmp_option[1024],
                    command_str[1024],
                    *return_str = NULL;
@@ -105,11 +108,13 @@ trans_exec(char    *file_path,
       while ((*p_end != '\n') && (*p_end != '\0') &&
              (ii < MAX_EXEC_FILE_SUBSTITUTION))
       {
-         if ((*p_end == '%') && (*(p_end + 1) == 's'))
+         if ((*p_end == '%') &&
+             ((*(p_end + 1) == 's') || (*(p_end + 1) == 'n')))
          {
             tmp_option[k] = *p_end;
             tmp_option[k + 1] = *(p_end + 1);
             insert_list[ii] = &tmp_option[k];
+            insert_type[ii] = *(p_end + 1);
             ii++;
             p_end += 2;
             k += 2;
@@ -228,11 +233,14 @@ trans_exec(char    *file_path,
          /* Setup command by inserting the filenames for all %s */
          if (ii > 0)
          {
-            int  length,
+            int  fullname_checked = NO,
+                 length,
                  length_start,
                  mask_file_name,
+                 p_file_name_buffer_checked = NO,
                  ret;
             char *fnp,
+                 *p_name,
                  tmp_char;
 
             insert_list[ii] = &tmp_option[k];
@@ -242,37 +250,49 @@ trans_exec(char    *file_path,
                                     "cd %s && %s", file_path, p_command);
             *insert_list[0] = tmp_char;
 
-            fnp = p_file_name_buffer;
-            mask_file_name = NO;
-            do
-            {
-               if ((*fnp == ';') || (*fnp == ' '))
-               {
-                  mask_file_name = YES;
-                  break;
-               }
-               fnp++;
-            } while (*fnp != '\0');
-
             /* Generate command string with file name(s). */
             length = 0;
             for (k = 1; k < (ii + 1); k++)
             {
+               if (insert_type[k - 1] == 'n')
+               {
+                  p_name = fullname;
+               }
+               else
+               {
+                  p_name = p_file_name_buffer;
+               }
+               if (((insert_type[k - 1] == 'n') && (fullname_checked == NO)) ||
+                   ((insert_type[k - 1] == 's') &&
+                    (p_file_name_buffer_checked == NO)))
+               {
+                  fnp = p_name;
+                  mask_file_name = NO;
+                  do
+                  {
+                     if ((*fnp == ';') || (*fnp == ' '))
+                     {
+                        mask_file_name = YES;
+                        break;
+                     }
+                     fnp++;
+                  } while (*fnp != '\0');
+               }
+
                tmp_char = *insert_list[k];
                *insert_list[k] = '\0';
                if (mask_file_name == YES)
                {
                   length += snprintf(command_str + length_start + length,
                                      1024 - (length_start + length),
-                                     "\"%s\"%s", p_file_name_buffer,
+                                     "\"%s\"%s", p_name,
                                      insert_list[k - 1] + 2);
                }
                else
                {
                   length += snprintf(command_str + length_start + length,
                                      1024 - (length_start + length),
-                                     "%s%s", p_file_name_buffer,
-                                     insert_list[k - 1] + 2);
+                                     "%s%s", p_name, insert_list[k - 1] + 2);
                }
                *insert_list[k] = tmp_char;
             }
