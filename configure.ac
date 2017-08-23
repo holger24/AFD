@@ -362,6 +362,12 @@ AC_ARG_ENABLE(ftp_reuse_data_port,
       AC_DEFINE([FTP_REUSE_DATA_PORT], [], [With reusing FTP data port])
    fi])
 
+AC_ARG_ENABLE(ascii_only_subject,
+   [  --enable-ascii_only_subject     enable ASCII only subjet in mail],
+   [if test x$enableval = xyes; then
+      AC_DEFINE([WITH_ASCII_ONLY_SUBJECT], [], [With ASCII only subjects])
+   fi])
+
 AC_ARG_ENABLE(ms_error_workaround,
    [  --enable-ms_error_workaround    enable workaround for MS FTP bug],
    [if test x$enableval = xyes; then

@@ -1209,7 +1209,11 @@ check_option(char *option, FILE *cmd_fp)
               if (*ptr == '"')
               {
                  ptr++;
+#ifdef WITH_ASCII_ONLY_SUBJECT
                  while ((*ptr != '"') && (*ptr != '\0') && (isascii(*ptr)))
+#else
+                 while ((*ptr != '"') && (*ptr != '\0'))
+#endif
                  {
                     ptr++;
                  }
@@ -1230,10 +1234,13 @@ check_option(char *option, FILE *cmd_fp)
                  }
                  else
                  {
+#ifdef WITH_ASCII_ONLY_SUBJECT
                     if (*ptr == '\0')
                     {
+#endif
                        update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
                                      "Subject line not terminated with a \" sign.");
+#ifdef WITH_ASCII_ONLY_SUBJECT
                     }
                     else
                     {
@@ -1241,6 +1248,7 @@ check_option(char *option, FILE *cmd_fp)
                                      "Subject line contains an illegal character (integer value = %d) that does not fit into the 7-bit ASCII character set.",
                                      (int)((unsigned char)*ptr));
                     }
+#endif
                     return(INCORRECT);
                  }
               }

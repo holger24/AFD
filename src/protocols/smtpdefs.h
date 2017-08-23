@@ -51,8 +51,9 @@ extern int  encode_base64(unsigned char *, int, unsigned char *),
             smtp_smarttls(int),
 #endif
             smtp_open(void),
-            smtp_write(char *, char *, int),
+            smtp_write(char *, char *, size_t),
             smtp_write_iso8859(char *, char *, int),
+            smtp_write_subject(char *, size_t *),
             smtp_close(void),
             smtp_quit(void);
 extern void get_content_type(char *, char *, int);

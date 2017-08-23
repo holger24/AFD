@@ -1068,8 +1068,13 @@ eval_message(char *message_name, struct job *p_db)
 
                           ptr++;
                           ptr_start = ptr;
+#ifdef WITH_ASCII_ONLY_SUBJECT
                           while ((*ptr != '"') && (*ptr != '\n') &&
                                  (*ptr != '\0') && (isascii(*ptr)))
+#else
+                          while ((*ptr != '"') && (*ptr != '\n') &&
+                                 (*ptr != '\0'))
+#endif
                           {
                              ptr++;
                           }
@@ -1093,11 +1098,14 @@ eval_message(char *message_name, struct job *p_db)
                           }
                           else
                           {
+#ifdef WITH_ASCII_ONLY_SUBJECT
                              if ((*ptr == '\n') || (*ptr == '\0'))
                              {
+#endif
                                 system_log(WARN_SIGN, __FILE__, __LINE__,
                                            "Subject line not terminated with a \" sign, igoring %s option. #%x",
                                            SUBJECT_ID, p_db->id.job);
+#ifdef WITH_ASCII_ONLY_SUBJECT
                              }
                              else
                              {
@@ -1114,6 +1122,7 @@ eval_message(char *message_name, struct job *p_db)
                                    ptr++;
                                 }
                              }
+#endif
                           }
                        }
                        else if (*ptr == '/')

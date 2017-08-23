@@ -115,6 +115,7 @@ DESCR__S_M3
  **                      support IPv6.
  **   11.09.2014 H.Kiehl Added simulation mode.
  **   10.10.2014 H.Kiehl Added SMARTTLS support.
+ **   22.08.2017 H.Kiehl Added function smtp_write_subject().
  **
  */
 DESCR__E_M3
@@ -122,7 +123,7 @@ DESCR__E_M3
 
 #include <stdio.h>            /* fprintf(), fdopen(), fclose()           */
 #include <string.h>           /* memset(), memcpy(), strcpy()            */
-#include <stdlib.h>           /* atoi(), exit()                          */
+#include <stdlib.h>           /* atoi(), exit(), malloc(), free()        */
 #include <ctype.h>            /* isdigit()                               */
 #include <sys/types.h>        /* fd_set                                  */
 #include <sys/time.h>         /* struct timeval                          */
@@ -825,6 +826,95 @@ smtp_open(void)
 }
 
 
+/*######################## smtp_write_subject() #########################*/
+int
+smtp_write_subject(char *subject, size_t *length)
+{
+   int  ret = 0;
+   char *buffer;
+#ifndef WITH_ASCII_ONLY_SUBJECT
+   char *ptr = subject;
+
+   while ((ret < *length) && (isascii(*ptr)))
+   {
+      ptr++; ret++;
+   }
+   if (ret == *length)
+   {
+#endif
+      if ((buffer = malloc((9 + *length + 2 + 1))) == NULL)
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, "smtp_write_subject", NULL,
+                   _("malloc() error : %s"), strerror(errno));
+         return(INCORRECT);
+      }
+
+      /* Subject: */
+      buffer[0] = 'S'; buffer[1] = 'u'; buffer[2] = 'b'; buffer[3] = 'j';
+      buffer[4] = 'e'; buffer[5] = 'c'; buffer[6] = 't'; buffer[7] = ':';
+      buffer[8] = ' ';
+
+      (void)memcpy(&buffer[9], subject, *length);
+      buffer[9 + *length] = '\r';
+      buffer[9 + *length + 1] = '\n';
+
+      (*length) += 9 + 2;
+#ifndef WITH_ASCII_ONLY_SUBJECT
+   }
+   else
+   {
+      while (*ptr != '\0')
+      {
+         ptr++; (*length)++;
+      }
+
+      /*
+       * Subject is not plain ASCII. So lets encode the subject to
+       * base64.
+       */
+      if ((buffer = malloc((19 + (2 * *length) + 4 + 1))) == NULL)
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, "smtp_write_subject", NULL,
+                   _("malloc() error : %s"), strerror(errno));
+         return(INCORRECT);
+      }
+
+      /* Subject: */
+      buffer[0] = 'S'; buffer[1] = 'u'; buffer[2] = 'b'; buffer[3] = 'j';
+      buffer[4] = 'e'; buffer[5] = 'c'; buffer[6] = 't'; buffer[7] = ':';
+      buffer[8] = ' ';
+
+      /* =?utf-8?B? */
+      buffer[9] = '='; buffer[10] = '?'; buffer[11] = 'u'; buffer[12] = 't';
+      buffer[13] = 'f'; buffer[14] = '-'; buffer[15] = '8'; buffer[16] = '?';
+      buffer[17] = 'B'; buffer[18] = '?';
+
+      ret = encode_base64((unsigned char *)subject, *length,
+                          (unsigned char *)&buffer[19]);
+      buffer[19 + ret] = '?';
+      buffer[19 + ret + 1] = '=';
+      buffer[19 + ret + 2] = '\r';
+      buffer[19 + ret + 3] = '\n';
+
+      *length = 19 + ret + 4;
+   }
+#endif
+
+   if (smtp_write(buffer, NULL, *length) < 0)
+   {
+      ret = INCORRECT;
+   }
+   else
+   {
+      ret = SUCCESS;
+   }
+
+   free(buffer);
+
+   return(ret);
+}
+
+
 /*############################# smtp_write() ############################*/
 /*                              ------------                             */
 /* If buffer is not NULL, this function converts a '\n' only to a '\r'   */
@@ -837,7 +927,7 @@ smtp_open(void)
 /* be initialized by the caller to '\n' only for the first block send.   */
 /*#######################################################################*/
 int
-smtp_write(char *block, char *buffer, int size)
+smtp_write(char *block, char *buffer, size_t size)
 {
    int    status;
    char   *ptr = block;

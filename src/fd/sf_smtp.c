@@ -1499,8 +1499,7 @@ main(int argc, char *argv[])
             {
                if (db.filename_pos_subject == -1)
                {
-                  length = snprintf(buffer, buffer_size,
-                                    "Subject: %s\r\n", db.subject);
+                  length = snprintf(buffer, buffer_size, "%s", db.subject);
                   if (length >= buffer_size)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -1512,8 +1511,7 @@ main(int argc, char *argv[])
                else
                {
                   db.subject[db.filename_pos_subject] = '\0';
-                  length = snprintf(buffer, buffer_size,
-                                    "Subject: %s", db.subject);
+                  length = snprintf(buffer, buffer_size, "%s", db.subject);
                   if (length >= buffer_size)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -1573,13 +1571,15 @@ main(int argc, char *argv[])
                         }
                      }
                   }
-                  if ((db.special_flag & ATTACH_ALL_FILES) && (files_to_send > 1))
+                  if ((db.special_flag & ATTACH_ALL_FILES) &&
+                      (files_to_send > 1))
                   {
                      int  filenames_to_add;
                      char *p_tmp_file_name_buffer;
 
                      p_tmp_file_name_buffer = file_name_buffer + MAX_FILENAME_LENGTH;
-                     for (filenames_to_add = 1; filenames_to_add < files_to_send; filenames_to_add++)
+                     for (filenames_to_add = 1;
+                          filenames_to_add < files_to_send; filenames_to_add++)
                      {
                         if (db.subject_rename_rule[0] == '\0')
                         {
@@ -1650,8 +1650,7 @@ main(int argc, char *argv[])
                   {
                      if ((length + strlen(&db.subject[db.filename_pos_subject + 2]) + 2) < buffer_size)
                      {
-                        length += snprintf(&buffer[length], buffer_size,
-                                           "%s\r\n",
+                        length += snprintf(&buffer[length], buffer_size, "%s",
                                            &db.subject[db.filename_pos_subject + 2]);
                         if (length >= buffer_size)
                         {
@@ -1661,22 +1660,10 @@ main(int argc, char *argv[])
                            exit(ALLOC_ERROR);
                         }
                      }
-                     else
-                     {
-                        buffer[length] = '\r';
-                        buffer[length + 1] = '\n';
-                        length += 2;
-                     }
-                  }
-                  else
-                  {
-                     buffer[length] = '\r';
-                     buffer[length + 1] = '\n';
-                     length += 2;
                   }
                   db.subject[db.filename_pos_subject] = '%';
                }
-               if (smtp_write(buffer, NULL, length) < 0)
+               if (smtp_write_subject(buffer, &length) < 0)
                {
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                             "Failed to write subject to SMTP-server.");
@@ -1687,16 +1674,8 @@ main(int argc, char *argv[])
             }
             else if (db.special_flag & FILE_NAME_IS_SUBJECT)
                  {
-                    length = snprintf(buffer, buffer_size,
-                                      "Subject: %s\r\n", final_filename);
-                    if (length >= buffer_size)
-                    {
-                       trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                 "Buffer length for mail header to small!");
-                       (void)smtp_quit();
-                       exit(ALLOC_ERROR);
-                    }
-                    if (smtp_write(buffer, NULL, length) < 0)
+                    length = strlen(final_filename);
+                    if (smtp_write_subject(final_filename, &length) < 0)
                     {
                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                  "Failed to write the filename as subject to SMTP-server.");

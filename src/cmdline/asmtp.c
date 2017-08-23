@@ -486,8 +486,7 @@ main(int argc, char *argv[])
 
       if (db.subject != NULL)
       {
-         length = snprintf(buffer, buffer_size,
-                           "Subject: %s\r\n", db.subject);
+         length = snprintf(buffer, buffer_size, "%s", db.subject);
          if (length >= buffer_size)
          {
             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -495,7 +494,7 @@ main(int argc, char *argv[])
             (void)smtp_quit();
             exit(ALLOC_ERROR);
          }
-         if (smtp_write(buffer, NULL, length) < 0)
+         if (smtp_write_subject(buffer, &length) < 0)
          {
             WHAT_DONE("mailed", file_size_done, no_of_files_done);
             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -507,8 +506,7 @@ main(int argc, char *argv[])
       }
       else if (db.special_flag & FILE_NAME_IS_SUBJECT)
            {
-              length = snprintf(buffer, buffer_size,
-                                "Subject: %s\r\n", final_filename);
+              length = snprintf(buffer, buffer_size, "%s", final_filename);
               if (length >= buffer_size)
               {
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -516,7 +514,7 @@ main(int argc, char *argv[])
                  (void)smtp_quit();
                  exit(ALLOC_ERROR);
               }
-              if (smtp_write(buffer, NULL, length) < 0)
+              if (smtp_write_subject(buffer, &length) < 0)
               {
                  WHAT_DONE("mailed", file_size_done, no_of_files_done);
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -782,8 +780,7 @@ main(int argc, char *argv[])
 
          if (db.subject != NULL)
          {
-            length = snprintf(buffer, buffer_size,
-                              "Subject: %s\r\n", db.subject);
+            length = snprintf(buffer, buffer_size, "%s", db.subject);
             if (length >= buffer_size)
             {
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -791,7 +788,7 @@ main(int argc, char *argv[])
                (void)smtp_quit();
                exit(ALLOC_ERROR);
             }
-            if (smtp_write(buffer, NULL, length) < 0)
+            if (smtp_write_subject(buffer, &length) < 0)
             {
                WHAT_DONE("mailed", file_size_done, no_of_files_done);
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -803,8 +800,7 @@ main(int argc, char *argv[])
          }
          else if (db.special_flag & FILE_NAME_IS_SUBJECT)
               {
-                 length = snprintf(buffer, buffer_size,
-                                   "Subject: %s\r\n", final_filename);
+                 length = snprintf(buffer, buffer_size, "%s", final_filename);
                  if (length >= buffer_size)
                  {
                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -812,7 +808,7 @@ main(int argc, char *argv[])
                     (void)smtp_quit();
                     exit(ALLOC_ERROR);
                  }
-                 if (smtp_write(buffer, NULL, length) < 0)
+                 if (smtp_write_subject(buffer, &length) < 0)
                  {
                     WHAT_DONE("mailed", file_size_done, no_of_files_done);
                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,

@@ -119,6 +119,14 @@
 --enable-ip_database                 - Enable AFD's own internal IP database.
                                        This is only used when it fails lookup
                                        the IP from DNS.
+--enable-ascii_only_subject          - Up to version 1.4.8-0.9.beta AFD
+                                       accepted only 7 bit ASCII subjects
+                                       for mail. Newer versions of AFD will
+                                       encode the subject to base64 if it
+                                       encounters a non 7 bit ASCII in the
+                                       mail subject. So, setting this option
+                                       will disable the automatic conversion
+                                       and restore the original behaviour.
 --enable-dfax_support                - Enable support for Divas Fax API
                                        for sending Fax. With the option
                                        --with-dfax-libraries=DIR one can
