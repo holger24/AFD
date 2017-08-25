@@ -193,6 +193,7 @@ char                       stop_flag = 0,
                            str_remote_file_check_interval[MAX_INT_LENGTH],
                            file_dir[MAX_PATH_LENGTH],
                            msg_dir[MAX_PATH_LENGTH],
+                           *default_charset,
                            default_http_proxy[MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH],
 #ifdef _WITH_DE_MAIL_SUPPORT
                            *default_de_mail_sender,
@@ -3262,6 +3263,13 @@ make_process(struct connection *con, int qb_pos)
          argcount++;
          args[argcount] = default_smtp_reply_to;
       }
+      if (default_charset != NULL)
+      {
+         argcount++;
+         args[argcount] = "-C";
+         argcount++;
+         args[argcount] = default_charset;
+      }
       if (default_smtp_server[0] != '\0')
       {
          argcount++;
@@ -4626,6 +4634,23 @@ get_afd_config_value(void)
       {
          default_smtp_server[0] = '\0';
       }
+      if (get_definition(buffer, DEFAULT_CHARSET_DEF,
+                         config_file, MAX_PATH_LENGTH) != NULL)
+      {
+         if ((default_charset = malloc(strlen(config_file) + 1)) == NULL)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "malloc() error : %s", strerror(errno));
+         }
+         else
+         {
+            (void)strcpy(default_charset, config_file);
+         }
+      }
+      else
+      {
+         default_charset = NULL;
+      }
 #ifdef _WITH_DE_MAIL_SUPPORT
       if (get_definition(buffer, DEFAULT_DE_MAIL_SENDER_DEF,
                          config_file,
@@ -4850,6 +4875,7 @@ get_afd_config_value(void)
 #endif
       default_smtp_server[0] = '\0';
       default_http_proxy[0] = '\0';
+      default_charset = NULL;
       default_smtp_from = NULL;
       default_smtp_reply_to = NULL;
       (void)snprintf(str_remote_file_check_interval, MAX_INT_LENGTH, "%d",

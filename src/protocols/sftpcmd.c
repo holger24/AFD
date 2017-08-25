@@ -1,6 +1,6 @@
 /*
  *  sftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -109,7 +109,7 @@ DESCR__E_M3
 #include <errno.h>
 #include "ssh_commondefs.h"
 #include "sftpdefs.h"
-#include "fddefs.h"           /* struct job                              */
+#include "fddefs.h"           /* trans_log()                             */
 
 
 #define SFTP_CD_TRY_CREATE_DIR()                                          \
@@ -186,7 +186,6 @@ extern int                      simulation_mode,
 extern char                     msg_str[];
 extern long                     transfer_timeout;
 extern char                     tr_hostname[];
-extern struct job               db;
 
 /* Local global variables. */
 static int                      byte_order = 1,

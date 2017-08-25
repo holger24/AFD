@@ -31,6 +31,7 @@ DESCR__S_M1
  **       --version        Version
  **       -a <age limit>   The age limit for the files being send.
  **       -A               Disable archiving of files.
+ **       -C <charset>     Default charset.
  **       -o <retries>     Old/Error message and number of retries.
  **       -r               Resend from archive (job from show_olog).
  **       -s <SMTP server> Server where to send the mails.
@@ -82,6 +83,7 @@ DESCR__S_M1
  **                      the filename or part of it.
  **   22.01.2009 H.Kiehl When adding the filename to the subject, add all
  **                      filenames if we have more then one file.
+ **   24.08.2017 H.Kiehl Added option to specify the default charset.
  **
  */
 DESCR__E_M1
@@ -1663,7 +1665,7 @@ main(int argc, char *argv[])
                   }
                   db.subject[db.filename_pos_subject] = '%';
                }
-               if (smtp_write_subject(buffer, &length) < 0)
+               if (smtp_write_subject(buffer, &length, (db.charset == NULL) ? db.default_charset : db.charset) < 0)
                {
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                             "Failed to write subject to SMTP-server.");
@@ -1675,7 +1677,7 @@ main(int argc, char *argv[])
             else if (db.special_flag & FILE_NAME_IS_SUBJECT)
                  {
                     length = strlen(final_filename);
-                    if (smtp_write_subject(final_filename, &length) < 0)
+                    if (smtp_write_subject(final_filename, &length, (db.charset == NULL) ? db.default_charset : db.charset) < 0)
                     {
                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                  "Failed to write the filename as subject to SMTP-server.");
@@ -1907,11 +1909,12 @@ main(int argc, char *argv[])
                }
                no_of_bytes += length;
             } /* if (db.special_flag & ATTACH_FILE) */
-            else if (db.charset != NULL)
+            else if ((db.charset != NULL) || (db.default_charset != NULL))
                  {
                     length = snprintf(buffer, buffer_size,
                                       "MIME-Version: 1.0 (produced by AFD %s)\r\nContent-Type: TEXT/plain; charset=%s\r\nContent-Transfer-Encoding: 8BIT\r\n",
-                                      PACKAGE_VERSION, db.charset);
+                                      PACKAGE_VERSION,
+                                      (db.charset == NULL) ? db.default_charset : db.charset);
                      if (length >= buffer_size)
                      {
                         trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -1940,7 +1943,7 @@ main(int argc, char *argv[])
                if (db.special_flag & ATTACH_FILE)
                {
                   /* Write boundary. */
-                  if (db.charset == NULL)
+                  if ((db.charset == NULL) && (db.default_charset == NULL))
                   {
                      length = snprintf(encode_buffer, encode_buffer_size,
                                        "\r\n--%s\r\nContent-Type: TEXT/plain; charset=US-ASCII\r\n\r\n",
@@ -1950,7 +1953,8 @@ main(int argc, char *argv[])
                   {
                      length = snprintf(encode_buffer, encode_buffer_size,
                                        "\r\n--%s\r\nContent-Type: TEXT/plain; charset=%s\r\nContent-Transfer-Encoding: 8BIT\r\n\r\n",
-                                       multipart_boundary, db.charset);
+                                       multipart_boundary,
+                                       (db.charset == NULL) ? db.default_charset : db.charset);
                   }
                   if (length >= encode_buffer_size)
                   {

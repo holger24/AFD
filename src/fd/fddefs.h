@@ -1,6 +1,6 @@
 /*
  *  fddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -515,7 +515,8 @@ struct job
           int           no_listed;       /* No. of elements in a group.  */
           char          **group_list;    /* List of elements found in    */
                                          /* the group file.              */
-          char          *charset;        /* MIME charset.                */
+          char          *default_charset;/* Default charset for mail.    */
+          char          *charset;        /* Mail charset.                */
           char          *subject;        /* Subject for mail.            */
           char          *reply_to;       /* The address where the        */
                                          /* recipient sends the reply.   */

@@ -1,6 +1,6 @@
 /*
  *  pop3cmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2013 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -85,33 +85,32 @@ DESCR__E_M3
 #include <fcntl.h>            /* O_NONBLOCK                              */
 #include <errno.h>
 #include "pop3defs.h"
-#include "fddefs.h"           /* struct job                              */
+#include "fddefs.h"           /* trans_log()                             */
 #include "commondefs.h"
 
 #ifdef WITH_SSL
-SSL                       *ssl_con = NULL;
+SSL                   *ssl_con = NULL;
 #endif
 
 /* External global variables. */
-extern int                timeout_flag;
+extern int            timeout_flag;
 #ifdef LINUX
-extern char               *h_errlist[];  /* for gethostbyname()          */
-extern int                h_nerr;        /* for gethostbyname()          */
+extern char           *h_errlist[];  /* for gethostbyname()          */
+extern int            h_nerr;        /* for gethostbyname()          */
 #endif
-extern long               transfer_timeout;
-extern char               msg_str[],
-                          tr_hostname[];
-extern struct job         db;
+extern long           transfer_timeout;
+extern char           msg_str[],
+                      tr_hostname[];
 
 /* Local global variables. */
-static int                pop3_fd,
-                          rb_offset;
-static char               read_buffer[4];
-static struct timeval     timeout;
+static int            pop3_fd,
+                      rb_offset;
+static char           read_buffer[4];
+static struct timeval timeout;
 
 /* Local function prototypes. */
-static int                get_reply(void),
-                          read_msg(void);
+static int            get_reply(void),
+                      read_msg(void);
 
 
 

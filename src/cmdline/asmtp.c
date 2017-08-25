@@ -1,6 +1,6 @@
 /*
  *  asmtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -494,7 +494,7 @@ main(int argc, char *argv[])
             (void)smtp_quit();
             exit(ALLOC_ERROR);
          }
-         if (smtp_write_subject(buffer, &length) < 0)
+         if (smtp_write_subject(buffer, &length, db.charset) < 0)
          {
             WHAT_DONE("mailed", file_size_done, no_of_files_done);
             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -514,7 +514,7 @@ main(int argc, char *argv[])
                  (void)smtp_quit();
                  exit(ALLOC_ERROR);
               }
-              if (smtp_write_subject(buffer, &length) < 0)
+              if (smtp_write_subject(buffer, &length, db.charset) < 0)
               {
                  WHAT_DONE("mailed", file_size_done, no_of_files_done);
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -788,7 +788,7 @@ main(int argc, char *argv[])
                (void)smtp_quit();
                exit(ALLOC_ERROR);
             }
-            if (smtp_write_subject(buffer, &length) < 0)
+            if (smtp_write_subject(buffer, &length, db.charset) < 0)
             {
                WHAT_DONE("mailed", file_size_done, no_of_files_done);
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -808,7 +808,7 @@ main(int argc, char *argv[])
                     (void)smtp_quit();
                     exit(ALLOC_ERROR);
                  }
-                 if (smtp_write_subject(buffer, &length) < 0)
+                 if (smtp_write_subject(buffer, &length, db.charset) < 0)
                  {
                     WHAT_DONE("mailed", file_size_done, no_of_files_done);
                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,

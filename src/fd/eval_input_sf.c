@@ -37,6 +37,7 @@ DESCR__S_M3
  **          -a <age limit>            The age limit for the files being send.
  **          -A                        Disable archiving of files.
  **          -c                        Enable support for hardware CRC-32.
+ **          -C <charset>              Default charset to use.
  **          -D <DE-mail sender>       The sender DE-mail address.
  **          -e <seconds>              Disconnect after given time.
  **          -f <SMTP from>            Default from identifier to send.
@@ -71,6 +72,7 @@ DESCR__S_M3
  **   15.09.2014 H.Kiehl Added -S for simulation mode.
  **   01.07.2015 H.Kiehl Added -e for disconnect time.
  **   16.07.2017 H.Kiehl Added -m for create target dir mode.
+ **   24.08.2017 H.Kiehl Added -C to specify the default charset.
  **
  */
 DESCR__E_M3
@@ -281,6 +283,39 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                     have_hw_crc32 = YES;
                                     break;
 #endif
+                                 case 'C' : /* Charset. */
+                                    if (((i + 1) < argc) &&
+                                        (argv[i + 1][0] != '-'))
+                                    {
+                                       size_t length;
+
+                                       i++;
+                                       length = strlen(argv[i]) + 1;
+                                       if ((p_db->default_charset = malloc(length)) == NULL)
+                                       {
+                                          (void)fprintf(stderr,
+# if SIZEOF_SIZE_T == 4
+                                                        "ERROR   : Failed to malloc() %d bytes : %s",
+# else
+                                                        "ERROR   : Failed to malloc() %lld bytes : %s",
+# endif
+                                                        (pri_size_t)length,
+                                                        strerror(errno));
+                                          ret = ALLOC_ERROR;
+                                       }
+                                       else
+                                       {
+                                          (void)strcpy(p_db->default_charset, argv[i]);
+                                       }
+                                    }
+                                    else
+                                    {
+                                       (void)fprintf(stderr,
+                                                     "ERROR   : No default charset specified for -C option.\n");
+                                       usage(argv[0]);
+                                       ret = SYNTAX_ERROR;
+                                    }
+                                    break;
 #ifdef _WITH_DE_MAIL_SUPPORT
                                  case 'D' : /* DE-Mail sender address. */
                                     if (((i + 1) < argc) &&
@@ -669,6 +704,7 @@ usage(char *name)
 #ifdef HAVE_HW_CRC32
    (void)fprintf(stderr, "  -c                        - Enable support for hardware CRC-32.\n");
 #endif
+   (void)fprintf(stderr, "  -C <charset>              - Set the default charset.\n");
 #ifdef _WITH_DE_MAIL_SUPPORT
    (void)fprintf(stderr, "  -D <DE-Mail sender>       - DE-Mail sender address.\n");
 #endif

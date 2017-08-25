@@ -1,6 +1,6 @@
 /*
  *  init_asmtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2000 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -90,6 +90,7 @@ init_asmtp(int argc, char *argv[], struct data *p_db)
    p_db->special_flag     = 0;
    p_db->filename         = NULL;
    p_db->realname         = NULL;
+   p_db->charset          = NULL;
 #ifdef WITH_SSL
    p_db->strict           = NO;
 #endif
@@ -207,6 +208,34 @@ init_asmtp(int argc, char *argv[], struct data *p_db)
                argc--;
 
                eval_config_file(config_file, p_db);
+            }
+            break;
+
+         case 'C' : /* Character set to specify. */
+            if ((argc == 1) || (*(argv + 1)[0] == '-'))
+            {
+               (void)fprintf(stderr,
+                             _("ERROR   : No charset specified for option -C.\n"));
+               correct = NO;
+            }
+            else
+            {
+               size_t length;
+
+               argv++;
+               length = strlen(argv[0]) + 1;
+               if ((p_db->charset = malloc(length)) == NULL)
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : malloc() error : %s (%s %d)\n"),
+                                strerror(errno), __FILE__, __LINE__);
+                  correct = NO;
+               }
+               else
+               {
+                  (void)strcpy(p_db->charset, argv[0]);
+               }
+               argc--;
             }
             break;
 
@@ -497,6 +526,7 @@ usage(void)
    (void)fprintf(stderr, _("                               bytes.\n"));
    (void)fprintf(stderr, _("  -c <config file>           - Configuration file holding user name,\n"));
    (void)fprintf(stderr, _("                               domain and SMTP server in URL format.\n"));
+   (void)fprintf(stderr, _("  -C <charset>               - Character set to be used.\n"));
    (void)fprintf(stderr, _("  -e                         - Encode files in BASE64.\n"));
    (void)fprintf(stderr, _("  -f <filename>              - File containing a list of filenames\n"));
    (void)fprintf(stderr, _("                               that are to be send.\n"));

@@ -1,6 +1,6 @@
 /*
  *  cmdline.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -170,6 +170,8 @@ struct data
 #endif
           long         transfer_timeout; /* When to timeout the            */
                                          /* transmitting job.              */
+          char         *charset;         /* Character set to be used for   */
+                                         /* mail.                          */
           char         *subject;         /* Subject of the mail.           */
           char         *reply_to;        /* The address where the recipient*/
                                          /* sends the reply.               */

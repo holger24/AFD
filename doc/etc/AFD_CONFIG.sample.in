@@ -359,6 +359,14 @@ MAX_CONNECTIONS                  80
 #DEFAULT_SMTP_REPLY_TO            donald@work
 
 ##########################################################################
+# The default charset is in most cases not set. With this option you can #
+# set it to the charset you want. Note AFD will not check if you enter a #
+# valid charset.                                                         #
+# Default: not set                                                       #
+##########################################################################
+#DEFAULT_CHARSET                  utf-8
+
+##########################################################################
 # The maximum number of files that are copied before they are send to    #
 # the FD.                                                                #
 # Default: 100                                                           #

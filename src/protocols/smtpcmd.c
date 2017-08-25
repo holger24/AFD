@@ -138,7 +138,7 @@ DESCR__E_M3
 #include <arpa/inet.h>        /* inet_addr()                             */
 #include <unistd.h>           /* select(), write(), read(), close()      */
 #include <errno.h>
-#include "fddefs.h"
+#include "fddefs.h"           /* trans_log(), C_TRACE, BIN_W_TRACE, etc  */
 #include "smtpdefs.h"
 #include "commondefs.h"
 
@@ -157,7 +157,6 @@ extern char                            *h_errlist[]; /* for gethostbyname() */
 extern int                             h_nerr;       /* for gethostbyname() */
 #endif
 extern long                            transfer_timeout;
-extern struct job                      db;
 
 /* Local global variables. */
 static int                             smtp_fd;
@@ -828,7 +827,7 @@ smtp_open(void)
 
 /*######################## smtp_write_subject() #########################*/
 int
-smtp_write_subject(char *subject, size_t *length)
+smtp_write_subject(char *subject, size_t *length, char *charset)
 {
    int  ret = 0;
    char *buffer;
@@ -863,40 +862,54 @@ smtp_write_subject(char *subject, size_t *length)
    }
    else
    {
-      while (*ptr != '\0')
-      {
-         ptr++; (*length)++;
-      }
+      size_t charset_length;
 
       /*
        * Subject is not plain ASCII. So lets encode the subject to
        * base64.
        */
-      if ((buffer = malloc((19 + (2 * *length) + 4 + 1))) == NULL)
+      if (charset == NULL)
+      {
+         charset_length = 5;
+      }
+      else
+      {
+         charset_length = strlen(charset);
+      }
+      if ((buffer = malloc((11 + charset_length + 3 + (2 * *length) + 4 + 1))) == NULL)
       {
          trans_log(ERROR_SIGN, __FILE__, __LINE__, "smtp_write_subject", NULL,
                    _("malloc() error : %s"), strerror(errno));
          return(INCORRECT);
       }
 
-      /* Subject: */
+      /* Subject: =? */
       buffer[0] = 'S'; buffer[1] = 'u'; buffer[2] = 'b'; buffer[3] = 'j';
       buffer[4] = 'e'; buffer[5] = 'c'; buffer[6] = 't'; buffer[7] = ':';
-      buffer[8] = ' ';
+      buffer[8] = ' '; buffer[9] = '='; buffer[10] = '?';
 
-      /* =?utf-8?B? */
-      buffer[9] = '='; buffer[10] = '?'; buffer[11] = 'u'; buffer[12] = 't';
-      buffer[13] = 'f'; buffer[14] = '-'; buffer[15] = '8'; buffer[16] = '?';
-      buffer[17] = 'B'; buffer[18] = '?';
+      if (charset == NULL)
+      {
+         /* utf-8 */
+         buffer[11] = 'u'; buffer[12] = 't'; buffer[13] = 'f';
+         buffer[14] = '-'; buffer[15] = '8';
+      }
+      else
+      {
+         (void)memcpy(&buffer[11], charset, charset_length);
+      }
+      buffer[11 + charset_length] = '?';
+      buffer[11 + charset_length + 1] = 'B';
+      buffer[11 + charset_length + 2] = '?';
 
       ret = encode_base64((unsigned char *)subject, *length,
-                          (unsigned char *)&buffer[19]);
-      buffer[19 + ret] = '?';
-      buffer[19 + ret + 1] = '=';
-      buffer[19 + ret + 2] = '\r';
-      buffer[19 + ret + 3] = '\n';
+                          (unsigned char *)&buffer[11 + charset_length + 3]);
+      buffer[11 + charset_length + 3 + ret] = '?';
+      buffer[11 + charset_length + 3 + ret + 1] = '=';
+      buffer[11 + charset_length + 3 + ret + 2] = '\r';
+      buffer[11 + charset_length + 3 + ret + 3] = '\n';
 
-      *length = 19 + ret + 4;
+      *length = 11 + charset_length + 3 + ret + 4;
    }
 #endif
 

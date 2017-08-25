@@ -1,6 +1,6 @@
 /*
  *  wmocmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -75,25 +75,24 @@ DESCR__E_M3
 #include <fcntl.h>            /* O_NONBLOCK                              */
 #include <errno.h>
 #include "wmodefs.h"
-#include "fddefs.h"           /* struct job                              */
+#include "fddefs.h"           /* trans_log()                             */
 #include "commondefs.h"
 
 
 /* External global variables. */
-extern int                simulation_mode,
-                          timeout_flag;
-extern unsigned int       special_flag;
+extern int            simulation_mode,
+                      timeout_flag;
+extern unsigned int   special_flag;
 #ifdef LINUX
-extern char               *h_errlist[];  /* for gethostbyname()          */
-extern int                h_nerr;        /* for gethostbyname()          */
+extern char           *h_errlist[];  /* for gethostbyname()          */
+extern int            h_nerr;        /* for gethostbyname()          */
 #endif
-extern long               transfer_timeout;
-extern char               tr_hostname[];
-extern struct job         db;
+extern long           transfer_timeout;
+extern char           tr_hostname[];
 
 /* Local global variables. */
-static int                wmo_fd;
-static struct timeval     timeout;
+static int            wmo_fd;
+static struct timeval timeout;
 
 #define MAX_CHARS_IN_LINE 45
 
