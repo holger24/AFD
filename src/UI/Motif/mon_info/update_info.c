@@ -1,6 +1,6 @@
 /*
  *  update_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -78,7 +78,7 @@ update_info(Widget w)
 {
    static int  interval = 0;
    signed char flush = NO;
-   char        str_line[MAX_INFO_STRING_LENGTH],
+   char        str_line[MAX_PATH_LENGTH],
                tmp_str_line[MAX_INFO_STRING_LENGTH];
 
    /* Check if MSA changed. */

@@ -1,6 +1,6 @@
 /*
  *  mon_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -134,7 +134,7 @@ main(int argc, char *argv[])
    int             i;
    char            window_title[100],
                    work_dir[MAX_PATH_LENGTH],
-                   str_line[MAX_INFO_STRING_LENGTH],
+                   str_line[MAX_PATH_LENGTH],
                    tmp_str_line[MAX_INFO_STRING_LENGTH];
    static String   fallback_res[] =
                    {
