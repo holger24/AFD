@@ -1227,6 +1227,7 @@ typedef unsigned long       u_long_64;
 #define DEFAULT_SMTP_SERVER_DEF          "DEFAULT_SMTP_SERVER"
 #define DEFAULT_SMTP_FROM_DEF            "DEFAULT_SMTP_FROM"
 #define DEFAULT_SMTP_REPLY_TO_DEF        "DEFAULT_SMTP_REPLY_TO"
+#define DEFAULT_CHARSET_DEF              "DEFAULT_CHARSET"
 #ifdef _WITH_DE_MAIL_SUPPORT
 # define DEFAULT_DE_MAIL_SENDER_DEF      "DEFAULT_DE_MAIL_SENDER"
 # define DEFAULT_DE_MAIL_CONF_TIMEUP_DEF "DEFAULT_DE_MAIL_CONF_TIMEUP"
@@ -3325,7 +3326,7 @@ struct crc_buf
 struct dir_options
        {
           int  no_of_dir_options;
-          char aoptions[MAX_NO_OPTIONS + 1][MAX_OPTION_LENGTH];
+          char aoptions[MAX_NO_OPTIONS + 1][LOCAL_REMOTE_DIR_ID_LENGTH + 1 + MAX_OPTION_LENGTH];
           char dir_alias[MAX_DIR_ALIAS_LENGTH + 1];
           char url[MAX_PATH_LENGTH];
        };

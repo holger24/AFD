@@ -946,7 +946,7 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
          if (fra[i].in_dc_flag & LOCAL_REMOTE_DIR_IDC)
          {
             (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],
-                           MAX_OPTION_LENGTH,
+                           LOCAL_REMOTE_DIR_ID_LENGTH + 1 + MAX_OPTION_LENGTH,
                            "%s %s",
                            LOCAL_REMOTE_DIR_ID, fra[i].retrieve_work_dir);
             d_o->no_of_dir_options++;
