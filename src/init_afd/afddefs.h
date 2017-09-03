@@ -652,6 +652,7 @@ typedef unsigned long       u_long_64;
 #define AUTO_SIZE_DETECT           -2
 #define FILE_IS_DIR                -2     /* Used by remove_dir().        */
 #define GET_ONCE_ONLY              2
+#define APPEND_ONLY                3
 #define DATA_MOVED                 1
 #define DATA_COPIED                3
 #define NORMAL_IDENTIFIER          0
@@ -2743,9 +2744,12 @@ struct fileretrieve_status
                                             /* GET_ONCE_ONLY it will get */
                                             /* the file once only,       */
                                             /* regardless if the file is */
-                                            /* changed. If set to NO the */
-                                            /* it will try to fetch it   */
-                                            /* again when it changes.    */
+                                            /* changed. If set to        */
+                                            /* APPEND_ONLY, it will just */
+                                            /* retrieve the appended data*/
+                                            /* only. If set to NO it will*/
+                                            /* try to fetch it again when*/
+                                            /* it changes.               */
           unsigned char delete_files_flag;  /* UNKNOWN_FILES: All unknown*/
                                             /* files will be deleted.    */
                                             /* QUEUED_FILES: Queues will */
@@ -3332,7 +3336,7 @@ struct dir_options
        };
 
 /* Structure holding all filenames that are/have been retrieved. */
-#define CURRENT_RL_VERSION      1
+#define CURRENT_RL_VERSION      2
 #define RETRIEVE_LIST_STEP_SIZE 50
 struct retrieve_list
        {
@@ -3347,6 +3351,7 @@ struct retrieve_list
                                          /* the list that are no longer at */
                                          /* the remote host.               */
           off_t         size;            /* Size of the file.              */
+          off_t         prev_size;       /* Previous size of the file.     */
           time_t        file_mtime;      /* Modification time of file.     */
        };
 

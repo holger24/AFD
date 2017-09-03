@@ -697,10 +697,18 @@ eval_dir_options(int dir_pos, char *dir_options, FILE *cmd_fp)
                  dd[dir_pos].stupid_mode = GET_ONCE_ONLY;
                  ptr += 4;
               }
-              else
-              {
-                 dd[dir_pos].stupid_mode = NO;
-              }
+              else if ((*ptr == 'a') && (*(ptr + 1) == 'p') &&
+                       (*(ptr + 2) == 'p') && (*(ptr + 3) == 'e') &&
+                       (*(ptr + 4) == 'n') && (*(ptr + 5) == 'd') &&
+                       ((*(ptr + 6) == '\n') || (*(ptr + 6) == '\0')))
+                   {
+                      dd[dir_pos].stupid_mode = APPEND_ONLY;
+                      ptr += 6;
+                   }
+                   else
+                   {
+                      dd[dir_pos].stupid_mode = NO;
+                   }
               while ((*ptr != '\n') && (*ptr != '\0'))
               {
                  ptr++;

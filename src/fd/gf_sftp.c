@@ -577,6 +577,7 @@ main(int argc, char *argv[])
                if ((rl[i].retrieved == NO) &&
                    (rl[i].assigned == ((unsigned char)db.job_no + 1)))
                {
+                  int   prev_download_exists = NO;
                   off_t offset;
 
                   if (rl[i].file_name[0] != '.')
@@ -591,16 +592,31 @@ main(int argc, char *argv[])
                   {
                      if (stat(local_tmp_file, &stat_buf) == -1)
                      {
-                        offset = 0;
+                        if (fra[db.fra_pos].stupid_mode == APPEND_ONLY)
+                        {
+                           offset = rl[i].prev_size;
+                        }
+                        else
+                        {
+                           offset = 0;
+                        }
                      }
                      else
                      {
                         offset = stat_buf.st_size;
+                        prev_download_exists = YES;
                      }
                   }
                   else
                   {
-                     offset = 0;
+                     if (fra[db.fra_pos].stupid_mode == APPEND_ONLY)
+                     {
+                        offset = rl[i].prev_size;
+                     }
+                     else
+                     {
+                        offset = 0;
+                     }
                   }
 #ifdef _OUTPUT_LOG
                   if (db.output_log == YES)
@@ -632,7 +648,7 @@ main(int argc, char *argv[])
                                      rl[i].file_name, fra[db.fra_pos].dir_alias);
                      }
 
-                     if (offset > 0)
+                     if (prev_download_exists == YES)
                      {
 #ifdef O_LARGEFILE
                         fd = open(local_tmp_file, O_WRONLY | O_APPEND | O_LARGEFILE);
@@ -983,8 +999,8 @@ main(int argc, char *argv[])
                               fsa->total_file_size += (bytes_done + offset - rl[i].size);
                               rl[i].size = bytes_done + offset;
                            }
-                           fsa->total_file_size -= rl[i].size;
-                           file_size_to_retrieve_shown -= rl[i].size;
+                           fsa->total_file_size -= (rl[i].size - offset);
+                           file_size_to_retrieve_shown -= (rl[i].size - offset);
 #ifdef _VERIFY_FSA
                            if (fsa->total_file_size < 0)
                            {

@@ -455,6 +455,17 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                     goto done;
                  }
               }
+         else if (fra[i].stupid_mode == APPEND_ONLY)
+              {
+                 (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
+                              STORE_RETRIEVE_LIST_ID);
+                 (void)strcat(d_o->aoptions[d_o->no_of_dir_options], " append");
+                 d_o->no_of_dir_options++;
+                 if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
+                 {
+                    goto done;
+                 }
+              }
          if (fra[i].ls_data_alias[0] != '\0')
          {
             (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],

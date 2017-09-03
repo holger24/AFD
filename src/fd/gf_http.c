@@ -518,6 +518,7 @@ main(int argc, char *argv[])
                if ((rl[i].retrieved == NO) &&
                    (rl[i].assigned == ((unsigned char)db.job_no + 1)))
                {
+                  int   prev_download_exists = NO;
                   off_t offset;
 
                   if (rl[i].file_name[0] != '.')
@@ -532,7 +533,14 @@ main(int argc, char *argv[])
                   {
                      if (stat(local_tmp_file, &stat_buf) == -1)
                      {
-                        offset = 0;
+                        if (fra[db.fra_pos].stupid_mode == APPEND_ONLY)
+                        {
+                           offset = rl[i].prev_size;
+                        }
+                        else
+                        {
+                           offset = 0;
+                        }
                      }
                      else
                      {
@@ -541,7 +549,14 @@ main(int argc, char *argv[])
                   }
                   else
                   {
-                     offset = 0;
+                     if (fra[db.fra_pos].stupid_mode == APPEND_ONLY)
+                     {
+                        offset = rl[i].prev_size;
+                     }
+                     else
+                     {
+                        offset = 0;
+                     }
                   }
 
                   if (rl[i].size == -1)
@@ -630,8 +645,8 @@ main(int argc, char *argv[])
                         /* Total file size. */
                         if (rl[i].size > 0)
                         {
-                           fsa->total_file_size -= rl[i].size;
-                           file_size_to_retrieve_shown -= rl[i].size;
+                           fsa->total_file_size -= (rl[i].size - offset);
+                           file_size_to_retrieve_shown -= (rl[i].size - offset);
 #ifdef _VERIFY_FSA
                            if (fsa->total_file_size < 0)
                            {
@@ -697,7 +712,7 @@ main(int argc, char *argv[])
                                      rl[i].file_name);
                      }
 
-                     if (offset > 0)
+                     if (prev_download_exists == YES)
                      {
 #ifdef O_LARGEFILE
                         fd = open(local_tmp_file, O_WRONLY | O_APPEND |

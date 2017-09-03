@@ -1,7 +1,7 @@
 /*
  *  handle_retrieve_list.c - Part of AFD, an automatic file distribution
  *                           program.
- *  Copyright (c) 2006 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -350,6 +350,7 @@ check_list(struct directory_entry *p_de,
             p_de->rl[i].retrieved = NO;
          }
          p_de->rl[i].got_date = YES;
+         p_de->rl[i].prev_size = p_de->rl[i].size;
          if (p_de->rl[i].size != p_stat_buf->st_size)
          {
             p_de->rl[i].size = p_stat_buf->st_size;
@@ -404,6 +405,7 @@ check_list(struct directory_entry *p_de,
    p_de->rl[*p_de->no_of_listed_files].retrieved = NO;
    p_de->rl[*p_de->no_of_listed_files].in_list = YES;
    p_de->rl[*p_de->no_of_listed_files].size = p_stat_buf->st_size;
+   p_de->rl[*p_de->no_of_listed_files].prev_size = 0;
    (*p_de->no_of_listed_files)++;
 
    return(*p_de->no_of_listed_files - 1);
