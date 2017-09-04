@@ -1296,7 +1296,7 @@ main(int argc, char *argv[])
                            ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
                            ol_file_name[*ol_file_name_length + 1] = '\0';
                            (*ol_file_name_length)++;        
-                           *ol_file_size = rl[i].size;
+                           *ol_file_size = bytes_done;
                            *ol_job_number = db.id.dir;
                            *ol_retries = db.retries;
                            *ol_unl = 0;             
