@@ -42,6 +42,7 @@ DESCR__S_M3
  **   02.12.2009 H.Kiehl Added support for NOAA type HTML file listing.
  **   15.03.2011 H.Kiehl Added HTML list type listing.
  **   03.09.2017 H.Kiehl Added option to get only appended part.
+ **   10.09.2017 H.Kiehl Added support for nginx HTML listing.
  **
  */
 DESCR__E_M3
@@ -1356,16 +1357,22 @@ eval_html_dir_list(char         *html_buffer,
                }
             }
                  /* Pre type listing. */
-            else if ((*(ptr + 1) == 'p') && (*(ptr + 4) == '>'))
+            else if (((*(ptr + 1) == 'p') && (*(ptr + 4) == '>')) ||
+                     ((*(ptr + 1) == 'a') && (*(ptr + 2) == ' ') &&
+                      (*(ptr + 3) == 'h') && (*(ptr + 7) == '=')))
                  {
-                    /* Ignore heading line. */
-                    while ((*ptr != '\n') && (*ptr != '\r') && (*ptr != '\0'))
+                    if ((*(ptr + 1) == 'p') && (*(ptr + 4) == '>'))
                     {
-                       ptr++;
-                    }
-                    while ((*ptr == '\n') || (*ptr == '\r'))
-                    {
-                       ptr++;
+                       /* Ignore heading line. */
+                       while ((*ptr != '\n') && (*ptr != '\r') &&
+                              (*ptr != '\0'))
+                       {
+                          ptr++;
+                       }
+                       while ((*ptr == '\n') || (*ptr == '\r'))
+                       {
+                          ptr++;
+                       }
                     }
 
                     while (*ptr == '<')
