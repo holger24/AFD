@@ -103,6 +103,7 @@ int                        data_printed,
                            no_of_dirs = 0,
                            no_of_hosts = 0,
                            rotate_limit,
+                           *search_afd_msa_pos = NULL,
                            sys_log_fd = STDOUT_FILENO, /* Used by get_afd_path(). */
                            trace_mode,
                            verbose;
@@ -155,6 +156,7 @@ struct afd_host_list       *ahl = NULL;
 struct afd_typesize_data   *atd = NULL;
 struct mon_status_area     *msa;
 #endif
+struct afd_info            afd;
 #ifdef _INPUT_LOG
 off_t                      *icp;    /* Input current position. */
 struct log_file_data       input;
@@ -194,7 +196,8 @@ int                        cache_step_size;
 #endif
 
 /* Local function prototypes. */
-static void                init_file_data(time_t, time_t, int, char *),
+static void                get_afd_info(int),
+                           init_file_data(time_t, time_t, int, char *),
 #ifdef CACHE_DEBUG
                            print_alda_cache(void),
 #endif
@@ -364,6 +367,7 @@ main(int argc, char *argv[])
             }
             attach_atd(search_afd_start_alias[i]);
             alloc_jid(search_afd_start_alias[i]);
+            get_afd_info(search_afd_msa_pos[i]);
             search_afd(search_afd_start_alias[i]);
             dealloc_jid();
             detach_atd();
@@ -451,6 +455,7 @@ main(int argc, char *argv[])
       else
       {
          alloc_jid(NULL);
+         get_afd_info(-1);
          search_afd(NULL);
          dealloc_jid();
       }
@@ -687,6 +692,48 @@ main(int argc, char *argv[])
 #endif
 
    exit(SUCCESS);
+}
+
+
+/*########################### get_afd_info() ############################*/
+static void
+get_afd_info(int msa_pos)
+{
+   if (msa_pos == -1)
+   {
+      if (gethostname(afd.hostname, MAX_REAL_HOSTNAME_LENGTH) == -1)
+      {
+         (void)fprintf(stderr, "gethostname() error : %s (%s %d)\n",
+                       strerror(errno), __FILE__, __LINE__);
+         afd.hostname[0] = '\0';
+         afd.hostname_length = '\0';
+      }
+      else
+      {
+         afd.hostname_length = (int)strlen(afd.hostname);
+      }
+      if (get_afd_name(afd.aliasname) == INCORRECT)
+      {
+         (void)strcpy(afd.aliasname, afd.hostname);
+         afd.aliasname_length = afd.hostname_length;
+      }
+      else
+      {
+         afd.aliasname_length = (int)strlen(afd.aliasname);
+      }
+      (void)strcpy(afd.version, PACKAGE_VERSION);
+   }
+   else
+   {
+      (void)strcpy(afd.hostname, msa[msa_pos].hostname[(int)msa[msa_pos].afd_toggle]);
+      (void)strcpy(afd.aliasname, msa[msa_pos].afd_alias);
+      (void)strcpy(afd.version, msa[msa_pos].afd_version);
+      afd.hostname_length = (int)strlen(afd.hostname);
+      afd.aliasname_length = (int)strlen(afd.aliasname);
+   }
+   afd.version_length = (int)strlen(afd.version);
+
+   return;
 }
 
 
@@ -2383,6 +2430,12 @@ add_afd_to_list(int pos)
    {
       RT_ARRAY(search_afd_start_alias, ALLOC_STEP_SIZE, MAX_AFDNAME_LENGTH + 1,
                char);
+      if ((search_afd_msa_pos = malloc((ALLOC_STEP_SIZE * sizeof(int)))) == NULL)
+      {
+         (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
+                       strerror(errno), __FILE__, __LINE__);
+         exit(INCORRECT);
+      }
    }
    else if ((start_search_counter != 0) &&
             ((start_search_counter % ALLOC_STEP_SIZE) == 0))
@@ -2392,9 +2445,18 @@ add_afd_to_list(int pos)
            new_size = ((start_search_counter / ALLOC_STEP_SIZE) + 1) * ALLOC_STEP_SIZE;
            REALLOC_RT_ARRAY(search_afd_start_alias, new_size,
                             MAX_AFDNAME_LENGTH + 1, char);
+
+           new_size = new_size * sizeof(int);
+           if ((search_afd_msa_pos = realloc(search_afd_msa_pos, new_size)) == NULL)
+           {
+              (void)fprintf(stderr, "realloc() error : %s (%s %d)\n",
+                            strerror(errno), __FILE__, __LINE__);
+              exit(INCORRECT);
+           }
         }
    (void)strcpy(search_afd_start_alias[start_search_counter],
                 msa[pos].afd_alias);
+   search_afd_msa_pos[start_search_counter] = pos;
    start_search_counter++;
 
    return;

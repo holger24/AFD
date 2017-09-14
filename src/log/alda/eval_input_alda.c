@@ -132,6 +132,10 @@ DESCR__S_M3
  **              %[Z]DJ                 - job ID of deleted file
  **              %[Z]DI                 - input source ID
  **              %[Y]DH                 - target alias name
+ **              -- AFD information --
+ **              %[Y]Ah                 - AFD real hostname/IP
+ **              %[Y]AH                 - AFD alias name
+ **              %[Y]AV                 - AFD version
  **
  **               [X] -> [-][0]#[.#]] or [-][0]#[d|o|x]
  **               [Y] -> [-]#
@@ -2231,6 +2235,10 @@ usage(char *progname)
    (void)fprintf(stderr, "              %%[Z]DI                 - input source ID\n");
    (void)fprintf(stderr, "              %%[Y]DH                 - target alias name\n");
 #endif
+   (void)fprintf(stderr, "              -- AFD information --\n");
+   (void)fprintf(stderr, "              %%[Y]Ah                 - AFD real hostname/IP\n");
+   (void)fprintf(stderr, "              %%[Y]AH                 - AFD alias name\n");
+   (void)fprintf(stderr, "              %%[Y]AV                 - AFD version\n");
    (void)fprintf(stderr, "\n               [X] -> [-][0]#[.#]] or [-][0]#[d|o|x]\n");
    (void)fprintf(stderr, "               [Y] -> [-]#\n");
    (void)fprintf(stderr, "               [Z] -> [-][0]#[d|o|x]\n");

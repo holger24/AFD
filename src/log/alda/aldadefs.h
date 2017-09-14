@@ -1,6 +1,6 @@
 /*
  *  aldadefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #else
 # include <time.h>                    /* struct tm                       */
 #endif
+#include "mondefs.h"
 
 #ifndef WITH_AFD_MON
 # define MAX_AFDNAME_LENGTH 12
@@ -169,7 +170,7 @@
              ulog.file_size = -1;                       \
              ulog.distribution_time = -1L;              \
              ulog.input_time = -1L;                     \
-             ulog.filename_length = 0;                  \
+             ulog.afd_hostname_length = 0;              \
              ulog.full_source_length = 0;               \
              ulog.no_of_dist_jobs = 0;                  \
              ulog.djid_buffer_length = 0;               \
@@ -488,6 +489,16 @@ struct alda_cache_data
        };
 
 /* Structure for evaluating log data (alda). */
+struct afd_info
+       {
+          char          hostname[MAX_REAL_HOSTNAME_LENGTH + 1];
+          char          aliasname[MAX_AFDNAME_LENGTH + 1];
+          char          version[MAX_VERSION_LENGTH];
+          int           hostname_length;
+          int           aliasname_length;
+          int           version_length;
+       };
+
 #ifdef _INPUT_LOG
 struct alda_idata
        {

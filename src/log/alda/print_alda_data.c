@@ -1,6 +1,6 @@
 /*
  *  print_alda_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,6 +36,8 @@ DESCR__S_M3
  ** HISTORY
  **   02.02.2008 H.Kiehl Created
  **   09.03.2010 H.Kiehl Handle case when user wants to print a % sign.
+ **   14.09.2017 H.Kiehl Added format parameter %A to print information
+ **                      about remote AFD.
  **
  */
 DESCR__E_M3
@@ -60,6 +62,7 @@ extern char              *format_str,
                          header_filename[],
                          output_filename[];
 extern FILE              *output_fp;
+extern struct afd_info   afd;
 #ifdef _INPUT_LOG
 extern struct alda_idata ilog;
 #endif
@@ -975,6 +978,36 @@ print_alda_data(void)
                   }
                   break;
 #endif /* _DELETE_LOG */
+               case 'A' : /* Data about remote AFD. */
+                  switch (*(ptr + 1))
+                  {
+                     case 'h' : /* AFD real hostname/IP. */
+                        i += pri_string(right_side, max_length,
+                                        afd.hostname,
+                                        afd.hostname_length, i);
+                        ptr++;
+                        break;
+
+                     case 'H' : /* AFD alias name. */
+                        i += pri_string(right_side, max_length, afd.aliasname,
+                                        afd.aliasname_length, i);
+                        ptr++;
+                        break;
+
+                     case 'V' : /* AFD Version. */
+                        i += pri_string(right_side, max_length, afd.version,
+                                        afd.version_length, i);
+                        ptr++;
+                        break;
+
+                     default  : /* Unknown, lets print this as supplied. */
+                        ptr++;
+                        j = ptr - p_start;
+                        (void)memcpy(&output_line[i], p_start, j);
+                        i += j;
+                        break;
+                  }
+                  break;
 
                default  : /* Unknown, lets print this as supplied. */
                   j = ptr - p_start;
