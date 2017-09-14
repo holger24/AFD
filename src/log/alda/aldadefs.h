@@ -170,7 +170,7 @@
              ulog.file_size = -1;                       \
              ulog.distribution_time = -1L;              \
              ulog.input_time = -1L;                     \
-             ulog.afd_hostname_length = 0;              \
+             ulog.filename_length = 0;                  \
              ulog.full_source_length = 0;               \
              ulog.no_of_dist_jobs = 0;                  \
              ulog.djid_buffer_length = 0;               \
