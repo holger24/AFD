@@ -181,6 +181,9 @@ struct p_array                *pp;
 struct passwd_buf             *pwb = NULL;
 static char                   *p_t = NULL;   /* Start of directory table.   */
 
+/* Local variables. */
+static off_t                  data_alloc_size;
+
 /* Local function prototypes. */
 static int                    check_hostname_list(char *, char *, char *,
                                                   unsigned int, unsigned int),
@@ -363,13 +366,14 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp)
    prev_user_name[0] = '\0';
 
    /* Create temporal storage area for job. */
-   if ((p_t = calloc((db_size * 2), sizeof(char))) == NULL)
+   if ((p_t = calloc(db_size, sizeof(char))) == NULL)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "Could not allocate memory : %s", strerror(errno));
       free((void *)dir);
       exit(INCORRECT);
    }
+   data_alloc_size = db_size;
 
 #ifdef WITH_ONETIME
    if (onetime == NO)
@@ -2690,7 +2694,7 @@ insert_dir(struct dir_group *dir)
 /* Description: This function copies one job into the temporary memory  */
 /*              p_t created in the top level function eval_dir_config().*/
 /*              Each recipient in the DIR_CONFIG is counted as one job. */
-/*              Data is stored are as followed: job type, priority,     */
+/*              Data is stored as followed: job type, priority,         */
 /*              directory, no. of files/filters, file/filters, number   */
 /*              of local options, local options, number of standard     */
 /*              options, standard options and recipient. Additionally a */
@@ -2741,7 +2745,8 @@ copy_job(int file_no, int dest_no, struct dir_group *dir)
                      CONVERT_ID_LENGTH,
                      LCHMOD_ID_LENGTH
                   };
-   unsigned int   loptions_flag[LOCAL_OPTION_POOL_SIZE] =
+   unsigned int   full_job_size,
+                  loptions_flag[LOCAL_OPTION_POOL_SIZE] =
                   {
                      RENAME_ID_FLAG,
                      SRENAME_ID_FLAG,
@@ -2823,6 +2828,69 @@ copy_job(int file_no, int dest_no, struct dir_group *dir)
       }
    }
 
+   /* Check if the buffer for storing the actual data is large enough. */
+   if (dest_no == 0)
+   {
+      char *p_file = dir->file[file_no].files;
+
+      for (i = 0; i < dir->file[file_no].fc; i++)
+      {
+         NEXT(p_file);
+      }
+      offset = p_file - dir->file[file_no].files;
+   }
+   else
+   {
+      offset = -1;
+   }
+   full_job_size = sizeof(char) +                 /* Priority. */
+                   MAX_PATH_LENGTH +              /* Directory. */
+                   MAX_DIR_ALIAS_LENGTH + 1 +     /* Dir alias. */
+                   MAX_INT_LENGTH +               /* File filter counter. */
+                   offset + 1 +                   /* File filters. */
+                   (dir->file[file_no].dest[dest_no].oc *
+                    MAX_OPTION_LENGTH) +          /* Local options + Standart options. */
+                   MAX_INT_HEX_LENGTH +           /* Number of local options. */
+                   MAX_INT_LENGTH +               /* Number of standart options. */
+                   (dir->file[file_no].dest[dest_no].rc *
+                    (MAX_RECIPIENT_LENGTH + 1 +   /* Recipient. */
+                     MAX_INT_LENGTH +             /* Scheme. */
+                     MAX_HOSTNAME_LENGTH + 1)) +  /* Host alias. */
+                   MAX_INT_HEX_LENGTH;            /* DIR_CONFIG ID. */
+   if (data_alloc_size < (data_length + full_job_size))
+   {
+      /* Calculate new size of pointer buffer. */
+      new_size = data_length + (10 * full_job_size);
+
+      /* Increase the space for pointers by PTR_BUF_SIZE. */
+      if ((p_t = realloc(p_t, new_size)) == NULL)
+      {
+         system_log(FATAL_SIGN, __FILE__, __LINE__,
+                    "Could not allocate memory for job data buffer : %s",
+                    strerror(errno));
+         exit(INCORRECT);
+      }
+
+      system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#if SIZEOF_OFF_T == 4
+# if SIZEOF_SIZE_T == 4
+                 "Resizing data buffer from %ld to %ld (job size = %u)",
+# else
+                 "Resizing data buffer from %ld to %lld (job size = %u)",
+# endif
+#else
+# if SIZEOF_SIZE_T == 4
+                 "Resizing data buffer from %lld to %ld (job size = %u)",
+# else
+                 "Resizing data buffer from %lld to %lld (job size = %u)",
+# endif
+#endif
+                 (pri_off_t)data_alloc_size,
+                 (pri_size_t)new_size, full_job_size);
+
+      data_alloc_size = new_size;
+   }
+
    /* Set pointer array. */
    p_ptr = pp;
 
@@ -2884,13 +2952,6 @@ copy_job(int file_no, int dest_no, struct dir_group *dir)
    p_ptr[job_no].ptr[FILE_PTR_POS] = ptr - p_offset;
    if (dest_no == 0)
    {
-      char *p_file = dir->file[file_no].files;
-
-      for (i = 0; i < dir->file[file_no].fc; i++)
-      {
-         NEXT(p_file);
-      }
-      offset = p_file - dir->file[file_no].files;
       (void)memcpy(ptr, dir->file[file_no].files, offset);
       ptr += offset + 1;
    }
@@ -2903,7 +2964,7 @@ copy_job(int file_no, int dest_no, struct dir_group *dir)
    /* has to handle. They are:                             */
    /*        - priority       (special option)             */
    /*        - rename                                      */
-   /*        - srename                                      */
+   /*        - srename                                     */
    /*        - exec, execd and execD                       */
    /*        - basename                                    */
    /*        - prefix                                      */
