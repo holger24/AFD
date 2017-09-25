@@ -1,7 +1,7 @@
 /*
- *  handle_dir_group_name.c - Part of AFD, an automatic file distribution
- *                            program.
- *  Copyright (c) 2014 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  handle_recipient_group_name.c - Part of AFD, an automatic file
+ *                                  distribution program.
+ *  Copyright (c) 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,19 +23,18 @@
 DESCR__S_M3
 /*
  ** NAME
- **   init_dir_group_name - initialize directory group names
- **   next_dir_group_name - get next directory entry
- **   free_dir_group_name - free all resources
+ **   init_recipient_group_name - initialize recipient group names
+ **   next_recipient_group_name - get next recipient entry
+ **   free_recipient_group_name - free all resources
  **
  ** SYNOPSIS
- **   void init_dir_group_name(char *location, int *location_length,
- **                            char *group_name, int dir_group_type)
- **   int  next_dir_group_name(char *location, int *location_length,
- **                            char *alias)
- **   void free_dir_group_name(void)
+ **   void init_recipient_group_name(char *recipient, char *group_name,
+ **                                  int dir_group_type)
+ **   int  next_recipient_group_name(char *recipient)
+ **   void free_recipient_group_name(void)
  **
  ** DESCRIPTION
- **   This set of functions handles group names for directories
+ **   This set of functions handles group names for recipients
  **   in DIR_CONFIG file. The group name is resolved via the file
  **   $AFD_WORK_DIR/etc/group.list.
  **
@@ -46,8 +45,7 @@ DESCR__S_M3
  **   H.Kiehl
  **
  ** HISTORY
- **   23.12.2014 H.Kiehl Created
- **   04.01.2015 H.Kiehl Added different group types file and directory.
+ **   17.09.2017 H.Kiehl Created
  **
  */
 DESCR__E_M3
@@ -72,15 +70,14 @@ static int  next_group_pos,
             start_group_pos;
 static char **group_list = NULL,
             last_part[MAX_PATH_LENGTH],
-            orig_dir[MAX_PATH_LENGTH];
+            orig_recipient[MAX_PATH_LENGTH];
 
 
-/*####################### init_dir_group_name() #########################*/
+/*#################### init_recipient_group_name() ######################*/
 void
-init_dir_group_name(char *location,
-                    int  *location_length,
-                    char *group_name,
-                    int  dir_group_type)
+init_recipient_group_name(char *location,
+                          char *group_name,
+                          int  dir_group_type)
 {
    off_t file_size;
    char  *buffer = NULL,
@@ -99,7 +96,8 @@ init_dir_group_name(char *location,
       (void)snprintf(group_file, MAX_PATH_LENGTH, "%s%s%s",
                      p_work_dir, ETC_DIR, GROUP_FILE);
    }
-   if (((file_size = read_file_no_cr(group_file, &buffer, YES, __FILE__, __LINE__)) != INCORRECT) &&
+   if (((file_size = read_file_no_cr(group_file, &buffer, YES,
+                                     __FILE__, __LINE__)) != INCORRECT) &&
        (file_size > 0))
    {
       int  length;
@@ -260,10 +258,10 @@ init_dir_group_name(char *location,
 continue_search:
       while ((*ptr != GROUP_SIGN) && (*ptr != '\0'))
       {
-         orig_dir[length] = *ptr;
+         orig_recipient[length] = *ptr;
          ptr++; length++;
       }
-      orig_dir[length] = '\0';
+      orig_recipient[length] = '\0';
       start_group_pos = length;
       if (*ptr == '\0')
       {
@@ -326,7 +324,6 @@ continue_search:
          }
          (void)strcpy(location + start_group_pos, group_list[0]);
          (void)strcat(location + start_group_pos, last_part);
-         *location_length = strlen(location);
          next_group_pos = 1;
       }
    }
@@ -335,21 +332,16 @@ continue_search:
 }
 
 
-/*####################### next_dir_group_name() #########################*/
+/*#################### next_recipient_group_name() ######################*/
 int
-next_dir_group_name(char *location, int *location_length, char *alias)
+next_recipient_group_name(char *recipient)
 {
    if ((no_listed > 0) && (next_group_pos < no_listed))
    {
-      (void)strcpy(location, orig_dir);
-      (void)strcpy(location + start_group_pos, group_list[next_group_pos]);
-      (void)strcat(location + start_group_pos, last_part);
-      *location_length = strlen(location);
+      (void)strcpy(recipient, orig_recipient);
+      (void)strcpy(recipient + start_group_pos, group_list[next_group_pos]);
+      (void)strcat(recipient + start_group_pos, last_part);
       next_group_pos++;
-
-      /* We need a new alias for this directory. */
-      (void)snprintf(alias, MAX_DIR_ALIAS_LENGTH + 1,
-                     "%x", get_str_checksum(location));
 
       return(1);
    }
@@ -358,9 +350,9 @@ next_dir_group_name(char *location, int *location_length, char *alias)
 }
 
 
-/*####################### free_dir_group_name() #########################*/
+/*#################### free_recipient_group_name() ######################*/
 void
-free_dir_group_name(void)
+free_recipient_group_name(void)
 {
    no_listed = 0;
    if (group_list != NULL)

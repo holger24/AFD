@@ -1455,6 +1455,7 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp)
 
                         /* Store recipient. */
                         i = 0;
+                        group_name[0] = '\0';
                         tmp_ptr = search_ptr = ptr;
                         while ((*ptr != '\n') && (*ptr != '\0'))
                         {
@@ -1497,6 +1498,57 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp)
                                     break;
                               }
                            }
+                           else if ((*ptr == GROUP_SIGN) &&
+                                    ((*(ptr + 1) == CURLY_BRACKET_OPEN) ||
+                                     (*(ptr + 1) == SQUARE_BRACKET_OPEN)))
+                                {
+                                   char close_bracket;
+
+                                   if (*(ptr + 1) == CURLY_BRACKET_OPEN)
+                                   {
+                                      dir_group_type = YES;
+                                      close_bracket = CURLY_BRACKET_CLOSE;
+                                   }
+                                   else
+                                   {
+                                      dir_group_type = NO;
+                                      close_bracket = SQUARE_BRACKET_CLOSE;
+                                   }
+                                   dir->file[dir->fgc].\
+                                           dest[dir->file[dir->fgc].dgc].\
+                                           rec[dir->file[dir->fgc].\
+                                           dest[dir->file[dir->fgc].dgc].rc].\
+                                           recipient[i] = *ptr;
+                                   dir->file[dir->fgc].\
+                                           dest[dir->file[dir->fgc].dgc].\
+                                           rec[dir->file[dir->fgc].\
+                                           dest[dir->file[dir->fgc].dgc].rc].\
+                                           recipient[i + 1] = *(ptr + 1);
+                                   ptr += 2;
+                                   i += 2;
+                                   j = 0;
+                                   while ((*ptr != close_bracket) &&
+                                          (*ptr != '\n') && (*ptr != '\0'))
+                                   {
+                                      group_name[j] = *ptr;
+                                      dir->file[dir->fgc].\
+                                              dest[dir->file[dir->fgc].dgc].\
+                                              rec[dir->file[dir->fgc].\
+                                              dest[dir->file[dir->fgc].dgc].rc].\
+                                              recipient[i] = *ptr;
+                                      j++; ptr++; i++;
+                                   }
+                                   if (*ptr == close_bracket)
+                                   {
+                                      group_name[j] = '\0';
+                                   }
+                                   else
+                                   {
+                                      /* No end marker, so just take it as a normal */
+                                      /* directory entry.                           */
+                                      group_name[0] = '\0';
+                                   }
+                                }
                            dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].\
                                    rec[dir->file[dir->fgc].\
                                    dest[dir->file[dir->fgc].dgc].rc].\
@@ -1515,7 +1567,20 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp)
                         /* Make sure that we did read a line. */
                         if (i != 0)
                         {
-                           if ((error_mask = url_evaluate(dir->file[dir->fgc].\
+                           if (group_name[0] != '\0')
+                           {
+                              init_recipient_group_name(dir->file[dir->fgc].\
+                                                        dest[dir->file[dir->fgc].dgc].\
+                                                        rec[dir->file[dir->fgc].\
+                                                        dest[dir->file[dir->fgc].dgc].rc].\
+                                                        recipient,
+                                                        group_name,
+                                                        dir_group_type);
+                           }
+
+                           do
+                           {
+                              if ((error_mask = url_evaluate(dir->file[dir->fgc].\
                                                           dest[dir->file[dir->fgc].dgc].\
                                                           rec[dir->file[dir->fgc].\
                                                           dest[dir->file[dir->fgc].dgc].rc].\
@@ -1541,89 +1606,95 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp)
                                                           &dummy_transfer_mode,
                                                           &dummy_ssh_protocol,
                                                           smtp_server)) < 4)
-                           {
-                              if (user[0] == '\0')
                               {
-                                 if (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[0] == MAIL_GROUP_IDENTIFIER)
+                                 if (user[0] == '\0')
+                                 {
+                                    if (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[0] == MAIL_GROUP_IDENTIFIER)
+                                    {
+                                       j = 0;
+                                       while (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j + 1] != '\0')
+                                       {
+                                          dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j] = dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j + 1];
+                                          j++;
+                                       }
+                                       dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j] = '\0';
+                                    }
+                                 }
+#ifdef _WITH_DE_MAIL_SUPPORT
+                                 if (((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].scheme & SMTP_FLAG) ||
+                                      (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].scheme & DE_MAIL_FLAG)) &&
+                                     (smtp_server[0] != '\0'))
+#else
+                                 if ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].scheme & SMTP_FLAG) &&
+                                     (smtp_server[0] != '\0'))
+#endif
                                  {
                                     j = 0;
-                                    while (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j + 1] != '\0')
+                                    while (smtp_server[j] != '\0')
                                     {
-                                       dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j] = dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j + 1];
+                                       dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j] = smtp_server[j];
                                        j++;
                                     }
                                     dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j] = '\0';
                                  }
+                                 t_hostname(dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname,
+                                            dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].host_alias);
+
+                                 if (password[0] != '\0')
+                                 {
+                                    if (smtp_auth == SMTP_AUTH_NONE)
+                                    {
+                                       store_passwd(user,
+                                                    dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname,
+                                                    password);
+                                    }
+                                    else
+                                    {
+                                       store_passwd(smtp_user,
+                                                    dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname,
+                                                    password);
+                                    }
+                                 }
+
+                                 dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc++;
+                                 t_rc++;
+                                 if ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc % RECIPIENT_STEP_SIZE) == 0)
+                                 {
+                                    int new_size = ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc /
+                                                     RECIPIENT_STEP_SIZE) + 1) * RECIPIENT_STEP_SIZE *
+                                                   sizeof(struct recipient_group);
+
+                                    if ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec = realloc(dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec,
+                                                                                                         new_size)) == NULL)
+                                    {
+                                       system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                                  "Could not realloc() memory : %s",
+                                                  strerror(errno));
+                                       exit(INCORRECT);
+                                    }
+                                 }
                               }
-#ifdef _WITH_DE_MAIL_SUPPORT
-                              if (((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].scheme & SMTP_FLAG) ||
-                                   (dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].scheme & DE_MAIL_FLAG)) &&
-                                  (smtp_server[0] != '\0'))
-#else
-                              if ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].scheme & SMTP_FLAG) &&
-                                  (smtp_server[0] != '\0'))
-#endif
+                              else
                               {
-                                 j = 0;
-                                 while (smtp_server[j] != '\0')
-                                 {
-                                    dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j] = smtp_server[j];
-                                    j++;
-                                 }
-                                 dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname[j] = '\0';
+                                 char error_msg[MAX_URL_ERROR_MSG];
+
+                                 url_get_error(error_mask, error_msg, MAX_URL_ERROR_MSG);
+                                 update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                                               "Incorrect url `%s'. Error is: %s. Ignoring the recipient in %s at line %d.",
+                                               dir->file[dir->fgc].\
+                                               dest[dir->file[dir->fgc].dgc].\
+                                               rec[dir->file[dir->fgc].\
+                                               dest[dir->file[dir->fgc].dgc].rc].\
+                                               recipient, error_msg,
+                                               dcl[dcd].dir_config_file,
+                                               count_new_lines(database, search_ptr));
                               }
-                              t_hostname(dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname,
-                                         dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].host_alias);
-
-                              if (password[0] != '\0')
-                              {
-                                 if (smtp_auth == SMTP_AUTH_NONE)
-                                 {
-                                    store_passwd(user,
-                                                 dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname,
-                                                 password);
-                                 }
-                                 else
-                                 {
-                                    store_passwd(smtp_user,
-                                                 dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec[dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc].real_hostname,
-                                                 password);
-                                 }
-                              }
-
-                              dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc++;
-                              t_rc++;
-                              if ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc % RECIPIENT_STEP_SIZE) == 0)
-                              {
-                                 int new_size = ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rc /
-                                                  RECIPIENT_STEP_SIZE) + 1) * RECIPIENT_STEP_SIZE *
-                                                sizeof(struct recipient_group);
-
-                                 if ((dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec = realloc(dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec,
-                                                                                                      new_size)) == NULL)
-                                 {
-                                    system_log(FATAL_SIGN, __FILE__, __LINE__,
-                                               "Could not realloc() memory : %s",
-                                               strerror(errno));
-                                    exit(INCORRECT);
-                                 }
-                              }
-                           }
-                           else
-                           {
-                              char error_msg[MAX_URL_ERROR_MSG];
-
-                              url_get_error(error_mask, error_msg, MAX_URL_ERROR_MSG);
-                              update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
-                                            "Incorrect url `%s'. Error is: %s. Ignoring the recipient in %s at line %d.",
-                                            dir->file[dir->fgc].\
-                                            dest[dir->file[dir->fgc].dgc].\
-                                            rec[dir->file[dir->fgc].\
-                                            dest[dir->file[dir->fgc].dgc].rc].\
-                                            recipient, error_msg,
-                                            dcl[dcd].dir_config_file,
-                                            count_new_lines(database, search_ptr));
-                           }
+                           } while (next_recipient_group_name(dir->file[dir->fgc].\
+                                                              dest[dir->file[dir->fgc].dgc].\
+                                                              rec[dir->file[dir->fgc].\
+                                                              dest[dir->file[dir->fgc].dgc].rc].\
+                                                              recipient) == 1);
+                           free_recipient_group_name();
                         } /* if (i != 0) */
 
 check_dummy_line:
