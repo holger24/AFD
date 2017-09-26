@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1999 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -38,6 +38,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   23.02.1999 H.Kiehl Created
+ **   26.09.2017 H.Kiehl Fix memory leak in search_button().
  **
  */
 DESCR__E_M3
@@ -141,6 +142,8 @@ search_button(Widget w, XtPointer client_data, XtPointer call_data)
          last_pos = 0;
       }
    }
+   XtFree(text_str);
+   XtFree(search_str);
 
    return;
 }
