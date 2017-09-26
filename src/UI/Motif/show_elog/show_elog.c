@@ -995,7 +995,7 @@ main(int argc, char *argv[])
       size_t length;
       char   *str;  
 
-      length = (no_of_search_dir_alias * (MAX_DIR_ALIAS_LENGTH + 1));
+      length = (no_of_search_dir_alias * (MAX_DIR_ALIAS_LENGTH + 2 + 1));
       if ((str = malloc(length)) != NULL)                          
       {
          int i;
@@ -1015,7 +1015,7 @@ main(int argc, char *argv[])
       size_t length;
       char   *str;  
 
-      length = (no_of_search_host_alias * (MAX_HOSTNAME_LENGTH + 1));
+      length = (no_of_search_host_alias * (MAX_HOSTNAME_LENGTH + 2 + 1));
       if ((str = malloc(length)) != NULL)                          
       {
          int i;
