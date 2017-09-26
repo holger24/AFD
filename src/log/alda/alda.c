@@ -1,6 +1,6 @@
 /*
  *  alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -349,7 +349,8 @@ main(int argc, char *argv[])
       if (mode & ALDA_REMOTE_MODE)
       {
 #ifdef WITH_AFD_MON
-         int i;
+         int          i;
+         unsigned int tmp_search_log_type;
 
          get_current_afd_mon_list();
          check_start_afds();
@@ -368,7 +369,9 @@ main(int argc, char *argv[])
             attach_atd(search_afd_start_alias[i]);
             alloc_jid(search_afd_start_alias[i]);
             get_afd_info(search_afd_msa_pos[i]);
+            tmp_search_log_type = search_log_type;
             search_afd(search_afd_start_alias[i]);
+            search_log_type = tmp_search_log_type;
             dealloc_jid();
             detach_atd();
             if (search_log_type & SEARCH_INPUT_LOG)
