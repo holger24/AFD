@@ -416,6 +416,8 @@ search_button(Widget w, XtPointer client_data, XtPointer call_data)
          last_pos = 0;
       }
    }
+   XtFree(text_str);
+   XtFree(search_str);
 
    return;
 }
