@@ -1,6 +1,6 @@
 /*
  *  init_msg_buffer.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -240,8 +240,9 @@ stat_again:
       sleep_counter++;
       if ((sleep_counter % 300) == 0)
       {
-         system_log(WARN_SIGN, __FILE__, __LINE__,
-                    "Hmm, still waiting for AMG to finish writting to JID structure.");
+         system_log(INFO_SIGN, __FILE__, __LINE__,
+                    "Hmm, still waiting for AMG to finish writting to JID structure (wait time %d).",
+                    (sleep_counter / 10));
       }
    }
    if (sleep_counter >= 1800)
