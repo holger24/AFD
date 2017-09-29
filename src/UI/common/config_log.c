@@ -166,7 +166,7 @@ config_log(unsigned int event_class,
    if (alias == NULL)
    {
       length += snprintf(&buf[length], MAX_LINE_LENGTH - length, "%s",
-                         eastr[event_action]);
+                         (event_action > EA_MAX_EVENT_ACTION) ? "Undefined action no." : eastr[event_action]);
    }
    else
    {
@@ -181,7 +181,8 @@ config_log(unsigned int event_class,
          alias_length = MAX_DIR_ALIAS_LENGTH;
       }
       length += snprintf(&buf[length], MAX_LINE_LENGTH - length, "%-*s: %s",
-                         alias_length, alias, eastr[event_action]);
+                         alias_length, alias,
+                         (event_action > EA_MAX_EVENT_ACTION) ? "Undefined action no." : eastr[event_action]);
    }
    if (fmt != NULL)
    {
