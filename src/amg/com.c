@@ -1,6 +1,6 @@
 /*
  *  com.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2012 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -40,6 +40,9 @@ DESCR__S_M3
  ** HISTORY
  **   10.08.1995 H.Kiehl Created
  **   26.03.1998 H.Kiehl Put this function into a separate file.
+ **   27.09.2017 H.Kiehl Allow other process to send a BUSY_WORKING,
+ **                      meaning we will not timeout and instead
+ **                      keep waiting.
  **
  */
 DESCR__E_M3
@@ -108,50 +111,60 @@ com(char action)
 
    /* Initialise descriptor set and timeout. */
    FD_ZERO(&rset);
-   FD_SET(read_fd, &rset);
-   timeout.tv_usec = 0L;
-   timeout.tv_sec = JOB_TIMEOUT;
-
-   /* Wait for message x seconds and then continue. */
-   ret = select((read_fd + 1), &rset, NULL, NULL, &timeout);
-
-   if ((ret > 0) && (FD_ISSET(read_fd, &rset)))
+   for (;;)
    {
-      if ((ret = read(read_fd, buffer, 10)) > 0)
+      FD_SET(read_fd, &rset);
+      timeout.tv_usec = 0L;
+      timeout.tv_sec = JOB_TIMEOUT;
+
+      /* Wait for message x seconds and then continue. */
+      ret = select((read_fd + 1), &rset, NULL, NULL, &timeout);
+
+      if ((ret > 0) && (FD_ISSET(read_fd, &rset)))
       {
-         if (buffer[ret - 1] != ACKN)
+         if ((ret = read(read_fd, buffer, 10)) > 0)
+         {
+            if (buffer[ret - 1] == BUSY_WORKING)
+            {
+               continue;
+            }
+            if (buffer[ret - 1] != ACKN)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Received garbage (%d) while reading from fifo.",
+                          buffer[ret - 1]);
+            }
+            ret = SUCCESS;
+         }
+         else
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "Received garbage (%d) while reading from fifo.",
-                       buffer[ret - 1]);
+                       "Read problems (%d) : %s", ret, strerror(errno));
+            ret = INCORRECT;
          }
-         ret = SUCCESS;
+         break;
       }
-      else
-      {
-         system_log(WARN_SIGN, __FILE__, __LINE__,
-                    "Read problems (%d) : %s", ret, strerror(errno));
-         ret = INCORRECT;
-      }
+      else if (ret < 0)
+           {
+              system_log(FATAL_SIGN, __FILE__, __LINE__,
+                         "select() error : %s", strerror(errno));
+              exit(INCORRECT);
+           }
+      else if (ret == 0)
+           {
+              /* The other side does not answer. */
+              system_log(WARN_SIGN, __FILE__, __LINE__,
+                         "Did not receive any reply from %s for the command %s (%d).",
+                         DC_PROC_NAME, get_com_action_str(action), action);
+              ret = INCORRECT;
+              break;
+           }
+           else /* Impossible! Unknown error. */
+           {
+              system_log(FATAL_SIGN, __FILE__, __LINE__, "Ouch! What now? @!$(%.");
+              exit(INCORRECT);
+           }
    }
-   else if (ret < 0)
-        {
-           system_log(FATAL_SIGN, __FILE__, __LINE__,
-                      "select() error : %s", strerror(errno));
-           exit(INCORRECT);
-        }
-   else if (ret == 0)
-        {
-           /* The other side does not answer. */
-           system_log(WARN_SIGN, __FILE__, __LINE__,
-                      "Did not receive any reply from %s.", DC_PROC_NAME);
-           ret = INCORRECT;
-        }
-        else /* Impossible! Unknown error. */
-        {
-           system_log(FATAL_SIGN, __FILE__, __LINE__, "Ouch! What now? @!$(%.");
-           exit(INCORRECT);
-        }
 
    if ((close(write_fd) == -1) || (close(read_fd) == -1))
    {

@@ -154,7 +154,8 @@ struct passwd_buf                 *pwb;
 #ifdef MULTI_FS_SUPPORT
 static int                        check_extra_filesystem(dev_t, int);
 #endif
-static void                       write_current_job_list(int);
+static void                       send_busy_working(int),
+                                  write_current_job_list(int);
 
 /* #define _WITH_JOB_LIST_TEST 1 */
 #define POS_STEP_SIZE      20
@@ -163,7 +164,7 @@ static void                       write_current_job_list(int);
 
 /*+++++++++++++++++++++++++++++ create_db() +++++++++++++++++++++++++++++*/
 int
-create_db(FILE *udc_reply_fp)
+create_db(FILE *udc_reply_fp, int write_fd)
 {
    int            amg_data_fd,
                   exec_flag,
@@ -189,6 +190,7 @@ create_db(FILE *udc_reply_fp)
    unsigned int   max_jobs_per_dir;
 #endif
    dev_t          ldv;               /* Local device number (filesystem). */
+   time_t         start_time;
    char           amg_data_file[MAX_PATH_LENGTH],
                   *ptr,
                   *tmp_ptr,
@@ -503,6 +505,7 @@ create_db(FILE *udc_reply_fp)
       one_job_only_dir++;
    }
 
+   start_time = time(NULL);
    exec_flag_dir = 0;
    for (i = 0; i < no_of_jobs; i++)
    {
@@ -1192,6 +1195,16 @@ create_db(FILE *udc_reply_fp)
          fjd[no_fork_jobs].system_time = 0;
          no_fork_jobs++;
       }
+      if ((i % 100) == 0)
+      {
+         time_t now = time(NULL);
+
+         if ((now - start_time) > (JOB_TIMEOUT / 2))
+         {
+            start_time = now;
+            send_busy_working(write_fd);
+         }
+      }
    } /* for (i = 0; i < no_of_jobs; i++)  */
 
    if ((de[dir_counter].flag & DELETE_ALL_FILES) ||
@@ -1433,6 +1446,23 @@ create_db(FILE *udc_reply_fp)
 #endif
 
    return(no_of_jobs);
+}
+
+
+/*+++++++++++++++++++++++++ send_busy_working() +++++++++++++++++++++++++*/
+static void
+send_busy_working(int write_fd)
+{
+   int action = BUSY_WORKING;
+
+   if (write(write_fd, &action, 1) != 1)
+   {
+      system_log(WARN_SIGN, __FILE__, __LINE__,
+                 "Could not write to fifo %s : %s",
+                 DC_RESP_FIFO, strerror(errno));
+   }
+
+   return;
 }
 
 

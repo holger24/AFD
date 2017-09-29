@@ -899,7 +899,7 @@ extern int    amg_zombie_check(pid_t *, int),
                                   off_t *),
 #endif
               check_process_list(int),
-              create_db(FILE *),
+              create_db(FILE *, int),
 #ifdef WITH_ONETIME
               eval_dir_config(off_t, unsigned int *, FILE *, int),
 #else
@@ -935,6 +935,7 @@ extern char   *check_paused_dir(struct directory_entry *, int *, int *, int *),
                            unsigned char),
               *convert_jid(int, char *, size_t *, int, unsigned char,
                            unsigned char),
+              *get_com_action_str(int),
               *next(char *);
 
 extern void   add_file_mask(char *, struct dir_group *),

@@ -657,7 +657,7 @@ init_dir_check(int    argc,
    }
 
    /* Now create the internal database of this process. */
-   no_of_jobs = create_db(udc_reply_fp);
+   no_of_jobs = create_db(udc_reply_fp, *write_fd);
 
    if (udc_reply_fp != NULL)
    {

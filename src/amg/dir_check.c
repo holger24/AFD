@@ -838,7 +838,7 @@ main(int argc, char *argv[])
                          * There should be no change such as a new host
                          * or a new directory entry.
                          */
-                        if (create_db(NULL) != no_of_jobs)
+                        if (create_db(NULL, write_fd) != no_of_jobs)
                         {
                            system_log(ERROR_SIGN, __FILE__, __LINE__,
                                       "Unexpected change in database! Terminating.");
@@ -1089,7 +1089,7 @@ main(int argc, char *argv[])
              * section. There should be no change such as a new host
              * or a new directory entry.
              */
-            if (create_db(NULL) != no_of_jobs)
+            if (create_db(NULL, write_fd) != no_of_jobs)
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           "Unexpected change in database! Terminating.");

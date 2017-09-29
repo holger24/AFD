@@ -1915,6 +1915,7 @@ typedef unsigned long       u_long_64;
 #define FLUSH_MSG_FIFO_DUMP_QUEUE  31
 #define CHECK_FSA_ENTRIES          32
 #define DATA_READY                 33
+#define BUSY_WORKING               34
 
 #define DELETE_ALL_JOBS_FROM_HOST  1
 #define DELETE_MESSAGE             2
