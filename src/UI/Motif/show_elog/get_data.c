@@ -940,6 +940,10 @@ search_data(register char *ptr,
                   *(p_add_info + j + 1) = '\0';
                   bytes_written = p_add_info - line + j + 1;
                }
+               else
+               {
+                  bytes_written = 0;
+               }
             }
             else if ((event_action_no == EA_START_ERROR_QUEUE) ||
                      (event_action_no == EA_STOP_ERROR_QUEUE))

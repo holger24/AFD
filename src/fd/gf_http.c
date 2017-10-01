@@ -168,7 +168,7 @@ main(int argc, char *argv[])
                     status;
    unsigned int     loop_counter;
 #ifdef _WITH_BURST_2
-   int              cb2_ret;
+   int              cb2_ret = NO;
    unsigned int     values_changed = 0;
 #endif
    off_t            bytes_done,
@@ -181,7 +181,7 @@ main(int argc, char *argv[])
                     diff_time,
 #endif
                     end_transfer_time_file,
-                    start_transfer_time_file;
+                    start_transfer_time_file = 0;
    char             *buffer,
                     *chunkbuffer = NULL,
                     local_file[MAX_PATH_LENGTH],
@@ -600,6 +600,7 @@ main(int argc, char *argv[])
                       (status == 400) || /* Bad Requeuest. */
                       (status == 404))   /* Not Found. */
                   {
+                     bytes_done = 0;
                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                "Failed to open remote file %s in %s (%d).",
                                rl[i].file_name, fra[db.fra_pos].dir_alias, status);
@@ -788,9 +789,9 @@ main(int argc, char *argv[])
                              exit(TRANSFER_SUCCESS);
                           }
 
+                     bytes_done = 0;
                      if (status != NOTHING_TO_FETCH)
                      {
-                        bytes_done = 0;
                         if (fsa->trl_per_process > 0)
                         {
                            init_limit_transfer_rate();

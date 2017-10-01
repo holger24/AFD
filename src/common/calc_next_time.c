@@ -142,7 +142,7 @@ calc_next_time(struct bd_time_entry *te,
              i;
 #ifdef WITH_TIMEZONE
    int       reset_env;
-   char      *p_env;
+   char      *p_env = NULL;
    time_t    new_time;
 #endif
    struct tm *bd_time;     /* Broken-down time */
@@ -192,10 +192,12 @@ calc_next_time(struct bd_time_entry *te,
             system_log(WARN_SIGN, __FILE__, __LINE__,
                        "Failed to setenv() TZ to `%s' : %s",
                        timezone, strerror(errno));
+            reset_env = NO;
          }
          else
          {
             tzset();
+            reset_env = YES;
          }
       }
    }

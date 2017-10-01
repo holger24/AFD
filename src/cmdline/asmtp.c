@@ -126,7 +126,7 @@ main(int argc, char *argv[])
                no_of_bytes;
    char        *buffer,
                *buffer_ptr,
-               *encode_buffer,
+               *encode_buffer = NULL,
                *file_ptr,
                host_name[256],
                local_user[MAX_FILENAME_LENGTH],

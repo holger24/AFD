@@ -765,7 +765,7 @@ search_afd(char *search_afd)
                 *p_prev_split_job_counter = NULL,
                 *p_prev_unique_number = NULL;
    time_t       prev_log_time = 0L,
-                start_search_time;
+                start_search_time = 0; /* Silence compiler. */
    off_t        prev_filename_length = 0;
    char         *p_file_pattern;
 

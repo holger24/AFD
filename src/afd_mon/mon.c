@@ -1,6 +1,6 @@
 /*
  *  mon.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -315,6 +315,10 @@ main(int argc, char *argv[])
          {
             current_afd_toggle = msa[afd_no].afd_toggle;
          }
+         else
+         {
+            current_afd_toggle = 0; /* Silence compiler. */
+         }
          msa[afd_no].connect_status = CONNECTION_ESTABLISHED;
          mon_log(INFO_SIGN, NULL, 0, 0L, NULL,
                  "========> AFDD Connected <========");
@@ -342,6 +346,10 @@ main(int argc, char *argv[])
                 (msa[afd_no].disconnect_time != 0))
             {
                start_time = time(NULL);
+            }
+            else
+            {
+               start_time = 0; /* Silence compiler. */
             }
             FD_ZERO(&rset);
             for (;;)

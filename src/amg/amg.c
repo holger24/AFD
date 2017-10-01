@@ -1953,6 +1953,7 @@ get_afd_config_value(int          *rescan_time,
       {
          alfc = 0;
          alfbl = 0;
+         length = 0; /* Silence compiler. */
       }
       if (get_definition(buffer, DEFAULT_DIR_INFO_TIME_DEF,
                          value, MAX_LONG_LENGTH) != NULL)

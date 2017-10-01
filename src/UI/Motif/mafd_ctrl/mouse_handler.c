@@ -1008,7 +1008,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
 {
    int              change_host_config = NO,
                     ehc = YES,
-                    offset,
+                    offset = 0,
                     hosts_found,
                     i,
                     j,

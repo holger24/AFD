@@ -1,6 +1,6 @@
 /*
  *  view_dc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1999 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -690,6 +690,10 @@ init_view_dc(int *argc, char *argv[])
       {
          p_retr_send_sep = NULL;
       }
+   }
+   else
+   {
+      p_retr_send_sep = NULL;
    }
 
    /*

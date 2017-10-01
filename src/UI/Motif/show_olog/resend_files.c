@@ -1,6 +1,6 @@
 /*
  *  resend_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -140,7 +140,7 @@ resend_files(int no_selected, int *select_list)
                       last_job_id = 0,
                       split_job_counter;
    time_t             creation_time = 0;
-   off_t              file_size,
+   off_t              file_size = 0,
                       total_file_size;
    static int         user_limit = 0;
    char               user_message[256];

@@ -1,6 +1,6 @@
 /*
  *  exec_cmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -163,6 +163,12 @@ exec_cmd(char           *cmd,
    else if (exec_duration != NULL)
         {
            start_time = times(&tval);
+           p_cmd = NULL; /* Silence compiler warning. */
+        }
+        else
+        {
+           start_time = 0; /* Silence compiler warning. */
+           p_cmd = NULL;   /* Silence compiler warning. */
         }
 
    if (limit_read_buffer == YES)

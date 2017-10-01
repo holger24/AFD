@@ -236,7 +236,7 @@ trans_exec(char    *file_path,
             int  fullname_checked = NO,
                  length,
                  length_start,
-                 mask_file_name,
+                 mask_file_name = NO, /* Silence compiler. */
                  p_file_name_buffer_checked = NO,
                  ret;
             char *fnp,

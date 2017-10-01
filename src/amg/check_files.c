@@ -209,7 +209,7 @@ check_files(struct directory_entry *p_de,
                                          /* when we are called.       */
    unsigned int  split_job_counter = 0;
    off_t         bytes_in_dir = 0;
-   time_t        diff_time,
+   time_t        diff_time = 0, /* Silence compiler. */
                  pmatch_time;
    char          fullname[MAX_PATH_LENGTH],
                  *ptr = NULL,

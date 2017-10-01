@@ -1,6 +1,6 @@
 /*
  *  inspect_archive.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -98,7 +98,8 @@ inspect_archive(char *archive_dir)
       struct stat   stat_buf;
       DIR           *p_dir_filesystemname;
 #endif
-      int           noh, nou, nod;
+      int           noh = 0,
+                    nou, nod;
       char          *ptr_archive,
                     *ptr_hostname,
                     *ptr_username,

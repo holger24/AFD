@@ -88,7 +88,9 @@ static size_t             jis_size;
 static struct job_id_stat *jis = NULL;
 
 /* Local function prototypes. */
+#ifdef WHEN_DONE
 static void               check_jis_space(void);
+#endif
 static char               *convert_jis(int, char *, size_t *, char *,
                                        unsigned char, unsigned char);
 
@@ -523,6 +525,7 @@ get_and_reset_store_ip(void)
 #endif /* WHEN_WE_KNOW */
 
 
+#ifdef WHEN_DONE
 /*++++++++++++++++++++++++++ check_jis_space() ++++++++++++++++++++++++++*/
 static void
 check_jis_space(void)
@@ -549,9 +552,10 @@ check_jis_space(void)
    }
    return;
 }
+#endif
 
 
-/*+++++++++++++++++++++++++++ convert_ip_db() +++++++++++++++++++++++++++*/
+/*++++++++++++++++++++++++++++ convert_jis() ++++++++++++++++++++++++++++*/
 static char *
 convert_jis(int           old_jis_fd,
             char          *old_jis_file,

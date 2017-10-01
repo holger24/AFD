@@ -1898,6 +1898,7 @@ pri_time(char      *format_orientation,
                   p_bd = localtime(&time_val);
                   (void)memcpy(bd_time_val, p_bd, sizeof(struct tm));
                }
+               tmp_pos = 0; /* Silence compiler. */
             }
             pos = strftime(&output_line[pos], MAX_OUTPUT_LINE_LENGTH - pos,
                            time_format, bd_time_val);

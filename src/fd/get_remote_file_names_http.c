@@ -1324,15 +1324,15 @@ eval_html_dir_list(char         *html_buffer,
                            exact_size = -1;
                            file_size = -1;
                         }
-                     }
 
-                     if (file_name[0] != '\0')
-                     {
-                        (void)check_list(file_name, file_name_length,
-                                         file_mtime, exact_size,
-                                         file_size, files_to_retrieve,
-                                         file_size_to_retrieve,
-                                         more_files_in_list);
+                        if (file_name[0] != '\0')
+                        {
+                           (void)check_list(file_name, file_name_length,
+                                            file_mtime, exact_size,
+                                            file_size, files_to_retrieve,
+                                            file_size_to_retrieve,
+                                            more_files_in_list);
+                        }
                      }
 
                      /* Go to end of line. */

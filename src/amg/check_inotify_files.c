@@ -139,7 +139,7 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
    char         fullname[MAX_PATH_LENGTH],
                 *ptr = NULL,
                 *work_ptr;
-   time_t       diff_time;
+   time_t       diff_time = 0; /* Silence compiler. */
 #ifdef _INPUT_LOG
    size_t       il_real_size;
 #endif

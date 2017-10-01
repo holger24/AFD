@@ -1,6 +1,6 @@
 /*
  *  afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -179,7 +179,7 @@ main(int argc, char *argv[])
                start_up,
                shutdown_perm,
                user_offset;
-   long        default_heartbeat_timeout;
+   long        default_heartbeat_timeout = DEFAULT_HEARTBEAT_TIMEOUT;
    char        auto_block_file[MAX_PATH_LENGTH],
                exec_cmd[AFD_CTRL_LENGTH + 1],
                fake_user[MAX_FULL_USER_ID_LENGTH],
@@ -348,10 +348,6 @@ main(int argc, char *argv[])
                  {
                     default_heartbeat_timeout = atol(argv[2]);
                  }
-                 else
-                 {
-                    default_heartbeat_timeout = DEFAULT_HEARTBEAT_TIMEOUT;
-                 }
               }
          else if (my_strcmp(argv[1], "-C") == 0) /* Only check if AFD is active. */
               {
@@ -365,10 +361,6 @@ main(int argc, char *argv[])
                  if (argc == 3)
                  {
                     default_heartbeat_timeout = atol(argv[2]);
-                 }
-                 else
-                 {
-                    default_heartbeat_timeout = DEFAULT_HEARTBEAT_TIMEOUT;
                  }
               }
          else if (my_strcmp(argv[1], "-d") == 0) /* Start afd_ctrl. */
@@ -388,10 +380,6 @@ main(int argc, char *argv[])
                  {
                     default_heartbeat_timeout = atol(argv[2]);
                  }
-                 else
-                 {
-                    default_heartbeat_timeout = DEFAULT_HEARTBEAT_TIMEOUT;
-                 }
               }
          else if (my_strcmp(argv[1], "-H") == 0) /* If there is no heartbeat start AFD. */
               {
@@ -405,10 +393,6 @@ main(int argc, char *argv[])
                  if (argc == 3)
                  {
                     default_heartbeat_timeout = atol(argv[2]);
-                 }
-                 else
-                 {
-                    default_heartbeat_timeout = DEFAULT_HEARTBEAT_TIMEOUT;
                  }
               }
          else if (my_strcmp(argv[1], "-i") == 0) /* Initialize AFD. */

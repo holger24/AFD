@@ -88,7 +88,7 @@ popup_error_history(int x_root, int y_root, int host_no)
         max_lines,
         max_length,
         str_length;
-   char *error_list;
+   char *error_list = NULL;
 
    if (error_shell != NULL)
    {
@@ -103,13 +103,13 @@ popup_error_history(int x_root, int y_root, int host_no)
    {
       int host_alias_shown,
           j;
-      struct error_list
+      struct error_str_list
              {  
                 char host_alias[MAX_HOSTNAME_LENGTH + 1];
                 char error_str[MAX_ERROR_STR_LENGTH + 1];
              } *el;
 
-      if ((el = malloc((EL_STEP_SIZE * sizeof(struct error_list)))) == NULL)
+      if ((el = malloc((EL_STEP_SIZE * sizeof(struct error_str_list)))) == NULL)
       {
          (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
                        strerror(errno), __FILE__, __LINE__);
@@ -129,7 +129,7 @@ popup_error_history(int x_root, int y_root, int host_no)
                if ((lines != 0) && ((lines % EL_STEP_SIZE) == 0))
                {
                   size_t new_size = ((lines / EL_STEP_SIZE) + 1) *
-                                    EL_STEP_SIZE * sizeof(struct error_list);
+                                    EL_STEP_SIZE * sizeof(struct error_str_list);
 
                   if ((el = realloc(el, new_size)) == NULL)
                   {
@@ -185,12 +185,12 @@ popup_error_history(int x_root, int y_root, int host_no)
    {
       if (connect_data[host_no].error_counter > 0)
       {
-         struct error_list
+         struct error_str_list
                 {
                    char error_str[MAX_ERROR_STR_LENGTH + 1];
                 } *el;
 
-         if ((el = malloc((EL_STEP_SIZE * sizeof(struct error_list)))) == NULL)
+         if ((el = malloc((EL_STEP_SIZE * sizeof(struct error_str_list)))) == NULL)
          {
             (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
                           strerror(errno), __FILE__, __LINE__);
@@ -203,7 +203,7 @@ popup_error_history(int x_root, int y_root, int host_no)
             if ((lines != 0) && ((lines % EL_STEP_SIZE) == 0))
             {
                size_t new_size = ((lines / EL_STEP_SIZE) + 1) *
-                                 EL_STEP_SIZE * sizeof(struct error_list);
+                                 EL_STEP_SIZE * sizeof(struct error_str_list);
 
                if ((el = realloc(el, new_size)) == NULL)
                {

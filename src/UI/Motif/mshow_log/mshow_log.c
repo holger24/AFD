@@ -164,7 +164,7 @@ main(int argc, char *argv[])
    int             slider_size;
 #endif
    char            window_title[MAX_WNINDOW_TITLE_LENGTH],
-                   str_number[MAX_INT_LENGTH];
+                   str_number[MAX_LONG_LENGTH];
    static String   fallback_res[] =
                    {
                       ".show_log*mwmDecorations : 110",

@@ -204,7 +204,7 @@ main(int argc, char *argv[])
                     diff_time,
 #endif
                     end_transfer_time_file,
-                    start_transfer_time_file,
+                    start_transfer_time_file = 0,
                     last_update_time,
                     now;
 #ifdef _OUTPUT_LOG

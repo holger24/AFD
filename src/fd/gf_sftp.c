@@ -162,7 +162,7 @@ main(int argc, char *argv[])
    unsigned int     loop_counter;
    mode_t           dir_mode = 0;
 #ifdef _WITH_BURST_2
-   int              cb2_ret;
+   int              cb2_ret = NO;
    unsigned int     values_changed = 0;
 #endif
    char             *created_path = NULL;
@@ -173,7 +173,7 @@ main(int argc, char *argv[])
                     diff_time,
 #endif
                     end_transfer_time_file,
-                    start_transfer_time_file;
+                    start_transfer_time_file = 0;
 #ifdef SA_FULLDUMP
    struct sigaction sact;
 #endif

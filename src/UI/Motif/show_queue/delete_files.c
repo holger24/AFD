@@ -119,16 +119,16 @@ delete_files(int no_selected, int *select_list)
                        i,
                        j,
                        k,
-                       *no_msg_queued,
+                       *no_msg_queued = NULL,
                        skipped;
    size_t              length;
    off_t               dnb_size,
-                       qb_size;
+                       qb_size = 0;
    char                fullname[MAX_PATH_LENGTH + 1 + MAX_HOSTNAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 1],
                        message[MAX_MESSAGE_LENGTH],
                        wbuf[MAX_PATH_LENGTH];
    struct stat         stat_buf;
-   struct queue_buf    *qb;
+   struct queue_buf    *qb = NULL;
    struct dir_name_buf *dnb;
 
    /* Map to directory name buffer. */

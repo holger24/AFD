@@ -77,7 +77,7 @@ config_log(unsigned int event_class,
            char         *fmt, ...)
 {
    size_t    length,
-             pos1,
+             pos1 = 0,
              pos2;
    time_t    tvalue;
    char      buf[MAX_LINE_LENGTH + 1];

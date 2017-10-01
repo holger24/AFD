@@ -1,7 +1,7 @@
 /*
  *  get_checksum_crc32c.c - Part of AFD, an automatic file distribution
  *                          program.
- *  Copyright (c) 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2012 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  Note the copyright is only on that part of the code written by
  *  myself. Most of the code comes from Evan Jones and researchers at
@@ -782,7 +782,10 @@ get_file_checksum_crc32c(int          fd,
 int
 detect_cpu_crc32(void)
 {
-   unsigned int eax, ebx, ecx, edx;
+   unsigned int eax,
+                ebx,
+                ecx = 0, /* Silence compiler warnings. */
+                edx;
 
    __get_cpuid(1, &eax, &ebx, &ecx, &edx);
    if (ecx & bit_SSE4_2)

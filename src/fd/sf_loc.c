@@ -1889,7 +1889,7 @@ copy_file_mkdir(char *from,
             if ((stat_buf.st_size > 0) && (ret == SUCCESS))
             {
                time_t end_transfer_time_file,
-                      start_transfer_time_file;
+                      start_transfer_time_file = 0;
 #ifdef WITH_SPLICE_SUPPORT
                int    fd_pipe[2];
 

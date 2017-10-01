@@ -490,7 +490,7 @@ dir_popup_cb(Widget    w,
                j,
 #endif
                k,
-               offset,
+               offset = 0,
                send_msg = NO;
    char        host_err_no[1025],
                progname[MAX_PROCNAME_LENGTH + 1],

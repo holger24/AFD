@@ -166,7 +166,7 @@ main(int argc, char *argv[])
    unsigned int     ftp_options,
                     loop_counter;
 #ifdef _WITH_BURST_2
-   int              cb2_ret,
+   int              cb2_ret = NO,
                     in_burst_loop = NO,
                     disconnect = NO;
    unsigned int     values_changed = 0;
@@ -180,7 +180,7 @@ main(int argc, char *argv[])
                     diff_time,
 #endif
                     end_transfer_time_file,
-                    start_transfer_time_file;
+                    start_transfer_time_file = 0; /* Silence compiler. */
 #ifdef SA_FULLDUMP
    struct sigaction sact;
 #endif

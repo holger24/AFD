@@ -2321,6 +2321,7 @@ handle_dir(int                       dir_pos,
             {
                (void)strcat(src_file_dir, "/.");
                (void)strcat(src_file_dir, host_name);
+               orig_search_time = 0; /* Silence compiler. */
             }
             p_fra = &fra[dir_pos];
 

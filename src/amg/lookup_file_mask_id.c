@@ -1,7 +1,7 @@
 /*
  *  lookup_file_mask_id.c - Part of AFD, an automatic file distribution
  *                          program.
- *  Copyright (c) 2003 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -217,7 +217,7 @@ lookup_file_mask_id(struct instant_db *p_db, int fbl)
    {
       if (*(unsigned int *)(tmp_ptr + fml_offset + sizeof(int)) == p_db->file_mask_id)
       {
-         unsigned int new_file_mask_id;
+         unsigned int new_file_mask_id = 0; /* Silence compiler. */
 
          system_log(DEBUG_SIGN, __FILE__, __LINE__,
                     "Hmmm, same checksum (%x) for two different file mask entries!",

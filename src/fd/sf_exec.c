@@ -332,6 +332,7 @@ main(int argc, char *argv[])
       {
          p_command++;
       }
+      ii = 0;
       if ((db.special_flag & EXEC_ONCE_ONLY) == 0)
       {
          char *p_end;
@@ -339,7 +340,6 @@ main(int argc, char *argv[])
          /* Prepare insert list. */
          p_end = p_command;
          k = 0;
-         ii = 0;
          while ((*p_end != '\0') && (ii < MAX_EXEC_FILE_SUBSTITUTION))
          {
             if ((*p_end == '%') && (*(p_end + 1) == 's'))
@@ -366,6 +366,10 @@ main(int argc, char *argv[])
          tmp_option[k] = '\0';
          p_command = tmp_option;
          last_k = k;
+      }
+      else
+      {
+         last_k = 0; /* Silence compiler. */
       }
 
       p_file_name_buffer = file_name_buffer;

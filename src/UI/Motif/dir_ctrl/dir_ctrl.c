@@ -500,7 +500,6 @@ init_dir_ctrl(int *argc, char *argv[], char *window_title)
 {
    int           i,
                  no_of_invisible_members = 0,
-                 prev_plus_minus,
                  user_offset;
    unsigned int  new_bar_length;
    char          *perm_buffer,
@@ -726,7 +725,6 @@ init_dir_ctrl(int *argc, char *argv[], char *window_title)
    no_of_rows_set = DEFAULT_NO_OF_ROWS;
    read_setup(DIR_CTRL, profile, NULL, NULL, NULL,
               &no_of_invisible_members, &invisible_members);
-   prev_plus_minus = PM_OPEN_STATE;
 
    /* Determine the default bar length. */
    max_bar_length  = 6 * BAR_LENGTH_MODIFIER;

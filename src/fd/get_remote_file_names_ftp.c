@@ -541,7 +541,7 @@ get_remote_file_names_ftp(off_t *file_size_to_retrieve, int *more_files_in_list)
                   }
                   else
                   {
-                     time_t file_mtime;
+                     time_t file_mtime = 0; /* Silence compiler. */
 
                      gotcha = NO;
                      for (i = 0; i < nfg; i++)
@@ -1104,6 +1104,10 @@ check_list(char   *file,
                               size_to_retrieve = rl[i].size;
                            }
                         }
+                        else
+                        {
+                           size_to_retrieve = 0;
+                        }
                         rl[i].prev_size = prev_size;
                         if ((fra[db.fra_pos].stupid_mode == YES) ||
                             (fra[db.fra_pos].remove == YES) ||
@@ -1145,6 +1149,10 @@ check_list(char   *file,
                               {
                                  size_to_retrieve = rl[i].size;
                               }
+                           }
+                           else
+                           {
+                              size_to_retrieve = 0;
                            }
                            rl[i].prev_size = prev_size;
                            if ((fra[db.fra_pos].stupid_mode == YES) ||

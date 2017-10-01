@@ -1,6 +1,6 @@
 /*
  *  aftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1207,6 +1207,10 @@ main(int argc, char *argv[])
          if (db.keepalive == YES)
          {
             keep_alive_time = time(NULL);
+         }
+         else
+         {
+            keep_alive_time = 0; /* Silence compiler. */
          }
 #endif
 

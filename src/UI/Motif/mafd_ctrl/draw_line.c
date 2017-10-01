@@ -921,7 +921,7 @@ draw_history(int type, int left)
         {
            y_offset = SPACE_ABOVE_LINE + bar_thickness_3;
         }
-   else if (type == TRANSFER_HISTORY)
+        else /* if (type == TRANSFER_HISTORY) */
         {
            y_offset = SPACE_ABOVE_LINE + bar_thickness_3 + bar_thickness_3;
         }
@@ -952,7 +952,7 @@ draw_history(int type, int left)
                  gc_values.foreground = color_pool[NO_INFORMATION];
               }
            }
-      else if (type == TRANSFER_HISTORY)
+           else /* if (type == TRANSFER_HISTORY) */
            {
               if (prev_afd_status.trans_log_history[i] < COLOR_POOL_SIZE)
               {

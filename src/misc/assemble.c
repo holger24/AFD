@@ -1,6 +1,6 @@
 /*
  *  assemble.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -149,6 +149,10 @@ assemble(char         *source_dir,
                      counter_file);
          return(INCORRECT);
       }
+   }
+   else
+   {
+      counter_fd = -1; /* Silence compiler. */
    }
    (void)strcpy(temp_dest_file, source_dir);
    p_src = source_dir + source_length;

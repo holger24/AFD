@@ -1,6 +1,6 @@
 /*
  *  lookup_dir_id.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -130,7 +130,7 @@ lookup_dir_id(char *dir_name, char *orig_dir_name)
    {
       if (dnb[i].dir_id == dnb[*no_of_dir_names].dir_id)
       {
-         unsigned int new_did_number;
+         unsigned int new_did_number = 0;
 
          system_log(DEBUG_SIGN, __FILE__, __LINE__,
                     "Hmmm, same checksum (%x) for two different directories!",

@@ -1,7 +1,7 @@
 /*
  *  get_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016 Deutscher Wetterdienst (DWD),
- *                     Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2016, 2017 Deutscher Wetterdienst (DWD),
+ *                           Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -462,7 +462,7 @@ get_sum_data(int    item,
    if (pos > -1)
    {
       int  onefoureigth_or_greater;
-      char *p_start,
+      char *p_start = NULL,
            *ptr,
            buffer[MAX_FILENAME_LENGTH + MAX_FILENAME_LENGTH + MAX_PATH_LENGTH];
 

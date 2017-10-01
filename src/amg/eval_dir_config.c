@@ -264,8 +264,11 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp)
 {
    unsigned int          error_mask;
    int                   dcd = 0,             /* DIR_CONFIG's done.       */
-                         dir_group_type,      /* Groups can either be of  */
-                                              /* type file or directory.  */
+                         dir_group_type = NEITHER, /* Groups can either   */
+                                              /* be of type file or       */
+                                              /* directory. Note, it is   */
+                                              /* initialized to NEITHER   */
+                                              /* to silence the compiler. */
                          i,
                          j,
 #ifdef _DEBUG

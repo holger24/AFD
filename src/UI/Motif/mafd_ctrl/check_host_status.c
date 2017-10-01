@@ -613,6 +613,10 @@ check_host_status(Widget w)
    {
       end_time = times(&tmsdummy);
    }
+   else
+   {
+      end_time = 0; /* Silence compiler. */
+   }
 
    if (*p_feature_flag != saved_feature_flag)
    {

@@ -1,6 +1,6 @@
 /*
  *  lookup_job_id.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -411,7 +411,7 @@ lookup_job_id(struct instant_db *p_db,
    {
       if (jd[i].job_id == *jid_number)
       {
-         unsigned int new_jid_number;
+         unsigned int new_jid_number = 0; /* Silence compiler. */
 
          system_log(WARN_SIGN, __FILE__, __LINE__,
                     "Hmmm, same checksum (%x) for two different jobs (%d %d)!",

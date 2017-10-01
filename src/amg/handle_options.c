@@ -428,6 +428,10 @@ handle_options(int          position,
                                  with_path = NO;
                               }
                            }
+                           else
+                           {
+                              with_path = NO;
+                           }
                         }
                         else if ((*p_overwrite == 'w') &&
                                  (*(p_overwrite + 1) == 'i') &&
@@ -471,6 +475,10 @@ handle_options(int          position,
                                     {
                                        overwrite = NO;
                                     }
+                                 }
+                                 else
+                                 {
+                                    overwrite = NO;
                                  }
                               }
                               else
@@ -767,6 +775,10 @@ handle_options(int          position,
                                     with_path = NO;
                                  }
                               }
+                              else
+                              {
+                                 with_path = NO;
+                              }
                            }
                            else if ((*p_overwrite == 'w') &&
                                     (*(p_overwrite + 1) == 'i') &&
@@ -810,6 +822,10 @@ handle_options(int          position,
                                        {
                                           overwrite = NO;
                                        }
+                                    }
+                                    else
+                                    {
+                                       overwrite = NO;
                                     }
                                  }
                                  else
@@ -1128,7 +1144,7 @@ handle_options(int          position,
                          tmp_option[1024],
                          command_str[1024],
                          *return_str = NULL;
-            off_t        lock_offset;
+            off_t        lock_offset = 0; /* Silence compiler. */
 
 #ifdef HAVE_SETPRIORITY
             if (exec_base_priority != NO_PRIORITY)
@@ -4257,7 +4273,7 @@ rename_ow(int          overwrite,
    int   gotcha,
          i,
          rename_overwrite;
-   char  *p_new_name_buffer;
+   char  *p_new_name_buffer = NULL; /* Silence compiler. */
    off_t rename_overwrite_size = 0;
 
    if (overwrite == NO)

@@ -92,7 +92,7 @@ void
 check_afd_status(Widget w)
 {
    signed char flush;
-   int         draw_identifier,
+   int         draw_identifier = YES,
                i,
                k,
                x,

@@ -120,7 +120,7 @@ handle_request(int  sock_sd,
                   j;
    int            nbytes,
                   status;
-   long           log_interval;
+   long           log_interval = 0;
    time_t         last,
                   last_time_read,
                   now,

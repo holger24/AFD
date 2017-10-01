@@ -177,7 +177,7 @@ handle_time_dir(int time_job_no)
       int            files_moved,
                      ret;
       off_t          file_size_moved;
-      time_t         creation_time;
+      time_t         creation_time = 0; /* Silence compiler. */
       int            unique_number;
       unsigned int   split_job_counter;
       char           dest_file_path[MAX_PATH_LENGTH],

@@ -1,6 +1,6 @@
 /*
  *  lookup_dc_id.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -148,7 +148,7 @@ lookup_dc_id(struct dir_config_buf **dcl, int dcl_counter)
          {
             if (mdcl[k].dc_id == (*dcl)[j].dc_id)
             {
-               unsigned int new_dc_id;
+               unsigned int new_dc_id = 0;
 
                system_log(DEBUG_SIGN, __FILE__, __LINE__,
                           "Hmmm, same checksum (%x) for two different DIR_CONFIG's!",

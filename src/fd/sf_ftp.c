@@ -231,7 +231,7 @@ main(int argc, char *argv[])
                     diff_time,
 #endif
                     end_transfer_time_file,
-                    start_transfer_time_file,
+                    start_transfer_time_file = 0,
                     last_update_time,
                     now,
                     *p_file_mtime_buffer;
@@ -247,20 +247,20 @@ main(int argc, char *argv[])
    struct tms       tmsdummy;
 #endif
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
-   time_t           keep_alive_time;
+   time_t           keep_alive_time = 0;
 #endif
    char             *ptr,
                     *ascii_buffer = NULL,
                     *p_file_name_buffer,
                     append_count = 0,
-                    *buffer,
+                    *buffer = NULL,
                     *created_path = NULL,
                     final_filename[MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH],
                     initial_filename[MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH],
                     remote_filename[MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH],
                     fullname[MAX_PATH_LENGTH],
-                    *p_final_filename,
-                    *p_remote_filename,
+                    *p_final_filename = NULL,
+                    *p_remote_filename = NULL,
                     *p_fullname,
                     file_path[MAX_PATH_LENGTH];
    struct job       *p_db;

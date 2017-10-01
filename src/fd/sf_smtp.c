@@ -250,7 +250,7 @@ main(int argc, char *argv[])
                     diff_time,
 #endif
                     end_transfer_time_file,
-                    start_transfer_time_file,
+                    start_transfer_time_file = 0,
                     last_update_time,
                     now;
 #ifdef _WITH_BURST_2
@@ -258,7 +258,7 @@ main(int argc, char *argv[])
    unsigned int     values_changed = 0;
 #endif
    char             *smtp_buffer = NULL,
-                    *p_file_name_buffer,
+                    *p_file_name_buffer = NULL,
                     host_name[256],
                     local_user[MAX_FILENAME_LENGTH],
                     multipart_boundary[MAX_FILENAME_LENGTH],

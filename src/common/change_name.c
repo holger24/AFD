@@ -929,6 +929,7 @@ change_name(char         *orig_file_name,
                               if ((*ptr_rule >= '0') && (*ptr_rule <= '9'))
                               {
                                  number = *ptr_rule + 1 - '0';
+                                 ul_char = 0; /* To silent compiler warnings. */
                               }
                               else if ((*ptr_rule >= 'A') && (*ptr_rule <= 'F'))
                                    {

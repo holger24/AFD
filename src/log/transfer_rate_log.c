@@ -203,6 +203,7 @@ main(int argc, char *argv[])
    /* Calculate time when we have to start a new file. */
    next_file_time = (time(&now) / SWITCH_FILE_TIME) * SWITCH_FILE_TIME +
                     SWITCH_FILE_TIME;
+   prev_time = now;
 
    /* Is current log file already too old? */
    if (stat(current_log_file, &stat_buf) == 0)

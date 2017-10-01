@@ -1,6 +1,6 @@
 /*
  *  convert.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -263,6 +263,7 @@ convert(char         *file_path,
            else
            {
               add_nnn_length = 0;
+              counter_fd = -1; /* Silence compiler. */
            }
 
            switch (type)
@@ -419,33 +420,33 @@ convert(char         *file_path,
                        char nnn[3 + MAX_INT_LENGTH + 1];
 
                        (void)next_counter(counter_fd, counter,
-                                          my_power(10, nnn_length) - 1);
+                         my_power(10, nnn_length) - 1);
                        nnn[0] = 13;
                        nnn[1] = 13;
                        nnn[2] = 10;
                        add_length = sprintf(&nnn[3], "%0*d",
-                                            nnn_length, *counter);
+                         nnn_length, *counter);
                        if (write(to_fd, nnn, add_length) != add_length)
                        {
-                          receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                                      _("Failed to write() to `%s' : %s"),
-                                      new_name, strerror(errno));
-                          CONVERT_CLEAN_UP();
-                          (void)close(to_fd);
-                          return(INCORRECT);
+                        receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
+                          _("Failed to write() to `%s' : %s"),
+                          new_name, strerror(errno));
+                        CONVERT_CLEAN_UP();
+                        (void)close(to_fd);
+                        return(INCORRECT);
                        }
                        *file_size += add_length;
                     }
 
                     if (writen(to_fd, (src_ptr + offset), size,
-                               stat_buf.st_blksize) != size)
+                       stat_buf.st_blksize) != size)
                     {
-                       receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                                   _("Failed to writen() to `%s' : %s"),
-                                   new_name, strerror(errno));
-                       CONVERT_CLEAN_UP();
-                       (void)close(to_fd);
-                       return(INCORRECT);
+                     receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
+                       _("Failed to writen() to `%s' : %s"),
+                       new_name, strerror(errno));
+                     CONVERT_CLEAN_UP();
+                     (void)close(to_fd);
+                     return(INCORRECT);
                     }
                     *file_size += size;
                  }
@@ -453,214 +454,214 @@ convert(char         *file_path,
 
               case SOHETXWMO :
                  {
-                    int    additional_length,
-                           end_offset,
-                           front_offset;
-                    size_t length,
-                           write_length;
-                    char   length_indicator[14];
+                  int    additional_length,
+                         end_offset,
+                         front_offset;
+                  size_t length,
+                         write_length;
+                  char   length_indicator[14];
 
-                    if ((to_fd = open(new_name, (O_RDWR | O_CREAT | O_TRUNC),
-                                      stat_buf.st_mode)) == -1)
-                    {
-                       receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                                   _("Failed to open() %s : %s"),
-                                   new_name, strerror(errno));
-                       CONVERT_CLEAN_UP();
-                       return(INCORRECT);
-                    }
+                  if ((to_fd = open(new_name, (O_RDWR | O_CREAT | O_TRUNC),
+                      stat_buf.st_mode)) == -1)
+                  {
+                   receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
+                     _("Failed to open() %s : %s"),
+                     new_name, strerror(errno));
+                   CONVERT_CLEAN_UP();
+                   return(INCORRECT);
+                  }
 
-                    if (*src_ptr != 1)
+                  if (*src_ptr != 1)
+                  {
+                   if ((stat_buf.st_size > 10) &&
+                     (isdigit((int)*src_ptr)) &&
+                     (isdigit((int)*(src_ptr + 1))) &&
+                     (isdigit((int)*(src_ptr + 2))) &&
+                     (isdigit((int)*(src_ptr + 3))) &&
+                     (isdigit((int)*(src_ptr + 4))) &&
+                     (isdigit((int)*(src_ptr + 5))) &&
+                     (isdigit((int)*(src_ptr + 6))) &&
+                     (isdigit((int)*(src_ptr + 7))) &&
+                     (isdigit((int)*(src_ptr + 8))) &&
+                     (isdigit((int)*(src_ptr + 9))))
+                   {
+                    length_indicator[0] = *src_ptr;
+                    length_indicator[1] = *(src_ptr + 1);
+                    length_indicator[2] = *(src_ptr + 2);
+                    length_indicator[3] = *(src_ptr + 3);
+                    length_indicator[4] = *(src_ptr + 4);
+                    length_indicator[5] = *(src_ptr + 5);
+                    length_indicator[6] = *(src_ptr + 6);
+                    length_indicator[7] = *(src_ptr + 7);
+                    length_indicator[8] = '\0';
+                    length = (size_t)strtoul(length_indicator, NULL, 10);
+                    if (stat_buf.st_size == (length + 10))
                     {
-                       if ((stat_buf.st_size > 10) &&
-                           (isdigit((int)*src_ptr)) &&
-                           (isdigit((int)*(src_ptr + 1))) &&
-                           (isdigit((int)*(src_ptr + 2))) &&
-                           (isdigit((int)*(src_ptr + 3))) &&
-                           (isdigit((int)*(src_ptr + 4))) &&
-                           (isdigit((int)*(src_ptr + 5))) &&
-                           (isdigit((int)*(src_ptr + 6))) &&
-                           (isdigit((int)*(src_ptr + 7))) &&
-                           (isdigit((int)*(src_ptr + 8))) &&
-                           (isdigit((int)*(src_ptr + 9))))
-                       {
-                          length_indicator[0] = *src_ptr;
-                          length_indicator[1] = *(src_ptr + 1);
-                          length_indicator[2] = *(src_ptr + 2);
-                          length_indicator[3] = *(src_ptr + 3);
-                          length_indicator[4] = *(src_ptr + 4);
-                          length_indicator[5] = *(src_ptr + 5);
-                          length_indicator[6] = *(src_ptr + 6);
-                          length_indicator[7] = *(src_ptr + 7);
-                          length_indicator[8] = '\0';
-                          length = (size_t)strtoul(length_indicator, NULL, 10);
-                          if (stat_buf.st_size == (length + 10))
-                          {
-                             if (*(src_ptr + 10) == 1)
-                             {
-                                if (*(src_ptr + 11) == 10)
-                                {
-                                   length_indicator[10] = 1;
-                                   length_indicator[11] = 13;
-                                   length_indicator[12] = 13;
-                                   length_indicator[13] = 10;
-                                   length = 14;
-                                   front_offset = 12;
-                                   additional_length = 4;
-                                }
-                                else if (((*(src_ptr + 11) == 13) ||
-                                          (*(src_ptr + 11) == ' ')) &&
-                                         (*(src_ptr + 12) == 10))
-                                     {
-                                        length_indicator[10] = 1;
-                                        length_indicator[11] = 13;
-                                        length_indicator[12] = 13;
-                                        length_indicator[13] = 10;
-                                        length = 14;
-                                        front_offset = 13;
-                                        additional_length = 4;
-                                     }
-                                     else
-                                     {
-                                        length = 10;
-                                        front_offset = 10;
-                                        additional_length = 0;
-                                     }
-                             }
-                             else
-                             {
-                                length_indicator[10] = 1;
-                                length_indicator[11] = 13;
-                                length_indicator[12] = 13;
-                                length_indicator[13] = 10;
-                                length = 14;
-                                front_offset = 10;
-                                additional_length = 4;
-                             }
-                          }
-                          else
-                          {
-                             length_indicator[10] = 1;
-                             length_indicator[11] = 13;
-                             length_indicator[12] = 13;
-                             length_indicator[13] = 10;
-                             length = 14;
-                             front_offset = 0;
-                             additional_length = 4;
-                          }
-                       }
-                       else
-                       {
-                          length_indicator[10] = 1;
-                          length_indicator[11] = 13;
-                          length_indicator[12] = 13;
-                          length_indicator[13] = 10;
-                          length = 14;
-                          front_offset = 0;
-                          additional_length = 4;
-                       }
+                     if (*(src_ptr + 10) == 1)
+                     {
+                      if (*(src_ptr + 11) == 10)
+                      {
+                       length_indicator[10] = 1;
+                       length_indicator[11] = 13;
+                       length_indicator[12] = 13;
+                       length_indicator[13] = 10;
+                       length = 14;
+                       front_offset = 12;
+                       additional_length = 4;
+                      }
+                      else if (((*(src_ptr + 11) == 13) ||
+                         (*(src_ptr + 11) == ' ')) &&
+                        (*(src_ptr + 12) == 10))
+                      {
+                       length_indicator[10] = 1;
+                       length_indicator[11] = 13;
+                       length_indicator[12] = 13;
+                       length_indicator[13] = 10;
+                       length = 14;
+                       front_offset = 13;
+                       additional_length = 4;
+                      }
+                      else
+                      {
+                       length = 10;
+                       front_offset = 10;
+                       additional_length = 0;
+                      }
+                     }
+                     else
+                     {
+                      length_indicator[10] = 1;
+                      length_indicator[11] = 13;
+                      length_indicator[12] = 13;
+                      length_indicator[13] = 10;
+                      length = 14;
+                      front_offset = 10;
+                      additional_length = 4;
+                     }
                     }
                     else
                     {
-                       if (*(src_ptr + 1) == 10)
-                       {
-                          length_indicator[10] = 1;
-                          length_indicator[11] = 13;
-                          length_indicator[12] = 13;
-                          length_indicator[13] = 10;
-                          length = 14;
-                          front_offset = 2;
-                          additional_length = 4;
-                       }
-                       else if (((*(src_ptr + 1) == 13) ||
-                                 (*(src_ptr + 1) == ' ')) &&
-                                (*(src_ptr + 2) == 10))
-                            {
-                               length_indicator[10] = 1;
-                               length_indicator[11] = 13;
-                               length_indicator[12] = 13;
-                               length_indicator[13] = 10;
-                               length = 14;
-                               front_offset = 3;
-                               additional_length = 4;
-                            }
-                       else if ((*(src_ptr + 1) == 13) &&
-                                (*(src_ptr + 2) == 13) &&
-                                (*(src_ptr + 3) == 10))
-                            {
-                               length = 10;
-                               front_offset = 0;
-                               additional_length = 0;
-                            }
-                            else
-                            {
-                               length_indicator[10] = 1;
-                               length_indicator[11] = 13;
-                               length_indicator[12] = 13;
-                               length_indicator[13] = 10;
-                               length = 14;
-                               front_offset = 1;
-                               additional_length = 4;
-                            }
+                     length_indicator[10] = 1;
+                     length_indicator[11] = 13;
+                     length_indicator[12] = 13;
+                     length_indicator[13] = 10;
+                     length = 14;
+                     front_offset = 0;
+                     additional_length = 4;
                     }
-                    if (*(src_ptr + stat_buf.st_size - 1) != 3)
-                    {
-                       end_offset = 0;
-                       additional_length += 4;
-                    }
-                    else
-                    {
-                       if (*(src_ptr + stat_buf.st_size - 2) != 10)
-                       {
-                          end_offset = 1;
-                          additional_length += 4;
-                       }
-                       else if (*(src_ptr + stat_buf.st_size - 3) != 13)
-                            {
-                               end_offset = 2;
-                               additional_length += 4;
-                            }
-                            else
-                            {
-                               end_offset = 0;
-                            }
-                    }
-                    if ((stat_buf.st_size - front_offset - end_offset + additional_length + add_nnn_length) > 99999999)
-                    {
-                       (void)strcpy(length_indicator, "99999999");
-                       receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
+                   }
+                   else
+                   {
+                    length_indicator[10] = 1;
+                    length_indicator[11] = 13;
+                    length_indicator[12] = 13;
+                    length_indicator[13] = 10;
+                    length = 14;
+                    front_offset = 0;
+                    additional_length = 4;
+                   }
+                  }
+                  else
+                  {
+                   if (*(src_ptr + 1) == 10)
+                   {
+                    length_indicator[10] = 1;
+                    length_indicator[11] = 13;
+                    length_indicator[12] = 13;
+                    length_indicator[13] = 10;
+                    length = 14;
+                    front_offset = 2;
+                    additional_length = 4;
+                   }
+                   else if (((*(src_ptr + 1) == 13) ||
+                      (*(src_ptr + 1) == ' ')) &&
+                     (*(src_ptr + 2) == 10))
+                   {
+                    length_indicator[10] = 1;
+                    length_indicator[11] = 13;
+                    length_indicator[12] = 13;
+                    length_indicator[13] = 10;
+                    length = 14;
+                    front_offset = 3;
+                    additional_length = 4;
+                   }
+                   else if ((*(src_ptr + 1) == 13) &&
+                     (*(src_ptr + 2) == 13) &&
+                     (*(src_ptr + 3) == 10))
+                   {
+                    length = 10;
+                    front_offset = 0;
+                    additional_length = 0;
+                   }
+                   else
+                   {
+                    length_indicator[10] = 1;
+                    length_indicator[11] = 13;
+                    length_indicator[12] = 13;
+                    length_indicator[13] = 10;
+                    length = 14;
+                    front_offset = 1;
+                    additional_length = 4;
+                   }
+                  }
+                  if (*(src_ptr + stat_buf.st_size - 1) != 3)
+                  {
+                   end_offset = 0;
+                   additional_length += 4;
+                  }
+                  else
+                  {
+                   if (*(src_ptr + stat_buf.st_size - 2) != 10)
+                   {
+                    end_offset = 1;
+                    additional_length += 4;
+                   }
+                   else if (*(src_ptr + stat_buf.st_size - 3) != 13)
+                   {
+                    end_offset = 2;
+                    additional_length += 4;
+                   }
+                   else
+                   {
+                    end_offset = 0;
+                   }
+                  }
+                  if ((stat_buf.st_size - front_offset - end_offset + additional_length + add_nnn_length) > 99999999)
+                  {
+                   (void)strcpy(length_indicator, "99999999");
+                   receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
 #if SIZEOF_OFF_T == 4
-                                   "Data length (%ld) greater then what is possible in WMO header size, inserting maximum possible 99999999.",
+                     "Data length (%ld) greater then what is possible in WMO header size, inserting maximum possible 99999999.",
 #else
-                                   "Data length (%lld) greater then what is possible in WMO header size, inserting maximum possible 99999999.",
+                     "Data length (%lld) greater then what is possible in WMO header size, inserting maximum possible 99999999.",
 #endif
-                                    (pri_off_t)(stat_buf.st_size - front_offset - end_offset + additional_length));
-                    }
-                    else
-                    {
-                       (void)snprintf(length_indicator, 14, "%08lu",
-                                      (unsigned long)stat_buf.st_size - front_offset - end_offset + additional_length + add_nnn_length);
-                    }
-                    length_indicator[8] = '0';
-                    length_indicator[9] = '0';
-                    if (writen(to_fd, length_indicator, length,
-                               stat_buf.st_blksize) != length)
-                    {
-                       receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                                   _("Failed to writen() to `%s' : %s"),
-                                   new_name, strerror(errno));
-                       CONVERT_CLEAN_UP();
-                       (void)close(to_fd);
-                       return(INCORRECT);
-                    }
-                    *file_size += length;
+                     (pri_off_t)(stat_buf.st_size - front_offset - end_offset + additional_length));
+                  }
+                  else
+                  {
+                   (void)snprintf(length_indicator, 14, "%08lu",
+                     (unsigned long)stat_buf.st_size - front_offset - end_offset + additional_length + add_nnn_length);
+                  }
+                  length_indicator[8] = '0';
+                  length_indicator[9] = '0';
+                  if (writen(to_fd, length_indicator, length,
+                     stat_buf.st_blksize) != length)
+                  {
+                   receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
+                     _("Failed to writen() to `%s' : %s"),
+                     new_name, strerror(errno));
+                   CONVERT_CLEAN_UP();
+                   (void)close(to_fd);
+                   return(INCORRECT);
+                  }
+                  *file_size += length;
 
-                    if (nnn_length > 0)
-                    {
-                       int  add_length;
-                       char nnn[MAX_INT_LENGTH + 3 + 1];
+                  if (nnn_length > 0)
+                  {
+                   int  add_length;
+                   char nnn[MAX_INT_LENGTH + 3 + 1];
 
-                       (void)next_counter(counter_fd, counter,
+                   (void)next_counter(counter_fd, counter,
                                           my_power(10, nnn_length) - 1);
                        add_length = sprintf(nnn, "%0*d\r\r\n",
                                             nnn_length, *counter);

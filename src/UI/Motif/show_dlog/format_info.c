@@ -1,6 +1,6 @@
 /*
  *  format_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -860,6 +860,7 @@ format_input_info(char **text)
    } /* if (id.dir[0] != '\0') */
    else
    {
+      begin_underline = 0;
       count = sprintf(*text + length, "Dir_ID     : %x\n", id.dir_id);
       length += count;
       if (count > max_x)

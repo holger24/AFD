@@ -1144,6 +1144,10 @@ get_time_jobs(void)
                      }
                   }
                }
+               else
+               {
+                  gotcha = NO;
+               }
 
                if (gotcha == YES)
                {

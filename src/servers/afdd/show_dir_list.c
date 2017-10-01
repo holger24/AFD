@@ -1,6 +1,6 @@
 /*
  *  show_dir_list.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -152,6 +152,7 @@ show_dir_list(FILE *p_data)
                            {
                               get_home_dir_user(dnb[k].dir_name, home_dir_user,
                                                 &home_dir_length);
+                              m = 0;
                            }
                            if (home_dir_user[0] == '\0')
                            {

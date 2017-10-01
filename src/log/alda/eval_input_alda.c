@@ -1253,17 +1253,17 @@ static void
 store_name_alias_id(char *input, int dir_host_type)
 {
    unsigned int *p_alias_counter = NULL,
-                **p_id,
+                **p_id = NULL, /* Silence compiler. */
                 *p_id_counter = NULL,
                 *p_name_counter = NULL;
    int          length,
-                max_length,
-                max_alias_length,
-                max_id_length,
-                max_name_length,
-                type;
-   char         ***p_alias,
-                ***p_name,
+                max_length = 0,
+                max_alias_length = 0,
+                max_id_length = 0,
+                max_name_length = 0,
+                type = NAME_TYPE;
+   char         ***p_alias = NULL, /* Silence compiler. */
+                ***p_name = NULL,  /* Silence compiler. */
                 *ptr;
 
    /* Count number of parameters. */
