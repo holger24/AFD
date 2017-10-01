@@ -278,6 +278,7 @@ main(int argc, char *argv[])
       {
          only_list_target_dirs = YES;
       }
+      dir_id = 0;
    }
 
    get_additional_locked_files(&alfc, NULL, NULL);
@@ -394,7 +395,7 @@ get_dc_data(char         *host_name,
                i,
                j,
                jd_fd,
-               position,
+               position = 0, /* Silence compiler. */
                pwb_fd;
    size_t      dcl_size = 0,
                dnb_size = 0,

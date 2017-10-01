@@ -1,6 +1,6 @@
 /*
  *  set_pw.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -217,6 +217,7 @@ main(int argc, char *argv[])
          exit(INCORRECT);
       }
       hostname[i] = '\0';
+      job_id = 0;
    }
    else if (get_arg(&argc, argv, "-i", uh_name,
                     MAX_USER_NAME_LENGTH + MAX_REAL_HOSTNAME_LENGTH) == SUCCESS)
@@ -468,6 +469,8 @@ main(int argc, char *argv[])
       {
          (void)fprintf(stderr, "Failed to open() `%s' : %s (%s %d)\n",
                        file, strerror(errno), __FILE__, __LINE__);
+         dnb = NULL;
+         dnb_size = 0;
       }
       else
       {
@@ -475,6 +478,8 @@ main(int argc, char *argv[])
          {
             (void)fprintf(stderr, "Failed to mmap() `%s' : %s (%s %d)\n",
                           file, strerror(errno), __FILE__, __LINE__);
+            dnb = NULL;
+            dnb_size = 0;
          }
          else
          {
@@ -489,6 +494,7 @@ main(int argc, char *argv[])
                (void)fprintf(stderr, "Failed to mmap() `%s' : %s (%s %d)\n",
                              file, strerror(errno), __FILE__, __LINE__);
                dnb = NULL;
+               dnb_size = 0;
             }
             else
             {

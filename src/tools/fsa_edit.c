@@ -375,7 +375,7 @@ main(int argc, char *argv[])
                }
                (void)memcpy(fsa[position].real_hostname[0], buffer,
                             MAX_REAL_HOSTNAME_LENGTH);
-               fsa[position].host_dsp_name[MAX_REAL_HOSTNAME_LENGTH - 1] = '\0';
+               fsa[position].host_dsp_name[MAX_HOSTNAME_LENGTH - 1] = '\0';
             }
             break;
 

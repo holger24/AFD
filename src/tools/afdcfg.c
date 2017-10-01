@@ -1,6 +1,6 @@
 /*
  *  afdcfg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2000 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -124,14 +124,14 @@ int
 main(int argc, char *argv[])
 {
    int  action,
-        ignore_first_errors,
+        ignore_first_errors = 0, /* Silence compiler. */
         ret,
         user_offset;
    char fake_user[MAX_FULL_USER_ID_LENGTH],
         *perm_buffer,
         profile[MAX_PROFILE_NAME_LENGTH + 1],
-        *ptr_fra,
-        *ptr_fsa,
+        *ptr_fra = NULL, /* Silence compiler. */
+        *ptr_fsa = NULL, /* Silence compiler. */
         user[MAX_FULL_USER_ID_LENGTH],
         work_dir[MAX_PATH_LENGTH];
 

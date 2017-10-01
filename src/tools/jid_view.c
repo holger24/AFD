@@ -1,6 +1,6 @@
 /*
  *  jid_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -282,6 +282,7 @@ main(int argc, char *argv[])
    {
       (void)fprintf(stderr, _("Failed to open() `%s' : %s (%s %d)\n"),
                     file, strerror(errno), __FILE__, __LINE__);
+      no_of_file_masks_id = 0;
    }
    else
    {
@@ -289,6 +290,7 @@ main(int argc, char *argv[])
       {
          (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
                        file, strerror(errno), __FILE__, __LINE__);
+         no_of_file_masks_id = 0;
       }
       else
       {
@@ -303,6 +305,7 @@ main(int argc, char *argv[])
             (void)fprintf(stderr, _("Failed to mmap() `%s' : %s (%s %d)\n"),
                           file, strerror(errno), __FILE__, __LINE__);
             fmd = NULL;
+            no_of_file_masks_id = 0;
          }
          else
          {
@@ -329,6 +332,7 @@ main(int argc, char *argv[])
    {
       (void)fprintf(stderr, _("Failed to open() `%s' : %s (%s %d)\n"),
                     file, strerror(errno), __FILE__, __LINE__);
+      no_of_dir_names = 0;
    }
    else
    {
@@ -336,6 +340,7 @@ main(int argc, char *argv[])
       {
          (void)fprintf(stderr, _("Failed to mmap() `%s' : %s (%s %d)\n"),
                        file, strerror(errno), __FILE__, __LINE__);
+         no_of_dir_names = 0;
       }
       else
       {
@@ -350,6 +355,7 @@ main(int argc, char *argv[])
             (void)fprintf(stderr, _("Failed to mmap() `%s' : %s (%s %d)\n"),
                           file, strerror(errno), __FILE__, __LINE__);
             dnb = NULL;
+            no_of_dir_names = 0;
          }
          else
          {
@@ -420,7 +426,7 @@ main(int argc, char *argv[])
 
    if (no_of_job_ids > 0)
    {
-      int  j,
+      int  j = 0,
            lines_drawn = 0;
 #ifdef _NEW_JID
       char time_str[25];
