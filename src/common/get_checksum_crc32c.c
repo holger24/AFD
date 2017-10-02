@@ -782,15 +782,18 @@ get_file_checksum_crc32c(int          fd,
 int
 detect_cpu_crc32(void)
 {
-   unsigned int eax,
-                ebx,
-                ecx = 0, /* Silence compiler warnings. */
-                edx;
+   unsigned int eax, ebx, ecx, edx;
 
-   __get_cpuid(1, &eax, &ebx, &ecx, &edx);
-   if (ecx & bit_SSE4_2)
+   if (__get_cpuid(1, &eax, &ebx, &ecx, &edx) == 1)
    {
-      return(YES);
+      if (ecx & bit_SSE4_2)
+      {
+         return(YES);
+      }
+      else
+      {
+         return(NO);
+      }
    }
    else
    {
