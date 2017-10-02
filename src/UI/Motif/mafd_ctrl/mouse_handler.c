@@ -1097,21 +1097,31 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
       case SWITCH_SEL:
          (void)snprintf(host_config_file, MAX_PATH_LENGTH, "%s%s%s",
                         p_work_dir, ETC_DIR, DEFAULT_HOST_CONFIG_FILE);
-         ehc = eval_host_config(&hosts_found, host_config_file, &hl, NULL,
-                                NULL, NO);
-         if ((ehc == NO) && (no_of_hosts != hosts_found))
+         if (eaccess(host_config_file, (R_OK | W_OK)) == -1)
          {
             (void)xrec(WARN_DIALOG,
-                       "Hosts found in HOST_CONFIG (%d) and those currently storred (%d) are not the same. Unable to do any changes. (%s %d)",
-                       no_of_hosts, hosts_found, __FILE__, __LINE__);
+                       "Unable to read/write from/to HOST_CONFIG, therefore no values changed in it! (%s %d)",
+                       __FILE__, __LINE__);
             ehc = YES;
          }
-         else if (ehc == YES)
-              {
-                 (void)xrec(WARN_DIALOG,
-                            "Unable to retrieve data from HOST_CONFIG, therefore no values changed in it! (%s %d)",
-                            __FILE__, __LINE__);
-              }
+         else
+         {
+            ehc = eval_host_config(&hosts_found, host_config_file, &hl, NULL,
+                                   NULL, NO);
+            if ((ehc == NO) && (no_of_hosts != hosts_found))
+            {
+               (void)xrec(WARN_DIALOG,
+                          "Hosts found in HOST_CONFIG (%d) and those currently storred (%d) are not the same. Unable to do any changes. (%s %d)",
+                          no_of_hosts, hosts_found, __FILE__, __LINE__);
+               ehc = YES;
+            }
+            else if (ehc == YES)
+                 {
+                    (void)xrec(WARN_DIALOG,
+                               "Unable to retrieve data from HOST_CONFIG, therefore no values changed in it! (%s %d)",
+                               __FILE__, __LINE__);
+                 }
+         }
          break;
 
       case RETRY_SEL:
@@ -2434,77 +2444,80 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                break;
 
             case SWITCH_SEL :
-               if (check_host_permissions(fsa[i].host_alias,
-                                          acp.switch_host_list,
-                                          acp.switch_host) == SUCCESS)
+               if (ehc == NO)
                {
-                  if ((fsa[i].toggle_pos > 0) &&
-                      (fsa[i].host_toggle_str[0] != '\0'))
+                  if (check_host_permissions(fsa[i].host_alias,
+                                             acp.switch_host_list,
+                                             acp.switch_host) == SUCCESS)
                   {
-                     char tmp_host_alias[MAX_HOSTNAME_LENGTH + 4 + 2];
-
-                     if (fsa[i].host_toggle == HOST_ONE)
+                     if ((fsa[i].toggle_pos > 0) &&
+                         (fsa[i].host_toggle_str[0] != '\0'))
                      {
-                        connect_data[i].host_toggle = fsa[i].host_toggle = HOST_TWO;
-                        hl[i].host_status |= HOST_TWO_FLAG;
-                     }
-                     else
-                     {
-                        connect_data[i].host_toggle = fsa[i].host_toggle = HOST_ONE;
-                        hl[i].host_status &= ~HOST_TWO_FLAG;
-                     }
-                     change_host_config = YES;
-                     (void)strcpy(tmp_host_alias, fsa[i].host_dsp_name);
-                     fsa[i].host_dsp_name[(int)fsa[i].toggle_pos] = fsa[i].host_toggle_str[(int)fsa[i].host_toggle];
-                     config_log(EC_HOST, ET_MAN, EA_SWITCH_HOST,
-                                fsa[i].host_alias, "%s -> %s",
-                                tmp_host_alias, fsa[i].host_dsp_name);
-                     connect_data[i].host_display_str[(int)fsa[i].toggle_pos] = fsa[i].host_toggle_str[(int)fsa[i].host_toggle];
+                        char tmp_host_alias[MAX_HOSTNAME_LENGTH + 4 + 2];
 
-                     /* Don't forget to redraw display name of tv window. */
-                     if (no_of_jobs_selected > 0)
-                     {
-                        int ii;
-
-                        for (ii = 0; ii < no_of_jobs_selected; ii++)
+                        if (fsa[i].host_toggle == HOST_ONE)
                         {
-                           if (jd[ii].fsa_no == i)
-                           {
-                              int x, y;
+                           connect_data[i].host_toggle = fsa[i].host_toggle = HOST_TWO;
+                           hl[i].host_status |= HOST_TWO_FLAG;
+                        }
+                        else
+                        {
+                           connect_data[i].host_toggle = fsa[i].host_toggle = HOST_ONE;
+                           hl[i].host_status &= ~HOST_TWO_FLAG;
+                        }
+                        change_host_config = YES;
+                        (void)strcpy(tmp_host_alias, fsa[i].host_dsp_name);
+                        fsa[i].host_dsp_name[(int)fsa[i].toggle_pos] = fsa[i].host_toggle_str[(int)fsa[i].host_toggle];
+                        config_log(EC_HOST, ET_MAN, EA_SWITCH_HOST,
+                                   fsa[i].host_alias, "%s -> %s",
+                                   tmp_host_alias, fsa[i].host_dsp_name);
+                        connect_data[i].host_display_str[(int)fsa[i].toggle_pos] = fsa[i].host_toggle_str[(int)fsa[i].host_toggle];
 
-                              while ((ii < no_of_jobs_selected) && (jd[ii].fsa_no == i))
+                        /* Don't forget to redraw display name of tv window. */
+                        if (no_of_jobs_selected > 0)
+                        {
+                           int ii;
+
+                           for (ii = 0; ii < no_of_jobs_selected; ii++)
+                           {
+                              if (jd[ii].fsa_no == i)
                               {
-                                 jd[ii].host_display_str[(int)fsa[i].toggle_pos] = fsa[i].host_toggle_str[(int)fsa[i].host_toggle];
-                                 tv_locate_xy(ii, &x, &y);
-                                 draw_tv_dest_identifier(ii, x, y);
-                                 ii++;
+                                 int x, y;
+
+                                 while ((ii < no_of_jobs_selected) && (jd[ii].fsa_no == i))
+                                 {
+                                    jd[ii].host_display_str[(int)fsa[i].toggle_pos] = fsa[i].host_toggle_str[(int)fsa[i].host_toggle];
+                                    tv_locate_xy(ii, &x, &y);
+                                    draw_tv_dest_identifier(ii, x, y);
+                                    ii++;
+                                 }
+                                 break;
                               }
-                              break;
                            }
                         }
                      }
+                     else
+                     {
+                        (void)xrec(ERROR_DIALOG,
+                                   "Host %s cannot be switched!",
+                                   fsa[i].host_dsp_name);
+                     }
+
+                     if (connect_data[i].inverse == ON)
+                     {
+                        connect_data[i].inverse = OFF;
+                     }
+                     draw_line_status(m, 1);
                   }
                   else
                   {
-                     (void)xrec(ERROR_DIALOG,
-                                "Host %s cannot be switched!",
-                                fsa[i].host_dsp_name);
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "User %s does not have the permission to switch %s",
+                                user, fsa[i].host_alias);
+                     (void)xrec(INFO_DIALOG,
+                                "You do not have the permission to switch %s",
+                                fsa[i].host_alias);
                   }
-
-                  if (connect_data[i].inverse == ON)
-                  {
-                     connect_data[i].inverse = OFF;
-                  }
-                  draw_line_status(m, 1);
-               }
-               else
-               {
-                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                             "User %s does not have the permission to switch %s",
-                             user, fsa[i].host_alias);
-                  (void)xrec(INFO_DIALOG,
-                             "You do not have the permission to switch %s",
-                             fsa[i].host_alias);
                }
                break;
 

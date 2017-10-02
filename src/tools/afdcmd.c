@@ -1135,20 +1135,29 @@ main(int argc, char *argv[])
       {
          (void)sprintf(host_config_file, "%s%s%s",
                        p_work_dir, ETC_DIR, DEFAULT_HOST_CONFIG_FILE);
-         ehc = eval_host_config(&hosts_found, host_config_file, &hl, NULL,
-                               NULL, NO);
-         if ((ehc == NO) && (no_of_hosts != hosts_found))
+         if (eaccess(host_config_file, (R_OK | W_OK)) == -1)
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
-                       _("Hosts found in HOST_CONFIG (%d) and those currently storred (%d) are not the same. Unable to do any changes."),
-                       no_of_hosts, hosts_found);
+                       _("Unable to read/write from/to HOST_CONFIG, therefore no values changed in it!"));
             ehc = YES;
          }
-         else if (ehc == YES)
-              {
-                 system_log(WARN_SIGN, __FILE__, __LINE__,
-                            _("Unable to retrieve data from HOST_CONFIG, therefore no values changed in it!"));
-              }
+         else
+         {
+            ehc = eval_host_config(&hosts_found, host_config_file, &hl, NULL,
+                                  NULL, NO);
+            if ((ehc == NO) && (no_of_hosts != hosts_found))
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          _("Hosts found in HOST_CONFIG (%d) and those currently storred (%d) are not the same. Unable to do any changes."),
+                          no_of_hosts, hosts_found);
+               ehc = YES;
+            }
+            else if (ehc == YES)
+                 {
+                    system_log(WARN_SIGN, __FILE__, __LINE__,
+                               _("Unable to retrieve data from HOST_CONFIG, therefore no values changed in it!"));
+                 }
+         }
       }
 
       for (i = 0; i < no_of_host_names; i++)
@@ -1790,42 +1799,42 @@ main(int argc, char *argv[])
                                    fsa[position].host_dsp_name);
                   }
                }
-            }
 
-            if (options & SWITCH_OPTION)
-            {
-               if ((fsa[position].toggle_pos > 0) &&
-                   (fsa[position].host_toggle_str[0] != '\0'))
+               if (options & SWITCH_OPTION)
                {
-                  char tmp_host_alias[MAX_HOSTNAME_LENGTH + 2];
-
-                  system_log(DEBUG_SIGN, NULL, 0,
-                             _("Host Switch initiated for host %s (%s) [afdcmd]"),
-                             fsa[position].host_dsp_name, user);
-                  if (fsa[position].host_toggle == HOST_ONE)
+                  if ((fsa[position].toggle_pos > 0) &&
+                      (fsa[position].host_toggle_str[0] != '\0'))
                   {
-                     fsa[position].host_toggle = HOST_TWO;
-                     hl[position].host_status |= HOST_TWO_FLAG;
+                     char tmp_host_alias[MAX_HOSTNAME_LENGTH + 2];
+
+                     system_log(DEBUG_SIGN, NULL, 0,
+                                _("Host Switch initiated for host %s (%s) [afdcmd]"),
+                                fsa[position].host_dsp_name, user);
+                     if (fsa[position].host_toggle == HOST_ONE)
+                     {
+                        fsa[position].host_toggle = HOST_TWO;
+                        hl[position].host_status |= HOST_TWO_FLAG;
+                     }
+                     else
+                     {
+                        fsa[position].host_toggle = HOST_ONE;
+                        hl[position].host_status &= ~HOST_TWO_FLAG;
+                     }
+                     change_host_config = YES;
+                     (void)strcpy(tmp_host_alias, fsa[position].host_dsp_name);
+                     fsa[position].host_dsp_name[(int)fsa[position].toggle_pos] = fsa[position].host_toggle_str[(int)fsa[position].host_toggle];
+                     event_log(0L, EC_HOST, ET_MAN, EA_SWITCH_HOST,
+                               "%s%c%s%c%s -> %s",
+                               fsa[position].host_alias, SEPARATOR_CHAR,
+                               user, SEPARATOR_CHAR, tmp_host_alias,
+                               fsa[position].host_dsp_name);
                   }
                   else
                   {
-                     fsa[position].host_toggle = HOST_ONE;
-                     hl[position].host_status &= ~HOST_TWO_FLAG;
+                     (void)fprintf(stderr,
+                                   _("WARNING : Host %s cannot be switched!"),
+                                   fsa[position].host_dsp_name);
                   }
-                  change_host_config = YES;
-                  (void)strcpy(tmp_host_alias, fsa[position].host_dsp_name);
-                  fsa[position].host_dsp_name[(int)fsa[position].toggle_pos] = fsa[position].host_toggle_str[(int)fsa[position].host_toggle];
-                  event_log(0L, EC_HOST, ET_MAN, EA_SWITCH_HOST,
-                            "%s%c%s%c%s -> %s",
-                            fsa[position].host_alias, SEPARATOR_CHAR,
-                            user, SEPARATOR_CHAR, tmp_host_alias,
-                            fsa[position].host_dsp_name);
-               }
-               else
-               {
-                  (void)fprintf(stderr,
-                                _("WARNING : Host %s cannot be switched!"),
-                                fsa[position].host_dsp_name);
                }
             }
 
