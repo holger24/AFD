@@ -727,10 +727,6 @@ create_db(FILE *udc_reply_fp, int write_fd)
             }
             NEXT(p_file);
          }
-         while (*p_file != '\0')
-         {
-            p_file++;
-         }
          db[i].fbl = p_file - db[i].files;
          lookup_file_mask_id(&db[i], db[i].fbl);
          if ((de[dir_counter].flag & ALL_FILES) && (db[i].no_of_files > 1))
