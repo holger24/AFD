@@ -94,6 +94,7 @@ extern int                        no_of_hosts,
                                   max_parallel_jobs_columns,
                                   line_height,
                                   led_width,
+                                  have_groups,
                                   hostname_display_length,
                                   bar_thickness_2,
                                   bar_thickness_3,
@@ -378,6 +379,11 @@ setup_window(char *font_name, int redraw_mainmenu)
          XtVaSetValues(sw[ROWS_W], XmNfontList, fontlist, NULL);
          XtVaSetValues(sw[STYLE_W], XmNfontList, fontlist, NULL);
          XtVaSetValues(sw[OTHER_W], XmNfontList, fontlist, NULL);
+         if (have_groups == YES)
+         {
+            XtVaSetValues(sw[OPEN_ALL_GROUPS_W], XmNfontList, fontlist, NULL);
+            XtVaSetValues(sw[CLOSE_ALL_GROUPS_W], XmNfontList, fontlist, NULL);
+         }
          XtVaSetValues(sw[SAVE_W], XmNfontList, fontlist, NULL);
 
          /* Set the font for the Help pulldown. */
@@ -422,6 +428,8 @@ setup_window(char *font_name, int redraw_mainmenu)
 
          /* Set the font for the Other options pulldown. */
          XtVaSetValues(oow[FORCE_SHIFT_SELECT_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(oow[AUTO_SAVE_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(oow[FRAMED_GROUPS_W], XmNfontList, fontlist, NULL);
       }
    }
 

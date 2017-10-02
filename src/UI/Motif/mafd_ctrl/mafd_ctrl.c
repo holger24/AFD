@@ -172,6 +172,7 @@ int                        amg_flag = NO,
                            fsa_fd = -1,
                            fsa_id,
                            ft_exposure_tv_line = 0,
+                           have_groups = NO,
                            hostname_display_length,
                            led_width,
                            *line_length = NULL,
@@ -287,8 +288,8 @@ static void                mafd_ctrl_exit(void),
                            create_pullright_style(Widget),
                            create_pullright_test(Widget),
                            eval_permissions(char *),
-                           init_menu_bar(Widget, Widget *, int),
-                           init_mafd_ctrl(int *, char **, char *, int *),
+                           init_menu_bar(Widget, Widget *),
+                           init_mafd_ctrl(int *, char **, char *),
                            init_popup_menu(Widget),
                            sig_bus(int),
                            sig_exit(int),
@@ -299,7 +300,6 @@ static void                mafd_ctrl_exit(void),
 int
 main(int argc, char *argv[])
 {
-   int           have_groups = NO;
    char          window_title[100];
    static String fallback_res[] =
                  {
@@ -334,7 +334,7 @@ main(int argc, char *argv[])
    CHECK_FOR_VERSION(argc, argv);
 
    /* Initialise global values. */
-   init_mafd_ctrl(&argc, argv, window_title, &have_groups);
+   init_mafd_ctrl(&argc, argv, window_title);
 
    /*
     * SSH wants to look at .Xauthority and with setuid flag
@@ -425,7 +425,7 @@ main(int argc, char *argv[])
 
    if (no_input == False)
    {
-      init_menu_bar(mainform_w, &menu_w, have_groups);
+      init_menu_bar(mainform_w, &menu_w);
    }
 
    /* Setup colors. */
@@ -640,7 +640,7 @@ main(int argc, char *argv[])
 
 /*+++++++++++++++++++++++++++ init_mafd_ctrl() ++++++++++++++++++++++++++*/
 static void
-init_mafd_ctrl(int *argc, char *argv[], char *window_title, int *have_groups)
+init_mafd_ctrl(int *argc, char *argv[], char *window_title)
 {
    int          fd,
                 gotcha,
@@ -1031,7 +1031,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title, int *have_groups)
       if (fsa[i].real_hostname[0][0] == GROUP_IDENTIFIER)
       {
          connect_data[i].type = GROUP_IDENTIFIER;
-         *have_groups = YES;
+         have_groups = YES;
       }
       else
       {
@@ -1363,7 +1363,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title, int *have_groups)
 
 /*+++++++++++++++++++++++++++ init_menu_bar() +++++++++++++++++++++++++++*/
 static void
-init_menu_bar(Widget mainform_w, Widget *menu_w, int have_groups)
+init_menu_bar(Widget mainform_w, Widget *menu_w)
 {
    Arg      args[MAXARGS];
    Cardinal argcount;

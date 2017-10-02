@@ -88,6 +88,7 @@ extern float                   max_bar_length;
 extern int                     no_of_afds,
                                line_length,
                                line_height,
+                               have_groups,
                                his_log_set,
                                log_angle,
                                no_of_columns,
@@ -224,6 +225,7 @@ setup_mon_window(char *font_name)
           (mcp.show_rlog != NO_PERMISSION) ||
           (mcp.show_tlog != NO_PERMISSION) ||
           (mcp.show_ilog != NO_PERMISSION) ||
+          (mcp.show_plog != NO_PERMISSION) ||
           (mcp.show_olog != NO_PERMISSION) ||
           (mcp.show_dlog != NO_PERMISSION) ||
           (mcp.show_queue != NO_PERMISSION) ||
@@ -253,6 +255,10 @@ setup_mon_window(char *font_name)
          if (mcp.show_ilog != NO_PERMISSION)
          {
             XtVaSetValues(vw[MON_INPUT_W], XmNfontList, fontlist, NULL);
+         }
+         if (mcp.show_plog != NO_PERMISSION)
+         {
+            XtVaSetValues(vw[MON_PRODUCTION_W], XmNfontList, fontlist, NULL);
          }
          if (mcp.show_olog != NO_PERMISSION)
          {
@@ -328,6 +334,11 @@ setup_mon_window(char *font_name)
       XtVaSetValues(sw[STYLE_W], XmNfontList, fontlist, NULL);
       XtVaSetValues(sw[HISTORY_W], XmNfontList, fontlist, NULL);
       XtVaSetValues(sw[MON_OTHER_W], XmNfontList, fontlist, NULL);
+      if (have_groups == YES)
+      {
+         XtVaSetValues(sw[MON_OPEN_ALL_GROUPS_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(sw[MON_CLOSE_ALL_GROUPS_W], XmNfontList, fontlist, NULL);
+      }
       XtVaSetValues(sw[MON_SAVE_W], XmNfontList, fontlist, NULL);
 
       /* Set the font for the Help pulldown. */
@@ -374,6 +385,8 @@ setup_mon_window(char *font_name)
 
       /* Set the font for the Other options pulldown. */
       XtVaSetValues(oow[FORCE_SHIFT_SELECT_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(oow[AUTO_SAVE_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(oow[FRAMED_GROUPS_W], XmNfontList, fontlist, NULL);
    }
 
    glyph_height       = font_struct->ascent + font_struct->descent;

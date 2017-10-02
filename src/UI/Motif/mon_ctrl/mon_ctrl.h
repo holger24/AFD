@@ -84,7 +84,9 @@
 /* Definitions for the Setup pulldown. */
 #define HISTORY_W                      3
 #define MON_OTHER_W                    4
-#define MON_SAVE_W                     5
+#define MON_OPEN_ALL_GROUPS_W          5
+#define MON_CLOSE_ALL_GROUPS_W         6
+#define MON_SAVE_W                     7
 
 /* History length definitions. */
 #define HIS_0                          "0"
