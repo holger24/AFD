@@ -728,9 +728,15 @@ get_afd_info(int msa_pos)
    }
    else
    {
+#ifdef WITH_AFD_MON
       (void)strcpy(afd.hostname, msa[msa_pos].hostname[(int)msa[msa_pos].afd_toggle]);
       (void)strcpy(afd.aliasname, msa[msa_pos].afd_alias);
       (void)strcpy(afd.version, msa[msa_pos].afd_version);
+#else
+      afd.hostname[0] = '\0';
+      afd.aliasname[0] = '\0';
+      afd.version[0] = '\0';
+#endif
       afd.hostname_length = (int)strlen(afd.hostname);
       afd.aliasname_length = (int)strlen(afd.aliasname);
    }

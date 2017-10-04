@@ -25,10 +25,14 @@
 #else
 # include <time.h>                    /* struct tm                       */
 #endif
-#include "mondefs.h"
+#ifdef WITH_AFD_MON
+# include "mondefs.h"
+#endif
+
 
 #ifndef WITH_AFD_MON
 # define MAX_AFDNAME_LENGTH 12
+# define MAX_VERSION_LENGTH 40
 #endif
 
 /* Definitions for evaluating log data (alda). */
