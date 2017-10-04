@@ -461,7 +461,7 @@ main(int argc, char *argv[])
 /*                          Criteria Box                                 */
 /*                          ------------                                 */
 /* Here more search parameters can be entered, such as: file name,       */
-/* length of the file, directory from which the file had its origion,    */
+/* size of the file, directory from which the file had its origion,      */
 /* recipient of the file.                                                */
 /*-----------------------------------------------------------------------*/
    /* Create managing widget for other criteria. */
