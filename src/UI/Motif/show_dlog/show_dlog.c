@@ -416,7 +416,7 @@ main(int argc, char *argv[])
 /*                          Criteria Box                                 */
 /*                          ------------                                 */
 /* Here more search parameters can be entered, such as: file name,       */
-/* length of the file, directory from which the file had its origion,    */
+/* size of the file, directory from which the file had its origion,      */
 /* recipient of the file.                                                */
 /*-----------------------------------------------------------------------*/
    /* Create managing widget for other criteria. */
@@ -433,7 +433,7 @@ main(int argc, char *argv[])
    argcount++;
    criteriabox_w = XmCreateForm(mainform_w, "criteriabox", args, argcount);
 
-   label_w = XtVaCreateManagedWidget("File name length:",
+   label_w = XtVaCreateManagedWidget("File name :",
                            xmLabelGadgetClass,  criteriabox_w,
                            XmNfontList,         fontlist,
                            XmNtopAttachment,    XmATTACH_POSITION,
@@ -443,7 +443,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     0,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    20,
+                           XmNrightPosition,    12,
                            XmNalignment,        XmALIGNMENT_END,
                            NULL);
    file_name_w = XtVaCreateManagedWidget("",
@@ -477,7 +477,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     0,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    20,
+                           XmNrightPosition,    12,
                            NULL);
    directory_w = XtVaCreateManagedWidget("",
                            xmTextWidgetClass,   criteriabox_w,
@@ -510,7 +510,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     62,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    77,
+                           XmNrightPosition,    73,
                            NULL);
    file_length_w = XtVaCreateManagedWidget("",
                            xmTextWidgetClass,   criteriabox_w,
@@ -543,7 +543,7 @@ main(int argc, char *argv[])
                            XmNleftAttachment,   XmATTACH_POSITION,
                            XmNleftPosition,     62,
                            XmNrightAttachment,  XmATTACH_POSITION,
-                           XmNrightPosition,    77,
+                           XmNrightPosition,    73,
                            NULL);
    recipient_w = XtVaCreateManagedWidget("",
                            xmTextWidgetClass,   criteriabox_w,
