@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2015 Holger Kiehl                                      
+## Copyright (C) 2001 - 2017 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ SUBDIRS              = filter
 AM_CPPFLAGS          = -I.. -I../init_afd -I../protocols -I../fd -I../log\
                        -I../afd_mon
 EXTRA_PROGRAMS       = als arg ahttp ascp bt change_name copy_file create_files\
-                       encode64 testlock url_check
+                       encode64 html_listing testlock url_check
 MAINTAINERCLEANFILES = Makefile.in
 CLEANFILES           = gmon.out core core.* $(EXTRA_PROGRAMS)
 als_SOURCES          = als.c
@@ -45,3 +45,5 @@ ascp_SOURCES         = ascp.c\
 ascp_LDADD           = ../protocols/libprotocols.a ../common/libafd.a
 url_check_SOURCES    = url_check.c
 url_check_LDADD      = ../common/libafd.a
+html_listing_SOURCES = html_listing.c
+html_listing_LDADD   = ../common/libafd.a
