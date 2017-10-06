@@ -70,10 +70,10 @@ DESCR__E_M3
 #include "fddefs.h"
 
 
-#define STORE_HTML_STRING(html_str, str_len, max_str_length)       \
+#define STORE_HTML_STRING(html_str, str_len, max_str_length, end_char)\
         {                                                          \
            str_len = 0;                                            \
-           while ((*ptr != '<') && (*ptr != '\n') && (*ptr != '\r') &&\
+           while ((*ptr != end_char) && (*ptr != '\n') && (*ptr != '\r') &&\
                   (*ptr != '\0') && (str_len < ((max_str_length) - 1)))\
            {                                                       \
               if (*ptr == '&')                                     \
@@ -136,6 +136,20 @@ DESCR__E_M3
                       {                                            \
                          (html_str)[str_len++] = 176;              \
                          ptr += 4;                                 \
+                         continue;                                 \
+                      }                                            \
+                 else if ((*ptr == 'g') && (*(ptr + 1) == 't') &&  \
+                          (*(ptr + 2) == ';'))                     \
+                      {                                            \
+                         (html_str)[str_len++] = '>';              \
+                         ptr += 3;                                 \
+                         continue;                                 \
+                      }                                            \
+                 else if ((*ptr == 'l') && (*(ptr + 1) == 't') &&  \
+                          (*(ptr + 2) == ';'))                     \
+                      {                                            \
+                         (html_str)[str_len++] = '<';              \
+                         ptr += 3;                                 \
                          continue;                                 \
                       }                                            \
                       else                                         \
@@ -1005,7 +1019,7 @@ eval_html_dir_list(char         *html_buffer,
                   {
                      /* Store file name. */
                      STORE_HTML_STRING(file_name, file_name_length,
-                                       MAX_FILENAME_LENGTH);
+                                       MAX_FILENAME_LENGTH, '<');
 
                      if (*ptr == '<')
                      {
@@ -1066,7 +1080,7 @@ eval_html_dir_list(char         *html_buffer,
 
                            /* Store size string. */
                            STORE_HTML_STRING(size_str, str_len,
-                                             MAX_FILENAME_LENGTH);
+                                             MAX_FILENAME_LENGTH, '<');
                            exact_size = convert_size(size_str,
                                                      &file_size);
                         }
@@ -1240,7 +1254,7 @@ eval_html_dir_list(char         *html_buffer,
                         {
                            /* Store file name. */
                            STORE_HTML_STRING(file_name, file_name_length,
-                                             MAX_FILENAME_LENGTH);
+                                             MAX_FILENAME_LENGTH, '<');
 
                            while (*ptr == '<')
                            {
@@ -1267,7 +1281,7 @@ eval_html_dir_list(char         *html_buffer,
 
                               /* Store date string. */
                               STORE_HTML_STRING(date_str, str_len,
-                                                MAX_FILENAME_LENGTH);
+                                                MAX_FILENAME_LENGTH, '<');
                               file_mtime = datestr2unixtime(date_str);
 
                               while (*ptr == '<')
@@ -1288,7 +1302,7 @@ eval_html_dir_list(char         *html_buffer,
                               {
                                  /* Store size string. */
                                  STORE_HTML_STRING(size_str, str_len,
-                                                   MAX_FILENAME_LENGTH);
+                                                   MAX_FILENAME_LENGTH, '<');
                                  exact_size = convert_size(size_str,
                                                            &file_size);
                               }
@@ -1357,8 +1371,8 @@ eval_html_dir_list(char         *html_buffer,
                }
             }
                  /* Pre type listing. */
-            else if (((*(ptr + 1) == 'p') && (*(ptr + 4) == '>')) ||
-                     ((*(ptr + 1) == 'a') && (*(ptr + 2) == ' ') &&
+            else if (((*(ptr + 1) == 'p') && (*(ptr + 4) == '>')) || /* <pre> */
+                     ((*(ptr + 1) == 'a') && (*(ptr + 2) == ' ') &&  /* <a href= */
                       (*(ptr + 3) == 'h') && (*(ptr + 7) == '=')))
                  {
                     if ((*(ptr + 1) == 'p') && (*(ptr + 4) == '>'))
@@ -1377,13 +1391,26 @@ eval_html_dir_list(char         *html_buffer,
 
                     while (*ptr == '<')
                     {
+                       file_name[0] = '\0';
                        while (*ptr == '<')
                        {
                           ptr++;
-                          while ((*ptr != '>') && (*ptr != '\n') &&
-                                 (*ptr != '\r') && (*ptr != '\0'))
+                          if ((*ptr == 'a') && (*(ptr + 1) == ' ') &&
+                           (*(ptr + 2) == 'h') && (*(ptr + 3) == 'r') &&
+                           (*(ptr + 4) == 'e') && (*(ptr + 5) == 'f') &&
+                           (*(ptr + 6) == '=') && (*(ptr + 7) == '"'))
                           {
-                             ptr++;
+                             ptr += 8;
+                             STORE_HTML_STRING(file_name, file_name_length,
+                                               MAX_FILENAME_LENGTH, '"');
+                          }
+                          else
+                          {
+                             while ((*ptr != '>') && (*ptr != '\n') &&
+                                    (*ptr != '\r') && (*ptr != '\0'))
+                             {
+                                ptr++;
+                             }
                           }
                           if (*ptr == '>')
                           {
@@ -1397,9 +1424,21 @@ eval_html_dir_list(char         *html_buffer,
 
                        if ((*ptr != '\n') && (*ptr != '\r') && (*ptr != '\0'))
                        {
-                          /* Store file name. */
-                          STORE_HTML_STRING(file_name, file_name_length,
-                                            MAX_FILENAME_LENGTH);
+                          if (file_name[0] == '\0')
+                          {
+                             /* Store file name. */
+                             STORE_HTML_STRING(file_name, file_name_length,
+                                               MAX_FILENAME_LENGTH, '<');
+                          }
+                          else
+                          {
+                             /* Away with the shown, maybe cut off filename. */
+                             while ((*ptr != '<') && (*ptr != '\n') &&
+                                    (*ptr != '\r') && (*ptr != '\0'))
+                             {
+                                ptr++;
+                             }
+                          }
 
                           if (*ptr == '<')
                           {
@@ -1460,7 +1499,7 @@ eval_html_dir_list(char         *html_buffer,
 
                                 /* Store size string. */
                                 STORE_HTML_STRING(size_str, str_len,
-                                                  MAX_FILENAME_LENGTH);
+                                                  MAX_FILENAME_LENGTH, '<');
                                 exact_size = convert_size(size_str,
                                                           &file_size);
                              }
@@ -1556,7 +1595,7 @@ eval_html_dir_list(char         *html_buffer,
                        {
                           /* Store file name. */
                           STORE_HTML_STRING(file_name, file_name_length,
-                                            MAX_FILENAME_LENGTH);
+                                            MAX_FILENAME_LENGTH, '<');
 
                           if (check_name(file_name, file_name_length,
                                          -1, -1) == YES)
