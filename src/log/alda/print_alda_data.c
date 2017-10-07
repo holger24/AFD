@@ -963,6 +963,20 @@ print_alda_data(void)
                         ptr++;
                         break;
 
+                     case 'N' : /* Full source name. */
+                        if (dlog.dir_id != 0)
+                        {
+                           int  full_source_length = 0;
+                           char full_source[MAX_PATH_LENGTH];
+
+                           get_full_source(dlog.dir_id, full_source,
+                                           &full_source_length);
+                           i += pri_string(right_side, max_length, full_source,
+                                           full_source_length, i);
+                        }
+                        ptr++;
+                        break;
+
                      case 'H' : /* Target alias name. */
                         i += pri_string(right_side, max_length, dlog.alias_name,
                                         dlog.alias_name_length, i);

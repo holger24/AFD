@@ -131,6 +131,7 @@ DESCR__S_M3
  **              %[X]DS<size char>      - file size of deleted file
  **              %[Z]DJ                 - job ID of deleted file
  **              %[Z]DI                 - input source ID
+ **              %[Y]DN                 - full source name
  **              %[Y]DH                 - target alias name
  **              -- AFD information --
  **              %[Y]Ah                 - AFD real hostname/IP
@@ -2233,6 +2234,7 @@ usage(char *progname)
    (void)fprintf(stderr, "              %%[X]DS<size char>      - file size of deleted file\n");
    (void)fprintf(stderr, "              %%[Z]DJ                 - job ID of deleted file\n");
    (void)fprintf(stderr, "              %%[Z]DI                 - input source ID\n");
+   (void)fprintf(stderr, "              %%[Y]DN                 - full source name\n");
    (void)fprintf(stderr, "              %%[Y]DH                 - target alias name\n");
 #endif
    (void)fprintf(stderr, "              -- AFD information --\n");
