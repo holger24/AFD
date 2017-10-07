@@ -1392,6 +1392,7 @@ eval_html_dir_list(char         *html_buffer,
                     while (*ptr == '<')
                     {
                        file_name[0] = '\0';
+                       file_name_length = 0;
                        while (*ptr == '<')
                        {
                           ptr++;
@@ -1516,11 +1517,11 @@ eval_html_dir_list(char         *html_buffer,
                              file_size = -1;
                           }
 
-                           (*list_length)++;
-                           if (file_size > 0)
-                           {
-                              (*list_size) += file_size;
-                           }
+                          (*list_length)++;
+                          if (file_size > 0)
+                          {
+                             (*list_size) += file_size;
+                          }
 
                           if (check_name(file_name, file_name_length,
                                          file_size, file_mtime) != YES)
