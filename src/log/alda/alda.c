@@ -358,7 +358,8 @@ main(int argc, char *argv[])
 
          for (i = 0; i < start_search_counter; i++)
          {
-            if (search_log_type & SEARCH_INPUT_LOG)
+            if ((search_log_type & SEARCH_INPUT_LOG) ||
+                (search_log_type & SEARCH_DELETE_LOG))
             {
                attach_adl(search_afd_start_alias[i]);
             }
@@ -374,7 +375,8 @@ main(int argc, char *argv[])
             search_log_type = tmp_search_log_type;
             dealloc_jid();
             detach_atd();
-            if (search_log_type & SEARCH_INPUT_LOG)
+            if ((search_log_type & SEARCH_INPUT_LOG) ||
+                (search_log_type & SEARCH_DELETE_LOG))
             {
                detach_adl();
             }
