@@ -297,79 +297,79 @@
 #endif
 #if defined (_INPUT_LOG) && defined (_OUTPUT_LOG) && defined (_DELETE_LOG)
 # define SEARCH_ALL_LOGS                    (SEARCH_INPUT_LOG | SEARCH_OUTPUT_LOG | SEARCH_DELETE_LOG)
-# define DEFAULT_OUTPUT_ALL_FORMAT          "%ITd %ITX|%-30IF|%11ISB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE|+|%DTd %DTX|%DR"
+# define DEFAULT_OUTPUT_ALL_FORMAT          "%ITd %ITX|%-12AH|%-30IF|%11ISB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE|+|%DTd %DTX|%DR"
 #endif
 #if defined (_INPUT_LOG) && defined (_DISTRIBUTION_LOG) && defined (_PRODUCTION_LOG) && defined (_OUTPUT_LOG) && defined (_DELETE_LOG)
 # undef  SEARCH_ALL_LOGS
 # define SEARCH_ALL_LOGS                    (SEARCH_INPUT_LOG | SEARCH_DISTRIBUTION_LOG | SEARCH_PRODUCTION_LOG | SEARCH_OUTPUT_LOG | SEARCH_DELETE_LOG)
 # undef  DEFAULT_OUTPUT_ALL_FORMAT
-# define DEFAULT_OUTPUT_ALL_FORMAT          "%ITd %ITX|%-30IF|%11ISB|+|%Ptd %PtX (%PDX)|%-30PF|%11PSB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE|+|%DTd %DTX|%DR"
+# define DEFAULT_OUTPUT_ALL_FORMAT          "%ITd %ITX|%-12AH|%-30IF|%11ISB|+|%Ptd %PtX (%PDX)|%-30PF|%11PSB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE|+|%DTd %DTX|%DR"
 #endif
 #if defined (_INPUT_LOG) && defined (_DISTRIBUTION_LOG) && defined (_PRODUCTION_LOG) && defined (_OUTPUT_LOG) && !defined (_DELETE_LOG)
 # undef  SEARCH_ALL_LOGS
 # define SEARCH_ALL_LOGS                    (SEARCH_INPUT_LOG | SEARCH_DISTRIBUTION_LOG | SEARCH_PRODUCTION_LOG | SEARCH_OUTPUT_LOG)
 # undef  DEFAULT_OUTPUT_ALL_FORMAT
-# define DEFAULT_OUTPUT_ALL_FORMAT          "%ITd %ITX|%-30IF|%11ISB|+|%Ptd %PtX (%PDX)|%-30PF|%11PSB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE"
+# define DEFAULT_OUTPUT_ALL_FORMAT          "%ITd %ITX|%-12AH|%-30IF|%11ISB|+|%Ptd %PtX (%PDX)|%-30PF|%11PSB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE"
 #endif
 #if defined (_INPUT_LOG) && defined (_DISTRIBUTION_LOG) && defined (_PRODUCTION_LOG) && !defined (_OUTPUT_LOG) && defined (_DELETE_LOG)
 # undef  SEARCH_ALL_LOGS
 # define SEARCH_ALL_LOGS                    (SEARCH_INPUT_LOG | SEARCH_DISTRIBUTION_LOG | SEARCH_PRODUCTION_LOG | SEARCH_DELETE_LOG)
 # undef  DEFAULT_OUTPUT_ALL_FORMAT
-# define DEFAULT_OUTPUT_ALL_FORMAT          "%ITd %ITX|%-30IF|%11ISB|+|%Ptd %PtX (%PDX)|%-30PF|%11PSB|+|%DTd %DTX|%DR"
+# define DEFAULT_OUTPUT_ALL_FORMAT          "%ITd %ITX|%-12AH|%-30IF|%11ISB|+|%Ptd %PtX (%PDX)|%-30PF|%11PSB|+|%DTd %DTX|%DR"
 #endif
 #if defined (_INPUT_LOG) && defined (_DISTRIBUTION_LOG) && !defined (_PRODUCTION_LOG) && defined (_OUTPUT_LOG) && defined (_DELETE_LOG)
 # undef  SEARCH_ALL_LOGS
 # define SEARCH_ALL_LOGS                    (SEARCH_INPUT_LOG | SEARCH_DISTRIBUTION_LOG | SEARCH_OUTPUT_LOG | SEARCH_DELETE_LOG)
 # undef  DEFAULT_OUTPUT_ALL_FORMAT
-# define DEFAULT_OUTPUT_ALL_FORMAT          "%ITd %ITX|%-30IF|%11ISB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE|+|%DTd %DTX|%DR"
+# define DEFAULT_OUTPUT_ALL_FORMAT          "%ITd %ITX|%-12AH|%-30IF|%11ISB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE|+|%DTd %DTX|%DR"
 #endif
 #if defined (_INPUT_LOG) && !defined (_DISTRIBUTION_LOG) && defined (_PRODUCTION_LOG) && defined (_OUTPUT_LOG) && defined (_DELETE_LOG)
 # undef  SEARCH_ALL_LOGS
 # define SEARCH_ALL_LOGS                    (SEARCH_INPUT_LOG | SEARCH_DISTRIBUTION_LOG | SEARCH_OUTPUT_LOG | SEARCH_DELETE_LOG)
 # undef  DEFAULT_OUTPUT_ALL_FORMAT
-# define DEFAULT_OUTPUT_ALL_FORMAT          "%ITd %ITX|%-30IF|%11ISB|+|%Ptd %PtX (%PDX)|%-30PF|%11PSB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE|+|%DTd %DTX|%DR"
+# define DEFAULT_OUTPUT_ALL_FORMAT          "%ITd %ITX|%-12AH|%-30IF|%11ISB|+|%Ptd %PtX (%PDX)|%-30PF|%11PSB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE|+|%DTd %DTX|%DR"
 #endif
 #if !defined (_INPUT_LOG) && defined (_DISTRIBUTION_LOG) && defined (_PRODUCTION_LOG) && defined (_OUTPUT_LOG) && defined (_DELETE_LOG)
 # undef  SEARCH_ALL_LOGS
 # define SEARCH_ALL_LOGS                    (SEARCH_PRODUCTION_LOG | SEARCH_OUTPUT_LOG | SEARCH_DELETE_LOG)
 # undef  DEFAULT_OUTPUT_ALL_FORMAT
-# define DEFAULT_OUTPUT_ALL_FORMAT          "%UTd %UTX|%-30UF|%11USB|+|%Ptd %PtX (%PDX)|%-30Pf|%-30PF|%11PSB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE|+|%DTd %DTX|%DR"
+# define DEFAULT_OUTPUT_ALL_FORMAT          "%UTd %UTX|%-12AH|%-30UF|%11USB|+|%Ptd %PtX (%PDX)|%-30Pf|%-30PF|%11PSB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE|+|%DTd %DTX|%DR"
 #endif
 #if !defined (_INPUT_LOG) && defined (_DISTRIBUTION_LOG) && !defined (_PRODUCTION_LOG) && defined (_OUTPUT_LOG) && defined (_DELETE_LOG)
 # undef  SEARCH_ALL_LOGS
 # define SEARCH_ALL_LOGS                    (SEARCH_DISTRIBUTION_LOG | SEARCH_OUTPUT_LOG | SEARCH_DELETE_LOG)
 # undef  DEFAULT_OUTPUT_ALL_FORMAT
-# define DEFAULT_OUTPUT_ALL_FORMAT          "%UTd %UTX|%-30UF|%11USB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE|%11OSB|%-30OF|+|%DTd %DTX|%-20DF|%20DSB|%DR"
+# define DEFAULT_OUTPUT_ALL_FORMAT          "%UTd %UTX|%-12AH|%-30UF|%11USB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE|%11OSB|%-30OF|+|%DTd %DTX|%-20DF|%20DSB|%DR"
 #endif
 #if !defined (_INPUT_LOG) && !defined (_DISTRIBUTION_LOG) && !defined (_PRODUCTION_LOG) && defined (_OUTPUT_LOG) && defined (_DELETE_LOG)
 # undef  SEARCH_ALL_LOGS
 # define SEARCH_ALL_LOGS                    (SEARCH_OUTPUT_LOG | SEARCH_DELETE_LOG)
 # undef  DEFAULT_OUTPUT_ALL_FORMAT
-# define DEFAULT_OUTPUT_ALL_FORMAT          "%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE|%11OSB|%-30OF|+|%DTd %DTX|%-20DF|%20DSB|%DR"
+# define DEFAULT_OUTPUT_ALL_FORMAT          "%OTd %OTX (%ODX)|%-12AH|%-6OP|%-8OH|%-30OE|%11OSB|%-30OF|+|%DTd %DTX|%-20DF|%20DSB|%DR"
 #endif
 #if !defined (_INPUT_LOG) && defined (_DISTRIBUTION_LOG) && defined (_PRODUCTION_LOG) && !defined (_OUTPUT_LOG) && defined (_DELETE_LOG)
 # undef  SEARCH_ALL_LOGS
 # define SEARCH_ALL_LOGS                    (SEARCH_DISTRIBUTION_LOG | SEARCH_PRODUCTION_LOG | SEARCH_DELETE_LOG)
 # undef  DEFAULT_OUTPUT_ALL_FORMAT
-# define DEFAULT_OUTPUT_ALL_FORMAT          "%UTd %UTX|%-30UF|%11USB|+|%Ptd %PtX (%PDX)|%-30Pf|%-30PF|%11PSB|+|%DTd %DTX|%-30DF|%11DSB|%DR"
+# define DEFAULT_OUTPUT_ALL_FORMAT          "%UTd %UTX|%-12AH|%-30UF|%11USB|+|%Ptd %PtX (%PDX)|%-30Pf|%-30PF|%11PSB|+|%DTd %DTX|%-30DF|%11DSB|%DR"
 #endif
 #if !defined (_INPUT_LOG) && !defined (_DISTRIBUTION_LOG) && defined (_PRODUCTION_LOG) && !defined (_OUTPUT_LOG) && defined (_DELETE_LOG)
 # undef  SEARCH_ALL_LOGS
 # define SEARCH_ALL_LOGS                    (SEARCH_PRODUCTION_LOG | SEARCH_DELETE_LOG)
 # undef  DEFAULT_OUTPUT_ALL_FORMAT
-# define DEFAULT_OUTPUT_ALL_FORMAT          "%Ptd %PtX (%PDX)|%-30Pf|%-30PF|%11PSB|+|%DTd %DTX|%-30DF|%11DSB|%DR"
+# define DEFAULT_OUTPUT_ALL_FORMAT          "%Ptd %PtX (%PDX)|%-12AH|%-30Pf|%-30PF|%11PSB|+|%DTd %DTX|%-30DF|%11DSB|%DR"
 #endif
 #if !defined (_INPUT_LOG) && defined (_DISTRIBUTION_LOG) && defined (_PRODUCTION_LOG) && defined (_OUTPUT_LOG) && !defined (_DELETE_LOG)
 # undef  SEARCH_ALL_LOGS
 # define SEARCH_ALL_LOGS                    (SEARCH_DISTRIBUTION_LOG | SEARCH_PRODUCTION_LOG | SEARCH_OUTPUT_LOG)
 # undef  DEFAULT_OUTPUT_ALL_FORMAT
-# define DEFAULT_OUTPUT_ALL_FORMAT          "%UTd %UTX|%-30UF|%11USB|+|%Ptd %PtH:%PtM:%PtS (%PDX)|%-30Pf|%-30PF|%11PSB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE"
+# define DEFAULT_OUTPUT_ALL_FORMAT          "%UTd %UTX|%-12AH|%-30UF|%11USB|+|%Ptd %PtH:%PtM:%PtS (%PDX)|%-30Pf|%-30PF|%11PSB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE"
 #endif
 #if !defined (_INPUT_LOG) && !defined (_DISTRIBUTION_LOG) && defined (_PRODUCTION_LOG) && defined (_OUTPUT_LOG) && !defined (_DELETE_LOG)
 # undef  SEARCH_ALL_LOGS
 # define SEARCH_ALL_LOGS                    (SEARCH_PRODUCTION_LOG | SEARCH_OUTPUT_LOG)
 # undef  DEFAULT_OUTPUT_ALL_FORMAT
-# define DEFAULT_OUTPUT_ALL_FORMAT          "%Ptd %PtH:%PtM:%PtS (%PDX)|%-30Pf|%-30PF|%11PSB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE"
+# define DEFAULT_OUTPUT_ALL_FORMAT          "%Ptd %PtH:%PtM:%PtS (%PDX)|%-12AH|%-30Pf|%-30PF|%11PSB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE"
 #endif
 #if defined (_INPUT_LOG) && !defined (_DISTRIBUTION_LOG) && !defined (_PRODUCTION_LOG) && !defined (_OUTPUT_LOG) && !defined (_DELETE_LOG)
 # undef  SEARCH_ALL_LOGS
