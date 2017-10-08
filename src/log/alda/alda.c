@@ -397,6 +397,25 @@ main(int argc, char *argv[])
             }
 # endif
 # ifdef _DISTRIBUTION_LOG
+            if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
+            {
+               if (ucache != NULL)
+               {
+                  free(ucache);
+                  ucache = NULL;
+               }
+               if (upl != NULL)
+               {
+                  int i;
+
+                  for (i = 0; i < distribution.max_log_files; i++)
+                  {
+                     free(upl[i]);
+                  }
+                  free(upl);
+                  upl = NULL;
+               }
+            }
             if (distribution.fp != NULL)
             {
                if (fclose(distribution.fp) == EOF)
@@ -411,6 +430,25 @@ main(int argc, char *argv[])
             }
 # endif
 # ifdef _PRODUCTION_LOG
+            if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
+            {
+               if (pcache != NULL)
+               {
+                  free(pcache);
+                  pcache = NULL;
+               }
+               if (ppl != NULL)
+               {
+                  int i;
+
+                  for (i = 0; i < production.max_log_files; i++)
+                  {
+                     free(ppl[i]);
+                  }
+                  free(ppl);
+                  ppl = NULL;
+               }
+            }
             if (production.fp != NULL)
             {
                if (fclose(production.fp) == EOF)
@@ -425,6 +463,25 @@ main(int argc, char *argv[])
             }
 # endif
 # ifdef _OUTPUT_LOG
+            if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
+            {
+               if (ocache != NULL)
+               {
+                  free(ocache);
+                  ocache = NULL;
+               }
+               if (opl != NULL)
+               {
+                  int i;
+
+                  for (i = 0; i < output.max_log_files; i++)
+                  {
+                     free(opl[i]);
+                  }
+                  free(opl);
+                  opl = NULL;
+               }
+            }
             if (output.fp != NULL)
             {
                if (fclose(output.fp) == EOF)
@@ -439,6 +496,25 @@ main(int argc, char *argv[])
             }
 # endif
 # ifdef _DELETE_LOG
+            if ((trace_mode == ON) && (mode & ALDA_FORWARD_MODE))
+            {
+               if (dcache != NULL)
+               {
+                  free(dcache);
+                  dcache = NULL;
+               }
+               if (dpl != NULL)
+               {
+                  int i;
+
+                  for (i = 0; i < delete.max_log_files; i++)
+                  {
+                     free(dpl[i]);
+                  }
+                  free(dpl);
+                  dpl = NULL;
+               }
+            }
             if (delete.fp != NULL)
             {
                if (fclose(delete.fp) == EOF)
