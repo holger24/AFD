@@ -1336,7 +1336,7 @@ typedef unsigned long       u_long_64;
 /* Group identifier for mails. */
 #define MAIL_GROUP_IDENTIFIER        '$'
 
-/* Group identifier for either file or directory groups. */
+/* Group identifier for either recipient, file or directory groups. */
 #define GROUP_SIGN                   '&'
 
 /* Length of log date in log files. */
