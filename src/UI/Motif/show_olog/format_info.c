@@ -516,7 +516,7 @@ format_receive_info(char **text, int with_alda_data)
    }
    if (id.trans_time[0] != '\0')
    {
-      count = sizeof("Trans time  : ") - 1 + sizeof("Trans time : ") + strlen((char *)id.trans_time) + sizeof(" sec") + 1;
+      count = sizeof("Trans time  : ") - 1 + sizeof("Trans time  : ") + strlen((char *)id.trans_time) + sizeof(" sec") + 1;
       length += count;
       if (count > max_x)
       {
@@ -987,7 +987,7 @@ format_receive_info(char **text, int with_alda_data)
    length += sprintf(*text + length, "Receive time: %s", ctime(&id.date_send));
    if (id.trans_time[0] != '\0')
    {
-      length += sprintf(*text + length, "Trans time : %s sec\n", id.trans_time);
+      length += sprintf(*text + length, "Trans time  : %s sec\n", id.trans_time);
    }
    if (id.dir[0] != '\0')
    {
