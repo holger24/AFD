@@ -1801,7 +1801,14 @@ check_dirs(char *work_dir)
       exit(INCORRECT);
    }
    ptr += GROUP_NAME_DIR_LENGTH;
-   (void)strcpy(ptr, DIR_GROUP_NAME);
+   (void)strcpy(ptr, SOURCE_GROUP_NAME);
+   if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
+   {
+      (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+   (void)strcpy(ptr, RECIPIENT_GROUP_NAME);
    if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
    {
       (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);

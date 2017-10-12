@@ -89,7 +89,7 @@ init_recipient_group_name(char *location,
    {
       (void)snprintf(group_file, MAX_PATH_LENGTH, "%s%s%s%s/%s",
                      p_work_dir, ETC_DIR, GROUP_NAME_DIR,
-                     DIR_GROUP_NAME, group_name);
+                     RECIPIENT_GROUP_NAME, group_name);
    }
    else
    {

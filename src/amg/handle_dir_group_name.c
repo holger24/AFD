@@ -1,7 +1,7 @@
 /*
  *  handle_dir_group_name.c - Part of AFD, an automatic file distribution
  *                            program.
- *  Copyright (c) 2014 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -92,7 +92,7 @@ init_dir_group_name(char *location,
    {
       (void)snprintf(group_file, MAX_PATH_LENGTH, "%s%s%s%s/%s",
                      p_work_dir, ETC_DIR, GROUP_NAME_DIR,
-                     DIR_GROUP_NAME, group_name);
+                     SOURCE_GROUP_NAME, group_name);
    }
    else
    {

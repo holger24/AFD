@@ -1744,7 +1744,8 @@ typedef unsigned long       u_long_64;
 #define MAIL_HEADER_DIR            "/mail_header"
 #define GROUP_NAME_DIR             "/groups"
 #define GROUP_NAME_DIR_LENGTH      (sizeof(GROUP_NAME_DIR) - 1)
-#define DIR_GROUP_NAME             "/directory"
+#define SOURCE_GROUP_NAME          "/source"
+#define RECIPIENT_GROUP_NAME       "/recipient"
 #define FILE_GROUP_NAME            "/files"
 #define INCOMING_DIR               "/incoming"
 #define INCOMING_DIR_LENGTH        (sizeof(INCOMING_DIR) - 1)
