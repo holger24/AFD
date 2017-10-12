@@ -4357,33 +4357,7 @@ rename_ow(int          overwrite,
    {
       if (rename_overwrite == YES)
       {
-#ifdef _DELETE_LOG
-         size_t dl_real_size;
-#endif
-
          *file_size -= rename_overwrite_size;
-#ifdef _DELETE_LOG
-         (void)strcpy(dl.file_name, p_newname);
-         (void)snprintf(dl.host_name, MAX_HOSTNAME_LENGTH + 4 + 1, "%-*s %03x",
-                        MAX_HOSTNAME_LENGTH,
-                        db[position].host_alias, RENAME_OVERWRITE);
-         *dl.file_size = rename_overwrite_size;
-         *dl.job_id = db[position].job_id;
-         *dl.dir_id = db[position].dir_id;
-         *dl.input_time = creation_time;
-         *dl.split_job_counter = split_job_counter;
-         *dl.unique_number = unique_number;
-         *dl.file_name_length = strlen(p_newname);
-         dl_real_size = *dl.file_name_length + dl.size +
-                        snprintf((dl.file_name + *dl.file_name_length + 1),
-                                 MAX_FILENAME_LENGTH + 1,
-                                 "%s", DIR_CHECK);
-         if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
-         {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "write() error : %s", strerror(errno));
-         }
-#endif
       }
       (void)strcpy(new_name_buffer + (p_file_name - file_name_buffer),
                    p_newname);
@@ -4447,47 +4421,76 @@ cleanup_rename_ow(int          file_counter,
                   char         **new_name_buffer,
                   off_t        **new_size_buffer)
 {
-   int  files_deleted = 0,
-        files_to_send,
-        i;
-   char *p_file_name,
-        *p_new_name;
+   int    files_deleted = 0,
+          files_to_send,
+          i;
+#ifdef _DELETE_LOG
+   size_t dl_real_size;
+#endif
+   char   *p_file_name,
+          *p_new_name;
 
    p_new_name = *new_name_buffer;
-#ifdef _PRODUCTION_LOG
+#if defined _PRODUCTION_LOG || defined _DELETE_LOG
    p_file_name = file_name_buffer;
    for (i = 0; i < file_counter; i++)
    {
       if (*p_new_name == '\0')
       {
+# ifdef _PRODUCTION_LOG
          production_log(creation_time, 1, 0, unique_number, split_job_counter,
                         db[position].job_id, db[position].dir_id, 0.0, 0L, 0L,
-# if SIZEOF_OFF_T == 4
+#  if SIZEOF_OFF_T == 4
                         "%s%c%lx%c%s%c%c0%c%s",
-# else
+#  else
                         "%s%c%llx%c%s%c%c0%c%s",
-# endif
+#  endif
                         p_file_name, SEPARATOR_CHAR,
                         (pri_off_t)file_size_buffer[i], SEPARATOR_CHAR,
                         p_new_name, SEPARATOR_CHAR,
                         SEPARATOR_CHAR, SEPARATOR_CHAR, p_option);
+# endif
+# ifdef _DELETE_LOG
+         (void)strcpy(dl.file_name, p_file_name);
+         (void)snprintf(dl.host_name, MAX_HOSTNAME_LENGTH + 4 + 1, "%-*s %03x",
+                        MAX_HOSTNAME_LENGTH,
+                        db[position].host_alias, RENAME_OVERWRITE);
+         *dl.file_size = file_size_buffer[i];
+         *dl.job_id = db[position].job_id;
+         *dl.dir_id = db[position].dir_id;
+         *dl.input_time = creation_time;
+         *dl.split_job_counter = split_job_counter;
+         *dl.unique_number = unique_number;
+         *dl.file_name_length = strlen(p_file_name);
+         dl_real_size = *dl.file_name_length + dl.size +
+                        snprintf((dl.file_name + *dl.file_name_length + 1),
+                                 MAX_FILENAME_LENGTH + 1,
+                                 "%s", DIR_CHECK);
+         if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "write() error : %s", strerror(errno));
+         }
+# endif
          files_deleted++;
       }
+# ifdef _PRODUCTION_LOG
       else
       {
          production_log(creation_time, 1, 1, unique_number, split_job_counter,
                         db[position].job_id, db[position].dir_id, 0.0, 0L, 0L,
-# if SIZEOF_OFF_T == 4
+#  if SIZEOF_OFF_T == 4
                         "%s%c%lx%c%s%c%lx%c0%c%s",
-# else
+#  else
                         "%s%c%llx%c%s%c%llx%c0%c%s",
-# endif
+#  endif
                         p_file_name, SEPARATOR_CHAR,
                         (pri_off_t)file_size_buffer[i], SEPARATOR_CHAR,
                         p_new_name, SEPARATOR_CHAR,
                         (pri_off_t)(*new_size_buffer)[i], SEPARATOR_CHAR,
                         SEPARATOR_CHAR, p_option);
       }
+# endif
       p_new_name += MAX_FILENAME_LENGTH;
       p_file_name += MAX_FILENAME_LENGTH;
    }
