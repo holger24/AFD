@@ -1148,6 +1148,7 @@ typedef unsigned long       u_long_64;
 #define AFD_USER_FILE                    "/afd.users"
 #define AFD_USER_FILE_LENGTH             (sizeof(AFD_USER_FILE) - 1)
 #define GROUP_FILE                       "/group.list"
+#define GROUP_FILE_LENGTH                (sizeof(GROUP_FILE) - 1)
 #define ALIAS_NAME_FILE                  "/alias.list"
 #define AFD_LOCAL_INTERFACE_FILE         "/local_interface.list"
 #ifndef XOR_KEY
@@ -1709,55 +1710,57 @@ typedef unsigned long       u_long_64;
 #define DIR_INFO_ACTION            6
 
 /* Directory definitions. */
-#define AFD_MSG_DIR                "/messages"
+#define AFD_MSG_DIR                 "/messages"
 #ifdef WITH_ONETIME
-# define AFD_ONETIME_DIR           "/onetime"
-# define AFD_ONETIME_DIR_LENGTH    (sizeof(AFD_ONETIME_DIR) - 1)
-# define AFD_LIST_DIR              "/list"
-# define AFD_CONFIG_DIR            "/config"
+# define AFD_ONETIME_DIR            "/onetime"
+# define AFD_ONETIME_DIR_LENGTH     (sizeof(AFD_ONETIME_DIR) - 1)
+# define AFD_LIST_DIR               "/list"
+# define AFD_CONFIG_DIR             "/config"
 # define AFD_CONFIG_DIR_LENGTH      (sizeof(AFD_CONFIG_DIR) - 1)
 #endif
-#define AFD_FILE_DIR               "/files"
-#define AFD_FILE_DIR_LENGTH        (sizeof(AFD_FILE_DIR) - 1)
-#define AFD_TMP_DIR                "/pool"
-#define AFD_TMP_DIR_LENGTH         (sizeof(AFD_TMP_DIR) - 1)
-#define AFD_TIME_DIR               "/time"
-#define AFD_TIME_DIR_LENGTH        (sizeof(AFD_TIME_DIR) - 1)
-#define AFD_ARCHIVE_DIR            "/archive"
-#define AFD_ARCHIVE_DIR_LENGTH     (sizeof(AFD_ARCHIVE_DIR) - 1)
-#define FIFO_DIR                   "/fifodir"
-#define LOG_DIR                    "/log"
-#define LOG_DIR_LENGTH             (sizeof(LOG_DIR) - 1)
-#define RLOG_DIR                   "/rlog"  /* Only used for afd_mon. */
-#define ETC_DIR                    "/etc"
-#define ETC_DIR_LENGTH             (sizeof(ETC_DIR) - 1)
-#define ACTION_DIR                 "/action"
-#define ACTION_DIR_LENGTH          (sizeof(ACTION_DIR) - 1)
-#define ACTION_TARGET_DIR          "/target"
-#define ACTION_TARGET_DIR_LENGTH   (sizeof(ACTION_TARGET_DIR) - 1)
-#define ACTION_SOURCE_DIR          "/source"
-#define ACTION_SOURCE_DIR_LENGTH   (sizeof(ACTION_SOURCE_DIR) - 1)
-#define ACTION_ERROR_DIR           "/error"
-#define ACTION_WARN_DIR            "/warn"
-#define ACTION_INFO_DIR            "/info"
-#define ACTION_SUCCESS_DIR         "/success"
-#define MAIL_HEADER_DIR            "/mail_header"
-#define GROUP_NAME_DIR             "/groups"
-#define GROUP_NAME_DIR_LENGTH      (sizeof(GROUP_NAME_DIR) - 1)
-#define SOURCE_GROUP_NAME          "/source"
-#define RECIPIENT_GROUP_NAME       "/recipient"
-#define FILE_GROUP_NAME            "/files"
-#define INCOMING_DIR               "/incoming"
-#define INCOMING_DIR_LENGTH        (sizeof(INCOMING_DIR) - 1)
-#define OUTGOING_DIR               "/outgoing"
-#define OUTGOING_DIR_LENGTH        (sizeof(OUTGOING_DIR) - 1)
-#define STORE_DIR                  "/store"
+#define AFD_FILE_DIR                "/files"
+#define AFD_FILE_DIR_LENGTH         (sizeof(AFD_FILE_DIR) - 1)
+#define AFD_TMP_DIR                 "/pool"
+#define AFD_TMP_DIR_LENGTH          (sizeof(AFD_TMP_DIR) - 1)
+#define AFD_TIME_DIR                "/time"
+#define AFD_TIME_DIR_LENGTH         (sizeof(AFD_TIME_DIR) - 1)
+#define AFD_ARCHIVE_DIR             "/archive"
+#define AFD_ARCHIVE_DIR_LENGTH      (sizeof(AFD_ARCHIVE_DIR) - 1)
+#define FIFO_DIR                    "/fifodir"
+#define LOG_DIR                     "/log"
+#define LOG_DIR_LENGTH              (sizeof(LOG_DIR) - 1)
+#define RLOG_DIR                    "/rlog"  /* Only used for afd_mon. */
+#define ETC_DIR                     "/etc"
+#define ETC_DIR_LENGTH              (sizeof(ETC_DIR) - 1)
+#define ACTION_DIR                  "/action"
+#define ACTION_DIR_LENGTH           (sizeof(ACTION_DIR) - 1)
+#define ACTION_TARGET_DIR           "/target"
+#define ACTION_TARGET_DIR_LENGTH    (sizeof(ACTION_TARGET_DIR) - 1)
+#define ACTION_SOURCE_DIR           "/source"
+#define ACTION_SOURCE_DIR_LENGTH    (sizeof(ACTION_SOURCE_DIR) - 1)
+#define ACTION_ERROR_DIR            "/error"
+#define ACTION_WARN_DIR             "/warn"
+#define ACTION_INFO_DIR             "/info"
+#define ACTION_SUCCESS_DIR          "/success"
+#define MAIL_HEADER_DIR             "/mail_header"
+#define GROUP_NAME_DIR              "/groups"
+#define GROUP_NAME_DIR_LENGTH       (sizeof(GROUP_NAME_DIR) - 1)
+#define SOURCE_GROUP_NAME           "/source"
+#define SOURCE_GROUP_NAME_LENGTH    (sizeof(SOURCE_GROUP_NAME) - 1)
+#define RECIPIENT_GROUP_NAME        "/recipient"
+#define RECIPIENT_GROUP_NAME_LENGTH (sizeof(RECIPIENT_GROUP_NAME) - 1)
+#define FILE_GROUP_NAME             "/files"
+#define INCOMING_DIR                "/incoming"
+#define INCOMING_DIR_LENGTH         (sizeof(INCOMING_DIR) - 1)
+#define OUTGOING_DIR                "/outgoing"
+#define OUTGOING_DIR_LENGTH         (sizeof(OUTGOING_DIR) - 1)
+#define STORE_DIR                   "/store"
 #ifdef WITH_DUP_CHECK
-# define CRC_DIR                   "/crc"
+# define CRC_DIR                    "/crc"
 #endif
-#define FILE_MASK_DIR              "/file_mask"
-#define LS_DATA_DIR                "/ls_data"
-#define LS_DATA_DIR_LENGTH         (sizeof(LS_DATA_DIR) - 1)
+#define FILE_MASK_DIR               "/file_mask"
+#define LS_DATA_DIR                 "/ls_data"
+#define LS_DATA_DIR_LENGTH          (sizeof(LS_DATA_DIR) - 1)
 
 /*-----------------------------------------------------------------------*/
 /* If definitions are added or removed, update init_afd/afd.c!           */

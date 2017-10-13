@@ -33,6 +33,7 @@ DESCR__S_M3
  **                         size_t           old_size,
  **                         int              rescan_time,
  **                         int              max_no_proc,
+ **                         int              *using_groups,
  **                         unsigned int     *warn_counter,
  **                         FILE             *debug_fp,
  **                         pid_t            udc_pid,
@@ -102,6 +103,7 @@ reread_dir_config(int              dc_changed,
                   size_t           old_size,
                   int              rescan_time,
                   int              max_no_proc,
+                  int              *using_groups,
                   unsigned int     *warn_counter,
                   FILE             *debug_fp,
                   pid_t            udc_pid,
@@ -236,9 +238,9 @@ reread_dir_config(int              dc_changed,
             hl[i].protocol = 0;
          }
 #ifdef WITH_ONETIME
-         if (eval_dir_config(db_size, warn_counter, debug_fp, NO) < 0)
+         if (eval_dir_config(db_size, warn_counter, debug_fp, NO, using_groups) < 0)
 #else
-         if (eval_dir_config(db_size, warn_counter, debug_fp) < 0)
+         if (eval_dir_config(db_size, warn_counter, debug_fp, using_groups) < 0)
 #endif
          {
             update_db_log(ERROR_SIGN, __FILE__, __LINE__, debug_fp, NULL,

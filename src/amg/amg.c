@@ -215,7 +215,8 @@ main(int argc, char *argv[])
                     status = 0,
                     fd,
                     rescan_time = DEFAULT_RESCAN_TIME,
-                    max_no_proc = MAX_NO_OF_DIR_CHECKS;
+                    max_no_proc = MAX_NO_OF_DIR_CHECKS,
+                    using_groups = NO;
    time_t           hc_old_time;
    size_t           fifo_size;
    char             *fifo_buffer,
@@ -717,15 +718,19 @@ main(int argc, char *argv[])
 
       /* Evaluate database. */
 #ifdef WITH_ONETIME
-      if (eval_dir_config(db_size, NULL, NULL, NO) != SUCCESS)
+      if (eval_dir_config(db_size, NULL, NULL, NO, &using_groups) != SUCCESS)
 #else
-      if (eval_dir_config(db_size, NULL, NULL) != SUCCESS)
+      if (eval_dir_config(db_size, NULL, NULL, &using_groups) != SUCCESS)
 #endif
       {
          system_log(FATAL_SIGN, __FILE__, __LINE__,
                     _("Could not find any valid entries in database %s"),
                     (no_of_dir_configs > 1) ? "files" : "file");
          exit(INCORRECT);
+      }
+      if (using_groups == YES)
+      {
+         init_group_list_mtime();
       }
 
       /*
@@ -950,6 +955,10 @@ main(int argc, char *argv[])
                      my_usleep(100000L);
                   }
                }
+            }
+            if (using_groups == YES)
+            {
+               free_group_list_mtime();
             }
 
             stop_flag = 1;
@@ -1427,11 +1436,21 @@ main(int argc, char *argv[])
                                       }
                                    }
                                 }
+
+                                if (using_groups == YES)
+                                {
+                                   if (check_group_list_mtime() == YES)
+                                   {
+                                      dc_changed = YES;
+                                   }
+                                }
+
                                 if (db_size > 0)
                                 {
                                    if (dc_changed == YES)
                                    {
                                       int              old_no_of_hosts,
+                                                       old_using_groups = using_groups,
                                                        rewrite_host_config = NO;
                                       size_t           old_size = 0;
                                       struct host_list *old_hl = NULL;
@@ -1460,12 +1479,23 @@ main(int argc, char *argv[])
                                                                     old_size,
                                                                     rescan_time,
                                                                     max_no_proc,
+                                                                    &using_groups,
                                                                     &dc_warn_counter,
                                                                     uc_reply_fp,
                                                                     ret_pid,
                                                                     old_hl);
                                       event_log(0L, EC_GLOB, ET_MAN, EA_REREAD_DIR_CONFIG,
                                                 "with %d warnings", dc_warn_counter);
+                                      if ((old_using_groups == YES) &&
+                                          (using_groups == NO))
+                                      {
+                                         free_group_list_mtime();
+                                      }
+                                      else if ((old_using_groups == NO) &&
+                                               (using_groups == YES))
+                                           {
+                                              init_group_list_mtime();
+                                           }
                                    }
                                    else
                                    {

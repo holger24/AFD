@@ -28,7 +28,8 @@ DESCR__S_M3
  ** SYNOPSIS
  **   int eval_dir_config(off_t        db_size,
  **                       unsigend int *warn_counter,
- **                       FILE         *debug_fp)
+ **                       FILE         *debug_fp,
+ **                       int          *using_groups)
  **
  ** DESCRIPTION
  **   The function eval_dir_config() reads the DIR_CONFIG file of the
@@ -76,7 +77,8 @@ DESCR__S_M3
  **
  ** RETURN VALUES
  **   Returns NO_VALID_ENTRIES when it fails to find any valid entries
- **   in any database file (DIR_CONFIG's). Otherwise SUCCESS is returned.
+ **   in any database file (DIR_CONFIG's). Otherwise SUCCESS is returned,
+ **   or SUCCESS_WITH_GROUPS when groups are being used.
  **
  ** AUTHOR
  **   H.Kiehl
@@ -256,11 +258,13 @@ static char                   *posi_identifier(char *, char *, size_t);
 
 /*########################## eval_dir_config() ##########################*/
 int
+eval_dir_config(off_t        db_size,
+                unsigned int *warn_counter,
+                FILE         *debug_fp,
 #ifdef WITH_ONETIME
-eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp, int onetime)
-#else
-eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp)
+                int          onetime
 #endif
+                int          *using_groups)
 {
    unsigned int          error_mask;
    int                   dcd = 0,             /* DIR_CONFIG's done.       */
@@ -643,6 +647,7 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp)
                           group_name[j] = '\0';
                           dir->location[i] = *ptr;
                           ptr++; i++;
+                          *using_groups = YES;
                        }
                        else
                        {
@@ -1245,6 +1250,7 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp)
                                               dcl[dcd].dir_config_file,
                                               database, search_ptr,
                                               warn_counter, debug_fp);
+                           *using_groups = YES;
                         }
                         else
                         {
@@ -1548,6 +1554,7 @@ eval_dir_config(off_t db_size, unsigned int *warn_counter, FILE *debug_fp)
                                    if (*ptr == close_bracket)
                                    {
                                       group_name[j] = '\0';
+                                      *using_groups = YES;
                                    }
                                    else
                                    {
