@@ -43,7 +43,13 @@ DESCR__S_M3
  **   in the FSA.
  **
  ** RETURN VALUES
- **   None.
+ **   Returns INCORRECT when an error is encountered. Otherwise the
+ **   following status value can be returned:
+ **        DIR_CONFIG_EMPTY
+ **        DIR_CONFIG_NO_VALID_DATA
+ **        DIR_CONFIG_UPDATED_DC_PROBLEMS
+ **        DIR_CONFIG_UPDATED
+ **        NO_CHANGE_IN_DIR_CONFIG
  **
  ** AUTHOR
  **   H.Kiehl
