@@ -1119,6 +1119,7 @@ main(int argc, char *argv[])
                 ((fra[de[i].fra_pos].dir_flag & DIR_STOPPED) == 0) &&
 # ifdef WITH_INOTIFY
                 ((fra[de[i].fra_pos].dir_flag & INOTIFY_NEEDS_SCAN) ||
+                 (fra[de[i].fra_pos].force_reread == YES) ||
                  (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) == 0) &&
                   ((fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) == 0) &&
                   ((fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) == 0))) &&
@@ -1204,6 +1205,7 @@ main(int argc, char *argv[])
                 ((fra[de[i].fra_pos].dir_flag & DIR_STOPPED) == 0) &&
 # ifdef WITH_INOTIFY
                 ((fra[de[i].fra_pos].dir_flag & INOTIFY_NEEDS_SCAN) ||
+                 (fra[de[i].fra_pos].force_reread == YES) ||
                  (fra[de[i].fra_pos].dir_flag & FILES_IN_QUEUE) ||
                  (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) == 0) &&
                   ((fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) == 0) &&
