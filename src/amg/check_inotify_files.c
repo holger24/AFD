@@ -175,21 +175,21 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
             diff_time = current_time - stat_buf.st_mtime;
          }
 
-         if (((fra[p_de->fra_pos].ignore_size == -1) ||
-              ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_EQUAL) &&
-               (fra[p_de->fra_pos].ignore_size != stat_buf.st_size)) ||
-              ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_LESS_THEN) &&
-               (fra[p_de->fra_pos].ignore_size < stat_buf.st_size)) ||
-              ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_GREATER_THEN) &&
-               (fra[p_de->fra_pos].ignore_size > stat_buf.st_size))) &&
-             ((fra[p_de->fra_pos].ignore_file_time == 0) ||
-              (fra[p_de->fra_pos].fsa_pos != -1) || /* Time+size check only local dirs! */
+         if ((fra[p_de->fra_pos].fsa_pos != -1) || /* Time+size check only local dirs! */
+             (((fra[p_de->fra_pos].ignore_size == -1) ||
+               ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_EQUAL) &&
+                (fra[p_de->fra_pos].ignore_size != stat_buf.st_size)) ||
+               ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_LESS_THEN) &&
+                (fra[p_de->fra_pos].ignore_size < stat_buf.st_size)) ||
+               ((fra[p_de->fra_pos].gt_lt_sign & ISIZE_GREATER_THEN) &&
+                (fra[p_de->fra_pos].ignore_size > stat_buf.st_size))) &&
+              ((fra[p_de->fra_pos].ignore_file_time == 0) ||
                ((fra[p_de->fra_pos].gt_lt_sign & IFTIME_EQUAL) &&
                 (fra[p_de->fra_pos].ignore_file_time != diff_time)) ||
-              ((fra[p_de->fra_pos].gt_lt_sign & IFTIME_LESS_THEN) &&
-               (fra[p_de->fra_pos].ignore_file_time < diff_time)) ||
-              ((fra[p_de->fra_pos].gt_lt_sign & IFTIME_GREATER_THEN) &&
-               (fra[p_de->fra_pos].ignore_file_time > diff_time))))
+               ((fra[p_de->fra_pos].gt_lt_sign & IFTIME_LESS_THEN) &&
+                (fra[p_de->fra_pos].ignore_file_time < diff_time)) ||
+               ((fra[p_de->fra_pos].gt_lt_sign & IFTIME_GREATER_THEN) &&
+                (fra[p_de->fra_pos].ignore_file_time > diff_time)))))
          {
 #ifdef _POSIX_SAVED_IDS
             if ((stat_buf.st_mode & S_IROTH) ||
