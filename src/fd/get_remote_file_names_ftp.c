@@ -26,8 +26,9 @@ DESCR__S_M3
  **   get_remote_file_names_ftp - retrieves filename, size and date
  **
  ** SYNOPSIS
- **   int get_remote_file_names_ftp(off_t *file_size_to_retrieve,
- **                                 int   *more_files_in_list)
+ **   int get_remote_file_names_ftp(off_t        *file_size_to_retrieve,
+ **                                 int          *more_files_in_list,
+ **                                 unsigned int ftp_options)
  **
  ** DESCRIPTION
  **
@@ -47,7 +48,10 @@ DESCR__S_M3
  **                        a NLST command.
  **   22.01.2017 H.Kiehl   Ensure we do not return the -1 if we do not
  **                        get the size.
- **   03.09.2017 H.Kiehl Added option to get only appended part.
+ **   03.09.2017 H.Kiehl   Added option to get only appended part.
+ **   14.10.2017 H.Kiehl   If we know via FEAT that SIZE and MDTM are
+ **                        supported, lets not assume for the rest of the
+ **                        session that this command is not supported.
  **
  */
 DESCR__E_M3
@@ -88,12 +92,15 @@ static int                        check_date = YES,
 static time_t                     current_time;
 
 /* Local function prototypes. */
-static int                        check_list(char *, int *, time_t *, off_t *, int *);
+static int                        check_list(char *, int *, time_t *, off_t *,
+                                             int *, unsigned int);
 
 
 /*##################### get_remote_file_names_ftp() #####################*/
 int
-get_remote_file_names_ftp(off_t *file_size_to_retrieve, int *more_files_in_list)
+get_remote_file_names_ftp(off_t        *file_size_to_retrieve,
+                          int          *more_files_in_list,
+                          unsigned int ftp_options)
 {
    int files_to_retrieve = 0,
        i;
@@ -164,7 +171,10 @@ get_remote_file_names_ftp(off_t *file_size_to_retrieve, int *more_files_in_list)
                            }
                            else if ((status == 500) || (status == 502))
                                 {
-                                   check_date = NO;
+                                   if ((ftp_options & FTP_OPTION_MDTM) == 0)
+                                   {
+                                      check_date = NO;
+                                   }
                                    rl[i].got_date = NO;
                                    if (fsa->debug > NORMAL_MODE)
                                    {
@@ -216,7 +226,10 @@ get_remote_file_names_ftp(off_t *file_size_to_retrieve, int *more_files_in_list)
                         }
                         else if ((status == 500) || (status == 502))
                              {
-                                check_date = NO;
+                                if ((ftp_options & FTP_OPTION_MDTM) == 0)
+                                {
+                                   check_date = NO;
+                                }
                                 rl[i].got_date = NO;
                                 if (fsa->debug > NORMAL_MODE)
                                 {
@@ -267,7 +280,10 @@ get_remote_file_names_ftp(off_t *file_size_to_retrieve, int *more_files_in_list)
                      }
                      else if ((status == 500) || (status == 502))
                           {
-                             check_size = NO;
+                             if ((ftp_options & FTP_OPTION_SIZE) == 0)
+                             {
+                                check_size = NO;
+                             }
                              rl[i].size = -1;
                              if (fsa->debug > NORMAL_MODE)
                              {
@@ -553,7 +569,8 @@ get_remote_file_names_ftp(off_t *file_size_to_retrieve, int *more_files_in_list)
                                (check_list(p_list, &files_to_retrieve,
                                            &file_mtime,
                                            file_size_to_retrieve,
-                                           more_files_in_list) == 0))
+                                           more_files_in_list,
+                                           ftp_options) == 0))
                            {
                               gotcha = YES;
                               break;
@@ -749,11 +766,12 @@ get_remote_file_names_ftp(off_t *file_size_to_retrieve, int *more_files_in_list)
 
 /*+++++++++++++++++++++++++++++ check_list() ++++++++++++++++++++++++++++*/
 static int
-check_list(char   *file,
-           int    *files_to_retrieve,
-           time_t *file_mtime,
-           off_t  *file_size_to_retrieve,
-           int    *more_files_in_list)
+check_list(char         *file,
+           int          *files_to_retrieve,
+           time_t       *file_mtime,
+           off_t        *file_size_to_retrieve,
+           int          *more_files_in_list,
+           unsigned int ftp_options)
 {
    int i,
        status;
@@ -796,7 +814,10 @@ check_list(char   *file,
                   }
                   else if ((status == 500) || (status == 502))
                        {
-                          check_date = NO;
+                          if ((ftp_options & FTP_OPTION_MDTM) == 0)
+                          {
+                             check_date = NO;
+                          }
                           rl[i].got_date = NO;
                           if (fsa->debug > NORMAL_MODE)
                           {
@@ -838,7 +859,10 @@ check_list(char   *file,
                   }
                   else if ((status == 500) || (status == 502))
                        {
-                          check_size = NO;
+                          if ((ftp_options & FTP_OPTION_SIZE) == 0)
+                          {
+                             check_size = NO;
+                          }
                           if (fsa->debug > NORMAL_MODE)
                           {
                              trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
@@ -1003,7 +1027,10 @@ check_list(char   *file,
                   else if ((status == 500) || (status == 502) ||
                            (status == 550))
                        {
-                          check_date = NO;
+                          if ((ftp_options & FTP_OPTION_MDTM) == 0)
+                          {
+                             check_date = NO;
+                          }
                           rl[i].got_date = NO;
                           if (fsa->debug > NORMAL_MODE)
                           {
@@ -1054,7 +1081,10 @@ check_list(char   *file,
                   }
                   else if ((status == 500) || (status == 502))
                        {
-                          check_size = NO;
+                          if ((ftp_options & FTP_OPTION_SIZE) == 0)
+                          {
+                             check_size = NO;
+                          }
                           if (fsa->debug > NORMAL_MODE)
                           {
                              trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
@@ -1072,7 +1102,10 @@ check_list(char   *file,
                              (void)ftp_quit();
                              exit(SIZE_ERROR);
                           }
-                          check_size = NO;
+                          if ((ftp_options & FTP_OPTION_SIZE) == 0)
+                          {
+                             check_size = NO;
+                          }
                        }
                }
 
@@ -1270,7 +1303,10 @@ check_list(char   *file,
             }
             else if ((status == 500) || (status == 502))
                  {
-                    check_date = NO;
+                    if ((ftp_options & FTP_OPTION_MDTM) == 0)
+                    {
+                       check_date = NO;
+                    }
                     rl[*no_of_listed_files].got_date = NO;
                     if (fsa->debug > NORMAL_MODE)
                     {
@@ -1313,7 +1349,10 @@ check_list(char   *file,
          }
          else if ((status == 500) || (status == 502))
               {
-                 check_date = NO;
+                 if ((ftp_options & FTP_OPTION_MDTM) == 0)
+                 {
+                    check_date = NO;
+                 }
                  rl[*no_of_listed_files].got_date = NO;
                  if (fsa->debug > NORMAL_MODE)
                  {
@@ -1358,7 +1397,10 @@ check_list(char   *file,
       }
       else if ((status == 500) || (status == 502))
            {
-              check_size = NO;
+              if ((ftp_options & FTP_OPTION_SIZE) == 0)
+              {
+                 check_size = NO;
+              }
               rl[*no_of_listed_files].size = -1;
               if (fsa->debug > NORMAL_MODE)
               {

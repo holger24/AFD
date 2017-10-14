@@ -840,7 +840,8 @@ main(int argc, char *argv[])
             else
             {
                files_to_retrieve = get_remote_file_names_ftp(&file_size_to_retrieve,
-                                                             &more_files_in_list);
+                                                             &more_files_in_list,
+                                                             ftp_options);
             }
          }
 
