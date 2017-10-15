@@ -1,6 +1,6 @@
 /*
  *  view_ls_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2009 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2005 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -37,6 +37,7 @@ DESCR__S_M1
  **
  ** HISTORY
  **   08.04.2005 H.Kiehl Created
+ **   15.10.2017 H.Kiehl Add the full path name for the ls_data directory.
  **
  */
 DESCR__E_M1
@@ -53,6 +54,11 @@ DESCR__E_M1
 #include <errno.h>
 #include "version.h"
 
+/* Global variables. */
+int         sys_log_fd = STDERR_FILENO;
+char        *p_work_dir;
+const char  *sys_log_name = SYSTEM_LOG_FIFO;
+
 /* Local function prototypes. */
 static void usage(char *);
 
@@ -65,31 +71,44 @@ main(int argc, char *argv[])
                         i,
                         j,
                         no_of_listed_files;
-   char                 *ptr,
-                        time_str[25];
+   char                 fullname[MAX_PATH_LENGTH],
+                        *ptr,
+                        time_str[25],
+                        work_dir[MAX_PATH_LENGTH],
+                        *work_ptr;
    struct stat          stat_buf;
    struct retrieve_list *rl;
 
    CHECK_FOR_VERSION(argc, argv);
+
+   if (get_afd_path(&argc, argv, work_dir) < 0)
+   {
+      exit(INCORRECT);
+   }
+   p_work_dir = work_dir;
 
    if (argc < 2)
    {
       usage(argv[0]);
       exit(INCORRECT);
    }
+   work_ptr = fullname + snprintf(fullname, MAX_PATH_LENGTH, "%s%s%s%s/",
+                                  p_work_dir, AFD_FILE_DIR, INCOMING_DIR,
+                                  LS_DATA_DIR);
    for (i = 1; i < argc; i++)
    {
-      if ((fd = open(argv[i], O_RDONLY)) == -1)
+      (void)strcpy(work_ptr, argv[i]);
+      if ((fd = open(fullname, O_RDONLY)) == -1)
       {
          (void)fprintf(stderr, "Failed to open() %s : %s\n",
-                       argv[i], strerror(errno));
+                       fullname, strerror(errno));
       }
       else
       {
          if (fstat(fd, &stat_buf) == -1)
          {
             (void)fprintf(stderr, "Failed to fstat() %s : %s\n",
-                          argv[i], strerror(errno));
+                          fullname, strerror(errno));
          }
          else
          {
@@ -97,7 +116,7 @@ main(int argc, char *argv[])
                             fd, 0)) == (caddr_t) -1)
             {
                (void)fprintf(stderr, "Failed to mmap() %s : %s\n",
-                             argv[i], strerror(errno));
+                             fullname, strerror(errno));
             }
             else
             {
@@ -118,18 +137,19 @@ main(int argc, char *argv[])
 
                   (void)fprintf(stdout, "\n        %s (%d entries  Struct Version: %d)\n\n",
                                 argv[i], no_of_listed_files, version);
-                  (void)fprintf(stdout, "                        |            |Got |    | In |Assi|\n");
-                  (void)fprintf(stdout, "          Date          |    Size    |date|Retr|list|nged|Flag|   File name\n");
-                  (void)fprintf(stdout, "------------------------+------------+----+----+----+----+----+-------------------------------\n");
+                  (void)fprintf(stdout, "                        |            |  Previous  |Got |    | In |Assi|\n");
+                  (void)fprintf(stdout, "          Date          |    Size    |    Size    |date|Retr|list|nged|Flag|   File name\n");
+                  (void)fprintf(stdout, "------------------------+------------+------------+----+----+----+----+----+-------------------------------\n");
                   for (j = 0; j < no_of_listed_files; j++)
                   {
                      (void)strftime(time_str, 25, "%c", localtime(&rl[j].file_mtime));
 #if SIZEOF_OFF_T == 4
-                     (void)fprintf(stdout, "%s|%12ld| %s| %s| %s| %3d| %3d|%s\n",
+                     (void)fprintf(stdout, "%s|%12ld|%12ld| %s| %s| %s| %3d| %3d|%s\n",
 #else
-                     (void)fprintf(stdout, "%s|%12lld| %s| %s| %s| %3d| %3d|%s\n",
+                     (void)fprintf(stdout, "%s|%12lld|%12lld| %s| %s| %s| %3d| %3d|%s\n",
 #endif
                                    time_str, (pri_off_t)rl[j].size,
+                                   (pri_off_t)rl[j].prev_size,
                                    (rl[j].got_date == YES) ? "YES" : "NO ",
                                    (rl[j].retrieved == YES) ? "YES" : "NO ",
                                    (rl[j].in_list == YES) ? "YES" : "NO ",
@@ -141,7 +161,7 @@ main(int argc, char *argv[])
                if (munmap(ptr, stat_buf.st_size) == -1)
                {
                   (void)fprintf(stderr, "Failed to munmap() from %s : %s\n",
-                                argv[i], strerror(errno));
+                                fullname, strerror(errno));
                }
             }
          }
