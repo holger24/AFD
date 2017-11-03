@@ -966,8 +966,12 @@ list_job_to_remove(int                cache_pos,
                if ((rjl = malloc(new_size)) == NULL)
                {
                   system_log(FATAL_SIGN, __FILE__, __LINE__,
+#if SIZEOF_SIZE_T == 4
                              "Could not malloc() %d bytes : %s",
-                             new_size, strerror(errno));
+#else
+                             "Could not malloc() %lld bytes : %s",
+#endif
+                             (pri_size_t)new_size, strerror(errno));
                   exit(INCORRECT);
                }
             }
@@ -976,8 +980,12 @@ list_job_to_remove(int                cache_pos,
                if ((rjl = realloc(rjl, new_size)) == NULL)
                {
                   system_log(FATAL_SIGN, __FILE__, __LINE__,
+#if SIZEOF_SIZE_T == 4
                              "Could not realloc() %d bytes : %s",
-                             new_size, strerror(errno));
+#else
+                             "Could not realloc() %lld bytes : %s",
+#endif
+                             (pri_size_t)new_size, strerror(errno));
                   exit(INCORRECT);
                }
             }
@@ -1057,8 +1065,12 @@ list_job_to_remove(int                cache_pos,
             if ((rml = malloc(new_size)) == NULL)
             {
                system_log(FATAL_SIGN, __FILE__, __LINE__,
+#if SIZEOF_SIZE_T == 4
                           "Could not malloc() %d bytes : %s",
-                          new_size, strerror(errno));
+#else
+                          "Could not malloc() %lld bytes : %s",
+#endif
+                          (pri_size_t)new_size, strerror(errno));
                exit(INCORRECT);
             }
          }
@@ -1067,8 +1079,12 @@ list_job_to_remove(int                cache_pos,
             if ((rml = realloc(rml, new_size)) == NULL)
             {
                system_log(FATAL_SIGN, __FILE__, __LINE__,
+#if SIZEOF_SIZE_T == 4
                           "Could not realloc() %d bytes : %s",
-                          new_size, strerror(errno));
+#else
+                          "Could not realloc() %lld bytes : %s",
+#endif
+                          (pri_size_t)new_size, strerror(errno));
                exit(INCORRECT);
             }
          }
@@ -1261,8 +1277,12 @@ list_job_to_remove(int                cache_pos,
             if ((fmtrl = malloc(new_size)) == NULL)
             {
                system_log(FATAL_SIGN, __FILE__, __LINE__,
+#if SIZEOF_SIZE_T == 4
                           "Could not malloc() %d bytes memory : %s",
-                          new_size, strerror(errno));
+#else
+                          "Could not malloc() %lld bytes memory : %s",
+#endif
+                          (pri_size_t)new_size, strerror(errno));
                exit(INCORRECT);
             }
          }
@@ -1271,8 +1291,12 @@ list_job_to_remove(int                cache_pos,
             if ((fmtrl = realloc(fmtrl, new_size)) == NULL)
             {
                system_log(FATAL_SIGN, __FILE__, __LINE__,
+#if SIZEOF_SIZE_T == 4
                           "Could not realloc() %d bytes memory : %s",
-                          new_size, strerror(errno));
+#else
+                          "Could not realloc() %lld bytes memory : %s",
+#endif
+                          (pri_size_t)new_size, strerror(errno));
                exit(INCORRECT);
             }
          }
