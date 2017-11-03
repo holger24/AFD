@@ -111,6 +111,8 @@ DESCR__E_M3
 #include "sftpdefs.h"
 #include "fddefs.h"           /* trans_log()                             */
 
+#define DIR_NOT_EXIST_WORKAROUND 1
+
 
 #define SFTP_CD_TRY_CREATE_DIR()                                          \
         {                                                                 \
