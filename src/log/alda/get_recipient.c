@@ -1,6 +1,6 @@
 /*
  *  get_recipient.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2010 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2010 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -166,7 +166,7 @@ get_recipient_alias(unsigned int job_id)
                         (olog.alias_name[j] != '.') &&
                         (j != max_hostname_length))
                  {
-                    /* Do nothing. */;
+                    j++;
                  }
                  olog.alias_name[j] = '\0';
               }
@@ -198,7 +198,7 @@ get_recipient_alias(unsigned int job_id)
                               (olog.alias_name[j] != '.') &&
                               (j != max_hostname_length))
                        {
-                          /* Do nothing. */;
+                          j++;
                        }
                        olog.alias_name[j] = '\0';
                     }
