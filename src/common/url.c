@@ -27,7 +27,7 @@ DESCR__S_M3
  **
  ** SYNOPSIS
  **   unsigned int url_evaluate(char          *url,
- **                             unsigned int  scheme,
+ **                             unsigned int  *scheme,
  **                             char          *user,
  **                             unsigned char *smtp_auth,
  **                             char          *smtp_user,
