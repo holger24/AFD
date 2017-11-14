@@ -617,6 +617,7 @@ get_remote_file_names_ftp(off_t        *file_size_to_retrieve,
                         time_t diff_time = current_time - file_mtime;
 
                         if ((fra[db.fra_pos].unknown_file_time == -2) ||
+                            (file_mtime <= 0) ||
                             ((diff_time > fra[db.fra_pos].unknown_file_time) &&
                              (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
                         {
