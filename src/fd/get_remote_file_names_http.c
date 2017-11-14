@@ -259,9 +259,11 @@ static struct file_mask           *fml = NULL;
 /* Local function prototypes. */
 static int                        check_list(char *, int, time_t, off_t, off_t,
                                              int *, off_t *, int *),
-                                  check_name(char *, int, off_t, time_t),
+                                  check_name(char *, int, off_t, time_t,
+                                             unsigned int *, off_t *),
                                   eval_html_dir_list(char *, int *, off_t *,
                                                      int *, unsigned int *,
+                                                     off_t *, unsigned int *,
                                                      off_t *);
 static off_t                      convert_size(char *, off_t *);
 #ifdef WITH_ATOM_FEED_SUPPORT
@@ -432,12 +434,10 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
    }
    else
    {
-      unsigned int list_length = 0;
-      int          j,
-                   status;
-      time_t       now;
-      off_t        list_size = 0;
-      struct tm    *p_tm;
+      int       j,
+                status;
+      time_t    now;
+      struct tm *p_tm;
 
       /* Get all file masks for this directory. */
       if ((j = read_file_mask(fra[db.fra_pos].dir_alias, &nfg, &fml)) != SUCCESS)
@@ -507,9 +507,13 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
        */
       if ((fra[db.fra_pos].dir_flag & DONT_GET_DIR_LIST) == 0)
       {
-         off_t bytes_buffered = 0,
-               content_length = 0;
-         char  *listbuffer = NULL;
+         unsigned int files_deleted = 0,
+                      list_length = 0;
+         off_t        bytes_buffered = 0,
+                      content_length = 0,
+                      file_size_deleted = 0,
+                      list_size = 0;
+         char         *listbuffer = NULL;
 
          if (((status = http_get(db.hostname, db.target_dir, "",
                                  &content_length, 0)) != SUCCESS) &&
@@ -741,13 +745,42 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
             if (eval_html_dir_list(listbuffer, &files_to_retrieve,
                                    file_size_to_retrieve,
                                    more_files_in_list,
-                                   &list_length, &list_size) == INCORRECT)
+                                   &list_length, &list_size,
+                                   &files_deleted,
+                                   &file_size_deleted) == INCORRECT)
             {
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                          "Failed to evaluate HTML directory listing.");
             }
          }
          free(listbuffer);
+
+         if (files_deleted > 0)
+         {
+            trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                      "%d files %ld bytes found for retrieving [%u files with %ld bytes in %s (deleted %u files with %ld bytes)]. @%x",
+#else
+                      "%d files %lld bytes found for retrieving [%u files with %lld bytes in %s (deleted %u files with %lld bytes)]. @%x",
+#endif
+                      files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
+                      list_length, (pri_off_t)list_size,
+                      (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                      files_deleted, (pri_off_t)file_size_deleted, db.id.dir);
+         }
+         else
+         {
+            trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                      "%d files %ld bytes found for retrieving [%u files with %ld bytes in %s]. @%x",
+#else
+                      "%d files %lld bytes found for retrieving [%u files with %lld bytes in %s]. @%x",
+#endif
+                      files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
+                      list_length, (pri_off_t)list_size,
+                      (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                      db.id.dir);
+         }
       }
       else /* Just copy the file mask list. */
       {
@@ -774,6 +807,15 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
                NEXT(p_mask);
             }
          }
+         trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                   "%d files %ld bytes found for retrieving in %s [%s]. @%x",
+#else
+                   "%d files %lld bytes found for retrieving in %s [%s]. @%x",
+#endif
+                   files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
+                   (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                   DO_NOT_GET_DIR_LIST_ID, db.id.dir);
       }
 
       /* Free file mask list. */
@@ -783,16 +825,12 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
       }
       free(fml);
 
-      trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
-#if SIZEOF_OFF_T == 4
-                "%d files %ld bytes found for retrieving [%u files with %ld bytes in %s]. @%x",
-#else
-                "%d files %lld bytes found for retrieving [%u files with %lld bytes in %s]. @%x",
-#endif
-                files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
-                list_length, (pri_off_t)list_size,
-                (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
-                db.id.dir);
+      if ((fra[db.fra_pos].dir_flag & DONT_GET_DIR_LIST) == 0)
+      {
+      }
+      else
+      {
+      }
 
       /*
        * Remove all files from the remote_list structure that are not
@@ -905,7 +943,9 @@ eval_html_dir_list(char         *html_buffer,
                    off_t        *file_size_to_retrieve,
                    int          *more_files_in_list,
                    unsigned int *list_length,
-                   off_t        *list_size)
+                   off_t        *list_size,
+                   unsigned int *files_deleted,
+                   off_t        *file_size_deleted)
 {
    char *ptr;
 
@@ -1103,7 +1143,8 @@ eval_html_dir_list(char         *html_buffer,
                         (*list_size) += file_size;
                      }
                      if (check_name(file_name, file_name_length,
-                                    file_size, file_mtime) != YES)
+                                    file_size, file_mtime, files_deleted,
+                                    file_size_deleted) != YES)
                      {
                         file_name[0] = '\0';
                      }
@@ -1326,7 +1367,8 @@ eval_html_dir_list(char         *html_buffer,
                            }
 
                            if (check_name(file_name, file_name_length,
-                                          file_size, file_mtime) != YES)
+                                          file_size, file_mtime, files_deleted,
+                                          file_size_deleted) != YES)
                            {
                               file_name[0] = '\0';
                            }
@@ -1524,7 +1566,8 @@ eval_html_dir_list(char         *html_buffer,
                           }
 
                           if (check_name(file_name, file_name_length,
-                                         file_size, file_mtime) != YES)
+                                         file_size, file_mtime, files_deleted,
+                                         file_size_deleted) != YES)
                           {
                              file_name[0] = '\0';
                           }
@@ -1599,7 +1642,8 @@ eval_html_dir_list(char         *html_buffer,
                                             MAX_FILENAME_LENGTH, '<');
 
                           if (check_name(file_name, file_name_length,
-                                         -1, -1) == YES)
+                                         -1, -1, files_deleted,
+                                         file_size_deleted) == YES)
                           {
                              file_mtime = -1;
                              exact_size = -1;
@@ -2365,10 +2409,12 @@ extract_feed_date(char *time_str)
 
 /*---------------------------- check_name() -----------------------------*/
 static int
-check_name(char   *file_name,
-           int    file_name_length,
-           off_t  file_size,
-           time_t file_mtime)
+check_name(char         *file_name,
+           int          file_name_length,
+           off_t        file_size,
+           time_t       file_mtime,
+           unsigned int *files_deleted,
+           off_t        *file_size_deleted)
 {
    int  gotcha = NO;
    char *p_mask;
@@ -2384,9 +2430,9 @@ check_name(char   *file_name,
       {
          delete_remote_file(HTTP, file_name, file_name_length,
 #ifdef _DELETE_LOG
-                            DEL_UNREADABLE_FILE,
+                            DELETE_HOST_DISABLED,
 #endif
-                            file_size);
+                            files_deleted, file_size_deleted, file_size);
       }
       else
       {
@@ -2426,8 +2472,9 @@ check_name(char   *file_name,
             {
                delete_remote_file(HTTP, file_name, file_name_length,
 #ifdef _DELETE_LOG
-                                  DEL_UNREADABLE_FILE,
+                                  DEL_UNKNOWN_FILE,
 #endif
+                                  files_deleted, file_size_deleted,
                                   file_size);
             }
          }

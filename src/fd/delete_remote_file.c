@@ -1,7 +1,7 @@
 /*
  *  delete_remote_file.c - Part of AFD, an automatic file distribution
  *                         program.
- *  Copyright (c) 2014, 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,10 +26,12 @@ DESCR__S_M3
  **   delete_remote_file - deletes a remote file
  **
  ** SYNOPSIS
- **   void delete_remote_file(int   type,
- **                           char  *file_name,
- **                           int   namelen,
- **                           off_t file_size)
+ **   void delete_remote_file(int          type,
+ **                           char         *file_name,
+ **                           int          namelen,
+ **                           unsigned int *files_deleted,
+ **                           off_t        *file_size_deleted,
+ **                           off_t        file_size)
  **
  ** DESCRIPTION
  **
@@ -64,13 +66,15 @@ extern struct fileretrieve_status *fra;
 
 /*######################### delete_remote_file() ########################*/
 void
-delete_remote_file(int   type,
-                   char  *file_name,
-                   int   namelen,
+delete_remote_file(int          type,
+                   char         *file_name,
+                   int          namelen,
 #ifdef _DELETE_LOG
-                   int   delete_reason,
+                   int          delete_reason,
 #endif
-                   off_t file_size)
+                   unsigned int *files_deleted,
+                   off_t        *file_size_deleted,
+                   off_t        file_size)
 {
    if (delete_wrapper(file_name) == SUCCESS)
    {
@@ -78,6 +82,15 @@ delete_remote_file(int   type,
       char   procname[MAX_PROCNAME_LENGTH + 1];
       size_t dl_real_size;
 #endif
+
+      if (files_deleted != NULL)
+      {
+         (*files_deleted)++;
+      }
+      if ((file_size != -1) || (file_size_deleted != NULL))
+      {
+         *file_size_deleted += file_size;
+      }
 
       if (fsa->debug > NORMAL_MODE)
       {

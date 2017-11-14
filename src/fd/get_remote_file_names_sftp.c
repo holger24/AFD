@@ -187,14 +187,16 @@ get_remote_file_names_sftp(off_t *file_size_to_retrieve,
    }
    else
    {
-      unsigned int     list_length = 0;
+      unsigned int     files_deleted = 0,
+                       list_length = 0;
       int              gotcha,
                        j,
                        nfg,           /* Number of file mask. */
                        status;
       char             filename[MAX_FILENAME_LENGTH],
                        *p_mask;
-      off_t            list_size = 0;
+      off_t            file_size_deleted = 0,
+                       list_size = 0;
       struct file_mask *fml = NULL;
       struct tm        *p_tm;
       struct stat      stat_buf;
@@ -312,8 +314,9 @@ get_remote_file_names_sftp(off_t *file_size_to_retrieve,
                {
                   delete_remote_file(SFTP, filename, namelen,
 #ifdef _DELETE_LOG
-                                     DEL_UNREADABLE_FILE,
+                                     DELETE_HOST_DISABLED,
 #endif
+                                     &files_deleted, &file_size_deleted,
                                      stat_buf.st_size);
                }
                else
@@ -357,8 +360,9 @@ get_remote_file_names_sftp(off_t *file_size_to_retrieve,
                      {
                         delete_remote_file(SFTP, filename, namelen,
 #ifdef _DELETE_LOG
-                                           DEL_UNREADABLE_FILE,
+                                           DEL_UNKNOWN_FILE,
 #endif
+                                           &files_deleted, &file_size_deleted,
                                            stat_buf.st_size);
                      }
                   }
@@ -401,16 +405,32 @@ get_remote_file_names_sftp(off_t *file_size_to_retrieve,
       }
       free(fml);
 
-      trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+      if (files_deleted > 0)
+      {
+         trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
 #if SIZEOF_OFF_T == 4
-                "%d files %ld bytes found for retrieving [%u files with %ld bytes in %s]. @%x",
+                   "%d files %ld bytes found for retrieving [%u files with %ld bytes in %s (deleted %u files with %ld bytes)]. @%x",
 #else
-                "%d files %lld bytes found for retrieving [%u files with %lld bytes in %s]. @%x",
+                   "%d files %lld bytes found for retrieving [%u files with %lld bytes in %s (deleted %u files with %lld bytes)]. @%x",
 #endif
-                files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
-                list_length, (pri_off_t)list_size,
-                (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
-                db.id.dir);
+                   files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
+                   list_length, (pri_off_t)list_size,
+                   (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                   files_deleted, (pri_off_t)file_size_deleted, db.id.dir);
+      }
+      else
+      {
+         trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                   "%d files %ld bytes found for retrieving [%u files with %ld bytes in %s]. @%x",
+#else
+                   "%d files %lld bytes found for retrieving [%u files with %lld bytes in %s]. @%x",
+#endif
+                   files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
+                   list_length, (pri_off_t)list_size,
+                   (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                   db.id.dir);
+      }
 
       /*
        * Remove all files from the remote_list structure that are not

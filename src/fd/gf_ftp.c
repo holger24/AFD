@@ -1036,7 +1036,7 @@ main(int argc, char *argv[])
 #ifdef _DELETE_LOG
                                            DEL_UNREADABLE_FILE,
 #endif
-                                           rl[i].size);
+                                           NULL, NULL, rl[i].size);
                      }
 
                      /*
