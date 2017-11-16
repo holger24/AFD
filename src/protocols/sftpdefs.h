@@ -25,8 +25,8 @@
 #define MAX_PENDING_WRITES                  (MAX_PENDING_WRITE_BUFFER / 16384)
 #define MAX_SFTP_MSG_LENGTH                 MAX_TRANSFER_BLOCKSIZE
 
-#define SFTP_WRITE_FILE                     1 /* Open file for reading.  */
-#define SFTP_READ_FILE                      2 /* Open file for writting. */
+#define SFTP_WRITE_FILE                     1 /* Open file for writting. */
+#define SFTP_READ_FILE                      2 /* Open file for reading.  */
 
 #define SSH_FILEXFER_VERSION                6
 

@@ -1148,7 +1148,7 @@ sftp_open_file(int    openmode,
             else
             {
                scd.file_offset = offset;
-               if (openmode == O_WRONLY)
+               if (openmode == SFTP_WRITE_FILE)
                {
                   scd.pending_write_counter = -1;
                   scd.max_pending_writes = MAX_PENDING_WRITE_BUFFER / blocksize;
@@ -1186,7 +1186,7 @@ sftp_open_file(int    openmode,
               scd.file_offset = offset;
               scd.file_handle = NULL;
               scd.file_handle_length = 0;
-              if (openmode == O_WRONLY)
+              if (openmode == SFTP_WRITE_FILE)
               {
                  scd.pending_write_counter = -1;
                  scd.max_pending_writes = MAX_PENDING_WRITE_BUFFER / blocksize;
