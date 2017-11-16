@@ -125,6 +125,7 @@ get_recipient_alias(unsigned int job_id)
       {
          (void)strcpy(olog.recipient, jidd.jd[jidd.prev_pos].recipient);
          (void)strcpy(olog.alias_name, jidd.jd[jidd.prev_pos].host_alias);
+         olog.alias_name_length = (int)strlen(olog.alias_name);
          return(SUCCESS);
       }
       else
@@ -137,6 +138,7 @@ get_recipient_alias(unsigned int job_id)
             {
                (void)strcpy(olog.recipient, jidd.jd[i].recipient);
                (void)strcpy(olog.alias_name, jidd.jd[i].host_alias);
+               olog.alias_name_length = (int)strlen(olog.alias_name);
                jidd.prev_pos = i;
                return(SUCCESS);
             }
@@ -169,6 +171,7 @@ get_recipient_alias(unsigned int job_id)
                     j++;
                  }
                  olog.alias_name[j] = '\0';
+                 olog.alias_name_length = j;
               }
 
               return(SUCCESS);
@@ -201,6 +204,7 @@ get_recipient_alias(unsigned int job_id)
                           j++;
                        }
                        olog.alias_name[j] = '\0';
+                       olog.alias_name_length = j;
                     }
                     jidd.prev_pos = i;
 

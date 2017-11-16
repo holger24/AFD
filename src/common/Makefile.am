@@ -17,11 +17,15 @@
 ##
 
 if WITH_AFD_MON
-   AFD_MON_PROGS = msa_attach.c msa_detach.c attach_afd_mon_status.c detach_afd_mon_status.c
+   AFD_MON_PROGS = msa_attach.c msa_detach.c attach_afd_mon_status.c\
+                   detach_afd_mon_status.c handle_adl.c handle_ahl.c\
+		   handle_atd.c
    EXTRA_AFD_MON =
 else
    AFD_MON_PROGS =
-   EXTRA_AFD_MON = msa_attach.c msa_detach.c attach_afd_mon_status.c detach_afd_mon_status.c
+   EXTRA_AFD_MON = msa_attach.c msa_detach.c attach_afd_mon_status.c\
+                   detach_afd_mon_status.c handle_adl.c handle_ahl.c\
+		   handle_atd.c
 endif
 if WITHOUT_MMAP
    AFD_MAPPER = mmap_emu.c msync_emu.c munmap_emu.c
@@ -116,7 +120,7 @@ EXTRA_DIST = $(EXTRA_MAPPER) $(EXTRA_AFD_MON) $(EXTRA_EACCESS)\
 
 MAINTAINERCLEANFILES = Makefile.in
 AM_CPPFLAGS          = -I.. -I../init_afd -I../amg -I../fd -I../misc\
-                       -I../afd_mon
+                       -I../afd_mon -I../log/alda
 
 lib_LIBRARIES        = libafd.a
 libafd_a_SOURCES     = attach_afd_status.c\
@@ -185,6 +189,7 @@ libafd_a_SOURCES     = attach_afd_status.c\
                        $(HANDLE_ERROR_QUEUE)\
                        $(HANDLE_EXTRA_WORK_DIRS)\
                        $(HANDLE_IP)\
+		       handle_jid.c\
 		       handle_jis.c\
                        handle_xor_crypt.c\
                        inform_fd_about_fsa_change.c\

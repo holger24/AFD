@@ -60,6 +60,7 @@ DESCR__E_M1
 #include <errno.h>
 #include "permission.h"
 #include "amgdefs.h"
+#include "aldadefs.h"
 #include "version.h"
 
 /* Global variables. */
@@ -67,9 +68,14 @@ int                        fra_fd = -1,
                            fsa_fd = -1,
                            fra_id,
                            fsa_id,
+                           max_hostname_length = MAX_HOSTNAME_LENGTH,
                            no_of_dirs = 0,
                            no_of_hosts = 0,
                            sys_log_fd = STDERR_FILENO;
+#ifdef WITH_AFD_MON
+unsigned int               adl_entries = 0,
+                           ahl_entries = 0;
+#endif
 char                       *p_work_dir = NULL;
 #ifdef HAVE_MMAP
 off_t                      fra_size,
@@ -78,6 +84,12 @@ off_t                      fra_size,
 const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 struct fileretrieve_status *fra = NULL;
 struct filetransfer_status *fsa = NULL;
+struct jid_data            jidd;
+#ifdef WITH_AFD_MON
+struct afd_dir_list        *adl = NULL;
+struct afd_host_list       *ahl = NULL;
+struct afd_typesize_data   *atd = NULL;
+#endif
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
@@ -100,7 +112,8 @@ main(int argc, char *argv[])
                            dnb_size = 0,
                            fmd_size = 0,
                            jid_size = 0;
-   char                    fake_user[MAX_FULL_USER_ID_LENGTH],
+   char                    afd_alias[MAX_AFDNAME_LENGTH + 1],
+                           fake_user[MAX_FULL_USER_ID_LENGTH],
                            file[MAX_PATH_LENGTH],
                            *fmd = NULL,
                            option_buffer[MAX_OPTION_LENGTH],
@@ -113,6 +126,7 @@ main(int argc, char *argv[])
    struct job_id_data     *jd;
    struct dir_name_buf    *dnb = NULL;
    struct dir_config_list *dcl = NULL;
+   struct afd_dir_list    *adl = NULL;
    struct dir_options     d_o;
 
    if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
@@ -120,7 +134,7 @@ main(int argc, char *argv[])
        (get_arg(&argc, argv, "--help", NULL, 0) == SUCCESS))
    {
       (void)fprintf(stdout,
-                    _("Usage: %s [-w <AFD work dir>] [-u <fake user>] [-p <user profile>] [--version] [<job ID> [...<job ID n>]]\n"),
+                    _("Usage: %s [-w <AFD work dir>] [-u <fake user>] [-p <user profile>] [--version] [-r <remote AFD alias>] [<job ID> [...<job ID n>]]\n"),
                     argv[0]);
       exit(SUCCESS);
    }
@@ -136,6 +150,10 @@ main(int argc, char *argv[])
    if (get_arg(&argc, argv, "-p", profile, MAX_PROFILE_NAME_LENGTH) == INCORRECT)
    {
       profile[0] = '\0';
+   }
+   if (get_arg(&argc, argv, "-a", afd_alias, MAX_AFDNAME_LENGTH) == INCORRECT)
+   {
+      afd_alias[0] = '\0';
    }
    if (get_arg(&argc, argv, "--dir_config", NULL, 0) == SUCCESS)
    {
@@ -232,568 +250,701 @@ main(int argc, char *argv[])
       job_id = NULL;
    }
 
-   /* Map to JID file. */
-   (void)sprintf(file, "%s%s%s", work_dir, FIFO_DIR, JOB_ID_DATA_FILE);
-   if ((fd = open(file, O_RDONLY)) == -1)
+   if (afd_alias[0] != '\0')
    {
-      (void)fprintf(stderr, _("Failed to open() `%s' : %s (%s %d)\n"),
-                    file, strerror(errno), __FILE__, __LINE__);
-      exit(INCORRECT);
-   }
+      attach_ahl(afd_alias);
+      attach_atd(afd_alias);
+      alloc_jid(afd_alias);
 
-   if (fstat(fd, &stat_buf) == -1)
-   {
-      (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
-                    file, strerror(errno), __FILE__, __LINE__);
-      exit(INCORRECT);
-   }
-
-#ifdef HAVE_MMAP
-   if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
-                   MAP_SHARED, fd, 0)) == (caddr_t)-1)
-#else
-   if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
-                       MAP_SHARED, file, 0)) == (caddr_t)-1)
+      if (jidd.no_of_job_ids > 0)
+      {
+         int  j = 0,
+              lines_drawn = 0;
+         char *alias_name;
+#ifdef _NEW_JID
+         char time_str[25];
 #endif
-   {
-      (void)fprintf(stderr, _("Failed to mmap() `%s' : %s (%s %d)\n"),
-                    file, strerror(errno), __FILE__, __LINE__);
-      exit(INCORRECT);
-   }
-   if (close(fd) == -1)
-   {
-      (void)fprintf(stderr, _("Failed to close() `%s' : %s (%s %d)\n"),
-                    file, strerror(errno), __FILE__, __LINE__);
-   }
-   if (*(ptr + SIZEOF_INT + 1 + 1 + 1) != CURRENT_JID_VERSION)
-   {
-      (void)fprintf(stderr, _("Incorrect JID version (data=%d current=%d)!\n"),
-                    *(ptr + SIZEOF_INT + 1 + 1 + 1), CURRENT_JID_VERSION);
-      exit(INCORRECT);
-   }
-   no_of_job_ids = *(int *)ptr;
-   ptr += AFD_WORD_OFFSET;
-   jd = (struct job_id_data *)ptr;
-   jid_size = stat_buf.st_size;
 
-   /* Map to file mask file. */
-   (void)sprintf(file, "%s%s%s", work_dir, FIFO_DIR, FILE_MASK_FILE);
-   if ((fd = open(file, O_RDONLY)) == -1)
-   {
-      (void)fprintf(stderr, _("Failed to open() `%s' : %s (%s %d)\n"),
-                    file, strerror(errno), __FILE__, __LINE__);
-      no_of_file_masks_id = 0;
+         attach_adl(afd_alias);
+
+         if ((alias_name = malloc(max_hostname_length + 1)) == NULL)
+         {
+            (void)fprintf(stderr, _("malloc() error : %s (%s %d)\n"),
+                          strerror(errno), __FILE__, __LINE__);
+         }
+
+         for (i = 0; i < jidd.no_of_job_ids; i++)
+         {
+            if (no_of_search_ids > 0)
+            {
+               for (j = 0; j < no_of_search_ids; j++)
+               {
+                  if (job_id[j] == jidd.jd[i].job_id)
+                  {
+                     break;
+                  }
+               }
+               if (j == no_of_search_ids)
+               {
+                  continue;
+               }
+            }
+            if ((job_id == NULL) || (job_id[j] == jidd.jd[i].job_id))
+            {
+               (void)fprintf(stdout, "Job-ID          : %x\n", jidd.jd[i].job_id);
+#ifdef _NEW_JID
+               (void)strftime(time_str, 25, "%c", localtime(&jidd.jd[i].creation_time));
+               (void)fprintf(stdout, "Creation time   : %s\n", time_str);
+#endif
+               (void)fprintf(stdout, "DIR_CONFIG-ID   : %x\n", jidd.jd[i].dir_config_id);
+
+               if ((dir_config_view_mode == YES) && (no_of_search_ids == 1))
+               {
+                  int adl_pos = 0,
+                      gotcha = NO;
+
+                  (void)fprintf(stdout, "File-Mask-ID    : %x\n", jidd.jd[i].file_mask_id);
+                  (void)fprintf(stdout, "Destination-ID  : %x\n", jidd.jd[i].recipient_id);
+                  (void)fprintf(stdout, "Host-Alias-ID   : %x\n", jidd.jd[i].host_id);
+
+#ifdef WITH_AFD_MON
+                  if (adl != NULL)
+                  {
+                     for (j = 0; j < adl_entries; j++)
+                     {
+                        if (adl[j].dir_id == jidd.jd[i].dir_id)
+                        {
+                           adl_pos = j;
+                           gotcha = YES;
+                           break;
+                        }
+                     }
+                     if ((gotcha == YES) && (alias_name != NULL))
+                     {
+                        unsigned int scheme;
+
+                        if ((url_evaluate(adl[adl_pos].orig_dir_name, &scheme,
+                                          NULL, NULL, NULL,
+# ifdef WITH_SSH_FINGERPRINT
+                                          NULL, NULL,
+# endif
+                                          NULL, NO, alias_name, NULL, NULL,
+                                          NULL, NULL, NULL, NULL, NULL) < 4) &&
+                            (scheme != LOC_FLAG) && (scheme != UNKNOWN_FLAG))
+                        {
+                           j = 0;
+                           while ((alias_name[j] != '\0') &&
+                                  (alias_name[j] != '\n') &&
+                                  (alias_name[j] != ':') &&
+                                  (alias_name[j] != '.') &&
+                                  (j != max_hostname_length))
+                           {
+                              j++;
+                           }
+                           alias_name[j] = '\0';
+                        }
+                        if ((scheme != LOC_FLAG) && (scheme != UNKNOWN_FLAG) &&
+                            (alias_name[0] != '\0'))
+                        {
+                           for (j = 0; j < ahl_entries; j++)
+                           {
+                              if (my_strcmp(alias_name, ahl[j].host_alias) == 0)
+                              {
+                                 if (ahl[j].real_hostname[0][0] == GROUP_IDENTIFIER)
+                                 {
+                                    (void)fprintf(stdout, "Real hostname(S):\n");
+                                 }
+                                 else
+                                 {
+                                    /* Since we do not have the information */
+                                    /* which host is currently active, show */
+                                    /* them both.                           */
+                                    (void)fprintf(stdout,
+                                                  "Real hostname(S): %s",
+                                                  ahl[j].real_hostname[0]);
+                                    if (ahl[j].real_hostname[1][0] == '\0')
+                                    {
+                                       (void)fprintf(stdout, "\n");
+                                    }
+                                    else
+                                    {
+                                       (void)fprintf(stdout, " %s\n",
+                                                     ahl[j].real_hostname[1]);
+                                    }
+                                 }
+                                 break;
+                              }
+                           }
+                        }
+                     }
+
+                     if (ahl != NULL)
+                     {
+                        for (j = 0; j < ahl_entries; j++)
+                        {
+                           if (my_strcmp(jidd.jd[i].host_alias,
+                                         ahl[j].host_alias) == 0)
+                           {
+                              if (ahl[j].real_hostname[0][0] == GROUP_IDENTIFIER)
+                              {
+                                 (void)fprintf(stdout, "Real hostname(D):\n");
+                              }
+                              else
+                              {
+                                 /* Since we do not have the information */
+                                 /* which host is currently active, show */
+                                 /* them both.                           */
+                                 (void)fprintf(stdout, "Real hostname(D): %s",
+                                               ahl[j].real_hostname[0]);
+                                 if (ahl[j].real_hostname[1][0] == '\0')
+                                 {
+                                    (void)fprintf(stdout, "\n");
+                                 }
+                                 else
+                                 {
+                                    (void)fprintf(stdout, " %s\n",
+                                                  ahl[j].real_hostname[1]);
+                                 }
+                              }
+                              break;
+                           }
+                        }
+                     }
+
+                     (void)fprintf(stdout, "--------------------------------------------------------------------------------\n");
+
+                     if (gotcha == YES)
+                     {
+                        (void)strcpy(tmp_value, adl[adl_pos].orig_dir_name);
+                        url_insert_password(tmp_value, (view_passwd == YES) ? NULL : "XXXXX");
+                        (void)fprintf(stdout, "%s %s\n%s\n",
+                                      DIR_IDENTIFIER, adl[adl_pos].dir_alias,
+                                      tmp_value);
+                        if (CHECK_STRCMP(adl[adl_pos].dir_name,
+                                         adl[adl_pos].orig_dir_name) != 0)
+                        {
+                           (void)fprintf(stdout, "# %s\n\n", adl[adl_pos].dir_name);
+                        }
+                        else
+                        {
+                           (void)fprintf(stdout, "\n");
+                        }
+                     }
+                  }
+#endif /* WITH_AFD_MON */
+
+                  (void)fprintf(stdout, "   %s\n", DIR_OPTION_IDENTIFIER);
+                  (void)fprintf(stdout, "   # Not available\n");
+
+                  (void)fprintf(stdout, "   %s\n   # Not available\n",
+                                FILE_IDENTIFIER);
+
+                  (void)fprintf(stdout, "\n      %s\n\n         %s\n",
+                                DESTINATION_IDENTIFIER, RECIPIENT_IDENTIFIER);
+                  (void)strcpy(tmp_value, jidd.jd[i].recipient);
+                  url_insert_password(tmp_value, (view_passwd == YES) ? NULL : "XXXXX");
+                  (void)fprintf(stdout, "         %s\n", tmp_value);
+
+                  /* Show all options. */
+                  (void)fprintf(stdout, "\n         %s\n         %s %c\n",
+                                OPTION_IDENTIFIER, PRIORITY_ID,
+                                jidd.jd[i].priority);
+
+                  /* Show all AMG options. */
+                  if (jidd.jd[i].no_of_loptions > 0)
+                  {
+                     char *ptr = jidd.jd[i].loptions;
+
+                     for (j = 0; j < jidd.jd[i].no_of_loptions; j++)
+                     {
+                        (void)fprintf(stdout, "         %s\n", ptr);
+                        NEXT(ptr);
+                     }
+                  }
+
+                  /* Show all FD options. */
+                  if (jidd.jd[i].no_of_soptions > 0)
+                  {
+                     int  counter;
+                     char *ptr = jidd.jd[i].soptions;
+
+                     for (j = 0; j < jidd.jd[i].no_of_soptions; j++)
+                     {
+                        counter = 0;
+                        while ((*ptr != '\n') && (*ptr != '\0'))
+                        {
+                           tmp_value[counter] = *ptr;
+                           ptr++; counter++;
+                        }
+                        tmp_value[counter] = '\0';
+                        (void)fprintf(stdout, "         %s\n", tmp_value);
+                        if (*ptr == '\0')
+                        {
+                           break;
+                        }
+                        ptr++;
+                     }
+                  }
+                  (void)fprintf(stdout, "\n");
+               }
+               else
+               {
+#ifdef WITH_AFD_MON
+                  if (adl != NULL)
+                  {
+                     for (j = 0; j < adl_entries; j++)
+                     {
+                        if (adl[j].dir_id == jidd.jd[i].dir_id)
+                        {
+                           (void)strcpy(tmp_value, adl[j].orig_dir_name);
+                           url_insert_password(tmp_value, (view_passwd == YES) ? NULL : "XXXXX");
+                           (void)fprintf(stdout, "Source-Directory: %s\n", tmp_value);
+                           if (CHECK_STRCMP(adl[j].dir_name, adl[j].orig_dir_name) != 0)
+                           {
+                              (void)fprintf(stdout, "Local-Source-Dir: %s\n",
+                                            adl[j].dir_name);
+                           }
+                           break;
+                        }
+                     }
+                  }
+#endif
+                  (void)fprintf(stdout, "Dir-ID          : %x\n", jidd.jd[i].dir_id);
+                  (void)fprintf(stdout, "Dir position    : %d\n", jidd.jd[i].dir_id_pos);
+                  (void)fprintf(stdout, "DIR-options     : # Not available!\n");
+
+                  (void)fprintf(stdout, "File filters    : # Not available!\n");
+                  (void)fprintf(stdout, "File-Mask-ID    : %x\n", jidd.jd[i].file_mask_id);
+
+                  (void)strcpy(tmp_value, jidd.jd[i].recipient);
+                  url_insert_password(tmp_value, (view_passwd == YES) ? NULL : "XXXXX");
+                  (void)fprintf(stdout, "Destination     : %s\n", tmp_value);
+                  (void)fprintf(stdout, "Destination-ID  : %x\n", jidd.jd[i].recipient_id);
+                  (void)fprintf(stdout, "Host alias      : %s\n", jidd.jd[i].host_alias);
+                  (void)fprintf(stdout, "Host-Alias-ID   : %x\n", jidd.jd[i].host_id);
+
+#ifdef WITH_AFD_MON
+                  if (ahl != NULL)
+                  {
+                     for (j = 0; j < ahl_entries; j++)
+                     {
+                        if (my_strcmp(jidd.jd[i].host_alias,
+                                      ahl[j].host_alias) == 0)
+                        {
+                           if (ahl[j].real_hostname[0][0] == GROUP_IDENTIFIER)
+                           {
+                              (void)fprintf(stdout, "Real hostname   :\n");
+                           }
+                           else
+                           {
+                              (void)fprintf(stdout, "Real hostname   : %s ",
+                                            ahl[j].real_hostname[0]);
+                              if (ahl[j].real_hostname[1][0] == '\0')
+                              {
+                                 (void)fprintf(stdout, "\n");
+                              }
+                              else
+                              {
+                                 (void)fprintf(stdout, " %s\n",
+                                               ahl[j].real_hostname[1]);
+                              }
+                           }
+                           break;
+                        }
+                     }
+                  }
+#endif
+
+                  if (jidd.jd[i].no_of_loptions > 0)
+                  {
+                     if (jidd.jd[i].no_of_loptions == 1)
+                     {
+                        (void)fprintf(stdout, "AMG options     : %s\n",
+                                      jidd.jd[i].loptions);
+                     }
+                     else
+                     {
+                        char *ptr = jidd.jd[i].loptions;
+
+                        (void)fprintf(stdout, "AMG options     : %s\n", ptr);
+                        NEXT(ptr);
+                        for (j = 1; j < jidd.jd[i].no_of_loptions; j++)
+                        {
+                           (void)fprintf(stdout, "                  %s\n", ptr);
+                           NEXT(ptr);
+                        }
+                     }
+                  }
+                  if (jidd.jd[i].no_of_soptions > 0)
+                  {
+                     if (jidd.jd[i].no_of_soptions == 1)
+                     {
+                        (void)fprintf(stdout, "FD options      : %s\n",
+                                      jidd.jd[i].soptions);
+                     }
+                     else
+                     {
+                        char *ptr,
+                             *ptr_start;
+
+                        ptr = ptr_start = option_buffer;
+
+                        (void)strcpy(option_buffer, jidd.jd[i].soptions);
+                        while ((*ptr != '\n') && (*ptr != '\0'))
+                        {
+                           ptr++;
+                        }
+                        *ptr = '\0';
+                        ptr++;
+                        (void)fprintf(stdout, "FD options      : %s\n", ptr_start);
+                        for (j = 1; j < jidd.jd[i].no_of_soptions; j++)
+                        {
+                           ptr_start = ptr;
+                           while ((*ptr != '\n') && (*ptr != '\0'))
+                           {
+                              ptr++;
+                           }
+                           *ptr = '\0';
+                           ptr++;
+                           (void)fprintf(stdout, "                  %s\n", ptr_start);
+                        }
+                     }
+                  }
+                  (void)fprintf(stdout, "Priority        : %c\n", jidd.jd[i].priority);
+                  if (((no_of_search_ids > 0) && ((lines_drawn + 1) < no_of_search_ids)) ||
+                      ((no_of_search_ids == 0) && ((i + 1) < jidd.no_of_job_ids)))
+                  {
+                     (void)fprintf(stdout, "--------------------------------------------------------------------------------\n");
+                     lines_drawn++;
+                  }
+               }
+            }
+
+            free(alias_name);
+         }
+
+         detach_adl();
+         detach_ahl();
+      }
+      else
+      {
+         (void)fprintf(stdout, _("Job ID list is empty.\n"));
+      }
+
+      dealloc_jid();
+      detach_atd();
    }
    else
    {
+      /* Map to JID file. */
+      (void)sprintf(file, "%s%s%s", work_dir, FIFO_DIR, JOB_ID_DATA_FILE);
+      if ((fd = open(file, O_RDONLY)) == -1)
+      {
+         (void)fprintf(stderr, _("Failed to open() `%s' : %s (%s %d)\n"),
+                       file, strerror(errno), __FILE__, __LINE__);
+         exit(INCORRECT);
+      }
+
       if (fstat(fd, &stat_buf) == -1)
       {
          (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
+                       file, strerror(errno), __FILE__, __LINE__);
+         exit(INCORRECT);
+      }
+
+#ifdef HAVE_MMAP
+      if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+                      MAP_SHARED, fd, 0)) == (caddr_t)-1)
+#else
+      if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
+                          MAP_SHARED, file, 0)) == (caddr_t)-1)
+#endif
+      {
+         (void)fprintf(stderr, _("Failed to mmap() `%s' : %s (%s %d)\n"),
+                       file, strerror(errno), __FILE__, __LINE__);
+         exit(INCORRECT);
+      }
+      if (close(fd) == -1)
+      {
+         (void)fprintf(stderr, _("Failed to close() `%s' : %s (%s %d)\n"),
+                       file, strerror(errno), __FILE__, __LINE__);
+      }
+      if (*(ptr + SIZEOF_INT + 1 + 1 + 1) != CURRENT_JID_VERSION)
+      {
+         (void)fprintf(stderr, _("Incorrect JID version (data=%d current=%d)!\n"),
+                       *(ptr + SIZEOF_INT + 1 + 1 + 1), CURRENT_JID_VERSION);
+         exit(INCORRECT);
+      }
+      no_of_job_ids = *(int *)ptr;
+      ptr += AFD_WORD_OFFSET;
+      jd = (struct job_id_data *)ptr;
+      jid_size = stat_buf.st_size;
+
+      /* Map to file mask file. */
+      (void)sprintf(file, "%s%s%s", work_dir, FIFO_DIR, FILE_MASK_FILE);
+      if ((fd = open(file, O_RDONLY)) == -1)
+      {
+         (void)fprintf(stderr, _("Failed to open() `%s' : %s (%s %d)\n"),
                        file, strerror(errno), __FILE__, __LINE__);
          no_of_file_masks_id = 0;
       }
       else
       {
-#ifdef HAVE_MMAP
-         if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
-                         MAP_SHARED, fd, 0)) == (caddr_t)-1)
-#else
-         if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
-                             MAP_SHARED, file, 0)) == (caddr_t)-1)
-#endif
+         if (fstat(fd, &stat_buf) == -1)
          {
-            (void)fprintf(stderr, _("Failed to mmap() `%s' : %s (%s %d)\n"),
+            (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
                           file, strerror(errno), __FILE__, __LINE__);
-            fmd = NULL;
             no_of_file_masks_id = 0;
          }
          else
          {
-            no_of_file_masks_id = *(int *)ptr;
-            ptr += AFD_WORD_OFFSET;
-            fmd = ptr;
-            fmd_size = stat_buf.st_size;
-            fml_offset = sizeof(int) + sizeof(int);
-            mask_offset = fml_offset + sizeof(int) + sizeof(unsigned int) +
-                          sizeof(unsigned char);
+#ifdef HAVE_MMAP
+            if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+                            MAP_SHARED, fd, 0)) == (caddr_t)-1)
+#else
+            if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
+                                MAP_SHARED, file, 0)) == (caddr_t)-1)
+#endif
+            {
+               (void)fprintf(stderr, _("Failed to mmap() `%s' : %s (%s %d)\n"),
+                             file, strerror(errno), __FILE__, __LINE__);
+               fmd = NULL;
+               no_of_file_masks_id = 0;
+            }
+            else
+            {
+               no_of_file_masks_id = *(int *)ptr;
+               ptr += AFD_WORD_OFFSET;
+               fmd = ptr;
+               fmd_size = stat_buf.st_size;
+               fml_offset = sizeof(int) + sizeof(int);
+               mask_offset = fml_offset + sizeof(int) + sizeof(unsigned int) +
+                             sizeof(unsigned char);
+            }
+         }
+
+         if (close(fd) == -1)
+         {
+            (void)fprintf(stderr, _("Failed to close() `%s' : %s (%s %d)\n"),
+                          file, strerror(errno), __FILE__, __LINE__);
          }
       }
 
-      if (close(fd) == -1)
+      /* Map to directory_names file. */
+      (void)sprintf(file, "%s%s%s", work_dir, FIFO_DIR, DIR_NAME_FILE);
+      if ((fd = open(file, O_RDONLY)) == -1)
       {
-         (void)fprintf(stderr, _("Failed to close() `%s' : %s (%s %d)\n"),
-                       file, strerror(errno), __FILE__, __LINE__);
-      }
-   }
-
-   /* Map to directory_names file. */
-   (void)sprintf(file, "%s%s%s", work_dir, FIFO_DIR, DIR_NAME_FILE);
-   if ((fd = open(file, O_RDONLY)) == -1)
-   {
-      (void)fprintf(stderr, _("Failed to open() `%s' : %s (%s %d)\n"),
-                    file, strerror(errno), __FILE__, __LINE__);
-      no_of_dir_names = 0;
-   }
-   else
-   {
-      if (fstat(fd, &stat_buf) == -1)
-      {
-         (void)fprintf(stderr, _("Failed to mmap() `%s' : %s (%s %d)\n"),
+         (void)fprintf(stderr, _("Failed to open() `%s' : %s (%s %d)\n"),
                        file, strerror(errno), __FILE__, __LINE__);
          no_of_dir_names = 0;
       }
       else
       {
-#ifdef HAVE_MMAP
-         if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
-                         MAP_SHARED, fd, 0)) == (caddr_t)-1)
-#else
-         if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
-                             MAP_SHARED, file, 0)) == (caddr_t)-1)
-#endif
+         if (fstat(fd, &stat_buf) == -1)
          {
             (void)fprintf(stderr, _("Failed to mmap() `%s' : %s (%s %d)\n"),
                           file, strerror(errno), __FILE__, __LINE__);
-            dnb = NULL;
             no_of_dir_names = 0;
          }
          else
          {
-            no_of_dir_names = *(int *)ptr;
-            ptr += AFD_WORD_OFFSET;
-            dnb = (struct dir_name_buf *)ptr;
-            dnb_size = stat_buf.st_size;
+#ifdef HAVE_MMAP
+            if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+                            MAP_SHARED, fd, 0)) == (caddr_t)-1)
+#else
+            if ((ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
+                                MAP_SHARED, file, 0)) == (caddr_t)-1)
+#endif
+            {
+               (void)fprintf(stderr, _("Failed to mmap() `%s' : %s (%s %d)\n"),
+                             file, strerror(errno), __FILE__, __LINE__);
+               dnb = NULL;
+               no_of_dir_names = 0;
+            }
+            else
+            {
+               no_of_dir_names = *(int *)ptr;
+               ptr += AFD_WORD_OFFSET;
+               dnb = (struct dir_name_buf *)ptr;
+               dnb_size = stat_buf.st_size;
+            }
+         }
+
+         if (close(fd) == -1)
+         {
+            (void)fprintf(stderr, _("Failed to close() `%s' : %s (%s %d)\n"),
+                          file, strerror(errno), __FILE__, __LINE__);
          }
       }
 
-      if (close(fd) == -1)
+      /* Map to DIR_CONFIG name database. */
+      (void)sprintf(file, "%s%s%s", p_work_dir, FIFO_DIR, DC_LIST_FILE);
+      if ((fd = open(file, O_RDONLY)) != -1)
       {
-         (void)fprintf(stderr, _("Failed to close() `%s' : %s (%s %d)\n"),
-                       file, strerror(errno), __FILE__, __LINE__);
-      }
-   }
-
-   /* Map to DIR_CONFIG name database. */
-   (void)sprintf(file, "%s%s%s", p_work_dir, FIFO_DIR, DC_LIST_FILE);
-   if ((fd = open(file, O_RDONLY)) != -1)
-   {
-      if (fstat(fd, &stat_buf) != -1)
-      {
-         if (stat_buf.st_size > 0)
+         if (fstat(fd, &stat_buf) != -1)
          {
-            char *ptr;
+            if (stat_buf.st_size > 0)
+            {
+               char *ptr;
 
-            if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
-                            MAP_SHARED, fd, 0)) != (caddr_t) -1)
-            {                                                       
-               dcl_size = stat_buf.st_size;
-               no_of_dc_ids = *(int *)ptr; 
-               ptr += AFD_WORD_OFFSET;
-               dcl = (struct dir_config_list *)ptr;
+               if ((ptr = mmap(NULL, stat_buf.st_size, PROT_READ,
+                               MAP_SHARED, fd, 0)) != (caddr_t) -1)
+               {                                                       
+                  dcl_size = stat_buf.st_size;
+                  no_of_dc_ids = *(int *)ptr; 
+                  ptr += AFD_WORD_OFFSET;
+                  dcl = (struct dir_config_list *)ptr;
+               }
+               else
+               {
+                  (void)fprintf(stderr,
+                                _("Failed to mmap() to `%s' : %s (%s %d)\n"),
+                                file, strerror(errno), __FILE__, __LINE__);
+               }
             }
             else
             {
                (void)fprintf(stderr,
-                             _("Failed to mmap() to `%s' : %s (%s %d)\n"),
-                             file, strerror(errno), __FILE__, __LINE__);
+                             _("File mask database file is empty. (%s %d)\n"),
+                             __FILE__, __LINE__);
             }
          }
          else
          {
-            (void)fprintf(stderr,
-                          _("File mask database file is empty. (%s %d)\n"),
-                          __FILE__, __LINE__);
+            (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
+                          file, strerror(errno), __FILE__, __LINE__);
+         }
+         if (close(fd) == -1)
+         {
+            (void)fprintf(stderr, _("close() error : %s (%s %d)\n"),
+                          strerror(errno), __FILE__, __LINE__);     
          }
       }
       else
       {
-         (void)fprintf(stderr, _("Failed to fstat() `%s' : %s (%s %d)\n"),
+         (void)fprintf(stderr, _("Failed to open() `%s' : %s (%s %d)\n"),
                        file, strerror(errno), __FILE__, __LINE__);
       }
-      if (close(fd) == -1)
+
+      (void)fsa_attach_passive(NO, "jid_view");
+
+      if (no_of_job_ids > 0)
       {
-         (void)fprintf(stderr, _("close() error : %s (%s %d)\n"),
-                       strerror(errno), __FILE__, __LINE__);     
-      }
-   }
-   else
-   {
-      (void)fprintf(stderr, _("Failed to open() `%s' : %s (%s %d)\n"),
-                    file, strerror(errno), __FILE__, __LINE__);
-   }
-
-   (void)fsa_attach_passive(NO, "jid_view");
-
-   if (no_of_job_ids > 0)
-   {
-      int  j = 0,
-           lines_drawn = 0;
+         int  j = 0,
+              lines_drawn = 0;
 #ifdef _NEW_JID
-      char time_str[25];
+         char time_str[25];
 #endif
 
-      for (i = 0; i < no_of_job_ids; i++)
-      {
-         if (no_of_search_ids > 0)
+         for (i = 0; i < no_of_job_ids; i++)
          {
-            for (j = 0; j < no_of_search_ids; j++)
+            if (no_of_search_ids > 0)
             {
-               if (job_id[j] == jd[i].job_id)
+               for (j = 0; j < no_of_search_ids; j++)
                {
-                  break;
+                  if (job_id[j] == jd[i].job_id)
+                  {
+                     break;
+                  }
+               }
+               if (j == no_of_search_ids)
+               {
+                  continue;
                }
             }
-            if (j == no_of_search_ids)
+            if ((job_id == NULL) || (job_id[j] == jd[i].job_id))
             {
-               continue;
-            }
-         }
-         if ((job_id == NULL) || (job_id[j] == jd[i].job_id))
-         {
-            (void)fprintf(stdout, "Job-ID          : %x\n", jd[i].job_id);
+               (void)fprintf(stdout, "Job-ID          : %x\n", jd[i].job_id);
 #ifdef _NEW_JID
-            (void)strftime(time_str, 25, "%c", localtime(&jd[i].creation_time));
-            (void)fprintf(stdout, "Creation time   : %s\n", time_str);
+               (void)strftime(time_str, 25, "%c", localtime(&jd[i].creation_time));
+               (void)fprintf(stdout, "Creation time   : %s\n", time_str);
 #endif
-            if (dcl != NULL)
-            {
-               for (j = 0; j < no_of_dc_ids; j++)
+               if (dcl != NULL)
                {
-                  if (dcl[j].dc_id == jd[i].dir_config_id)
+                  for (j = 0; j < no_of_dc_ids; j++)
                   {
-                     (void)fprintf(stdout, "DIR_CONFIG      : %s\n",
-                                   dcl[j].dir_config_file);
-                     break;
-                  }
-               }
-            }
-            (void)fprintf(stdout, "DIR_CONFIG-ID   : %x\n", jd[i].dir_config_id);
-
-            if ((dir_config_view_mode == YES) && (no_of_search_ids == 1) &&
-                (dnb != NULL) && (fmd != NULL) && (fsa != NULL) &&
-                (fra_attach_passive() == SUCCESS))
-            {
-               int fra_pos = 0,
-                   gotcha = NO,
-                   position;
-
-               (void)fprintf(stdout, "File-Mask-ID    : %x\n", jd[i].file_mask_id);
-               (void)fprintf(stdout, "Destination-ID  : %x\n", jd[i].recipient_id);
-               (void)fprintf(stdout, "Host-Alias-ID   : %x\n", jd[i].host_id);
-
-               for (j = 0; j < no_of_dirs; j++)
-               {
-                  if (fra[j].dir_id == jd[i].dir_id)
-                  {
-                     fra_pos = j;
-                     gotcha = YES;
-                     break;
-                  }
-               }
-               if ((gotcha == YES) && (fra[fra_pos].fsa_pos != -1))
-               {
-                  if (fsa[fra[fra_pos].fsa_pos].real_hostname[1][0] == '\0')
-                  {
-                     (void)fprintf(stdout, "Real hostname(S): %s\n",
-                                   fsa[fra[fra_pos].fsa_pos].real_hostname[0]);
-                  }
-                  else
-                  {
-                     int second_host;
-
-                     (void)fprintf(stdout, "Real hostname(S): %s ",
-                                   fsa[fra[fra_pos].fsa_pos].real_hostname[(int)fsa[fra[fra_pos].fsa_pos].host_toggle - 1]);
-                     if (fsa[fra[fra_pos].fsa_pos].host_toggle == HOST_ONE)
+                     if (dcl[j].dc_id == jd[i].dir_config_id)
                      {
-                        second_host = 1;
-                     }
-                     else
-                     {
-                        second_host = 0;
-                     }
-                     if (fsa[fra[fra_pos].fsa_pos].auto_toggle == ON)
-                     {
-                        (void)fprintf(stdout, "%c%s%c\n",
-                                      AUTO_TOGGLE_OPEN,
-                                      fsa[fra[fra_pos].fsa_pos].real_hostname[second_host],
-                                      AUTO_TOGGLE_CLOSE);
-                     }
-                     else
-                     {
-                        (void)fprintf(stdout, "%c%s%c\n",
-                                      STATIC_TOGGLE_OPEN,
-                                      fsa[fra[fra_pos].fsa_pos].real_hostname[second_host],
-                                      STATIC_TOGGLE_CLOSE);
+                        (void)fprintf(stdout, "DIR_CONFIG      : %s\n",
+                                      dcl[j].dir_config_file);
+                        break;
                      }
                   }
                }
+               (void)fprintf(stdout, "DIR_CONFIG-ID   : %x\n", jd[i].dir_config_id);
 
-               if ((position = get_host_id_position(fsa, jd[i].host_id,
-                                                    no_of_hosts)) >= 0)
+               if ((dir_config_view_mode == YES) && (no_of_search_ids == 1) &&
+                   (dnb != NULL) && (fmd != NULL) && (fsa != NULL) &&
+                   (fra_attach_passive() == SUCCESS))
                {
-                  if (fsa[position].real_hostname[1][0] == '\0')
-                  {
-                     (void)fprintf(stdout, "Real hostname(D): %s\n",
-                                   fsa[position].real_hostname[0]);
-                  }
-                  else
-                  {
-                     int second_host;
+                  int fra_pos = 0,
+                      gotcha = NO,
+                      position;
 
-                     (void)fprintf(stdout, "Real hostname(D): %s ",
-                                   fsa[position].real_hostname[(int)fsa[position].host_toggle - 1]);
-                     if (fsa[position].host_toggle == HOST_ONE)
+                  (void)fprintf(stdout, "File-Mask-ID    : %x\n", jd[i].file_mask_id);
+                  (void)fprintf(stdout, "Destination-ID  : %x\n", jd[i].recipient_id);
+                  (void)fprintf(stdout, "Host-Alias-ID   : %x\n", jd[i].host_id);
+
+                  for (j = 0; j < no_of_dirs; j++)
+                  {
+                     if (fra[j].dir_id == jd[i].dir_id)
                      {
-                        second_host = 1;
-                     }
-                     else
-                     {
-                        second_host = 0;
-                     }
-                     if (fsa[position].auto_toggle == ON)
-                     {
-                        (void)fprintf(stdout, "%c%s%c\n",
-                                      AUTO_TOGGLE_OPEN,
-                                      fsa[position].real_hostname[second_host],
-                                      AUTO_TOGGLE_CLOSE);
-                     }
-                     else
-                     {
-                        (void)fprintf(stdout, "%c%s%c\n",
-                                      STATIC_TOGGLE_OPEN,
-                                      fsa[position].real_hostname[second_host],
-                                      STATIC_TOGGLE_CLOSE);
+                        fra_pos = j;
+                        gotcha = YES;
+                        break;
                      }
                   }
-               }
-               (void)fprintf(stdout, "--------------------------------------------------------------------------------\n");
-
-               for (j = 0; j < no_of_dir_names; j++)
-               {
-                  if (dnb[j].dir_id == jd[i].dir_id)
+                  if ((gotcha == YES) && (fra[fra_pos].fsa_pos != -1))
                   {
-                     (void)strcpy(tmp_value, dnb[j].orig_dir_name);
-                     url_insert_password(tmp_value, (view_passwd == YES) ? NULL : "XXXXX");
-                     if ((gotcha == YES) &&
-                         (fra[fra_pos].in_dc_flag & DIR_ALIAS_IDC))
+                     if (fsa[fra[fra_pos].fsa_pos].real_hostname[1][0] == '\0')
                      {
-                        (void)fprintf(stdout, "%s %s\n%s\n",
-                                      DIR_IDENTIFIER, fra[fra_pos].dir_alias,
-                                      tmp_value);
+                        (void)fprintf(stdout, "Real hostname(S): %s\n",
+                                      fsa[fra[fra_pos].fsa_pos].real_hostname[0]);
                      }
                      else
                      {
-                        (void)fprintf(stdout, "%s\n%s\n",
-                                      DIR_IDENTIFIER, tmp_value);
-                     }
+                        int second_host;
 
-                     if (CHECK_STRCMP(dnb[j].dir_name, dnb[j].orig_dir_name) != 0)
-                     {
-                        (void)fprintf(stdout, "# %s\n\n", dnb[j].dir_name);
-                     }
-                     else
-                     {
-                        (void)fprintf(stdout, "\n");
-                     }
-                     break;
-                  }
-               }
-
-               get_dir_options(jd[i].dir_id, &d_o);
-               if (d_o.no_of_dir_options > 0)
-               {
-                  (void)fprintf(stdout, "   %s\n", DIR_OPTION_IDENTIFIER);
-                  for (j = 0; j < d_o.no_of_dir_options; j++)
-                  {
-                     (void)fprintf(stdout, "   %s\n", d_o.aoptions[j]);
-                  }
-                  (void)fprintf(stdout, "\n");
-               }
-
-               ptr = fmd;
-               gotcha = NO;
-               for (j = 0; j < no_of_file_masks_id; j++)
-               {
-                  if (*(unsigned int *)(ptr + fml_offset + sizeof(int)) == jd[i].file_mask_id)
-                  {
-                     int    k;
-                     time_t now = time(NULL);
-                     char   *p_file = ptr + mask_offset,
-                            tmp_mask[MAX_FILENAME_LENGTH];
-
-                     if (expand_filter(p_file, tmp_mask, now) == YES)
-                     {
-                        (void)fprintf(stdout, "   %s\n   %s # %s\n",
-                                      FILE_IDENTIFIER, p_file, tmp_mask);
-                     }
-                     else
-                     {
-                         (void)fprintf(stdout, "   %s\n   %s\n",
-                                       FILE_IDENTIFIER, p_file);
-                     }
-                     NEXT(p_file);
-                     for (k = 1; k < *(int *)ptr; k++)
-                     {
-                        if (expand_filter(p_file, tmp_mask, now) == YES)
+                        (void)fprintf(stdout, "Real hostname(S): %s ",
+                                      fsa[fra[fra_pos].fsa_pos].real_hostname[(int)fsa[fra[fra_pos].fsa_pos].host_toggle - 1]);
+                        if (fsa[fra[fra_pos].fsa_pos].host_toggle == HOST_ONE)
                         {
-                           (void)fprintf(stdout, "   %s # %s\n",
-                                         p_file, tmp_mask);
+                           second_host = 1;
                         }
                         else
                         {
-                           (void)fprintf(stdout, "   %s\n", p_file);
+                           second_host = 0;
                         }
-                        NEXT(p_file);
-                     }
-                     gotcha = YES;
-                     break;
-                  }
-                  ptr += (mask_offset + *(int *)(ptr + fml_offset) +
-                          sizeof(char) + *(ptr + mask_offset - 1));
-               }
-               if (gotcha == NO)
-               {
-                  (void)fprintf(stdout,
-                                "   %s\n   * # Filter database broken, assuming this filter!!!\n",
-                                FILE_IDENTIFIER);
-               }
-
-               (void)fprintf(stdout, "\n      %s\n\n         %s\n",
-                             DESTINATION_IDENTIFIER, RECIPIENT_IDENTIFIER);
-               (void)strcpy(tmp_value, jd[i].recipient);
-               url_insert_password(tmp_value, (view_passwd == YES) ? NULL : "XXXXX");
-               (void)fprintf(stdout, "         %s\n", tmp_value);
-
-               /* Show all options. */
-               (void)fprintf(stdout, "\n         %s\n         %s %c\n",
-                             OPTION_IDENTIFIER, PRIORITY_ID,
-                             jd[i].priority);
-
-               /* Show all AMG options. */
-               if (jd[i].no_of_loptions > 0)
-               {
-                  char *ptr = jd[i].loptions;
-
-                  for (j = 0; j < jd[i].no_of_loptions; j++)
-                  {
-                     (void)fprintf(stdout, "         %s\n", ptr);
-                     NEXT(ptr);
-                  }
-               }
-
-               /* Show all FD options. */
-               if (jd[i].no_of_soptions > 0)
-               {
-                  int  counter;
-                  char *ptr = jd[i].soptions;
-
-                  for (j = 0; j < jd[i].no_of_soptions; j++)
-                  {
-                     counter = 0;
-                     while ((*ptr != '\n') && (*ptr != '\0'))
-                     {
-                        tmp_value[counter] = *ptr;
-                        ptr++; counter++;
-                     }
-                     tmp_value[counter] = '\0';
-                     (void)fprintf(stdout, "         %s\n", tmp_value);
-                     if (*ptr == '\0')
-                     {
-                        break;
-                     }
-                     ptr++;
-                  }
-               }
-               (void)fprintf(stdout, "\n");
-
-               (void)fra_detach();
-            }
-            else
-            {
-               if (dnb != NULL)
-               {
-                  for (j = 0; j < no_of_dir_names; j++)
-                  {
-                     if (dnb[j].dir_id == jd[i].dir_id)
-                     {
-                        (void)strcpy(tmp_value, dnb[j].orig_dir_name);
-                        url_insert_password(tmp_value, (view_passwd == YES) ? NULL : "XXXXX");
-                        (void)fprintf(stdout, "Source-Directory: %s\n", tmp_value);
-                        if (CHECK_STRCMP(dnb[j].dir_name, dnb[j].orig_dir_name) != 0)
+                        if (fsa[fra[fra_pos].fsa_pos].auto_toggle == ON)
                         {
-                           (void)fprintf(stdout, "Local-Source-Dir: %s\n",
-                                         dnb[j].dir_name);
-                        }
-                        break;
-                     }
-                  }
-               }
-               (void)fprintf(stdout, "Dir-ID          : %x\n", jd[i].dir_id);
-               (void)fprintf(stdout, "Dir position    : %d\n", jd[i].dir_id_pos);
-               get_dir_options(jd[i].dir_id, &d_o);
-               if (d_o.no_of_dir_options > 0)
-               {
-                  (void)fprintf(stdout, "DIR-options     : %s\n", d_o.aoptions[0]);
-                  for (j = 1; j < d_o.no_of_dir_options; j++)
-                  {
-                     (void)fprintf(stdout, "                  %s\n", d_o.aoptions[j]);
-                  }
-               }
-               if (fmd != NULL)
-               {
-                  ptr = fmd;
-
-                  for (j = 0; j < no_of_file_masks_id; j++)
-                  {
-                     if (*(unsigned int *)(ptr + fml_offset + sizeof(int)) == jd[i].file_mask_id)
-                     {
-                        if (*(int *)ptr == 1)
-                        {
-                           (void)fprintf(stdout, "File filters    : %s\n",
-                                         (ptr + mask_offset));
+                           (void)fprintf(stdout, "%c%s%c\n",
+                                         AUTO_TOGGLE_OPEN,
+                                         fsa[fra[fra_pos].fsa_pos].real_hostname[second_host],
+                                         AUTO_TOGGLE_CLOSE);
                         }
                         else
                         {
-                           char *p_file = ptr + mask_offset;
-
-                           (void)fprintf(stdout, "File filters    : %s\n", p_file);
-                           NEXT(p_file);
-                           for (j = 1; j < *(int *)ptr; j++)
-                           {
-                              (void)fprintf(stdout, "                  %s\n", p_file);
-                              NEXT(p_file);
-                           }
+                           (void)fprintf(stdout, "%c%s%c\n",
+                                         STATIC_TOGGLE_OPEN,
+                                         fsa[fra[fra_pos].fsa_pos].real_hostname[second_host],
+                                         STATIC_TOGGLE_CLOSE);
                         }
-                        break;
                      }
-                     ptr += (mask_offset + *(int *)(ptr + fml_offset) +
-                             sizeof(char) + *(ptr + mask_offset - 1));
                   }
-               }
-               (void)fprintf(stdout, "File-Mask-ID    : %x\n", jd[i].file_mask_id);
-               (void)strcpy(tmp_value, jd[i].recipient);
-               url_insert_password(tmp_value, (view_passwd == YES) ? NULL : "XXXXX");
-               (void)fprintf(stdout, "Destination     : %s\n", tmp_value);
-               (void)fprintf(stdout, "Destination-ID  : %x\n", jd[i].recipient_id);
-               (void)fprintf(stdout, "Host alias      : %s\n", jd[i].host_alias);
-               (void)fprintf(stdout, "Host-Alias-ID   : %x\n", jd[i].host_id);
-               if (fsa != NULL)
-               {
-                  int position;
 
                   if ((position = get_host_id_position(fsa, jd[i].host_id,
                                                        no_of_hosts)) >= 0)
                   {
                      if (fsa[position].real_hostname[1][0] == '\0')
                      {
-                        (void)fprintf(stdout, "Real hostname   : %s\n",
+                        (void)fprintf(stdout, "Real hostname(D): %s\n",
                                       fsa[position].real_hostname[0]);
                      }
                      else
                      {
                         int second_host;
 
-                        (void)fprintf(stdout, "Real hostname   : %s ",
+                        (void)fprintf(stdout, "Real hostname(D): %s ",
                                       fsa[position].real_hostname[(int)fsa[position].host_toggle - 1]);
                         if (fsa[position].host_toggle == HOST_ONE)
                         {
@@ -819,108 +970,362 @@ main(int argc, char *argv[])
                         }
                      }
                   }
-               }
-               if (jd[i].no_of_loptions > 0)
-               {
-                  if (jd[i].no_of_loptions == 1)
+                  (void)fprintf(stdout, "--------------------------------------------------------------------------------\n");
+
+                  for (j = 0; j < no_of_dir_names; j++)
                   {
-                     (void)fprintf(stdout, "AMG options     : %s\n",
-                                   jd[i].loptions);
+                     if (dnb[j].dir_id == jd[i].dir_id)
+                     {
+                        (void)strcpy(tmp_value, dnb[j].orig_dir_name);
+                        url_insert_password(tmp_value, (view_passwd == YES) ? NULL : "XXXXX");
+                        if ((gotcha == YES) &&
+                            (fra[fra_pos].in_dc_flag & DIR_ALIAS_IDC))
+                        {
+                           (void)fprintf(stdout, "%s %s\n%s\n",
+                                         DIR_IDENTIFIER, fra[fra_pos].dir_alias,
+                                         tmp_value);
+                        }
+                        else
+                        {
+                           (void)fprintf(stdout, "%s\n%s\n",
+                                         DIR_IDENTIFIER, tmp_value);
+                        }
+
+                        if (CHECK_STRCMP(dnb[j].dir_name, dnb[j].orig_dir_name) != 0)
+                        {
+                           (void)fprintf(stdout, "# %s\n\n", dnb[j].dir_name);
+                        }
+                        else
+                        {
+                           (void)fprintf(stdout, "\n");
+                        }
+                        break;
+                     }
                   }
-                  else
+
+                  get_dir_options(jd[i].dir_id, &d_o);
+                  if (d_o.no_of_dir_options > 0)
+                  {
+                     (void)fprintf(stdout, "   %s\n", DIR_OPTION_IDENTIFIER);
+                     for (j = 0; j < d_o.no_of_dir_options; j++)
+                     {
+                        (void)fprintf(stdout, "   %s\n", d_o.aoptions[j]);
+                     }
+                     (void)fprintf(stdout, "\n");
+                  }
+
+                  ptr = fmd;
+                  gotcha = NO;
+                  for (j = 0; j < no_of_file_masks_id; j++)
+                  {
+                     if (*(unsigned int *)(ptr + fml_offset + sizeof(int)) == jd[i].file_mask_id)
+                     {
+                        int    k;
+                        time_t now = time(NULL);
+                        char   *p_file = ptr + mask_offset,
+                               tmp_mask[MAX_FILENAME_LENGTH];
+
+                        if (expand_filter(p_file, tmp_mask, now) == YES)
+                        {
+                           (void)fprintf(stdout, "   %s\n   %s # %s\n",
+                                         FILE_IDENTIFIER, p_file, tmp_mask);
+                        }
+                        else
+                        {
+                            (void)fprintf(stdout, "   %s\n   %s\n",
+                                          FILE_IDENTIFIER, p_file);
+                        }
+                        NEXT(p_file);
+                        for (k = 1; k < *(int *)ptr; k++)
+                        {
+                           if (expand_filter(p_file, tmp_mask, now) == YES)
+                           {
+                              (void)fprintf(stdout, "   %s # %s\n",
+                                            p_file, tmp_mask);
+                           }
+                           else
+                           {
+                              (void)fprintf(stdout, "   %s\n", p_file);
+                           }
+                           NEXT(p_file);
+                        }
+                        gotcha = YES;
+                        break;
+                     }
+                     ptr += (mask_offset + *(int *)(ptr + fml_offset) +
+                             sizeof(char) + *(ptr + mask_offset - 1));
+                  }
+                  if (gotcha == NO)
+                  {
+                     (void)fprintf(stdout,
+                                   "   %s\n   * # Filter database broken, assuming this filter!!!\n",
+                                   FILE_IDENTIFIER);
+                  }
+
+                  (void)fprintf(stdout, "\n      %s\n\n         %s\n",
+                                DESTINATION_IDENTIFIER, RECIPIENT_IDENTIFIER);
+                  (void)strcpy(tmp_value, jd[i].recipient);
+                  url_insert_password(tmp_value, (view_passwd == YES) ? NULL : "XXXXX");
+                  (void)fprintf(stdout, "         %s\n", tmp_value);
+
+                  /* Show all options. */
+                  (void)fprintf(stdout, "\n         %s\n         %s %c\n",
+                                OPTION_IDENTIFIER, PRIORITY_ID,
+                                jd[i].priority);
+
+                  /* Show all AMG options. */
+                  if (jd[i].no_of_loptions > 0)
                   {
                      char *ptr = jd[i].loptions;
 
-                     (void)fprintf(stdout, "AMG options     : %s\n", ptr);
-                     NEXT(ptr);
-                     for (j = 1; j < jd[i].no_of_loptions; j++)
+                     for (j = 0; j < jd[i].no_of_loptions; j++)
                      {
-                        (void)fprintf(stdout, "                  %s\n", ptr);
+                        (void)fprintf(stdout, "         %s\n", ptr);
                         NEXT(ptr);
                      }
                   }
-               }
-               if (jd[i].no_of_soptions > 0)
-               {
-                  if (jd[i].no_of_soptions == 1)
-                  {
-                     (void)fprintf(stdout, "FD options      : %s\n",
-                                   jd[i].soptions);
-                  }
-                  else
-                  {
-                     char *ptr,
-                          *ptr_start;
 
-                     ptr = ptr_start = option_buffer;
+                  /* Show all FD options. */
+                  if (jd[i].no_of_soptions > 0)
+                  {
+                     int  counter;
+                     char *ptr = jd[i].soptions;
 
-                     (void)strcpy(option_buffer, jd[i].soptions);
-                     while ((*ptr != '\n') && (*ptr != '\0'))
+                     for (j = 0; j < jd[i].no_of_soptions; j++)
                      {
+                        counter = 0;
+                        while ((*ptr != '\n') && (*ptr != '\0'))
+                        {
+                           tmp_value[counter] = *ptr;
+                           ptr++; counter++;
+                        }
+                        tmp_value[counter] = '\0';
+                        (void)fprintf(stdout, "         %s\n", tmp_value);
+                        if (*ptr == '\0')
+                        {
+                           break;
+                        }
                         ptr++;
                      }
-                     *ptr = '\0';
-                     ptr++;
-                     (void)fprintf(stdout, "FD options      : %s\n", ptr_start);
-                     for (j = 1; j < jd[i].no_of_soptions; j++)
+                  }
+                  (void)fprintf(stdout, "\n");
+
+                  (void)fra_detach();
+               }
+               else
+               {
+                  if (dnb != NULL)
+                  {
+                     for (j = 0; j < no_of_dir_names; j++)
                      {
-                        ptr_start = ptr;
+                        if (dnb[j].dir_id == jd[i].dir_id)
+                        {
+                           (void)strcpy(tmp_value, dnb[j].orig_dir_name);
+                           url_insert_password(tmp_value, (view_passwd == YES) ? NULL : "XXXXX");
+                           (void)fprintf(stdout, "Source-Directory: %s\n", tmp_value);
+                           if (CHECK_STRCMP(dnb[j].dir_name, dnb[j].orig_dir_name) != 0)
+                           {
+                              (void)fprintf(stdout, "Local-Source-Dir: %s\n",
+                                            dnb[j].dir_name);
+                           }
+                           break;
+                        }
+                     }
+                  }
+                  (void)fprintf(stdout, "Dir-ID          : %x\n", jd[i].dir_id);
+                  (void)fprintf(stdout, "Dir position    : %d\n", jd[i].dir_id_pos);
+                  get_dir_options(jd[i].dir_id, &d_o);
+                  if (d_o.no_of_dir_options > 0)
+                  {
+                     (void)fprintf(stdout, "DIR-options     : %s\n", d_o.aoptions[0]);
+                     for (j = 1; j < d_o.no_of_dir_options; j++)
+                     {
+                        (void)fprintf(stdout, "                  %s\n", d_o.aoptions[j]);
+                     }
+                  }
+                  if (fmd != NULL)
+                  {
+                     ptr = fmd;
+
+                     for (j = 0; j < no_of_file_masks_id; j++)
+                     {
+                        if (*(unsigned int *)(ptr + fml_offset + sizeof(int)) == jd[i].file_mask_id)
+                        {
+                           if (*(int *)ptr == 1)
+                           {
+                              (void)fprintf(stdout, "File filters    : %s\n",
+                                            (ptr + mask_offset));
+                           }
+                           else
+                           {
+                              char *p_file = ptr + mask_offset;
+
+                              (void)fprintf(stdout, "File filters    : %s\n", p_file);
+                              NEXT(p_file);
+                              for (j = 1; j < *(int *)ptr; j++)
+                              {
+                                 (void)fprintf(stdout, "                  %s\n", p_file);
+                                 NEXT(p_file);
+                              }
+                           }
+                           break;
+                        }
+                        ptr += (mask_offset + *(int *)(ptr + fml_offset) +
+                                sizeof(char) + *(ptr + mask_offset - 1));
+                     }
+                  }
+                  (void)fprintf(stdout, "File-Mask-ID    : %x\n", jd[i].file_mask_id);
+                  (void)strcpy(tmp_value, jd[i].recipient);
+                  url_insert_password(tmp_value, (view_passwd == YES) ? NULL : "XXXXX");
+                  (void)fprintf(stdout, "Destination     : %s\n", tmp_value);
+                  (void)fprintf(stdout, "Destination-ID  : %x\n", jd[i].recipient_id);
+                  (void)fprintf(stdout, "Host alias      : %s\n", jd[i].host_alias);
+                  (void)fprintf(stdout, "Host-Alias-ID   : %x\n", jd[i].host_id);
+                  if (fsa != NULL)
+                  {
+                     int position;
+
+                     if ((position = get_host_id_position(fsa, jd[i].host_id,
+                                                          no_of_hosts)) >= 0)
+                     {
+                        if (fsa[position].real_hostname[1][0] == '\0')
+                        {
+                           (void)fprintf(stdout, "Real hostname   : %s\n",
+                                         fsa[position].real_hostname[0]);
+                        }
+                        else
+                        {
+                           int second_host;
+
+                           (void)fprintf(stdout, "Real hostname   : %s ",
+                                         fsa[position].real_hostname[(int)fsa[position].host_toggle - 1]);
+                           if (fsa[position].host_toggle == HOST_ONE)
+                           {
+                              second_host = 1;
+                           }
+                           else
+                           {
+                              second_host = 0;
+                           }
+                           if (fsa[position].auto_toggle == ON)
+                           {
+                              (void)fprintf(stdout, "%c%s%c\n",
+                                            AUTO_TOGGLE_OPEN,
+                                            fsa[position].real_hostname[second_host],
+                                            AUTO_TOGGLE_CLOSE);
+                           }
+                           else
+                           {
+                              (void)fprintf(stdout, "%c%s%c\n",
+                                            STATIC_TOGGLE_OPEN,
+                                            fsa[position].real_hostname[second_host],
+                                            STATIC_TOGGLE_CLOSE);
+                           }
+                        }
+                     }
+                  }
+                  if (jd[i].no_of_loptions > 0)
+                  {
+                     if (jd[i].no_of_loptions == 1)
+                     {
+                        (void)fprintf(stdout, "AMG options     : %s\n",
+                                      jd[i].loptions);
+                     }
+                     else
+                     {
+                        char *ptr = jd[i].loptions;
+
+                        (void)fprintf(stdout, "AMG options     : %s\n", ptr);
+                        NEXT(ptr);
+                        for (j = 1; j < jd[i].no_of_loptions; j++)
+                        {
+                           (void)fprintf(stdout, "                  %s\n", ptr);
+                           NEXT(ptr);
+                        }
+                     }
+                  }
+                  if (jd[i].no_of_soptions > 0)
+                  {
+                     if (jd[i].no_of_soptions == 1)
+                     {
+                        (void)fprintf(stdout, "FD options      : %s\n",
+                                      jd[i].soptions);
+                     }
+                     else
+                     {
+                        char *ptr,
+                             *ptr_start;
+
+                        ptr = ptr_start = option_buffer;
+
+                        (void)strcpy(option_buffer, jd[i].soptions);
                         while ((*ptr != '\n') && (*ptr != '\0'))
                         {
                            ptr++;
                         }
                         *ptr = '\0';
                         ptr++;
-                        (void)fprintf(stdout, "                  %s\n", ptr_start);
+                        (void)fprintf(stdout, "FD options      : %s\n", ptr_start);
+                        for (j = 1; j < jd[i].no_of_soptions; j++)
+                        {
+                           ptr_start = ptr;
+                           while ((*ptr != '\n') && (*ptr != '\0'))
+                           {
+                              ptr++;
+                           }
+                           *ptr = '\0';
+                           ptr++;
+                           (void)fprintf(stdout, "                  %s\n", ptr_start);
+                        }
                      }
                   }
-               }
-               (void)fprintf(stdout, "Priority        : %c\n", jd[i].priority);
-               if (((no_of_search_ids > 0) && ((lines_drawn + 1) < no_of_search_ids)) ||
-                   ((no_of_search_ids == 0) && ((i + 1) < no_of_job_ids)))
-               {
-                  (void)fprintf(stdout, "--------------------------------------------------------------------------------\n");
-                  lines_drawn++;
+                  (void)fprintf(stdout, "Priority        : %c\n", jd[i].priority);
+                  if (((no_of_search_ids > 0) && ((lines_drawn + 1) < no_of_search_ids)) ||
+                      ((no_of_search_ids == 0) && ((i + 1) < no_of_job_ids)))
+                  {
+                     (void)fprintf(stdout, "--------------------------------------------------------------------------------\n");
+                     lines_drawn++;
+                  }
                }
             }
          }
       }
-   }
-   else
-   {
-      (void)fprintf(stdout, _("Job ID list is empty.\n"));
-   }
+      else
+      {
+         (void)fprintf(stdout, _("Job ID list is empty.\n"));
+      }
 
-   if (fmd != NULL)
-   {
-      if (munmap((char *)fmd - AFD_WORD_OFFSET, fmd_size) == -1)
+      if (fmd != NULL)
+      {
+         if (munmap((char *)fmd - AFD_WORD_OFFSET, fmd_size) == -1)
+         {
+            (void)fprintf(stderr, _("Failed to munmap() `%s' : %s (%s %d)\n"),
+                          FILE_MASK_FILE, strerror(errno), __FILE__, __LINE__);
+         }
+      }
+      if (dnb != NULL)
+      {
+         if (munmap((char *)dnb - AFD_WORD_OFFSET, dnb_size) == -1)
+         {
+            (void)fprintf(stderr, _("Failed to munmap() `%s' : %s (%s %d)\n"),
+                          DIR_NAME_FILE, strerror(errno), __FILE__, __LINE__);
+         }
+      }
+      if (dcl != NULL)
+      {
+         if (munmap((char *)dcl - AFD_WORD_OFFSET, dcl_size) == -1)
+         {
+            (void)fprintf(stderr, _("Failed to munmap() `%s' : %s (%s %d)\n"),
+                          DC_LIST_FILE, strerror(errno), __FILE__, __LINE__);
+         }
+      }
+      if (munmap((char *)jd - AFD_WORD_OFFSET, jid_size) == -1)
       {
          (void)fprintf(stderr, _("Failed to munmap() `%s' : %s (%s %d)\n"),
-                       FILE_MASK_FILE, strerror(errno), __FILE__, __LINE__);
+                       file, strerror(errno), __FILE__, __LINE__);
       }
+      (void)fsa_detach(NO);
    }
-   if (dnb != NULL)
-   {
-      if (munmap((char *)dnb - AFD_WORD_OFFSET, dnb_size) == -1)
-      {
-         (void)fprintf(stderr, _("Failed to munmap() `%s' : %s (%s %d)\n"),
-                       DIR_NAME_FILE, strerror(errno), __FILE__, __LINE__);
-      }
-   }
-   if (dcl != NULL)
-   {
-      if (munmap((char *)dcl - AFD_WORD_OFFSET, dcl_size) == -1)
-      {
-         (void)fprintf(stderr, _("Failed to munmap() `%s' : %s (%s %d)\n"),
-                       DC_LIST_FILE, strerror(errno), __FILE__, __LINE__);
-      }
-   }
-   if (munmap((char *)jd - AFD_WORD_OFFSET, jid_size) == -1)
-   {
-      (void)fprintf(stderr, _("Failed to munmap() `%s' : %s (%s %d)\n"),
-                    file, strerror(errno), __FILE__, __LINE__);
-   }
-   (void)fsa_detach(NO);
 
    exit(SUCCESS);
 }

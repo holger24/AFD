@@ -658,16 +658,6 @@ struct aldad_proc_list
 extern void check_dna(void),
             eval_input_alda(int *, char **),
             get_full_source(unsigned int, char *, int *),
-            alloc_jid(char *),
-#ifdef WITH_AFD_MON
-            attach_adl(char *),
-            attach_ahl(char *),
-            attach_atd(char *),
-            detach_adl(void),
-            detach_ahl(void),
-            detach_atd(void),
-#endif
-            dealloc_jid(void),
             print_alda_data(void),
             seek_cache_position(struct log_file_data *, time_t),
             show_file_content(FILE *, char *);
@@ -691,6 +681,7 @@ extern int  check_output_line(char *, char *, off_t, time_t, unsigned int,
 #ifdef _DELETE_LOG
 extern int  check_delete_line(char *, char *, off_t, time_t, unsigned int,
                               unsigned int *, unsigned int *);
+extern void get_alias_name(unsigned int, char *, int *);
 #endif
 extern int  check_did(unsigned int),
             check_host_alias(char *, char *, int),

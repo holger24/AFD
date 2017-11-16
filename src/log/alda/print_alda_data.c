@@ -978,6 +978,11 @@ print_alda_data(void)
                         break;
 
                      case 'H' : /* Target alias name. */
+                        if ((dlog.alias_name[0] == '\0') && (dlog.job_id != 0))
+                        {
+                           get_alias_name(dlog.job_id, dlog.alias_name,
+                                          &dlog.alias_name_length);
+                        }
                         i += pri_string(right_side, max_length, dlog.alias_name,
                                         dlog.alias_name_length, i);
                         ptr++;

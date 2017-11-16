@@ -4094,6 +4094,16 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
 #ifdef WITH_IP_DB
                     add_to_ip_db(char *, char *),
 #endif
+                    alloc_jid(char *),
+#ifdef WITH_AFD_MON
+                    attach_adl(char *),
+                    attach_ahl(char *),
+                    attach_atd(char *),
+                    detach_adl(void),
+                    detach_ahl(void),
+                    detach_atd(void),
+#endif
+                    dealloc_jid(void),
                     bitset(unsigned char *, int),
                     change_alias_order(char **, int),
                     change_name(char *, char *, char *, char *,
