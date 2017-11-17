@@ -1,6 +1,6 @@
 /*
  *  show_job_list.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -188,7 +188,7 @@ show_job_list(FILE *p_data)
 #else
                                        m = snprintf((char *)buffer,
                                                     3 + MAX_INT_LENGTH + MAX_INT_HEX_LENGTH + MAX_INT_HEX_LENGTH + MAX_INT_HEX_LENGTH + 2 + MAX_RECIPIENT_LENGTH + 2,
-                                                    "Jl %d %x %x %x %c",
+                                                    "Jl %d %x %x %x %c ",
                                                     i, jd[j].job_id,
                                                     jd[j].dir_id,
                                                     jd[j].no_of_loptions,
