@@ -84,8 +84,8 @@ off_t                      fra_size,
 const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 struct fileretrieve_status *fra = NULL;
 struct filetransfer_status *fsa = NULL;
-struct jid_data            jidd;
 #ifdef WITH_AFD_MON
+struct jid_data            jidd;
 struct afd_dir_list        *adl = NULL;
 struct afd_host_list       *ahl = NULL;
 struct afd_typesize_data   *atd = NULL;
@@ -112,8 +112,10 @@ main(int argc, char *argv[])
                            dnb_size = 0,
                            fmd_size = 0,
                            jid_size = 0;
-   char                    afd_alias[MAX_AFDNAME_LENGTH + 1],
-                           fake_user[MAX_FULL_USER_ID_LENGTH],
+#ifdef WITH_AFD_MON
+   char                    afd_alias[MAX_AFDNAME_LENGTH + 1];
+#endif
+   char                    fake_user[MAX_FULL_USER_ID_LENGTH],
                            file[MAX_PATH_LENGTH],
                            *fmd = NULL,
                            option_buffer[MAX_OPTION_LENGTH],
@@ -151,10 +153,12 @@ main(int argc, char *argv[])
    {
       profile[0] = '\0';
    }
-   if (get_arg(&argc, argv, "-a", afd_alias, MAX_AFDNAME_LENGTH) == INCORRECT)
+#ifdef WITH_AFD_MON
+   if (get_arg(&argc, argv, "-r", afd_alias, MAX_AFDNAME_LENGTH) == INCORRECT)
    {
       afd_alias[0] = '\0';
    }
+#endif
    if (get_arg(&argc, argv, "--dir_config", NULL, 0) == SUCCESS)
    {
       dir_config_view_mode = YES;
@@ -250,6 +254,7 @@ main(int argc, char *argv[])
       job_id = NULL;
    }
 
+#ifdef WITH_AFD_MON
    if (afd_alias[0] != '\0')
    {
       attach_ahl(afd_alias);
@@ -260,14 +265,20 @@ main(int argc, char *argv[])
       {
          int  j = 0,
               lines_drawn = 0;
-         char *alias_name;
+         char *host_alias_destination,
+              *host_alias_source;
 #ifdef _NEW_JID
          char time_str[25];
 #endif
 
          attach_adl(afd_alias);
 
-         if ((alias_name = malloc(max_hostname_length + 1)) == NULL)
+         if ((host_alias_destination = malloc(max_hostname_length + 1)) == NULL)
+         {
+            (void)fprintf(stderr, _("malloc() error : %s (%s %d)\n"),
+                          strerror(errno), __FILE__, __LINE__);
+         }
+         if ((host_alias_source = malloc(max_hostname_length + 1)) == NULL)
          {
             (void)fprintf(stderr, _("malloc() error : %s (%s %d)\n"),
                           strerror(errno), __FILE__, __LINE__);
@@ -279,7 +290,7 @@ main(int argc, char *argv[])
             {
                for (j = 0; j < no_of_search_ids; j++)
                {
-                  if (job_id[j] == jidd.jd[i].job_id)
+                  if (job_id[j] == jidd.ajl[i].job_id)
                   {
                      break;
                   }
@@ -289,37 +300,59 @@ main(int argc, char *argv[])
                   continue;
                }
             }
-            if ((job_id == NULL) || (job_id[j] == jidd.jd[i].job_id))
+            if ((job_id == NULL) || (job_id[j] == jidd.ajl[i].job_id))
             {
-               (void)fprintf(stdout, "Job-ID          : %x\n", jidd.jd[i].job_id);
+               (void)fprintf(stdout, "Job-ID          : %x\n", jidd.ajl[i].job_id);
 #ifdef _NEW_JID
-               (void)strftime(time_str, 25, "%c", localtime(&jidd.jd[i].creation_time));
+               (void)strftime(time_str, 25, "%c", localtime(&jidd.ajl[i].creation_time));
                (void)fprintf(stdout, "Creation time   : %s\n", time_str);
 #endif
-               (void)fprintf(stdout, "DIR_CONFIG-ID   : %x\n", jidd.jd[i].dir_config_id);
+               (void)fprintf(stdout, "DIR_CONFIG-ID   : # Not available!\n");
+
+               if (host_alias_destination != NULL)
+               {
+                  if (url_evaluate(jidd.ajl[i].recipient, NULL,
+                                   NULL, NULL, NULL,
+# ifdef WITH_SSH_FINGERPRINT
+                                   NULL, NULL,
+# endif
+                                   NULL, NO, host_alias_destination, NULL, NULL,
+                                   NULL, NULL, NULL, NULL, NULL) < 4)
+                  {
+                     j = 0;
+                     while ((host_alias_destination[j] != '\0') &&
+                            (host_alias_destination[j] != '\n') &&
+                            (host_alias_destination[j] != ':') &&
+                            (host_alias_destination[j] != '.') &&
+                            (j != max_hostname_length))
+                     {
+                        j++;
+                     }
+                     host_alias_destination[j] = '\0';
+                  }
+               }
 
                if ((dir_config_view_mode == YES) && (no_of_search_ids == 1))
                {
                   int adl_pos = 0,
                       gotcha = NO;
 
-                  (void)fprintf(stdout, "File-Mask-ID    : %x\n", jidd.jd[i].file_mask_id);
-                  (void)fprintf(stdout, "Destination-ID  : %x\n", jidd.jd[i].recipient_id);
-                  (void)fprintf(stdout, "Host-Alias-ID   : %x\n", jidd.jd[i].host_id);
+                  (void)fprintf(stdout, "File-Mask-ID    : # Not available!\n");
+                  (void)fprintf(stdout, "Destination-ID  : # Not available!\n");
+                  (void)fprintf(stdout, "Host-Alias-ID   : # Not available!\n");
 
-#ifdef WITH_AFD_MON
                   if (adl != NULL)
                   {
                      for (j = 0; j < adl_entries; j++)
                      {
-                        if (adl[j].dir_id == jidd.jd[i].dir_id)
+                        if (adl[j].dir_id == jidd.ajl[i].dir_id)
                         {
                            adl_pos = j;
                            gotcha = YES;
                            break;
                         }
                      }
-                     if ((gotcha == YES) && (alias_name != NULL))
+                     if ((gotcha == YES) && (host_alias_source != NULL))
                      {
                         unsigned int scheme;
 
@@ -328,27 +361,27 @@ main(int argc, char *argv[])
 # ifdef WITH_SSH_FINGERPRINT
                                           NULL, NULL,
 # endif
-                                          NULL, NO, alias_name, NULL, NULL,
+                                          NULL, NO, host_alias_source, NULL, NULL,
                                           NULL, NULL, NULL, NULL, NULL) < 4) &&
                             (scheme != LOC_FLAG) && (scheme != UNKNOWN_FLAG))
                         {
                            j = 0;
-                           while ((alias_name[j] != '\0') &&
-                                  (alias_name[j] != '\n') &&
-                                  (alias_name[j] != ':') &&
-                                  (alias_name[j] != '.') &&
+                           while ((host_alias_source[j] != '\0') &&
+                                  (host_alias_source[j] != '\n') &&
+                                  (host_alias_source[j] != ':') &&
+                                  (host_alias_source[j] != '.') &&
                                   (j != max_hostname_length))
                            {
                               j++;
                            }
-                           alias_name[j] = '\0';
+                           host_alias_source[j] = '\0';
                         }
                         if ((scheme != LOC_FLAG) && (scheme != UNKNOWN_FLAG) &&
-                            (alias_name[0] != '\0'))
+                            (host_alias_source[0] != '\0'))
                         {
                            for (j = 0; j < ahl_entries; j++)
                            {
-                              if (my_strcmp(alias_name, ahl[j].host_alias) == 0)
+                              if (my_strcmp(host_alias_source, ahl[j].host_alias) == 0)
                               {
                                  if (ahl[j].real_hostname[0][0] == GROUP_IDENTIFIER)
                                  {
@@ -378,11 +411,12 @@ main(int argc, char *argv[])
                         }
                      }
 
-                     if (ahl != NULL)
+                     if ((ahl != NULL) && (host_alias_destination != NULL) &&
+                         (host_alias_destination[0] != '\0'))
                      {
                         for (j = 0; j < ahl_entries; j++)
                         {
-                           if (my_strcmp(jidd.jd[i].host_alias,
+                           if (my_strcmp(host_alias_destination,
                                          ahl[j].host_alias) == 0)
                            {
                               if (ahl[j].real_hostname[0][0] == GROUP_IDENTIFIER)
@@ -431,7 +465,6 @@ main(int argc, char *argv[])
                         }
                      }
                   }
-#endif /* WITH_AFD_MON */
 
                   (void)fprintf(stdout, "   %s\n", DIR_OPTION_IDENTIFIER);
                   (void)fprintf(stdout, "   # Not available\n");
@@ -441,60 +474,25 @@ main(int argc, char *argv[])
 
                   (void)fprintf(stdout, "\n      %s\n\n         %s\n",
                                 DESTINATION_IDENTIFIER, RECIPIENT_IDENTIFIER);
-                  (void)strcpy(tmp_value, jidd.jd[i].recipient);
+                  (void)strcpy(tmp_value, jidd.ajl[i].recipient);
                   url_insert_password(tmp_value, (view_passwd == YES) ? NULL : "XXXXX");
                   (void)fprintf(stdout, "         %s\n", tmp_value);
 
-                  /* Show all options. */
-                  (void)fprintf(stdout, "\n         %s\n         %s %c\n",
+                  /* Show all available options. */
+                  (void)fprintf(stdout, "\n         %s\n         %s %c\n         # No further options available (no_of_loptions=%d)\n",
                                 OPTION_IDENTIFIER, PRIORITY_ID,
-                                jidd.jd[i].priority);
+                                jidd.ajl[i].priority,
+                                jidd.ajl[i].no_of_loptions);
 
-                  /* Show all AMG options. */
-                  if (jidd.jd[i].no_of_loptions > 0)
-                  {
-                     char *ptr = jidd.jd[i].loptions;
-
-                     for (j = 0; j < jidd.jd[i].no_of_loptions; j++)
-                     {
-                        (void)fprintf(stdout, "         %s\n", ptr);
-                        NEXT(ptr);
-                     }
-                  }
-
-                  /* Show all FD options. */
-                  if (jidd.jd[i].no_of_soptions > 0)
-                  {
-                     int  counter;
-                     char *ptr = jidd.jd[i].soptions;
-
-                     for (j = 0; j < jidd.jd[i].no_of_soptions; j++)
-                     {
-                        counter = 0;
-                        while ((*ptr != '\n') && (*ptr != '\0'))
-                        {
-                           tmp_value[counter] = *ptr;
-                           ptr++; counter++;
-                        }
-                        tmp_value[counter] = '\0';
-                        (void)fprintf(stdout, "         %s\n", tmp_value);
-                        if (*ptr == '\0')
-                        {
-                           break;
-                        }
-                        ptr++;
-                     }
-                  }
                   (void)fprintf(stdout, "\n");
                }
                else
                {
-#ifdef WITH_AFD_MON
                   if (adl != NULL)
                   {
                      for (j = 0; j < adl_entries; j++)
                      {
-                        if (adl[j].dir_id == jidd.jd[i].dir_id)
+                        if (adl[j].dir_id == jidd.ajl[i].dir_id)
                         {
                            (void)strcpy(tmp_value, adl[j].orig_dir_name);
                            url_insert_password(tmp_value, (view_passwd == YES) ? NULL : "XXXXX");
@@ -508,27 +506,26 @@ main(int argc, char *argv[])
                         }
                      }
                   }
-#endif
-                  (void)fprintf(stdout, "Dir-ID          : %x\n", jidd.jd[i].dir_id);
-                  (void)fprintf(stdout, "Dir position    : %d\n", jidd.jd[i].dir_id_pos);
+                  (void)fprintf(stdout, "Dir-ID          : %x\n", jidd.ajl[i].dir_id);
+                  (void)fprintf(stdout, "Dir position    : # Not available!\n");
                   (void)fprintf(stdout, "DIR-options     : # Not available!\n");
 
                   (void)fprintf(stdout, "File filters    : # Not available!\n");
-                  (void)fprintf(stdout, "File-Mask-ID    : %x\n", jidd.jd[i].file_mask_id);
+                  (void)fprintf(stdout, "File-Mask-ID    : # Not available!\n");
 
-                  (void)strcpy(tmp_value, jidd.jd[i].recipient);
+                  (void)strcpy(tmp_value, jidd.ajl[i].recipient);
                   url_insert_password(tmp_value, (view_passwd == YES) ? NULL : "XXXXX");
                   (void)fprintf(stdout, "Destination     : %s\n", tmp_value);
-                  (void)fprintf(stdout, "Destination-ID  : %x\n", jidd.jd[i].recipient_id);
-                  (void)fprintf(stdout, "Host alias      : %s\n", jidd.jd[i].host_alias);
-                  (void)fprintf(stdout, "Host-Alias-ID   : %x\n", jidd.jd[i].host_id);
+                  (void)fprintf(stdout, "Destination-ID  : # Not available!\n");
+                  (void)fprintf(stdout, "Host alias      : %s\n", host_alias_destination);
+                  (void)fprintf(stdout, "Host-Alias-ID   : # Not available!\n");
 
-#ifdef WITH_AFD_MON
-                  if (ahl != NULL)
+                  if ((ahl != NULL) && (host_alias_destination != NULL) &&
+                      (host_alias_destination[0] != '\0'))
                   {
                      for (j = 0; j < ahl_entries; j++)
                      {
-                        if (my_strcmp(jidd.jd[i].host_alias,
+                        if (my_strcmp(host_alias_destination,
                                       ahl[j].host_alias) == 0)
                         {
                            if (ahl[j].real_hostname[0][0] == GROUP_IDENTIFIER)
@@ -553,64 +550,8 @@ main(int argc, char *argv[])
                         }
                      }
                   }
-#endif
 
-                  if (jidd.jd[i].no_of_loptions > 0)
-                  {
-                     if (jidd.jd[i].no_of_loptions == 1)
-                     {
-                        (void)fprintf(stdout, "AMG options     : %s\n",
-                                      jidd.jd[i].loptions);
-                     }
-                     else
-                     {
-                        char *ptr = jidd.jd[i].loptions;
-
-                        (void)fprintf(stdout, "AMG options     : %s\n", ptr);
-                        NEXT(ptr);
-                        for (j = 1; j < jidd.jd[i].no_of_loptions; j++)
-                        {
-                           (void)fprintf(stdout, "                  %s\n", ptr);
-                           NEXT(ptr);
-                        }
-                     }
-                  }
-                  if (jidd.jd[i].no_of_soptions > 0)
-                  {
-                     if (jidd.jd[i].no_of_soptions == 1)
-                     {
-                        (void)fprintf(stdout, "FD options      : %s\n",
-                                      jidd.jd[i].soptions);
-                     }
-                     else
-                     {
-                        char *ptr,
-                             *ptr_start;
-
-                        ptr = ptr_start = option_buffer;
-
-                        (void)strcpy(option_buffer, jidd.jd[i].soptions);
-                        while ((*ptr != '\n') && (*ptr != '\0'))
-                        {
-                           ptr++;
-                        }
-                        *ptr = '\0';
-                        ptr++;
-                        (void)fprintf(stdout, "FD options      : %s\n", ptr_start);
-                        for (j = 1; j < jidd.jd[i].no_of_soptions; j++)
-                        {
-                           ptr_start = ptr;
-                           while ((*ptr != '\n') && (*ptr != '\0'))
-                           {
-                              ptr++;
-                           }
-                           *ptr = '\0';
-                           ptr++;
-                           (void)fprintf(stdout, "                  %s\n", ptr_start);
-                        }
-                     }
-                  }
-                  (void)fprintf(stdout, "Priority        : %c\n", jidd.jd[i].priority);
+                  (void)fprintf(stdout, "Priority        : %c\n", jidd.ajl[i].priority);
                   if (((no_of_search_ids > 0) && ((lines_drawn + 1) < no_of_search_ids)) ||
                       ((no_of_search_ids == 0) && ((i + 1) < jidd.no_of_job_ids)))
                   {
@@ -620,7 +561,8 @@ main(int argc, char *argv[])
                }
             }
 
-            free(alias_name);
+            free(host_alias_source);
+            free(host_alias_destination);
          }
 
          detach_adl();
@@ -636,6 +578,7 @@ main(int argc, char *argv[])
    }
    else
    {
+#endif /* WITH_AFD_MON */
       /* Map to JID file. */
       (void)sprintf(file, "%s%s%s", work_dir, FIFO_DIR, JOB_ID_DATA_FILE);
       if ((fd = open(file, O_RDONLY)) == -1)
@@ -1325,7 +1268,9 @@ main(int argc, char *argv[])
                        file, strerror(errno), __FILE__, __LINE__);
       }
       (void)fsa_detach(NO);
+#ifdef WITH_AFD_MON
    }
+#endif
 
    exit(SUCCESS);
 }
