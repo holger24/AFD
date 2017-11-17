@@ -81,6 +81,7 @@ alloc_jid(char *alias)
          jidd.jd = NULL;
          jidd.name[0] = '\0';
          jidd.prev_pos = -1;
+         jidd.no_of_job_ids = 0;
       }
       jidd.ajl = NULL;
    }
@@ -132,6 +133,10 @@ alloc_jid(char *alias)
                      jidd.ajl = NULL;
                      ret = INCORRECT;
                   }
+                  else
+                  {
+                     jidd.no_of_job_ids = stat_buf.st_size / sizeof(struct afd_job_list);
+                  }
                }
             }
             else
@@ -153,6 +158,7 @@ alloc_jid(char *alias)
          jidd.ajl = NULL;
          jidd.name[0] = '\0';
          jidd.prev_pos = -1;
+         jidd.no_of_job_ids = 0;
       }
       jidd.jd = NULL;
    }
@@ -165,6 +171,7 @@ alloc_jid(char *alias)
       jidd.jd = NULL;
       jidd.name[0] = '\0';
       jidd.prev_pos = -1;
+      jidd.no_of_job_ids = 0;
    }
 #endif
 
