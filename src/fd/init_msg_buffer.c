@@ -73,6 +73,8 @@ DESCR__E_M3
 #include <errno.h>
 #include "fddefs.h"
 
+#define REMOVE_STEP_SIZE 50
+
 
 /* External global variables. */
 extern int                        mdb_fd,
@@ -957,9 +959,10 @@ list_job_to_remove(int                cache_pos,
          remove_file_mask = YES;
          file_mask_id = jd[j].file_mask_id;
 
-         if ((removed_jobs % 10) == 0)
+         if ((removed_jobs % REMOVE_STEP_SIZE) == 0)
          {
-            size_t new_size = ((removed_jobs / 10) + 1) * 10 * sizeof(unsigned int);
+            size_t new_size = ((removed_jobs / REMOVE_STEP_SIZE) + 1) *
+                              REMOVE_STEP_SIZE * sizeof(unsigned int);
 
             if (removed_jobs == 0)
             {
@@ -1036,8 +1039,15 @@ list_job_to_remove(int                cache_pos,
    }
 
    /* Remove outgoing job directory. */
-   *p_file_dir = '/';
-   (void)strcpy(p_file_dir + 1, p_msg_dir);
+   if (*(p_file_dir - 1) != '/')
+   {
+      *p_file_dir = '/';
+      (void)strcpy(p_file_dir + 1, p_msg_dir);
+   }
+   else
+   {
+      (void)strcpy(p_file_dir, p_msg_dir);
+   }
    if (rec_rmdir(file_dir) < 0)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -1056,9 +1066,10 @@ list_job_to_remove(int                cache_pos,
    }
    else
    {
-      if ((removed_messages % 10) == 0)
+      if ((removed_messages % REMOVE_STEP_SIZE) == 0)
       {
-         size_t new_size = ((removed_messages / 10) + 1) * 10 * sizeof(unsigned int);
+         size_t new_size = ((removed_messages / REMOVE_STEP_SIZE) + 1) *
+                           REMOVE_STEP_SIZE * sizeof(unsigned int);
 
          if (removed_messages == 0)
          {
@@ -1267,10 +1278,10 @@ list_job_to_remove(int                cache_pos,
     */
    if (remove_file_mask == YES)
    {
-      if ((file_mask_to_remove % 10) == 0)
+      if ((file_mask_to_remove % REMOVE_STEP_SIZE) == 0)
       {
-         size_t new_size = ((file_mask_to_remove / 10) + 1) *
-                            10 * sizeof(unsigned int);
+         size_t new_size = ((file_mask_to_remove / REMOVE_STEP_SIZE) + 1) *
+                           REMOVE_STEP_SIZE * sizeof(unsigned int);
 
          if (file_mask_to_remove == 0)
          {
