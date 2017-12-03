@@ -1861,6 +1861,10 @@ int
 sftp_multi_read_init(int blocksize, off_t expected_size)
 {
    scd.reads_todo = expected_size / blocksize;
+   if ((expected_size % blocksize) != 0)
+   {
+      scd.reads_todo++;
+   }
    scd.reads_done = 0;
    scd.reads_queued = 0;
    scd.reads_low_water_mark = 0;
@@ -2051,7 +2055,9 @@ sftp_multi_read_catch(char *buffer)
             ((char *)&ui_var)[2] = msg[7];
             ((char *)&ui_var)[3] = msg[8];
          }
-         if (ui_var != scd.blocksize)
+         if ((ui_var > scd.blocksize) ||
+             ((ui_var < scd.blocksize) &&
+              (scd.reads_todo != (scd.reads_done + 1))))
          {
             trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_multi_read_catch", NULL,
                       _("Expecting %d bytes, but received %u bytes."),
@@ -2063,7 +2069,8 @@ sftp_multi_read_catch(char *buffer)
          {
             (void)memcpy(buffer, &msg[9], ui_var);
             status = ui_var;
-            if (scd.reads_queued == (scd.current_max_pending_reads - 1))
+            if ((scd.reads_todo != (scd.reads_done + 1)) &&
+                (scd.reads_queued == (scd.current_max_pending_reads - 1)))
             {
                if (scd.current_max_pending_reads < MAX_PENDING_READS)
                {

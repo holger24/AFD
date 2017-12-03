@@ -906,6 +906,8 @@ main(int argc, char *argv[])
                         sftp_multi_read_discard(YES);
                      } /* if (current_max_pending_reads > 0) */
 
+                     if ((bytes_done != rl[i].size) &&
+                         (status != (blocksize - buffer_offset)))
                      do
                      {
                         if ((status = sftp_read(buffer,
@@ -954,6 +956,14 @@ main(int argc, char *argv[])
                               exit(WRITE_LOCAL_ERROR);
                            }
                            bytes_done += status;
+
+                           /* See if we can save a read, ie. no need to */
+                           /* catch an EOF.                             */
+                           if ((bytes_done == rl[i].size) &&
+                               (status < (blocksize - buffer_offset)))
+                           {
+                              status = 0;
+                           }
                         }
 
                         if (gsf_check_fsa((struct job *)&db) != NEITHER)
