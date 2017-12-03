@@ -749,6 +749,7 @@ main(int argc, char *argv[])
                      }
 
                      bytes_done = 0;
+                     status = 0;
                      if (current_max_pending_reads > 0)
                      {
                         do
@@ -908,115 +909,118 @@ main(int argc, char *argv[])
 
                      if ((bytes_done != rl[i].size) &&
                          (status != (blocksize - buffer_offset)))
-                     do
                      {
-                        if ((status = sftp_read(buffer,
-                                                blocksize - buffer_offset)) == INCORRECT)
+                        do
                         {
-                           trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                     "Failed to read from remote file `%s' in %s",
-                                     rl[i].file_name, fra[db.fra_pos].dir_alias);
-                           reset_values(files_retrieved, file_size_retrieved,
-                                        files_to_retrieve,
-                                        file_size_to_retrieve,
-                                        (struct job *)&db);
-                           sftp_quit();
-                           if (bytes_done == 0)
-                           {
-                              (void)unlink(local_tmp_file);
-                           }
-                           exit(eval_timeout(READ_REMOTE_ERROR));
-                        }
-                        else if (status == SFTP_EOF)
-                             {
-                                status = 0;
-                             }
-
-                        if (fsa->trl_per_process > 0)
-                        {
-                           limit_transfer_rate(status, fsa->trl_per_process,
-                                               clktck);
-                        }
-                        if (status > 0)
-                        {
-                           if (write(fd, buffer, status) != status)
+                           if ((status = sftp_read(buffer,
+                                                   blocksize - buffer_offset)) == INCORRECT)
                            {
                               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                        "Failed to write() to file `%s' : %s",
-                                        local_tmp_file, strerror(errno));
-                              sftp_quit();
+                                        "Failed to read from remote file `%s' in %s",
+                                        rl[i].file_name,
+                                        fra[db.fra_pos].dir_alias);
                               reset_values(files_retrieved, file_size_retrieved,
                                            files_to_retrieve,
                                            file_size_to_retrieve,
                                            (struct job *)&db);
+                              sftp_quit();
                               if (bytes_done == 0)
                               {
                                  (void)unlink(local_tmp_file);
                               }
-                              exit(WRITE_LOCAL_ERROR);
+                              exit(eval_timeout(READ_REMOTE_ERROR));
                            }
-                           bytes_done += status;
+                           else if (status == SFTP_EOF)
+                                {
+                                   status = 0;
+                                }
 
-                           /* See if we can save a read, ie. no need to */
-                           /* catch an EOF.                             */
-                           if ((bytes_done == rl[i].size) &&
-                               (status < (blocksize - buffer_offset)))
+                           if (fsa->trl_per_process > 0)
                            {
-                              status = 0;
+                              limit_transfer_rate(status, fsa->trl_per_process,
+                                                  clktck);
                            }
-                        }
-
-                        if (gsf_check_fsa((struct job *)&db) != NEITHER)
-                        {
-                           fsa->job_status[(int)db.job_no].file_size_in_use_done = bytes_done;
-                           fsa->job_status[(int)db.job_no].file_size_done += status;
-                           fsa->job_status[(int)db.job_no].bytes_send += status;
-                           if (fsa->protocol_options & TIMEOUT_TRANSFER)
+                           if (status > 0)
                            {
-                              end_transfer_time_file = time(NULL);
-                              if (end_transfer_time_file < start_transfer_time_file)
+                              if (write(fd, buffer, status) != status)
                               {
-                                 start_transfer_time_file = end_transfer_time_file;
-                              }
-                              else
-                              {
-                                 if ((end_transfer_time_file - start_transfer_time_file) > transfer_timeout)
+                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                           "Failed to write() to file `%s' : %s",
+                                           local_tmp_file, strerror(errno));
+                                 sftp_quit();
+                                 reset_values(files_retrieved, file_size_retrieved,
+                                              files_to_retrieve,
+                                              file_size_to_retrieve,
+                                              (struct job *)&db);
+                                 if (bytes_done == 0)
                                  {
-                                    trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                    (void)unlink(local_tmp_file);
+                                 }
+                                 exit(WRITE_LOCAL_ERROR);
+                              }
+                              bytes_done += status;
+
+                              /* See if we can save a read, ie. no need to */
+                              /* catch an EOF.                             */
+                              if ((bytes_done == rl[i].size) &&
+                                  (status < (blocksize - buffer_offset)))
+                              {
+                                 status = 0;
+                              }
+                           }
+
+                           if (gsf_check_fsa((struct job *)&db) != NEITHER)
+                           {
+                              fsa->job_status[(int)db.job_no].file_size_in_use_done = bytes_done;
+                              fsa->job_status[(int)db.job_no].file_size_done += status;
+                              fsa->job_status[(int)db.job_no].bytes_send += status;
+                              if (fsa->protocol_options & TIMEOUT_TRANSFER)
+                              {
+                                 end_transfer_time_file = time(NULL);
+                                 if (end_transfer_time_file < start_transfer_time_file)
+                                 {
+                                    start_transfer_time_file = end_transfer_time_file;
+                                 }
+                                 else
+                                 {
+                                    if ((end_transfer_time_file - start_transfer_time_file) > transfer_timeout)
+                                    {
+                                       trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
 #if SIZEOF_TIME_T == 4
-                                              "Transfer timeout reached for `%s' in %s after %ld seconds.",
+                                                 "Transfer timeout reached for `%s' in %s after %ld seconds.",
 #else
-                                              "Transfer timeout reached for `%s' in %s after %lld seconds.",
+                                                 "Transfer timeout reached for `%s' in %s after %lld seconds.",
 #endif
-                                              fsa->job_status[(int)db.job_no].file_name_in_use,
-                                              fra[db.fra_pos].dir_alias,
-                                              (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
-                                    sftp_quit();
-                                    exit(STILL_FILES_TO_SEND);
+                                                 fsa->job_status[(int)db.job_no].file_name_in_use,
+                                                 fra[db.fra_pos].dir_alias,
+                                                 (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
+                                       sftp_quit();
+                                       exit(STILL_FILES_TO_SEND);
+                                    }
                                  }
                               }
                            }
-                        }
-                        else if (db.fsa_pos == INCORRECT)
-                             {
-                                /*
-                                 * Looks as if this host is no longer in our
-                                 * database. Lets exit.
-                                 */
-                                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                          "Database changed, exiting.");
-                                (void)sftp_close_file();
-                                (void)sftp_quit();
-                                (void)close(fd);
-                                (void)unlink(local_tmp_file);
-                                reset_values(files_retrieved,
-                                             file_size_retrieved,
-                                             files_to_retrieve,
-                                             file_size_to_retrieve,
-                                             (struct job *)&db);
-                                exit(TRANSFER_SUCCESS);
-                             }
-                     } while (status != 0);
+                           else if (db.fsa_pos == INCORRECT)
+                                {
+                                   /*
+                                    * Looks as if this host is no longer in our
+                                    * database. Lets exit.
+                                    */
+                                   trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                             "Database changed, exiting.");
+                                   (void)sftp_close_file();
+                                   (void)sftp_quit();
+                                   (void)close(fd);
+                                   (void)unlink(local_tmp_file);
+                                   reset_values(files_retrieved,
+                                                file_size_retrieved,
+                                                files_to_retrieve,
+                                                file_size_to_retrieve,
+                                                (struct job *)&db);
+                                   exit(TRANSFER_SUCCESS);
+                                }
+                        } while (status != 0);
+                     }
 
                      /* Close remote file. */
                      if ((status = sftp_close_file()) != SUCCESS)
