@@ -1,6 +1,6 @@
 /*
  *  sftpdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,13 +20,17 @@
 #ifndef __sftpdefs_h
 #define __sftpdefs_h
 
-#define MAX_SFTP_REPLY_BUFFER               10
+#define MAX_SFTP_MSG_LENGTH                 MAX_TRANSFER_BLOCKSIZE
 #define MAX_PENDING_WRITE_BUFFER            786432    /* 768 KBytes */
 #define MAX_PENDING_WRITES                  (MAX_PENDING_WRITE_BUFFER / 16384)
-#define MAX_SFTP_MSG_LENGTH                 MAX_TRANSFER_BLOCKSIZE
+#define MAX_PENDING_READS                   64
+#define MAX_SFTP_REPLY_BUFFER               MAX_PENDING_READS + 10
+#define SFTP_READ_STEP_SIZE                 4
 
 #define SFTP_WRITE_FILE                     1 /* Open file for writting. */
 #define SFTP_READ_FILE                      2 /* Open file for reading.  */
+#define SFTP_DO_SINGLE_READS                -4
+#define SFTP_EOF                            -5
 
 #define SSH_FILEXFER_VERSION                6
 
@@ -221,11 +225,22 @@ struct sftp_connect_data
           unsigned int           dir_handle_length;
           unsigned int           stat_flag;
           unsigned int           pending_write_id[MAX_PENDING_WRITES];
+          unsigned int           pending_read_id[MAX_PENDING_READS];
+          unsigned int           reads_todo;
+          unsigned int           reads_done;
           unsigned int           nl_pos;     /* Name list position. */
           unsigned int           nl_length;  /* Name list length. */
           int                    pending_write_counter;
           int                    max_pending_writes;
+          int                    max_pending_reads;
+          int                    current_max_pending_reads;
+          int                    pending_id_read_pos;
+          int                    pending_id_end_pos;
+          int                    reads_queued;
+          int                    reads_low_water_mark;
+          int                    blocksize;
           off_t                  file_offset;
+          off_t                  bytes_to_do;
           char                   *cwd;           /* Current working dir. */
           char                   *file_handle;
           char                   *dir_handle;
@@ -257,16 +272,21 @@ extern int          sftp_cd(char *, int, mode_t, char *),
                     sftp_flush(void),
                     sftp_mkdir(char *, mode_t),
                     sftp_move(char *, char *, int, mode_t, char *),
+                    sftp_multi_read_catch(char *),
+                    sftp_multi_read_dispatch(void),
+                    sftp_multi_read_eof(void),
+                    sftp_multi_read_init(int, off_t),
                     sftp_noop(void),
                     sftp_open_dir(char *, char),
-                    sftp_open_file(int, char *, off_t, mode_t *, int, int *,
-                                   char),
+                    sftp_open_file(int, char *, off_t, mode_t *, int,
+                                   int *, char),
                     sftp_pwd(void),
                     sftp_read(char *, int),
                     sftp_readdir(char *, struct stat *),
                     sftp_set_file_time(char *, time_t, time_t),
                     sftp_stat(char *, struct stat *),
                     sftp_write(char *, int);
-extern void         sftp_quit(void);
+extern void         sftp_multi_read_discard(int),
+                    sftp_quit(void);
 
 #endif /* __sftpdefs_h */

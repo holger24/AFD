@@ -1733,7 +1733,7 @@ sftp_write(char *block, int size)
          {
             if (msg[0] == SSH_FXP_STATUS)
             {
-               if (get_xfer_uint(&msg[5]) != SSH_FX_OK)
+               if (get_xfer_uint(&msg[5]) == SSH_FX_OK)
                {
                   /* Some error has occured. */
                   get_msg_str(&msg[9]);
@@ -1824,7 +1824,11 @@ sftp_read(char *block, int size)
          }
          else if (msg[0] == SSH_FXP_STATUS)
               {
-                 if (get_xfer_uint(&msg[5]) != SSH_FX_EOF)
+                 if (get_xfer_uint(&msg[5]) == SSH_FX_EOF)
+                 {
+                    status = SFTP_EOF;
+                 }
+                 else
                  {
                     /* Some error has occured. */
                     get_msg_str(&msg[9]);
@@ -1849,6 +1853,397 @@ sftp_read(char *block, int size)
    }
 
    return(status);
+}
+
+
+/*####################### sftp_multi_read_init() ########################*/
+int                                                                        
+sftp_multi_read_init(int blocksize, off_t expected_size)
+{
+   scd.reads_todo = expected_size / blocksize;
+   scd.reads_done = 0;
+   scd.reads_queued = 0;
+   scd.reads_low_water_mark = 0;
+   scd.pending_id_read_pos = 0;
+   scd.pending_id_end_pos = 0;
+   scd.blocksize = blocksize;
+   if (scd.reads_todo > MAX_PENDING_READS)
+   {
+      scd.max_pending_reads = MAX_PENDING_READS;
+   }
+   else
+   {
+      scd.max_pending_reads = scd.reads_todo;
+   }
+   if (scd.max_pending_reads > 1)
+   {
+      scd.current_max_pending_reads = SFTP_READ_STEP_SIZE;
+   }
+   else
+   {
+      scd.current_max_pending_reads = 0;
+   }
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      int length;
+
+      length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+# if SIZEOF_OFF_T == 4
+                        _("sftp_multi_read_init() max_pending_reads=%d current_max_pending_reads=%d expected_size=%ld bytes blocksize=%d reads_todo=%u"),
+# else
+                        _("sftp_multi_read_init() max_pending_reads=%d current_max_pending_reads=%d expected_size=%lld bytes blocksize=%d reads_todo=%u"),
+# endif
+                        scd.max_pending_reads, scd.current_max_pending_reads,
+                        (pri_off_t)expected_size, blocksize, scd.reads_todo);
+      trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
+   }
+#endif
+
+   return(scd.current_max_pending_reads);
+}
+
+
+/*##################### sftp_multi_read_dispatch() ######################*/
+int
+sftp_multi_read_dispatch(void)
+{
+   int status = SUCCESS,
+       todo = scd.reads_todo - (scd.reads_done + scd.reads_queued);
+
+   if ((todo > scd.reads_queued) &&
+       (scd.reads_queued <= scd.reads_low_water_mark) &&
+       (scd.reads_queued < scd.current_max_pending_reads))
+   {
+      int i,
+          rest;
+
+      if (todo > (scd.current_max_pending_reads - scd.reads_queued))
+      {
+         todo = scd.current_max_pending_reads - scd.reads_queued;
+      }
+
+      if ((scd.pending_id_end_pos + todo) > MAX_PENDING_READS)
+      {
+         rest = (scd.pending_id_end_pos + todo) - MAX_PENDING_READS;
+         todo = MAX_PENDING_READS;
+      }
+      else
+      {
+         todo = scd.pending_id_end_pos + todo;
+         rest = 0;
+      }
+      for (i = scd.pending_id_end_pos; i < todo; i++)
+      {
+         /*
+          * byte   SSH_FXP_READ
+          * uint32 request_id
+          * string handle
+          * uint64 offset
+          * uint32 length
+          */
+         msg[4] = SSH_FXP_READ;
+         scd.request_id++;
+         set_xfer_uint(&msg[4 + 1], scd.request_id);
+         set_xfer_str(&msg[4 + 1 + 4], scd.file_handle, scd.file_handle_length);
+         set_xfer_uint64(&msg[4 + 1 + 4 + 4 + scd.file_handle_length],
+                         scd.file_offset);
+         set_xfer_uint(&msg[4 + 1 + 4 + 4 + scd.file_handle_length + 8],
+                       scd.blocksize);
+         set_xfer_uint(msg, (1 + 4 + 4 + scd.file_handle_length + 8 + 4)); /* Write message length at start. */
+         if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.file_handle_length +
+                                       8 + 4), __LINE__)) == SUCCESS)
+         {
+            scd.pending_read_id[i] = scd.request_id;
+            scd.file_offset += scd.blocksize;
+            scd.reads_queued++;
+            scd.pending_id_end_pos++;
+         }
+         else
+         {
+            break;
+         }
+      }
+      if (rest > 0)
+      {
+         scd.pending_id_end_pos = 0;
+         for (i = 0; i < rest; i++)
+         {
+            /*
+             * byte   SSH_FXP_READ
+             * uint32 request_id
+             * string handle
+             * uint64 offset
+             * uint32 length
+             */
+            msg[4] = SSH_FXP_READ;
+            scd.request_id++;
+            set_xfer_uint(&msg[4 + 1], scd.request_id);
+            set_xfer_str(&msg[4 + 1 + 4], scd.file_handle, scd.file_handle_length);
+            set_xfer_uint64(&msg[4 + 1 + 4 + 4 + scd.file_handle_length],
+                            scd.file_offset);
+            set_xfer_uint(&msg[4 + 1 + 4 + 4 + scd.file_handle_length + 8],
+                          scd.blocksize);
+            set_xfer_uint(msg, (1 + 4 + 4 + scd.file_handle_length + 8 + 4)); /* Write message length at start. */
+            if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.file_handle_length +
+                                          8 + 4), __LINE__)) == SUCCESS)
+            {
+               scd.pending_read_id[i] = scd.request_id;
+               scd.file_offset += scd.blocksize;
+               scd.reads_queued++;
+               scd.pending_id_end_pos++;
+            }
+            else
+            {
+               break;
+            }
+         }
+      }
+
+      if (status == SUCCESS)
+      {
+         status = scd.reads_queued;
+      }
+
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         i = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                           _("sftp_multi_read_dispatch() reads_queued=%d pending_id_read_pos=%d pending_id_end_pos=%d reads_low_water_mark=%d (todo=%d rest=%d)"),
+                           scd.reads_queued, scd.pending_id_read_pos,
+                           scd.pending_id_end_pos, scd.reads_low_water_mark,
+                           todo, rest);
+         trace_log(NULL, 0, C_TRACE, msg_str, i, NULL);
+      }
+#endif
+   }
+
+   return(status);
+}
+
+
+/*####################### sftp_multi_read_catch() #######################*/
+int
+sftp_multi_read_catch(char *buffer)
+{
+   int status;
+
+   if ((status = get_reply(scd.pending_read_id[scd.pending_id_read_pos],
+                           __LINE__)) == SUCCESS)
+   {
+      if (msg[0] == SSH_FXP_DATA)
+      {
+         unsigned int ui_var;
+
+         if (*(char *)&byte_order == 1)
+         {
+            /* little-endian */
+            ((char *)&ui_var)[3] = msg[5];
+            ((char *)&ui_var)[2] = msg[6];
+            ((char *)&ui_var)[1] = msg[7];
+            ((char *)&ui_var)[0] = msg[8];
+         }
+         else
+         {
+            /* big-endian */
+            ((char *)&ui_var)[0] = msg[5];
+            ((char *)&ui_var)[1] = msg[6];
+            ((char *)&ui_var)[2] = msg[7];
+            ((char *)&ui_var)[3] = msg[8];
+         }
+         if (ui_var != scd.blocksize)
+         {
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_multi_read_catch", NULL,
+                      _("Expecting %d bytes, but received %u bytes."),
+                      scd.blocksize, ui_var);
+            scd.file_offset -= scd.blocksize;
+            status = SFTP_DO_SINGLE_READS;
+         }
+         else
+         {
+            (void)memcpy(buffer, &msg[9], ui_var);
+            status = ui_var;
+            if (scd.reads_queued == (scd.current_max_pending_reads - 1))
+            {
+               if (scd.current_max_pending_reads < MAX_PENDING_READS)
+               {
+                  scd.current_max_pending_reads += SFTP_READ_STEP_SIZE;
+                  if (scd.current_max_pending_reads > MAX_PENDING_READS)
+                  {
+                     scd.current_max_pending_reads = MAX_PENDING_READS;
+                  }
+                  scd.reads_low_water_mark = scd.current_max_pending_reads / 2;
+               }
+#ifdef WITH_TRACE
+               if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+               {
+                  int length;
+
+                  length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                    _("sftp_multi_read_catch() current_max_pending_reads=%d pending_id_read_pos=%d reads_low_water_mark=%d"),
+                                    scd.current_max_pending_reads,
+                                    scd.pending_id_read_pos,
+                                    scd.reads_low_water_mark);
+                  trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
+               }
+#endif
+            }
+         }
+      }
+      else if (msg[0] == SSH_FXP_STATUS)
+           {
+              if (get_xfer_uint(&msg[5]) != SSH_FX_EOF)
+              {
+                 status = SFTP_EOF;
+              }
+              else
+              {
+                 /* Some error has occured. */
+                 get_msg_str(&msg[9]);
+                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_multi_read_catch", NULL,
+                           "%s", error_2_str(&msg[5]));
+                 status = INCORRECT;
+              }
+           }
+           else
+           {
+              trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_multi_read_catch", NULL,
+                        _("Expecting %d (SSH_FXP_DATA) but got %d (%s) as reply."),
+                        SSH_FXP_DATA, (int)msg[0], response_2_str(msg[0]));
+              msg_str[0] = '\0';
+              status = INCORRECT;
+           }
+
+      scd.pending_id_read_pos++;
+      if (scd.pending_id_read_pos >= MAX_PENDING_READS)
+      {
+         scd.pending_id_read_pos = 0;
+      }
+      scd.reads_queued--;
+      scd.reads_done++;
+   }
+   else if (status == SIMULATION)
+        {
+           status = SUCCESS;
+           scd.pending_id_read_pos++;
+           if (scd.pending_id_read_pos >= MAX_PENDING_READS)
+           {
+              scd.pending_id_read_pos = 0;
+           }
+           scd.reads_queued--;
+           scd.reads_done++;
+        }
+
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      int length;
+
+      length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                        _("sftp_multi_read_catch() reads_done=%u reads_todo=%u left=%d pending_id_read_pos=%d"),
+                        scd.reads_done, scd.reads_todo,
+                        (scd.reads_todo - scd.reads_done),
+                        scd.pending_id_read_pos);
+      trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
+   }
+#endif
+
+   return(status);
+}
+
+
+/*######################### sftp_multi_read_eof() ##########################*/
+int                                                                        
+sftp_multi_read_eof(void)
+{
+   if (scd.reads_todo > scd.reads_done)
+   {
+      return(NO);
+   }
+   else
+   {
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         int length;
+
+         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                           _("sftp_multi_read_eof() reads_done=%u reads_todo=%u left=%d pending_id_read_pos=%d"),
+                           scd.reads_done, scd.reads_todo,
+                           (scd.reads_todo - scd.reads_done),
+                           scd.pending_id_read_pos);
+         trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
+      }
+#endif
+      return(YES);
+   }
+}
+
+
+/*####################### sftp_multi_read_discard() ########################*/
+void                                                                        
+sftp_multi_read_discard(int report_pending_reads)
+{
+   if (scd.reads_queued != 0)
+   {
+      int i,
+          rest,
+          status = SUCCESS,
+          todo;
+
+      if (report_pending_reads == YES)
+      {
+         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_multi_read_discard", NULL,
+                   "Pending read counter is still %d!?",
+                   scd.reads_queued);
+      }
+
+     if ((scd.pending_id_read_pos + scd.reads_queued) >= MAX_PENDING_READS)
+     {
+        todo = MAX_PENDING_READS;
+        rest = scd.reads_queued - (MAX_PENDING_READS - scd.pending_id_read_pos);
+     }
+     else
+     {
+        todo = scd.pending_id_read_pos + scd.reads_queued;
+        rest = 0;
+     }
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         int length;
+
+         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                           _("sftp_multi_read_discard() discarding %d reads (todo=%d rest=%d)"),
+                           scd.reads_queued, todo, rest);
+         trace_log(NULL, 0, C_TRACE, msg_str, length, NULL);
+      }
+#endif
+
+      /* Read all pending requests and ignore the data. */
+      for (i = scd.pending_id_read_pos; i < todo; i++)
+      {
+         if (status == SUCCESS)
+         {
+            status = get_reply(scd.pending_read_id[i], __LINE__);
+         }
+         scd.file_offset -= scd.blocksize;
+      }
+      if (rest > 0)
+      {
+         for (i = 0; i < rest; i++)
+         {
+            if (status == SUCCESS)
+            {
+               status = get_reply(scd.pending_read_id[i], __LINE__);
+            }
+            scd.file_offset -= scd.blocksize;
+         }
+      }
+      scd.reads_queued = 0;
+   }
+
+   return;
 }
 
 
