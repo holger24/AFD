@@ -60,7 +60,9 @@ DESCR__E_M1
 #include <errno.h>
 #include "permission.h"
 #include "amgdefs.h"
-#include "aldadefs.h"
+#ifdef WITH_AFD_MON
+# include "aldadefs.h"
+#endif
 #include "version.h"
 
 /* Global variables. */
