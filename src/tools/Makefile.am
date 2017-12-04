@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2016 Holger Kiehl
+## Copyright (C) 2001 - 2017 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -30,10 +30,18 @@ else
    AFDIPDBCMD =
    EXTRA_AFDIPDBCMD = afdipdbcmd
 endif
+if WITH_TRANSFER_RATE_LOG
+   AFDTR = afdtr
+   EXTRA_AFDTR =
+else
+   AFDTR =
+   EXTRA_AFDTR = afdtr
+endif
 
 AM_CPPFLAGS                  = -I.. -I../init_afd -I../amg -I../fd\
-                               -I../statistics -I../log
-bin_PROGRAMS                 = afdcmd afdcfg afd_hex_print afd_status\
+                               -I../statistics -I../log -I../log/alda\
+			       -I../afd_mon
+bin_PROGRAMS                 = afdcmd afdcfg afd_hex_print afd_status $(AFDTR)\
                                $(AFDIPDBCMD) fsa_edit fsa_view fra_edit\
                                fra_view get_dc_data get_hostname grib2wmo\
                                jid_view set_pw udc
@@ -42,12 +50,13 @@ sbin_PROGRAMS                = cache_spy convert_fsa convert_stat\
                                $(DUPCHECK) file_mask_list_spy\
                                gen_file queue_spy set_counter rm_job\
                                view_ls_data
-EXTRA_PROGRAMS               = afdconvert $(AFDIPDBCMD) bfc binfc byte_order\
-                               convert_jid count_burst convert_ls_data\
-                               del_cache dc_proc_spy $(EXTRA_DUPCHECK) fax2gts\
-                               get_counter get_checksum get_full_date\
-                               get_file_size gts2tiff linger reset_fsa rdu\
-                               sysconf tiff_sniffer watch_dir fra_version\
+EXTRA_PROGRAMS               = afdconvert $(EXTRA_AFDIPDBCMD) $(EXTRA_AFDTR)\
+                               bfc binfc byte_order convert_jid count_burst\
+			       convert_ls_data del_cache dc_proc_spy\
+			       $(EXTRA_DUPCHECK) fax2gts get_counter\
+			       get_checksum get_full_date get_file_size\
+			       gts2tiff linger reset_fsa rdu sysconf\
+			       tiff_sniffer watch_dir fra_version\
                                view_error_queue
 MAINTAINERCLEANFILES         = Makefile.in
 CLEANFILES                   = gmon.out core core.* $(EXTRA_PROGRAMS)
@@ -63,6 +72,8 @@ afdipdbcmd_SOURCES           = afdipdbcmd.c
 afdipdbcmd_LDADD             = ../common/libafd.a
 afd_status_SOURCES           = afd_status.c
 afd_status_LDADD             = ../common/libafd.a
+afdtr_SOURCES                = afdtr.c
+afdtr_LDADD                  = ../common/libafd.a
 bfc_SOURCES                  = bull_file_check.c
 bfc_LDADD                    = ../common/libafd.a
 binfc_SOURCES                = binfc.c
