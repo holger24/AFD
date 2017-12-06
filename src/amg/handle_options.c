@@ -90,6 +90,7 @@ DESCR__S_M3
  **                             are so many different GRIB types and
  **                             limited namespace for WMO header, many
  **                             GRIB's will overwrite each other.
+ **                    SP_CHAR- Separator character.
  **   assemble XXX   - Assembles WMO bulletins that are stored as 'one file
  **                    per bulletin' into one large file. The original files
  **                    will be deleted. It can create the same file
@@ -160,6 +161,7 @@ DESCR__S_M3
  **   15.02.2013 H.Kiehl Added extract option WMO+CHK.
  **   25.02.2016 H.Kiehl Added option srename (simple rename).
  **   14.08.2016 H.Kiehl Added with_path option to rename and srename.
+ **   06.12.2017 H.Kiehl Added extract option SP_CHAR.
  **
  */
 DESCR__E_M3
@@ -3419,6 +3421,7 @@ handle_options(int          position,
                }
             } while (*p_extract_id == '-');
          }
+         /* VAX */
          if ((*p_extract_id == 'V') && (*(p_extract_id + 1) == 'A') &&
              (*(p_extract_id + 2) == 'X') &&
              ((*(p_extract_id + 3) == ' ') || (*(p_extract_id + 3) == '\0') ||
@@ -3427,6 +3430,7 @@ handle_options(int          position,
             extract_typ = TWO_BYTE;
             p_extract_id += 3;
          }
+              /* LBF */
          else if ((*p_extract_id == 'L') && (*(p_extract_id + 1) == 'B') &&
                   (*(p_extract_id + 2) == 'F') &&
                   ((*(p_extract_id + 3) == ' ') ||
@@ -3436,6 +3440,7 @@ handle_options(int          position,
                  extract_typ = FOUR_BYTE_LBF;
                  p_extract_id += 3;
               }
+              /* HBF */
          else if ((*p_extract_id == 'H') && (*(p_extract_id + 1) == 'B') &&
                   (*(p_extract_id + 2) == 'F') &&
                   ((*(p_extract_id + 3) == ' ') ||
@@ -3445,6 +3450,7 @@ handle_options(int          position,
                  extract_typ = FOUR_BYTE_HBF;
                  p_extract_id += 3;
               }
+              /* MSS */
          else if ((*p_extract_id == 'M') && (*(p_extract_id + 1) == 'S') &&
                   (*(p_extract_id + 2) == 'S') &&
                   ((*(p_extract_id + 3) == ' ') ||
@@ -3454,6 +3460,7 @@ handle_options(int          position,
                  extract_typ = FOUR_BYTE_MSS;
                  p_extract_id += 3;
               }
+              /* MRZ */
          else if ((*p_extract_id == 'M') && (*(p_extract_id + 1) == 'R') &&
                   (*(p_extract_id + 2) == 'Z') &&
                   ((*(p_extract_id + 3) == ' ') ||
@@ -3463,6 +3470,7 @@ handle_options(int          position,
                  extract_typ = FOUR_BYTE_MRZ;
                  p_extract_id += 3;
               }
+              /* GRIB */
          else if ((*p_extract_id == 'G') && (*(p_extract_id + 1) == 'R') &&
                   (*(p_extract_id + 2) == 'I') &&
                   (*(p_extract_id + 3) == 'B') &&
@@ -3473,6 +3481,7 @@ handle_options(int          position,
                  extract_typ = FOUR_BYTE_GRIB;
                  p_extract_id += 4;
               }
+              /* WMO */
          else if ((*p_extract_id == 'W') && (*(p_extract_id + 1) == 'M') &&
                   (*(p_extract_id + 2) == 'O') &&
                   ((*(p_extract_id + 3) == ' ') ||
@@ -3482,6 +3491,7 @@ handle_options(int          position,
                  extract_typ = WMO_STANDARD;
                  p_extract_id += 3;
               }
+              /* WMO+CHK */
          else if ((*p_extract_id == 'W') && (*(p_extract_id + 1) == 'M') &&
                   (*(p_extract_id + 2) == 'O') &&
                   (*(p_extract_id + 3) == '+') &&
@@ -3495,6 +3505,7 @@ handle_options(int          position,
                  extract_typ = WMO_STANDARD_CHK;
                  p_extract_id += 7;
               }
+              /* ASCII */
          else if ((*p_extract_id == 'A') && (*(p_extract_id + 1) == 'S') &&
                   (*(p_extract_id + 2) == 'C') &&
                   (*(p_extract_id + 3) == 'I') &&
@@ -3506,6 +3517,7 @@ handle_options(int          position,
                  extract_typ = ASCII_STANDARD;
                  p_extract_id += 5;
               }
+              /* BINARY */
          else if ((*p_extract_id == 'B') && (*(p_extract_id + 1) == 'I') &&
                   (*(p_extract_id + 2) == 'N') &&
                   (*(p_extract_id + 3) == 'A') &&
@@ -3518,6 +3530,7 @@ handle_options(int          position,
                  extract_typ = BINARY_STANDARD;
                  p_extract_id += 6;
               }
+              /* ZCZC */
          else if ((*p_extract_id == 'Z') && (*(p_extract_id + 1) == 'C') &&
                   (*(p_extract_id + 2) == 'Z') &&
                   (*(p_extract_id + 3) == 'C') &&
@@ -3527,6 +3540,20 @@ handle_options(int          position,
               {
                  extract_typ = ZCZC_NNNN;
                  p_extract_id += 4;
+              }
+              /* SP_CHAR */
+         else if ((*p_extract_id == 'S') && (*(p_extract_id + 1) == 'P') &&
+                  (*(p_extract_id + 2) == '_') &&
+                  (*(p_extract_id + 3) == 'C') &&
+                  (*(p_extract_id + 4) == 'H') &&
+                  (*(p_extract_id + 5) == 'A') && 
+                  (*(p_extract_id + 6) == 'R') &&
+                  ((*(p_extract_id + 7) == ' ') ||
+                   (*(p_extract_id + 7) == '\0') ||
+                   (*(p_extract_id + 7) == '\t')))
+              {
+                 extract_typ = SP_CHAR;
+                 p_extract_id += 7;
               }
          else if (*(p_extract_id - 1) == '\0')
               {

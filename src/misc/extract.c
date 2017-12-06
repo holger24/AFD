@@ -1,6 +1,6 @@
 /*
  *  extract.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -96,6 +96,7 @@ DESCR__S_M3
  **                      as wmo_standard() only that it checks if the
  **                      terminating ETX is available and if not tries
  **                      to search for it's end.
+ **   06.12.2017 H.Kiehl Add function separator_char().
  **
  */
 DESCR__E_M3
@@ -177,6 +178,7 @@ static void                       ascii_sohetx(char *, off_t, time_t, char *),
                                   four_byte_mss(char *, off_t, time_t),
                                   four_byte_mss_swap(char *, off_t, time_t),
                                   hex_print(char *, char *, int),
+                                  separator_char(char *, off_t, time_t, char *, char),
                                   show_unknown_report(char *, int, char *,
                                                       char *, int),
                                   two_byte_vax(char *, off_t, time_t),
@@ -401,8 +403,14 @@ extract(char         *file_name,
          wmo_standard(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
          break;
 
-      case WMO_STANDARD_CHK  : /* WMO Standard with end search. */
+      case WMO_STANDARD_CHK : /* WMO Standard with end search. */
          wmo_standard_chk(src_ptr, stat_buf.st_size, stat_buf.st_mtime);
+         break;
+
+      case SP_CHAR : /* No length indicator, just locate separator */
+                     /* character at end.                          */
+         separator_char(src_ptr, stat_buf.st_size, stat_buf.st_mtime,
+                        file_name, '=');
          break;
 
       default            : /* Impossible! */
@@ -932,6 +940,50 @@ wmo_standard_chk(char *src_ptr, off_t total_length, time_t mtime)
       }
       ptr += length + additional_length + 10;
    } while ((ptr - src_ptr) < total_length);
+
+   return;
+}
+
+
+/*++++++++++++++++++++++++++++ separator_char() +++++++++++++++++++++++++*/
+static void
+separator_char(char   *src_ptr,
+               off_t  total_length,
+               time_t mtime,
+               char   *file_name,
+               char   separator)
+{
+   char *ptr = src_ptr,
+        *ptr_start;
+
+   do
+   {
+      ptr_start = ptr;
+      while ((*ptr != separator) && ((ptr - src_ptr) <= total_length))
+      {
+         ptr++;
+      }
+      if (*ptr == separator)
+      {
+         ptr++;
+         if (write_file(ptr_start, (unsigned int)(ptr - ptr_start), mtime,
+                        NO) < 0)
+         {
+            return;
+         }
+         if ((ptr - src_ptr) >= total_length)
+         {
+            return;
+         }
+      }
+      else
+      {
+         receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
+                     _("Failed to locate terminating character %c in %s."),
+                     separator, file_name);
+         return;
+      }
+   } while ((ptr - src_ptr) <= total_length);
 
    return;
 }

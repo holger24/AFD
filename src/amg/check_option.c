@@ -974,7 +974,8 @@ check_option(char *option, FILE *cmd_fp)
               ptr++;
            }
 
-           /* VAX, LBF, HBF, MRZ, MSS, WMO, ASCII, BINARY, ZCZC and GRIB. */
+           /* VAX, LBF, HBF, MRZ, MSS, WMO, ASCII, BINARY, ZCZC, GRIB, */
+           /* WMO+CHK and SP_CHAR                                      */
            if (((((*ptr == 'V') && (*(ptr + 1) == 'A') && (*(ptr + 2) == 'X')) ||
                  (((*ptr == 'L') || (*ptr == 'H')) && (*(ptr + 1) == 'B') && (*(ptr + 2) == 'F')) ||
                  ((*ptr == 'M') && (*(ptr + 1) == 'R') && (*(ptr + 2) == 'Z')) ||
@@ -995,6 +996,10 @@ check_option(char *option, FILE *cmd_fp)
                ((*ptr == 'W') && (*(ptr + 1) == 'M') && (*(ptr + 2) == 'O') &&
                 (*(ptr + 3) == '+') && (*(ptr + 4) == 'C') &&
                 (*(ptr + 5) == 'H') && (*(ptr + 6) == 'K') &&
+                ((*(ptr + 7) == ' ') || (*(ptr + 7) == '\t') || (*(ptr + 7) == '\0'))) ||
+               ((*ptr == 'S') && (*(ptr + 1) == 'P') && (*(ptr + 2) == '_') &&
+                (*(ptr + 3) == 'C') && (*(ptr + 4) == 'H') &&
+                (*(ptr + 5) == 'A') && (*(ptr + 6) == 'R') &&
                 ((*(ptr + 7) == ' ') || (*(ptr + 7) == '\t') || (*(ptr + 7) == '\0'))))
            {
               /* OK */;

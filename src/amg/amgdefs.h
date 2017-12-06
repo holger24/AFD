@@ -215,6 +215,7 @@
 #define ISO8859_2ASCII             22
 #define WMO_WITH_DUMMY_MESSAGE     23
 #define WMO_STANDARD_CHK           24
+#define SP_CHAR                    25
 
 /* Definitions for the different extract options. */
 #define EXTRACT_ADD_SOH_ETX          1
