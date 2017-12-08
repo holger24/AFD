@@ -824,9 +824,20 @@ main(int argc, char *argv[])
    }
    else if (start_up == AFD_CTRL_ONLY)
         {
+           int ret;
+
            (void)strcpy(exec_cmd, AFD_CTRL);
-           if (execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
-                      (char *) 0) == -1)
+           if (profile[0] == '\0')
+           {
+              ret = execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
+                           (char *) 0);
+           }
+           else
+           {
+              ret = execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
+                           "-p", profile, (char *) 0);
+           }
+           if (ret == -1)
            {
               (void)fprintf(stderr,
                             _("ERROR   : Failed to execute %s : %s (%s %d)\n"),
@@ -1138,9 +1149,21 @@ main(int argc, char *argv[])
    /* Is another AFD active in this directory? */
    if (check_afd_heartbeat(DEFAULT_HEARTBEAT_TIMEOUT, YES) == 1)
    {
+      int ret;
+
       /* Another AFD is active. Only start afd_ctrl. */
       (void)strcpy(exec_cmd, AFD_CTRL);
-      if (execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir, (char *) 0) == -1)
+      if (profile[0] == '\0')
+      {
+         ret = execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
+                      (char *) 0);
+      }
+      else
+      {
+         ret = execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
+                      "-p", profile, (char *) 0);
+      }
+      if (ret == -1)
       {
          (void)fprintf(stderr,
                        _("ERROR   : Failed to execute %s : %s (%s %d)\n"),
@@ -1160,10 +1183,21 @@ main(int argc, char *argv[])
 
       if (check_afd_heartbeat(DEFAULT_HEARTBEAT_TIMEOUT, NO) == 1)
       {
+         int ret;
+
          /* AFD is already up and running. */
          (void)strcpy(exec_cmd, AFD_CTRL);
-         if (execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
-                    (char *) 0) == -1)
+         if (profile[0] == '\0')
+         {
+            ret = execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
+                         (char *) 0);
+         }
+         else
+         {
+            ret = execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
+                         "-p", profile, (char *) 0);
+         }
+         if (ret == -1)
          {
             (void)fprintf(stderr,
                           _("ERROR   : Failed to execute %s : %s (%s %d)\n"),
@@ -1176,9 +1210,20 @@ main(int argc, char *argv[])
       {
          if (startup_afd() == YES)
          {
+            int ret;
+
             (void)strcpy(exec_cmd, AFD_CTRL);
-            if (execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
-                       (char *) 0) == -1)
+            if (profile[0] == '\0')
+            {
+               ret = execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
+                            (char *) 0);
+            }
+            else
+            {
+               ret = execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
+                            "-p", profile, (char *) 0);
+            }
+            if (ret == -1)
             {
                (void)fprintf(stderr,
                              _("ERROR   : Failed to execute %s : %s (%s %d)\n"),
