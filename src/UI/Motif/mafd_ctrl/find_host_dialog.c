@@ -789,6 +789,7 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
                }
                else
                {
+#ifdef ONLY_SELECT_ACTIVE_HOST
                   if ((fsa[i].toggle_pos > 0) &&
                       (fsa[i].host_toggle_str[0] != '\0'))
                   {
@@ -805,6 +806,19 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
                   {
                      match = pmatch((text[0] == '\0') ? "*" : text, fsa[i].real_hostname[HOST_ONE - 1], NULL);
                   }
+#else
+                  if ((pmatch((text[0] == '\0') ? "*" : text, fsa[i].real_hostname[HOST_ONE - 1], NULL) == 0) ||
+                      ((fsa[i].toggle_pos > 0) &&
+                       (fsa[i].host_toggle_str[0] != '\0') &&
+                       (pmatch((text[0] == '\0') ? "*" : text, fsa[i].real_hostname[HOST_TWO - 1], NULL) == 0)))
+                  {
+                     match = 0;
+                  }
+                  else
+                  {
+                     match = 1;
+                  }
+#endif
                }
             }
             if (match == 0)
