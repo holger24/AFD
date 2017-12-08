@@ -1672,12 +1672,13 @@ store_protocols(char *str_protocols)
 /*     Relative: -DDhhmm                                                 */
 /*               -hhmm                                                   */
 /*               -mm                                                     */
-/* Where MMDDhhmm have the following meaning:                            */
+/* Where MMDDhhmmss have the following meaning:                          */
 /*        MM - The month as a decimal number (range 01 to 12).           */
 /*        DD - The day of the month as a decimal number (range 01 to 31).*/
 /*        hh - The hour as a decimal number using a 24-hour clock (range */
 /*             00 to 23).                                                */
 /*        mm - The minute as a decimal number (range 00 to 59).          */
+/*        ss - The second as a decimal number (range 00 to 61).          */
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 static int
 eval_time(char *input, int type, time_t now)
@@ -1773,7 +1774,7 @@ get_time_value(char *input, char **ret_ptr, time_t now)
    }
    else
    {
-      max_length = 8;
+      max_length = 10;
    }
    while ((*(ptr + length) != '\0') && (*(ptr + length) != '-') &&
           (length < max_length))
@@ -2069,6 +2070,90 @@ get_time_value(char *input, char **ret_ptr, time_t now)
                     value = mktime(bd_time);
                  }
               }
+         else if (length == 10) /* MMDDhhmmss */
+              {
+                 if ((!isdigit((int)(*(ptr + 4)))) ||
+                     (!isdigit((int)(*(ptr + 5)))) ||
+                     (!isdigit((int)(*(ptr + 6)))) ||
+                     (!isdigit((int)(*(ptr + 7)))) ||
+                     (!isdigit((int)(*(ptr + 8)))) ||
+                     (!isdigit((int)(*(ptr + 9)))))
+                 {
+                    *(ptr + length) = tmp_char;
+                    return(INCORRECT);
+                 }
+                 else
+                 {
+                    int       day,
+                              hour,
+                              min,
+                              month,
+                              second;
+                    char      tmp_char2;
+                    struct tm *bd_time;     /* Broken-down time. */
+
+                    tmp_char2 = *(ptr + 2);
+                    *(ptr + 2) = '\0';
+                    month = atoi(ptr);
+                    *(ptr + 2) = tmp_char2;
+                    if ((month < 0) || (month > 12))
+                    {
+                       *(ptr + length) = tmp_char;
+                       return(INCORRECT);
+                    }
+                    tmp_char2 = *(ptr + 4);
+                    *(ptr + 4) = '\0';
+                    day = atoi(ptr + 2);
+                    *(ptr + 4) = tmp_char2;
+                    if ((day < 0) || (day > 31))
+                    {
+                       *(ptr + length) = tmp_char;
+                       return(INCORRECT);
+                    }
+                    tmp_char2 = *(ptr + 6);
+                    *(ptr + 6) = '\0';
+                    hour = atoi((ptr + 4));
+                    *(ptr + 6) = tmp_char2;
+                    if ((hour < 0) || (hour > 23))
+                    {
+                       *(ptr + length) = tmp_char;
+                       return(INCORRECT);
+                    }
+                    tmp_char2 = *(ptr + 8);
+                    *(ptr + 8) = '\0';
+                    min = atoi((ptr + 6));
+                    *(ptr + 8) = tmp_char2;
+                    if ((min < 0) || (min > 59))
+                    {
+                       *(ptr + length) = tmp_char;
+                       return(INCORRECT);
+                    }
+                    second = atoi((ptr + 8));
+                    if ((second < 0) || (second > 61))
+                    {
+                       *(ptr + length) = tmp_char;
+                       return(INCORRECT);
+                    }
+                    if ((bd_time = localtime(&now)) == NULL)
+                    {
+                       (void)fprintf(stderr, "Failed to determine localtime() : %s (%s %d)\n",
+                                     strerror(errno), __FILE__, __LINE__);
+                       *(ptr + length) = tmp_char;
+                       return(INCORRECT);
+                    }
+                    bd_time->tm_sec  = second;
+                    bd_time->tm_min  = min;
+                    bd_time->tm_hour = hour;
+                    bd_time->tm_mday = day;
+                    if ((bd_time->tm_mon == 0) && (month == 12))
+                    {
+                       bd_time->tm_year -= 1;
+                    }
+                    bd_time->tm_mon  = month - 1;
+
+                    value = mktime(bd_time);
+                 }
+              }
               else
               {
                  *(ptr + length) = tmp_char;
@@ -2116,14 +2201,15 @@ usage(char *progname)
    (void)fprintf(stderr, "           -e <AFD host name/alias/ID>  Ending AFD hostname/alias/ID.\n");
    (void)fprintf(stderr, "           -t <start>[-<end>]           Time frame at starting point.\n");
    (void)fprintf(stderr, "              Time is specified as follows:\n");
-   (void)fprintf(stderr, "                 Absolute: MMDDhhmm, DDhhmm or hhmm\n");
+   (void)fprintf(stderr, "                 Absolute: MMDDhhmmss, MMDDhhmm, DDhhmm or hhmm\n");
    (void)fprintf(stderr, "                 Relative: -DDhhmm, -hhmm or -mm\n");
-   (void)fprintf(stderr, "              Where MMDDhhmm have the following meaning:\n");
+   (void)fprintf(stderr, "              Where MMDDhhmmss have the following meaning:\n");
    (void)fprintf(stderr, "                 MM - The month as a decimal number (range 01 to 12).\n");
    (void)fprintf(stderr, "                 DD - The day of the month as a decimal number (range 01 to 31).\n");
    (void)fprintf(stderr, "                 hh - The hour as a decimal number using a 24-hour clock (range\n");
    (void)fprintf(stderr, "                      00 to 23).\n");
    (void)fprintf(stderr, "                 mm - The minute as a decimal number (range 00 to 59).\n");
+   (void)fprintf(stderr, "                 ss - The second as a decimal number (range 00 to 61).\n");
    (void)fprintf(stderr, "           -T <start>[-<end>]           Time frame at end point.\n");
    (void)fprintf(stderr, "           -L <log type>                Search only in given log type.\n");
    (void)fprintf(stderr, "                                        Log type can be:\n");
