@@ -27,7 +27,7 @@ see <a href="afd_users.html">afd.users</a> for more details.
 <img align=left src="../images/host_popup.gif" alt="[popup of Host button]">
 <table border>
    <tr>
-      <td><a name="handle_event">Handle event</a></td>
+      <td>Handle event</td>
       <td>This allows one to acknowledge an error situation, put an
           error situation offline or unset the acknowledge and/or offline
           setting. You must select one or more host to get the
@@ -43,7 +43,7 @@ see <a href="afd_users.html">afd.users</a> for more details.
           do so by enabling 'Time frame' and entering time values at
           'Start time' and 'End time'. The format can be one of the
           following: MMDDhhmm, DDhhmm or hhmm.</td>
-      <td align=center><img src="../images/handle_event_popup.gif" alt="[Dialog to handle event]"></td>
+      <td align=center><a name="handle_event"><img src="../images/handle_event_popup.gif" alt="[Dialog to handle event]"></a></td>
    </tr>
    <tr>
       <td><a name="start_stop_input_queue">Start/Stop input queue</a></td>
@@ -56,14 +56,14 @@ see <a href="afd_users.html">afd.users</a> for more details.
    </tr>
    <tr>
       <td>Start/Stop transfer</td>
-      <td>Allows you to start or stop the transfer of one or more selected
-          hosts. When the transfer is stopped the transfer led will be
-          orange. Stopping the transfer means that messages are still
-          being generated, but the FD will not distribute the files.
-          Care should be taken when choosing this option. Watch the job
-          queue number so it does not reach a critical stage. Use
-          Start/Stop queue if lots of files are being distributed
-          for this host.</td>
+      <td><a name="start_stop_transfer">Allows</a> you to start or stop
+          the transfer of one or more selected hosts. When the transfer
+          is stopped the transfer led will be orange. Stopping the
+          transfer means that messages are still being generated, but the
+          FD will not distribute the files. Care should be taken when
+          choosing this option. Watch the job queue number so it does
+          not reach a critical stage. Use Start/Stop queue if lots of
+          files are being distributed for this host.</td>
       <td>&nbsp;</td>
    </tr>
    <tr>
@@ -83,7 +83,7 @@ see <a href="afd_users.html">afd.users</a> for more details.
           data for it, disable it by pressing this button. NOTE: All
           current jobs for this host will be deleted when disabling
           a host.</td>
-      <td align=center><img src="../images/disable_yes_no.png" alt="[Dialog to ask user again if he is sure]"></td>
+      <td align=center><a name="enable_disable_host"><img src="../images/disable_yes_no.png" alt="[Dialog to ask user again if he is sure]"></a></td>
    </tr>
    <tr>
       <td><a name="Switch_host">Switch host</a></td>
@@ -102,14 +102,14 @@ see <a href="afd_users.html">afd.users</a> for more details.
       <td>&nbsp;</td>
    </tr>
    <tr>
-      <td><a name="Debug">Debug</a></td>
+      <td>Debug</td>
       <td>
          <table border>
          <tr>
             <td>Debug</td>
-            <td>This enables or disables normal debugging for the given
-                host. With this enables you can see step by step what
-                is being done. To watch the output the 
+            <td><a name="Debug">This</a> enables or disables normal
+                debugging for the given host. With this enables you can see
+                step by step what is being done. To watch the output the 
                 <a href="#Transfer_Debug_Log">Transfer Debug Log</a>
                 button. The contents of the debug log is described in
                 <a href="log.html#transfer_debug_log">Log Files</a>.</td>
@@ -149,7 +149,7 @@ see <a href="afd_users.html">afd.users</a> for more details.
           search is always case insensitive and no wild cards are possible
           when the system supports the strcasestr() function. The found
           hosts will then be selected.</td>
-      <td align=center><img src="../images/search_select.png" alt="[Search and select dialog]"></td>
+      <td align=center><a name="search_and_select"><img src="../images/search_select.png" alt="[Search and select dialog]"></a></td>
    </tr>
    <tr>
       <td>Long/Short line</td>
@@ -435,8 +435,9 @@ The meaning of each field is shown below:
 <tr>
    <td><b>1</b></td>
    <td>Destination alias</td>
-   <td>This field holds the name of the destination alias. The background
-       color indicates the current status of the connection:
+   <td><a name="destination_alias">This</a> field holds the name of the
+       destination alias. The background color indicates the current status
+       of the connection:
        <table>
        <tr>
           <td><center><img src="../images/normal_host.gif"></center></td>
@@ -476,17 +477,17 @@ The meaning of each field is shown below:
 <tr>
    <td><b>2</b></td>
    <td>Debug Led</td>
-   <td>If this is yellow debug is on for this destination. Do not let
-       debug on for very long on high traffic connections. Since this means
-       lots of data gets written to the log file. See
-       <a href="log.html#transfer_debug_log"> Log Files</a> for more
-       information of the debug output.</td>
+   <td><a name="debug_led">If</a> this is yellow debug is on for this
+       destination. Do not let debug on for very long on high traffic
+       connections. Since this means lots of data gets written to the
+       log file. See <a href="log.html#transfer_debug_log">Log Files</a>
+       for more information of the debug output.</td>
 </tr>
 <tr>
    <td><b>3</b></td>
    <td>Queue Led</td>
-   <td>The color of this LED tells what the AMG will do when files arrive
-       for this destination.
+   <td><a name="queue_led">The</a> color of this LED tells what the AMG will
+       do when files arrive for this destination.
        <table>
        <tr>
           <td><center><img src="../images/normal_status.gif"></center></td>
@@ -514,9 +515,9 @@ The meaning of each field is shown below:
 <tr>
    <td><b>4</b></td>
    <td>Transfer Led</td>
-   <td>This LED is split in two half's. The top half is for output and the
-       bottom part is input. The color tells the status of this which can be
-       one of the following:
+   <td><a name="transfer_led">This</a> LED is split in two half's. The top
+       half is for output and the bottom part is input. The color tells the
+       status of this which can be one of the following:
        <table>
        <tr>
           <td><center><img src="../images/normal_output_status.gif"></center></td>
@@ -586,8 +587,9 @@ The meaning of each field is shown below:
 </tr>
 <tr>
    <td><b>5</b></td>
-   <td>Detailed Selection</td>
-   <td>Shows all details for this job.</td>
+   <td><a name="detailed_selection">Detailed Selection</a></td>
+   <td>Shows all details for this job, see <a href="#Job_Details">
+       Job Details</a>.</td>
 </tr>
 <tr>
    <td><b>6</b></td>
@@ -746,13 +748,13 @@ selected lines:
 <img align=left src="../images/line_popup.gif" alt="[popup of Line button]">
 <table border>
    <tr>
-      <td><a name="handle_event">Handle event</a></td>
-      <td>This allows one to acknowledge an error situation, put an
-          error situation offline or unset the acknowledge and/or offline
-          setting. You must select one or more host to get the
-          handle_event popup. In the reason text field one can enter
-          a reason which will then show up in the event log via the
-          <a href="show_elog.html">show_elog</a> dialog. Acknowledging
+      <td>Handle event</td>
+      <td><a name="handle_event">This</a> allows one to acknowledge an
+          error situation, put an error situation offline or unset the
+          acknowledge and/or offline setting. You must select one or more
+          host to get the handle_event popup. In the reason text field one
+          can enter a reason which will then show up in the event log via
+          the <a href="show_elog.html">show_elog</a> dialog. Acknowledging
           an event means that the destination alias field now becomes
           pink (<img src="../images/acknowledge_host.gif">). If the
           host is put offline it will turn Steelblue
@@ -761,57 +763,59 @@ selected lines:
       <td align=center><img src="../images/handle_event_popup.gif" alt="[Dialog to handle event]"></td>
    </tr>
    <tr>
-      <td><a name="start_stop_input_queue">Start/Stop input queue</a></td>
-      <td>Allows you to start or stop the queue of one or more selected
-          hosts. When the queue is stopped the queue led turns brown.
-          Stopping the queue means that AFD internally will not generate
-          any messages, but no data is lost either. All current jobs that
-          have a message will still be transmitted.</td>
+      <td>Start/Stop input queue</td>
+      <td><a name="start_stop_input_queue">Allows</a> you to start or stop
+          the queue of one or more selected hosts. When the queue is stopped
+          the queue led turns brown. Stopping the queue means that AFD
+          internally will not generate any messages, but no data is lost
+          either. All current jobs that have a message will still be
+          transmitted.</td>
       <td>&nbsp;</td>
    </tr>
    <tr>
-      <td><a name="start_stop_transfer">Start/Stop transfer</a></td>
-      <td>Allows you to start or stop the transfer of one or more selected
-          hosts. When the transfer is stopped the transfer led will be
-          orange. Stopping the transfer means that messages are still
-          being generated, but the FD will not distribute the files.
-          Care should be taken when choosing this option. Watch the job
-          queue number so it does not reach a critical stage. Use
-          Start/Stop queue if lots of files are being distributed
+      <td>Start/Stop transfer</td>
+      <td><a name="start_stop_transfer">Allows</a> you to start or stop
+          the transfer of one or more selected hosts. When the transfer
+          is stopped the transfer led will be orange. Stopping the transfer
+          means that messages are still being generated, but the FD will not
+          distribute the files. Care should be taken when choosing this
+          option. Watch the job queue number so it does not reach a critical
+          stage. Use Start/Stop queue if lots of files are being distributed
           for this host.</td>
       <td>&nbsp;</td>
    </tr>
    <tr>
-      <td><a name="start_stop_host">Start/Stop host</a></td>
-      <td>Allows you to start or stop a host. Stopping a host means stopping
-          transfer and queue, but no data will be lost. If the data is not
-          required, press Enable/Disable host below. In case the queue or
-          transfer is already stopped and you then press this button it
-          will respectively close the transfer or queue. When the queue is
-          stopped the queue led turns brown and the transfer led will be
-          orange.</td>
+      <td>Start/Stop host</td>
+      <td><a name="start_stop_host">Allows</a> you to start or stop a host.
+          Stopping a host means stopping transfer and queue, but no data
+          will be lost. If the data is not required, press Enable/Disable
+          host below. In case the queue or transfer is already stopped and
+          you then press this button it will respectively close the transfer
+          or queue. When the queue is stopped the queue led turns brown and
+          the transfer led will be orange.</td>
       <td>&nbsp;</td>
    </tr>
    <tr>
       <td><a name="Disable_host">Enable/Disable host</a></td>
-      <td>When you want to stop a host and do not want to collect the
-          data for it, disable it by pressing this button. NOTE: All
-          current jobs for this host will be deleted when disabling
-          a host.</td>
+      <td><a name="Disable_host">When</a> you want to stop a host and do
+          not want to collect the data for it, disable it by pressing
+          this button. NOTE: All current jobs for this host will be deleted
+          when disabling a host.</td>
       <td align=center><img src="../images/disable_yes_no.png" alt="[Dialog to ask user again if he is sure]"></td>
    </tr>
    <tr>
-      <td><a name="Switch_host">Switch host</a></td>
-      <td>Switch host allows to change the destination address of
-          selected host. To see whether a certain host has a secondary
-          address look in <a href="afd_info.html">afd_info dialog</a>.</td>
+      <td>Switch host</td>
+      <td><a name="Switch_host">Switch host</a> allows to change the
+          destination address of selected host. To see whether a certain
+          host has a secondary address look in <a href="afd_info.html">
+          afd_info dialog</a>.</td>
       <td>&nbsp;</td>
    </tr>
    <tr>
-      <td><a name="Retry">Retry</a></td>
-      <td>Retry can only be used when there are jobs queued by FD for
-          this host and you would like AFD to immediately try and send
-          the files. This is useful in error situation when the
+      <td>Retry</td>
+      <td><a name="Retry">Retry</a> can only be used when there are jobs
+          queued by FD for this host and you would like AFD to immediately
+          try and send the files. This is useful in error situation when the
           error condition has been fixed and you do not want to wait
           for the next scheduled retry by AFD.</td>
       <td>&nbsp;</td>
@@ -821,7 +825,7 @@ selected lines:
       <td>
          <table border>
          <tr>
-            <td>Debug</td>
+            <td><a name="Debug_Debug">Debug</a></td>
             <td>This enables or disables normal debugging for the given
                 host. With this enables you can see step by step what
                 is being done. To watch the output the 
@@ -830,7 +834,7 @@ selected lines:
                 <a href="log.html#transfer_debug_log">Log Files</a>.</td>
          </tr>
          <tr>
-            <td>Trace</td>
+            <td><a name="Debug_Trace">Trace</a></td>
             <td>With this you enable a lot more debug output, each command
                 send and its reply from the remote partner is shown. This
                 can be quit CPU intensive and the log files grow very
@@ -839,7 +843,7 @@ selected lines:
                 sf_xxx_trace.</td>
          </tr>
          <tr>
-            <td>Full Trace</td>
+            <td><a name="Debug_Full_Trace">Full Trace</a></td>
             <td>This is the same as Trace only with this set you will
                 be able to see the contents of the file that is being
                 transmitted. This will be more CPU intensive if the
@@ -849,13 +853,13 @@ selected lines:
       <td align=center><img src="../images/debug.png" alt="[Different debug levels]"></td>
    </tr>
    <tr>
-      <td>Info</td>
+      <td><a name="Info">Info</a></td>
       <td>The Info button opens the <a href="afd_info.html">afd_info
           dialog</a> for this host.</td>
       <td align=center><img src="../images/afd_info.png" alt="[Dialog to view information about a host]"></td>
    </tr>
    <tr>
-      <td>Configuration</td>
+      <td><a name="Configuration">Configuration</td></td>
       <td>Shows the DIR_CONFIG configuration of the selected host.</td>
       <td align=center><img src="../images/view_config.gif" alt="[View DIR_CONFIG configuration]"></td>
    </tr>
@@ -1138,7 +1142,7 @@ it shorter.
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2017 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 28.05.2017
+   Last updated: 11.12.2017
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

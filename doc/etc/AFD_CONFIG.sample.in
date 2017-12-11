@@ -210,6 +210,40 @@ AMG_DIR_RESCAN_TIME              5
 #FORCE_REREAD_INTERVAL           0
 
 ##########################################################################
+# Some default values for a new host in HOST_CONFIG.                     #
+#                                                                        #
+#    DEFAULT_NO_PARALLEL_JOBS   The default number of parallel jobs for  #
+#                               tranmitting data.                        #
+#                               Default: 2                               #
+#    DEFAULT_MAX_ERRORS         The default number of errors before the  #
+#                               host becomes red in afd_ctrl dialog.     #
+#                               Default: 10                              #
+#    DEFAULT_RETRY_INTERVAL     The default interval at which AFD tries  #
+#                               to resend the data.                      #
+#                               Default: 300                             #
+#    DEFAULT_TRANSFER_BLOCKSIZE The default transfer blocksize in byte   #
+#                               that data gets transmitted.              #
+#                               Default: 4096                            #
+#    DEFAULT_SUCCESSFUL_RETRIES The default number of successful retries #
+#                               after which it tries to contact the      #
+#                               primary host again.                      #
+#                               Default: 10                              #
+#    DEFAULT_TRANSFER_TIMEOUT   The default time in seconds after which  #
+#                               a connection is timed out.               #
+#                               Default: 120                             #
+#    DEFAULT_ERROR_OFFLINE      Should the error offline flag be set by  #
+#                               default for this host.                   #
+#                               Default: NO                              #
+##########################################################################
+#DEFAULT_NO_PARALLEL_JOBS         5
+#DEFAULT_MAX_ERRORS               10
+#DEFAULT_RETRY_INTERVAL           300
+#DEFAULT_TRANSFER_BLOCKSIZE       4096
+#DEFAULT_SUCCESSFUL_RETRIES       10
+#DEFAULT_TRANSFER_TIMEOUT         120
+#DEFAULT_ERROR_OFFLINE            NO
+
+##########################################################################
 # The time when AMG will send an info message in receive log that no data#
 # has been received in the specified directory. directory. This value    #
 # will be overridden by 'info time' value from DIR_CONFIG if set. The    #

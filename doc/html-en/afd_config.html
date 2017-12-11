@@ -245,6 +245,64 @@ the new value:
    <td valign=top>amg</td>
 </tr>
 <tr>
+   <td valign=top><a name="default_no_parallel_jobs">DEFAULT_NO_PARALLEL_JOBS</a></td>
+   <td>The default number of parallel process that may be forked for
+       sending the data. This is the default value set by AMG when this
+       destination is new.</td>
+   <td valign=top>2</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="default_max_errors">DEFAULT_MAX_ERRORS</a></td>
+   <td>The default number of errors before the host becomes red in
+       <a href="afd_ctrl.html#destination_alias">afd_ctrl</a> dialog.
+       This is the default value set by AMG when this destination is new.</td>
+   <td valign=top>10</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="default_retry_interval">DEFAULT_RETRY_INTERVAL</a></td>
+   <td>The default interval in seconds at which AFD tries to resend data
+       after it got disconnected due to an error. This is the default value
+       set by AMG when this destination is new.</td>
+   <td valign=top>300</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="default_transfer_blocksize">DEFAULT_TRANSFER_BLOCKSIZE</a></td>
+   <td>The default transfer blocksize in byte that the data is transmitted
+       to the destination. The value should be divisible by 256. The value
+       set here will be the default value set by AMG when this destination
+       is new.</td>
+   <td valign=top>4096</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="default_successful_retries">DEFAULT_SUCCESSFUL_RETRIES</a></td>
+   <td>The default number of successful retries after which it tries to
+       contact the primary host again. This is the default value set by AMG
+       when this destination is new.</td>
+   <td valign=top>10</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="default_transfer_timeout">DEFAULT_TRANSFER_TIMEOUT</a></td>
+   <td>The default time in seconds after which a connection is timed out.
+       This is the default value set by AMG when this destination is new.</td>
+   <td valign=top>120</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
+   <td valign=top><a name="default_error_offline">DEFAULT_ERROR_OFFLINE</a></td>
+   <td>When set to YES all errors and warnings to this destination will
+       be set offline, ie. this host will not turn red in
+       <a href="afd_ctrl.html#destination_alias">afd_ctrl</a> dialog.
+       The value set here will be the default value set by AMG when this
+       destination is new.</td>
+   <td valign=top>NO</td>
+   <td valign=top>amg</td>
+</tr>
+<tr>
    <td valign=top><a name="max_process_per_dir">MAX_PROCESS_PER_DIR</a></td>
    <td>The maximum number of process that may be forked for one
        directory.</td>
@@ -793,7 +851,7 @@ restarted.
    <td width="90%"><small><address>
    Copyright &copy; 1999 - 2017 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 24.08.2017
+   Last updated: 11.12.2017
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

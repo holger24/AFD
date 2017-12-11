@@ -114,8 +114,13 @@ int                        alfbl,    /* Additional locked file buffer length */
                            create_source_dir_disabled = NO,
                            dnb_fd,
                            data_length, /* The size of data for one job. */
+                           default_no_parallel_jobs = DEFAULT_NO_PARALLEL_JOBS,
                            default_delete_files_flag = 0,
+                           default_max_errors = DEFAULT_MAX_ERRORS,
                            default_old_file_time = -1,
+                           default_retry_interval = DEFAULT_RETRY_INTERVAL,
+                           default_successful_retries = DEFAULT_SUCCESSFUL_RETRIES,
+                           default_transfer_blocksize = DEFAULT_TRANSFER_BLOCKSIZE,
                            event_log_fd = STDERR_FILENO,
 #ifdef _MAINTAINER_LOG
                            maintainer_log_fd = STDERR_FILENO,
@@ -140,10 +145,12 @@ int                        alfbl,    /* Additional locked file buffer length */
                            sys_log_fd = STDERR_FILENO,
                            stop_flag = 0,
                            amg_flag = YES;
-unsigned int               max_copied_files = MAX_COPIED_FILES;
+unsigned int               default_error_offline_flag = DEFAULT_FSA_HOST_STATUS,
 #ifdef WITH_INOTIFY
-unsigned int               default_inotify_flag = DEFAULT_INOTIFY_FLAG;
+                           default_inotify_flag = DEFAULT_INOTIFY_FLAG,
 #endif
+                           max_copied_files = MAX_COPIED_FILES;
+long                       default_transfer_timeout = DEFAULT_TRANSFER_TIMEOUT;
 pid_t                      dc_pid;      /* dir_check pid                 */
 off_t                      fra_size,
                            fsa_size,
@@ -182,8 +189,9 @@ static void                amg_exit(void),
 #ifdef WITH_INOTIFY
                                                 unsigned int *,
 #endif
-                                                time_t *,
-                                                time_t *, int *),
+                                                time_t *, time_t *, int *,
+                                                int *, int *, int *, int *,
+                                                long *, unsigned int *, int *),
                            notify_dir_check(void),
                            sig_segv(int),
                            sig_bus(int),
@@ -494,8 +502,12 @@ main(int argc, char *argv[])
 #ifdef WITH_INOTIFY
                            &default_inotify_flag,
 #endif
-                           &default_info_time,
-                           &default_warn_time, &create_source_dir);
+                           &default_info_time, &default_warn_time,
+                           &default_no_parallel_jobs, &default_max_errors,
+                           &default_retry_interval, &default_transfer_blocksize,
+                           &default_successful_retries,
+                           &default_transfer_timeout,
+                           &default_error_offline_flag, &create_source_dir);
 
       /* Lets check and see if create_source_dir was set via afdcfg. */
       if (fsa_attach_passive(YES, AMG) == SUCCESS)
@@ -1690,6 +1702,13 @@ get_afd_config_value(int          *rescan_time,
 #endif
                      time_t       *default_info_time,
                      time_t       *default_warn_time,
+                     int          *default_no_parallel_jobs,
+                     int          *default_max_errors,
+                     int          *default_retry_interval,
+                     int          *default_transfer_blocksize,
+                     int          *default_successful_retries,
+                     long         *default_transfer_timeout,
+                     unsigned int *default_error_offline_flag,
                      int          *create_source_dir)
 {
    char *buffer,
@@ -2079,6 +2098,110 @@ get_afd_config_value(int          *rescan_time,
                     }
                  }
          } while (*ptr != '\0');
+      }
+      if (get_definition(buffer, DEFAULT_NO_PARALLEL_JOBS_DEF,
+                         value, MAX_INT_LENGTH) != NULL)
+      {
+         *default_no_parallel_jobs = atoi(value);
+         if ((*default_no_parallel_jobs < 1) ||
+             (*default_no_parallel_jobs > MAX_NO_PARALLEL_JOBS))
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       _("Incorrect value (%d) set in AFD_CONFIG for %s. Must be between 1 and %d. Setting to default %d."),
+                       *default_no_parallel_jobs, DEFAULT_NO_PARALLEL_JOBS_DEF,
+                       MAX_NO_PARALLEL_JOBS, DEFAULT_NO_PARALLEL_JOBS);
+            *default_no_parallel_jobs = DEFAULT_NO_PARALLEL_JOBS;
+         }
+      }
+      if (get_definition(buffer, DEFAULT_MAX_ERRORS_DEF,
+                         value, MAX_INT_LENGTH) != NULL)
+      {
+         *default_max_errors = atoi(value);
+         if (*default_max_errors < 1)
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       _("Incorrect value (%d) set in AFD_CONFIG for %s. Must be greater then 0. Setting to default %d."),
+                       *default_max_errors, DEFAULT_MAX_ERRORS_DEF,
+                       DEFAULT_MAX_ERRORS);
+            *default_max_errors = DEFAULT_MAX_ERRORS;
+         }
+      }
+      if (get_definition(buffer, DEFAULT_RETRY_INTERVAL_DEF,
+                         value, MAX_INT_LENGTH) != NULL)
+      {
+         *default_retry_interval = atoi(value);
+         if (*default_retry_interval < 1)
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       _("Incorrect value (%d) set in AFD_CONFIG for %s. Must be greater then 0. Setting to default %d."),
+                       *default_retry_interval, DEFAULT_RETRY_INTERVAL_DEF,
+                       DEFAULT_RETRY_INTERVAL);
+            *default_retry_interval = DEFAULT_RETRY_INTERVAL;
+         }
+      }
+      if (get_definition(buffer, DEFAULT_TRANSFER_BLOCKSIZE_DEF,
+                         value, MAX_INT_LENGTH) != NULL)
+      {
+         *default_transfer_blocksize = atoi(value);
+         if ((*default_transfer_blocksize < 1) &&
+             ((*default_transfer_blocksize % 256) != 0))
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       _("Incorrect value (%d) set in AFD_CONFIG for %s. Must be greater then 0 and divisible by 256. Setting to default %d."),
+                       *default_transfer_blocksize,
+                       DEFAULT_TRANSFER_BLOCKSIZE_DEF,
+                       DEFAULT_TRANSFER_BLOCKSIZE);
+            *default_transfer_blocksize = DEFAULT_TRANSFER_BLOCKSIZE;
+         }
+      }
+      if (get_definition(buffer, DEFAULT_SUCCESSFUL_RETRIES_DEF,
+                         value, MAX_INT_LENGTH) != NULL)
+      {
+         *default_successful_retries = atoi(value);
+         if (*default_successful_retries < 1)
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       _("Incorrect value (%d) set in AFD_CONFIG for %s. Must be greater then 0. Setting to default %d."),
+                       *default_successful_retries, DEFAULT_SUCCESSFUL_RETRIES_DEF,
+                       DEFAULT_SUCCESSFUL_RETRIES);
+            *default_successful_retries = DEFAULT_SUCCESSFUL_RETRIES;
+         }
+      }
+      if (get_definition(buffer, DEFAULT_TRANSFER_TIMEOUT_DEF,
+                         value, MAX_LONG_LENGTH) != NULL)
+      {
+         *default_transfer_timeout = atol(value);
+         if (*default_transfer_timeout < 0)
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       _("A value less then 0 for AFD_CONFIG variable %s is not possible, setting default %ld"),
+                       DEFAULT_TRANSFER_TIMEOUT_DEF, DEFAULT_TRANSFER_TIMEOUT);
+            *default_transfer_timeout = DEFAULT_TRANSFER_TIMEOUT;
+         }
+      }
+      if (get_definition(buffer, DEFAULT_ERROR_OFFLINE_DEF,
+                         value, MAX_INT_LENGTH) != NULL)
+      {
+         if (((value[0] == 'n') || (value[0] == 'N')) &&
+             ((value[1] == 'o') || (value[1] == 'O')) &&
+             ((value[2] == '\0') || (value[2] == ' ') || (value[2] == '\t')))
+         {
+            *default_error_offline_flag = 0;
+         }
+         else if (((value[0] == 'y') || (value[0] == 'Y')) &&
+                  ((value[1] == 'e') || (value[1] == 'E')) &&
+                  ((value[2] == 's') || (value[2] == 'S')) &&
+                  ((value[3] == '\0') || (value[3] == ' ') || (value[3] == '\t')))
+              {
+                 *default_error_offline_flag = HOST_ERROR_OFFLINE_STATIC;
+              }
+              else
+              {
+                 system_log(WARN_SIGN, __FILE__, __LINE__,
+                            _("Only YES or NO (and not `%s') are possible for %s in AFD_CONFIG. Setting to default: %s"),
+                            value, DEFAULT_ERROR_OFFLINE_DEF,
+                            (*default_error_offline_flag == YES) ? "YES" : "NO");
+              }
       }
       ptr = buffer;
       no_of_dc_filters = 0;

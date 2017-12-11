@@ -1222,6 +1222,13 @@ typedef unsigned long       u_long_64;
 #define CREATE_TARGET_DIR_MODE_DEF       "CREATE_TARGET_DIR_MODE"
 #define SIMULATE_SEND_MODE_DEF           "SIMULATE_SEND_MODE"
 #define EXEC_TIMEOUT_DEF                 "EXEC_TIMEOUT"
+#define DEFAULT_NO_PARALLEL_JOBS_DEF     "DEFAULT_NO_PARALLEL_JOBS"
+#define DEFAULT_MAX_ERRORS_DEF           "DEFAULT_MAX_ERRORS"
+#define DEFAULT_RETRY_INTERVAL_DEF       "DEFAULT_RETRY_INTERVAL"
+#define DEFAULT_TRANSFER_BLOCKSIZE_DEF   "DEFAULT_TRANSFER_BLOCKSIZE"
+#define DEFAULT_SUCCESSFUL_RETRIES_DEF   "DEFAULT_SUCCESSFUL_RETRIES"
+#define DEFAULT_TRANSFER_TIMEOUT_DEF     "DEFAULT_TRANSFER_TIMEOUT"
+#define DEFAULT_ERROR_OFFLINE_DEF        "DEFAULT_ERROR_OFFLINE"
 #define DEFAULT_OLD_FILE_TIME_DEF        "DEFAULT_OLD_FILE_TIME"
 #define DEFAULT_DELETE_FILES_FLAG_DEF    "DEFAULT_DELETE_FILES_FLAG"
 #define DEFAULT_HTTP_PROXY_DEF           "DEFAULT_HTTP_PROXY"
@@ -2646,7 +2653,7 @@ struct host_list
                                             /* the host has not received */
                                             /* any data.                 */
           signed char   file_size_offset;
-          unsigned char number_of_no_bursts;
+          unsigned char number_of_no_bursts;/* Not used!                 */
           signed char   in_dir_config;
        };
 

@@ -153,6 +153,11 @@ extern int                    alfbl,/* Additional locked file buffer length */
                               alfc, /* Additional locked file counter       */
                               create_source_dir,
                               create_source_dir_disabled,
+                              default_no_parallel_jobs,
+                              default_max_errors,
+                              default_retry_interval,
+                              default_successful_retries,
+                              default_transfer_blocksize,
                               dnb_fd,
                               data_length,/* The size of data for one job.  */
                               *no_of_dir_names,
@@ -161,6 +166,8 @@ extern int                    alfbl,/* Additional locked file buffer length */
                                           /* which files have to be         */
                                           /* transfered.                    */
                               remove_unused_hosts;
+extern unsigned int           default_error_offline_flag;
+extern long                   default_transfer_timeout;
 extern mode_t                 create_source_dir_mode;
 extern struct host_list       *hl;        /* Structure that holds all the   */
                                           /* hosts.                         */
@@ -2660,19 +2667,19 @@ check_hostname_list(char         *recipient,
       hl[no_of_hosts].real_hostname[1][0] = '\0';
       hl[no_of_hosts].host_toggle_str[0]  = '\0';
       hl[no_of_hosts].proxy_name[0]       = '\0';
-      hl[no_of_hosts].allowed_transfers   = DEFAULT_NO_PARALLEL_JOBS;
-      hl[no_of_hosts].max_errors          = DEFAULT_MAX_ERRORS;
-      hl[no_of_hosts].retry_interval      = DEFAULT_RETRY_INTERVAL;
-      hl[no_of_hosts].transfer_blksize    = DEFAULT_TRANSFER_BLOCKSIZE;
-      hl[no_of_hosts].successful_retries  = DEFAULT_SUCCESSFUL_RETRIES;
+      hl[no_of_hosts].allowed_transfers   = default_no_parallel_jobs;
+      hl[no_of_hosts].max_errors          = default_max_errors;
+      hl[no_of_hosts].retry_interval      = default_retry_interval;
+      hl[no_of_hosts].transfer_blksize    = default_transfer_blocksize;
+      hl[no_of_hosts].successful_retries  = default_successful_retries;
       hl[no_of_hosts].file_size_offset    = DEFAULT_FILE_SIZE_OFFSET;
-      hl[no_of_hosts].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
+      hl[no_of_hosts].transfer_timeout    = default_transfer_timeout;
       hl[no_of_hosts].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
       hl[no_of_hosts].in_dir_config       = YES;
       hl[no_of_hosts].protocol            = scheme | flag;
       hl[no_of_hosts].protocol_options    = 0;
       hl[no_of_hosts].transfer_rate_limit = 0;
-      hl[no_of_hosts].host_status         = DEFAULT_FSA_HOST_STATUS;
+      hl[no_of_hosts].host_status         = default_error_offline_flag;
       i = no_of_hosts;
       no_of_hosts++;
    }
