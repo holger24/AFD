@@ -1733,7 +1733,7 @@ sftp_write(char *block, int size)
          {
             if (msg[0] == SSH_FXP_STATUS)
             {
-               if (get_xfer_uint(&msg[5]) == SSH_FX_OK)
+               if (get_xfer_uint(&msg[5]) != SSH_FX_OK)
                {
                   /* Some error has occured. */
                   get_msg_str(&msg[9]);
