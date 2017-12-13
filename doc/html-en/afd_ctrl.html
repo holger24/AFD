@@ -477,11 +477,35 @@ The meaning of each field is shown below:
 <tr>
    <td><b>2</b></td>
    <td>Debug Led</td>
-   <td><a name="debug_led">If</a> this is yellow debug is on for this
-       destination. Do not let debug on for very long on high traffic
-       connections. Since this means lots of data gets written to the
-       log file. See <a href="log.html#transfer_debug_log">Log Files</a>
-       for more information of the debug output.</td>
+   <td><a name="debug_led">This</a> indicates if debug is enabled for
+       this destination or not. The colors can be one of the following:
+       <table>
+       <tr>
+          <td><center><img src="../images/debug_led_normal.png"></center></td>
+          <td>Normal status, no debugging set.</td>
+       </tr>
+          <td><center><img src="../images/debug_led_debug.png"></center></td>
+          <td>Normal debugging. Just shows what commands are send.</td>
+       <tr>
+       </tr>
+          <td><center><img src="../images/debug_led_trace.png"></center></td>
+          <td>Trace debugging. This shows a lot more information. Full
+              details of all commands and replies are shown on protocol
+              level.</td>
+       <tr>
+       </tr>
+          <td><center><img src="../images/debug_led_full_trace.png"></center></td>
+          <td>Full Trace debugging. Same as Trace, just that now the
+              content of the file is shown as well. Do not set this
+              when sending big files. However, with SMTP you must set
+              this if you like to see the full mail header.</td>
+       <tr>
+       </tr>
+       </table>
+       Do not let debug on for very long on high traffic connections. Since
+       this means lots of data gets written to the log file. See
+       <a href="log.html#transfer_debug_log">Log Files</a> for more
+       information of the debug output.</td>
 </tr>
 <tr>
    <td><b>3</b></td>
@@ -1142,7 +1166,7 @@ it shorter.
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2017 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 11.12.2017
+   Last updated: 13.12.2017
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
