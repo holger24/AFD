@@ -206,9 +206,9 @@ popup_error_history(int x_root, int y_root, int afd_no)
 
       if (lines > 0)
       {
-         total_error_list_length = (lines * (MAX_AFDNAME_LENGTH + 1 +
-                                             MAX_HOSTNAME_LENGTH + 1 +
-                                             max_length + 1)) + 1;
+         total_error_list_length = ((lines + 1) * (MAX_AFDNAME_LENGTH + 1 +
+                                                   MAX_HOSTNAME_LENGTH + 1 +
+                                                   max_length + 1)) + 1;
          if ((error_list = malloc(total_error_list_length)) == NULL)
          {
             (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
