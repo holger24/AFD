@@ -206,9 +206,9 @@ popup_error_history(int x_root, int y_root, int afd_no)
 
       if (lines > 0)
       {
-         total_error_list_length = ((lines + 1) * (MAX_AFDNAME_LENGTH + 1 +
-                                                   MAX_HOSTNAME_LENGTH + 1 +
-                                                   max_length + 1)) + 1;
+         total_error_list_length = (lines * (MAX_AFDNAME_LENGTH + 1 +
+                                             MAX_HOSTNAME_LENGTH + 1 +
+                                             max_length + 1)) + 1;
          if ((error_list = malloc(total_error_list_length)) == NULL)
          {
             (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
@@ -219,7 +219,7 @@ popup_error_history(int x_root, int y_root, int afd_no)
          str_length = 0;
          for (m = 0; m < lines; m++)
          {
-            str_length += sprintf(error_list + str_length, "%-*s %-*s %-*s\n",
+            str_length += sprintf(error_list + str_length, "%-.*s %-.*s %-.*s\n",
                                   MAX_AFDNAME_LENGTH, el[m].afd_alias,
                                   MAX_HOSTNAME_LENGTH, el[m].host_alias,
                                   max_length, el[m].error_str);
@@ -325,7 +325,7 @@ popup_error_history(int x_root, int y_root, int afd_no)
             str_length = 0;
             for (i = 0; i < lines; i++)
             {
-               str_length += sprintf(error_list + str_length, "%-*s %-*s\n",
+               str_length += sprintf(error_list + str_length, "%-.*s %-.*s\n",
                                      MAX_HOSTNAME_LENGTH, el[i].host_alias,
                                      max_length, el[i].error_str);
             }
