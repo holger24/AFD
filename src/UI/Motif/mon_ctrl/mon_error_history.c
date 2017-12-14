@@ -186,8 +186,12 @@ popup_error_history(int x_root, int y_root, int afd_no)
                               exit(INCORRECT);
                            }
                         }
-                        el[lines].afd_alias[0] = '\0';
-                        el[lines].host_alias[0] = '\0';
+                        (void)memset(el[lines].afd_alias, ' ',
+                                     MAX_AFDNAME_LENGTH);
+                        el[lines].afd_alias[MAX_AFDNAME_LENGTH] = '\0';
+                        (void)memset(el[lines].host_alias, ' ',
+                                     MAX_HOSTNAME_LENGTH);
+                        el[lines].host_alias[MAX_HOSTNAME_LENGTH] = '\0';
                         (void)strcpy(el[lines].error_str,
                                      get_error_str(ahl[i].error_history[j]));
                         str_length = strlen(el[lines].error_str);
@@ -297,7 +301,9 @@ popup_error_history(int x_root, int y_root, int afd_no)
                            exit(INCORRECT);
                         }
                      }
-                     el[lines].host_alias[0] = '\0';
+                     (void)memset(el[lines].host_alias, ' ',
+                                  MAX_HOSTNAME_LENGTH);
+                     el[lines].host_alias[MAX_HOSTNAME_LENGTH] = '\0';
                      (void)strcpy(el[lines].error_str,
                                   get_error_str(ahl[i].error_history[j]));
                      str_length = strlen(el[lines].error_str);
