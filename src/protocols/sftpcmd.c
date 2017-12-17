@@ -2060,8 +2060,8 @@ sftp_multi_read_catch(char *buffer)
               (scd.reads_todo != (scd.reads_done + 1))))
          {
             trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_multi_read_catch", NULL,
-                      _("Expecting %d bytes, but received %u bytes."),
-                      scd.blocksize, ui_var);
+                      _("Expecting %d bytes, but received %u bytes. (reads_todo=%d reads_done=%d)"),
+                      scd.blocksize, ui_var, scd.reads_todo, scd.reads_done);
             scd.file_offset -= scd.blocksize;
             status = SFTP_DO_SINGLE_READS;
          }

@@ -724,7 +724,7 @@ main(int argc, char *argv[])
                           }
 
                      if ((current_max_pending_reads = sftp_multi_read_init(blocksize - buffer_offset,
-                                                                           rl[i].size)) == INCORRECT)
+                                                                           rl[i].size - offset)) == INCORRECT)
                      {
                         reset_values(files_retrieved, file_size_retrieved,
                                      files_to_retrieve,
