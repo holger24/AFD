@@ -150,14 +150,17 @@ popup_error_history(int x_root, int y_root, int afd_no)
                   }
                   if (afd_alias_shown == NO)
                   {
-                     (void)strcpy(el[lines].afd_alias, msa[m].afd_alias);
+                     my_fillncpy(el[lines].afd_alias, msa[m].afd_alias, ' ',
+                                 MAX_AFDNAME_LENGTH);
                      afd_alias_shown = YES;
                   }
                   else
                   {
-                     el[lines].afd_alias[0] = '\0';
+                     my_fillncpy(el[lines].afd_alias, "", ' ',
+                                 MAX_AFDNAME_LENGTH);
                   }
-                  (void)strcpy(el[lines].host_alias, ahl[i].host_alias);
+                  my_fillncpy(el[lines].host_alias, ahl[i].host_alias, ' ',
+                              MAX_HOSTNAME_LENGTH);
                   (void)strcpy(el[lines].error_str,
                                get_error_str(ahl[i].error_history[0]));
                   str_length = strlen(el[lines].error_str);
@@ -223,7 +226,7 @@ popup_error_history(int x_root, int y_root, int afd_no)
          str_length = 0;
          for (m = 0; m < lines; m++)
          {
-            str_length += sprintf(error_list + str_length, "%-.*s %-.*s %-.*s\n",
+            str_length += sprintf(error_list + str_length, "%*s %*s %-*s\n",
                                   MAX_AFDNAME_LENGTH, el[m].afd_alias,
                                   MAX_HOSTNAME_LENGTH, el[m].host_alias,
                                   max_length, el[m].error_str);
@@ -272,7 +275,8 @@ popup_error_history(int x_root, int y_root, int afd_no)
                      exit(INCORRECT);
                   }
                }
-               (void)strcpy(el[lines].host_alias, ahl[i].host_alias);
+               my_fillncpy(el[lines].host_alias, ahl[i].host_alias, ' ',
+                           MAX_HOSTNAME_LENGTH);
                (void)strcpy(el[lines].error_str,
                             get_error_str(ahl[i].error_history[0]));
                str_length = strlen(el[lines].error_str);
@@ -331,7 +335,7 @@ popup_error_history(int x_root, int y_root, int afd_no)
             str_length = 0;
             for (i = 0; i < lines; i++)
             {
-               str_length += sprintf(error_list + str_length, "%-.*s %-.*s\n",
+               str_length += sprintf(error_list + str_length, "%*s %-*s\n",
                                      MAX_HOSTNAME_LENGTH, el[i].host_alias,
                                      max_length, el[i].error_str);
             }

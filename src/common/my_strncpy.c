@@ -1,6 +1,6 @@
 /*
  *  my_strncpy.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,21 +26,28 @@ DESCR__S_M3
  **
  ** SYNOPSIS
  **   int my_strncpy(char *dest, const char *src, const size_t n)
+ **   void myfillncpy(char *dest, const char *src,
+ **                   const char fill_char, const size_t n)
  **
  ** DESCRIPTION
  **   The my_strncpy() function copies the string pointed to by src
  **   to the array pointed to by dest. Only n bytes will be copied.
  **   dest will always be terminated with a null byte.
  **
+ **   Function my_fillncpy() copies n bytes from src to dest, if
+ **   src is shorter then n, the remaining bytes are filled by
+ **   fill_char. dest will be null-terminated.
+ **
  ** RETURN VALUES
- **   If n is not reached SUCCESS will be returned, otherwise -1 is
- **   returned.
+ **   In my_strncpy() if n is not reached SUCCESS will be returned,
+ **   otherwise -1 is returned. None foe function myfillncpy().
  **
  ** AUTHOR
  **   H.Kiehl
  **
  ** HISTORY
  **   31.08.2002 H.Kiehl Created
+ **   18.12.2017 H.Kiehl Added function myfillncpy().
  **
  */
 DESCR__E_M3
@@ -67,4 +74,26 @@ my_strncpy(char *dest, const char *src, const size_t n)
       dest[i] = '\0';
       return(SUCCESS);
    }
+}
+
+
+/*############################# my_fillncpy() ###########################*/
+void
+my_fillncpy(char *dest, const char *src, const char fill_char, const size_t n)
+{
+   size_t i = 0;
+
+   while ((i < n) && (src[i] != '\0'))
+   {
+      dest[i] = src[i];
+      i++;
+   }
+   while (i < n)
+   {
+      dest[i] = fill_char;
+      i++;
+   }
+   dest[i] = '\0';
+
+   return;
 }
