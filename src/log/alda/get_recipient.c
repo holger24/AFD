@@ -185,7 +185,7 @@ get_recipient_alias(unsigned int job_id)
                  if (job_id == jidd.ajl[i].job_id)
                  {
                     (void)strcpy(olog.recipient, jidd.ajl[i].recipient);
-                    if (url_evaluate(jidd.ajl[jidd.prev_pos].recipient, NULL,
+                    if (url_evaluate(jidd.ajl[i].recipient, NULL,
                                      NULL, NULL, NULL,
 # ifdef WITH_SSH_FINGERPRINT
                                      NULL, NULL,
