@@ -1323,7 +1323,7 @@ show_data(struct job_id_data *p_jd,
       int  counter = 0;
       char *ptr = p_jd->soptions;
 
-      while ((*ptr != '\n') && (*ptr != '\0'))
+      while ((counter < MAX_PATH_LENGTH) && (*ptr != '\n') && (*ptr != '\0'))
       {
          value[counter] = *ptr;
          ptr++; counter++;
@@ -1334,7 +1334,7 @@ show_data(struct job_id_data *p_jd,
       for (i = 1; i < p_jd->no_of_soptions; i++)
       {
          counter = 0;
-         while ((*ptr != '\n') && (*ptr != '\0'))
+         while ((counter < MAX_PATH_LENGTH) && (*ptr != '\n') && (*ptr != '\0'))
          {
             value[counter] = *ptr;
             ptr++; counter++;
@@ -1608,7 +1608,8 @@ show_dir_data(int  dir_pos,
             for (i = 0; i < jd[job_pos].no_of_soptions; i++)
             {
                counter = 0;
-               while ((*ptr != '\n') && (*ptr != '\0'))
+               while ((counter < MAX_PATH_LENGTH) && (*ptr != '\n') &&
+                      (*ptr != '\0'))
                {
                   value[counter] = *ptr;
                   ptr++; counter++;
