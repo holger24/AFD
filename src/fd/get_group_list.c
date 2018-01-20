@@ -1,6 +1,6 @@
 /*
  *  get_group_list.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2002 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -40,6 +40,7 @@ DESCR__S_M3
  **   21.02.2002 H.Kiehl Created
  **   10.03.2012 H.Kiehl We NOT take global struct job. We might be doing
  **                      a burst.
+ **   20.01.2018 H.Kiehl Detect case when we have a header but no elements.
  **
  */
 DESCR__E_M3
@@ -136,12 +137,15 @@ get_group_list(char *user, struct job *p_db)
                        length++;
                        if ((*ptr == '\n') || (*ptr == '\0'))
                        {
-                          if (length > max_length)
+                          if (length > 1)
                           {
-                             max_length = length;
+                             if (length > max_length)
+                             {
+                                max_length = length;
+                             }
+                             p_db->no_listed++;
                           }
                           length = 0;
-                          p_db->no_listed++;
                        }
                     }
 
