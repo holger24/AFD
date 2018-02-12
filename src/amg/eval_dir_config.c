@@ -3195,7 +3195,8 @@ sort_jobs(void)
          {
             int start_j = j;
 
-            while (p_ptr[j].ptr[DIRECTORY_PTR_POS] == p_ptr[j + 1].ptr[DIRECTORY_PTR_POS])
+            while ((j < (job_no - 1)) &&
+                   (p_ptr[j].ptr[DIRECTORY_PTR_POS] == p_ptr[j + 1].ptr[DIRECTORY_PTR_POS]))
             {
                j++;
             }
