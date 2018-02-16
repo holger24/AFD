@@ -1,6 +1,6 @@
 /*
  *  aldadefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -496,7 +496,7 @@ struct alda_cache_data
 struct afd_info
        {
           char          hostname[MAX_REAL_HOSTNAME_LENGTH + 1];
-          char          aliasname[MAX_AFDNAME_LENGTH + 1];
+          char          aliasname[MAX_REAL_HOSTNAME_LENGTH + 1];
           char          version[MAX_VERSION_LENGTH];
           int           hostname_length;
           int           aliasname_length;
