@@ -1,6 +1,6 @@
 /*
  *  init_afd_worker.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2017, 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -428,8 +428,7 @@ main(int argc, char *argv[])
                if (fsa[i].real_hostname[0][0] == GROUP_IDENTIFIER)
                {
                   active_transfers = 0;
-                  (void)memset(bytes_send, 0,
-                               (MAX_NO_PARALLEL_JOBS * sizeof(u_off_t)));
+                  (void)memset(bytes_send, 0, sizeof(bytes_send));
                   error_counter = 0;
                   host_status = 0;
                   max_errors = 0;
