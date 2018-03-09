@@ -1,6 +1,6 @@
 /*
  *  handle_delete_fifo.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -562,6 +562,8 @@ handle_delete_fifo(int delete_jobs_fd, size_t fifo_size, char *file_dir)
                                                         lock_region_w(fsa_fd, lock_offset + LOCK_EC);
 # endif
                                                         fsa[mdb[qb[i].pos].fsa_pos].error_counter = 0;
+                                                        fsa[mdb[qb[i].pos].fsa_pos].error_history[0] = 0;
+                                                        fsa[mdb[qb[i].pos].fsa_pos].error_history[1] = 0;
 # ifdef LOCK_DEBUG
                                                         unlock_region(fsa_fd, lock_offset + LOCK_EC, __FILE__, __LINE__);
 # else

@@ -1,6 +1,6 @@
 /*
  *  handle_error_queue.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2006 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -672,6 +672,8 @@ validate_error_queue(int                        no_of_ids,
                lock_region_w(fsa_fd, lock_offset + LOCK_EC);
 #endif
                fsa[j].error_counter = 0;
+               fsa[j].error_history[0] = 0;
+               fsa[j].error_history[1] = 0;
 #ifdef LOCK_DEBUG
                unlock_region(fsa_fd, lock_offset + LOCK_EC, __FILE__, __LINE__);
 #else
