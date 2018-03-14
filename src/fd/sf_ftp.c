@@ -1,6 +1,6 @@
 /*
  *  sf_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -632,7 +632,14 @@ main(int argc, char *argv[])
                    * Since we did a new connect we must set the transfer type
                    * again. Or else we will transfer files in ASCII mode.
                    */
-                  values_changed |= TYPE_CHANGED;
+                  if ((fsa->protocol_options & FTP_FAST_CD) == 0)
+                  {
+                     values_changed |= (TYPE_CHANGED | TARGET_DIR_CHANGED);
+                  }
+                  else
+                  {
+                     values_changed |= TYPE_CHANGED;
+                  }
                   disconnect = YES;
                   reconnected = YES;
                }
@@ -852,7 +859,8 @@ main(int argc, char *argv[])
           * directory is not the absolute path.
           */
          if ((burst_2_counter > 0) && (db.target_dir[0] != '/') &&
-             ((fsa->protocol_options & FTP_FAST_CD) == 0) && (reconnected == NO))
+             ((fsa->protocol_options & FTP_FAST_CD) == 0) &&
+             (reconnected == NO))
          {
             if ((status = ftp_cd("", NO, "", NULL)) != SUCCESS)
             {
