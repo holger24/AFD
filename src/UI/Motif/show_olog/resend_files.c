@@ -1,6 +1,6 @@
 /*
  *  resend_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -107,6 +107,9 @@ static char             archive_dir[MAX_PATH_LENGTH],
                         *p_file_name,
                         *p_archive_name,
                         *p_dest_dir_end = NULL,
+#ifdef MULTI_FS_SUPPORT
+                        *p_orig_msg_name,
+#endif
                         *p_msg_name,
                         dest_dir[MAX_PATH_LENGTH];
 
@@ -124,6 +127,9 @@ static void             get_afd_config_value(void),
 void
 resend_files(int no_selected, int *select_list)
 {
+#ifdef MULTI_FS_SUPPORT
+   int                added_fs_id;
+#endif
    int                i,
                       k,
                       total_no_of_items,
@@ -177,12 +183,13 @@ resend_files(int no_selected, int *select_list)
    get_afd_config_value();
 
    /* Prepare the archive directory name. */
-   p_archive_name = archive_dir;
-   p_archive_name += sprintf(archive_dir, "%s%s/",
-                             p_work_dir, AFD_ARCHIVE_DIR);
-   p_msg_name = dest_dir;
-   p_msg_name += sprintf(dest_dir, "%s%s%s/",
-                         p_work_dir, AFD_FILE_DIR, OUTGOING_DIR);
+   p_archive_name = archive_dir + sprintf(archive_dir, "%s%s/",
+                                          p_work_dir, AFD_ARCHIVE_DIR);
+   p_msg_name = dest_dir + sprintf(dest_dir, "%s%s%s/",
+                                   p_work_dir, AFD_FILE_DIR, OUTGOING_DIR);
+#ifdef MULTI_FS_SUPPORT
+   p_orig_msg_name = p_msg_name;
+#endif
 
    /* Get the fsa_id and no of host of the FSA. */
    if (fsa_attach(SHOW_OLOG) != SUCCESS)
@@ -295,6 +302,11 @@ resend_files(int no_selected, int *select_list)
          }
       }
 
+#ifdef MULTI_FS_SUPPORT
+      added_fs_id = NO;
+      p_msg_name = p_orig_msg_name;
+#endif
+
       for (k = i; k < no_selected; k++)
       {
          if ((rl[k].status == FILE_PENDING) &&
@@ -307,6 +319,32 @@ resend_files(int no_selected, int *select_list)
             }
             else
             {
+#ifdef MULTI_FS_SUPPORT
+               if (added_fs_id == NO)
+               {
+                  int m = 0;
+
+                  /* Copy the filesystem ID to dest_dir. */
+                  while ((*(p_archive_name + m) != '/') &&
+                         (*(p_archive_name + m) != '\0') &&
+                         (m < MAX_INT_HEX_LENGTH))
+                  {
+                     *(p_orig_msg_name + m) = *(p_archive_name + m);
+                     m++;
+                  }
+                  if ((m == MAX_INT_HEX_LENGTH) ||
+                      (*(p_archive_name + m) == '\0'))
+                  {
+                     (void)xrec(FATAL_DIALOG,
+                                "Failed to locate filesystem ID in `%s' : (%s %d)",
+                                p_archive_name, __FILE__, __LINE__);
+                     return;
+                  }
+                  *(p_orig_msg_name + m) = '/';
+                  p_msg_name = p_dest_dir_end = p_orig_msg_name + m + 1;
+                  added_fs_id = YES;
+               }
+#endif
                if ((select_done % max_copied_files) == 0)
                {
                   /* Copy a message so FD can pick up the job. */
@@ -346,13 +384,12 @@ resend_files(int no_selected, int *select_list)
 
                   /* Create a new directory. */
                   creation_time = time(NULL);
-#ifndef MULTI_FS_SUPPORT
                   *p_msg_name = '\0';
-#endif
                   split_job_counter = 0;
                   if (create_name(dest_dir, strlen(dest_dir), id.priority,
                                   creation_time, current_job_id,
-                                  &split_job_counter, unique_number, p_msg_name,
+                                  &split_job_counter, unique_number,
+                                  p_msg_name,
                                   MAX_PATH_LENGTH - (p_msg_name - dest_dir),
                                   counter_fd) < 0)
                   {
@@ -657,30 +694,9 @@ get_archive_data(int pos, int file_no)
    *(p_archive_name + i++) = '_';
 
    /* Copy the file name to the archive directory. */
-   (void)strcpy((p_archive_name + i), &buffer[log_date_length + 1 + max_hostname_length + type_offset + 2]);
+   (void)strcpy((p_archive_name + i),
+                &buffer[log_date_length + 1 + max_hostname_length + type_offset + 2]);
    p_file_name = p_archive_name + i;
-
-#ifdef MULTI_FS_SUPPORT
-   /* Copy the filesystem ID to dest_dir. */
-   i = 0;
-   while ((*(p_archive_name + i) != '/') && (*(p_archive_name + i) != '\0') &&
-          (i < MAX_INT_HEX_LENGTH))
-   {
-      *(p_msg_name + i) = *(p_archive_name + i);
-      i++;
-   }
-   if ((i == MAX_INT_HEX_LENGTH) || (*(p_archive_name + i) == '\0'))
-   {
-      (void)xrec(FATAL_DIALOG,
-                 "Failed to locate filesystem ID in `%s' : (%s %d)",
-                 p_archive_name, __FILE__, __LINE__);
-      return(INCORRECT);
-   }
-   *(p_msg_name + i) = '/';
-   *(p_msg_name + i + 1) = '\0';
-   p_dest_dir_end = p_msg_name + i + 1;
-   p_msg_name += (i + 1);
-#endif
 
    return(SUCCESS);
 }
