@@ -1,6 +1,6 @@
 /*
  *  check_fra_fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -576,62 +576,25 @@ url_check(char *url1, char *url2)
    }
    else
    {
+      int url_diffs;
+
       /* Lets see where we differ. */
-      if (url_compare(url1, url2) == URL_PORT_DIFS)
+      if ((url_diffs = url_compare(url1, url2)) != -1)
       {
-         return(0);
-      }
-#ifdef WHEN_WE_KNOW
-      if (i > 5)
-      {
-         /* Compare scheme. */
-         i = 0;
-         while ((url1[i] == url2[i]) && (url1[i] != ':'))
-         {
-            i++;
-         }
-         if ((url1[i] == ':') && (url2[i] == ':') &&
-             (url1[i + 1] == '/') && (url2[i + 1] == '/') &&
-             (url1[i + 2] == '/') && (url2[i + 2] == '/'))
-         {
-            i += 3;
-
-            /* Compare user or hostname. */
-            while ((url1[i] == url2[i]) && (url1[i] != ':') && (url1[i] != '@'))
-            {
-               if (url1[i] == '\\')
-               {
-                  i++;
-               }
-               i++;
-            }
-            if (((url1[i] == ':') && (url2[i] == ':')) ||
-                ((url1[i] == '@') && (url2[i] == '@')))
-            {
-            }
-         }
-
-         int tmp_i = i;
-
-         while ((i > 0) && ((url1[i] != ':') || (url[i - 1] == '\\')))
-         {
-            i--;
-         }
-         if (url1[i] == ':')
-         {
-            port_pos_1 = i;
-            i--;
-            while ((i > 0) && ((url1[i] != '@') || (url[i - 1] == '\\')))
-            {
-               i--;
-            }
-            if (url1[i] != '@')
-            {
-               /* Hmm, we could be at the password. */
-            }
-         }
-      }
+         url_diffs &= ~URL_SCHEME_DIFS;
+         url_diffs &= ~URL_PORT_DIFS;
+         url_diffs &= ~URL_TRANSFER_TYPE_DIFS;
+         url_diffs &= ~URL_PROTOCOL_VERSION_DIFS;
+         url_diffs &= ~URL_PASSWORD_DIFS;
+#ifdef WITH_SSH_FINGERPRINT
+         url_diffs &= ~URL_KEYTYPE_DIFS;
+         url_diffs &= ~URL_FINGERPRINT_DIFS;
 #endif
+         if (url_diffs == 0)
+         {
+            return(0);
+         }
+      }
    }
 
    return(1);
