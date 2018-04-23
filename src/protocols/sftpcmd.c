@@ -1,6 +1,6 @@
 /*
  *  sftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -86,6 +86,8 @@ DESCR__S_M3
  **   07.03.2013 H.Kiehl Added function sftp_chmod().
  **   11.09.2014 H.Kiehl Added simulation mode.
  **   16.04.2015 H.Kiehl Added function sftp_nocd().
+ **   23.04.2018 H.Kiehl Show better error message when remote server just
+ **                      closes connection.
  **
  */
 DESCR__E_M3
@@ -3116,6 +3118,7 @@ read_msg(char *block, int blocksize, int line)
             trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
                       _("Failed to set signal handler [%d] : %s"),
                       line, strerror(errno));
+            msg_str[0] = '\0';
             return(INCORRECT);
          }
          if (sigsetjmp(env_alrm, 1) != 0)
@@ -3138,12 +3141,14 @@ read_msg(char *block, int blocksize, int line)
             }
             trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
                       _("read() error [%d] : %s"), line, strerror(tmp_errno));
+            msg_str[0] = '\0';
             return(INCORRECT);
          }
          else if (bytes_read == 0)
               {
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
                            _("Pipe has been closed! [%d]"), line);
+                 (void)strcpy(msg_str, "Connection closed");
                  return(INCORRECT);
               }
               else
@@ -3202,6 +3207,7 @@ read_msg(char *block, int blocksize, int line)
            {
               trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
                         _("select() error [%d] : %s"), line, strerror(errno));
+              msg_str[0] = '\0';
               return(INCORRECT);
            }
    } while (total_read < blocksize);
