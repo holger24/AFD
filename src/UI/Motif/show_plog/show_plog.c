@@ -1,6 +1,6 @@
 /*
  *  show_plog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -127,6 +127,7 @@ int                        amg_flag = NO,
                            no_of_search_dirids,
                            no_of_search_hosts,
                            no_of_search_jobids,
+                           no_of_search_production_cmd,
                            no_of_view_modes,
                            ratio_mode,
                            *search_dir_length = NULL,
@@ -153,7 +154,7 @@ char                       font_name[40],
                            *p_work_dir,
                            search_new_file_name[MAX_PATH_LENGTH],
                            search_orig_file_name[MAX_PATH_LENGTH],
-                           search_production_cmd[MAX_OPTION_LENGTH],
+                           **search_production_cmd = NULL,
                            **search_dir = NULL,
                            *search_dir_filter = NULL,
                            search_return_code_str[4],
@@ -1685,7 +1686,6 @@ init_show_plog(int *argc, char *argv[], char *window_title)
    search_new_file_size = -1;
    search_new_file_name[0] = '\0';
    search_return_code = -1;
-   search_production_cmd[0] = '\0';
    special_button_flag = SEARCH_BUTTON;
    no_of_log_files = 0;
 

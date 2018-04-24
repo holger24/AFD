@@ -1,7 +1,7 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016 Deutscher Wetterdienst (DWD),
- *                     Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2016 - 2018 Deutscher Wetterdienst (DWD),
+ *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -121,6 +121,7 @@ extern int              continues_toggle_set,
                         no_of_search_dirids,
                         no_of_search_hosts,
                         no_of_search_jobids,
+                        no_of_search_production_cmd,
                         file_name_length,
                         *search_dir_length,
                         ratio_mode,
@@ -140,7 +141,7 @@ extern size_t           search_new_file_size,
 extern double           search_cpu_time,
                         search_prod_time;
 extern char             header_line[],
-                        search_production_cmd[],
+                        **search_production_cmd,
                         search_new_file_name[],
                         search_orig_file_name[],
                         **search_dir,
@@ -956,13 +957,129 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
          break;
 
       case COMMAND_NAME_NO_ENTER :
-         (void)strcpy(search_production_cmd, value);
-         break;
-
       case COMMAND_NAME :
-         (void)strcpy(search_production_cmd, value);
+         {
+            int length,
+                max_production_cmd_length = 0,
+                not_counter = 0;
+
+            if (no_of_search_production_cmd != 0)
+            {
+               free(search_production_cmd);
+               search_production_cmd = NULL;
+               no_of_search_production_cmd = 0;
+            }
+            ptr = value;
+            for (;;)
+            {
+               while (*ptr == ' ')
+               {
+                  if (*ptr == '\\')
+                  {
+                     ptr++;
+                  }
+                  ptr++;
+               }
+               if (*ptr == '\0')
+               {
+                  if (ptr == value)
+                  {
+                     no_of_search_production_cmd = 0;
+                  }
+                  break;
+               }
+               length = 0;
+               if (*ptr == '!')
+               {
+                  not_counter++;
+               }
+               while ((*ptr != '\0') && (*ptr != ','))
+               {
+                  if (*ptr == '\\')
+                  {
+                     ptr++;
+                  }
+                  ptr++; length++;
+               }
+               no_of_search_production_cmd++;
+               if (length > max_production_cmd_length)
+               {
+                  max_production_cmd_length = length;
+               }
+               if (*ptr == '\0')
+               {
+                  if (ptr == value)
+                  {
+                     no_of_search_production_cmd = 0;
+                  }
+                  break;
+               }
+               ptr++;
+            }
+            if (no_of_search_production_cmd > 0)
+            {
+               int add_all = NO,
+                   i,
+                   ii = 0;
+
+               if (no_of_search_production_cmd == not_counter)
+               {
+                  no_of_search_production_cmd++;
+                  add_all = YES;
+               }
+               RT_ARRAY(search_production_cmd, no_of_search_production_cmd,
+                        (max_production_cmd_length + 1), char);
+               ptr = value;
+               for (;;)
+               {
+                  i = 0;
+                  while ((*ptr == ' ') || (*ptr == '\t'))
+                  {
+                     if (*ptr == '\\')
+                     {
+                        ptr++;
+                     }
+                     ptr++;
+                  }
+                  if (*ptr == '\0')
+                  {
+                     break;
+                  }
+
+                  while ((*ptr != '\0') && (*ptr != ','))
+                  {
+                     if (*ptr == '\\')
+                     {
+                        ptr++;
+                     }
+                     search_production_cmd[ii][i] = *ptr;
+                     ptr++; i++;
+                  }
+                  search_production_cmd[ii][i] = '\0';
+                  ii++;
+                  if (*ptr == ',')
+                  {
+                     ptr++;
+                  }
+                  else
+                  {
+                     break;
+                  }
+               } /* for (;;) */
+               no_of_search_production_cmd = ii;
+               if (add_all == YES)
+               {
+                  search_production_cmd[ii][0] = '*';
+                  search_production_cmd[ii][1] = '\0';
+                  no_of_search_production_cmd++;
+               }
+            }
+         }
          reset_message(statusbox_w);
-         XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         if (type == COMMAND_NAME)
+         {
+            XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         }
          break;
 
       case ORIG_FILE_SIZE_NO_ENTER :

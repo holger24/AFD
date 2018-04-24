@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016, 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2016 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -100,6 +100,7 @@ extern int              continues_toggle_set,
                         no_of_search_dirids,
                         no_of_search_hosts,
                         no_of_search_jobids,
+                        no_of_search_production_cmd,
                         ratio_mode,
                         *search_dir_length,
                         search_return_code,
@@ -119,7 +120,7 @@ extern double           search_cpu_time,
 extern char             *p_work_dir,
                         search_new_file_name[],
                         search_orig_file_name[],
-                        search_production_cmd[],
+                        **search_production_cmd,
                         **search_recipient,
                         **search_dir,
                         *search_dir_filter,
@@ -1689,10 +1690,47 @@ collect_data(register char *ptr,
             }
 
             /* Check command executed. */
-            if ((search_production_cmd[0] == '\0') ||
-                ((search_production_cmd[0] == '*') &&
-                 (search_production_cmd[1] == '\0')) ||
-                (sfilter(search_production_cmd, ptr, '\n') == 0))
+            if (no_of_search_production_cmd > 0)
+            {
+               int gotcha = NO,
+                   kk,
+                   ret;
+
+               for (kk = 0; kk < no_of_search_production_cmd; kk++)
+               {
+                  if (((ret = sfilter(search_production_cmd[kk], ptr, '\n')) == 0) &&
+                      (search_production_cmd[kk][0] != '!'))
+                  {
+                     j = 0;
+                     while ((*(ptr + j) != '\n') && (j < MAX_DISPLAYED_COMMAND))
+                     {
+                        if ((unsigned char)(*(ptr + j)) < ' ')
+                        {
+                           *(p_command + j) = '?';
+                           unprintable_chars++;
+                        }
+                        else
+                        {
+                           *(p_command + j) = *(ptr + j);
+                        }
+                        j++;
+                     }
+                     ptr += j;
+
+                     gotcha = YES;
+                     break;
+                  }
+                  else if (ret == 1)
+                       {
+                          break;
+                       }
+               }
+               if (gotcha == NO)
+               {
+                  IGNORE_ENTRY();
+               }
+            }
+            else
             {
                j = 0;
                while ((*(ptr + j) != '\n') && (j < MAX_DISPLAYED_COMMAND))
@@ -1709,10 +1747,6 @@ collect_data(register char *ptr,
                   j++;
                }
                ptr += j;
-            }
-            else
-            {
-               IGNORE_ENTRY();
             }
 
             /* If necessary, ignore rest of command. */
