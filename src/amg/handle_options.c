@@ -1,6 +1,6 @@
 /*
  *  handle_options.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -235,10 +235,9 @@ static void                       prepare_rename_ow(int, char **, off_t **),
                                             int, char *, char *, char *, char *),
                                   create_assembled_name(char *, char *,
                                                         unsigned int),
-                                  delete_all_files(char *,
+                                  delete_all_files(char *, int,
 #ifdef _DELETE_LOG
-                                                   int, int, time_t,
-                                                   unsigned int,
+                                                   int, time_t, unsigned int,
                                                    unsigned int,
 #endif
                                                    int, char *, char *);
@@ -251,10 +250,10 @@ static int                        cleanup_rename_ow(int,
 #ifdef _WITH_PTHREAD
 static int                        get_file_names(char *, char **, char **);
 #else
-static int                        restore_files(char *, off_t *);
+static int                        restore_files(char *, off_t *, int);
 #endif
 #if defined (_WITH_PTHREAD) || !defined (_PRODUCTION_LOG)
-static int                        recount_files(char *, off_t *);
+static int                        recount_files(char *, off_t *, int);
 #endif
 #ifdef _PRODUCTION_LOG
 static int                        check_changes(time_t, unsigned int,
@@ -1505,7 +1504,7 @@ handle_options(int          position,
 
 #ifdef _WITH_PTHREAD
 # ifndef _PRODUCTION_LOG
-                  *files_to_send = recount_files(file_path, file_size);
+                  *files_to_send = recount_files(file_path, file_size, position);
 # endif
                }
 
@@ -1513,7 +1512,7 @@ handle_options(int          position,
                free(file_size_buffer);
 #else
 # ifndef _PRODUCTION_LOG
-               *files_to_send = restore_files(file_path, file_size);
+               *files_to_send = restore_files(file_path, file_size, position);
 # endif
 #endif
             }
@@ -1710,10 +1709,10 @@ handle_options(int          position,
                         on_error_save = NO;
                      }
                   }
-                  delete_all_files(file_path,
+                  delete_all_files(file_path, position,
 #ifdef _DELETE_LOG
-                                   position, ret, creation_time,
-                                   unique_number, split_job_counter,
+                                   ret, creation_time, unique_number,
+                                   split_job_counter,
 #endif
                                    on_error_delete_all,
                                    (on_error_save == YES) ? p_save_orig_file : NULL,
@@ -1782,15 +1781,17 @@ handle_options(int          position,
                    * somethings with the files.
                    */
 # ifdef _WITH_PTHREAD
-                  *files_to_send = recount_files(file_path, file_size);
+                  *files_to_send = recount_files(file_path, file_size, position);
 # else
                   if ((i + 1) == db[position].no_of_loptions)
                   {
-                     *files_to_send = recount_files(file_path, file_size);
+                     *files_to_send = recount_files(file_path, file_size,
+                                                    position);
                   }
                   else
                   {
-                     *files_to_send = restore_files(file_path, file_size);
+                     *files_to_send = restore_files(file_path, file_size,
+                                                    position);
                   }
 # endif
 #endif
@@ -2957,9 +2958,9 @@ handle_options(int          position,
             if (recount_files_var == YES)
             {
 #ifdef _WITH_PTHREAD
-               *files_to_send = recount_files(file_path, file_size);
+               *files_to_send = recount_files(file_path, file_size, position);
 #else
-               *files_to_send = restore_files(file_path, file_size);
+               *files_to_send = restore_files(file_path, file_size, position);
 #endif
             }
          }
@@ -3075,9 +3076,9 @@ handle_options(int          position,
             if (recount_files_var == YES)
             {
 #ifdef _WITH_PTHREAD
-               *files_to_send = recount_files(file_path, file_size);
+               *files_to_send = recount_files(file_path, file_size, position);
 #else
-               *files_to_send = restore_files(file_path, file_size);
+               *files_to_send = restore_files(file_path, file_size, position);
 #endif
             }
          }
@@ -3223,9 +3224,9 @@ handle_options(int          position,
             if (recount_files_var == YES)
             {
 #ifdef _WITH_PTHREAD
-               *files_to_send = recount_files(file_path, file_size);
+               *files_to_send = recount_files(file_path, file_size, position);
 #else
-               *files_to_send = restore_files(file_path, file_size);
+               *files_to_send = restore_files(file_path, file_size, position);
 #endif
             }
          }
@@ -3699,10 +3700,10 @@ handle_options(int          position,
 #ifdef _WITH_PTHREAD
             if (extract_options & EXTRACT_ADD_UNIQUE_NUMBER)
             {
-               *files_to_send = recount_files(file_path, file_size);
+               *files_to_send = recount_files(file_path, file_size, position);
             }
 #else
-            *files_to_send = restore_files(file_path, file_size);
+            *files_to_send = restore_files(file_path, file_size, position);
 #endif
 #ifdef _WITH_PTHREAD
          }
@@ -3897,7 +3898,7 @@ handle_options(int          position,
                }
 #endif
 #ifndef _WITH_PTHREAD
-               *files_to_send = restore_files(file_path, file_size);
+               *files_to_send = restore_files(file_path, file_size, position);
 #endif
             }
 #ifdef _WITH_PTHREAD
@@ -4253,9 +4254,9 @@ handle_options(int          position,
             if (recount_files_var == YES)
             {
 #ifdef _WITH_PTHREAD
-               *files_to_send = recount_files(file_path, file_size);
+               *files_to_send = recount_files(file_path, file_size, position);
 #else
-               *files_to_send = restore_files(file_path, file_size);
+               *files_to_send = restore_files(file_path, file_size, position);
 #endif
             }
          }
@@ -4596,7 +4597,7 @@ cleanup_rename_ow(int          file_counter,
 #if defined (_WITH_PTHREAD) || !defined (_PRODUCTION_LOG)
 /*+++++++++++++++++++++++++++ recount_files() +++++++++++++++++++++++++++*/
 static int
-recount_files(char *file_path, off_t *file_size)
+recount_files(char *file_path, off_t *file_size, int position)
 {
    int file_counter = 0;
    DIR *dp;
@@ -4646,8 +4647,8 @@ recount_files(char *file_path, off_t *file_size)
             else if (S_ISDIR(stat_buf.st_mode))
                  {
                     receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                                "Currently unable to handle directories in job directories. Removing `%s'.",
-                                fullname);
+                                "Currently unable to handle directories in job directories. Removing `%s'. #%x",
+                                fullname, db[position].job_id);
                     (void)rec_rmdir(fullname);
                  }
          }
@@ -4675,9 +4676,9 @@ recount_files(char *file_path, off_t *file_size)
 
 /*+++++++++++++++++++++++++ delete_all_files() ++++++++++++++++++++++++++*/
 static void
-delete_all_files(char *file_path,
-#ifdef _DELETE_LOG
+delete_all_files(char         *file_path,
                  int          position,
+#ifdef _DELETE_LOG
                  int          ret,
                  time_t       creation_time,
                  unsigned int unique_number,
@@ -4753,22 +4754,25 @@ delete_all_files(char *file_path,
                   if (p_save_file == NULL)
                   {
                      receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                                 "Failed to unlink() `%s' : %s",
-                                 fullname, strerror(errno));
+                                 "Failed to unlink() `%s' : %s #%x",
+                                 fullname, strerror(errno),
+                                 db[position].job_id);
                   }
                   else
                   {
                      if (on_error_delete_all == YES)
                      {
                         receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                                    "Failed to rename() `%s' to `%s' : %s",
-                                    fullname, save_orig_file, strerror(errno));
+                                    "Failed to rename() `%s' to `%s' : %s #%x",
+                                    fullname, save_orig_file, strerror(errno),
+                                    db[position].job_id);
                      }
                      else
                      {
                         receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                                    "Failed to copy `%s' to `%s'",
-                                    fullname, save_orig_file);
+                                    "Failed to copy `%s' to `%s' #%x",
+                                    fullname, save_orig_file,
+                                    db[position].job_id);
                      }
                   }
                }
@@ -4961,8 +4965,8 @@ check_changes(time_t         creation_time,
             else if (S_ISDIR(stat_buf.st_mode))
                  {
                     receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                                "Currently unable to handle directories in job directories. Removing `%s'.",
-                                fullname);
+                                "Currently unable to handle directories in job directories. Removing `%s'. #%x",
+                                fullname, db[position].job_id);
                     (void)rec_rmdir(fullname);
                  }
          }
@@ -5290,7 +5294,7 @@ check_changes(time_t         creation_time,
 #ifndef _WITH_PTHREAD
 /*+++++++++++++++++++++++++++ restore_files() +++++++++++++++++++++++++++*/
 static int
-restore_files(char *file_path, off_t *file_size)
+restore_files(char *file_path, off_t *file_size, int position)
 {
    int file_counter = 0;
    DIR *dp;
@@ -5393,8 +5397,8 @@ restore_files(char *file_path, off_t *file_size)
             else if (S_ISDIR(stat_buf.st_mode))
                  {
                     receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                                "Currently unable to handle directories in job directories. Removing `%s'.",
-                                fullname);
+                                "Currently unable to handle directories in job directories. Removing `%s'. #%x",
+                                fullname, db[position].job_id);
                     (void)rec_rmdir(fullname);
                  }
          }
