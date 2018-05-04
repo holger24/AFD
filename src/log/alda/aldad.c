@@ -1,6 +1,6 @@
 /*
  *  aldad.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2009 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2009 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -224,7 +224,7 @@ main(int argc, char *argv[])
                            if (i < no_of_process)
                            {
                               (void)memmove(&apl[i], &apl[i + 1],
-                                            ((no_of_process - i) * sizeof(struct aldad_proc_list)));
+                                            ((no_of_process - (i + 1)) * sizeof(struct aldad_proc_list)));
                            }
                            no_of_process--;
                            i--;
