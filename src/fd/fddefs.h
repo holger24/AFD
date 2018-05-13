@@ -624,6 +624,10 @@ struct job
                                          /*|28 | Execute in target dir. |*/
                                          /*+---+------------------------+*/
 #ifdef _WITH_DE_MAIL_SUPPORT
+          char          *message_id;
+          char          *de_mail_privat_id;
+          char          *de_mail_sender;
+          int           de_mail_privat_id_length;
           unsigned char de_mail_options; /* Flag storing the different   */
                                          /* options for DE-mail, which   */
                                          /* are:                         */
@@ -634,9 +638,6 @@ struct job
                                          /*|    2 | CONF_OF_RECEIPT     |*/
                                          /*|    1 | CONF_OF_DISPATCH    |*/
                                          /*+------+---------------------+*/
-          int           de_mail_privat_id_length;
-          char          *de_mail_privat_id;
-          char          *de_mail_sender;
           char          demcd_log;       /* When the file name           */
                                          /* confirmation is to be logged,*/
                                          /* this variable is set YES.    */

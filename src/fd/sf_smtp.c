@@ -1,6 +1,6 @@
 /*
  *  sf_smtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -96,6 +96,9 @@ DESCR__E_M1
 #include <sys/stat.h>
 #ifdef _OUTPUT_LOG
 # include <sys/times.h>                /* times(), struct tms            */
+#endif
+#ifdef _WITH_DE_MAIL_SUPPORT
+# include <sys/time.h>                 /* gettimeofday()                 */
 #endif
 #include <fcntl.h>
 #include <signal.h>                    /* signal()                       */
@@ -212,7 +215,8 @@ static off_t               local_file_size,
 
 /* Local function prototypes. */
 #ifdef _WITH_DE_MAIL_SUPPORT
-static void                gen_privat_id(char *);
+static void                gen_message_id(char *),
+                           gen_privat_id(char *);
 #endif
 static void                sf_smtp_exit(void),
                            sig_bus(int),
@@ -1411,10 +1415,31 @@ main(int argc, char *argv[])
 #ifdef _WITH_DE_MAIL_SUPPORT
             if (db.protocol & DE_MAIL_FLAG)
             {
+               /* De mail must have a Messag-ID. */
+               gen_message_id(host_name);
+               length = snprintf(buffer, buffer_size,
+                                 "Messag-ID: %s\r\n", db.message_id);
+               if (length >= buffer_size)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "Buffer length for Messag-ID to small!");
+                  (void)smtp_quit();
+                  exit(ALLOC_ERROR);
+               }
+               if (smtp_write(buffer, NULL, length) < 0)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "Failed to write Messag-ID to SMTP-server.");
+                  (void)smtp_quit();
+                  exit(eval_timeout(WRITE_REMOTE_ERROR));
+               }
+               no_of_bytes += length;
+
                gen_privat_id(host_name);
                length = snprintf(buffer, buffer_size,
-                                 "X-de-mail-message-type:normal\r\nX-de-mail-privat-id:%s\r\nX-de-mail-sender:%s\r\nX-de-mail-version:1.1\r\n",
-                                 db.de_mail_privat_id, db.de_mail_sender);
+                                 "X-de-mail-message-type: normal\r\nX-de-mail-privat-id: %s\r\nX-de-mail-sender: %s\r\nX-de-mail-version:1.2\r\n",
+                                 db.de_mail_privat_id,
+                                 db.de_mail_sender);
                if (length >= buffer_size)
                {
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -1434,7 +1459,7 @@ main(int argc, char *argv[])
                if (db.de_mail_options & CONF_OF_DISPATCH)
                {
                   length = snprintf(buffer, buffer_size,
-                                    "X-de-mail-confirmation-of-dispatch:yes\r\n");
+                                    "X-de-mail-confirmation-of-dispatch: yes\r\n");
                   if (length >= buffer_size)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -1455,7 +1480,7 @@ main(int argc, char *argv[])
                if (db.de_mail_options & CONF_OF_RECEIPT)
                {
                   length = snprintf(buffer, buffer_size,
-                                    "X-de-mail-confirmation-of-receipt:yes\r\n");
+                                    "X-de-mail-confirmation-of-receipt: yes\r\n");
                   if (length >= buffer_size)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -1476,7 +1501,7 @@ main(int argc, char *argv[])
                if (db.de_mail_options & CONF_OF_RETRIEVE)
                {
                   length = snprintf(buffer, buffer_size,
-                                    "X-de-mail-confirmation-of-retrieve:yes\r\n");
+                                    "X-de-mail-confirmation-of-retrieve: yes\r\n");
                   if (length >= buffer_size)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -3175,7 +3200,48 @@ try_again_unlink:
 
 
 #ifdef _WITH_DE_MAIL_SUPPORT
-/*+++++++++++++++++++++++++++ gen_privat_id() #++++++++++++++++++++++++++*/
+/*+++++++++++++++++++++++++++ gen_message_id() ++++++++++++++++++++++++++*/
+static void
+gen_message_id(char *host_name)
+{
+   static int         rand_initialized = NO;
+   unsigned long long milliseconds_since_epoch;
+   struct timeval     tv;
+
+   if (db.message_id == NULL)
+   {
+      if ((db.message_id = malloc(MAX_LONG_LONG_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1 + 1 + 255 + 1)) == NULL)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "malloc() error : %s", strerror(errno));
+         exit(ALLOC_ERROR);
+      }
+   }
+   if (gettimeofday(&tv, NULL) == -1)
+   {
+      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                "gettimeofday() error : %s", strerror(errno));
+      milliseconds_since_epoch = time(NULL);
+   }
+   else
+   {
+      milliseconds_since_epoch = (unsigned long long)(tv.tv_sec) * 1000 +
+                                 (unsigned long long)(tv.tv_usec) / 1000;
+   }
+   if (rand_initialized == NO)
+   {
+      srand(time(NULL));
+   }
+   (void)snprintf(db.message_id,
+                  MAX_LONG_LONG_HEX_LENGTH + 1 + MAX_INT_HEX_LENGTH + 1 + 255 + 1,
+                  "%llx.%x@%s",
+                  milliseconds_since_epoch, rand(), host_name);
+
+    return;
+}
+
+
+/*+++++++++++++++++++++++++++ gen_privat_id() +++++++++++++++++++++++++++*/
 static void
 gen_privat_id(char *host_name)
 {
