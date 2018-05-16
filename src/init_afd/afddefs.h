@@ -1090,8 +1090,6 @@ typedef unsigned long       u_long_64;
 #define CHARSET_ID                       "charset"
 #define CHARSET_ID_LENGTH                (sizeof(CHARSET_ID) - 1)
 #ifdef _WITH_DE_MAIL_SUPPORT
-# define DE_MAIL_SENDER_ID               "demail sender"
-# define DE_MAIL_SENDER_ID_LENGTH        (sizeof(DE_MAIL_SENDER_ID) - 1)
 # define CONF_OF_RETRIEVE_ID             "confirmation of retrieve"
 # define CONF_OF_RETRIEVE_ID_LENGTH      (sizeof(CONF_OF_RETRIEVE_ID) - 1)
 #endif

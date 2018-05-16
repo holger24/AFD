@@ -1415,21 +1415,21 @@ main(int argc, char *argv[])
 #ifdef _WITH_DE_MAIL_SUPPORT
             if (db.protocol & DE_MAIL_FLAG)
             {
-               /* De mail must have a Messag-ID. */
+               /* De mail must have a Message-ID. */
                gen_message_id(host_name);
                length = snprintf(buffer, buffer_size,
-                                 "Messag-ID: %s\r\n", db.message_id);
+                                 "Message-ID: %s\r\n", db.message_id);
                if (length >= buffer_size)
                {
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "Buffer length for Messag-ID to small!");
+                            "Buffer length for Message-ID to small!");
                   (void)smtp_quit();
                   exit(ALLOC_ERROR);
                }
                if (smtp_write(buffer, NULL, length) < 0)
                {
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "Failed to write Messag-ID to SMTP-server.");
+                            "Failed to write Message-ID to SMTP-server.");
                   (void)smtp_quit();
                   exit(eval_timeout(WRITE_REMOTE_ERROR));
                }
@@ -1437,9 +1437,8 @@ main(int argc, char *argv[])
 
                gen_privat_id(host_name);
                length = snprintf(buffer, buffer_size,
-                                 "X-de-mail-message-type: normal\r\nX-de-mail-privat-id: %s\r\nX-de-mail-sender: %s\r\nX-de-mail-version:1.2\r\n",
-                                 db.de_mail_privat_id,
-                                 db.de_mail_sender);
+                                 "X-de-mail-privat-id: %s\r\n",
+                                 db.de_mail_privat_id);
                if (length >= buffer_size)
                {
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,

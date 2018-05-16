@@ -1,6 +1,6 @@
 /*
  *  eval_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -176,7 +176,6 @@ static char *store_mail_address(char *, char **, char *, unsigned int);
 #define HIDE_ALL_GROUP_MEMBERS_FLAG 128
 #ifdef _WITH_DE_MAIL_SUPPORT
 # define CONF_OF_RETRIEVE_FLAG      256
-# define DE_MAIL_SENDER_FLAG        512
 #endif
 
 
@@ -1625,33 +1624,6 @@ eval_message(char *message_name, struct job *p_db)
                     }
                  }
 #ifdef _WITH_DE_MAIL_SUPPORT
-            else if (((used & DE_MAIL_SENDER_FLAG) == 0) &&
-                     (CHECK_STRNCMP(ptr, DE_MAIL_SENDER_ID, DE_MAIL_SENDER_ID_LENGTH) == 0))
-                 {
-                    used |= DE_MAIL_SENDER_FLAG;
-                    if (p_db->protocol & DE_MAIL_FLAG)
-                    {
-                       ptr += DE_MAIL_SENDER_ID_LENGTH;
-                       while ((*ptr == ' ') || (*ptr == '\t'))
-                       {
-                          ptr++;
-                       }
-                       ptr = store_mail_address(ptr, &p_db->de_mail_sender,
-                                                DE_MAIL_SENDER_ID,
-                                                p_db->id.job);
-                    }
-                    else
-                    {
-                       while ((*ptr != '\n') && (*ptr != '\0'))
-                       {
-                          ptr++;
-                       }
-                    }
-                    while (*ptr == '\n')
-                    {
-                       ptr++;
-                    }
-                 }
             else if (((used & CONF_OF_RETRIEVE_FLAG) == 0) &&
                      (CHECK_STRNCMP(ptr, CONF_OF_RETRIEVE_ID,
                                     CONF_OF_RETRIEVE_ID_LENGTH) == 0))
