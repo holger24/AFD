@@ -1,6 +1,6 @@
 /*
  *  eval_input_alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,7 +49,8 @@ DESCR__S_M3
  **                                          I - Input Log
  **                                          U - Distribution Log
  **                                          P - Production Log
- **                                          O - Output Log
+ **                                          R - Output Log retrieve only
+ **                                          O - Output Log output only
  **                                          D - Delete Log
  **                                        Default: IUPOD
  **           -g <time in seconds>         Maximum time to search for
@@ -539,6 +540,10 @@ eval_input_alda(int *argc, char *argv[])
                            break;
 #endif
 #ifdef _OUTPUT_LOG
+                        case 'R' : /* Output log retrieve only. */
+                           search_log_type |= SEARCH_OUTPUT_RETRIEVE_ONLY_LOG;
+                           break;
+
                         case 'O' : /* Output log. */
                            search_log_type |= SEARCH_OUTPUT_LOG;
                            break;
@@ -2223,7 +2228,8 @@ usage(char *progname)
    (void)fprintf(stderr, "                                          P - Production Log\n");
 #endif
 #ifdef _OUTPUT_LOG
-   (void)fprintf(stderr, "                                          O - Output Log\n");
+   (void)fprintf(stderr, "                                          R - Output Log retrieve only\n");
+   (void)fprintf(stderr, "                                          O - Output Log output only\n");
 #endif
 #ifdef _DELETE_LOG
    (void)fprintf(stderr, "                                          D - Delete Log\n");

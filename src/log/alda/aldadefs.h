@@ -235,7 +235,8 @@
             plog.split_job_counter = 0;       \
          }
 #endif
-#define SEARCH_OUTPUT_LOG                   8
+#define SEARCH_OUTPUT_RETRIEVE_ONLY_LOG     8
+#define SEARCH_OUTPUT_LOG                   16
 #ifdef _OUTPUT_LOG
 # define DEFAULT_OUTPUT_OUTPUT_FORMAT       "%Otd %OtX - %OTd %OTX (%ODX)|%-6OP|%2dOp|%-8OH|%-14Oh|%9xOJ|%4xOU|%4xOL|%11OSB|%11dOe|%-30Of|%-30OF|%OA"
 # define RESET_OLOG()                             \
@@ -270,7 +271,7 @@
             olog.retries = 0;                     \
          }
 #endif
-#define SEARCH_DELETE_LOG                   16
+#define SEARCH_DELETE_LOG                   32
 #ifdef _DELETE_LOG
 # define DEFAULT_OUTPUT_DELETE_FORMAT       "%DTd %DTX|%-30DF|%11DSB|%-10DW|%-36DR|%9xDr|%9xDJ|%9xDI|%-8DH|%DA"
 # define RESET_DLOG()                             \
@@ -674,7 +675,7 @@ extern int  check_production_line(char *, char *, off_t, time_t, unsigned int,
 #endif
 #ifdef _OUTPUT_LOG
 extern int  check_output_line(char *, char *, off_t, time_t, unsigned int,
-                              unsigned int *, unsigned int *),
+                              unsigned int *, unsigned int *, int),
             get_recipient(unsigned int),
             get_recipient_alias(unsigned int);
 #endif
