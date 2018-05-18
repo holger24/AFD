@@ -1,6 +1,6 @@
 /*
  *  eval_input_ss.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2012 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -39,7 +39,7 @@ DESCR__S_M3
  **                      int  *show_year,
  **                      int  *arg_counter,
  **                      int  *show_time_stamp,
- **                      int  *show_numeric_total_only,
+ **                      int  *display_format,
  **                      int  input)
  **
  ** DESCRIPTION
@@ -47,6 +47,7 @@ DESCR__S_M3
  **   accepts the following parameters:
  **           -w <work dir>       working directory of the AFD
  **           -f <statistic file> path and name of the statistic file
+ **           -o <file name>      Output file name.
  **           -d [<x>]            show all information of day minus x
  **           -D                  show total summary on a per day basis
  **           -h [<x>]            show all information of hour minus x
@@ -58,6 +59,8 @@ DESCR__S_M3
  **           -t[u]               put in a time stamp for time the output
  **                               is valid. With the u the time is shown
  **                               in unix time.
+ **           -C                  Output in CSV format.
+ **           -N                  Show directory name not alias.
  **           -T                  Numeric total only.
  **
  ** RETURN VALUES
@@ -76,6 +79,7 @@ DESCR__S_M3
  **   16.02.2003 H.Kiehl Added -m and -mr options.
  **   19.02.2003 H.Kiehl Added -t[u] option.
  **   23.07.2006 H.Kiehl Added -T option.
+ **   30.04.2018 H.Kiehl Added -C, -N and -o option.
  **
  */
 DESCR__E_M3
@@ -101,6 +105,7 @@ void
 eval_input_ss(int  argc,
               char *argv[],
               char *status_file_name,
+              char *output_file_name,
               int  *show_day,
               int  *show_day_summary,
               int  *show_hour,
@@ -111,7 +116,8 @@ eval_input_ss(int  argc,
               int  *show_year,
               int  *arg_counter,
               int  *show_time_stamp,
-              int  *show_numeric_total_only,
+              int  *display_format,
+              int  *show_alias,
               int  input)
 {
    int correct = YES;       /* Was input/syntax correct?      */
@@ -131,13 +137,14 @@ eval_input_ss(int  argc,
    /*         - y : Show all information of year minus x.    */
    /*                                                        */
    /**********************************************************/
+   output_file_name[0] = '\0';
    if ((argc > 1) && (argv[1][0] == '-'))
    {
       while ((--argc > 0) && ((*++argv)[0] == '-'))
       {
          switch (*(argv[0] + 1))
          {
-            case 'f': /* Name of the statistic file */
+            case 'f': /* Name of the statistic file. */
 
                if ((argc == 1) || (*(argv + 1)[0] == '-'))
                {
@@ -147,11 +154,25 @@ eval_input_ss(int  argc,
                }
                else
                {
-                  while ((--argc > 0) && ((*++argv)[0] != '-'))
-                  {
-                     (void)my_strncpy(status_file_name, argv[0],
-                                      MAX_FILENAME_LENGTH + 1);
-                  }
+                  (void)my_strncpy(status_file_name, argv[1],
+                                   MAX_FILENAME_LENGTH + 1);
+                  argv++;
+                  argc--;
+               }
+               break;
+
+            case 'o': /* Output file name. */
+
+               if ((argc == 1) || (*(argv + 1)[0] == '-'))
+               {
+                  (void)fprintf(stderr,
+                                "ERROR  : You did not specify the name of the output file.\n");
+                  correct = NO;
+               }
+               else
+               {
+                  (void)my_strncpy(output_file_name, argv[0],
+                                   MAX_PATH_LENGTH + 1);
                   argv--;
                   argc++;
                }
@@ -306,12 +327,44 @@ eval_input_ss(int  argc,
 
                if ((argc == 1) || (*(argv + 1)[0] == '-'))
                {
-                  *show_numeric_total_only = YES;
+                  *display_format = NUMERIC_TOTAL_ONLY;
                }
                else
                {
                   (void)fprintf(stderr,
                                 "ERROR  : Data following -T option.\n");
+                  correct = NO;
+                  argc--;
+                  argv++;
+               }
+               break;
+
+            case 'C': /* Show CSV format. */
+
+               if ((argc == 1) || (*(argv + 1)[0] == '-'))
+               {
+                  *display_format = CSV_FORMAT;
+               }
+               else
+               {
+                  (void)fprintf(stderr,
+                                "ERROR  : Data following -C option.\n");
+                  correct = NO;
+                  argc--;
+                  argv++;
+               }
+               break;
+
+            case 'N': /* Show directory name. */
+
+               if ((argc == 1) || (*(argv + 1)[0] == '-'))
+               {
+                  *show_alias = NO;
+               }
+               else
+               {
+                  (void)fprintf(stderr,
+                                "ERROR  : Data following -N option.\n");
                   correct = NO;
                   argc--;
                   argv++;
@@ -350,7 +403,7 @@ eval_input_ss(int  argc,
    }
 
    /*
-    * Now lets collect all the host names and store them somewhere
+    * Now lets collect all the host/dir names and store them somewhere
     * save and snug ;-)
     */
    if (argc > 0)
@@ -391,6 +444,7 @@ usage(int input)
    }
    (void)fprintf(stderr, "           -w <work dir> Working directory of the AFD.\n");
    (void)fprintf(stderr, "           -f <name>     Path and name of the statistics file.\n");
+   (void)fprintf(stderr, "           -o <name>     Path and name of the output file.\n");
    (void)fprintf(stderr, "           -d [<x>]      Show information of all days [or day minus x].\n");
    (void)fprintf(stderr, "           -D            Show total summary on a per day basis.\n");
    (void)fprintf(stderr, "           -h [<x>]      Show information of all hours [or hour minus x].\n");
@@ -399,6 +453,11 @@ usage(int input)
    (void)fprintf(stderr, "           -m [<x>]      Show information of all minutes [or minute minus x].\n");
    (void)fprintf(stderr, "           -M [<x>]      Show total summary of last hour.\n");
    (void)fprintf(stderr, "           -t[u]         Put in a timestamp for when this output is valid.\n");
+   (void)fprintf(stderr, "           -C            Format output in CSV format.\n");
+   if (input == YES)
+   {
+      (void)fprintf(stderr, "           -N            Show directory name not alias.\n");
+   }
    (void)fprintf(stderr, "           -T            Show numeric total only.\n");
    (void)fprintf(stderr, "           -y [<x>]      Show information of all years [or year minus x].\n");
    (void)fprintf(stderr, "           --version     Show current version.\n");

@@ -1,6 +1,6 @@
 /*
  *  statdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2006 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,6 +19,17 @@
 
 #ifndef __statdefs_h
 #define __statdefs_h
+
+#define SHOW_SMALL_TOTAL   -1
+#define SHOW_BIG_TOTAL     -2
+#define SHOW_SPACE         -3
+#define NORMAL_OUTPUT      0
+#define NUMERIC_TOTAL_ONLY 1
+#define CSV_FORMAT         2
+
+#define SPACE_LINE  "                                                                                                                                                                                                                                                       "
+#define DOUBLE_LINE "======================================================================================================================================================================================================================================================="
+#define SINGLE_LINE "-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
 
 #define STAT_RESCAN_TIME                              5
 #define DAYS_PER_YEAR                               366
@@ -117,8 +128,13 @@ struct afd_year_istat
        };
 
 extern void eval_input_as(int, char **, char *, char *, char *),
-            eval_input_ss(int, char **, char *, int *, int *, int *, int *,
-                          int *, int *, int *, int *, int *, int *, int *, int),
+            eval_input_ss(int, char **, char *, char *, int *, int *, int *,
+                          int *, int *, int *, int *, int *, int *, int *,
+                          int *, int *, int),
+            free_get_dir_name(void),
+            get_dir_name(char *, char *),
+            get_max_name_length(void),
+            get_real_hostname(char *, char *, char *),
             read_afd_istat_db(int),
             read_afd_stat_db(int),
             save_old_input_year(int),

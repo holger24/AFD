@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2013 Holger Kiehl
+## Copyright (C) 2001 - 2018 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -32,10 +32,12 @@ afd_stat_SOURCES        = afd_stat.c\
 afd_stat_LDADD          = ../common/libafd.a
 show_stat_SOURCES       = show_stat.c\
                           eval_input_ss.c\
+			  get_real_hostname.c\
                           locate_host.c
 show_stat_LDADD         = ../common/libafd.a
 show_istat_SOURCES      = show_istat.c\
                           eval_input_ss.c\
+			  get_dir_name.c\
                           locate_dir.c
 show_istat_LDADD        = ../common/libafd.a
 show_bench_stat_SOURCES = show_bench_stat.c
