@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -110,7 +110,8 @@ extern int              continues_toggle_set,
 #ifdef _WITH_DE_MAIL_SUPPORT
                         view_confirmation,
 #endif
-                        view_archived_only;
+                        view_archived_only,
+                        view_received_only;
 extern unsigned int     all_list_items,
                         *search_dirid,
                         *search_jobid;
@@ -2328,6 +2329,10 @@ no_criteria(register char *ptr,
                }
                else
                {
+                  if (view_received_only == YES)
+                  {
+                     IGNORE_ENTRY();
+                  }
                   is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -2391,6 +2396,10 @@ no_criteria(register char *ptr,
                   }
                   else
                   {
+                     if (view_received_only == YES)
+                     {
+                        IGNORE_ENTRY();
+                     }
                      is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -3137,6 +3146,10 @@ file_name_only(register char *ptr,
                }
                else
                {
+                  if (view_received_only == YES)
+                  {
+                     IGNORE_ENTRY();
+                  }
                   is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -3200,6 +3213,10 @@ file_name_only(register char *ptr,
                   }
                   else
                   {
+                     if (view_received_only == YES)
+                     {
+                        IGNORE_ENTRY();
+                     }
                      is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -3995,6 +4012,10 @@ file_size_only(register char *ptr,
                }
                else
                {
+                  if (view_received_only == YES)
+                  {
+                     IGNORE_ENTRY();
+                  }
                   is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -4058,6 +4079,10 @@ file_size_only(register char *ptr,
                   }
                   else
                   {
+                     if (view_received_only == YES)
+                     {
+                        IGNORE_ENTRY();
+                     }
                      is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -4504,6 +4529,10 @@ file_name_and_size(register char *ptr,
                }
                else
                {
+                  if (view_received_only == YES)
+                  {
+                     IGNORE_ENTRY();
+                  }
                   is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -4567,6 +4596,10 @@ file_name_and_size(register char *ptr,
                   }
                   else
                   {
+                     if (view_received_only == YES)
+                     {
+                        IGNORE_ENTRY();
+                     }
                      is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -5212,6 +5245,10 @@ recipient_only(register char *ptr,
                }
                else
                {
+                  if (view_received_only == YES)
+                  {
+                     IGNORE_ENTRY();
+                  }
                   is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -5275,6 +5312,10 @@ recipient_only(register char *ptr,
                   }
                   else
                   {
+                     if (view_received_only == YES)
+                     {
+                        IGNORE_ENTRY();
+                     }
                      is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -6273,6 +6314,10 @@ file_name_and_recipient(register char *ptr,
                }
                else
                {
+                  if (view_received_only == YES)
+                  {
+                     IGNORE_ENTRY();
+                  }
                   is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -6336,6 +6381,10 @@ file_name_and_recipient(register char *ptr,
                   }
                   else
                   {
+                     if (view_received_only == YES)
+                     {
+                        IGNORE_ENTRY();
+                     }
                      is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -6712,6 +6761,10 @@ file_size_and_recipient(register char *ptr,
                }
                else
                {
+                  if (view_received_only == YES)
+                  {
+                     IGNORE_ENTRY();
+                  }
                   is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -6775,6 +6828,10 @@ file_size_and_recipient(register char *ptr,
                   }
                   else
                   {
+                     if (view_received_only == YES)
+                     {
+                        IGNORE_ENTRY();
+                     }
                      is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -7216,6 +7273,10 @@ file_name_size_recipient(register char *ptr,
                }
                else
                {
+                  if (view_received_only == YES)
+                  {
+                     IGNORE_ENTRY();
+                  }
                   is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
@@ -7279,6 +7340,10 @@ file_name_size_recipient(register char *ptr,
                   }
                   else
                   {
+                     if (view_received_only == YES)
+                     {
+                        IGNORE_ENTRY();
+                     }
                      is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT

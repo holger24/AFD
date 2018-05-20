@@ -1,6 +1,6 @@
 /*
  *  show_olog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -94,26 +94,29 @@ DESCR__E_M1
 /* Global variables. */
 Display                    *display;
 XtAppContext               app;
-Widget                     cont_togglebox_w,
-                           appshell,
-                           start_time_w,
+Widget                     appshell,
+                           con_toggle_w,
+                           cont_togglebox_w,
+                           directory_w,
                            end_time_w,
                            file_name_w,
-                           directory_w,
                            file_length_w,
                            job_id_w,
-                           recipient_w,
                            headingbox_w,
                            listbox_w,
+                           oa_toggle_w,
                            print_button_w,
+                           recipient_w,
                            resend_button_w,
+                           ro_toggle_w,
+                           scrollbar_w,
                            select_all_button_w,
                            selectionbox_w,
                            send_button_w,
+                           special_button_w,
+                           start_time_w,
                            statusbox_w,
                            summarybox_w,
-                           scrollbar_w,
-                           special_button_w,
                            transport_time_w,
                            view_button_w;
 Window                     main_window;
@@ -145,6 +148,7 @@ int                        acd_counter = 0,
 #ifdef _WITH_DE_MAIL_SUPPORT
                            view_confirmation = NO,
 #endif
+                           view_received_only = NO,
                            view_archived_only = NO,
                            view_mode;
 unsigned int               all_list_items = 0,
@@ -873,13 +877,50 @@ main(int argc, char *argv[])
                                 XmNresizable,        False,
                                 NULL);
 
-   toggle_w = XtVaCreateManagedWidget("Only archived",
+   oa_toggle_w = XtVaCreateManagedWidget("Only archived",
                                 xmToggleButtonGadgetClass, xx_togglebox_w,
                                 XmNfontList,               fontlist,
                                 XmNset,                    False,
                                 NULL);
-   XtAddCallback(toggle_w, XmNvalueChangedCallback,
+   XtAddCallback(oa_toggle_w, XmNvalueChangedCallback,
                  (XtCallbackProc)only_archived_toggle, NULL);
+   XtManageChild(xx_togglebox_w);
+
+   /* Vertical Separator */
+   argcount = 0;
+   XtSetArg(args[argcount], XmNorientation,      XmVERTICAL);
+   argcount++;
+   XtSetArg(args[argcount], XmNtopAttachment,    XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNbottomAttachment, XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftWidget,       xx_togglebox_w);
+   argcount++;
+   separator_w = XmCreateSeparator(selectionbox_w, "separator", args, argcount);
+   XtManageChild(separator_w);
+
+   /* Received only toggle box */
+   xx_togglebox_w = XtVaCreateWidget("ro_togglebox",
+                                xmRowColumnWidgetClass, selectionbox_w,
+                                XmNorientation,      XmHORIZONTAL,
+                                XmNpacking,          XmPACK_TIGHT,
+                                XmNnumColumns,       1,
+                                XmNtopAttachment,    XmATTACH_FORM,
+                                XmNleftAttachment,   XmATTACH_WIDGET,
+                                XmNleftWidget,       separator_w,
+                                XmNbottomAttachment, XmATTACH_FORM,
+                                XmNresizable,        False,
+                                NULL);
+
+   ro_toggle_w = XtVaCreateManagedWidget("Received only",
+                                xmToggleButtonGadgetClass, xx_togglebox_w,
+                                XmNfontList,               fontlist,
+                                XmNset,                    False,
+                                NULL);
+   XtAddCallback(ro_toggle_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)received_only_toggle, NULL);
    XtManageChild(xx_togglebox_w);
 
    /* Vertical Separator */
@@ -911,12 +952,12 @@ main(int argc, char *argv[])
                                 XmNresizable,        False,
                                 NULL);
 
-   toggle_w = XtVaCreateManagedWidget("Confirmation",
+   con_toggle_w = XtVaCreateManagedWidget("Confirmation",
                                 xmToggleButtonGadgetClass, xx_togglebox_w,
                                 XmNfontList,               fontlist,
                                 XmNset,                    False,
                                 NULL);
-   XtAddCallback(toggle_w, XmNvalueChangedCallback,
+   XtAddCallback(con_toggle_w, XmNvalueChangedCallback,
                  (XtCallbackProc)confirmation_toggle, NULL);
    XtManageChild(xx_togglebox_w);
 

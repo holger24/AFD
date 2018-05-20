@@ -1,6 +1,6 @@
 /*
  *  show_olog.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -310,6 +310,7 @@ extern void calculate_summary(char *, time_t, time_t, unsigned int,
             info_click(Widget, XtPointer, XEvent *),
             item_selection(Widget, XtPointer, XtPointer),
             only_archived_toggle(Widget, XtPointer, XtPointer),
+            received_only_toggle(Widget, XtPointer, XtPointer),
             print_button(Widget, XtPointer, XtPointer),
             radio_button(Widget, XtPointer, XtPointer),
             resend_button(Widget, XtPointer, XtPointer),

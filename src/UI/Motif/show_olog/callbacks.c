@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -29,6 +29,7 @@ DESCR__S_M3
  **   void confirmation_toggle(Widget w, XtPointer client_data, XtPointer call_data)
  **   void continues_toggle(Widget w, XtPointer client_data, XtPointer call_data)
  **   void only_archived_toggle(Widget w, XtPointer client_data, XtPointer call_data)
+ **   void received_only_toggle(Widget w, XtPointer client_data, XtPointer call_data)
  **   void file_name_toggle(Widget w, XtPointer client_data, XtPointer call_data)
  **   void radio_button(Widget w, XtPointer client_data, XtPointer call_data)
  **   void item_selection(Widget w, XtPointer client_data, XtPointer call_data)
@@ -110,6 +111,9 @@ DESCR__E_M3
 /* External global variables. */
 extern Display          *display;
 extern Widget           appshell,
+#ifdef _WITH_DE_MAIL_SUPPORT
+                        con_toggle_w,
+#endif
                         cont_togglebox_w,
                         directory_w,
                         end_time_w,
@@ -118,9 +122,11 @@ extern Widget           appshell,
                         headingbox_w,
                         job_id_w,
                         listbox_w,
+                        oa_toggle_w,
                         print_button_w,
                         recipient_w,
                         resend_button_w,
+                        ro_toggle_w,
                         scrollbar_w,
                         select_all_button_w,
                         selectionbox_w,
@@ -147,6 +153,7 @@ extern int              continues_toggle_set,
 #ifdef _WITH_DE_MAIL_SUPPORT
                         view_confirmation,
 #endif
+                        view_received_only,
                         view_archived_only,
                         view_mode;
 extern unsigned int     all_list_items,
@@ -221,10 +228,42 @@ only_archived_toggle(Widget w, XtPointer client_data, XtPointer call_data)
    if (view_archived_only == NO)
    {
       view_archived_only = YES;
+      XtSetSensitive(ro_toggle_w, False);
+#ifdef _WITH_DE_MAIL_SUPPORT
+      XtSetSensitive(con_toggle_w, False);
+#endif
    }
    else
    {
       view_archived_only = NO;
+      XtSetSensitive(ro_toggle_w, True);
+#ifdef _WITH_DE_MAIL_SUPPORT
+      XtSetSensitive(con_toggle_w, True);
+#endif
+   }
+   return;
+}
+
+
+/*######################## received_only_toggle() #######################*/
+void
+received_only_toggle(Widget w, XtPointer client_data, XtPointer call_data)
+{
+   if (view_received_only == NO)
+   {
+      view_received_only = YES;
+      XtSetSensitive(oa_toggle_w, False);
+#ifdef _WITH_DE_MAIL_SUPPORT
+      XtSetSensitive(con_toggle_w, False);
+#endif
+   }
+   else
+   {
+      view_received_only = NO;
+      XtSetSensitive(oa_toggle_w, True);
+#ifdef _WITH_DE_MAIL_SUPPORT
+      XtSetSensitive(con_toggle_w, True);
+#endif
    }
    return;
 }
