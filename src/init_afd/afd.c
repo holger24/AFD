@@ -1,6 +1,6 @@
 /*
  *  afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1261,7 +1261,7 @@ check_database(void)
    else
    {
       char *buffer,
-           config_file[MAX_PATH_LENGTH];
+           config_file[MAX_PATH_LENGTH + 5];
 
       ret = -1;
       if (read_file_no_cr(db_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT)
@@ -1307,7 +1307,7 @@ check_database(void)
                   char tmp_config_file[MAX_PATH_LENGTH];
 
                   (void)strcpy(tmp_config_file, config_file);
-                  (void)snprintf(config_file, MAX_PATH_LENGTH, "%s%s/%s",
+                  (void)snprintf(config_file, MAX_PATH_LENGTH + 5, "%s%s/%s",
                                  p_work_dir, ETC_DIR, tmp_config_file);
                }
             }

@@ -1,6 +1,6 @@
 /*
  *  eval_dir_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -882,7 +882,8 @@ eval_dir_config(off_t        db_size,
                                  }
                                  else
                                  {
-                                    (void)snprintf(dir->location, MAX_PATH_LENGTH,
+                                    (void)snprintf(dir->location,
+                                                   MAX_PATH_LENGTH + MAX_RECIPIENT_LENGTH,
                                                    "%s/%s",
                                                    prev_user_dir, directory);
                                     dir->location_length = optimise_dir(dir->location);

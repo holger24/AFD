@@ -144,7 +144,7 @@ main(int argc, char *argv[])
                 output_file_name[MAX_PATH_LENGTH],
                 *space_line = NULL,
                 statistic_file_name[MAX_FILENAME_LENGTH],
-                statistic_file[MAX_PATH_LENGTH],
+                statistic_file[MAX_PATH_LENGTH  + FIFO_DIR_LENGTH + MAX_FILENAME_LENGTH + 1 + MAX_INT_LENGTH],
                 work_dir[MAX_PATH_LENGTH];
    struct tm    *p_ts;
    struct stat  stat_buf;

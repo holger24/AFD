@@ -1,6 +1,6 @@
 /*
  *  sf_http.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -218,7 +218,7 @@ main(int argc, char *argv[])
                     now;
    char             *p_file_name_buffer,
                     *buffer,
-                    fullname[MAX_PATH_LENGTH],
+                    fullname[MAX_PATH_LENGTH + 1],
                     file_path[MAX_PATH_LENGTH];
    struct stat      stat_buf;
    struct job       *p_db;
@@ -455,7 +455,7 @@ main(int argc, char *argv[])
       local_file_size = 0;
       for (files_send = 0; files_send < files_to_send; files_send++)
       {
-         (void)snprintf(fullname, MAX_PATH_LENGTH,
+         (void)snprintf(fullname, MAX_PATH_LENGTH + 1,
                         "%s/%s", file_path, p_file_name_buffer);
 
          if (gsf_check_fsa(p_db) != NEITHER)

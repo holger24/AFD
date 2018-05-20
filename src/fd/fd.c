@@ -1,6 +1,6 @@
 /*
  *  fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -4706,8 +4706,7 @@ get_afd_config_value(void)
             }
             else
             {
-               (void)snprintf(default_de_mail_sender,
-                              MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH,
+               (void)snprintf(default_de_mail_sender, length,
                               "%s@%s", AFD_USER_NAME, host_name);
             }
          }
@@ -4867,8 +4866,7 @@ get_afd_config_value(void)
          }
          else
          {
-            (void)snprintf(default_de_mail_sender,
-                           MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH,
+            (void)snprintf(default_de_mail_sender, length,
                            "%s@%s", AFD_USER_NAME, host_name);
          }
       }

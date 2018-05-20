@@ -150,7 +150,7 @@ main(int argc, char *argv[])
                 output_file_name[MAX_PATH_LENGTH],
                 *space_line = NULL,
                 statistic_file_name[MAX_FILENAME_LENGTH],
-                statistic_file[MAX_PATH_LENGTH],
+                statistic_file[MAX_PATH_LENGTH + FIFO_DIR_LENGTH + MAX_FILENAME_LENGTH + 1 + MAX_INT_LENGTH],
                 work_dir[MAX_PATH_LENGTH];
    struct tm    *p_ts;
    struct stat  stat_buf;
@@ -625,7 +625,7 @@ main(int argc, char *argv[])
                   }
                   else if (display_format == NUMERIC_TOTAL_ONLY)
                        {
-                          (void)fprintf(output_fp, "%.0f %.0f\n", tmp_nfs, tmp_nbs, tmp_nc, tmp_ne);
+                          (void)fprintf(output_fp, "%.0f %.0f %.0f %.0f\n", tmp_nfs, tmp_nbs, tmp_nc, tmp_ne);
                        }
                        else
                        {
@@ -742,7 +742,7 @@ main(int argc, char *argv[])
                   }
                   else if (display_format == NUMERIC_TOTAL_ONLY)
                        {
-                          (void)fprintf(output_fp, "%.0f %.0f\n", tmp_nfs, tmp_nbs, tmp_nc, tmp_ne);
+                          (void)fprintf(output_fp, "%.0f %.0f %.0f %.0f\n", tmp_nfs, tmp_nbs, tmp_nc, tmp_ne);
                        }
                        else
                        {
@@ -1401,7 +1401,7 @@ main(int argc, char *argv[])
                   }
                   else if (display_format == NUMERIC_TOTAL_ONLY)
                        {
-                          (void)fprintf(output_fp, "%.0f %.0f\n", tmp_nfs, tmp_nbs, tmp_nc, tmp_ne);
+                          (void)fprintf(output_fp, "%.0f %.0f %.0f %.0f\n", tmp_nfs, tmp_nbs, tmp_nc, tmp_ne);
                        }
                        else
                        {

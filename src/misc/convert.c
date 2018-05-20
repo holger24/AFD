@@ -1,6 +1,6 @@
 /*
  *  convert.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -151,11 +151,11 @@ convert(char         *file_path,
          counter_fd,
          no_change = NO;
    char  fullname[MAX_PATH_LENGTH],
-         new_name[MAX_PATH_LENGTH];
+         new_name[MAX_PATH_LENGTH + 12];
 
    *file_size = 0;
    (void)snprintf(fullname, MAX_PATH_LENGTH, "%s/%s", file_path, file_name);
-   (void)snprintf(new_name, MAX_PATH_LENGTH, "%s.tmpnewname", fullname);
+   (void)snprintf(new_name, MAX_PATH_LENGTH + 12, "%s.tmpnewname", fullname);
    if (type == UNIX2DOS)
    {
       if (unix2dos(fullname, new_name, file_size) == INCORRECT)

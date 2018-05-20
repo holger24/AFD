@@ -1,7 +1,7 @@
 /*
  *  read_current_msg_list.c - Part of AFD, an automatic file distribution
  *                            program.
- *  Copyright (c) 2004 - 2007 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -138,7 +138,7 @@ read_current_msg_list(unsigned int **cml, int *no_of_current_msg)
     * get the time to fill all data into the current_msg_list_file.
     */
    sleep_counter = 0;
-   while ((p_afd_status->amg_jobs & WRITTING_JID_STRUCT) == 1)
+   while (p_afd_status->amg_jobs & WRITTING_JID_STRUCT)
    {
       (void)my_usleep(100000L);
       sleep_counter++;

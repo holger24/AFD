@@ -1,6 +1,6 @@
 /*
  *  get_log_number.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -79,7 +79,7 @@ get_log_number(int  *log_number,
                  tmp_number;
    char          *ptr,
                  str_number[MAX_INT_LENGTH],
-                 fullname[MAX_PATH_LENGTH],
+                 fullname[MAX_PATH_LENGTH + 256],
                  log_dir[MAX_PATH_LENGTH];
    struct stat   stat_buf;
    struct dirent *p_dir;
@@ -113,7 +113,7 @@ get_log_number(int  *log_number,
 
       if (strncmp(p_dir->d_name, log_name, log_name_length) == 0)
       {
-         (void)snprintf(fullname, MAX_PATH_LENGTH, "%s/%s",
+         (void)snprintf(fullname, MAX_PATH_LENGTH + 256, "%s/%s",
                         log_dir, p_dir->d_name);
          if (stat(fullname, &stat_buf) < 0)
          {

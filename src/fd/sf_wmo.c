@@ -1,6 +1,6 @@
 /*
  *  sf_wmo.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -214,7 +214,7 @@ main(int argc, char *argv[])
 #endif
    char             *p_file_name_buffer,
                     *buffer,
-                    fullname[MAX_PATH_LENGTH],
+                    fullname[MAX_PATH_LENGTH + 1],
                     file_path[MAX_PATH_LENGTH];
    clock_t          clktck;
    struct stat      stat_buf;
@@ -397,7 +397,8 @@ main(int argc, char *argv[])
       local_file_size = 0;
       for (files_send = 0; files_send < files_to_send; files_send++)
       {
-         (void)snprintf(fullname, MAX_PATH_LENGTH, "%s/%s", file_path, p_file_name_buffer);
+         (void)snprintf(fullname, MAX_PATH_LENGTH + 1, "%s/%s",
+                        file_path, p_file_name_buffer);
 
          if (*p_file_size_buffer > 0)
          {

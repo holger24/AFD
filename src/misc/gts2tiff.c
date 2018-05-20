@@ -1,6 +1,6 @@
 /*
  *  gts2tiff.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -129,7 +129,7 @@ gts2tiff(char *path, char *filename)
    char        *src,
                *dst,
                from[MAX_PATH_LENGTH],
-               to[MAX_PATH_LENGTH];
+               to[MAX_PATH_LENGTH + 5];
    struct stat stat_buf;
 
 #if defined (_TIFF_CONVERSION_TIME_TEST) || defined (_EOL_TIME_TEST)
@@ -172,7 +172,7 @@ gts2tiff(char *path, char *filename)
    }
 
    /* Open and create destination file. */
-   (void)snprintf(to, MAX_PATH_LENGTH, "%s%s", from, TIFF_END);
+   (void)snprintf(to, MAX_PATH_LENGTH + 5, "%s%s", from, TIFF_END);
    if ((fdout = open(to, (O_RDWR | O_CREAT | O_TRUNC), stat_buf.st_mode)) < 0)
    {
       receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,

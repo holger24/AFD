@@ -2313,9 +2313,9 @@ zombie_check(void)
                                    "%s/core", p_work_dir);
                     if (stat(core_file, &stat_buf) != -1)
                     {
-                       char new_core_file[MAX_PATH_LENGTH];
+                       char new_core_file[MAX_PATH_LENGTH + 51];
 
-                       (void)snprintf(new_core_file, MAX_PATH_LENGTH,
+                       (void)snprintf(new_core_file, MAX_PATH_LENGTH + 51,
 # if SIZEOF_TIME_T == 4
                                       "%s.%s.%ld.%d",
 # else

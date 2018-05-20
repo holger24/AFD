@@ -1,6 +1,6 @@
 /*
  *  afddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1732,6 +1732,7 @@ typedef unsigned long       u_long_64;
 #define AFD_ARCHIVE_DIR             "/archive"
 #define AFD_ARCHIVE_DIR_LENGTH      (sizeof(AFD_ARCHIVE_DIR) - 1)
 #define FIFO_DIR                    "/fifodir"
+#define FIFO_DIR_LENGTH             (sizeof(FIFO_DIR) - 1)
 #define LOG_DIR                     "/log"
 #define LOG_DIR_LENGTH              (sizeof(LOG_DIR) - 1)
 #define RLOG_DIR                    "/rlog"  /* Only used for afd_mon. */

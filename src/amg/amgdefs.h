@@ -1,6 +1,6 @@
 /*
  *  amgdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -370,7 +370,7 @@ struct file_group
 
 struct dir_group
        {
-          char              location[MAX_PATH_LENGTH];
+          char              location[MAX_PATH_LENGTH + MAX_RECIPIENT_LENGTH];
           char              orig_dir_name[MAX_PATH_LENGTH];
                                             /* Directory name as it is   */
                                             /* in DIR_CONFIG.            */

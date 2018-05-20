@@ -1,6 +1,6 @@
 /*
  *  init_msg_buffer.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -282,7 +282,7 @@ stat_again:
     * get the time to fill all data into the JID structure.
     */
    sleep_counter = 0;
-   while ((p_afd_status->amg_jobs & WRITTING_JID_STRUCT) == 1)
+   while (p_afd_status->amg_jobs & WRITTING_JID_STRUCT)
    {
       (void)my_usleep(100000L);
       sleep_counter++;

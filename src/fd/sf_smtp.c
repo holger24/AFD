@@ -264,14 +264,14 @@ main(int argc, char *argv[])
    char             *smtp_buffer = NULL,
                     *p_file_name_buffer = NULL,
                     host_name[256],
-                    local_user[MAX_FILENAME_LENGTH],
+                    local_user[MAX_FILENAME_LENGTH + MAX_FILENAME_LENGTH],
                     multipart_boundary[MAX_FILENAME_LENGTH],
                     remote_user[MAX_FILENAME_LENGTH],
                     *buffer = NULL,
                     *buffer_ptr,
                     *encode_buffer = NULL,
                     final_filename[MAX_FILENAME_LENGTH],
-                    fullname[MAX_PATH_LENGTH],
+                    fullname[MAX_PATH_LENGTH + 1],
                     file_path[MAX_PATH_LENGTH],
                     *extra_mail_header_buffer = NULL,
                     *mail_header_buffer = NULL,
@@ -744,12 +744,14 @@ main(int argc, char *argv[])
 
          if ((ptr = getenv("LOGNAME")) != NULL)
          {
-            (void)snprintf(local_user, MAX_FILENAME_LENGTH,
+            (void)snprintf(local_user,
+                           MAX_FILENAME_LENGTH + MAX_FILENAME_LENGTH,
                            "%s@%s", ptr, host_name);
          }
          else
          {
-            (void)snprintf(local_user, MAX_FILENAME_LENGTH,
+            (void)snprintf(local_user,
+                           MAX_FILENAME_LENGTH + MAX_FILENAME_LENGTH,
                            "%s@%s", AFD_USER_NAME, host_name);
          }
       }
@@ -1294,7 +1296,7 @@ main(int argc, char *argv[])
          /* Get the the name of the file we want to send next. */
          (void)my_strncpy(final_filename, p_file_name_buffer,
                           MAX_FILENAME_LENGTH);
-         (void)snprintf(fullname, MAX_PATH_LENGTH,
+         (void)snprintf(fullname, MAX_PATH_LENGTH + 1,
                         "%s/%s", file_path, p_file_name_buffer);
 
          /* Open local file. */
