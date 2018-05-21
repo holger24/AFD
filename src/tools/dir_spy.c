@@ -1,6 +1,6 @@
 /*
  *  dir_spy.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2012 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -74,7 +74,7 @@ main(int argc, char *argv[])
                        *no_of_dir_names,
                        ret;
    unsigned int        search_dir_id;
-   char                file[MAX_PATH_LENGTH],
+   char                file[MAX_PATH_LENGTH + FIFO_DIR_LENGTH + DIR_NAME_FILE_LENGTH],
                        *ptr,
                        str_dir_id[MAX_INT_LENGTH + 1],
                        work_dir[MAX_PATH_LENGTH];

@@ -1,6 +1,6 @@
 /*
  *  show_queue.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -128,7 +128,7 @@ off_t                      fra_size;
 #endif
 double                     total_file_size;
 char                       *p_work_dir,
-                           font_name[256],
+                           font_name[40],
                            search_file_name[MAX_PATH_LENGTH],
                            **search_dir = NULL,
                            **search_recipient,
@@ -158,7 +158,7 @@ static void                init_show_queue(int *, char **, char *),
 int
 main(int argc, char *argv[])
 {
-   char            window_title[MAX_WNINDOW_TITLE_LENGTH],
+   char            window_title[10 + 40 + 1],
                    work_dir[MAX_PATH_LENGTH],
                    *radio_label[] = {"Short", "Med", "Long"};
    static String   fallback_res[] =
@@ -1696,11 +1696,10 @@ init_show_queue(int *argc, char *argv[], char *window_title)
    }
    else
    {
-      (void)snprintf(window_title, MAX_WNINDOW_TITLE_LENGTH,
-                     "AFD Queue %s", font_name);
+      (void)snprintf(window_title, 10 + 40 + 1, "AFD Queue %s", font_name);
    }
 
-   if (get_arg(argc, argv, "-f", font_name, 256) == INCORRECT)
+   if (get_arg(argc, argv, "-f", font_name, 40) == INCORRECT)
    {
       (void)strcpy(font_name, DEFAULT_FONT);
    }

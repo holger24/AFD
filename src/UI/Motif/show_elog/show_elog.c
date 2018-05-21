@@ -1,6 +1,6 @@
 /*
  *  show_elog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -124,7 +124,7 @@ XT_PTR_TYPE      toggles_set;
 time_t           start_time_val,
                  end_time_val;
 char             *p_work_dir,
-                 font_name[256],
+                 font_name[40],
                  heading_line[MAX_OUTPUT_LINE_LENGTH + 1],
                  search_add_info[MAX_EVENT_REASON_LENGTH + 1],
                  **search_host_alias = NULL,
@@ -152,7 +152,7 @@ static void      eval_permissions(char *),
 int
 main(int argc, char *argv[])
 {
-   char            window_title[MAX_WNINDOW_TITLE_LENGTH],
+   char            window_title[14 + 40 + 1],
                    work_dir[MAX_PATH_LENGTH];
    static String   fallback_res[] =
                    {
@@ -1100,11 +1100,10 @@ init_show_elog(int *argc, char *argv[], char *window_title)
    }
    else
    {
-      (void)snprintf(window_title, MAX_WNINDOW_TITLE_LENGTH,
-                     "AFD Event Log %s", font_name);
+      (void)snprintf(window_title, 14 + 40 + 1, "AFD Event Log %s", font_name);
    }
 
-   if (get_arg(argc, argv, "-f", font_name, 256) == INCORRECT)
+   if (get_arg(argc, argv, "-f", font_name, 40) == INCORRECT)
    {
       (void)strcpy(font_name, DEFAULT_FONT);
    }

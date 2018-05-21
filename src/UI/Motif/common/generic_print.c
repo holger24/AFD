@@ -1,6 +1,6 @@
 /*
  *  print_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -602,10 +602,11 @@ send_print_cmd(char *message, int max_msg_length)
 {
    int  ret;
    char *buffer = NULL,
-        cmd[MAX_PATH_LENGTH];
+        cmd[PRINTER_INFO_LENGTH + 1 + PRINTER_INFO_LENGTH + 1 + MAX_PATH_LENGTH];
 
-   (void)snprintf(cmd, MAX_PATH_LENGTH, "%s%s %s",
-                  printer_cmd, printer_name, file_name);
+   (void)snprintf(cmd,
+                  PRINTER_INFO_LENGTH + 1 + PRINTER_INFO_LENGTH + 1 + MAX_PATH_LENGTH,
+                  "%s%s %s", printer_cmd, printer_name, file_name);
    if ((ret = exec_cmd(cmd, &buffer, -1, NULL, 0,
 #ifdef HAVE_SETPRIORITY
                        NO_PRIORITY,
@@ -662,9 +663,10 @@ send_mail_cmd(char *message, int max_msg_length)
    {
       int  ret;
       char *buffer = NULL,
-           cmd[MAX_PATH_LENGTH];
+           cmd[ASMTP_LENGTH + 4 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH + 1 + 4 + MAX_INT_LENGTH + 4 + MAX_RECIPIENT_LENGTH + 5 + MAX_PRINT_SUBJECT_LENGTH + 8 + MAX_PATH_LENGTH];
 
-      (void)snprintf(cmd, MAX_PATH_LENGTH,
+      (void)snprintf(cmd,
+                     ASMTP_LENGTH + 4 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH + 1 + 4 + MAX_INT_LENGTH + 4 + MAX_RECIPIENT_LENGTH + 5 + MAX_PRINT_SUBJECT_LENGTH + 8 + MAX_PATH_LENGTH,
                      "%s -m %s -p %d -a %s -s \"%s\" -t 20 %s",
                      ASMTP, mailserver, mailserverport, mailto, subject,
                      file_name);

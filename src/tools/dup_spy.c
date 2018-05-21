@@ -1,6 +1,6 @@
 /*
  *  dup_spy.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2013 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ main(int argc, char *argv[])
    unsigned int   id;
    int            fd,
                   *no_of_crcs;
-   char           file[MAX_PATH_LENGTH],
+   char           file[MAX_PATH_LENGTH + AFD_FILE_DIR_LENGTH + CRC_DIR_LENGTH + MAX_INT_HEX_LENGTH],
                   *ptr,
                   work_dir[MAX_PATH_LENGTH];
    struct stat    stat_buf;

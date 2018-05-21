@@ -350,6 +350,7 @@ typedef unsigned long       u_long_64;
 #define AFTP                       "aftp"
 #define ASFTP                      "asftp"
 #define ASMTP                      "asmtp"
+#define ASMTP_LENGTH               (sizeof(ASMTP) - 1)
 #define AWMO                       "awmo"
 #define HEX_PRINT                  "afd_hex_print"
 #ifdef WITH_AUTO_CONFIG
@@ -1715,173 +1716,181 @@ typedef unsigned long       u_long_64;
 #define DIR_INFO_ACTION            6
 
 /* Directory definitions. */
-#define AFD_MSG_DIR                 "/messages"
+#define AFD_MSG_DIR                   "/messages"
 #ifdef WITH_ONETIME
-# define AFD_ONETIME_DIR            "/onetime"
-# define AFD_ONETIME_DIR_LENGTH     (sizeof(AFD_ONETIME_DIR) - 1)
-# define AFD_LIST_DIR               "/list"
-# define AFD_CONFIG_DIR             "/config"
-# define AFD_CONFIG_DIR_LENGTH      (sizeof(AFD_CONFIG_DIR) - 1)
+# define AFD_ONETIME_DIR              "/onetime"
+# define AFD_ONETIME_DIR_LENGTH       (sizeof(AFD_ONETIME_DIR) - 1)
+# define AFD_LIST_DIR                 "/list"
+# define AFD_CONFIG_DIR               "/config"
+# define AFD_CONFIG_DIR_LENGTH        (sizeof(AFD_CONFIG_DIR) - 1)
 #endif
-#define AFD_FILE_DIR                "/files"
-#define AFD_FILE_DIR_LENGTH         (sizeof(AFD_FILE_DIR) - 1)
-#define AFD_TMP_DIR                 "/pool"
-#define AFD_TMP_DIR_LENGTH          (sizeof(AFD_TMP_DIR) - 1)
-#define AFD_TIME_DIR                "/time"
-#define AFD_TIME_DIR_LENGTH         (sizeof(AFD_TIME_DIR) - 1)
-#define AFD_ARCHIVE_DIR             "/archive"
-#define AFD_ARCHIVE_DIR_LENGTH      (sizeof(AFD_ARCHIVE_DIR) - 1)
-#define FIFO_DIR                    "/fifodir"
-#define FIFO_DIR_LENGTH             (sizeof(FIFO_DIR) - 1)
-#define LOG_DIR                     "/log"
-#define LOG_DIR_LENGTH              (sizeof(LOG_DIR) - 1)
-#define RLOG_DIR                    "/rlog"  /* Only used for afd_mon. */
-#define ETC_DIR                     "/etc"
-#define ETC_DIR_LENGTH              (sizeof(ETC_DIR) - 1)
-#define ACTION_DIR                  "/action"
-#define ACTION_DIR_LENGTH           (sizeof(ACTION_DIR) - 1)
-#define ACTION_TARGET_DIR           "/target"
-#define ACTION_TARGET_DIR_LENGTH    (sizeof(ACTION_TARGET_DIR) - 1)
-#define ACTION_SOURCE_DIR           "/source"
-#define ACTION_SOURCE_DIR_LENGTH    (sizeof(ACTION_SOURCE_DIR) - 1)
-#define ACTION_ERROR_DIR            "/error"
-#define ACTION_WARN_DIR             "/warn"
-#define ACTION_INFO_DIR             "/info"
-#define ACTION_SUCCESS_DIR          "/success"
-#define MAIL_HEADER_DIR             "/mail_header"
-#define GROUP_NAME_DIR              "/groups"
-#define GROUP_NAME_DIR_LENGTH       (sizeof(GROUP_NAME_DIR) - 1)
-#define SOURCE_GROUP_NAME           "/source"
-#define SOURCE_GROUP_NAME_LENGTH    (sizeof(SOURCE_GROUP_NAME) - 1)
-#define RECIPIENT_GROUP_NAME        "/recipient"
-#define RECIPIENT_GROUP_NAME_LENGTH (sizeof(RECIPIENT_GROUP_NAME) - 1)
-#define FILE_GROUP_NAME             "/files"
-#define INCOMING_DIR                "/incoming"
-#define INCOMING_DIR_LENGTH         (sizeof(INCOMING_DIR) - 1)
-#define OUTGOING_DIR                "/outgoing"
-#define OUTGOING_DIR_LENGTH         (sizeof(OUTGOING_DIR) - 1)
-#define STORE_DIR                   "/store"
+#define AFD_FILE_DIR                  "/files"
+#define AFD_FILE_DIR_LENGTH           (sizeof(AFD_FILE_DIR) - 1)
+#define AFD_TMP_DIR                   "/pool"
+#define AFD_TMP_DIR_LENGTH            (sizeof(AFD_TMP_DIR) - 1)
+#define AFD_TIME_DIR                  "/time"
+#define AFD_TIME_DIR_LENGTH           (sizeof(AFD_TIME_DIR) - 1)
+#define AFD_ARCHIVE_DIR               "/archive"
+#define AFD_ARCHIVE_DIR_LENGTH        (sizeof(AFD_ARCHIVE_DIR) - 1)
+#define FIFO_DIR                      "/fifodir"
+#define FIFO_DIR_LENGTH               (sizeof(FIFO_DIR) - 1)
+#define LOG_DIR                       "/log"
+#define LOG_DIR_LENGTH                (sizeof(LOG_DIR) - 1)
+#define RLOG_DIR                      "/rlog"  /* Only used for afd_mon. */
+#define ETC_DIR                       "/etc"
+#define ETC_DIR_LENGTH                (sizeof(ETC_DIR) - 1)
+#define ACTION_DIR                    "/action"
+#define ACTION_DIR_LENGTH             (sizeof(ACTION_DIR) - 1)
+#define ACTION_TARGET_DIR             "/target"
+#define ACTION_TARGET_DIR_LENGTH      (sizeof(ACTION_TARGET_DIR) - 1)
+#define ACTION_SOURCE_DIR             "/source"
+#define ACTION_SOURCE_DIR_LENGTH      (sizeof(ACTION_SOURCE_DIR) - 1)
+#define ACTION_ERROR_DIR              "/error"
+#define ACTION_WARN_DIR               "/warn"
+#define ACTION_INFO_DIR               "/info"
+#define ACTION_SUCCESS_DIR            "/success"
+#define MAIL_HEADER_DIR               "/mail_header"
+#define GROUP_NAME_DIR                "/groups"
+#define GROUP_NAME_DIR_LENGTH         (sizeof(GROUP_NAME_DIR) - 1)
+#define SOURCE_GROUP_NAME             "/source"
+#define SOURCE_GROUP_NAME_LENGTH      (sizeof(SOURCE_GROUP_NAME) - 1)
+#define RECIPIENT_GROUP_NAME          "/recipient"
+#define RECIPIENT_GROUP_NAME_LENGTH   (sizeof(RECIPIENT_GROUP_NAME) - 1)
+#define FILE_GROUP_NAME               "/files"
+#define INCOMING_DIR                  "/incoming"
+#define INCOMING_DIR_LENGTH           (sizeof(INCOMING_DIR) - 1)
+#define OUTGOING_DIR                  "/outgoing"
+#define OUTGOING_DIR_LENGTH           (sizeof(OUTGOING_DIR) - 1)
+#define STORE_DIR                     "/store"
 #ifdef WITH_DUP_CHECK
-# define CRC_DIR                    "/crc"
+# define CRC_DIR                      "/crc"
+# define CRC_DIR_LENGTH               (sizeof(CRC_DIR) - 1)
 #endif
-#define FILE_MASK_DIR               "/file_mask"
-#define LS_DATA_DIR                 "/ls_data"
-#define LS_DATA_DIR_LENGTH          (sizeof(LS_DATA_DIR) - 1)
+#define FILE_MASK_DIR                 "/file_mask"
+#define LS_DATA_DIR                   "/ls_data"
+#define LS_DATA_DIR_LENGTH            (sizeof(LS_DATA_DIR) - 1)
 
 /*-----------------------------------------------------------------------*/
 /* If definitions are added or removed, update init_afd/afd.c!           */
 /*-----------------------------------------------------------------------*/
 /* Data file definitions. */
-#define FSA_ID_FILE                "/fsa.id"
-#define FSA_STAT_FILE              "/fsa_status"
-#define FSA_STAT_FILE_ALL          "/fsa_status.*"
-#define FRA_ID_FILE                "/fra.id"
-#define FRA_STAT_FILE              "/fra_status"
-#define FRA_STAT_FILE_ALL          "/fra_status.*"
-#define AFD_STATUS_FILE            "afd.status"
-#define AFD_STATUS_FILE_LENGTH     (sizeof(AFD_STATUS_FILE) - 1)
-#define AFD_STATUS_FILE_ALL        "/afd.status.*"
-#define NNN_FILE                   "/nnn"
-#define NNN_ASSEMBLE_FILE          "/nnn.assemble"
-#define NNN_FILE_ALL               "/nnn.*"
-#define BLOCK_FILE                 "/NO_AUTO_RESTART"
-#define AMG_COUNTER_FILE           "/amg_counter"
-#define COUNTER_FILE               "/any_counter"
-#define MESSAGE_BUF_FILE           "/tmp_msg_buffer"
-#define MSG_CACHE_FILE             "/fd_msg_cache"
-#define MSG_QUEUE_FILE             "/fd_msg_queue"
+#define FSA_ID_FILE                  "/fsa.id"
+#define FSA_STAT_FILE                "/fsa_status"
+#define FSA_STAT_FILE_ALL            "/fsa_status.*"
+#define FRA_ID_FILE                  "/fra.id"
+#define FRA_STAT_FILE                "/fra_status"
+#define FRA_STAT_FILE_ALL            "/fra_status.*"
+#define AFD_STATUS_FILE              "afd.status"
+#define AFD_STATUS_FILE_LENGTH       (sizeof(AFD_STATUS_FILE) - 1)
+#define AFD_STATUS_FILE_ALL          "/afd.status.*"
+#define NNN_FILE                     "/nnn"
+#define NNN_ASSEMBLE_FILE            "/nnn.assemble"
+#define NNN_FILE_ALL                 "/nnn.*"
+#define BLOCK_FILE                   "/NO_AUTO_RESTART"
+#define AMG_COUNTER_FILE             "/amg_counter"
+#define COUNTER_FILE                 "/any_counter"
+#define MESSAGE_BUF_FILE             "/tmp_msg_buffer"
+#define MSG_CACHE_FILE               "/fd_msg_cache"
+#define MSG_CACHE_FILE_LENGTH        (sizeof(MSG_CACHE_FILE) - 1)
+#define MSG_QUEUE_FILE               "/fd_msg_queue"
+#define MSG_QUEUE_FILE_LENGTH        (sizeof(MSG_QUEUE_FILE) - 1)
 #ifdef WITH_ERROR_QUEUE
-# define ERROR_QUEUE_FILE          "/error_queue"
+# define ERROR_QUEUE_FILE            "/error_queue"
 #endif
-#define FILE_MASK_FILE             "/file_masks"
-#define DC_LIST_FILE               "/dc_name_data"
-#define DIR_NAME_FILE              "/directory_names"
-#define JOB_ID_DATA_FILE           "/job_id_data"
-#define DCPL_FILE_NAME             "/dcpl_data"  /* dir_check process list */
+#define FILE_MASK_FILE               "/file_masks"
+#define FILE_MASK_FILE_LENGTH        (sizeof(FILE_MASK_FILE) - 1)
+#define DC_LIST_FILE                 "/dc_name_data"
+#define DC_LIST_FILE_LENGTH          (sizeof(DC_LIST_FILE) - 1)
+#define DIR_NAME_FILE                "/directory_names"
+#define DIR_NAME_FILE_LENGTH         (sizeof(DIR_NAME_FILE) - 1)
+#define JOB_ID_DATA_FILE             "/job_id_data"
+#define DCPL_FILE_NAME               "/dcpl_data"  /* dir_check process list */
 #ifdef WITH_ONETIME
-# define OTPL_FILE_NAME            "/otpl_data"
+# define OTPL_FILE_NAME              "/otpl_data"
 #endif
-#define PWB_DATA_FILE              "/pwb_data"
-#define CURRENT_MSG_LIST_FILE      "/current_job_id_list"
-#define AMG_DATA_FILE              "/amg_data"
-#define AMG_DATA_FILE_TMP          "/amg_data.tmp"
+#define PWB_DATA_FILE                "/pwb_data"
+#define CURRENT_MSG_LIST_FILE        "/current_job_id_list"
+#define CURRENT_MSG_LIST_FILE_LENGTH (sizeof(CURRENT_MSG_LIST_FILE) - 1)
+#define AMG_DATA_FILE                "/amg_data"
+#define AMG_DATA_FILE_TMP            "/amg_data.tmp"
 #ifdef WITH_ONETIME
-# define AMG_ONETIME_DATA_FILE     "/amg_data_onetime"
+# define AMG_ONETIME_DATA_FILE       "/amg_data_onetime"
 #endif
-#define TYPESIZE_DATA_FILE         "/typesize_data"
-#define SYSTEM_DATA_FILE           "/system_data"
-#define ALTERNATE_FILE             "/alternate."
-#define ALTERNATE_FILE_ALL         "/alternate.*"
-#define LOCK_PROC_FILE             "/LOCK_FILE"
-#define AFD_ACTIVE_FILE            "/AFD_ACTIVE"
-#define WINDOW_ID_FILE             "/window_ids" /* No longer used, but keep */
-                                                 /* it so that it gets       */
-                                                 /* deleted by afd -i or -I. */
-#define DEFAULT_ACTION_FILE        "all.default"
+#define TYPESIZE_DATA_FILE           "/typesize_data"
+#define SYSTEM_DATA_FILE             "/system_data"
+#define ALTERNATE_FILE               "/alternate."
+#define ALTERNATE_FILE_ALL           "/alternate.*"
+#define LOCK_PROC_FILE               "/LOCK_FILE"
+#define AFD_ACTIVE_FILE              "/AFD_ACTIVE"
+#define WINDOW_ID_FILE               "/window_ids" /* No longer used, but keep */
+                                                   /* it so that it gets       */
+                                                   /* deleted by afd -i or -I. */
+#define DEFAULT_ACTION_FILE          "all.default"
 #ifdef WITH_IP_DB
-# define IP_DB_FILE                "/ip_data"
+# define IP_DB_FILE                  "/ip_data"
 #endif
 #ifdef _WITH_DE_MAIL_SUPPORT
-# define DEMCD_QUEUE_FILE          "/demcd_queue"
+# define DEMCD_QUEUE_FILE            "/demcd_queue"
 #endif
-#define JIS_FILE                   "/jis_data"
-#define DB_UPDATE_REPLY_DEBUG_FILE "/db_update_reply_debug"
+#define JIS_FILE                     "/jis_data"
+#define DB_UPDATE_REPLY_DEBUG_FILE   "/db_update_reply_debug"
 
 /* Definitions of fifo names. */
-#define SYSTEM_LOG_FIFO            "/system_log.fifo"
+#define SYSTEM_LOG_FIFO              "/system_log.fifo"
 #ifdef _MAINTAINER_LOG
-# define MAINTAINER_LOG_FIFO       "/maintainer_log.fifo"
+# define MAINTAINER_LOG_FIFO         "/maintainer_log.fifo"
 #endif
-#define EVENT_LOG_FIFO             "/event_log.fifo"
-#define RECEIVE_LOG_FIFO           "/receive_log.fifo"
-#define TRANSFER_LOG_FIFO          "/transfer_log.fifo"
-#define TRANS_DEBUG_LOG_FIFO       "/trans_db_log.fifo"
-#define MON_LOG_FIFO               "/monitor_log.fifo"
-#define AFD_CMD_FIFO               "/afd_cmd.fifo"
-#define AFD_RESP_FIFO              "/afd_resp.fifo"
-#define AFD_WORKER_CMD_FIFO        "/afd_worker_cmd.fifo"
-#define AMG_CMD_FIFO               "/amg_cmd.fifo"
-#define DB_UPDATE_FIFO             "/db_update.fifo"
-#define DB_UPDATE_REPLY_FIFO       "/db_update_reply.fifo."
-#define DB_UPDATE_REPLY_FIFO_ALL   "/db_update_reply.fifo.*"
-#define FD_CMD_FIFO                "/fd_cmd.fifo"
-#define AW_CMD_FIFO                "/aw_cmd.fifo"
-#define IP_FIN_FIFO                "/ip_fin.fifo"
+#define EVENT_LOG_FIFO               "/event_log.fifo"
+#define RECEIVE_LOG_FIFO             "/receive_log.fifo"
+#define TRANSFER_LOG_FIFO            "/transfer_log.fifo"
+#define TRANS_DEBUG_LOG_FIFO         "/trans_db_log.fifo"
+#define MON_LOG_FIFO                 "/monitor_log.fifo"
+#define AFD_CMD_FIFO                 "/afd_cmd.fifo"
+#define AFD_RESP_FIFO                "/afd_resp.fifo"
+#define AFD_WORKER_CMD_FIFO          "/afd_worker_cmd.fifo"
+#define AMG_CMD_FIFO                 "/amg_cmd.fifo"
+#define DB_UPDATE_FIFO               "/db_update.fifo"
+#define DB_UPDATE_REPLY_FIFO         "/db_update_reply.fifo."
+#define DB_UPDATE_REPLY_FIFO_ALL     "/db_update_reply.fifo.*"
+#define FD_CMD_FIFO                  "/fd_cmd.fifo"
+#define AW_CMD_FIFO                  "/aw_cmd.fifo"
+#define IP_FIN_FIFO                  "/ip_fin.fifo"
 #ifdef WITH_ONETIME
-# define OT_FIN_FIFO               "/ot_fin.fifo"
+# define OT_FIN_FIFO                 "/ot_fin.fifo"
 #endif
-#define SF_FIN_FIFO                "/sf_fin.fifo"
-#define RETRY_FD_FIFO              "/retry_fd.fifo"
-#define FD_DELETE_FIFO             "/fd_delete.fifo"
-#define FD_WAKE_UP_FIFO            "/fd_wake_up.fifo"
-#define TRL_CALC_FIFO              "/trl_calc.fifo"
-#define QUEUE_LIST_READY_FIFO      "/queue_list_ready.fifo"
-#define QUEUE_LIST_DONE_FIFO       "/queue_list_done.fifo"
-#define PROBE_ONLY_FIFO            "/probe_only.fifo"
+#define SF_FIN_FIFO                  "/sf_fin.fifo"
+#define RETRY_FD_FIFO                "/retry_fd.fifo"
+#define FD_DELETE_FIFO               "/fd_delete.fifo"
+#define FD_WAKE_UP_FIFO              "/fd_wake_up.fifo"
+#define TRL_CALC_FIFO                "/trl_calc.fifo"
+#define QUEUE_LIST_READY_FIFO        "/queue_list_ready.fifo"
+#define QUEUE_LIST_DONE_FIFO         "/queue_list_done.fifo"
+#define PROBE_ONLY_FIFO              "/probe_only.fifo"
 #ifdef _INPUT_LOG
-# define INPUT_LOG_FIFO            "/input_log.fifo"
+# define INPUT_LOG_FIFO              "/input_log.fifo"
 #endif
 #ifdef _DISTRIBUTION_LOG
-# define DISTRIBUTION_LOG_FIFO     "/distribution_log.fifo"
+# define DISTRIBUTION_LOG_FIFO       "/distribution_log.fifo"
 #endif
 #ifdef _OUTPUT_LOG
-# define OUTPUT_LOG_FIFO           "/output_log.fifo"
+# define OUTPUT_LOG_FIFO             "/output_log.fifo"
 #endif
 #ifdef _CONFIRMATION_LOG
-# define CONFIRMATION_LOG_FIFO     "/confirmation_log.fifo"
+# define CONFIRMATION_LOG_FIFO       "/confirmation_log.fifo"
 #endif
 #ifdef _DELETE_LOG
-# define DELETE_LOG_FIFO           "/delete_log.fifo"
+# define DELETE_LOG_FIFO             "/delete_log.fifo"
 #endif
 #ifdef _PRODUCTION_LOG
-# define PRODUCTION_LOG_FIFO       "/production_log.fifo"
+# define PRODUCTION_LOG_FIFO         "/production_log.fifo"
 #endif
-#define RETRY_MON_FIFO             "/retry_mon.fifo."
-#define DEL_TIME_JOB_FIFO          "/del_time_job.fifo"
-#define MSG_FIFO                   "/msg.fifo"
-#define AFDD_LOG_FIFO              "/afdd_log.fifo"
+#define RETRY_MON_FIFO               "/retry_mon.fifo."
+#define DEL_TIME_JOB_FIFO            "/del_time_job.fifo"
+#define MSG_FIFO                     "/msg.fifo"
+#define AFDD_LOG_FIFO                "/afdd_log.fifo"
 #ifdef _WITH_DE_MAIL_SUPPORT
-# define DEMCD_FIFO                "/demcd.fifo"
+# define DEMCD_FIFO                  "/demcd.fifo"
+# define DEMCD_FIFO_LENGTH           (sizeof(DEMCD_FIFO) - 1)
 #endif
 /*-----------------------------------------------------------------------*/
 

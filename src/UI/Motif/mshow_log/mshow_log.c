@@ -1,6 +1,6 @@
 /*
  *  mshow_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -163,7 +163,7 @@ main(int argc, char *argv[])
 #ifdef _WITH_SCROLLBAR
    int             slider_size;
 #endif
-   char            window_title[MAX_WNINDOW_TITLE_LENGTH],
+   char            window_title[MAX_FILENAME_LENGTH + 5 + 40],
                    str_number[MAX_LONG_LENGTH];
    static String   fallback_res[] =
                    {
@@ -932,7 +932,7 @@ static void
 init_log_file(int *argc, char *argv[], char *window_title)
 {
    int  max_alias_length;
-   char log_file[MAX_PATH_LENGTH];
+   char log_file[MAX_PATH_LENGTH + 1 + MAX_FILENAME_LENGTH + 2];
 
    if ((get_arg(argc, argv, "-?", NULL, 0) == SUCCESS) ||
        (get_arg(argc, argv, "-help", NULL, 0) == SUCCESS) ||
@@ -974,7 +974,7 @@ init_log_file(int *argc, char *argv[], char *window_title)
    }
    else
    {
-      (void)snprintf(window_title, MAX_WNINDOW_TITLE_LENGTH,
+      (void)snprintf(window_title, MAX_FILENAME_LENGTH + 5 + 40,
                      "%s Log %s", log_type, font_name);
    }
 

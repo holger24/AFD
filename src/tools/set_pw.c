@@ -1,6 +1,6 @@
 /*
  *  set_pw.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -91,7 +91,7 @@ main(int argc, char *argv[])
    char                current_user[MAX_FULL_USER_ID_LENGTH],
                        etype[2],
                        fake_user[MAX_FULL_USER_ID_LENGTH],
-                       file[MAX_PATH_LENGTH],
+                       file[MAX_PATH_LENGTH + FIFO_DIR_LENGTH + MAX_FILENAME_LENGTH],
                        hostname[MAX_REAL_HOSTNAME_LENGTH],
                        real_hostname[MAX_REAL_HOSTNAME_LENGTH],
                        *perm_buffer,

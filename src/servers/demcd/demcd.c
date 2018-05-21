@@ -1,6 +1,6 @@
 /*
  *  demcd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2015, 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -121,7 +121,7 @@ main(int argc, char *argv[])
    off_t          *file_size;
    time_t         now;
    dev_t          inode_number;
-   char           demcd_fifo[MAX_PATH_LENGTH],
+   char           demcd_fifo[MAX_PATH_LENGTH + FIFO_DIR_LENGTH + DEMCD_FIFO_LENGTH],
                   *fifo_buffer,
                   line[MAX_LINE_LENGTH],
                   mail_file[MAX_PATH_LENGTH],

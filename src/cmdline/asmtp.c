@@ -1,6 +1,6 @@
 /*
  *  asmtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -129,7 +129,7 @@ main(int argc, char *argv[])
                *encode_buffer = NULL,
                *file_ptr,
                host_name[256],
-               local_user[MAX_FILENAME_LENGTH],
+               local_user[MAX_FILENAME_LENGTH + MAX_FILENAME_LENGTH],
                multipart_boundary[MAX_FILENAME_LENGTH],
                remote_user[MAX_USER_NAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 1],
                final_filename[MAX_FILENAME_LENGTH],
@@ -323,12 +323,12 @@ main(int argc, char *argv[])
    {
       if ((ptr = getenv("LOGNAME")) != NULL)
       {
-         (void)snprintf(local_user, MAX_FILENAME_LENGTH,
+         (void)snprintf(local_user, MAX_FILENAME_LENGTH + MAX_FILENAME_LENGTH,
                         "%s@%s", ptr, host_name);
       }
       else
       {
-         (void)snprintf(local_user, MAX_FILENAME_LENGTH,
+         (void)snprintf(local_user, MAX_FILENAME_LENGTH + MAX_FILENAME_LENGTH,
                         "%s@%s", AFD_USER_NAME, host_name);
       }
    }

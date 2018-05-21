@@ -1,6 +1,6 @@
 /*
  *  cache_spy.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2012 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -66,7 +66,7 @@ main(int argc, char *argv[])
 {
    int                  fd,
                         *no_msg_cached;
-   char                 file[MAX_PATH_LENGTH],
+   char                 file[MAX_PATH_LENGTH + FIFO_DIR_LENGTH + MSG_CACHE_FILE_LENGTH],
                         *ptr,
                         work_dir[MAX_PATH_LENGTH];
    struct stat          stat_buf;

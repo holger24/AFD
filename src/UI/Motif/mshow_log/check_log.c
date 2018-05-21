@@ -1,6 +1,6 @@
 /*
  *  check_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -357,7 +357,7 @@ check_log(Widget w)
          (total_length > max_logfile_size))) &&
        (current_log_number == 0))
    {
-      char        log_file[MAX_PATH_LENGTH];
+      char        log_file[MAX_PATH_LENGTH + 1 + MAX_FILENAME_LENGTH + 2];
       struct stat stat_buf;
 
       /*

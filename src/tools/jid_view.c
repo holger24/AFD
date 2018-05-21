@@ -1,6 +1,6 @@
 /*
  *  jid_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -118,7 +118,7 @@ main(int argc, char *argv[])
    char                    afd_alias[MAX_AFDNAME_LENGTH + 1];
 #endif
    char                    fake_user[MAX_FULL_USER_ID_LENGTH],
-                           file[MAX_PATH_LENGTH],
+                           file[MAX_PATH_LENGTH + FIFO_DIR_LENGTH + MAX_FILENAME_LENGTH],
                            *fmd = NULL,
                            option_buffer[MAX_OPTION_LENGTH],
                            *perm_buffer,
