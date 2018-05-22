@@ -325,50 +325,17 @@ eval_input_ss(int  argc,
 
             case 'T': /* Show numeric total only. */
 
-               if ((argc == 1) || (*(argv + 1)[0] == '-'))
-               {
-                  *display_format = NUMERIC_TOTAL_ONLY;
-               }
-               else
-               {
-                  (void)fprintf(stderr,
-                                "ERROR  : Data following -T option.\n");
-                  correct = NO;
-                  argc--;
-                  argv++;
-               }
+               *display_format = NUMERIC_TOTAL_ONLY;
                break;
 
             case 'C': /* Show CSV format. */
 
-               if ((argc == 1) || (*(argv + 1)[0] == '-'))
-               {
-                  *display_format = CSV_FORMAT;
-               }
-               else
-               {
-                  (void)fprintf(stderr,
-                                "ERROR  : Data following -C option.\n");
-                  correct = NO;
-                  argc--;
-                  argv++;
-               }
+               *display_format = CSV_FORMAT;
                break;
 
             case 'N': /* Show directory name. */
 
-               if ((argc == 1) || (*(argv + 1)[0] == '-'))
-               {
-                  *show_alias = NO;
-               }
-               else
-               {
-                  (void)fprintf(stderr,
-                                "ERROR  : Data following -N option.\n");
-                  correct = NO;
-                  argc--;
-                  argv++;
-               }
+               *show_alias = NO;
                break;
 
             case 'y': /* Show year minus x */
