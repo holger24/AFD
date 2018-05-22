@@ -31,8 +31,7 @@ DESCR__S_M1
  **                          time_t       prev_log_time,
  **                          unsigned int prev_job_id,
  **                          unsigned int *prev_unique_number,
- **                          unsigned int *prev_split_job_counter,
- **                          int          only_retrieved_data)
+ **                          unsigned int *prev_split_job_counter)
  **
  ** DESCRIPTION
  **
@@ -75,7 +74,8 @@ extern unsigned int              file_pattern_counter,
                                  search_duration_flag,
                                  search_file_size_flag,
                                  search_job_id,
-                                 search_unique_number;
+                                 search_unique_number,
+                                 show_output_type;
 extern time_t                    start,
                                  start_time_end,
                                  start_time_start;
@@ -100,8 +100,7 @@ check_output_line(char         *line,
                   time_t       prev_log_time,
                   unsigned int prev_job_id,
                   unsigned int *prev_unique_number,
-                  unsigned int *prev_split_job_counter,
-                  int          only_retrieved_data)
+                  unsigned int *prev_split_job_counter)
 {
    register char *ptr = line + log_date_length + 1;
 
@@ -413,7 +412,7 @@ check_output_line(char         *line,
                                  if (*(ptr + i) == SEPARATOR_CHAR)
                                  {
                                     *(ptr + i) = '\0';
-                                    if ((only_retrieved_data == YES) &&
+                                    if ((show_output_type & SHOW_NORMAL_RECEIVED) &&
                                         (olog.output_type == OT_NORMAL_RECEIVED))
                                     {
                                        olog.dir_id = (unsigned int)strtoul(ptr, NULL, 16);
@@ -428,13 +427,23 @@ check_output_line(char         *line,
 
                                        return(SUCCESS);
                                     }
-                                    else
+                                    if (((show_output_type & SHOW_NORMAL_DELIVERED) &&
+                                         (olog.output_type == OT_NORMAL_DELIVERED))
+# if defined(_WITH_DE_MAIL_SUPPORT) && !defined(_CONFIRMATION_LOG)
+                                        || ((show_output_type & SHOW_CONF_OF_DISPATCH) &&
+                                            (olog.output_type == OT_CONF_OF_DISPATCH))
+                                        || ((show_output_type & SHOW_CONF_OF_RECEIPT) &&
+                                            (olog.output_type == OT_CONF_OF_RECEIPT))
+                                        || ((show_output_type & SHOW_CONF_OF_RETRIEVE) &&
+                                            (olog.output_type == OT_CONF_OF_RETRIEVE))
+                                        || ((show_output_type & SHOW_CONF_TIMEUP) &&
+                                            (olog.output_type == OT_CONF_TIMEUP))
+# endif
+                                       )
                                     {
                                        olog.job_id = (unsigned int)strtoul(ptr, NULL, 16);
                                        (void)get_recipient(olog.job_id);
-                                       if ((olog.output_type != OT_NORMAL_RECEIVED) && /* Does not store any more data. */
-                                           (only_retrieved_data == NO) &&
-                                           ((search_job_id == 0) ||
+                                       if (((search_job_id == 0) ||
                                             (olog.job_id == search_job_id)) &&
                                            ((prev_job_id == 0) ||
                                             (olog.job_id == prev_job_id)) &&

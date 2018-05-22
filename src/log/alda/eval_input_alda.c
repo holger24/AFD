@@ -49,8 +49,9 @@ DESCR__S_M3
  **                                          I - Input Log
  **                                          U - Distribution Log
  **                                          P - Production Log
- **                                          R - Output Log retrieve only
- **                                          O - Output Log output only
+ **                                          C - Output Log confirmed
+ **                                          R - Output Log retrieved
+ **                                          O - Output Log delivered
  **                                          D - Delete Log
  **                                        Default: IUPOD
  **           -g <time in seconds>         Maximum time to search for
@@ -297,6 +298,9 @@ extern unsigned int end_alias_counter,
                     search_job_id,
                     search_unique_number,
                     search_log_type,
+#ifdef _OUTPUT_LOG
+                    show_output_type,
+#endif
                     start_alias_counter,
                     *start_id,
                     start_id_counter,
@@ -519,6 +523,7 @@ eval_input_alda(int *argc, char *argv[])
                   int i;
 
                   search_log_type = 0;
+                  show_output_type = 0;
                   i = 0;
                   do
                   {
@@ -540,12 +545,24 @@ eval_input_alda(int *argc, char *argv[])
                            break;
 #endif
 #ifdef _OUTPUT_LOG
-                        case 'R' : /* Output log retrieve only. */
-                           search_log_type |= SEARCH_OUTPUT_RETRIEVE_ONLY_LOG;
+# if defined(_WITH_DE_MAIL_SUPPORT) && !defined(_CONFIRMATION_LOG)
+                        case 'C' : /* Output log confirmation. */
+                           search_log_type |= SEARCH_OUTPUT_LOG;
+                           show_output_type |= SHOW_CONF_OF_DISPATCH;
+                           show_output_type |= SHOW_CONF_OF_RECEIPT;
+                           show_output_type |= SHOW_CONF_OF_RETRIEVE;
+                           show_output_type |= SHOW_CONF_TIMEUP;
                            break;
 
-                        case 'O' : /* Output log. */
+# endif
+                        case 'R' : /* Output log retrieve. */
                            search_log_type |= SEARCH_OUTPUT_LOG;
+                           show_output_type |= SHOW_NORMAL_RECEIVED;
+                           break;
+
+                        case 'O' : /* Output log delivered. */
+                           search_log_type |= SEARCH_OUTPUT_LOG;
+                           show_output_type |= SHOW_NORMAL_DELIVERED;
                            break;
 #endif
 #ifdef _DELETE_LOG
@@ -2228,8 +2245,11 @@ usage(char *progname)
    (void)fprintf(stderr, "                                          P - Production Log\n");
 #endif
 #ifdef _OUTPUT_LOG
-   (void)fprintf(stderr, "                                          R - Output Log retrieve only\n");
-   (void)fprintf(stderr, "                                          O - Output Log output only\n");
+# if defined(_WITH_DE_MAIL_SUPPORT) && !defined(_CONFIRMATION_LOG)
+   (void)fprintf(stderr, "                                          C - Output Log confirmed\n");
+# endif
+   (void)fprintf(stderr, "                                          R - Output Log retrieved\n");
+   (void)fprintf(stderr, "                                          O - Output Log delivered\n");
 #endif
 #ifdef _DELETE_LOG
    (void)fprintf(stderr, "                                          D - Delete Log\n");

@@ -85,6 +85,9 @@ unsigned int               end_alias_counter,
                            search_job_id = 0,
                            search_unique_number = 0,
                            search_log_type = SEARCH_ALL_LOGS,
+#ifdef _OUTPUT_LOG
+                           show_output_type = SHOW_NORMAL_DELIVERED,
+#endif
                            start_alias_counter,
                            *start_id,
                            start_id_counter,
@@ -220,7 +223,7 @@ static int                 check_production_log(char *, char *, off_t, time_t,
 #ifdef _OUTPUT_LOG
 static int                 check_output_log(char *, char *, off_t, time_t,
                                             unsigned int, unsigned int *,
-                                            unsigned int *, int);
+                                            unsigned int *);
 #endif
 #ifdef _DELETE_LOG
 static int                 check_delete_log(char *, char *, off_t, time_t,
@@ -855,11 +858,6 @@ search_afd(char *search_afd)
 
    log_data_written = 0;
    more_log_data = search_log_type;
-   if (search_log_type & SEARCH_OUTPUT_RETRIEVE_ONLY_LOG)
-   {
-      more_log_data &= ~SEARCH_OUTPUT_RETRIEVE_ONLY_LOG;
-      more_log_data = SEARCH_OUTPUT_LOG;
-   }
    got_data = 0;
    search_loop = 0;
    init_time_start = 0L;
@@ -1357,8 +1355,7 @@ search_afd(char *search_afd)
          }
 #endif /* _PRODUCTION_LOG */
 #ifdef _OUTPUT_LOG
-         if (((search_log_type & SEARCH_OUTPUT_LOG) ||
-              (search_log_type & SEARCH_OUTPUT_RETRIEVE_ONLY_LOG)) &&
+         if ((search_log_type & SEARCH_OUTPUT_LOG) &&
 # ifdef _DISTRIBUTION_LOG
              ((ulog.filename[0] == '\0') ||
               (ulog.distribution_type < QUEUE_STOPPED_DIS_TYPE)) &&
@@ -1523,8 +1520,7 @@ search_afd(char *search_afd)
                if ((ret = check_output_log(search_afd, p_file_pattern,
                                            prev_filename_length, prev_log_time,
                                            prev_job_id, p_prev_unique_number,
-                                           p_prev_split_job_counter,
-                                           ((search_log_type & SEARCH_OUTPUT_RETRIEVE_ONLY_LOG) ? 1 : 0))) == GOT_DATA)
+                                           p_prev_split_job_counter)) == GOT_DATA)
                {
                   if ((olog.output_type == OT_NORMAL_DELIVERED) ||
                       (olog.output_type == OT_NORMAL_RECEIVED))
@@ -2111,7 +2107,7 @@ search_afd(char *search_afd)
          {
             RESET_OLOG();
             if ((ret = check_output_log(search_afd, NULL, -1, 0, 0, 0,
-                                        NULL, 0)) == GOT_DATA)
+                                        NULL)) == GOT_DATA)
             {
                got_data |= SEARCH_OUTPUT_LOG;
             }
@@ -4049,8 +4045,7 @@ check_output_log(char         *search_afd,
                  time_t       prev_log_time,
                  unsigned int prev_job_id,
                  unsigned int *prev_unique_number,
-                 unsigned int *prev_split_job_counter,
-                 int          only_retrieved_data)
+                 unsigned int *prev_split_job_counter)
 {
 #ifdef HAVE_GETLINE
    ssize_t      n;
@@ -4518,8 +4513,7 @@ check_output_log(char         *search_afd,
                   ret = check_output_line(output.line, prev_file_name,
                                           prev_filename_length, prev_log_time,
                                           prev_job_id, prev_unique_number,
-                                          prev_split_job_counter,
-                                          only_retrieved_data);
+                                          prev_split_job_counter);
                   if (verbose > 4)
                   {
                      (void)fprintf(stdout,
