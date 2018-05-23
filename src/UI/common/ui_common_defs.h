@@ -1,6 +1,6 @@
 /*
  *  ui_common_defs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1168,6 +1168,7 @@ struct alda_call_data
 
 /* Function Prototypes. */
 extern int    check_host_permissions(char *, char **, int),
+              get_dir_id(char *, unsigned int *),
               sfilter(char const *, char const *, char),
               store_host_names(char ***, char *),
               xrec(char, char *, ...);

@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -83,15 +83,16 @@ extern Widget                     appshell, /* CHECK_INTERRUPT() */
                                   special_button_w,
                                   statusbox_w,
                                   summarybox_w;
-extern int                        radio_set,
+extern int                        file_name_length,
+                                  radio_set,
                                   gt_lt_sign,
                                   no_of_dirs,
                                   no_of_search_dirs,
                                   no_of_search_dirids,
                                   no_of_search_hosts,
                                   queue_tmp_buf_entries,
-                                  special_button_flag,
-                                  file_name_length;
+                                  *search_dir_length,
+                                  special_button_flag;
 extern unsigned int               *search_dirid,
                                   total_no_files,
                                   unprintable_chars;
@@ -103,6 +104,7 @@ extern double                     total_file_size;
 extern char                       *p_work_dir,
                                   search_file_name[],
                                   **search_dir,
+                                  *search_dir_filter,
                                   **search_recipient,
                                   **search_user,
                                   summary_str[],
@@ -502,7 +504,8 @@ get_output_files(void)
                            if ((no_of_search_dirs > 0) ||
                                (no_of_search_dirids > 0))
                            {
-                              int kk;
+                              int    kk;
+                              size_t dir_name_length;
 
                               /* Check if an input directory was specified. */
                               gotcha = NO;
@@ -518,12 +521,29 @@ get_output_files(void)
                               {
                                  for (kk = 0; kk < no_of_search_dirs; kk++)
                                  {
-                                    if (sfilter(search_dir[kk],
-                                                dnb[jd[pos].dir_id_pos].dir_name,
-                                                0) == 0)
+                                    if (search_dir_filter[kk] == YES)
                                     {
-                                       gotcha = YES;
-                                       break;
+                                       if (sfilter(search_dir[kk],
+                                                   dnb[jd[pos].dir_id_pos].dir_name,
+                                                   0) == 0)
+                                       {
+                                          gotcha = YES;
+                                          break;
+                                       }
+                                    }
+                                    else
+                                    {
+                                       dir_name_length = strlen(dnb[jd[pos].dir_id_pos].dir_name);
+                                       if (search_dir_length[kk] == dir_name_length)
+                                       {
+                                          if (strncmp(search_dir[kk], 
+                                                      dnb[jd[pos].dir_id_pos].dir_name,
+                                                      dir_name_length) == 0)
+                                          {
+                                             gotcha = YES;
+                                             break;
+                                          }
+                                       }
                                     }
                                  }
                               }
@@ -673,7 +693,8 @@ get_retrieve_jobs(void)
                            if ((no_of_search_dirs > 0) ||
                                (no_of_search_dirids > 0))
                            {
-                              int kk;
+                              int    kk;
+                              size_t dir_name_length;
 
                               /* Check if an input directory was specified. */
                               gotcha = NO;
@@ -689,12 +710,29 @@ get_retrieve_jobs(void)
                               {
                                  for (kk = 0; kk < no_of_search_dirs; kk++)
                                  {
-                                    if (sfilter(search_dir[kk],
-                                                fra[qb[i].pos].url,
-                                                0) == 0)
+                                    if (search_dir_filter[kk] == YES)
                                     {
-                                       gotcha = YES;
-                                       break;
+                                       if (sfilter(search_dir[kk],
+                                                   fra[qb[i].pos].url,
+                                                   0) == 0)
+                                       {
+                                          gotcha = YES;
+                                          break;
+                                       }
+                                    }
+                                    else
+                                    {
+                                       dir_name_length = strlen(fra[qb[i].pos].url);
+                                       if (search_dir_length[kk] == dir_name_length)
+                                       {
+                                          if (strncmp(search_dir[kk], 
+                                                      fra[qb[i].pos].url,
+                                                      dir_name_length) == 0)
+                                          {
+                                             gotcha = YES;
+                                             break;
+                                          }
+                                       }
                                     }
                                  }
                               }
@@ -821,6 +859,7 @@ get_input_files(void)
 {
    register int  i, kk;
    int           gotcha;
+   size_t        dir_name_length;
    DIR           *dp;
    struct dirent *p_dir;
    struct stat   stat_buf;
@@ -842,10 +881,26 @@ get_input_files(void)
          {
             for (kk = 0; kk < no_of_search_dirs; kk++)
             {
-               if (sfilter(search_dir[kk], dnb[i].dir_name, 0) == 0)
+               if (search_dir_filter[kk] == YES)
                {
-                  gotcha = YES;
-                  break;
+                  if (sfilter(search_dir[kk], dnb[i].dir_name, 0) == 0)
+                  {
+                     gotcha = YES;
+                     break;
+                  }
+               }
+               else
+               {
+                  dir_name_length = strlen(dnb[i].dir_name);
+                  if (search_dir_length[kk] == dir_name_length)
+                  {
+                     if (strncmp(search_dir[kk], dnb[i].dir_name,
+                                 dir_name_length) == 0)
+                     {
+                        gotcha = YES;
+                        break;
+                     }
+                  }
                }
             }
          }
@@ -936,6 +991,7 @@ get_all_input_files(void)
 {
    register int i, kk;
    int          gotcha;
+   size_t       dir_name_length;
 
    for (i = 0; ((i < no_of_dnb_dirs) && (limit_reached == NO)); i++)
    {
@@ -954,10 +1010,26 @@ get_all_input_files(void)
          {
             for (kk = 0; kk < no_of_search_dirs; kk++)
             {
-               if (sfilter(search_dir[kk], dnb[i].dir_name, 0) == 0)
+               if (search_dir_filter[kk] == YES)
                {
-                  gotcha = YES;
-                  break;
+                  if (sfilter(search_dir[kk], dnb[i].dir_name, 0) == 0)
+                  {
+                     gotcha = YES;
+                     break;
+                  }
+               }
+               else
+               {
+                  dir_name_length = strlen(dnb[i].dir_name);
+                  if (search_dir_length[kk] == dir_name_length)
+                  {
+                     if (strncmp(search_dir[kk], dnb[i].dir_name,
+                                 dir_name_length) == 0)
+                     {
+                        gotcha = YES;
+                        break;
+                     }
+                  }
                }
             }
          }
@@ -1102,8 +1174,9 @@ get_time_jobs(void)
 
    if ((dp = opendir(fullname)) != NULL)
    {
-      int gotcha,
-          pos;
+      int    gotcha,
+             pos;
+      size_t dir_name_length;
 
       while (((p_dir = readdir(dp)) != NULL) && (limit_reached == NO))
       {
@@ -1170,10 +1243,28 @@ get_time_jobs(void)
                      {
                         for (kk = 0; kk < no_of_search_dirs; kk++)
                         {
-                           if (sfilter(search_dir[kk], dnb[jd[pos].dir_id_pos].dir_name, 0) == 0)
+                           if (search_dir_filter[kk] == YES)
                            {
-                              gotcha = YES;
-                              break;
+                              if (sfilter(search_dir[kk],
+                                          dnb[jd[pos].dir_id_pos].dir_name, 0) == 0)
+                              {
+                                 gotcha = YES;
+                                 break;
+                              }
+                           }
+                           else
+                           {
+                              dir_name_length = strlen(dnb[jd[pos].dir_id_pos].dir_name);
+                              if (search_dir_length[kk] == dir_name_length)
+                              {
+                                 if (strncmp(search_dir[kk],
+                                             dnb[jd[pos].dir_id_pos].dir_name,
+                                             dir_name_length) == 0)
+                                 {
+                                    gotcha = YES;
+                                    break;
+                                 }
+                              }
                            }
                         }
                      }

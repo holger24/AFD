@@ -90,87 +90,88 @@ DESCR__E_M3
 #include "permission.h"
 
 /* External global variables. */
-extern Display          *display;
-extern Widget           appshell,
-                        command_w,
-                        cont_togglebox_w,
-                        directory_w,
-                        end_time_w,
-                        file_length_w,
-                        headingbox_w,
-                        job_id_w,
-                        listbox_w,
-                        new_file_name_w,
-                        new_file_size_w,
-                        orig_file_name_w,
-                        orig_file_size_w,
-                        print_button_w,
-                        prod_time_w,
-                        return_code_w,
-                        scrollbar_w,
-                        select_all_button_w,
-                        selectionbox_w,
-                        special_button_w,
-                        start_time_w,
-                        statusbox_w,
-                        summarybox_w;
-extern Window           main_window;
-extern int              continues_toggle_set,
-                        items_selected,
-                        no_of_search_dirs,
-                        no_of_search_dirids,
-                        no_of_search_hosts,
-                        no_of_search_jobids,
-                        no_of_search_production_cmd,
-                        file_name_length,
-                        *search_dir_length,
-                        ratio_mode,
-                        search_return_code,
-                        special_button_flag,
-                        sum_line_length,
-                        no_of_log_files,
-                        char_width;
-extern unsigned int     all_list_items,
-                        *search_dirid,
-                        *search_jobid;
-extern XT_PTR_TYPE      toggles_set;
-extern time_t           start_time_val,
-                        end_time_val;
-extern size_t           search_new_file_size,
-                        search_orig_file_size;
-extern double           search_cpu_time,
-                        search_prod_time;
-extern char             header_line[],
-                        **search_production_cmd,
-                        search_new_file_name[],
-                        search_orig_file_name[],
-                        **search_dir,
-                        *search_dir_filter,
-                        search_return_code_str[],
-                        **search_recipient,
-                        **search_user;
-extern struct item_list *il;
-extern struct sol_perm  perm;
+extern Display                    *display;
+extern Widget                     appshell,
+                                  command_w,
+                                  cont_togglebox_w,
+                                  directory_w,
+                                  end_time_w,
+                                  file_length_w,
+                                  headingbox_w,
+                                  job_id_w,
+                                  listbox_w,
+                                  new_file_name_w,
+                                  new_file_size_w,
+                                  orig_file_name_w,
+                                  orig_file_size_w,
+                                  print_button_w,
+                                  prod_time_w,
+                                  return_code_w,
+                                  scrollbar_w,
+                                  select_all_button_w,
+                                  selectionbox_w,
+                                  special_button_w,
+                                  start_time_w,
+                                  statusbox_w,
+                                  summarybox_w;
+extern Window                     main_window;
+extern int                        continues_toggle_set,
+                                  items_selected,
+                                  no_of_search_dirs,
+                                  no_of_search_dirids,
+                                  no_of_search_hosts,
+                                  no_of_search_jobids,
+                                  no_of_search_production_cmd,
+                                  file_name_length,
+                                  *search_dir_length,
+                                  ratio_mode,
+                                  search_return_code,
+                                  special_button_flag,
+                                  sum_line_length,
+                                  no_of_log_files,
+                                  char_width;
+extern unsigned int               all_list_items,
+                                  *search_dirid,
+                                  *search_jobid;
+extern XT_PTR_TYPE                toggles_set;
+extern time_t                     start_time_val,
+                                  end_time_val;
+extern size_t                     search_new_file_size,
+                                  search_orig_file_size;
+extern double                     search_cpu_time,
+                                  search_prod_time;
+extern char                       header_line[],
+                                  **search_production_cmd,
+                                  search_new_file_name[],
+                                  search_orig_file_name[],
+                                  **search_dir,
+                                  *search_dir_filter,
+                                  search_return_code_str[],
+                                  **search_recipient,
+                                  **search_user;
+extern struct item_list           *il;
+extern struct sol_perm            perm;
+extern struct fileretrieve_status *fra;
 
 /* Global variables. */
-int                     do_search_return_code,
-                        gt_lt_sign_new,
-                        gt_lt_sign_orig,
-                        gt_lt_sign_ct,
-                        gt_lt_sign_pt,
-                        gt_lt_sign_rc,
-                        max_x,
-                        max_y;
-char                    search_cpu_time_str[MAX_DISPLAYED_CPU_TIME + 2],
-                        search_new_file_size_str[20],
-                        search_orig_file_size_str[20],
-                        search_prod_time_str[MAX_DISPLAYED_PROD_TIME + 2],
-                        summary_str[MAX_PRODUCTION_LINE_LENGTH + SHOW_LONG_FORMAT + SHOW_LONG_FORMAT + 5 + 1],
-                        total_summary_str[MAX_PRODUCTION_LINE_LENGTH + SHOW_LONG_FORMAT + SHOW_LONG_FORMAT + 5 + 1];
-struct info_data        id;
+int                               do_search_return_code,
+                                  gt_lt_sign_new,
+                                  gt_lt_sign_orig,
+                                  gt_lt_sign_ct,
+                                  gt_lt_sign_pt,
+                                  gt_lt_sign_rc,
+                                  max_x,
+                                  max_y;
+char                              search_cpu_time_str[MAX_DISPLAYED_CPU_TIME + 2],
+                                  search_new_file_size_str[20],
+                                  search_orig_file_size_str[20],
+                                  search_prod_time_str[MAX_DISPLAYED_PROD_TIME + 2],
+                                  summary_str[MAX_PRODUCTION_LINE_LENGTH + SHOW_LONG_FORMAT + SHOW_LONG_FORMAT + 5 + 1],
+                                  total_summary_str[MAX_PRODUCTION_LINE_LENGTH + SHOW_LONG_FORMAT + SHOW_LONG_FORMAT + 5 + 1];
+struct info_data                  id;
 
 /* Local global variables. */
-static int              scrollbar_moved_flag;
+static int                        scrollbar_moved_flag;
 
 
 /*########################## continues_toggle() #########################*/
@@ -793,7 +794,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                   }
                   break;
                }
-               if (*ptr == '#')
+               if ((*ptr == '#') || (*ptr == '@'))
                {
                   is_dir_id = YES;
                   ptr++;
@@ -913,39 +914,81 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                         break;
                      }
                   }
-                  else
-                  {
-                     p_dir = search_dir[ii_dirs];
+                  else if (*ptr == '@')
+                       {
+                          p_dir = str_search_dirid;
+                          ptr++;
 
-                     search_dir_filter[ii_dirs] = NO;
-                     while ((*ptr != '\0') && (*ptr != ','))
-                     {
-                        if (*ptr == '\\')
-                        {
-                           ptr++;
-                        }
-                        else
-                        {
-                           if ((*ptr == '?') || (*ptr == '*') || (*ptr == '['))
-                           {
-                              search_dir_filter[ii_dirs] = YES;
-                           }
-                        }
-                        *p_dir = *ptr;
-                        ptr++; p_dir++;
-                     }
-                     *p_dir = '\0';
-                     if (*ptr == ',')
-                     {
-                        ptr++;
-                        ii_dirs++;
-                     }
-                     else
-                     {
-                        break;
-                     }
-                  }
+                          while ((*ptr != '\0') && (*ptr != ','))
+                          {
+                             *p_dir = *ptr;
+                             ptr++; p_dir++;
+                          }
+                          *p_dir = '\0';
+                          if (get_dir_id(str_search_dirid,
+                                         &search_dirid[ii_dirids]) == INCORRECT)
+                          {
+                             no_of_search_dirids--;
+                             if (*ptr == ',')
+                             {
+                                ptr++;
+                             }
+                             else
+                             {
+                                break;
+                             }
+                          }
+                          else
+                          {
+                             if (*ptr == ',')
+                             {
+                                ptr++;
+                                ii_dirids++;
+                             }
+                             else
+                             {
+                                break;
+                             }
+                          }
+                       }
+                       else
+                       {
+                          p_dir = search_dir[ii_dirs];
+
+                          search_dir_filter[ii_dirs] = NO;
+                          while ((*ptr != '\0') && (*ptr != ','))
+                          {
+                             if (*ptr == '\\')
+                             {
+                                ptr++;
+                             }
+                             else
+                             {
+                                if ((*ptr == '?') || (*ptr == '*') || (*ptr == '['))
+                                {
+                                   search_dir_filter[ii_dirs] = YES;
+                                }
+                             }
+                             *p_dir = *ptr;
+                             ptr++; p_dir++;
+                          }
+                          *p_dir = '\0';
+                          if (*ptr == ',')
+                          {
+                             ptr++;
+                             ii_dirs++;
+                          }
+                          else
+                          {
+                             break;
+                          }
+                       }
                } /* for (;;) */
+               if (fra != NULL)
+               {
+                  (void)fra_detach();
+                  fra = NULL;
+               }
                free(str_search_dirid);
             }
          }

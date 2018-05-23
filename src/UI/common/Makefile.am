@@ -24,6 +24,7 @@ libuiafd_a_SOURCES   = check_host_permissions.c\
                        config_log.c\
                        eval_alda_data.c\
                        get_current_jid_list.c\
+		       get_dir_id.c\
                        get_ip_no.c\
                        get_printer_cmd.c\
                        handle_setup_file.c\

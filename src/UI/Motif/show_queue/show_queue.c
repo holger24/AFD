@@ -113,6 +113,7 @@ int                        char_width,
                            no_of_search_dirids,
                            no_of_search_hosts,
                            queue_tmp_buf_entries,
+                           *search_dir_length = NULL,
                            special_button_flag,
                            sys_log_fd = STDERR_FILENO;
 Dimension                  button_height;
@@ -131,6 +132,7 @@ char                       *p_work_dir,
                            font_name[40],
                            search_file_name[MAX_PATH_LENGTH],
                            **search_dir = NULL,
+                           *search_dir_filter = NULL,
                            **search_recipient,
                            **search_user,
                            user[MAX_FULL_USER_ID_LENGTH];
@@ -141,7 +143,7 @@ struct delete_log          dl;
 #endif
 struct queued_file_list    *qfl;
 struct queue_tmp_buf       *qtb;
-struct fileretrieve_status *fra;
+struct fileretrieve_status *fra = NULL;
 const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 
 /* Local function prototypes. */
@@ -1603,12 +1605,33 @@ main(int argc, char *argv[])
                ((no_of_search_dirs + no_of_search_dirids) * 2) + 1;
       if ((str = malloc(length)) != NULL)                          
       {
-         int i;
+         int  i;
+         char *ptr;
 
          length = 0;
          for (i = 0; i < no_of_search_dirs; i++)
          {
             length += sprintf(&str[length], "%s, ", search_dir[i]);
+            search_dir_filter[i] = NO;
+            ptr = str;
+            while (*ptr != '\0')
+            {
+               if (((*ptr == '?') || (*ptr == '*') || (*ptr == '[')) &&
+                   ((ptr == str) || (*(ptr - 1) != '\\')))
+               {
+                  search_dir_filter[i] = YES;
+                  break;
+               }
+               ptr++;
+            }
+            if (search_dir_filter[i] == YES)
+            {
+               search_dir_length[i] = 0;
+            }
+            else
+            {
+               search_dir_length[i] = strlen(search_dir[i]);
+            }
          }
          for (i = 0; i < no_of_search_dirids; i++)
          {
@@ -1740,6 +1763,24 @@ init_show_queue(int *argc, char *argv[], char *window_title)
                      &no_of_search_dirs) == INCORRECT)
    {
       no_of_search_dirs = 0;
+   }
+   else
+   {
+      if (no_of_search_dirs > 0)
+      {
+         if ((search_dir_filter = malloc(no_of_search_dirs)) == NULL)
+         {
+            (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
+                          strerror(errno), __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+         if ((search_dir_length = malloc((no_of_search_dirs * sizeof(int)))) == NULL)
+         {
+            (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
+                          strerror(errno), __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+      }
    }
 
    /* Now lets see if user may use this program. */

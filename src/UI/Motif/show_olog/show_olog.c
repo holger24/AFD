@@ -174,7 +174,7 @@ char                       *p_work_dir,
 struct item_list           *il = NULL;
 struct alda_call_data      *acd = NULL;
 struct sol_perm            perm;
-struct fileretrieve_status *fra;
+struct fileretrieve_status *fra = NULL;
 struct apps_list           *apps_list;
 struct view_modes          *vm;
 const char                 *sys_log_name = SYSTEM_LOG_FIFO;

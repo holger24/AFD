@@ -1,6 +1,6 @@
 /*
  *  show_dlog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -118,10 +118,12 @@ int                        char_width,
                            no_of_search_hosts,
                            no_of_search_dirs,
                            no_of_search_dirids,
+                           *search_dir_length = NULL,
                            special_button_flag,
                            sum_line_length,
                            sys_log_fd = STDERR_FILENO;
-unsigned int               all_list_items = 0;
+unsigned int               all_list_items = 0,
+                           *search_dirid = NULL;
 XT_PTR_TYPE                dr_toggles_set;
 #ifdef HAVE_MMAP
 off_t                      fra_size;
@@ -135,11 +137,11 @@ char                       *p_work_dir,
                            header_line[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 2],
                            search_file_name[MAX_PATH_LENGTH],
                            **search_dir = NULL,
-                           **search_dirid = NULL,
+                           *search_dir_filter = NULL,
                            **search_recipient;
 struct item_list           *il;
 struct sol_perm            perm;
-struct fileretrieve_status *fra;
+struct fileretrieve_status *fra = NULL;
 const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 
 /* Local function prototypes. */
@@ -977,12 +979,33 @@ main(int argc, char *argv[])
                ((no_of_search_dirs + no_of_search_dirids) * 2) + 1;
       if ((str = malloc(length)) != NULL)
       {
-         int i;
+         int  i;
+         char *ptr;
 
          length = 0;
          for (i = 0; i < no_of_search_dirs; i++)
          {
             length += sprintf(&str[length], "%s, ", search_dir[i]);
+            search_dir_filter[i] = NO;
+            ptr = str;
+            while (*ptr != '\0')
+            {
+               if (((*ptr == '?') || (*ptr == '*') || (*ptr == '[')) &&
+                   ((ptr == str) || (*(ptr - 1) != '\\')))
+               {
+                  search_dir_filter[i] = YES;
+                  break;
+               }
+               ptr++;
+            }
+            if (search_dir_filter[i] == YES)
+            {
+               search_dir_length[i] = 0;
+            }
+            else
+            {
+               search_dir_length[i] = strlen(search_dir[i]);
+            }
          }
          for (i = 0; i < no_of_search_dirids; i++)
          {
@@ -1080,6 +1103,24 @@ init_show_dlog(int *argc, char *argv[], char *window_title)
                      &no_of_search_dirs) == INCORRECT)
    {
       no_of_search_dirs = 0;
+   }
+   else
+   {
+      if (no_of_search_dirs > 0)
+      {
+         if ((search_dir_filter = malloc(no_of_search_dirs)) == NULL)
+         {
+            (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
+                          strerror(errno), __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+         if ((search_dir_length = malloc((no_of_search_dirs * sizeof(int)))) == NULL)
+         {
+            (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
+                          strerror(errno), __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+      }
    }
 
    /* Now lets see if user may use this program. */

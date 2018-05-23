@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -223,6 +223,7 @@ static void   check_log_updates(Widget),
               id.dir[0] = '\0';                                             \
               if (no_of_search_dirs > 0)                                    \
               {                                                             \
+                 id.dir[0] = '\0';                                          \
                  get_info(GOT_JOB_ID_DIR_ONLY);                             \
                  count = strlen((char *)id.dir);                            \
                  id.dir[count] = SEPARATOR_CHAR;                            \
@@ -1247,6 +1248,7 @@ no_criteria(register char *ptr,
             id.dir[0] = '\0';
             if (no_of_search_dirs > 0)
             {
+               id.dir[0] = '\0';
                get_info(GOT_JOB_ID_DIR_ONLY);
                count = strlen((char *)id.dir);
                id.dir[count] = SEPARATOR_CHAR;

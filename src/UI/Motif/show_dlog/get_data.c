@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -101,8 +101,10 @@ extern int              file_name_toggle_set,
                         no_of_log_files,
                         no_of_search_dirs,
                         no_of_search_dirids,
-                        no_of_search_hosts;
-extern unsigned int     all_list_items;
+                        no_of_search_hosts,
+                        *search_dir_length;
+extern unsigned int     all_list_items,
+                        *search_dirid;
 extern XT_PTR_TYPE      dr_toggles_set;
 extern size_t           search_file_size;
 extern time_t           start_time_val,
@@ -110,7 +112,7 @@ extern time_t           start_time_val,
 extern char             *p_work_dir,
                         search_file_name[],
                         **search_dir,
-                        **search_dirid,
+                        *search_dir_filter,
                         **search_recipient,
                         summary_str[],
                         total_summary_str[];
@@ -271,7 +273,7 @@ static void             display_data(int, time_t, time_t),
                                                            \
               for (kk = 0; kk < no_of_search_dirids; kk++) \
               {                                            \
-                 if (sfilter(search_dirid[kk], id.dir_id_str, 0) == 0)\
+                 if (search_dirid[kk] == id.dir_id)        \
                  {                                         \
                     gotcha = YES;                          \
                     break;                                 \
@@ -281,10 +283,24 @@ static void             display_data(int, time_t, time_t),
               {                                            \
                  for (kk = 0; kk < no_of_search_dirs; kk++)\
                  {                                         \
-                    if (sfilter(search_dir[kk], (char *)id.dir, SEPARATOR_CHAR) == 0)\
+                    if (search_dir_filter[kk] == YES)      \
                     {                                      \
-                       gotcha = YES;                       \
-                       break;                              \
+                       if (sfilter(search_dir[kk], (char *)id.dir, SEPARATOR_CHAR) == 0)\
+                       {                                   \
+                          gotcha = YES;                    \
+                          break;                           \
+                       }                                   \
+                    }                                      \
+                    else                                   \
+                    {                                      \
+                       if (search_dir_length[kk] == count) \
+                       {                                   \
+                          if (strncmp(search_dir[kk], (char *)id.dir, count) == 0)\
+                          {                                \
+                             gotcha = YES;                 \
+                             break;                        \
+                          }                                \
+                       }                                   \
                     }                                      \
                  }                                         \
               }                                            \
@@ -1237,7 +1253,7 @@ no_criteria(register char *ptr,
 
                for (kk = 0; kk < no_of_search_dirids; kk++)
                {
-                  if (sfilter(search_dirid[kk], id.dir_id_str, 0) == 0)
+                  if (search_dirid[kk] == id.dir_id)
                   {
                      gotcha = YES;
                      break;
@@ -1247,10 +1263,24 @@ no_criteria(register char *ptr,
                {
                   for (kk = 0; kk < no_of_search_dirs; kk++)
                   {
-                     if (sfilter(search_dir[kk], (char *)id.dir, SEPARATOR_CHAR) == 0)
+                     if (search_dir_filter[kk] == YES)
                      {
-                        gotcha = YES;
-                        break;
+                        if (sfilter(search_dir[kk], (char *)id.dir, SEPARATOR_CHAR) == 0)
+                        {
+                           gotcha = YES;
+                           break;
+                        }
+                     }
+                     else
+                     {
+                        if (search_dir_length[kk] == count)
+                        {
+                           if (strncmp(search_dir[kk], (char *)id.dir, count) == 0)
+                           {
+                              gotcha = YES;
+                              break;
+                           }
+                        }
                      }
                   }
                }

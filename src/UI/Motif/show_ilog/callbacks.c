@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -91,60 +91,61 @@ DESCR__E_M3
 /* #define SHOW_ALDA_CMD */
 
 /* External global variables. */
-extern Display          *display;
-extern Widget           cont_togglebox_w,
-                        directory_w,
-                        end_time_w,
-                        file_length_w,
-                        file_name_w,
-                        headingbox_w,
-                        listbox_w,
-                        print_button_w,
-                        radiobox_w,
-                        recipient_w,
-                        select_all_button_w,
-                        send_button_w,
-                        start_time_w,
-                        statusbox_w,
-                        summarybox_w,
-                        appshell;
-extern Window           main_window;
-extern int              continues_toggle_set,
-                        file_name_length,
-                        no_of_search_dirs,
-                        no_of_search_dirids,
-                        no_of_search_hosts,
-                        *search_dir_length,
-                        special_button_flag,
-                        sum_line_length,
-                        no_of_log_files,
-                        char_width;
-extern unsigned int     all_list_items,
-                        *search_dirid;
-extern time_t           start_time_val,
-                        end_time_val;
-extern size_t           search_file_size;
-extern char             font_name[],
-                        header_line[],
-                        *p_work_dir,
-                        search_file_name[],
-                        **search_dir,
-                        *search_dir_filter,
-                        **search_recipient,
-                        **search_user;
-extern struct item_list *il;
+extern Display                    *display;
+extern Widget                     cont_togglebox_w,
+                                  directory_w,
+                                  end_time_w,
+                                  file_length_w,
+                                  file_name_w,
+                                  headingbox_w,
+                                  listbox_w,
+                                  print_button_w,
+                                  radiobox_w,
+                                  recipient_w,
+                                  select_all_button_w,
+                                  send_button_w,
+                                  start_time_w,
+                                  statusbox_w,
+                                  summarybox_w,
+                                  appshell;
+extern Window                     main_window;
+extern int                        char_width,
+                                  continues_toggle_set,
+                                  file_name_length,
+                                  no_of_log_files,
+                                  no_of_search_dirs,
+                                  no_of_search_dirids,
+                                  no_of_search_hosts,
+                                  *search_dir_length,
+                                  special_button_flag,
+                                  sum_line_length;
+extern unsigned int               all_list_items,
+                                  *search_dirid;
+extern time_t                     start_time_val,
+                                  end_time_val;
+extern size_t                     search_file_size;
+extern char                       font_name[],
+                                  header_line[],
+                                  *p_work_dir,
+                                  search_file_name[],
+                                  **search_dir,
+                                  *search_dir_filter,
+                                  **search_recipient,
+                                  **search_user;
+extern struct item_list           *il;
+extern struct fileretrieve_status *fra;
 
 /* Global variables. */
-int                     gt_lt_sign,
-                        max_x,
-                        max_y;
-char                    search_file_size_str[20],
-                        summary_str[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 5 + 1],
-                        total_summary_str[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 5 + 1];
-struct info_data        id;
+int                               gt_lt_sign,
+                                  max_x,
+                                  max_y;
+char                              search_file_size_str[20],
+                                  summary_str[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 5 + 1],
+                                  total_summary_str[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 5 + 1];
+struct info_data                  id;
 
 /* Local global variables. */
-static int              scrollbar_moved_flag;
+static int                        scrollbar_moved_flag;
 
 
 /*########################## continues_toggle() #########################*/
@@ -530,8 +531,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
 {
    int         extra_sign = 0;
    XT_PTR_TYPE type = (XT_PTR_TYPE)client_data;
-   char        *ptr,
-               *value = XmTextGetString(w);
+   char        *value = XmTextGetString(w);
 
    switch (type)
    {
@@ -600,10 +600,11 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
       case DIRECTORY_NAME_NO_ENTER :
       case DIRECTORY_NAME :
          {
-            int is_dir_id,
-                length,
-                max_dir_length = 0,
-                max_dirid_length = 0;
+            int  is_dir_id,
+                 length,
+                 max_dir_length = 0,
+                 max_dirid_length = 0;
+            char *ptr;
 
             if (no_of_search_dirs != 0)
             {
@@ -640,7 +641,7 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                   }
                   break;
                }
-               if (*ptr == '#')
+               if ((*ptr == '#') || (*ptr == '@'))
                {
                   is_dir_id = YES;
                   ptr++;
@@ -760,39 +761,81 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                         break;
                      }
                   }
-                  else
-                  {
-                     p_dir = search_dir[ii_dirs];
+                  else if (*ptr == '@')
+                       {
+                          p_dir = str_search_dirid;
+                          ptr++;
 
-                     search_dir_filter[ii_dirs] = NO;
-                     while ((*ptr != '\0') && (*ptr != ','))
-                     {
-                        if (*ptr == '\\')
-                        {
-                           ptr++;
-                        }
-                        else
-                        {
-                           if ((*ptr == '?') || (*ptr == '*') || (*ptr == '['))
-                           {
-                              search_dir_filter[ii_dirs] = YES;
-                           }
-                        }
-                        *p_dir = *ptr;
-                        ptr++; p_dir++;
-                     }
-                     *p_dir = '\0';
-                     if (*ptr == ',')
-                     {
-                        ptr++;
-                        ii_dirs++;
-                     }
-                     else
-                     {
-                        break;
-                     }
-                  }
+                          while ((*ptr != '\0') && (*ptr != ','))
+                          {
+                             *p_dir = *ptr;
+                             ptr++; p_dir++;
+                          }
+                          *p_dir = '\0';
+                          if (get_dir_id(str_search_dirid,
+                                         &search_dirid[ii_dirids]) == INCORRECT)
+                          {
+                             no_of_search_dirids--;
+                             if (*ptr == ',')
+                             {
+                                ptr++;
+                             }
+                             else
+                             {
+                                break;
+                             }
+                          }
+                          else
+                          {
+                             if (*ptr == ',')
+                             {
+                                ptr++;
+                                ii_dirids++;
+                             }
+                             else
+                             {
+                                break;
+                             }
+                          }
+                       }
+                       else
+                       {
+                          p_dir = search_dir[ii_dirs];
+
+                          search_dir_filter[ii_dirs] = NO;
+                          while ((*ptr != '\0') && (*ptr != ','))
+                          {
+                             if (*ptr == '\\')
+                             {
+                                ptr++;
+                             }
+                             else
+                             {
+                                if ((*ptr == '?') || (*ptr == '*') || (*ptr == '['))
+                                {
+                                   search_dir_filter[ii_dirs] = YES;
+                                }
+                             }
+                             *p_dir = *ptr;
+                             ptr++; p_dir++;
+                          }
+                          *p_dir = '\0';
+                          if (*ptr == ',')
+                          {
+                             ptr++;
+                             ii_dirs++;
+                          }
+                          else
+                          {
+                             break;
+                          }
+                       }
                } /* for (;;) */
+               if (fra != NULL)
+               {
+                  (void)fra_detach();
+                  fra = NULL;
+               }
                free(str_search_dirid);
             }
          }
@@ -856,7 +899,8 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
          {
             int  i = 0,
                  ii = 0;
-            char *ptr_start;
+            char *ptr,
+                 *ptr_start;
 
             if (no_of_search_hosts != 0)
             {
