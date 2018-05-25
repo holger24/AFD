@@ -82,7 +82,7 @@ Widget         printshell = (Widget)NULL;
 XT_PTR_TYPE    range_type,
                device_type;
 char           file_name[MAX_PATH_LENGTH],
-               subject[MAX_PRINT_SUBJECT_LENGTH];
+               subject[MAX_PRINT_SUBJECT_LENGTH + 1];
 FILE           *fp;             /* File pointer for printer command.     */
 
 /* External global variables. */

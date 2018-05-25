@@ -185,8 +185,8 @@ char                       stop_flag = 0,
                            *p_file_dir,
                            *p_msg_dir,
                            str_age_limit[MAX_INT_LENGTH],
-                           str_create_source_dir_mode[MAX_INT_LENGTH],
-                           str_create_target_dir_mode[MAX_INT_LENGTH],
+                           str_create_source_dir_mode[MAX_INT_OCT_LENGTH],
+                           str_create_target_dir_mode[MAX_INT_OCT_LENGTH],
                            str_fsa_id[MAX_INT_LENGTH],
                            str_gf_disconnect[MAX_INT_LENGTH],
                            str_sf_disconnect[MAX_INT_LENGTH],
@@ -4467,7 +4467,7 @@ get_afd_config_value(void)
                  }
               }
 
-         (void)snprintf(str_create_source_dir_mode, MAX_INT_LENGTH,
+         (void)snprintf(str_create_source_dir_mode, MAX_INT_OCT_LENGTH,
                         "%04o", create_source_dir_mode);
       }
       if (get_definition(buffer, MAX_CONNECTIONS_DEF,
@@ -4579,7 +4579,7 @@ get_afd_config_value(void)
                   }
                   create_target_dir_mode = ko;
                }
-               (void)snprintf(str_create_target_dir_mode, MAX_INT_LENGTH,
+               (void)snprintf(str_create_target_dir_mode, MAX_INT_OCT_LENGTH,
                               "%04o", create_target_dir_mode);
                *(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) |= ENABLE_CREATE_TARGET_DIR;
             }

@@ -1143,7 +1143,7 @@ handle_options(int          position,
             char         *p_end = p_command,
                          *insert_list[MAX_EXEC_FILE_SUBSTITUTION],
                          tmp_option[1024],
-                         command_str[1024],
+                         command_str[3 + MAX_PATH_LENGTH + 4 + MAX_OPTION_LENGTH + 1],
                          *return_str = NULL;
             off_t        lock_offset = 0; /* Silence compiler. */
 
@@ -1230,7 +1230,8 @@ handle_options(int          position,
                   insert_list[ii] = &tmp_option[k];
                   tmp_char = *insert_list[0];
                   *insert_list[0] = '\0';
-                  length_start = snprintf(command_str, 1024,
+                  length_start = snprintf(command_str,
+                                          3 + MAX_PATH_LENGTH + 4 + MAX_OPTION_LENGTH + 1,
                                           "cd %s && %s", file_path, p_command);
                   *insert_list[0] = tmp_char;
 
@@ -1520,8 +1521,9 @@ handle_options(int          position,
             {
                int ret;
 
-               (void)snprintf(command_str, 1024, "cd %s && %s",
-                              file_path, p_command);
+               (void)snprintf(command_str,
+                              3 + MAX_PATH_LENGTH + 4 + MAX_OPTION_LENGTH + 1,
+                              "cd %s && %s", file_path, p_command);
 
                if ((lock_one_job_only == YES) && (lock_all_jobs == NO))
                {

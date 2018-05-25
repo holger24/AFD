@@ -971,21 +971,33 @@ main(int argc, char *argv[])
 
    if ((no_of_search_dirs > 0) || (no_of_search_dirids > 0))
    {
-      size_t length;
+      size_t str_length;
       char   *str;
 
-      length = (no_of_search_dirs * MAX_PATH_LENGTH) +
-               (no_of_search_dirids * (MAX_DIR_ALIAS_LENGTH + 1)) +
-               ((no_of_search_dirs + no_of_search_dirids) * 2) + 1;
-      if ((str = malloc(length)) != NULL)
+      str_length = (no_of_search_dirs * MAX_PATH_LENGTH) +
+                   (no_of_search_dirids * (1 + MAX_INT_HEX_LENGTH + 2)) +
+                   ((no_of_search_dirs + no_of_search_dirids) * 2) + 1;
+      if ((str = malloc(str_length)) != NULL)
       {
-         int  i;
-         char *ptr;
+         int    i;
+         size_t length = 0;
+         char   *ptr;
 
-         length = 0;
          for (i = 0; i < no_of_search_dirs; i++)
          {
-            length += sprintf(&str[length], "%s, ", search_dir[i]);
+            length += snprintf(&str[length], str_length - length,
+                               "%s, ", search_dir[i]);
+            if (length > str_length)
+            {
+#if SIZEOF_SIZE_T == 4
+               (void)fprintf(stderr, "Buffer to small %d > %d (%s %d)\n",
+#else
+               (void)fprintf(stderr, "Buffer to small %lld > %lld (%s %d)\n",
+#endif
+                             (pri_size_t)length, (pri_size_t)str_length,
+                             __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
             search_dir_filter[i] = NO;
             ptr = str;
             while (*ptr != '\0')
@@ -1009,7 +1021,19 @@ main(int argc, char *argv[])
          }
          for (i = 0; i < no_of_search_dirids; i++)
          {
-            length += sprintf(&str[length], "#%s, ", search_dirid[i]);
+            length += snprintf(&str[length], str_length - length,
+                               "#%x, ", search_dirid[i]);
+            if (length > str_length)
+            {
+#if SIZEOF_SIZE_T == 4
+               (void)fprintf(stderr, "Buffer to small %d > %d (%s %d)\n",
+#else
+               (void)fprintf(stderr, "Buffer to small %lld > %lld (%s %d)\n",
+#endif
+                             (pri_size_t)length, (pri_size_t)str_length,
+                             __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
          }
          str[length - 2] = '\0';
          XtVaSetValues(directory_w, XmNvalue, str, NULL);
@@ -1094,8 +1118,8 @@ init_show_dlog(int *argc, char *argv[], char *window_title)
    {
       (void)strcpy(font_name, DEFAULT_FONT);
    }
-   if (get_arg_array(argc, argv, "-d", &search_dirid,
-                     &no_of_search_dirids) == INCORRECT)
+   if (get_arg_int_array(argc, argv, "-d", &search_dirid,
+                         &no_of_search_dirids) == INCORRECT)
    {
       no_of_search_dirids = 0;
    }

@@ -1387,6 +1387,8 @@ typedef unsigned long       u_long_64;
                                             /* the largest integer value.   */
 #define MAX_INT_HEX_LENGTH            9     /* Ditto, just using hex values */
                                             /* here.                        */
+#define MAX_INT_OCT_LENGTH           12     /* Ditto, just using octal      */
+                                            /* values.                      */
 #if SIZEOF_SHORT == 2
 # define MAX_SHORT_LENGTH             6
 #else

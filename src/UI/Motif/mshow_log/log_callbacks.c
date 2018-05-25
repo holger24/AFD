@@ -1,6 +1,6 @@
 /*
  *  log_callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -318,7 +318,7 @@ update_button(Widget w, XtPointer client_data, XtPointer call_data)
       if ((p_log_file = fopen(log_file, "r")) == NULL)
       {
          char *ptr,
-              error_line[80];
+              error_line[13 + MAX_PATH_LENGTH + 19 + 1];
 
          if (errno != ENOENT)
          {

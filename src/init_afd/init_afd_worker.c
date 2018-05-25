@@ -828,10 +828,11 @@ static void
 get_afd_config_value(int *danger_no_of_files, int *amg_rescan_time)
 {
    char *buffer,
-        config_file[MAX_PATH_LENGTH];
+        config_file[MAX_PATH_LENGTH + ETC_DIR_LENGTH + AFD_CONFIG_FILE_LENGTH + 1];
 
-   (void)snprintf(config_file, MAX_PATH_LENGTH, "%s%s%s",
-                  p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
+   (void)snprintf(config_file,
+                  MAX_PATH_LENGTH + ETC_DIR_LENGTH + AFD_CONFIG_FILE_LENGTH + 1,
+                  "%s%s%s", p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
    if ((eaccess(config_file, F_OK) == 0) &&
        (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {

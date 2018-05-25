@@ -56,7 +56,7 @@ DESCR__E_M3
 /* Global variables. */
 int                    no_of_process,
                        sys_log_fd = STDERR_FILENO;
-char                   afd_config_file[MAX_PATH_LENGTH],
+char                   afd_config_file[MAX_PATH_LENGTH + ETC_DIR_LENGTH + AFD_CONFIG_FILE_LENGTH + 1],
                        *p_work_dir;
 struct aldad_proc_list *apl = NULL;
 const char             *sys_log_name = SYSTEM_LOG_FIFO;

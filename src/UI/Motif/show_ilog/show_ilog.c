@@ -941,7 +941,7 @@ main(int argc, char *argv[])
       char   *str;
 
       length = (no_of_search_dirs * MAX_PATH_LENGTH) +
-               (no_of_search_dirids * (MAX_DIR_ALIAS_LENGTH + 1)) +
+               (no_of_search_dirids * (1 + MAX_INT_HEX_LENGTH + 2)) +
                ((no_of_search_dirs + no_of_search_dirids) * 2) + 1;
       if ((str = malloc(length)) != NULL)
       {
