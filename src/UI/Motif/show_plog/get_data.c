@@ -1357,8 +1357,15 @@ collect_data(register char *ptr,
                   id.dir[0] = '\0';
                   get_info(GOT_DIR_ID_DIR_ONLY);
                   length = strlen((char *)id.dir);
-                  id.dir[length] = SEPARATOR_CHAR;
-                  id.dir[length + 1] = '\0';
+                  if (id.dir[length - 1] != SEPARATOR_CHAR)
+                  {
+                     id.dir[length] = SEPARATOR_CHAR;
+                     id.dir[length + 1] = '\0';
+                  }
+                  else
+                  {
+                     length--;
+                  }
 
                   for (kk = 0; kk < no_of_search_dirs; kk++)
                   {

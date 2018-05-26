@@ -268,8 +268,15 @@ static void             display_data(int, time_t, time_t),
               id.dir[0] = '\0';                            \
               get_info(GOT_JOB_ID_DIR_ONLY);               \
               count = strlen((char *)id.dir);              \
-              id.dir[count] = SEPARATOR_CHAR;              \
-              id.dir[count + 1] = '\0';                    \
+              if (id.dir[count - 1] != SEPARATOR_CHAR)     \
+              {                                            \
+                 id.dir[count] = SEPARATOR_CHAR;           \
+                 id.dir[count + 1] = '\0';                 \
+              }                                            \
+              else                                         \
+              {                                            \
+                 count--;                                  \
+              }                                            \
                                                            \
               for (kk = 0; kk < no_of_search_dirids; kk++) \
               {                                            \
@@ -1248,8 +1255,15 @@ no_criteria(register char *ptr,
                id.dir[0] = '\0';
                get_info(GOT_JOB_ID_DIR_ONLY);
                count = strlen((char *)id.dir);
-               id.dir[count] = SEPARATOR_CHAR;
-               id.dir[count + 1] = '\0';
+               if (id.dir[count - 1] != SEPARATOR_CHAR)
+               {
+                  id.dir[count] = SEPARATOR_CHAR;
+                  id.dir[count + 1] = '\0';
+               }
+               else
+               {
+                  count--;
+               }
 
                for (kk = 0; kk < no_of_search_dirids; kk++)
                {
