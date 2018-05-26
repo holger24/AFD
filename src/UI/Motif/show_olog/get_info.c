@@ -1,6 +1,6 @@
 /*
  *  get_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -276,10 +276,17 @@ get_info(int item)
    {
       if (item == GOT_JOB_ID_DIR_ONLY)
       {
-         (void)strcpy((char *)id.dir, dnb[jd[0].dir_id_pos].dir_name);
-         id.dir_id = id.job_no;
-         (void)snprintf(id.dir_id_str, MAX_DIR_ALIAS_LENGTH + 1, "%x",
-                        id.dir_id);
+         for (i = 0; i < *no_of_dir_names; i++)
+         {
+            if (id.job_no == dnb[i].dir_id)
+            {
+               (void)strcpy((char *)id.dir, dnb[i].dir_name);
+               id.dir_id = id.job_no;
+               (void)snprintf(id.dir_id_str, MAX_DIR_ALIAS_LENGTH + 1, "%x",
+                              id.dir_id);
+               break;
+            }
+         }
       }
       else if (item == GOT_JOB_ID_USER_ONLY)
            {

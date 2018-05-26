@@ -378,11 +378,17 @@ static void   check_log_updates(Widget),
                  int gotcha = NO,\
                      kk;\
 \
-                 id.dir[0] = '\0';\
                  get_info(GOT_JOB_ID_DIR_ONLY);\
                  count = strlen((char *)id.dir);\
-                 id.dir[count] = SEPARATOR_CHAR;\
-                 id.dir[count + 1] = '\0';\
+                 if (id.dir[count - 1] != SEPARATOR_CHAR)\
+                 {\
+                    id.dir[count] = SEPARATOR_CHAR;\
+                    id.dir[count + 1] = '\0';\
+                 }\
+                 else\
+                 {\
+                    count--;\
+                 }\
                  for (kk = 0; kk < no_of_search_dirids; kk++)\
                  {\
                     if (search_dirid[kk] == id.dir_id)\
@@ -503,7 +509,7 @@ static void   check_log_updates(Widget),
            {\
               if (confirmation_sign == 0)\
               {\
-                 if (is_receive_job == YES)\
+                 if (id.is_receive_job == YES)\
                  {\
                     *p_archive_flag = '*';\
                  }\
@@ -657,11 +663,17 @@ static void   check_log_updates(Widget),
                  int gotcha = NO,\
                      kk;\
 \
-                 id.dir[0] = '\0';\
                  get_info(GOT_JOB_ID_DIR_ONLY);\
                  count = strlen((char *)id.dir);\
-                 id.dir[count] = SEPARATOR_CHAR;\
-                 id.dir[count + 1] = '\0';\
+                 if (id.dir[count - 1] != SEPARATOR_CHAR)\
+                 {\
+                    id.dir[count] = SEPARATOR_CHAR;\
+                    id.dir[count + 1] = '\0';\
+                 }\
+                 else\
+                 {\
+                    count--;\
+                 }\
                  for (kk = 0; kk < no_of_search_dirids; kk++)\
                  {\
                     if (search_dirid[kk] == id.dir_id)\
@@ -780,7 +792,7 @@ static void   check_log_updates(Widget),
            }\
            else\
            {\
-              if (is_receive_job == YES)\
+              if (id.is_receive_job == YES)\
               {\
                  *p_archive_flag = '*';\
               }\
@@ -1448,6 +1460,31 @@ get_data(void)
          log_fd = -1;
       }
    }
+
+#ifdef DEBUG_PARAMETERS
+   (void)fprintf(stderr, "view_received_only=%s view_archived_only=%s\n",
+                 (view_received_only == YES) ? "YES" : "NO",
+                 (view_archived_only == YES) ? "YES" : "NO");
+   (void)fprintf(stderr, "no_of_search_hosts=%d\n", no_of_search_hosts);
+   for (i = 0; i < no_of_search_hosts; i++)
+   {
+      (void)fprintf(stderr, "search_recipient[%d]=%s search_user[%d]=%s\n",
+                    i, search_recipient[i], i, search_user[i]);
+   }
+   (void)fprintf(stderr, "no_of_search_dirs=%d\n", no_of_search_dirs);
+   for (i = 0; i < no_of_search_dirs; i++)
+   {
+      (void)fprintf(stderr, "search_dir[%d]=%s filter=%s length=%d\n",
+                    i, search_dir[i],
+                    (search_dir_filter[i] == NO) ? "NO" : "YES",
+                    search_dir_length[i]);
+   }
+   (void)fprintf(stderr, "no_of_search_dirids=%d\n", no_of_search_dirids);
+   for (i = 0; i < no_of_search_dirids; i++)
+   {
+      (void)fprintf(stderr, "search_dirid[%d]=%x\n", i, search_dirid[i]);
+   }
+#endif
 
    /* Prepare log file name. */
    i = snprintf(log_file, MAX_PATH_LENGTH, "%s%s/%s",
@@ -2249,7 +2286,6 @@ no_criteria(register char *ptr,
    register int i,
                 j;
    int          current_search_host = -1,
-                is_receive_job,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 ptr_is_remote,
@@ -2325,7 +2361,7 @@ no_criteria(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = YES;
+                  id.is_receive_job = YES;
                }
                else
                {
@@ -2333,7 +2369,7 @@ no_criteria(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
@@ -2369,7 +2405,7 @@ no_criteria(register char *ptr,
                           confirmation_sign = 0;
                        }
                   type_offset = 5;
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
                else
                {
@@ -2392,7 +2428,7 @@ no_criteria(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = YES;
+                     id.is_receive_job = YES;
                   }
                   else
                   {
@@ -2400,7 +2436,7 @@ no_criteria(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
@@ -2436,7 +2472,7 @@ no_criteria(register char *ptr,
                              confirmation_sign = 0;
                           }
                      type_offset = 5;
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
                   else
                   {
@@ -2450,7 +2486,7 @@ no_criteria(register char *ptr,
             else
             {
                type_offset = 3;
-               is_receive_job = NO;
+               id.is_receive_job = NO;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -2460,7 +2496,7 @@ no_criteria(register char *ptr,
          else
          {
             type_offset = 1;
-            is_receive_job = NO;
+            id.is_receive_job = NO;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
@@ -2865,11 +2901,17 @@ no_criteria(register char *ptr,
                int gotcha = NO,
                    kk;
 
-               id.dir[0] = '\0';
                get_info(GOT_JOB_ID_DIR_ONLY);
                count = strlen((char *)id.dir);
-               id.dir[count] = SEPARATOR_CHAR;
-               id.dir[count + 1] = '\0';
+               if (id.dir[count - 1] != SEPARATOR_CHAR)
+               {
+                  id.dir[count] = SEPARATOR_CHAR;
+                  id.dir[count + 1] = '\0';
+               }
+               else
+               {
+                  count--;
+               }
 
                for (kk = 0; kk < no_of_search_dirids; kk++)
                {
@@ -2994,7 +3036,7 @@ no_criteria(register char *ptr,
             if (confirmation_sign == 0)
             {
 #endif
-               if (is_receive_job == YES)
+               if (id.is_receive_job == YES)
                {
                   *p_archive_flag = '*';
                }
@@ -3067,7 +3109,6 @@ file_name_only(register char *ptr,
    register int i,
                 j;
    int          current_search_host = -1,
-                is_receive_job,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 ptr_is_remote,
@@ -3142,7 +3183,7 @@ file_name_only(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = YES;
+                  id.is_receive_job = YES;
                }
                else
                {
@@ -3150,7 +3191,7 @@ file_name_only(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
@@ -3186,7 +3227,7 @@ file_name_only(register char *ptr,
                           confirmation_sign = 0;
                        }
                   type_offset = 5;
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
                else
                {
@@ -3209,7 +3250,7 @@ file_name_only(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = YES;
+                     id.is_receive_job = YES;
                   }
                   else
                   {
@@ -3217,7 +3258,7 @@ file_name_only(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
@@ -3253,7 +3294,7 @@ file_name_only(register char *ptr,
                              confirmation_sign = 0;
                           }
                      type_offset = 5;
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
                   else
                   {
@@ -3267,7 +3308,7 @@ file_name_only(register char *ptr,
             else
             {
                type_offset = 3;
-               is_receive_job = NO;
+               id.is_receive_job = NO;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -3277,7 +3318,7 @@ file_name_only(register char *ptr,
          else
          {
             type_offset = 1;
-            is_receive_job = NO;
+            id.is_receive_job = NO;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
@@ -3933,7 +3974,6 @@ file_size_only(register char *ptr,
    register int i,
                 j;
    int          current_search_host = -1,
-                is_receive_job,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 ptr_is_remote,
@@ -4008,7 +4048,7 @@ file_size_only(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = YES;
+                  id.is_receive_job = YES;
                }
                else
                {
@@ -4016,7 +4056,7 @@ file_size_only(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
@@ -4052,7 +4092,7 @@ file_size_only(register char *ptr,
                           confirmation_sign = 0;
                        }
                   type_offset = 5;
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
                else
                {
@@ -4075,7 +4115,7 @@ file_size_only(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = YES;
+                     id.is_receive_job = YES;
                   }
                   else
                   {
@@ -4083,7 +4123,7 @@ file_size_only(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
@@ -4119,7 +4159,7 @@ file_size_only(register char *ptr,
                              confirmation_sign = 0;
                           }
                      type_offset = 5;
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
                   else
                   {
@@ -4133,7 +4173,7 @@ file_size_only(register char *ptr,
             else
             {
                type_offset = 3;
-               is_receive_job = NO;
+               id.is_receive_job = NO;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -4143,7 +4183,7 @@ file_size_only(register char *ptr,
          else
          {
             type_offset = 1;
-            is_receive_job = NO;
+            id.is_receive_job = NO;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
@@ -4450,7 +4490,6 @@ file_name_and_size(register char *ptr,
    register int i,
                 j;
    int          current_search_host = -1,
-                is_receive_job,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 ptr_is_remote,
@@ -4525,7 +4564,7 @@ file_name_and_size(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = YES;
+                  id.is_receive_job = YES;
                }
                else
                {
@@ -4533,7 +4572,7 @@ file_name_and_size(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
@@ -4569,7 +4608,7 @@ file_name_and_size(register char *ptr,
                           confirmation_sign = 0;
                        }
                   type_offset = 5;
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
                else
                {
@@ -4592,7 +4631,7 @@ file_name_and_size(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = YES;
+                     id.is_receive_job = YES;
                   }
                   else
                   {
@@ -4600,7 +4639,7 @@ file_name_and_size(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
@@ -4636,7 +4675,7 @@ file_name_and_size(register char *ptr,
                              confirmation_sign = 0;
                           }
                      type_offset = 5;
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
                   else
                   {
@@ -4650,7 +4689,7 @@ file_name_and_size(register char *ptr,
             else
             {
                type_offset = 3;
-               is_receive_job = NO;
+               id.is_receive_job = NO;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -4660,7 +4699,7 @@ file_name_and_size(register char *ptr,
          else
          {
             type_offset = 1;
-            is_receive_job = NO;
+            id.is_receive_job = NO;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
@@ -5165,7 +5204,6 @@ recipient_only(register char *ptr,
    register int i,
                 j;
    int          current_search_host,
-                is_receive_job,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 ptr_is_remote,
@@ -5241,7 +5279,7 @@ recipient_only(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = YES;
+                  id.is_receive_job = YES;
                }
                else
                {
@@ -5249,7 +5287,7 @@ recipient_only(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
@@ -5285,7 +5323,7 @@ recipient_only(register char *ptr,
                           confirmation_sign = 0;
                        }
                   type_offset = 5;
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
                else
                {
@@ -5308,7 +5346,7 @@ recipient_only(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = YES;
+                     id.is_receive_job = YES;
                   }
                   else
                   {
@@ -5316,7 +5354,7 @@ recipient_only(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
@@ -5352,7 +5390,7 @@ recipient_only(register char *ptr,
                              confirmation_sign = 0;
                           }
                      type_offset = 5;
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
                   else
                   {
@@ -5366,7 +5404,7 @@ recipient_only(register char *ptr,
             else
             {
                type_offset = 3;
-               is_receive_job = NO;
+               id.is_receive_job = NO;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -5376,7 +5414,7 @@ recipient_only(register char *ptr,
          else
          {
             type_offset = 1;
-            is_receive_job = NO;
+            id.is_receive_job = NO;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
@@ -6037,11 +6075,17 @@ recipient_only(register char *ptr,
                int gotcha = NO,
                    kk;
 
-               id.dir[0] = '\0';
                get_info(GOT_JOB_ID_DIR_ONLY);
                count = strlen((char *)id.dir);
-               id.dir[count] = SEPARATOR_CHAR;
-               id.dir[count + 1] = '\0';
+               if (id.dir[count - 1] != SEPARATOR_CHAR)
+               {
+                  id.dir[count] = SEPARATOR_CHAR;
+                  id.dir[count + 1] = '\0';
+               }
+               else
+               {
+                  count--;
+               }
 
                for (kk = 0; kk < no_of_search_dirids; kk++)
                {
@@ -6166,7 +6210,7 @@ recipient_only(register char *ptr,
             if (confirmation_sign == 0)
             {
 #endif
-               if (is_receive_job == YES)
+               if (id.is_receive_job == YES)
                {
                   *p_archive_flag = '*';
                }
@@ -6234,7 +6278,6 @@ file_name_and_recipient(register char *ptr,
    register int i,
                 j;
    int          current_search_host,
-                is_receive_job,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 ptr_is_remote,
@@ -6310,7 +6353,7 @@ file_name_and_recipient(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = YES;
+                  id.is_receive_job = YES;
                }
                else
                {
@@ -6318,7 +6361,7 @@ file_name_and_recipient(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
@@ -6354,7 +6397,7 @@ file_name_and_recipient(register char *ptr,
                           confirmation_sign = 0;
                        }
                   type_offset = 5;
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
                else
                {
@@ -6377,7 +6420,7 @@ file_name_and_recipient(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = YES;
+                     id.is_receive_job = YES;
                   }
                   else
                   {
@@ -6385,7 +6428,7 @@ file_name_and_recipient(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
@@ -6421,7 +6464,7 @@ file_name_and_recipient(register char *ptr,
                              confirmation_sign = 0;
                           }
                      type_offset = 5;
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
                   else
                   {
@@ -6435,7 +6478,7 @@ file_name_and_recipient(register char *ptr,
             else
             {
                type_offset = 3;
-               is_receive_job = NO;
+               id.is_receive_job = NO;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -6445,7 +6488,7 @@ file_name_and_recipient(register char *ptr,
          else
          {
             type_offset = 1;
-            is_receive_job = NO;
+            id.is_receive_job = NO;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
@@ -6681,7 +6724,6 @@ file_size_and_recipient(register char *ptr,
    register int i,
                 j;
    int          current_search_host,
-                is_receive_job,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 ptr_is_remote,
@@ -6757,7 +6799,7 @@ file_size_and_recipient(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = YES;
+                  id.is_receive_job = YES;
                }
                else
                {
@@ -6765,7 +6807,7 @@ file_size_and_recipient(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
@@ -6801,7 +6843,7 @@ file_size_and_recipient(register char *ptr,
                           confirmation_sign = 0;
                        }
                   type_offset = 5;
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
                else
                {
@@ -6824,7 +6866,7 @@ file_size_and_recipient(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = YES;
+                     id.is_receive_job = YES;
                   }
                   else
                   {
@@ -6832,7 +6874,7 @@ file_size_and_recipient(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
@@ -6868,7 +6910,7 @@ file_size_and_recipient(register char *ptr,
                              confirmation_sign = 0;
                           }
                      type_offset = 5;
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
                   else
                   {
@@ -6882,7 +6924,7 @@ file_size_and_recipient(register char *ptr,
             else
             {
                type_offset = 3;
-               is_receive_job = NO;
+               id.is_receive_job = NO;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -6892,7 +6934,7 @@ file_size_and_recipient(register char *ptr,
          else
          {
             type_offset = 1;
-            is_receive_job = NO;
+            id.is_receive_job = NO;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
@@ -7193,7 +7235,6 @@ file_name_size_recipient(register char *ptr,
    register int i,
                 j;
    int          current_search_host,
-                is_receive_job,
                 item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 ptr_is_remote,
@@ -7269,7 +7310,7 @@ file_name_size_recipient(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = YES;
+                  id.is_receive_job = YES;
                }
                else
                {
@@ -7277,7 +7318,7 @@ file_name_size_recipient(register char *ptr,
                   {
                      IGNORE_ENTRY();
                   }
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
@@ -7313,7 +7354,7 @@ file_name_size_recipient(register char *ptr,
                           confirmation_sign = 0;
                        }
                   type_offset = 5;
-                  is_receive_job = NO;
+                  id.is_receive_job = NO;
                }
                else
                {
@@ -7336,7 +7377,7 @@ file_name_size_recipient(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = YES;
+                     id.is_receive_job = YES;
                   }
                   else
                   {
@@ -7344,7 +7385,7 @@ file_name_size_recipient(register char *ptr,
                      {
                         IGNORE_ENTRY();
                      }
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
 # ifdef _WITH_DE_MAIL_SUPPORT
                   confirmation_sign = 0;
@@ -7380,7 +7421,7 @@ file_name_size_recipient(register char *ptr,
                              confirmation_sign = 0;
                           }
                      type_offset = 5;
-                     is_receive_job = NO;
+                     id.is_receive_job = NO;
                   }
                   else
                   {
@@ -7394,7 +7435,7 @@ file_name_size_recipient(register char *ptr,
             else
             {
                type_offset = 3;
-               is_receive_job = NO;
+               id.is_receive_job = NO;
 # ifdef _WITH_DE_MAIL_SUPPORT
                confirmation_sign = 0;
 # endif
@@ -7404,7 +7445,7 @@ file_name_size_recipient(register char *ptr,
          else
          {
             type_offset = 1;
-            is_receive_job = NO;
+            id.is_receive_job = NO;
 #ifdef _WITH_DE_MAIL_SUPPORT
             confirmation_sign = 0;
 #endif
