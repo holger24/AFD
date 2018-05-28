@@ -1,6 +1,6 @@
 /*
  *  mon_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -888,9 +888,9 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
          int pos;
 
          (void)memset(connect_data[i].afd_display_str, ' ', MAX_AFDNAME_LENGTH);
-         pos = sprintf(connect_data[i].afd_display_str, "%s%d",
+         pos = sprintf(connect_data[i].afd_display_str, "%s%c",
                        connect_data[i].afd_alias,
-                       connect_data[i].afd_toggle + 1);
+                       connect_data[i].afd_toggle + 1 + '/');
          connect_data[i].afd_display_str[pos] = ' ';
          connect_data[i].afd_display_str[MAX_AFDNAME_LENGTH] = '\0';
       }

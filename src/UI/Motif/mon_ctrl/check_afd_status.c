@@ -1,7 +1,7 @@
 /*
  *  check_afd_status.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -196,9 +196,9 @@ check_afd_status(Widget w)
 
                (void)memset(new_connect_data[i].afd_display_str, ' ',
                             MAX_AFDNAME_LENGTH);
-               pos = sprintf(new_connect_data[i].afd_display_str, "%s%d",
+               pos = sprintf(new_connect_data[i].afd_display_str, "%s%c",
                              new_connect_data[i].afd_alias,
-                             new_connect_data[i].afd_toggle + 1);
+                             new_connect_data[i].afd_toggle + 1 + '/');
                new_connect_data[i].afd_display_str[pos] = ' ';
                new_connect_data[i].afd_display_str[MAX_AFDNAME_LENGTH] = '\0';
             }
@@ -472,9 +472,9 @@ check_afd_status(Widget w)
 
             (void)memset(connect_data[i].afd_display_str, ' ',
                          MAX_AFDNAME_LENGTH);
-            pos = sprintf(connect_data[i].afd_display_str, "%s%d",
+            pos = sprintf(connect_data[i].afd_display_str, "%s%c",
                           connect_data[i].afd_alias,
-                          connect_data[i].afd_toggle + 1);
+                          connect_data[i].afd_toggle + 1 + '/');
             connect_data[i].afd_display_str[pos] = ' ';
             connect_data[i].afd_display_str[MAX_AFDNAME_LENGTH] = '\0';
             draw_identifier = YES;
