@@ -1,6 +1,6 @@
 /*
  *  init_afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1809,6 +1809,13 @@ check_dirs(char *work_dir)
       exit(INCORRECT);
    }
    (void)strcpy(ptr, RECIPIENT_GROUP_NAME);
+   if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
+   {
+      (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);
+      (void)unlink(afd_active_file);
+      exit(INCORRECT);
+   }
+   (void)strcpy(ptr, FILE_GROUP_NAME);
    if (check_dir(new_dir, R_OK | W_OK | X_OK) < 0)
    {
       (void)fprintf(stderr, "Failed to check directory %s\n", new_dir);

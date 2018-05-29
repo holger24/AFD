@@ -1,7 +1,7 @@
 /*
  *  handle_file_group_name.c - Part of AFD, an automatic file distribution
  *                             program.
- *  Copyright (c) 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   21.03.2015 H.Kiehl Created
+ **   29.05.2018 H.Kiehl Implement storing of file group type.
  **
  */
 DESCR__E_M3
@@ -94,31 +95,7 @@ get_file_group(char             *group_name,
       if (file_group_type == YES)
       {
          ptr = file_group_buffer;
-      }
-      else
-      {
-         char group_id[MAX_GROUPNAME_LENGTH + 2 + 1];
 
-         length = snprintf(group_id, MAX_GROUPNAME_LENGTH + 2 + 1,
-                           "[%s]", group_name);
-         if ((ptr = lposi(file_group_buffer, group_id, length)) == NULL)
-         {
-            system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "Failed to locate group [%s] in group file %s",
-                       group_name, group_file);
-            free(file_group_buffer);
-
-            return;
-         }
-      }
-
-      ptr--;
-      while ((*ptr != '\n') && (*ptr != '\0'))
-      {
-         ptr++;
-      }
-      if (*ptr == '\n')
-      {
          length = 0;
          do
          {
@@ -178,12 +155,97 @@ get_file_group(char             *group_name,
             {
                break;
             }
-         } while ((*ptr != '[') && (*ptr != '\0'));
+         } while (*ptr != '\0');
       }
       else
       {
-         system_log(WARN_SIGN, __FILE__, __LINE__,
-                    "No group elements found for group %s.", group_name);
+         char group_id[MAX_GROUPNAME_LENGTH + 2 + 1];
+
+         length = snprintf(group_id, MAX_GROUPNAME_LENGTH + 2 + 1,
+                           "[%s]", group_name);
+         if ((ptr = lposi(file_group_buffer, group_id, length)) == NULL)
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "Failed to locate group [%s] in group file %s",
+                       group_name, group_file);
+            free(file_group_buffer);
+
+            return;
+         }
+
+         ptr--;
+         while ((*ptr != '\n') && (*ptr != '\0'))
+         {
+            ptr++;
+         }
+         if (*ptr == '\n')
+         {
+            length = 0;
+            do
+            {
+               ptr++;
+               if (*ptr == '\\')
+               {
+                  ptr++;
+               }
+               else if (*ptr == '#')
+                    {
+                       while ((*ptr != '\n') && (*ptr != '\0'))
+                       {
+                          ptr++;
+                       }
+                       if (length > 0)
+                       {
+                          dir->file[dir->fgc].files[*total_length + length] = '\0';
+                          *total_length += length + 1;
+                          dir->file[dir->fgc].fc++;
+                          length = 0;
+                       }
+                    }
+               else if ((*ptr == ' ') || (*ptr == '\t'))
+                    {
+                       /* Ignore spaces! */;
+                    }
+                    else
+                    {
+                       if ((*ptr == '\n') || (*ptr == '\0'))
+                       {
+                          dir->file[dir->fgc].files[*total_length + length] = '\0';
+                          *total_length += length + 1;
+                          dir->file[dir->fgc].fc++;
+                          length = 0;
+                       }
+                       else
+                       {
+                          dir->file[dir->fgc].files[*total_length + length] = *ptr;
+                          length++;
+                          if ((*total_length + length + 1) >= dir->file[dir->fgc].fbl)
+                          {
+                             dir->file[dir->fgc].fbl += FILE_MASK_STEP_SIZE;
+                             if ((dir->file[dir->fgc].files = realloc(dir->file[dir->fgc].files,
+                                                                      dir->file[dir->fgc].fbl)) == NULL)
+                             {
+                                system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                           "Could not realloc() memory : %s",
+                                           strerror(errno));
+                                exit(INCORRECT);
+                             }
+                          }
+                       }
+                    }
+
+               if ((*ptr == '\n') &&
+                   ((*(ptr + 1) == '\n') || (*(ptr + 1) == '\0')))
+               {
+                  break;
+               }
+            } while ((*ptr != '[') && (*ptr != '\0'));
+         }
+         else
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "No group elements found for group %s.", group_name);
+         }
       }
 
       free(file_group_buffer);
