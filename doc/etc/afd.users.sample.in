@@ -49,6 +49,7 @@
 #   show_dlog [host1 .. hostn]        : View debug log.
 #   show_rlog [host1 .. hostn]        : View receive log.
 #   show_ilog [host1 .. hostn]        : View input log.
+#   show_plog [host1 .. hostn]        : View production log.
 #   show_olog [host1 .. hostn]        : View output log.
 #   show_elog [host1 .. hostn]        : View delete log.
 #   list_limit <number>               : Limit the number of files shown in
