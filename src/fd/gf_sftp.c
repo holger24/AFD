@@ -1,6 +1,6 @@
 /*
  *  gf_sftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -910,6 +910,8 @@ main(int argc, char *argv[])
                      if ((bytes_done != rl[i].size) &&
                          (status != (blocksize - buffer_offset)))
                      {
+                        int tmp_status;
+
                         do
                         {
                            if ((status = sftp_read(buffer,
@@ -959,6 +961,7 @@ main(int argc, char *argv[])
                                  exit(WRITE_LOCAL_ERROR);
                               }
                               bytes_done += status;
+                              tmp_status = status;
 
                               /* See if we can save a read, ie. no need to */
                               /* catch an EOF.                             */
@@ -968,12 +971,16 @@ main(int argc, char *argv[])
                                  status = 0;
                               }
                            }
+                           else
+                           {
+                              tmp_status = 0;
+                           }
 
                            if (gsf_check_fsa((struct job *)&db) != NEITHER)
                            {
                               fsa->job_status[(int)db.job_no].file_size_in_use_done = bytes_done;
-                              fsa->job_status[(int)db.job_no].file_size_done += status;
-                              fsa->job_status[(int)db.job_no].bytes_send += status;
+                              fsa->job_status[(int)db.job_no].file_size_done += tmp_status;
+                              fsa->job_status[(int)db.job_no].bytes_send += tmp_status;
                               if (fsa->protocol_options & TIMEOUT_TRANSFER)
                               {
                                  end_transfer_time_file = time(NULL);
