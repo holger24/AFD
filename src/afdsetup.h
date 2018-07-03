@@ -424,14 +424,14 @@
  * output:
  *
  * MAX_DEFAULT_CONNECTIONS      - default when no value is set in
- *                                AFD_CONFIG file (default 50).
+ *                                AFD_CONFIG file (default 200).
  * MAX_CONFIGURABLE_CONNECTIONS - the maximum configurable value in
- *                                AFD_CONFIG file (default 1024). If
+ *                                AFD_CONFIG file (default 4096). If
  *                                a higher value is specified it will
  *                                default to MAX_DEFAULT_CONNECTIONS.
  *-----------------------------------------------------------------------*/
-#define MAX_DEFAULT_CONNECTIONS      50
-#define MAX_CONFIGURABLE_CONNECTIONS 1024
+#define MAX_DEFAULT_CONNECTIONS      200
+#define MAX_CONFIGURABLE_CONNECTIONS 4096
 
 /*-----------------------------------------------------------------------*
  * If the number of messages queued is very large and most messages
