@@ -51,6 +51,7 @@
 #define ADDITIONAL_INFO_LENGTH           50
 #define MAX_INFO_STRING_LENGTH           65
 #define MAX_WNINDOW_TITLE_LENGTH         80
+#define MULTI_SELECT_THRESHOLD           6
 
 /* Definitions for the printer interface. */
 #define SELECTION_TOGGLE                 1

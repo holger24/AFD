@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1007,13 +1007,15 @@ void
 popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
 {
    int              change_host_config = NO,
+                    doit = NO,
                     ehc = YES,
                     offset = 0,
                     hosts_found,
                     i,
                     j,
                     k,
-                    m;
+                    m,
+                    question_already_asked = NO;
    XT_PTR_TYPE      sel_typ = (XT_PTR_TYPE)client_data;
    char             host_config_file[MAX_PATH_LENGTH],
                     host_err_no[1025],
@@ -2305,9 +2307,23 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                      }
                      else
                      {
-                        if (xrec(QUESTION_DIALOG,
-                                 "Are you sure that you want to disable %s?\nAll jobs for this host will be lost.",
-                                 fsa[i].host_dsp_name) == YES)
+                        if ((no_selected + no_selected_static) > MULTI_SELECT_THRESHOLD)
+                        {
+                           if (question_already_asked == NO)
+                           {
+                              doit = xrec(QUESTION_DIALOG,
+                                          "Are you sure that you want to enable/disable %d hosts?\nAll sending jobs for disabled hosts will be lost.",
+                                          no_selected + no_selected_static);
+                              question_already_asked = YES;
+                           }
+                        }
+                        else
+                        {
+                           doit = xrec(QUESTION_DIALOG,
+                                       "Are you sure that you want to disable %s?\nAll sending jobs for this host will be lost.",
+                                       fsa[i].host_dsp_name);
+                        }
+                        if (doit == YES)
                         {
                            int    fd;
 #ifdef WITHOUT_FIFO_RW_SUPPORT
