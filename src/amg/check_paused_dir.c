@@ -1,6 +1,6 @@
 /*
  *  check_paused_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2008 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -51,6 +51,10 @@ DESCR__S_M3
  **   05.02.2004 H.Kiehl Also check for dummy remote paused directories.
  **   09.04.2005 H.Kiehl Added function remove_paused_dir() to
  **                      reduce files_queued and bytes_in_queue in FRA.
+ **   31.07.2018 H.Kiehl Added a timeout for deleting files in
+ **                      remove_paused_dir(). If the directory is full
+ **                      it can take a long time for the function before
+ **                      it returns.
  **
  */
 DESCR__E_M3
@@ -61,8 +65,11 @@ DESCR__E_M3
 #include <sys/stat.h>              /* stat(), S_ISREG()                  */
 #include <dirent.h>                /* opendir(), readdir(), closedir()   */
 #include <unistd.h>
+#include <time.h>                  /* time()                             */
 #include <errno.h>
 #include "amgdefs.h"
+
+#define REMOVE_PAUSED_DIR_TIMEOUT 30
 
 /* External global variables. */
 #ifdef WITH_ERROR_QUEUE
@@ -208,8 +215,10 @@ static int
 remove_paused_dir(char *dirname, int fra_pos)
 {
    int           addchar = NO,
-                 files_deleted = 0;
+                 files_deleted = 0,
+                 timed_out = NO;
    off_t         file_size_deleted = 0;
+   time_t        start_time;
    char          *ptr;
    struct dirent *dirp;
    DIR           *dp;
@@ -229,6 +238,8 @@ remove_paused_dir(char *dirname, int fra_pos)
       addchar = YES;
    }
 
+   start_time = time(NULL);
+
    while ((dirp = readdir(dp)) != NULL)
    {
       if ((dirp->d_name[0] == '.') && ((dirp->d_name[1] == '\0') ||
@@ -239,8 +250,11 @@ remove_paused_dir(char *dirname, int fra_pos)
       (void)strcpy(ptr, dirp->d_name);
       if (stat(dirname, &stat_buf) == -1)
       {
-         system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                    "Failed to stat() `%s' : %s", dirname, strerror(errno));
+         if (errno != ENOENT)
+         {
+            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       "Failed to stat() `%s' : %s", dirname, strerror(errno));
+         }
       }
       else
       {
@@ -255,6 +269,12 @@ remove_paused_dir(char *dirname, int fra_pos)
             files_deleted++;
             file_size_deleted += stat_buf.st_size;
          }
+      }
+
+      if ((time(NULL) - start_time) > REMOVE_PAUSED_DIR_TIMEOUT)
+      {
+         timed_out = YES;
+         break;
       }
    }
    if (addchar == YES)
@@ -271,11 +291,19 @@ remove_paused_dir(char *dirname, int fra_pos)
                  "Failed to closedir() <%s> : %s", dirname, strerror(errno));
       return(INCORRECT);
    }
-   if (rmdir(dirname) == -1)
+   if (timed_out == NO)
    {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to rmdir() <%s> : %s", dirname, strerror(errno));
-      return(INCORRECT);
+      if (rmdir(dirname) == -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to rmdir() <%s> : %s", dirname, strerror(errno));
+      }
+   }
+   else
+   {
+      system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                 "Unable to delete all files in %s due to timeout %d (REMOVE_PAUSED_DIR_TIMEOUT) seconds.",
+                 dirname, REMOVE_PAUSED_DIR_TIMEOUT);
    }
    if (files_deleted > 0)
    {
