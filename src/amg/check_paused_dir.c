@@ -55,6 +55,8 @@ DESCR__S_M3
  **                      remove_paused_dir(). If the directory is full
  **                      it can take a long time for the function before
  **                      it returns.
+ **   03.08.2018 H.Kiehl Lets not always call time() for each file deleted.
+ **                      Most the time deleting files is very fast.
  **
  */
 DESCR__E_M3
@@ -215,6 +217,7 @@ static int
 remove_paused_dir(char *dirname, int fra_pos)
 {
    int           addchar = NO,
+                 counter = 0,
                  files_deleted = 0,
                  timed_out = NO;
    off_t         file_size_deleted = 0;
@@ -271,10 +274,18 @@ remove_paused_dir(char *dirname, int fra_pos)
          }
       }
 
-      if ((time(NULL) - start_time) > REMOVE_PAUSED_DIR_TIMEOUT)
+      if (counter > 20)
       {
-         timed_out = YES;
-         break;
+         counter = 0;
+         if ((time(NULL) - start_time) > REMOVE_PAUSED_DIR_TIMEOUT)
+         {
+            timed_out = YES;
+            break;
+         }
+      }
+      else
+      {
+         counter++;
       }
    }
    if (addchar == YES)
@@ -297,6 +308,28 @@ remove_paused_dir(char *dirname, int fra_pos)
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "Failed to rmdir() <%s> : %s", dirname, strerror(errno));
+      }
+      else
+      {
+#ifdef LOCK_DEBUG
+         lock_region_w(fra_fd,
+                       (char *)&fra[fra_pos].files_queued - (char *)fra,
+                       __FILE__, __LINE__);
+#else
+         lock_region_w(fra_fd,
+                       (char *)&fra[fra_pos].files_queued - (char *)fra);
+#endif
+         fra[fra_pos].files_queued = 0;
+         fra[fra_pos].bytes_in_queue = 0;
+#ifdef LOCK_DEBUG
+         unlock_region(fra_fd,
+                       (char *)&fra[fra_pos].files_queued - (char *)fra,
+                       __FILE__, __LINE__);
+#else
+         unlock_region(fra_fd,
+                       (char *)&fra[fra_pos].files_queued - (char *)fra);
+#endif
+         files_deleted = 0;
       }
    }
    else
