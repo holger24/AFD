@@ -1,6 +1,6 @@
 /*
  *  check_option.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1614,6 +1614,8 @@ check_option(char *option, FILE *cmd_fp)
              (*(option + HIDE_ALL_GROUP_MEMBERS_ID_LENGTH) == '\0')) ||
             ((CHECK_STRNCMP(option, MATCH_REMOTE_SIZE_ID, MATCH_REMOTE_SIZE_ID_LENGTH) == 0) &&
              (*(option + MATCH_REMOTE_SIZE_ID_LENGTH) == '\0')) ||
+            ((CHECK_STRNCMP(option, SILENT_NOT_LOCKED_FILE_ID, SILENT_NOT_LOCKED_FILE_ID_LENGTH) == 0) &&
+             (*(option + SILENT_NOT_LOCKED_FILE_ID_LENGTH) == '\0')) ||
             ((CHECK_STRNCMP(option, ENCODE_ANSI_ID, ENCODE_ANSI_ID_LENGTH) == 0) &&
              (*(option + ENCODE_ANSI_ID_LENGTH) == '\0')) ||
             ((CHECK_STRNCMP(option, ACTIVE_FTP_MODE, ACTIVE_FTP_MODE_LENGTH) == 0) &&

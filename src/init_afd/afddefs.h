@@ -1135,7 +1135,9 @@ typedef unsigned long       u_long_64;
 #define HIDE_ALL_GROUP_MEMBERS_ID        "hide all group members"
 #define HIDE_ALL_GROUP_MEMBERS_ID_LENGTH (sizeof(HIDE_ALL_GROUP_MEMBERS_ID) - 1)
 #define MATCH_REMOTE_SIZE_ID             "match size"
-#define MATCH_REMOTE_SIZE_ID_LENGTH      (sizeof(MATCH_REMOTE_SIZE_ID) -1)
+#define MATCH_REMOTE_SIZE_ID_LENGTH      (sizeof(MATCH_REMOTE_SIZE_ID) - 1)
+#define SILENT_NOT_LOCKED_FILE_ID        "silent not locked"
+#define SILENT_NOT_LOCKED_FILE_ID_LENGTH (sizeof(SILENT_NOT_LOCKED_FILE_ID) - 1)
 
 /* Default definitions. */
 #define AFD_CONFIG_FILE                  "/AFD_CONFIG"

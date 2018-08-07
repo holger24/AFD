@@ -708,6 +708,17 @@ main(int argc, char *argv[])
                {
                   if (stat_buf.st_size > *p_file_size_buffer)
                   {
+                     char *sign;
+
+                     if (db.special_flag & SILENT_NOT_LOCKED_FILE)
+                     {
+                        sign = DEBUG_SIGN;
+                     }
+                     else
+                     {
+                        sign = WARN_SIGN;
+                     }
+
                      loops = (stat_buf.st_size - *p_file_size_buffer) / blocksize;
                      rest = (stat_buf.st_size - *p_file_size_buffer) % blocksize;
                      *p_file_size_buffer = stat_buf.st_size;
@@ -716,7 +727,7 @@ main(int argc, char *argv[])
                       * Give a warning in the receive log, so some action
                       * can be taken against the originator.
                       */
-                     receive_log(WARN_SIGN, __FILE__, __LINE__, 0L, db.id.job,
+                     receive_log(sign, __FILE__, __LINE__, 0L, db.id.job,
                                  "File `%s' for host %s was DEFINITELY send without any locking. #%x",
                                  p_file_name_buffer, fsa->host_dsp_name, db.id.job);
                   }

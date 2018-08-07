@@ -1,6 +1,6 @@
 /*
  *  sf_sftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1264,11 +1264,22 @@ main(int argc, char *argv[])
              */
             if ((no_of_bytes + append_offset) != *p_file_size_buffer)
             {
+               char *sign;
+
+               if (db.special_flag & SILENT_NOT_LOCKED_FILE)
+               {
+                  sign = DEBUG_SIGN;
+               }
+               else
+               {
+                  sign = WARN_SIGN;
+               }
+
                /*
                 * Give a warning in the receive log, so some action
                 * can be taken against the originator.
                 */
-               receive_log(WARN_SIGN, __FILE__, __LINE__, 0L, db.id.job,
+               receive_log(sign, __FILE__, __LINE__, 0L, db.id.job,
 #if SIZEOF_OFF_T == 4
                            "File `%s' for host %s was DEFINITELY send without any locking. Size changed from %ld to %ld. #%x",
 #else

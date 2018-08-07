@@ -1,6 +1,6 @@
 /*
  *  fddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -290,6 +290,7 @@
 #ifdef _WITH_TRANS_EXEC
 # define EXECUTE_IN_TARGET_DIR         134217728
 #endif
+#define SILENT_NOT_LOCKED_FILE         268435456
 
 #ifdef _WITH_DE_MAIL_SUPPORT
 /* Definition for de_mail_options in structure job. */
@@ -622,6 +623,7 @@ struct job
                                          /*|   |       members.         |*/
                                          /*|27 | Target dir can change. |*/
                                          /*|28 | Execute in target dir. |*/
+                                         /*|29 | Silent not locked file.|*/
                                          /*+---+------------------------+*/
 #ifdef _WITH_DE_MAIL_SUPPORT
           char          *message_id;

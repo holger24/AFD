@@ -177,6 +177,7 @@ static char *store_mail_address(char *, char **, char *, unsigned int);
 #ifdef _WITH_DE_MAIL_SUPPORT
 # define CONF_OF_RETRIEVE_FLAG      256
 #endif
+#define SILENT_DEF_NO_LOCK_FLAG     512
 
 
 #define MAX_HUNK                    4096
@@ -880,6 +881,24 @@ eval_message(char *message_name, struct job *p_db)
                  {
                     used2 |= CHECK_REMOTE_SIZE_FLAG;
                     p_db->special_flag |= MATCH_REMOTE_SIZE;
+                    while ((*ptr != '\n') && (*ptr != '\0'))
+                    {
+                       ptr++;
+                    }
+                    while (*ptr == '\n')
+                    {
+                       ptr++;
+                    }
+                 }
+            else if (((used2 & SILENT_DEF_NO_LOCK_FLAG) == 0) &&
+                     (CHECK_STRNCMP(ptr, SILENT_NOT_LOCKED_FILE_ID,
+                                    SILENT_NOT_LOCKED_FILE_ID_LENGTH) == 0))
+                 {
+                    used2 |= SILENT_DEF_NO_LOCK_FLAG;
+                    if (p_db->special_flag & SILENT_NOT_LOCKED_FILE)
+                    {
+                       p_db->special_flag ^= SILENT_NOT_LOCKED_FILE;
+                    }
                     while ((*ptr != '\n') && (*ptr != '\0'))
                     {
                        ptr++;
