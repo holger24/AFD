@@ -841,15 +841,15 @@ main(int argc, char *argv[])
             {
                if (stat_buf.st_size > *p_file_size_buffer)
                {
-                  char *sign;
+                  char sign[LOG_SIGN_LENGTH];
 
                   if (db.special_flag & SILENT_NOT_LOCKED_FILE)
                   {
-                     sign = DEBUG_SIGN;
+                     (void)memcpy(sign, DEBUG_SIGN, LOG_SIGN_LENGTH);
                   }
                   else
                   {
-                     sign = WARN_SIGN;
+                     (void)memcpy(sign, WARN_SIGN, LOG_SIGN_LENGTH);
                   }
                   loops = (stat_buf.st_size - *p_file_size_buffer) / blocksize;
                   rest = (stat_buf.st_size - *p_file_size_buffer) % blocksize;
@@ -1248,7 +1248,7 @@ try_again_unlink:
                 */
                if (fsa->host_status & AUTO_PAUSE_QUEUE_STAT)
                {
-                  char *sign;
+                  char sign[LOG_SIGN_LENGTH];
 
                   error_action(fsa->host_alias, "stop", HOST_ERROR_ACTION);
                   event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",
@@ -1257,11 +1257,11 @@ try_again_unlink:
                       (fsa->host_status & HOST_ERROR_OFFLINE) ||
                       (fsa->host_status & HOST_ERROR_OFFLINE_T))
                   {
-                     sign = OFFLINE_SIGN;
+                     (void)memcpy(sign, OFFLINE_SIGN, LOG_SIGN_LENGTH);
                   }
                   else
                   {
-                     sign = INFO_SIGN;
+                     (void)memcpy(sign, INFO_SIGN, LOG_SIGN_LENGTH);
                   }
                   trans_log(sign, __FILE__, __LINE__, NULL, NULL,
                             "Starting input queue that was stopped by init_afd.");

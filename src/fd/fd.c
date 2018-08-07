@@ -3979,7 +3979,7 @@ zombie_check(struct connection *p_con,
                          (fsa[p_con->fsa_pos].host_status & AUTO_PAUSE_QUEUE_STAT))
                      {
                         off_t lock_offset;
-                        char  *sign;
+                        char  sign[LOG_SIGN_LENGTH];
 
                         lock_offset = AFD_WORD_OFFSET +
                                       (p_con->fsa_pos * sizeof(struct filetransfer_status));
@@ -4048,11 +4048,11 @@ zombie_check(struct connection *p_con,
                             (fsa[p_con->fsa_pos].host_status & HOST_ERROR_OFFLINE) ||
                             (fsa[p_con->fsa_pos].host_status & HOST_ERROR_OFFLINE_T))
                         {
-                           sign = OFFLINE_SIGN;
+                           (void)memcpy(sign, OFFLINE_SIGN, LOG_SIGN_LENGTH);
                         }
                         else
                         {
-                           sign = INFO_SIGN;
+                           (void)memcpy(sign, INFO_SIGN, LOG_SIGN_LENGTH);
                         }
                         system_log(sign, __FILE__, __LINE__,
                                    "Starting input queue for %s that was stopped by init_afd.",

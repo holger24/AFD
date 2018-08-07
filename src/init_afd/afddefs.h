@@ -737,6 +737,8 @@ typedef unsigned long       u_long_64;
 #define TRACE_SIGN                 "<T>"
 #define DUMMY_SIGN                 "<#>"   /* To always show some general*/
                                            /* information, eg month.     */
+#define LOG_SIGN_LENGTH            3
+
 #define SEPARATOR                  "-->"
 
 #define INFO_NO                    1

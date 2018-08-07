@@ -1,6 +1,6 @@
 /*
  *  gf_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1697,7 +1697,7 @@ main(int argc, char *argv[])
                             */
                            if (fsa->host_status & AUTO_PAUSE_QUEUE_STAT)
                            {
-                              char *sign;
+                              char sign[LOG_SIGN_LENGTH];
 
                               error_action(fsa->host_alias, "stop", HOST_ERROR_ACTION);
                               event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",
@@ -1706,11 +1706,11 @@ main(int argc, char *argv[])
                                   (fsa->host_status & HOST_ERROR_OFFLINE) ||
                                   (fsa->host_status & HOST_ERROR_OFFLINE_T))
                               {
-                                 sign = OFFLINE_SIGN;
+                                 (void)memcpy(sign, OFFLINE_SIGN, LOG_SIGN_LENGTH);
                               }
                               else
                               {
-                                 sign = INFO_SIGN;
+                                 (void)memcpy(sign, INFO_SIGN, LOG_SIGN_LENGTH);
                               }
                               trans_log(sign, __FILE__, __LINE__, NULL, NULL,
                                         "Starting input queue that was stopped by init_afd.");
@@ -1985,7 +1985,7 @@ main(int argc, char *argv[])
                      */
                     if (fsa->host_status & AUTO_PAUSE_QUEUE_STAT)
                     {
-                       char *sign;
+                       char sign[LOG_SIGN_LENGTH];
 
                        error_action(fsa->host_alias, "stop", HOST_ERROR_ACTION);
                        event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",
@@ -1994,11 +1994,11 @@ main(int argc, char *argv[])
                            (fsa->host_status & HOST_ERROR_OFFLINE) ||
                            (fsa->host_status & HOST_ERROR_OFFLINE_T))
                        {
-                          sign = OFFLINE_SIGN;
+                          (void)memcpy(sign, OFFLINE_SIGN, LOG_SIGN_LENGTH);
                        }
                        else
                        {
-                          sign = INFO_SIGN;
+                          (void)memcpy(sign, INFO_SIGN, LOG_SIGN_LENGTH);
                        }
                        trans_log(sign, __FILE__, __LINE__, NULL, NULL,
                                  "Starting input queue that was stopped by init_afd.");
