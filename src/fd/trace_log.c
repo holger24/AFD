@@ -1,6 +1,6 @@
 /*
  *  trace_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -60,6 +60,7 @@ DESCR__S_M3
  **   07.04.2006 H.Kiehl Added ASCII command flag C_TRACE.
  **   03.05.2013 H.Kiehl Added ASCII list read LIST_R_TRACE.
  **   10.06.2015 H.Kiehl Added CRLF_R_TRACE.
+ **   11.08.2018 H.Kiehl Show file and line in C_TRACE and others.
  **
  */
 DESCR__E_M3
@@ -421,7 +422,23 @@ trace_log(char *file,
                           }
                           bytes_done++;
                        }
-                       buf[wpos] = '\n';
+                       if ((file == NULL) || (line == 0) ||
+                           (wpos >= (MAX_LINE_LENGTH + MAX_LINE_LENGTH)))
+                       {
+                          buf[wpos] = '\n';
+                       }
+                       else
+                       {
+                          wpos += snprintf(&buf[wpos],
+                                             (MAX_LINE_LENGTH + MAX_LINE_LENGTH) - wpos,
+                                             " (%s %d)\n", file, line);
+                          if (wpos > (MAX_LINE_LENGTH + MAX_LINE_LENGTH))
+                          {
+                             wpos = MAX_LINE_LENGTH + MAX_LINE_LENGTH;
+                             buf[wpos] = '\n';
+                             wpos += 1;
+                          }
+                       }
                        if (write(trans_db_log_fd, buf, (wpos + 1)) != (wpos + 1))
                        {
                           system_log(ERROR_SIGN, __FILE__, __LINE__,
