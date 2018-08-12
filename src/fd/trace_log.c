@@ -229,9 +229,9 @@ trace_log(char *file,
                break;
 
             case C_TRACE :
-               buf[length] = '<';
+               buf[length] = '#';
                buf[length + 1] = 'C';
-               buf[length + 2] = '>';
+               buf[length + 2] = '#';
                break;
 
             default :

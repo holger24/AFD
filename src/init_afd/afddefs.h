@@ -4181,6 +4181,7 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
                     maintainer_log(char *, char *, int, char *, ...),
 #endif
                     *map_file(char *, int *, off_t *, struct stat *, int, ...),
+                    mode_t2str(mode_t, char *),
                     *mmap_resize(int, void *, size_t),
                     my_fillncpy(char *, const char *, const char, const size_t),
                     my_usleep(unsigned long),

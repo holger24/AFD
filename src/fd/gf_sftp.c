@@ -626,8 +626,7 @@ main(int argc, char *argv[])
 #endif
                   if ((status = sftp_open_file(SFTP_READ_FILE, rl[i].file_name,
                                                offset, NULL, blocksize,
-                                               &buffer_offset,
-                                               fsa->debug)) != SUCCESS)
+                                               &buffer_offset)) != SUCCESS)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                "Failed to open remote file `%s' in %s (%d).",

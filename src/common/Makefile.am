@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2017 Holger Kiehl
+## Copyright (C) 2001 - 2018 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -202,6 +202,7 @@ libafd_a_SOURCES     = attach_afd_status.c\
                        $(MAINTAINER_LOG)\
                        make_fifo.c\
                        map_file.c\
+		       mode_t2str.c\
                        $(AFD_MAPPER)\
                        mmap_resize.c\
                        $(AFD_MON_PROGS)\

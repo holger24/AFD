@@ -100,6 +100,7 @@ DESCR__E_M3
 # include <grp.h>             /* getgrnam()                              */
 # include <pwd.h>             /* getpwnam()                              */
 #endif
+#include <time.h>             /* gmtime(), strftime()                    */
 #include <sys/types.h>        /* fd_set                                  */
 #include <sys/time.h>         /* struct timeval                          */
 #include <sys/wait.h>         /* waitpid()                               */
@@ -220,7 +221,12 @@ static void                     get_msg_str(char *),
                                 set_xfer_uint64(char *, u_long_64),
                                 sig_handler(int);
 #ifdef WITH_TRACE
-static void                     show_sftp_cmd(unsigned int, int);
+static void                     show_sftp_cmd(unsigned int, int),
+                                show_trace_handle(char *, unsigned int,
+                                                  char *, char *,
+                                                  unsigned int, off_t,
+                                                  int, char *, int, int);
+static char                     mode2type(unsigned);
 #endif
 
 
@@ -574,6 +580,18 @@ sftp_pwd(void)
    set_xfer_uint(&msg[4 + 1], scd.request_id);
    set_xfer_str(&msg[4 + 1 + 4], ".", 1);
    set_xfer_uint(msg, (1 + 4 + 4 + 1)); /* Write message length at start. */
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      int length;
+
+      length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                        "sftp_pwd(): request-id=%d SSH_FXP_REALPATH path=.",
+                        scd.request_id);
+      trace_log(__FILE__, __LINE__, C_TRACE, msg_str, length, NULL);
+      msg_str[0] = '\0';
+   }
+#endif
    if ((status = write_msg(msg, 14, __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
@@ -672,6 +690,18 @@ retry_cd:
    status = strlen(directory);
    set_xfer_str(&msg[4 + 1 + 4], directory, status);
    set_xfer_uint(msg, (1 + 4 + 4 + status)); /* Write message length at start. */
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      int length;
+
+      length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                        "sftp_cd(): request-id=%d SSH_FXP_REALPATH path=%s",
+                        scd.request_id, directory);
+      trace_log(__FILE__, __LINE__, C_TRACE, msg_str, length, NULL);
+      msg_str[0] = '\0';
+   }
+#endif
    if ((status = write_msg(msg, (4 + 1 + 4 + 4 + status), __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
@@ -701,8 +731,10 @@ retry_cd:
                   /*
                    * Some older versions of openssh have the bug
                    * that they return the directory name even if that
-                   * directory does not exist. So we must do a sftp_stat()
-                   * to make sure the directory does exist.
+                   * directory does not exist. So we must do a sftp_lstat()
+                   * to make sure the directory does exist. Note, we must
+                   * use sftp_lstat() because using sftp_stat() does not
+                   * work when the directory is a symbolic link.
                    */
                   if (scd.version < 4)
                   {
@@ -826,6 +858,9 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
 {
    int pos,
        status;
+#ifdef WITH_TRACE
+   int length;
+#endif
 
    if ((filename == NULL) && (scd.file_handle == NULL))
    {
@@ -848,6 +883,35 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
       msg[4] = SSH_FXP_FSTAT;
       status = (int)scd.file_handle_length;
       set_xfer_str(&msg[4 + 1 + 4], scd.file_handle, status);
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         if (scd.file_handle_length == 4)
+         {
+            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                              "sftp_stat(): request-id=%d SSH_FXP_FSTAT file_handle_length=%u file_handle=%u",
+                              scd.request_id, (int)scd.file_handle_length,
+                              get_xfer_uint(scd.file_handle));
+         }
+         else if (scd.file_handle_length == 8)
+              {
+                 length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+# ifdef HAVE_LONG_LONG
+                                   "sftp_stat(): request-id=%d SSH_FXP_FSTAT file_handle_length=%u file_handle=%llu",
+# else
+                                   "sftp_stat(): request-id=%d SSH_FXP_FSTAT file_handle_length=%u file_handle=%lu",
+# endif
+                                   scd.request_id, (int)scd.file_handle_length,
+                                   get_xfer_uint64(scd.file_handle));
+              }
+              else
+              {
+                 length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                   "sftp_stat(): request-id=%d SSH_FXP_FSTAT file_handle_length=%u file_handle=<?>",
+                                   scd.request_id, (int)scd.file_handle_length);
+              }
+      }
+#endif
    }
    else
    {
@@ -856,6 +920,14 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
       {
          status = strlen(filename);
          set_xfer_str(&msg[4 + 1 + 4], filename, status);
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                              "sftp_stat(): request-id=%d SSH_FXP_STAT file_name=%s name_length=%d",
+                              scd.request_id, filename, status);
+         }
+#endif
       }
       else
       {
@@ -864,6 +936,14 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
          status = snprintf(fullname, MAX_PATH_LENGTH,
                            "%s/%s", scd.cwd, filename);
          set_xfer_str(&msg[4 + 1 + 4], fullname, status);
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                              "sftp_stat(): request-id=%d SSH_FXP_STAT full_file_name=%s name_length=%d",
+                              scd.request_id, fullname, status);
+         }
+#endif
       }
    }
    pos = 4 + 1 + 4 + 4 + status;
@@ -871,14 +951,37 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
    {
       set_xfer_uint(&msg[pos],
                     (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_MODIFYTIME));
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                            " attributes=%d (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_MODIFYTIME)",
+                            SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_MODIFYTIME);
+      }
+#endif
    }
    else
    {
       set_xfer_uint(&msg[pos],
                     (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_ACMODTIME));
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                            " attributes=%d (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_ACMODTIME)",
+                            SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_ACMODTIME);
+      }
+#endif
    }
    pos += 4;
    set_xfer_uint(msg, (pos - 4)); /* Write message length at start. */
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      trace_log(__FILE__, __LINE__, C_TRACE, msg_str, length, NULL);
+      msg_str[0] = '\0';
+   }
+#endif
    if ((status = write_msg(msg, pos, __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
@@ -929,6 +1032,9 @@ sftp_set_file_time(char *filename, time_t mtime, time_t atime)
 {
    int pos,
        status;
+#ifdef WITH_TRACE
+   int length;
+#endif
 
    if ((filename == NULL) && (scd.file_handle == NULL))
    {
@@ -951,6 +1057,35 @@ sftp_set_file_time(char *filename, time_t mtime, time_t atime)
       msg[4] = SSH_FXP_FSETSTAT;
       status = (int)scd.file_handle_length;
       set_xfer_str(&msg[4 + 1 + 4], scd.file_handle, status);
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         if (scd.file_handle_length == 4)
+         {
+            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                              "sftp_set_file_time(): request-id=%d SSH_FXP_FSETSTAT file_handle_length=%u file_handle=%u",
+                              scd.request_id, (int)scd.file_handle_length,
+                              get_xfer_uint(scd.file_handle));
+         }
+         else if (scd.file_handle_length == 8)
+              {
+                 length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+# ifdef HAVE_LONG_LONG
+                                   "sftp_set_file_time(): request-id=%d SSH_FXP_FSETSTAT file_handle_length=%u file_handle=%llu",
+# else
+                                   "sftp_set_file_time(): request-id=%d SSH_FXP_FSETSTAT file_handle_length=%u file_handle=%lu",
+# endif
+                                   scd.request_id, (int)scd.file_handle_length,
+                                   get_xfer_uint64(scd.file_handle));
+              }
+              else
+              {
+                 length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                   "sftp_set_file_time(): request-id=%d SSH_FXP_FSETSTAT file_handle_length=%u file_handle=<?>",
+                                   scd.request_id, (int)scd.file_handle_length);
+              }
+      }
+#endif
    }
    else
    {
@@ -959,6 +1094,14 @@ sftp_set_file_time(char *filename, time_t mtime, time_t atime)
       {
          status = strlen(filename);
          set_xfer_str(&msg[4 + 1 + 4], filename, status);
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                              "sftp_set_file_time(): request-id=%d SSH_FXP_SETSTAT file_name=%s name_length=%d",
+                              scd.request_id, filename, status);
+         }
+#endif
       }
       else
       {
@@ -967,6 +1110,14 @@ sftp_set_file_time(char *filename, time_t mtime, time_t atime)
          status = snprintf(fullname, MAX_PATH_LENGTH,
                            "%s/%s", scd.cwd, filename);
          set_xfer_str(&msg[4 + 1 + 4], fullname, status);
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                              "sftp_set_file_time(): request-id=%d SSH_FXP_SETSTAT full file_name=%s name_length=%d",
+                              scd.request_id, fullname, status);
+         }
+#endif
       }
    }
    pos = 4 + 1 + 4 + 4 + status;
@@ -978,6 +1129,15 @@ sftp_set_file_time(char *filename, time_t mtime, time_t atime)
       pos += 4;
       set_xfer_uint(&msg[pos], (unsigned int)atime);
       pos += 4;
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                            " attributes=%d (SSH_FILEXFER_ATTR_ACMODTIME) mtime=%u atime=%u",
+                            SSH_FILEXFER_ATTR_ACMODTIME,
+                            (unsigned int)mtime, (unsigned int)atime);
+      }
+#endif
    }
    else
    {
@@ -988,8 +1148,28 @@ sftp_set_file_time(char *filename, time_t mtime, time_t atime)
       pos += 8;
       set_xfer_uint64(&msg[pos], (u_long_64)(atime));
       pos += 8;
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+# ifdef HAVE_LONG_LONG
+                            " attributes=%d (SSH_FILEXFER_ATTR_MODIFYTIME | SSH_FILEXFER_ATTR_ACCESSTIME) mtime=%llu atime=%llu",
+# else
+                            " attributes=%d (SSH_FILEXFER_ATTR_MODIFYTIME | SSH_FILEXFER_ATTR_ACCESSTIME) mtime=%lu atime=%lu",
+# endif
+                            SSH_FILEXFER_ATTR_MODIFYTIME | SSH_FILEXFER_ATTR_ACCESSTIME,
+                            (u_long_64)mtime, (u_long_64)atime);
+      }
+#endif
    }
    set_xfer_uint(msg, (pos - 4)); /* Write message length at start. */
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      trace_log(__FILE__, __LINE__, C_TRACE, msg_str, length, NULL);
+      msg_str[0] = '\0';
+   }
+#endif
    if ((status = write_msg(msg, pos, __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
@@ -1030,11 +1210,13 @@ sftp_open_file(int    openmode,
                off_t  offset,
                mode_t *mode,
                int    blocksize,
-               int    *buffer_offset,
-               char   debug)
+               int    *buffer_offset)
 {
    int pos,
        status;
+#ifdef WITH_TRACE
+   int length;
+#endif
 
    if (scd.file_handle != NULL)
    {
@@ -1057,6 +1239,14 @@ sftp_open_file(int    openmode,
    {
       status = strlen(filename);
       set_xfer_str(&msg[4 + 1 + 4], filename, status);
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                           "sftp_open_file(): request-id=%d SSH_FXP_OPEN file_name=%s name_length=%d",
+                           scd.request_id, filename, status);
+      }
+#endif
    }
    else
    {
@@ -1064,6 +1254,14 @@ sftp_open_file(int    openmode,
 
       status = snprintf(fullname, MAX_PATH_LENGTH, "%s/%s", scd.cwd, filename);
       set_xfer_str(&msg[4 + 1 + 4], fullname, status);
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                           "sftp_open_file(): request-id=%d SSH_FXP_OPEN full_file_name=%s name_length=%d",
+                           scd.request_id, fullname, status);
+      }
+#endif
    }
    if (openmode == SFTP_WRITE_FILE)
    {
@@ -1074,6 +1272,17 @@ sftp_open_file(int    openmode,
          set_xfer_uint(&msg[4 + 1 + 4 + 4 + status + 4],
                        (offset == 0) ? SSH_FXF_CREATE_TRUNCATE : SSH_FXF_OPEN_EXISTING);
          pos = 4 + 1 + 4 + 4 + status + 4 + 4;
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                               " ace_flags=%d (%s) flags=%d (%s)",
+                               (offset == 0) ? ACE4_WRITE_DATA : ACE4_APPEND_DATA,
+                               (offset == 0) ? "ACE4_WRITE_DATA" : "ACE4_APPEND_DATA",
+                               (offset == 0) ? SSH_FXF_CREATE_TRUNCATE : SSH_FXF_OPEN_EXISTING,
+                               (offset == 0) ? "SSH_FXF_CREATE_TRUNCATE" : "SSH_FXF_OPEN_EXISTING");
+         }
+#endif
       }
       else
       {
@@ -1081,28 +1290,84 @@ sftp_open_file(int    openmode,
                        (SSH_FXF_WRITE | SSH_FXF_CREAT |
                        ((offset == 0) ? SSH_FXF_TRUNC : 0)));
          pos = 4 + 1 + 4 + 4 + status + 4;
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            if (offset == 0)
+            {
+               length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                                  " flags=%d (SSH_FXF_WRITE | SSH_FXF_CREAT | SSH_FXF_TRUNC)",
+                                  SSH_FXF_WRITE | SSH_FXF_CREAT | SSH_FXF_TRUNC);
+            }
+            else
+            {
+               length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                                  " flags=%d (SSH_FXF_WRITE | SSH_FXF_CREAT)",
+                                  SSH_FXF_WRITE | SSH_FXF_CREAT);
+            }
+         }
+#endif
       }
       if (mode == NULL)
       {
          set_xfer_uint(&msg[pos], 0);
          pos += 4;
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                               " mode_type=0");
+         }
+#endif
          if (scd.version > 3)
          {
             msg[pos] = SSH_FILEXFER_TYPE_REGULAR;
             pos++;
+#ifdef WITH_TRACE
+            if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+            {
+               length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                                  " type=%d (SSH_FILEXFER_TYPE_REGULAR)",
+                                  SSH_FILEXFER_TYPE_REGULAR);
+            }
+#endif
          }
       }
       else
       {
          set_xfer_uint(&msg[pos], SSH_FILEXFER_ATTR_PERMISSIONS);
          pos += 4;
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                               " mode_type=%d (SSH_FILEXFER_ATTR_PERMISSIONS)",
+                               SSH_FILEXFER_ATTR_PERMISSIONS);
+         }
+#endif
          if (scd.version > 3)
          {
             msg[pos] = SSH_FILEXFER_TYPE_REGULAR;
             pos++;
+#ifdef WITH_TRACE
+            if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+            {
+               length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                                  " type=%d (SSH_FILEXFER_TYPE_REGULAR)",
+                                  SSH_FILEXFER_TYPE_REGULAR);
+            }
+#endif
          }
          set_xfer_uint(&msg[pos], (unsigned int)(*mode));
          pos += 4;
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                               " mode=%u (%x)",
+                               (unsigned int)(*mode), (unsigned int)(*mode));
+         }
+#endif
       }
    }
    else if (openmode == SFTP_READ_FILE)
@@ -1113,11 +1378,26 @@ sftp_open_file(int    openmode,
               set_xfer_uint(&msg[4 + 1 + 4 + 4 + status + 4],
                             SSH_FXF_OPEN_EXISTING);
               pos = 4 + 1 + 4 + 4 + status + 4 + 4;
+#ifdef WITH_TRACE
+              if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+              {
+                 length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                                    " ace_flags=%d (ACE4_READ_DATA) flags=%d (SSH_FXF_OPEN_EXISTING)",
+                                    ACE4_READ_DATA, SSH_FXF_OPEN_EXISTING);
+              }
+#endif
            }
            else
            {
               set_xfer_uint(&msg[4 + 1 + 4 + 4 + status], SSH_FXF_READ);
               pos = 4 + 1 + 4 + 4 + status + 4;
+#ifdef WITH_TRACE
+              if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+              {
+                 length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                                    " flags=%d (SSH_FXF_READ)", SSH_FXF_READ);
+              }
+#endif
            }
            set_xfer_uint(&msg[pos], 0);
            pos += 4;
@@ -1125,6 +1405,14 @@ sftp_open_file(int    openmode,
            {
               msg[pos] = SSH_FILEXFER_TYPE_REGULAR;
               pos++;
+#ifdef WITH_TRACE
+              if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+              {
+                 length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                                    " type=%d (SSH_FILEXFER_TYPE_REGULAR)",
+                                    SSH_FILEXFER_TYPE_REGULAR);
+              }
+#endif
            }
         }
         else
@@ -1135,7 +1423,13 @@ sftp_open_file(int    openmode,
            return(INCORRECT);
         }
    set_xfer_uint(msg, (unsigned int)(pos - 4)); /* Write message length at start. */
-   scd.debug = debug;
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      trace_log(__FILE__, __LINE__, C_TRACE, msg_str, length, NULL);
+      msg_str[0] = '\0';
+   }
+#endif
    if ((status = write_msg(msg, pos, __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
@@ -1211,9 +1505,12 @@ sftp_open_file(int    openmode,
 
 /*########################## sftp_open_dir() ############################*/
 int
-sftp_open_dir(char *dirname, char debug)
+sftp_open_dir(char *dirname)
 {
    int status;
+#ifdef WITH_TRACE
+   int length;
+#endif
 
    if (scd.dir_handle != NULL)
    {
@@ -1234,11 +1531,27 @@ sftp_open_dir(char *dirname, char debug)
       {
          status = 1;
          set_xfer_str(&msg[4 + 1 + 4], ".", status);
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                              "sftp_open_dir(): request-id=%d SSH_FXP_OPENDIR path=. path_length=1",
+                              scd.request_id);
+         }
+#endif
       }
       else
       {
          status = strlen(dirname);
          set_xfer_str(&msg[4 + 1 + 4], dirname, status);
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                              "sftp_open_dir(): request-id=%d SSH_FXP_OPENDIR path=%s path_length=%d",
+                              scd.request_id, dirname, status);
+         }
+#endif
       }
    }
    else
@@ -1247,6 +1560,14 @@ sftp_open_dir(char *dirname, char debug)
       {
          status = strlen(scd.cwd);
          set_xfer_str(&msg[4 + 1 + 4], scd.cwd, status);
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                              "sftp_open_dir(): request-id=%d SSH_FXP_OPENDIR path=%s path_length=%d",
+                              scd.request_id, scd.cwd, status);
+         }
+#endif
       }
       else
       {
@@ -1255,10 +1576,24 @@ sftp_open_dir(char *dirname, char debug)
          status = snprintf(fullname, MAX_PATH_LENGTH,
                            "%s/%s", scd.cwd, dirname);
          set_xfer_str(&msg[4 + 1 + 4], fullname, status);
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                              "sftp_open_dir(): request-id=%d SSH_FXP_OPENDIR path=%s path_length=%d",
+                              scd.request_id, fullname, status);
+         }
+#endif
       }
    }
    set_xfer_uint(msg, (1 + 4 + 4 + status)); /* Write message length at start. */
-   scd.debug = debug;
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      trace_log(__FILE__, __LINE__, C_TRACE, msg_str, length, NULL);
+      msg_str[0] = '\0';
+   }
+#endif
    if ((status = write_msg(msg, (4 + 1 + 4 + 4 + status), __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
@@ -1329,6 +1664,14 @@ sftp_close_file(void)
       set_xfer_uint(&msg[4 + 1], scd.request_id);
       set_xfer_str(&msg[4 + 1 + 4], scd.file_handle, scd.file_handle_length);
       set_xfer_uint(msg, (1 + 4 + 4 + scd.file_handle_length)); /* Write message length at start. */
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         show_trace_handle("sftp_close_file()", scd.request_id, "SSH_FXP_CLOSE",
+                           scd.file_handle, scd.file_handle_length, 0, 0,
+                           __FILE__, __LINE__, NO);
+      }
+#endif
       if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.file_handle_length), __LINE__)) == SUCCESS)
       {
          if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
@@ -1375,7 +1718,7 @@ sftp_close_file(void)
 int
 sftp_close_dir(void)
 {
-   int status = SUCCESS;
+   int status;
 
    /*
     * byte   SSH_FXP_CLOSE
@@ -1387,6 +1730,14 @@ sftp_close_dir(void)
    set_xfer_uint(&msg[4 + 1], scd.request_id);
    set_xfer_str(&msg[4 + 1 + 4], scd.dir_handle, scd.dir_handle_length);
    set_xfer_uint(msg, (1 + 4 + 4 + scd.dir_handle_length)); /* Write message length at start. */
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      show_trace_handle("sftp_close_dir()", scd.request_id, "SSH_FXP_CLOSE",
+                        scd.dir_handle, scd.dir_handle_length, 0, 0,
+                        __FILE__, __LINE__, NO);
+   }
+#endif
    if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.dir_handle_length), __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
@@ -1446,6 +1797,9 @@ sftp_mkdir(char *directory, mode_t dir_mode)
 {
    int attr_len,
        status;
+#ifdef WITH_TRACE
+   int length;
+#endif
 
    /*
     * byte   SSH_FXP_MKDIR
@@ -1460,6 +1814,14 @@ sftp_mkdir(char *directory, mode_t dir_mode)
    {
       status = strlen(directory);
       set_xfer_str(&msg[4 + 1 + 4], directory, status);
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                           "sftp_mkdir(): request-id=%d SSH_FXP_MKDIR path=%s path_length=%d",
+                           scd.request_id, directory, status);
+      }
+#endif
    }
    else
    {
@@ -1467,6 +1829,14 @@ sftp_mkdir(char *directory, mode_t dir_mode)
 
       status = snprintf(fullname, MAX_PATH_LENGTH, "%s/%s", scd.cwd, directory);
       set_xfer_str(&msg[4 + 1 + 4], fullname, status);
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                           "sftp_mkdir(): request-id=%d SSH_FXP_MKDIR full path=%s path_length=%d",
+                           scd.request_id, fullname, status);
+      }
+#endif
    }
    if (dir_mode == 0)
    {
@@ -1478,8 +1848,24 @@ sftp_mkdir(char *directory, mode_t dir_mode)
       set_xfer_uint(&msg[4 + 1 + 4 + 4 + status], SSH_FILEXFER_ATTR_PERMISSIONS);
       set_xfer_uint(&msg[4 + 1 + 4 + 4 + status + 4], (unsigned int)(dir_mode));
       attr_len = 4;
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                            " mode_type=%d (SSH_FILEXFER_ATTR_PERMISSIONS), mode=%d (%x)", 
+                            SSH_FILEXFER_ATTR_PERMISSIONS,
+                            (unsigned int)(dir_mode), (unsigned int)(dir_mode));
+      }
+#endif
    }
    set_xfer_uint(msg, (1 + 4 + 4 + status + 4 + attr_len)); /* Write message length at start. */
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      trace_log(__FILE__, __LINE__, C_TRACE, msg_str, length, NULL);
+      msg_str[0] = '\0';
+   }
+#endif
    if ((status = write_msg(msg, (4 + 1 + 4 + 4 + status + 4 + attr_len), __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
@@ -1542,6 +1928,9 @@ sftp_move(char   *from,
        retries = 0,
        status,
        to_length;
+#ifdef WITH_TRACE
+   int length;
+#endif
 
    /*
     * byte   SSH_FXP_RENAME
@@ -1559,11 +1948,27 @@ retry_move:
       set_xfer_str(&msg[4 + 1 + 4], OPENSSH_POSIX_RENAME_EXT,
                    OPENSSH_POSIX_RENAME_EXT_LENGTH);
       pos = 4 + 1 + 4 + 4 + OPENSSH_POSIX_RENAME_EXT_LENGTH;
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                           "sftp_move(): request-id=%d SSH_FXP_EXTENDED %s",
+                           scd.request_id, OPENSSH_POSIX_RENAME_EXT);
+      }
+#endif
    }
    else
    {
       msg[4] = SSH_FXP_RENAME;
       pos = 4 + 1 + 4;
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                           "sftp_move(): request-id=%d SSH_FXP_RENAME",
+                           scd.request_id);
+      }
+#endif
    }
    if (scd.cwd == NULL)
    {
@@ -1571,6 +1976,13 @@ retry_move:
       set_xfer_str(&msg[pos], from, from_length);
       to_length = strlen(to);
       set_xfer_str(&msg[pos + 4 + from_length], to, to_length);
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                            " from=%s to=%s", from, to);
+      }
+#endif
    }
    else
    {
@@ -1578,8 +1990,22 @@ retry_move:
 
       from_length = snprintf(fullname, MAX_PATH_LENGTH, "%s/%s", scd.cwd, from);
       set_xfer_str(&msg[pos], fullname, from_length);
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                            " from=%s", fullname);
+      }
+#endif
       to_length = snprintf(fullname, MAX_PATH_LENGTH, "%s/%s", scd.cwd, to);
       set_xfer_str(&msg[pos + 4 + from_length], fullname, to_length);
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                            " to=%s", fullname);
+      }
+#endif
    }
    pos += 4 + from_length + 4 + to_length;
    if (scd.version > 5)
@@ -1589,6 +2015,13 @@ retry_move:
       pos += 4;
    }
    set_xfer_uint(msg, (pos - 4)); /* Write message length at start. */
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      trace_log(__FILE__, __LINE__, C_TRACE, msg_str, length, NULL);
+      msg_str[0] = '\0';
+   }
+#endif
    if ((status = write_msg(msg, pos, __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
@@ -1720,6 +2153,15 @@ sftp_write(char *block, int size)
    set_xfer_uint64(&msg[4 + 1 + 4 + 4 + scd.file_handle_length], scd.file_offset);
    set_xfer_str(&msg[4 + 1 + 4 + 4 + scd.file_handle_length + 8], block, size);
    set_xfer_uint(msg, (1 + 4 + 4 + scd.file_handle_length + 8 + 4 + size)); /* Write message length at start. */
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      show_trace_handle("sftp_write()", scd.request_id,
+                        "SSH_FXP_WRITE", scd.file_handle,
+                        scd.file_handle_length, scd.file_offset, size,
+                        __FILE__, __LINE__, YES);
+   }
+#endif
    if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.file_handle_length + 8 + 4 + size), __LINE__)) == SUCCESS)
    {
       if ((scd.pending_write_counter != -1) &&
@@ -1789,6 +2231,15 @@ sftp_read(char *block, int size)
    set_xfer_uint64(&msg[4 + 1 + 4 + 4 + scd.file_handle_length], scd.file_offset);
    set_xfer_uint(&msg[4 + 1 + 4 + 4 + scd.file_handle_length + 8], (unsigned int)size);
    set_xfer_uint(msg, (1 + 4 + 4 + scd.file_handle_length + 8 + 4)); /* Write message length at start. */
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      show_trace_handle("sftp_read()", scd.request_id,
+                        "SSH_FXP_READ", scd.file_handle,
+                        scd.file_handle_length, scd.file_offset, size,
+                        __FILE__, __LINE__, YES);
+   }
+#endif
    if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.file_handle_length + 8 + 4), __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
@@ -1957,6 +2408,15 @@ sftp_multi_read_dispatch(void)
          set_xfer_uint(&msg[4 + 1 + 4 + 4 + scd.file_handle_length + 8],
                        scd.blocksize);
          set_xfer_uint(msg, (1 + 4 + 4 + scd.file_handle_length + 8 + 4)); /* Write message length at start. */
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            show_trace_handle("sftp_multi_read_dispatch()", scd.request_id,
+                              "SSH_FXP_READ", scd.file_handle,
+                              scd.file_handle_length, scd.file_offset,
+                              scd.blocksize, __FILE__, __LINE__, YES);
+         }
+#endif
          if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.file_handle_length +
                                        8 + 4), __LINE__)) == SUCCESS)
          {
@@ -1991,6 +2451,15 @@ sftp_multi_read_dispatch(void)
             set_xfer_uint(&msg[4 + 1 + 4 + 4 + scd.file_handle_length + 8],
                           scd.blocksize);
             set_xfer_uint(msg, (1 + 4 + 4 + scd.file_handle_length + 8 + 4)); /* Write message length at start. */
+#ifdef WITH_TRACE
+            if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+            {
+               show_trace_handle("sftp_multi_read_dispatch()", scd.request_id,
+                                 "SSH_FXP_READ", scd.file_handle,
+                                 scd.file_handle_length, scd.file_offset,
+                                 scd.blocksize, __FILE__, __LINE__, YES);
+            }
+#endif
             if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.file_handle_length +
                                           8 + 4), __LINE__)) == SUCCESS)
             {
@@ -2274,6 +2743,14 @@ sftp_readdir(char *name, struct stat *p_stat_buf)
       set_xfer_uint(&msg[4 + 1], scd.request_id);
       set_xfer_str(&msg[4 + 1 + 4], scd.dir_handle, scd.dir_handle_length);
       set_xfer_uint(msg, (1 + 4 + 4 + scd.dir_handle_length)); /* Write message length at start. */
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         show_trace_handle("sftp_readdir()", scd.request_id, "SSH_FXP_READDIR",
+                           scd.dir_handle, scd.dir_handle_length, 0, 0,
+                           __FILE__, __LINE__, NO);
+      }
+#endif
       if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.dir_handle_length), __LINE__)) == SUCCESS)
       {
          if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
@@ -2355,6 +2832,14 @@ sftp_flush(void)
       int i,
           status;
 
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
+                   "sftp_flush(): flush %d pending writes",
+                   scd.pending_write_counter);
+      }
+#endif
       for (i = 0; i < scd.pending_write_counter; i++)
       {
          if ((status = get_reply(scd.pending_write_id[i], __LINE__)) == SUCCESS)
@@ -2401,6 +2886,9 @@ int
 sftp_dele(char *filename)
 {
    int status;
+#ifdef WITH_TRACE
+   int length;
+#endif
 
    /*
     * byte   SSH_FXP_REMOVE
@@ -2414,6 +2902,14 @@ sftp_dele(char *filename)
    {
       status = strlen(filename);
       set_xfer_str(&msg[4 + 1 + 4], filename, status);
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                           "sftp_dele(): request-id=%d SSH_FXP_REMOVE file_name=%s name_length=%d",
+                           scd.request_id, filename, status);
+      }
+#endif
    }
    else
    {
@@ -2421,8 +2917,23 @@ sftp_dele(char *filename)
 
       status = snprintf(fullname, MAX_PATH_LENGTH, "%s/%s", scd.cwd, filename);
       set_xfer_str(&msg[4 + 1 + 4], fullname, status);
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                           "sftp_dele(): request-id=%d SSH_FXP_REMOVE full file_name=%s name_length=%d",
+                           scd.request_id, fullname, status);
+      }
+#endif
    }
    set_xfer_uint(msg, (1 + 4 + 4 + status)); /* Write message length at start. */
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      trace_log(__FILE__, __LINE__, C_TRACE, msg_str, length, NULL);
+      msg_str[0] = '\0';
+   }
+#endif
    if ((status = write_msg(msg, (4 + 1 + 4 + 4 + status), __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
@@ -2462,6 +2973,9 @@ int
 sftp_chmod(char *filename, mode_t mode)
 {
    int status;
+#ifdef WITH_TRACE
+   int length;
+#endif
 
    if ((filename == NULL) && (scd.file_handle == NULL))
    {
@@ -2484,6 +2998,35 @@ sftp_chmod(char *filename, mode_t mode)
       msg[4] = SSH_FXP_FSETSTAT;
       status = (int)scd.file_handle_length;
       set_xfer_str(&msg[4 + 1 + 4], scd.file_handle, status);
+#ifdef WITH_TRACE
+      if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+      {
+         if (scd.file_handle_length == 4)
+         {
+            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                              "sftp_chmod(): request-id=%d SSH_FXP_FSETSTAT file_handle_length=%u file_handle=%u",
+                              scd.request_id, (int)scd.file_handle_length,
+                              get_xfer_uint(scd.file_handle));
+         }
+         else if (scd.file_handle_length == 8)
+              {
+                 length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+# ifdef HAVE_LONG_LONG
+                                   "sftp_chmod(): request-id=%d SSH_FXP_FSETSTAT file_handle_length=%u file_handle=%llu",
+# else
+                                   "sftp_chmod(): request-id=%d SSH_FXP_FSETSTAT file_handle_length=%u file_handle=%lu",
+# endif
+                                   scd.request_id, (int)scd.file_handle_length,
+                                   get_xfer_uint64(scd.file_handle));
+              }
+              else
+              {
+                 length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                   "sftp_chmod(): request-id=%d SSH_FXP_FSETSTAT file_handle_length=%u file_handle=<?>",
+                                   scd.request_id, (int)scd.file_handle_length);
+              }
+      }
+#endif
    }
    else
    {
@@ -2492,6 +3035,14 @@ sftp_chmod(char *filename, mode_t mode)
       {
          status = strlen(filename);
          set_xfer_str(&msg[4 + 1 + 4], filename, status);
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                              "sftp_chmod(): request-id=%d SSH_FXP_SETSTAT file_name=%s name_length=%d",
+                              scd.request_id, filename, status);
+         }
+#endif
       }
       else
       {
@@ -2500,11 +3051,28 @@ sftp_chmod(char *filename, mode_t mode)
          status = snprintf(fullname, MAX_PATH_LENGTH,
                            "%s/%s", scd.cwd, filename);
          set_xfer_str(&msg[4 + 1 + 4], fullname, status);
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                              "sftp_chmod(): request-id=%d SSH_FXP_SETSTAT full file_name=%s name_length=%d",
+                              scd.request_id, fullname, status);
+         }
+#endif
       }
    }
    set_xfer_uint(&msg[4 + 1 + 4 + 4 + status], SSH_FILEXFER_ATTR_PERMISSIONS);
    set_xfer_uint(&msg[4 + 1 + 4 + 4 + status + 4], (unsigned int)mode);
    set_xfer_uint(msg, (1 + 4 + 4 + status + 4 + 4)); /* Write message length at start. */
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+                         " mode=%o", (mode & ~S_IFMT));
+      trace_log(__FILE__, __LINE__, C_TRACE, msg_str, length, NULL);
+      msg_str[0] = '\0';
+   }
+#endif
    if ((status = write_msg(msg, 4 + 1 + 4 + 4 + status + 4 + 4, __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
@@ -2542,6 +3110,14 @@ sftp_chmod(char *filename, mode_t mode)
 int
 sftp_noop(void)
 {
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
+                "sftp_noop(): Calling sftp_stat(\".\", NULL)");
+   }
+#endif
+
    /* I do not know of a better way. SFTP does not support */
    /* a NOOP command, so lets just do a stat() on the      */
    /* current working directory.                           */
@@ -2553,6 +3129,14 @@ sftp_noop(void)
 void
 sftp_quit(void)
 {
+#ifdef WITH_TRACE
+   if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+   {
+      trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
+                "sftp_quit(): Quitting ...");
+   }
+#endif
+
    /* Free all allocated memory. */
    if (scd.cwd != NULL)
    {
@@ -3404,6 +3988,54 @@ show_sftp_cmd(unsigned int ui_var, int type)
          length = snprintf(buffer, 1024,
                            "SSH_FXP_HANDLE length=%u id=%u",
                            ui_var, get_xfer_uint(&msg[offset + 1]));
+         if ((offset == 0) && (ui_var > 5))
+         {
+            unsigned int handle_length;
+            char         *handle = NULL;
+
+            if ((handle_length = get_xfer_str(&msg[5], &handle)) != 0)
+            {
+               if (handle_length == 4)
+               {
+                  length += snprintf(buffer + length, 1024 - length,
+                                     " handle=%u", get_xfer_uint(handle));
+               }
+               else if (handle_length == 8)
+                    {
+                       length += snprintf(buffer + length, 1024 - length,
+# ifdef HAVE_LONG_LONG
+                                          " handle=%llu",
+# else
+                                          " handle=%lu",
+# endif
+                                          get_xfer_uint64(handle));
+                    }
+                    else
+                    {
+                       int i;
+
+                       length += snprintf(buffer + length, 1024 - length,
+                                         " handle=<");
+                       for (i = 0; i < (int)handle_length; i++)
+                       {
+                          if (((unsigned char)handle[i] < 32) ||
+                              ((unsigned char)handle[i] > 126))
+                          {
+                             *(buffer + length + i) = '.';
+                          }
+                          else
+                          {
+                             *(buffer + length + i) = handle[i];
+                          }
+                       }
+                       length = length + i;
+                       *(buffer + length) = '>';
+                       length++;
+                       *(buffer + length) = '\0';
+                    }
+            }
+            free(handle);
+         }
          break;
       case SSH_FXP_DATA :
          length = snprintf(buffer, 1024,
@@ -3414,11 +4046,184 @@ show_sftp_cmd(unsigned int ui_var, int type)
          length = snprintf(buffer, 1024,
                            "SSH_FXP_NAME length=%u id=%u",
                            ui_var, get_xfer_uint(&msg[offset + 1]));
+         if ((offset == 0) && (ui_var > 5))
+         {
+            unsigned int ui_var;
+
+            ui_var = get_xfer_uint(&msg[5]);
+            if (ui_var == 1)
+            {
+               char *name = NULL;
+
+               (void)get_xfer_str(&msg[9], &name);
+               length += snprintf(buffer + length, 1024 - length,
+                                  " name=%s", name);
+               free(name);
+            }
+            else if (ui_var > 1)
+                 {
+                    int       i;
+                    time_t    mtime;
+                    char      dstr[26],
+                              mstr[11];
+                    struct tm *p_tm;
+
+                    length += snprintf(buffer + length, 1024 - length,
+                                       " name list with %u elements", ui_var);
+                    trace_log(NULL, 0, type, buffer, length, NULL);
+                    length = 0;
+
+                    get_xfer_names(ui_var, &msg[1 + 4 + 4]);
+                    for (i = 0; i < ui_var; i++)
+                    {
+                       if (scd.nl_pos < scd.nl_length)
+                       {
+                          mtime = scd.nl[scd.nl_pos].stat_buf.st_mtime;
+                          p_tm = gmtime(&mtime);
+                          (void)strftime(dstr, 26, "%a %h %d %H:%M:%S %Y", p_tm);
+                          mode_t2str(scd.nl[scd.nl_pos].stat_buf.st_mode, mstr),
+                          length = snprintf(buffer, 1024,
+# if SIZEOF_OFF_T == 4
+                                            "SSH_FXP_NAME[%d]: %s %s %*ld uid=%06u gid=%06u mode=%05o %s",
+# else
+                                            "SSH_FXP_NAME[%d]: %s %s %*lld uid=%06u gid=%06u mode=%05o %s",
+# endif
+                                            i, mstr, dstr, MAX_OFF_T_LENGTH,
+                                            (pri_off_t)scd.nl[scd.nl_pos].stat_buf.st_size,
+                                            (unsigned int)scd.nl[scd.nl_pos].stat_buf.st_uid,
+                                            (unsigned int)scd.nl[scd.nl_pos].stat_buf.st_gid,
+                                            (scd.nl[scd.nl_pos].stat_buf.st_mode & ~S_IFMT),
+                                            scd.nl[scd.nl_pos].name);
+                          trace_log(NULL, 0, type, buffer, length, NULL);
+                          scd.nl_pos++;
+                       }
+                    }
+                    for (i = 0; i < scd.nl_length; i++)
+                    {
+                       free(scd.nl[i].name);
+                    }
+                    free(scd.nl);
+                    scd.nl = NULL;
+                    length = 0;
+                 }
+                 else
+                 {
+                    length += snprintf(buffer + length, 1024 - length,
+                                       " name=");
+                 }
+         }
          break;
       case SSH_FXP_ATTRS :
          length = snprintf(buffer, 1024,
                            "SSH_FXP_ATTRS length=%u id=%u",
                            ui_var, get_xfer_uint(&msg[offset + 1]));
+         if ((offset == 0) && (ui_var > 5))
+         {
+            unsigned int stat_flag;
+            struct stat  stat_buf;
+
+            (void)store_attributes(&msg[5], &stat_flag, &stat_buf);
+            length += snprintf(buffer + length, 1024 - length,
+                               " st_mode=%c", mode2type(stat_buf.st_mode));
+            if (stat_flag & SSH_FILEXFER_ATTR_PERMISSIONS)
+            {
+                *(buffer + length) = (stat_buf.st_mode & 0400) ? 'r' : '-';
+                length++;
+                *(buffer + length) = (stat_buf.st_mode & 0200) ? 'w' : '-';
+                length++;
+                if (stat_buf.st_mode & 04000)
+                {
+                   *(buffer + length) = (stat_buf.st_mode & 0100) ? 's' : 'S';
+                }
+                else
+                {
+                   *(buffer + length) = (stat_buf.st_mode & 0100) ? 'x' : '-';
+                }
+                length++;
+                *(buffer + length) = (stat_buf.st_mode & 040) ? 'r' : '-';
+                length++;
+                *(buffer + length) = (stat_buf.st_mode & 020) ? 'w' : '-';
+                length++;
+                if (stat_buf.st_mode & 02000)
+                {
+                   *(buffer + length) = (stat_buf.st_mode & 010) ? 's' : 'S';
+                }
+                else
+                {
+                   *(buffer + length) = (stat_buf.st_mode & 010) ? 'x' : '-';
+                }
+                length++;
+                *(buffer + length) = (stat_buf.st_mode & 04) ? 'r' : '-';
+                length++;
+                *(buffer + length) = (stat_buf.st_mode & 02) ? 'w' : '-';
+                length++;
+                if (stat_buf.st_mode & 01000)
+                {
+                   *(buffer + length) = (stat_buf.st_mode & 01) ? 't' : 'T';
+                }
+                else
+                {
+                   *(buffer + length) = (stat_buf.st_mode & 01) ? 'x' : '-';
+                }
+                length++;
+                *(buffer + length) = '\0';
+            }
+            else
+            {
+                *(buffer + length) = '.';
+                length++;
+                *(buffer + length) = '.';
+                length++;
+                *(buffer + length) = '.';
+                length++;
+                *(buffer + length) = '.';
+                length++;
+                *(buffer + length) = '.';
+                length++;
+                *(buffer + length) = '.';
+                length++;
+                *(buffer + length) = '.';
+                length++;
+                *(buffer + length) = '.';
+                length++;
+                *(buffer + length) = '.';
+                length++;
+                *(buffer + length) = '\0';
+            }
+            if (stat_flag & SSH_FILEXFER_ATTR_SIZE)
+            {
+               length += snprintf(buffer + length, 1024 - length,
+# if SIZEOF_OFF_T == 4
+                                  " st_size=%ld",
+# else
+                                  " st_size=%lld",
+# endif
+                                  (pri_off_t)stat_buf.st_size);
+            }
+            if (stat_flag & SSH_FILEXFER_ATTR_UIDGID)
+            {
+               length += snprintf(buffer + length, 1024 - length,
+                                  " st_uid=%u st_gid=%u",
+                                  (unsigned int)stat_buf.st_uid,
+                                  (unsigned int)stat_buf.st_gid);
+            }
+# ifdef WITH_OWNER_GROUP_EVAL
+            if (stat_flag & SSH_FILEXFER_ATTR_OWNERGROUP)
+            {
+               length += snprintf(buffer + length, 1024 - length,
+                                  " st_uid=%u st_gid=%u",
+                                  (unsigned int)stat_buf.st_uid,
+                                  (unsigned int)stat_buf.st_gid);
+            }
+# endif
+            if (stat_flag & SSH_FILEXFER_ATTR_ACMODTIME)
+            {
+               length += snprintf(buffer + length, 1024 - length,
+                                  " st_atime=%u st_mtime=%u",
+                                  (unsigned int)stat_buf.st_atime,
+                                  (unsigned int)stat_buf.st_mtime);
+            }
+         }
          break;
       case SSH_FXP_EXTENDED :
          length = snprintf(buffer, 1024,
@@ -3438,8 +4243,145 @@ show_sftp_cmd(unsigned int ui_var, int type)
    {
       trace_log(NULL, 0, type, buffer, length, NULL);
    }
+
+   return;
 }
-#endif
+
+
+/*----------------------------- mode2type() -----------------------------*/
+static char
+mode2type(unsigned st_mode)
+{
+   switch(st_mode & S_IFMT)
+   {
+      case S_IFREG : return '-';
+      case S_IFDIR : return 'd';
+      case S_IFLNK : return 'l';
+# ifdef S_IFSOCK
+      case S_IFSOCK: return 's';
+# endif
+      case S_IFCHR : return 'c';
+      case S_IFBLK : return 'b';
+      case S_IFIFO : return 'p';
+      default      : return '?';
+   }
+}
+
+
+/*+++++++++++++++++++++++++ show_trace_handle() +++++++++++++++++++++++++*/
+static void
+show_trace_handle(char         *function,
+                  unsigned int request_id,
+                  char         *ssh_fxp_cmd,
+                  char         *handle,
+                  unsigned int handle_length,
+                  off_t        offset,
+                  int          block_size,
+                  char         *file,
+                  int          line,
+                  int          rw_mode)
+{
+   int length;
+
+   if (handle_length == 4)
+   {
+      if (rw_mode == YES)
+      {
+         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+# if SIZEOF_OFF_T == 4
+                           "%s: request-id=%d %s handle=%u offset=%ld block_size=%d",
+# else
+                           "%s: request-id=%d %s handle=%u offset=%lld block_size=%d",
+# endif
+                           function, request_id, ssh_fxp_cmd,
+                           get_xfer_uint(handle), (pri_off_t)offset,
+                           block_size);
+      }
+      else
+      {
+         length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                           "%s: request-id=%d %s handle=%u",
+                           function, request_id, ssh_fxp_cmd,
+                           get_xfer_uint(handle));
+      }
+   }
+   else if (handle_length == 8)
+        {
+           if (rw_mode == YES)
+           {
+              length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+# ifdef HAVE_LONG_LONG
+#  if SIZEOF_OFF_T == 4
+                                "%s: request-id=%d %s handle=%llu offset=%ld block_size=%d",
+#  else
+                                "%s: request-id=%d %s handle=%llu offset=%lld block_size=%d",
+#  endif
+# else
+#  if SIZEOF_OFF_T == 4
+                                "%s: request-id=%d %s handle=%lu offset=%ld block_size=%d",
+#  else
+                                "%s: request-id=%d %s handle=%lu offset=%lld block_size=%d",
+#  endif
+# endif
+                                function, request_id, ssh_fxp_cmd,
+                                get_xfer_uint64(handle), (pri_off_t)offset,
+                                block_size);
+           }
+           else
+           {
+              length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+# ifdef HAVE_LONG_LONG
+                                "%s: request-id=%d %s handle=%llu",
+# else
+                                "%s: request-id=%d %s handle=%lu",
+# endif
+                                function, request_id, ssh_fxp_cmd,
+                                get_xfer_uint64(handle));
+           }
+        }
+        else
+        {
+           int i;
+
+           length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                             "%s: request-id=%d %s handle=<",
+                             function, request_id, ssh_fxp_cmd);
+           for (i = 0; i < (int)handle_length; i++)
+           {
+              if (((unsigned char)handle[i] < 32) ||
+                  ((unsigned char)handle[i] > 126))
+              {
+                 msg_str[i] = '.';
+              }
+              else
+              {
+                 msg_str[i] = handle[i];
+              }
+           }
+           length = length + i;
+           if (rw_mode == YES)
+           {
+              length += snprintf(msg_str + length, MAX_RET_MSG_LENGTH - length,
+# if SIZEOF_OFF_T == 4
+                                 "> offset=%ld block_size=%d",
+# else
+                                 "> offset=%lld block_size=%d",
+# endif
+                                 (pri_off_t)offset, block_size);
+           }
+           else
+           {
+              msg_str[length] = '>';
+              length++;
+              msg_str[length] = '\0';
+           }
+        }
+   trace_log(file, line, C_TRACE, msg_str, length, NULL);
+   msg_str[0] = '\0';
+
+   return;
+}
+#endif /* WITH_TRACE */
 
 
 /*++++++++++++++++++++++++++ get_xfer_uint() ++++++++++++++++++++++++++++*/
@@ -3777,10 +4719,11 @@ set_xfer_str(char *msg, char *p_xfer_str, int length)
 static int
 store_attributes(char *msg, unsigned int *p_stat_flag, struct stat *p_stat_buf)
 {
-   int pos;
+   int          pos;
+   unsigned int stat_flag;
 
    (void)memset(p_stat_buf, 0, sizeof(struct stat));
-   *p_stat_flag = get_xfer_uint(msg);
+   stat_flag = *p_stat_flag = get_xfer_uint(msg);
    if (scd.version > 3)
    {
       switch (msg[4])
@@ -3823,26 +4766,26 @@ store_attributes(char *msg, unsigned int *p_stat_flag, struct stat *p_stat_buf)
    {
       pos = 4;
    }
-   if (*p_stat_flag & SSH_FILEXFER_ATTR_SIZE)
+   if (stat_flag & SSH_FILEXFER_ATTR_SIZE)
    {
       p_stat_buf->st_size = (off_t)get_xfer_uint64(&msg[pos]);
       pos += 8;
-      *p_stat_flag &= ~SSH_FILEXFER_ATTR_SIZE;
+      stat_flag &= ~SSH_FILEXFER_ATTR_SIZE;
    }
-   if (*p_stat_flag & SSH_FILEXFER_ATTR_UIDGID) /* Up to version 3. */
+   if (stat_flag & SSH_FILEXFER_ATTR_UIDGID) /* Up to version 3. */
    {
       p_stat_buf->st_uid = (uid_t)get_xfer_uint(&msg[pos]);
       pos += 4;
       p_stat_buf->st_gid = (gid_t)get_xfer_uint(&msg[pos]);
       pos += 4;
-      *p_stat_flag &= ~SSH_FILEXFER_ATTR_UIDGID;
+      stat_flag &= ~SSH_FILEXFER_ATTR_UIDGID;
    }
-   if (*p_stat_flag & SSH_FILEXFER_ATTR_ALLOCATION_SIZE)
+   if (stat_flag & SSH_FILEXFER_ATTR_ALLOCATION_SIZE)
    {
       pos += 8;
-      *p_stat_flag &= ~SSH_FILEXFER_ATTR_ALLOCATION_SIZE;
+      stat_flag &= ~SSH_FILEXFER_ATTR_ALLOCATION_SIZE;
    }
-   if (*p_stat_flag & SSH_FILEXFER_ATTR_OWNERGROUP)
+   if (stat_flag & SSH_FILEXFER_ATTR_OWNERGROUP)
    {
       unsigned int  length;
 #ifdef WITH_OWNER_GROUP_EVAL
@@ -3905,87 +4848,87 @@ store_attributes(char *msg, unsigned int *p_stat_flag, struct stat *p_stat_buf)
       }
       pos += (length + 4);
 #endif
-      *p_stat_flag &= ~SSH_FILEXFER_ATTR_OWNERGROUP;
+      stat_flag &= ~SSH_FILEXFER_ATTR_OWNERGROUP;
    }
-   if (*p_stat_flag & SSH_FILEXFER_ATTR_PERMISSIONS)
+   if (stat_flag & SSH_FILEXFER_ATTR_PERMISSIONS)
    {
       unsigned int ui_var;
 
       ui_var = get_xfer_uint(&msg[pos]);
       p_stat_buf->st_mode |= ui_var;
       pos += 4;
-      *p_stat_flag &= ~SSH_FILEXFER_ATTR_PERMISSIONS;
+      stat_flag &= ~SSH_FILEXFER_ATTR_PERMISSIONS;
    }
    if (scd.version < 4)
    {
-      if (*p_stat_flag & SSH_FILEXFER_ATTR_ACMODTIME)
+      if (stat_flag & SSH_FILEXFER_ATTR_ACMODTIME)
       {
          p_stat_buf->st_atime = (time_t)get_xfer_uint(&msg[pos]);
          pos += 4;
          p_stat_buf->st_mtime = (time_t)get_xfer_uint(&msg[pos]);
          pos += 4;
-         *p_stat_flag &= ~SSH_FILEXFER_ATTR_ACMODTIME;
+         stat_flag &= ~SSH_FILEXFER_ATTR_ACMODTIME;
       }
-      if (*p_stat_flag & SSH_FILEXFER_ATTR_EXTENDED)
+      if (stat_flag & SSH_FILEXFER_ATTR_EXTENDED)
       {
       }
    }
    else
    {
-      if (*p_stat_flag & SSH_FILEXFER_ATTR_ACCESSTIME)
+      if (stat_flag & SSH_FILEXFER_ATTR_ACCESSTIME)
       {
          p_stat_buf->st_atime = (time_t)get_xfer_uint64(&msg[pos]);
          pos += 8;
-         *p_stat_flag &= ~SSH_FILEXFER_ATTR_ACCESSTIME;
+         stat_flag &= ~SSH_FILEXFER_ATTR_ACCESSTIME;
       }
-      if (*p_stat_flag & SSH_FILEXFER_ATTR_SUBSECOND_TIMES)
+      if (stat_flag & SSH_FILEXFER_ATTR_SUBSECOND_TIMES)
       {
          pos += 4;
-         *p_stat_flag &= ~SSH_FILEXFER_ATTR_SUBSECOND_TIMES;
+         stat_flag &= ~SSH_FILEXFER_ATTR_SUBSECOND_TIMES;
       }
-      if (*p_stat_flag & SSH_FILEXFER_ATTR_CREATETIME)
+      if (stat_flag & SSH_FILEXFER_ATTR_CREATETIME)
       {
          pos += 8;
-         *p_stat_flag &= ~SSH_FILEXFER_ATTR_CREATETIME;
+         stat_flag &= ~SSH_FILEXFER_ATTR_CREATETIME;
       }
-      if (*p_stat_flag & SSH_FILEXFER_ATTR_SUBSECOND_TIMES)
+      if (stat_flag & SSH_FILEXFER_ATTR_SUBSECOND_TIMES)
       {
          pos += 4;
-         *p_stat_flag &= ~SSH_FILEXFER_ATTR_SUBSECOND_TIMES;
+         stat_flag &= ~SSH_FILEXFER_ATTR_SUBSECOND_TIMES;
       }
-      if (*p_stat_flag & SSH_FILEXFER_ATTR_MODIFYTIME)
+      if (stat_flag & SSH_FILEXFER_ATTR_MODIFYTIME)
       {
          p_stat_buf->st_mtime = (time_t)get_xfer_uint64(&msg[pos]);
          pos += 8;
-         *p_stat_flag &= ~SSH_FILEXFER_ATTR_MODIFYTIME;
+         stat_flag &= ~SSH_FILEXFER_ATTR_MODIFYTIME;
       }
-      if (*p_stat_flag & SSH_FILEXFER_ATTR_SUBSECOND_TIMES)
+      if (stat_flag & SSH_FILEXFER_ATTR_SUBSECOND_TIMES)
       {
          pos += 4;
-         *p_stat_flag &= ~SSH_FILEXFER_ATTR_SUBSECOND_TIMES;
+         stat_flag &= ~SSH_FILEXFER_ATTR_SUBSECOND_TIMES;
       }
-      if (*p_stat_flag & SSH_FILEXFER_ATTR_CTIME)
+      if (stat_flag & SSH_FILEXFER_ATTR_CTIME)
       {
          p_stat_buf->st_ctime = (time_t)get_xfer_uint64(&msg[pos]);
          pos += 8;
-         *p_stat_flag &= ~SSH_FILEXFER_ATTR_CTIME;
+         stat_flag &= ~SSH_FILEXFER_ATTR_CTIME;
       }
-      if (*p_stat_flag & SSH_FILEXFER_ATTR_SUBSECOND_TIMES)
+      if (stat_flag & SSH_FILEXFER_ATTR_SUBSECOND_TIMES)
       {
          pos += 4;
-         *p_stat_flag &= ~SSH_FILEXFER_ATTR_SUBSECOND_TIMES;
+         stat_flag &= ~SSH_FILEXFER_ATTR_SUBSECOND_TIMES;
       }
-      if (*p_stat_flag & SSH_FILEXFER_ATTR_BITS)
+      if (stat_flag & SSH_FILEXFER_ATTR_BITS)
       {
          pos += 4;
-         *p_stat_flag &= ~SSH_FILEXFER_ATTR_BITS;
+         stat_flag &= ~SSH_FILEXFER_ATTR_BITS;
       }
    }
-   if (*p_stat_flag != 0)
+   if (stat_flag != 0)
    {
       trans_log(DEBUG_SIGN, __FILE__, __LINE__, "store_attributes", NULL,
                 _("Attribute flag still contains unaccounted flags : %u"),
-                *p_stat_flag);
+                stat_flag);
    }
 
    return(pos);

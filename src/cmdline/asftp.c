@@ -1,6 +1,6 @@
 /*
  *  asftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -299,7 +299,7 @@ main(int argc, char *argv[])
             }
             if ((status = sftp_open_file(SFTP_READ_FILE, rl[i].file_name,
                                          offset, NULL, db.blocksize,
-                                         &buffer_offset, db.verbose)) != SUCCESS)
+                                         &buffer_offset)) != SUCCESS)
             {
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          _("Failed to open remote file %s (%d)."),
@@ -663,8 +663,7 @@ main(int argc, char *argv[])
          if ((status = sftp_open_file(SFTP_WRITE_FILE, initial_filename,
                                       append_offset,
                                       (db.chmod_str[0] == '\0') ? NULL : &db.chmod,
-                                      db.blocksize, &buffer_offset,
-                                      db.verbose)) != SUCCESS)
+                                      db.blocksize, &buffer_offset)) != SUCCESS)
          {
             WHAT_DONE("send", file_size_done, no_of_files_done);
             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,

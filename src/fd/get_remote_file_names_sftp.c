@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_sftp.c - Part of AFD, an automatic file distribution
  *                                 program.
- *  Copyright (c) 2006 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -261,7 +261,7 @@ get_remote_file_names_sftp(off_t *file_size_to_retrieve,
        * Get a directory listing from the remote site so we can see
        * what files are there.
        */
-      if ((status = sftp_open_dir("", fsa->debug)) == SUCCESS)
+      if ((status = sftp_open_dir("")) == SUCCESS)
       {
          if (fsa->debug > NORMAL_MODE)
          {
@@ -295,19 +295,23 @@ get_remote_file_names_sftp(off_t *file_size_to_retrieve,
                if (fsa->debug > NORMAL_MODE)
                {
                   time_t mtime;
-                  char   dstr[26];
+                  char   dstr[26],
+                         mstr[11];
 
                   mtime = stat_buf.st_mtime;
                   p_tm = gmtime(&mtime);
                   (void)strftime(dstr, 26, "%a %h %d %H:%M:%S %Y", p_tm);
+                  mode_t2str(stat_buf.st_mode, mstr);
                   trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
 #if SIZEOF_OFF_T == 4
-                               "%s  `%s' size=%ld mode=%d",
+                               "%s %s size=%ld uid=%u gid=%u mode=%o %s",
 #else
-                               "%s  `%s' size=%lld mode=%d",
+                               "%s %s size=%lld uid=%u gid=%u mode=%o %s",
 #endif
-                               dstr, filename, (pri_off_t)stat_buf.st_size,
-                               stat_buf.st_mode);
+                               mstr, dstr, (pri_off_t)stat_buf.st_size,
+                               (stat_buf.st_mode & ~S_IFMT),
+                               (unsigned int)stat_buf.st_uid,
+                               (unsigned int)stat_buf.st_gid, filename);
                }
 
                if (fra[db.fra_pos].dir_flag == ALL_DISABLED)

@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_sftp_cmd.c - Part of AFD, an automatic file
  *                                     distribution program.
- *  Copyright (c) 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -83,7 +83,7 @@ get_remote_file_names_sftp_cmd(off_t *file_size_to_retrieve)
     * what files are there.
     */
    *file_size_to_retrieve = 0;
-   if ((status = sftp_open_dir("", db.verbose)) == SUCCESS)
+   if ((status = sftp_open_dir("")) == SUCCESS)
    {
       char        filename[MAX_FILENAME_LENGTH];
       struct stat stat_buf;

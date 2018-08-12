@@ -569,8 +569,7 @@ main(int argc, char *argv[])
          /* Create lock file on remote host. */
          if ((status = sftp_open_file(SFTP_WRITE_FILE, db.lock_file_name, 0,
                                       (db.special_flag & CHANGE_PERMISSION) ? &db.chmod : NULL,
-                                      blocksize, &buffer_offset,
-                                      fsa->debug)) != SUCCESS)
+                                      blocksize, &buffer_offset)) != SUCCESS)
          {
             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                       "Failed to send lock file `%s' (%d).",
@@ -989,8 +988,7 @@ main(int argc, char *argv[])
             if ((status = sftp_open_file(SFTP_WRITE_FILE, initial_filename,
                                          append_offset,
                                          (db.special_flag & CHANGE_PERMISSION) ? &db.chmod : NULL,
-                                         blocksize, &buffer_offset,
-                                         fsa->debug)) != SUCCESS)
+                                         blocksize, &buffer_offset)) != SUCCESS)
             {
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          "Failed to open remote file `%s' (%d).",
