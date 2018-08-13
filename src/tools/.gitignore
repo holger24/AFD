@@ -3,6 +3,7 @@ afdcmd
 afdipdbcmd
 afd_hex_print
 afd_status
+afdtr
 cache_spy
 convert_fsa
 convert_stat
