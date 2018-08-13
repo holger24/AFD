@@ -386,11 +386,14 @@ trace_log(char *file,
                              bytes_done++;
                           }
                        }
-                       buf[wpos] = '\n';
-                       if (write(trans_db_log_fd, buf, (wpos + 1)) != (wpos + 1))
+                       if (wpos > header_length)
                        {
-                          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                     "write() error : %s", strerror(errno));
+                          buf[wpos] = '\n';
+                          if (write(trans_db_log_fd, buf, (wpos + 1)) != (wpos + 1))
+                          {
+                             system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                        "write() error : %s", strerror(errno));
+                          }
                        }
                     }
                     else
