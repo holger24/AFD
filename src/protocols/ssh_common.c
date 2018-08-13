@@ -351,7 +351,7 @@ ssh_exec(char          *host,
                {
                   length = MAX_PATH_LENGTH;
                }
-               trace_log(NULL, 0, C_TRACE, buffer, length, NULL);
+               trace_log(__FILE__, __LINE__, C_TRACE, buffer, length, NULL);
 #endif
                /* Synchronize with parent. */
                (void)close(pipe_fds[1]);
