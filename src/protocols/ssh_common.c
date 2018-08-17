@@ -228,7 +228,7 @@ ssh_exec(char          *host,
          {
             if ((*child_pid = fork()) == 0)  /* Child process. */
             {
-               char *args[21],
+               char *args[22],
                     dummy,
                     str_protocol[1 + 3 + 1],
                     str_port[MAX_INT_LENGTH];
@@ -287,6 +287,8 @@ ssh_exec(char          *host,
                args[argcount] = "-oForwardX11 no";
                argcount++;
                args[argcount] = "-oForwardAgent no";
+               argcount++;
+               args[argcount] = "-oPermitLocalCommand no";
                argcount++;
                args[argcount] = "-oClearAllForwardings yes";
                argcount++;
@@ -424,6 +426,7 @@ ssh_login(int data_fd, char *passwd)
    int            eio_loops = 0,
                   max_fd,
                   rr_loops = 0,
+                  ssh_client_up = NO,
                   status;
    char           *password = NULL, /* To store the password part. */
                   *passwdBeg = NULL,
@@ -520,27 +523,6 @@ retry_read:
              status = INCORRECT;
              break;
           }
-          else if (FD_ISSET(data_fd, &rset))
-               {
-                  /*
-                   * We need to check if this is not a close event
-                   * from the SSH client closing the connection for
-                   * what ever reason. When one starts many openssh
-                   * clients at the same time, this is what can happen
-                   * regularly. I do not know why this is so.
-                   */
-                  if (write(data_fd, "", 0) == -1)
-                  {
-                     /* SSH client has closed the pipe! */
-                     status = RETRY;
-                  }
-                  else
-                  {
-                     /* No password required to login. */
-                     status = SUCCESS;
-                  }
-                  break;
-               }
           else if (FD_ISSET(fdm, &rset))
                {
                   int flags,
@@ -626,34 +608,45 @@ retry_read:
 
                   if (status < 0)
                   {
-                     if ((tmp_errno == EIO) && (eio_loops < 10))
+                     if (ssh_client_up == YES)
                      {
-                        if (eio_loops > 5)
-                        {
-                           trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
-                                     _("Hit an Input/Output error, assuming child was not up. Retrying (%d)."),
-                                     eio_loops);
-                        }
-                        (void)my_usleep(200000L);
-                        eio_loops++;
-                        continue;
+                        /* SSH client has disconnected. */
+                        trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
+                                  "SSH Client disconnected");
+                        status = INCORRECT;
+                        break;
                      }
                      else
                      {
-                        if ((tmp_errno == EIO) && (eio_loops > 0))
+                        if ((tmp_errno == EIO) && (eio_loops < 10))
                         {
-                           trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
-                                     _("Hit an Input/Output error, even after retrying %d times."),
-                                     eio_loops);
+                           if (eio_loops > 5)
+                           {
+                              trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
+                                        _("Hit an Input/Output error, assuming child was not up. Retrying (%d)."),
+                                        eio_loops);
+                           }
+                           (void)my_usleep(200000L);
+                           eio_loops++;
+                           continue;
                         }
-                        if (tmp_errno == ECONNRESET)
+                        else
                         {
-                           timeout_flag = CON_RESET;
+                           if ((tmp_errno == EIO) && (eio_loops > 0))
+                           {
+                              trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
+                                        _("Hit an Input/Output error, even after retrying %d times."),
+                                        eio_loops);
+                           }
+                           if (tmp_errno == ECONNRESET)
+                           {
+                              timeout_flag = CON_RESET;
+                           }
+                           trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
+                                     _("read() error (%d): %s"),
+                                     status, strerror(tmp_errno));
+                           status = INCORRECT;
                         }
-                        trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
-                                  _("read() error (%d): %s"),
-                                  status, strerror(tmp_errno));
-                        status = INCORRECT;
                      }
                   }
                   else
@@ -662,6 +655,7 @@ retry_read:
                      trace_log(NULL, 0, CRLF_R_TRACE, msg_str, status, NULL);
 #endif
                      msg_str[status] = '\0';
+                     ssh_client_up = YES;
                      if (status == 0)
                      {
                         trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
@@ -842,6 +836,13 @@ retry_read:
                                 continue;
                              }
 #endif
+#ifdef WITH_TRACE
+                        else if (strncmp(msg_str, "debug1: ", 8) == 0)
+                             {
+                                status = SUCCESS;
+                                continue;
+                             }
+#endif
                         else if (lposi(ptr, "Warning: Permanently added", 26) != NULL)
                              {
                                 /* Just some info that key has been added. */
@@ -897,12 +898,34 @@ retry_read:
                   }
                   break;
                }
+          else if (FD_ISSET(data_fd, &rset))
+               {
+                  /*
+                   * We need to check if this is not a close event
+                   * from the SSH client closing the connection for
+                   * what ever reason. When one starts many openssh
+                   * clients at the same time, this is what can happen
+                   * regularly. I do not know why this is so.
+                   */
+                  if (write(data_fd, "", 0) == -1)
+                  {
+                     /* SSH client has closed the pipe! */
+                     status = RETRY;
+                  }
+                  else
+                  {
+                     /* No password required to login. */
+                     status = SUCCESS;
+                  }
+                  break;
+               }
       }
       else if (status == 0) /* Timeout. */
            {
                trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
                          _("SSH program not responding."));
                status = INCORRECT;
+               timeout_flag = ON;
                if (ssh_data_pid > 0)
                {
                   if (kill(ssh_data_pid, SIGKILL) == -1)
@@ -918,7 +941,7 @@ retry_read:
                   else
                   {
                      trans_log(WARN_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
-                               _("Killing hanging data ssh process."));
+                               _("Killed ssh process."));
                   }
                }
                break;
