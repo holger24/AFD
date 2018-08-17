@@ -1,6 +1,6 @@
 /*
  *  trans_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ DESCR__S_M3
  **   08.07.2000 H.Kiehl Revised to reduce code size in sf_xxx().
  **   21.03.2009 H.Kiehl Added function parameter.
  **   10.08.2012 H.Kiehl Added some more length checking.
+ **   17.08.2018 H.Kiehl Do not show empty lines.
  **
  */
 DESCR__E_M3
@@ -258,6 +259,10 @@ trans_log(char *sign,
             {
                *end_ptr = '\0';
                end_ptr++;
+               while ((*end_ptr == '\n') || (*end_ptr == '\r'))
+               {
+                  end_ptr++;
+               }
             }
             length += snprintf(&buf[length],
                                (MAX_LINE_LENGTH + MAX_LINE_LENGTH) - length,
