@@ -228,10 +228,11 @@ ssh_exec(char          *host,
          {
             if ((*child_pid = fork()) == 0)  /* Child process. */
             {
-               char *args[22],
+               char *args[23],
                     dummy,
                     str_protocol[1 + 3 + 1],
-                    str_port[MAX_INT_LENGTH];
+                    str_port[MAX_INT_LENGTH],
+                    str_timeout[17 + MAX_INT_LENGTH + 1];
                int  argcount,
                     fds;
 #ifdef WITH_TRACE
@@ -292,6 +293,10 @@ ssh_exec(char          *host,
                argcount++;
                args[argcount] = "-oClearAllForwardings yes";
                argcount++;
+               args[argcount] = str_timeout;
+               argcount++;
+               (void)snprintf(str_timeout, 17 + MAX_INT_LENGTH + 1,
+                              "-oConnectTimeout %ld", transfer_timeout);
 #ifdef _WITH_FALLBACK_TO_RSH_NO
                args[argcount] = "-oFallBackToRsh no";
                argcount++;
@@ -510,7 +515,7 @@ retry_read_with_stat:
       FD_SET(fdm, &rset);
       FD_SET(fdm, &eset);
       timeout.tv_usec = 0L;
-      timeout.tv_sec = transfer_timeout;
+      timeout.tv_sec = transfer_timeout + 7;
 
       status = select(max_fd, &rset, NULL, &eset, &timeout);
       if (status > 0)
