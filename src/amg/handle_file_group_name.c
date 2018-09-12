@@ -71,8 +71,9 @@ get_file_group(char             *group_name,
                struct dir_group *dir,
                int              *total_length)
 {
-   char *file_group_buffer = NULL,
-        group_file[MAX_PATH_LENGTH];
+   off_t file_size;
+   char  *file_group_buffer = NULL,
+         group_file[MAX_PATH_LENGTH];
 
    if (file_group_type == YES)
    {
@@ -85,7 +86,38 @@ get_file_group(char             *group_name,
       (void)snprintf(group_file, MAX_PATH_LENGTH, "%s%s%s",
                      p_work_dir, ETC_DIR, GROUP_FILE);
    }
-   (void)read_file_no_cr(group_file, &file_group_buffer, YES, __FILE__, __LINE__);
+   if ((file_size = read_file_no_cr(group_file, &file_group_buffer, YES,
+                                    __FILE__, __LINE__)) < 1)
+   {
+      if (file_size == INCORRECT)
+      {
+         /* read_file_no_cr() already printed the error message. */;
+      }
+      else
+      {
+         if (file_group_type == YES)
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+#if SIZEOF_OFF_T == 4
+                       "Group file %s is empty (%ld).",
+#else
+                       "Group file %s is empty (%lld).",
+#endif
+                       group_file, (pri_off_t)file_size);
+         }
+         else
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+#if SIZEOF_OFF_T == 4
+                       "No elements found in group [%s] in file %s (%ld).",
+#else
+                       "No elements found in group [%s] in file %s (%lld).",
+#endif
+                       group_name, group_file, (pri_off_t)file_size);
+         }
+      }
+      return;
+   }
 
    if (file_group_buffer != NULL)
    {
@@ -151,7 +183,8 @@ get_file_group(char             *group_name,
                  }
 
             if ((*ptr == '\n') &&
-                ((*(ptr + 1) == '\n') || (*(ptr + 1) == '\0')))
+                ((*(ptr + 1) == '\n') || (*(ptr + 1) == '\0') ||
+                 (*(ptr + 1) == '[')))
             {
                break;
             }
@@ -159,10 +192,10 @@ get_file_group(char             *group_name,
       }
       else
       {
-         char group_id[MAX_GROUPNAME_LENGTH + 2 + 1];
+         char group_id[1 + MAX_GROUPNAME_LENGTH + 2 + 1];
 
-         length = snprintf(group_id, MAX_GROUPNAME_LENGTH + 2 + 1,
-                           "[%s]", group_name);
+         length = snprintf(group_id, 1 + MAX_GROUPNAME_LENGTH + 2 + 1,
+                           "\n[%s]", group_name);
          if ((ptr = lposi(file_group_buffer, group_id, length)) == NULL)
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
@@ -235,11 +268,12 @@ get_file_group(char             *group_name,
                     }
 
                if ((*ptr == '\n') &&
-                   ((*(ptr + 1) == '\n') || (*(ptr + 1) == '\0')))
+                   ((*(ptr + 1) == '\n') || (*(ptr + 1) == '\0') ||
+                    (*(ptr + 1) == '[')))
                {
                   break;
                }
-            } while ((*ptr != '[') && (*ptr != '\0'));
+            } while (*ptr != '\0');
          }
          else
          {

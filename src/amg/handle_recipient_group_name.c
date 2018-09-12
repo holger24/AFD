@@ -1,7 +1,7 @@
 /*
  *  handle_recipient_group_name.c - Part of AFD, an automatic file
  *                                  distribution program.
- *  Copyright (c) 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2017, 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   17.09.2017 H.Kiehl Created
+ **   11.09.2018 H.Kiehl Better detection for end of a group entry.
  **
  */
 DESCR__E_M3
@@ -96,12 +97,13 @@ init_recipient_group_name(char *location,
       (void)snprintf(group_file, MAX_PATH_LENGTH, "%s%s%s",
                      p_work_dir, ETC_DIR, GROUP_FILE);
    }
-   if (((file_size = read_file_no_cr(group_file, &buffer, YES,
-                                     __FILE__, __LINE__)) != INCORRECT) &&
-       (file_size > 0))
+   if ((file_size = read_file_no_cr(group_file, &buffer, YES,
+                                    __FILE__, __LINE__)) > 1)
    {
-      int  length;
-      char *ptr;
+      int  length,
+           max_length = 0;
+      char *ptr,
+           *ptr_start;
 
       if (dir_group_type == YES)
       {
@@ -109,145 +111,159 @@ init_recipient_group_name(char *location,
       }
       else
       {
-         char group_id[MAX_PATH_LENGTH + 2 + 1];
+         char group_id[1 + MAX_PATH_LENGTH + 2 + 1];
 
-         length = snprintf(group_id, MAX_PATH_LENGTH + 2 + 1,
-                           "[%s]", group_name);
-         ptr = lposi(buffer, group_id, length);
-      }
-
-      if (ptr == NULL)
-      {
-         system_log(WARN_SIGN, __FILE__, __LINE__,
-                    "Failed to locate group [%s] in group file %s",
-                    group_name, group_file);
-         group_list = NULL;
-         free(buffer);
-
-         return;
-      }
-      else
-      {
-         ptr--;
-         while ((*ptr != '\n') && (*ptr != '\0'))
+         length = snprintf(group_id, 1 + MAX_PATH_LENGTH + 2 + 1,
+                           "\n[%s]", group_name);
+         if ((ptr = lposi(buffer, group_id, length)) == NULL)
          {
-            ptr++;
-         }
-         if (*ptr == '\n')
-         {
-            int  max_length = 0;
-            char *ptr_start = ptr; /* NOTE: NOT + 1 */
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "Failed to locate group [%s] in group file %s",
+                       group_name, group_file);
+            group_list = NULL;
+            free(buffer);
 
-            /*
-             * First count the number of groups.
-             */
-            length = 0;
-            no_listed = 0;
-            do
-            {
-               ptr++;
-               if (*ptr == '#')
-               {
-                  while ((*ptr != '\n') && (*ptr != '\0'))
-                  {
-                     ptr++;
-                  }
-                  if (length > 0)
-                  {
-                     if (length > max_length)
-                     {
-                        max_length = length;
-                     }
-                     length = 0;
-                     no_listed++;
-                  }
-               }
-               else if ((*ptr == ' ') || (*ptr == '\t'))
-                    {
-                       /* Ignore spaces! */;
-                    }
-                    else
-                    {
-                       length++;
-                       if ((*ptr == '\n') || (*ptr == '\0'))
-                       {
-                          if (length > max_length)
-                          {
-                             max_length = length;
-                          }
-                          length = 0;
-                          no_listed++;
-                       }
-                    }
-
-               if ((*ptr == '\n') &&
-                   ((*(ptr + 1) == '\n') || (*(ptr + 1) == '\0')))
-               {
-                  break;
-               }
-            } while ((*ptr != '[') && (*ptr != '\0'));
-
-            if ((no_listed > 0) && (max_length > 0))
-            {
-               int counter = 0;
-
-               RT_ARRAY(group_list, no_listed, max_length, char);
-               ptr = ptr_start;
-               length = 0;
-               do
-               {
-                  ptr++;
-                  if (*ptr == '#')
-                  {
-                     while ((*ptr != '\n') && (*ptr != '\0'))
-                     {
-                        ptr++;
-                     }
-                     if (length > 0)
-                     {
-                        group_list[counter][length] = '\0';
-                        length = 0;
-                        counter++;
-                     }
-                  }
-                  else if ((*ptr == ' ') || (*ptr == '\t'))
-                       {
-                          /* Ignore spaces! */;
-                       }
-                       else
-                       {
-                          if ((*ptr == '\n') || (*ptr == '\0'))
-                          {
-                             group_list[counter][length] = '\0';
-                             length = 0;
-                             counter++;
-                          }
-                          else
-                          {
-                             group_list[counter][length] = *ptr;
-                             length++;
-                          }
-                       }
-                  if ((*ptr == '\n') &&
-                      ((*(ptr + 1) == '\n') || (*(ptr + 1) == '\0')))
-                  {
-                     break;
-                  }
-               } while ((*ptr != '[') && (*ptr != '\0'));
-            }
-            else
-            {
-               system_log(WARN_SIGN, __FILE__, __LINE__,
-                          "No group elements found for group %s.", group_name);
-               group_list = NULL;
-            }
+            return;
          }
          else
          {
-            system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "No group elements found for group %s.", group_name);
-            group_list = NULL;
+            /* Ignore anything behind the group identifier. */
+            ptr--;
+            while ((*ptr != '\n') && (*ptr != '\0'))
+            {
+               ptr++;
+            }
          }
+      }
+
+      /*
+       * First count the number of elements in the group.
+       */
+      ptr_start = ptr;
+      length = 0;
+      no_listed = 0;
+      do
+      {
+         ptr++;
+         if (*ptr == '\\')
+         {
+            ptr++;
+         }
+         else if (*ptr == '#')
+              {
+                 while ((*ptr != '\n') && (*ptr != '\0'))
+                 {
+                    ptr++;
+                 }
+                 if (length > 0)
+                 {
+                    if (length > max_length)
+                    {
+                       max_length = length;
+                    }
+                    length = 0;
+                    no_listed++;
+                 }
+              }
+         else if ((*ptr == ' ') || (*ptr == '\t'))
+              {
+                 /* Ignore spaces! */;
+              }
+              else
+              {
+                 length++;
+                 if ((*ptr == '\n') || (*ptr == '\0'))
+                 {
+                    if (length > max_length)
+                    {
+                       max_length = length;
+                    }
+                    length = 0;
+                    no_listed++;
+                 }
+              }
+
+         if ((*ptr == '\n') &&
+             ((*(ptr + 1) == '\n') || (*(ptr + 1) == '\0') ||
+              (*(ptr + 1) == '[')))
+         {
+            break;
+         }
+      } while (*ptr != '\0');
+
+      if ((no_listed > 0) && (max_length > 0))
+      {
+         int counter = 0;
+
+         RT_ARRAY(group_list, no_listed, max_length, char);
+         ptr = ptr_start;
+         length = 0;
+         do
+         {
+            ptr++;
+            if (*ptr == '\\')
+            {
+               ptr++;
+            }
+            else if (*ptr == '#')
+                 {
+                    while ((*ptr != '\n') && (*ptr != '\0'))
+                    {
+                       ptr++;
+                    }
+                    if (length > 0)
+                    {
+                       group_list[counter][length] = '\0';
+                       if ((counter + 1) < no_listed)
+                       {
+                          length = 0;
+                          counter++;
+                       }
+                       else
+                       {
+                          break;
+                       }
+                    }
+                 }
+            else if ((*ptr == ' ') || (*ptr == '\t'))
+                 {
+                    /* Ignore spaces! */;
+                 }
+                 else
+                 {
+                    if ((*ptr == '\n') || (*ptr == '\0'))
+                    {
+                       group_list[counter][length] = '\0';
+                       if ((counter + 1) < no_listed)
+                       {
+                          length = 0;
+                          counter++;
+                       }
+                       else
+                       {
+                          break;
+                       }
+                    }
+                    else
+                    {
+                       group_list[counter][length] = *ptr;
+                       length++;
+                    }
+                 }
+
+            if ((*ptr == '\n') &&
+                ((*(ptr + 1) == '\n') || (*(ptr + 1) == '\0') ||
+                 (*(ptr + 1) == '[')))
+            {
+               break;
+            }
+         } while (*ptr != '\0');
+      }
+      else
+      {
+         system_log(WARN_SIGN, __FILE__, __LINE__,
+                    "No group elements found for group %s.", group_name);
+         group_list = NULL;
       }
 
       free(buffer);
@@ -325,6 +341,37 @@ continue_search:
          (void)strcpy(location + start_group_pos, group_list[0]);
          (void)strcat(location + start_group_pos, last_part);
          next_group_pos = 1;
+      }
+   }
+   else
+   {
+      if (file_size == INCORRECT)
+      {
+         /* read_file_no_cr() already printed the error message. */;
+      }
+      else
+      {
+         if (dir_group_type == YES)
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+#if SIZEOF_OFF_T == 4
+                       "Group file %s is empty (%ld).",
+#else
+                       "Group file %s is empty (%lld).",
+#endif
+                       group_file, (pri_off_t)file_size);
+         }
+         else
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+#if SIZEOF_OFF_T == 4
+                       "No elements found in group [%s] in file %s (%ld).",
+#else
+                       "No elements found in group [%s] in file %s (%lld).",
+#endif
+                       group_name, group_file, (pri_off_t)file_size);
+         }
+         group_list = NULL;
       }
    }
 
