@@ -1,6 +1,6 @@
 /*
  *  httpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -2752,16 +2752,39 @@ read_msg(int *read_length, int offset, int line)
                     }
                     else
                     {
-                       if ((hmr.bytes_read = SSL_read(ssl_con,
-                                                      &msg_str[bytes_buffered],
-                                                      (MAX_RET_MSG_LENGTH - bytes_buffered))) < 1)
+                       int tmp_errno;
+
+                       /*
+                        * Remember we have set SSL_MODE_AUTO_RETRY. This
+                        * means the SSL lib may do several read() calls. We
+                        * just assured one read() with select(). So lets
+                        * set an an alarm since we might block on subsequent
+                        * calls to read(). It might be better when we
+                        * reimplement this without SSL_MODE_AUTO_RETRY
+                        * and handle SSL_ERROR_WANT_READ ourself.
+                        */
+                       if (sigsetjmp(env_alrm, 1) != 0)
+                       {
+                          trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
+                                    _("SSL_read() timeout (%ld)"),
+                                    transfer_timeout);
+                          timeout_flag = ON;
+                          return(INCORRECT);
+                       }
+                       (void)alarm(transfer_timeout);
+                       hmr.bytes_read = SSL_read(ssl_con,
+                                                 &msg_str[bytes_buffered],
+                                                 (MAX_RET_MSG_LENGTH - bytes_buffered));
+                       tmp_errno = errno;
+                       (void)alarm(0);
+                       if (hmr.bytes_read < 1)
                        {
                           if (hmr.bytes_read == 0)
                           {
-#ifdef WITH_TRACE
+# ifdef WITH_TRACE
                              trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
                                        "read_msg(): 0 bytes read");
-#endif
+# endif
                              return(0);
                           }
                           else
@@ -2769,13 +2792,14 @@ read_msg(int *read_length, int offset, int line)
                              if ((status = SSL_get_error(ssl_con,
                                                          hmr.bytes_read)) == SSL_ERROR_SYSCALL)
                              {
-                                if (errno == ECONNRESET)
+                                if (tmp_errno == ECONNRESET)
                                 {
                                    timeout_flag = CON_RESET;
                                 }
                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, "read_msg", NULL,
                                           _("SSL_read() error (after reading %d bytes) [%d] : %s"),
-                                          bytes_buffered, line, strerror(errno));
+                                          bytes_buffered, line,
+                                          strerror(tmp_errno));
                              }
                              else
                              {
