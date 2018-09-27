@@ -1,6 +1,6 @@
 /*
  *  get_rename_rules.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -63,6 +63,8 @@ DESCR__S_M3
  **   07.11.2008 H.Kiehl Accept DOS-style rename rule files.
  **   01.04.2012 H.Kiehl Added supoort for reading multiple rename rule
  **                      files.
+ **   27.09.2018 H.Kiehl Handle case where we do not have the rename
+ **                      to part.
  **
  */
 DESCR__E_M3
@@ -78,6 +80,8 @@ DESCR__E_M3
 #endif
 #include <errno.h>
 #include "amgdefs.h"
+
+/* #define _DEBUG_RULES */
 
 /* External global variables. */
 extern int         no_of_rule_headers;
@@ -452,24 +456,19 @@ get_rename_rules(int verbose)
                   }
                   no_of_rules = max_filter_length = max_rule_length = 0;
                   search_ptr = ptr;
-                  while ((*search_ptr != '\n') && (*search_ptr != '\r'))
+                  while (*search_ptr != '\n')
                   {
                      search_ptr++;
                   }
                   do
                   {
-                     if (*search_ptr == '\r')
-                     {
-                        search_ptr++;
-                     }
-                     search_ptr++;
+                     search_ptr++; /* Away with the '\n'. */
 
                      /* Ignore any comments. */
                      if ((*search_ptr == '#') &&
                          (search_ptr > ptr) && (*(search_ptr - 1) != '\\'))
                      {
-                        while ((*search_ptr != '\n') && (*search_ptr != '\0') &&
-                               (*search_ptr != '\r'))
+                        while ((*search_ptr != '\n') && (*search_ptr != '\0'))
                         {
                            search_ptr++;
                         }
@@ -478,6 +477,7 @@ get_rename_rules(int verbose)
                      {
                         count = 0;
                         while ((*search_ptr != ' ') && (*search_ptr != '\t') &&
+                               (*search_ptr != '\n') && (*search_ptr != '\0') &&
                                (search_ptr < last_ptr))
                         {
                            if ((*search_ptr == '\\') &&
@@ -502,8 +502,7 @@ get_rename_rules(int verbose)
                            search_ptr++;
                         }
                         count = 0;
-                        while ((*search_ptr != '\n') && (*search_ptr != '\0') &&
-                               (*search_ptr != '\r'))
+                        while ((*search_ptr != '\n') && (*search_ptr != '\0'))
                         {
                            count++; search_ptr++;
                         }
@@ -513,108 +512,125 @@ get_rename_rules(int verbose)
                         }
                         no_of_rules++;
                      }
-                  } while (((*search_ptr == '\r') &&
-                            (*(search_ptr + 2) != '\r') &&
-                            (*(search_ptr + 2) != '[') &&
-                            (*search_ptr != '\0') &&
-                            (*(search_ptr + 2) != '\0')) ||
-                           ((*search_ptr != '\r') &&
-                            (*(search_ptr + 1) != '\n') &&
-                            (*(search_ptr + 1) != '[') &&
-                            (*search_ptr != '\0') &&
-                            (*(search_ptr + 1) != '\0')));
-
-                  /* Allocate memory for filter and rename_to */
-                  /* part of struct rule.                     */
-                  rule[i].filter = NULL;
-                  RT_ARRAY(rule[i].filter, no_of_rules,
-                           max_filter_length + 1, char);
-                  rule[i].rename_to = NULL;
-                  RT_ARRAY(rule[i].rename_to, no_of_rules,
-                           max_rule_length + 1, char);
-
-                  ptr--;
-                  end_ptr = ptr;
-                  while ((*end_ptr != ']') && (*end_ptr != '\n') &&
-                         (*end_ptr != '\0') && (*end_ptr != '\r'))
-                  {
-                     end_ptr++;
-                  }
-                  if ((end_ptr - ptr) <= MAX_RULE_HEADER_LENGTH)
-                  {
-                     if (*end_ptr == ']')
+                     if ((*search_ptr == '\n') && ((*(search_ptr + 1) == '[') ||
+                         ((*(search_ptr + 1) == '\n') &&
+                          (*(search_ptr + 2) == '['))))
                      {
-                        *end_ptr = '\0';
-                        (void)strcpy(rule[i].header, ptr);
-                        ptr = end_ptr + 1;
+                        break;
+                     }
+                  } while (*search_ptr != '\0');
 
-                        while ((*ptr != '\n') && (*ptr != '\0') &&
-                               (*ptr != '\r'))
+#ifdef _DEBUG_RULES
+                  system_log(INFO_SIGN, __FILE__, __LINE__,
+                             "%d: no_of_rule_headers=%d no_of_rules=%d max_filter_length=%d max_rule_length=%d",
+                             i, no_of_rule_headers, no_of_rules,
+                             max_filter_length, max_rule_length);
+#endif
+
+                  rule[i].filter = NULL;
+                  rule[i].rename_to = NULL;
+                  rule[i].header[0] = '\0';
+                  if ((no_of_rules == 0) || (max_filter_length == 0) ||
+                      (max_rule_length == 0))
+                  {
+                     rule[i].no_of_rules = 0;
+
+                     /* Try determine the header so we can give the user */
+                     /* a clue where the problem is.                     */
+                     ptr--;
+                     end_ptr = ptr;
+                     while ((*end_ptr != ']') && (*end_ptr != '\n') &&
+                            (*end_ptr != '\0'))
+                     {
+                        end_ptr++;
+                     }
+                     if ((end_ptr - ptr) <= MAX_RULE_HEADER_LENGTH)
+                     {
+                        if (*end_ptr == ']')
                         {
-                           ptr++;
+                           *end_ptr = '\0';
+                           (void)strcpy(rule[i].header, ptr);
+                           *end_ptr = ']';
                         }
-                        if ((*ptr == '\n') || (*ptr == '\r'))
+                     }
+                     if (rule[i].header[0] == '\0')
+                     {
+                        system_log(WARN_SIGN, __FILE__, __LINE__,
+                                   _("Rule header number %d specified, but could not find any rules."),
+                                   i);
+                     }
+                     else
+                     {
+                        system_log(WARN_SIGN, __FILE__, __LINE__,
+                                   _("Rule header %s specified, but could not find any rules."),
+                                   rule[i].header);
+                     }
+
+                     /* Lets go directly to the next section. */
+                     ptr = end_ptr;
+                     while (*ptr != '\0')
+                     {
+                        if ((*ptr == '\n') && (*(ptr + 1) == '['))
                         {
-                           j = 0;
+                           break;
+                        }
+                        ptr++;
+                     }
+                  }
+                  else
+                  {
+                     /* Allocate memory for filter and rename_to */
+                     /* part of struct rule.                     */
+                     RT_ARRAY(rule[i].filter, no_of_rules,
+                              max_filter_length + 1, char);
+                     RT_ARRAY(rule[i].rename_to, no_of_rules,
+                              max_rule_length + 1, char);
 
-                           do
+                     ptr--;
+                     end_ptr = ptr;
+                     while ((*end_ptr != ']') && (*end_ptr != '\n') &&
+                            (*end_ptr != '\0'))
+                     {
+                        end_ptr++;
+                     }
+                     if ((end_ptr - ptr) <= MAX_RULE_HEADER_LENGTH)
+                     {
+                        if (*end_ptr == ']')
+                        {
+                           *end_ptr = '\0';
+                           (void)strcpy(rule[i].header, ptr);
+                           ptr = end_ptr + 1;
+
+                           while ((*ptr != '\n') && (*ptr != '\0'))
                            {
-                              if (*ptr == '\r')
-                              {
-                                 ptr++;
-                              }
                               ptr++;
+                           }
+                           if (*ptr == '\n')
+                           {
+                              j = 0;
 
-                              /* Ignore any comments. */
-                              if ((*ptr == '#') && (*(ptr - 1) != '\\'))
+                              do
                               {
-                                 while ((*ptr != '\n') && (*ptr != '\0') &&
-                                        (*ptr != '\r'))
-                                 {
-                                    ptr++;
-                                 }
-                              }
-                              else
-                              {
-                                 /*
-                                  * Store the filter part.
-                                  */
-                                 k = 0;
-                                 end_ptr = ptr;
-                                 while ((*end_ptr != ' ') &&
-                                        (*end_ptr != '\t') &&
-                                        (*end_ptr != '\n') &&
-                                        (*end_ptr != '\r') &&
-                                        (*end_ptr != '\0'))
-                                 {
-                                    if ((*end_ptr == '\\') &&
-                                        ((*(end_ptr + 1) == ' ') ||
-                                         (*(end_ptr + 1) == '#') ||
-                                         (*(end_ptr + 1) == '\t')))
-                                    {
-                                       end_ptr++;
-                                    }
-                                    rule[i].filter[j][k] = *end_ptr;
-                                    end_ptr++; k++;
-                                 }
-                                 if ((*end_ptr == ' ') || (*end_ptr == '\t'))
-                                 {
-                                    rule[i].filter[j][k] = '\0';
-                                    end_ptr++;
-                                    while ((*end_ptr == ' ') ||
-                                           (*end_ptr == '\t'))
-                                    {
-                                       end_ptr++;
-                                    }
+                                 ptr++; /* Away with the '\n'. */
 
+                                 /* Ignore any comments. */
+                                 if ((*ptr == '#') && (*(ptr - 1) != '\\'))
+                                 {
+                                    while ((*ptr != '\n') && (*ptr != '\0'))
+                                    {
+                                       ptr++;
+                                    }
+                                 }
+                                 else
+                                 {
                                     /*
-                                     * Store the renaming part.
+                                     * Store the filter part.
                                      */
                                     k = 0;
+                                    end_ptr = ptr;
                                     while ((*end_ptr != ' ') &&
                                            (*end_ptr != '\t') &&
                                            (*end_ptr != '\n') &&
-                                           (*end_ptr != '\r') &&
                                            (*end_ptr != '\0'))
                                     {
                                        if ((*end_ptr == '\\') &&
@@ -624,86 +640,139 @@ get_rename_rules(int verbose)
                                        {
                                           end_ptr++;
                                        }
-                                       rule[i].rename_to[j][k] = *end_ptr;
+                                       rule[i].filter[j][k] = *end_ptr;
                                        end_ptr++; k++;
                                     }
-                                    rule[i].rename_to[j][k] = '\0';
                                     if ((*end_ptr == ' ') || (*end_ptr == '\t'))
                                     {
-                                       int more_data = NO;
-
+                                       rule[i].filter[j][k] = '\0';
                                        end_ptr++;
-                                       while ((*end_ptr != '\n') &&
-                                              (*end_ptr != '\0') &&
-                                              (*end_ptr != '\r'))
+                                       while ((*end_ptr == ' ') ||
+                                              (*end_ptr == '\t'))
                                        {
-                                          if ((more_data == NO) &&
-                                              (*end_ptr != ' ') &&
-                                              (*end_ptr != '\t'))
-                                          {
-                                             more_data = YES;
-                                          }
                                           end_ptr++;
                                        }
-                                       if (more_data == YES)
+
+                                       /*
+                                        * Store the renaming part.
+                                        */
+                                       k = 0;
+                                       while ((*end_ptr != ' ') &&
+                                              (*end_ptr != '\t') &&
+                                              (*end_ptr != '\n') &&
+                                              (*end_ptr != '\0'))
+                                       {
+                                          if ((*end_ptr == '\\') &&
+                                              ((*(end_ptr + 1) == ' ') ||
+                                               (*(end_ptr + 1) == '#') ||
+                                               (*(end_ptr + 1) == '\t')))
+                                          {
+                                             end_ptr++;
+                                          }
+                                          rule[i].rename_to[j][k] = *end_ptr;
+                                          end_ptr++; k++;
+                                       }
+                                       rule[i].rename_to[j][k] = '\0';
+                                       if ((*end_ptr == ' ') || (*end_ptr == '\t'))
+                                       {
+                                          int more_data = NO;
+
+                                          end_ptr++;
+                                          while ((*end_ptr != '\n') &&
+                                                 (*end_ptr != '\0'))
+                                          {
+                                             if ((more_data == NO) &&
+                                                 (*end_ptr != ' ') &&
+                                                 (*end_ptr != '\t'))
+                                             {
+                                                more_data = YES;
+                                             }
+                                             end_ptr++;
+                                          }
+                                          if (more_data == YES)
+                                          {
+                                             system_log(WARN_SIGN, __FILE__, __LINE__,
+                                                        _("In rule [%s] the rule %s %s has data after the rename-to-part. Ignoring it!"),
+                                                        rule[i].header,
+                                                        rule[i].filter[j],
+                                                        rule[i].rename_to[j]);
+                                          }
+                                       }
+                                       ptr = end_ptr;
+                                       j++;
+                                    }
+                                    else
+                                    {
+                                       if (end_ptr != ptr)
                                        {
                                           system_log(WARN_SIGN, __FILE__, __LINE__,
-                                                     _("In rule [%s] the rule %s %s has data after the rename-to-part. Ignoring it!"),
-                                                     rule[i].header,
-                                                     rule[i].filter[j],
-                                                     rule[i].rename_to[j]);
+                                                     _("A filter is specified for the rule header %s but not a rule."),
+                                                     rule[i].header);
+                                          ptr = end_ptr;
                                        }
-                                    }
-                                    ptr = end_ptr;
-                                    j++;
-                                 }
-                                 else
-                                 {
-                                    if (end_ptr != ptr)
-                                    {
-                                       system_log(WARN_SIGN, __FILE__, __LINE__,
-                                                  _("A filter is specified for the rule header %s but not a rule."),
-                                                  rule[i].header);
-                                       ptr = end_ptr;
-                                    }
-                                    else if (*ptr == '\n')
-                                         {
-                                            ptr++;
-                                         }
-                                    else if (*ptr == '\r')
-                                         {
-                                            ptr++;
-                                            if (*ptr == '\n')
+                                       else if (*ptr == '\n')
                                             {
                                                ptr++;
                                             }
-                                         }
+                                    }
                                  }
-                              }
-                           } while (((*ptr == '\n') || (*ptr == '\r')) &&
-                                    (j < no_of_rules));
+                              } while ((*ptr == '\n') && (j < no_of_rules));
 
-                           rule[i].no_of_rules = j;
-                           total_no_of_rules += j;
+                              rule[i].no_of_rules = j;
+                              total_no_of_rules += j;
+                           }
+                           else
+                           {
+                              system_log(WARN_SIGN, __FILE__, __LINE__,
+                                         _("Rule header %s specified, but could not find any rules."),
+                                         rule[i].header);
+
+                              /* Lets ignore rest and try go to the next header. */
+                              while (*ptr != '\0')
+                              {
+                                 if ((*ptr == '\n') && (*(ptr + 1) == '['))
+                                 {
+                                    ptr++;
+                                    break;
+                                 }
+                                 ptr++;
+                              }
+                           }
                         }
                         else
                         {
                            system_log(WARN_SIGN, __FILE__, __LINE__,
-                                      _("Rule header %s specified, but could not find any rules."),
-                                      rule[i].header);
+                                      _("Failed to determine the end of the rule header."));
+
+                           /* Lets ignore rest and try go to the next header. */
+                           while (*ptr != '\0')
+                           {
+                              if ((*ptr == '\n') && (*(ptr + 1) == '['))
+                              {
+                                 ptr++;
+                                 break;
+                              }
+                              ptr++;
+                           }
                         }
                      }
                      else
                      {
                         system_log(WARN_SIGN, __FILE__, __LINE__,
-                                   _("Failed to determine the end of the rule header."));
+                                   _("Rule header to long. May not be longer then %d bytes [MAX_RULE_HEADER_LENGTH]."),
+                                   MAX_RULE_HEADER_LENGTH);
+
+                        /* Lets ignore rest and try go to the next header. */
+                        while (*ptr != '\0')
+                        {
+                           if ((*ptr == '\n') && (*(ptr + 1) == '['))
+                           {
+                              ptr++;
+                              break;
+                           }
+                           ptr++;
+                        }
                      }
-                  }
-                  else
-                  {
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                _("Rule header to long. May not be longer then %d bytes [MAX_RULE_HEADER_LENGTH]."),
-                                MAX_RULE_HEADER_LENGTH);
                   }
                }
                else
