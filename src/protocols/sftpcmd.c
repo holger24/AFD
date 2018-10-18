@@ -190,12 +190,12 @@ extern int                      simulation_mode,
                                 timeout_flag;
 extern char                     msg_str[];
 extern long                     transfer_timeout;
+extern pid_t                    data_pid;
 extern char                     tr_hostname[];
 
 /* Local global variables. */
 static int                      byte_order = 1,
                                 data_fd = -1;
-static pid_t                    data_pid = -1;
 static char                     *msg = NULL;
 static sigjmp_buf               env_alrm;
 static struct sftp_connect_data scd;
@@ -291,10 +291,20 @@ retry_connect:
    }
 
    if ((status = ssh_exec(hostname, port, ssh_protocol, compression, user,
-                          passwd, NULL, "sftp", &data_fd,
-                          &data_pid)) == SUCCESS)
+                          passwd, NULL, "sftp", &data_fd)) == SUCCESS)
    {
       unsigned int ui_var = 5;
+
+      if (debug > 0)
+      {
+         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_connect", NULL,
+# if SIZEOF_PID_T == 4
+                   "Started SSH client with pid %d.",
+# else
+                   "Started SSH client with pid %lld.",
+# endif
+                   (pri_pid_t)data_pid);
+      }
 
       if (msg == NULL)
       {
@@ -337,10 +347,15 @@ retry_connect:
 
       if ((status = write_msg(msg, 9, __LINE__)) == SUCCESS)
       {
+         if (debug > 0)
+         {
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_connect", NULL,
+                      "Trying to login as %s.", user);
+         }
 #ifdef WITH_SSH_FINGERPRINT
-         if ((status = ssh_login(data_fd, passwd, fingerprint)) == SUCCESS)
+         if ((status = ssh_login(data_fd, passwd, debug, fingerprint)) == SUCCESS)
 #else
-         if ((status = ssh_login(data_fd, passwd)) == SUCCESS)
+         if ((status = ssh_login(data_fd, passwd, debug)) == SUCCESS)
 #endif
          {
             if ((status = read_msg(msg, 4, __LINE__)) == SUCCESS)
@@ -3118,6 +3133,11 @@ sftp_noop(void)
    }
 #endif
 
+   if (ssh_child_up() == NO)
+   {
+      return(INCORRECT);
+   }
+
    /* I do not know of a better way. SFTP does not support */
    /* a NOOP command, so lets just do a stat() on the      */
    /* current working directory.                           */
@@ -3167,24 +3187,24 @@ sftp_quit(void)
       msg = NULL;
    }
 
+   /* Close pipe for read/write data connection. */
+   if (data_fd != -1)
+   {
+      if (close(data_fd) == -1)
+      {
+         trans_log(WARN_SIGN, __FILE__, __LINE__, "sftp_quit", NULL,
+                   _("Failed to close() write pipe to ssh process : %s"),
+                   strerror(errno));
+      }
+      data_fd = -1;
+   }
+
    /* Remove ssh process for writing data. */
-   if (data_pid != -1)
+   if (data_pid > 0)
    {
       int loop_counter,
           max_waitpid_loops,
           status;
-
-      /* Close pipe for read/write data connection. */
-      if (data_fd != -1)
-      {
-         if (close(data_fd) == -1)
-         {
-            trans_log(WARN_SIGN, __FILE__, __LINE__, "sftp_quit", NULL,
-                      _("Failed to close() write pipe to ssh process : %s"),
-                      strerror(errno));
-         }
-         data_fd = -1;
-      }
 
       errno = 0;
       loop_counter = 0;

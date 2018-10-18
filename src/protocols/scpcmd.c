@@ -1,6 +1,6 @@
 /*
  *  scpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -90,11 +90,11 @@ extern int        simulation_mode,
                   timeout_flag;
 extern char       msg_str[];
 extern long       transfer_timeout;
+extern pid_t      data_pid;
 extern char       tr_hostname[];
 
 /* Local global variables. */
 static int        data_fd = -1;
-static pid_t      data_pid = -1;
 static sigjmp_buf env_alrm;
 
 /* Local function prototypes. */
@@ -159,13 +159,12 @@ scp_connect(char          *hostname,
 # endif
 #endif
       if ((status = ssh_exec(hostname, port, ssh_protocol, compression, user,
-                             passwd, cmd, NULL, &data_fd,
-                             &data_pid)) == SUCCESS)
+                             passwd, cmd, NULL, &data_fd)) == SUCCESS)
       {
 #ifdef WITH_SSH_FINGERPRINT
-         status = ssh_login(data_fd, passwd, fingerprint);
+         status = ssh_login(data_fd, passwd, 0, fingerprint);
 #else
-         status = ssh_login(data_fd, passwd);
+         status = ssh_login(data_fd, passwd, 0);
 #endif
       }
 #ifdef WITH_SSH_FINGERPRINT
@@ -335,25 +334,25 @@ scp_write(char *block, int size)
 void
 scp_quit(void)
 {
+   /* Close pipe for read/write data connection. */
+   if (data_fd != -1)
+   {
+      if (close(data_fd) == -1)
+      {
+         trans_log(WARN_SIGN, __FILE__, __LINE__, "scp_quit", NULL,
+                   _("Failed to close() write pipe to ssh process : %s"),
+                   strerror(errno));
+      }
+      data_fd = -1;
+   }
+
    /* Remove ssh process for writing data. */
-   if (data_pid != -1)
+   if (data_pid > 0)
    {
       int   loop_counter,
             max_waitpid_loops,
             status;
       pid_t return_pid;
-
-      /* Close pipe for read/write data connection. */
-      if (data_fd != -1)
-      {
-         if (close(data_fd) == -1)
-         {
-            trans_log(WARN_SIGN, __FILE__, __LINE__, "scp_quit", NULL,
-                      _("Failed to close() write pipe to ssh process : %s"),
-                      strerror(errno));
-         }
-         data_fd = -1;
-      }
 
       loop_counter = 0;
       max_waitpid_loops = (transfer_timeout / 2) * 10;

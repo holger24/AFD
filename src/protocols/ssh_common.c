@@ -1,6 +1,6 @@
 /*
  *  ssh_common.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ DESCR__S_M3
  ** SYNOPSIS
  **   int     ssh_exec(char *host, int port, unsigned char ssh_protocol,
  **                    int compression, char *user, char *passwd,
- **                    char *cmd, char *subsystem, int *fd, pid_t *child_pid)
+ **                    char *cmd, char *subsystem, int *fd)
  **   int     ssh_login(int data_fd, char *passwd)
  **   size_t  pipe_write(int fd, char *buf, size_t count)
  **   int     get_ssh_reply(int fd, int check_reply)
@@ -58,6 +58,7 @@ DESCR__E_M3
 #include <stdlib.h>       /* malloc(), free(), exit()                    */
 #include <sys/types.h>    /* fd_set                                      */
 #include <signal.h>       /* kill()                                      */
+#include <sys/wait.h>     /* waitpid()                                   */
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif
@@ -85,15 +86,16 @@ DESCR__E_M3
 #include "fddefs.h"
 #include "ssh_commondefs.h"
 
+/* Global variables. */
+pid_t                  data_pid;
 
 /* External global variables. */
 extern int             timeout_flag;
-extern char            msg_str[];
 extern long            transfer_timeout;
+extern char            msg_str[];
 
 /* Local global variables. */
 static int             fdm;
-static pid_t           ssh_data_pid;
 #ifdef WITH_SSH_FINGERPRINT
 # ifdef WITH_REMOVE_FROM_KNOWNHOSTS
 static struct ssh_data sd;
@@ -129,8 +131,7 @@ ssh_exec(char          *host,
          char          *passwd,
          char          *cmd,
          char          *subsystem,
-         int           *fd,
-         pid_t         *child_pid)
+         int           *fd)
 {
    int  status;
    char pts_name[MAX_PATH_LENGTH],
@@ -195,7 +196,7 @@ ssh_exec(char          *host,
       trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_exec", NULL,
                 _("ptym_open() error"));
       status = INCORRECT;
-      ssh_data_pid = 0;
+      data_pid = -3;
    }
    else
    {
@@ -211,7 +212,7 @@ ssh_exec(char          *host,
          trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_exec", NULL,
                    _("socketpair() error : %s"), strerror(errno));
          status = INCORRECT;
-         ssh_data_pid = 0;
+         data_pid = -3;
       }
       else
       {
@@ -222,11 +223,11 @@ ssh_exec(char          *host,
             trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_exec", NULL,
                       _("pipe() error : %s"), strerror(errno));
             status = INCORRECT;
-            ssh_data_pid = 0;
+            data_pid = -3;
          }
          else
          {
-            if ((*child_pid = fork()) == 0)  /* Child process. */
+            if ((data_pid = fork()) == 0)  /* Child process. */
             {
                char *args[23],
                     dummy,
@@ -374,7 +375,7 @@ ssh_exec(char          *host,
                          _("execvp() error : %s"), strerror(errno));
                _exit(INCORRECT);
             }
-            else if (*child_pid > 0) /* Parent process. */
+            else if (data_pid > 0) /* Parent process. */
                  {
                     (void)close(sock_fd[1]);
 
@@ -393,7 +394,6 @@ ssh_exec(char          *host,
                        trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ssh_exec", NULL,
                                  _("tty_raw() failed in parent!"));
                     }
-                    ssh_data_pid = *child_pid;
 
                     status = SUCCESS;
                  }
@@ -401,7 +401,7 @@ ssh_exec(char          *host,
                  {
                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_exec", NULL,
                               _("fork() error : %s"), strerror(errno));
-                    ssh_data_pid = 0;
+                    data_pid = -3;
                     status = INCORRECT;
                  }
          }
@@ -423,9 +423,9 @@ ssh_exec(char          *host,
 /*############################ ssh_login() ##############################*/
 int
 #ifdef WITH_SSH_FINGERPRINT
-ssh_login(int data_fd, char *passwd, char *fingerprint)
+ssh_login(int data_fd, char *passwd, char debug, char *fingerprint)
 #else
-ssh_login(int data_fd, char *passwd)
+ssh_login(int data_fd, char *passwd, char debug)
 #endif
 {
    int            eio_loops = 0,
@@ -445,7 +445,7 @@ ssh_login(int data_fd, char *passwd)
    /* We want to be generic and allow a user to place the */
    /* tags in any order.                                  */
 
-   if (passwd != NULL)
+   if ((passwd != NULL) && (passwd[0] != '\0'))
    {
       /* Do we have an identity tag "<i>" ? */
       if ((ptr = strstr(passwd, "<i>")))
@@ -561,7 +561,7 @@ retry_read:
                   if (((status = read(fdm, msg_str, MAX_RET_MSG_LENGTH)) == -1) &&
                       (errno == EAGAIN))
                   {
-                     if (rr_loops > 5)
+                     if ((rr_loops > 5) || (debug > 0))
                      {
                         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
                                   _("Hit an Input/Output error, assuming child was not up. Retrying (%d)."),
@@ -623,9 +623,14 @@ retry_read:
                      }
                      else
                      {
+                        if (ssh_child_up() == NO)
+                        {
+                           status = INCORRECT;
+                           break;
+                        }
                         if ((tmp_errno == EIO) && (eio_loops < 10))
                         {
-                           if (eio_loops > 5)
+                           if ((eio_loops > 5) || (debug > 0))
                            {
                               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
                                         _("Hit an Input/Output error, assuming child was not up. Retrying (%d)."),
@@ -658,8 +663,15 @@ retry_read:
                   {
 #ifdef WITH_TRACE
                      trace_log(NULL, 0, CRLF_R_TRACE, msg_str, status, NULL);
-#endif
                      msg_str[status] = '\0';
+#else
+                     msg_str[status] = '\0';
+                     if (debug > 0)
+                     {
+                        trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
+                                  "SSH client response = `%s'", msg_str);
+                     }
+#endif
                      ssh_client_up = YES;
                      if (status == 0)
                      {
@@ -674,7 +686,12 @@ retry_read:
                         if ((lposi(ptr, "assword:", 8) != NULL) ||
                             (!strncmp(msg_str, "Enter passphrase", 16)))
                         {
-                           if (password)
+                           if (debug > 0)
+                           {
+                              trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
+                                        "Identified password prompt");
+                           }
+                           if ((password != NULL) && (password[0] != '\0'))
                            {
                               size_t length = strlen(password);
 
@@ -696,31 +713,24 @@ retry_read:
                               {
                                  /* Check if correct password was entered. */
                                  msg_str[0] = '\0';
-                                 if ((status = get_passwd_reply(fdm)) > 0)
+                                 if ((status = get_passwd_reply(fdm)) != SUCCESS)
                                  {
-                                    if ((status == 1) && (msg_str[0] == '\n'))
+                                    while (*ptr)
                                     {
-                                       status = SUCCESS;
-                                    }
-                                    else
-                                    {
-                                       while (*ptr)
+                                       if ((*ptr == '\n') || (*ptr == '\r'))
                                        {
-                                          if ((*ptr == '\n') || (*ptr == '\r'))
-                                          {
-                                             *ptr = ' ';
-                                          }
-                                          ptr++;
+                                          *ptr = ' ';
                                        }
-                                       trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_login", msg_str,
-                                                 _("Failed to enter password."));
-                                       status = INCORRECT;
-                                       msg_str[0] = '\0';
+                                       ptr++;
                                     }
+                                    trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_login", msg_str,
+                                              _("Failed to enter password."));
+                                    status = INCORRECT;
+                                    msg_str[0] = '\0';
                                  }
                               }
                            }
-                           else /* if (!password) */
+                           else /* No password given. */
                            {
                               /* It's asking for a password or passphrase and */
                               /* we don't have one. Report error.             */
@@ -912,15 +922,29 @@ retry_read:
                    * clients at the same time, this is what can happen
                    * regularly. I do not know why this is so.
                    */
-                  if (write(data_fd, "", 0) == -1)
+                  if (ssh_child_up() == NO)
                   {
-                     /* SSH client has closed the pipe! */
-                     status = RETRY;
+                     status = INCORRECT;
                   }
                   else
                   {
-                     /* No password required to login. */
-                     status = SUCCESS;
+                     if (write(data_fd, "", 0) == -1)
+                     {
+                        /* SSH client has closed the pipe! */
+                        if (ssh_child_up() == NO)
+                        {
+                           status = INCORRECT;
+                        }
+                        else
+                        {
+                           status = RETRY;
+                        }
+                     }
+                     else
+                     {
+                        /* No password required to login. */
+                        status = SUCCESS;
+                     }
                   }
                   break;
                }
@@ -931,9 +955,9 @@ retry_read:
                          _("SSH program not responding."));
                status = INCORRECT;
                timeout_flag = ON;
-               if (ssh_data_pid > 0)
+               if (data_pid > 0)
                {
-                  if (kill(ssh_data_pid, SIGKILL) == -1)
+                  if (kill(data_pid, SIGKILL) == -1)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
 #if SIZEOF_PID_T == 4
@@ -941,7 +965,7 @@ retry_read:
 #else
                                _("Failed to kill() data ssh process %lld : %s"),
 #endif
-                               (pri_pid_t)ssh_data_pid, strerror(errno));
+                               (pri_pid_t)data_pid, strerror(errno));
                   }
                   else
                   {
@@ -964,6 +988,25 @@ retry_read:
    (void)free(password);
 
    return(status);
+}
+
+
+/*########################### ssh_child_up() ############################*/
+int
+ssh_child_up(void)
+{
+   pid_t pid;
+
+   /* For now report if ssh transport process terminated. */
+   if ((pid = waitpid(data_pid, NULL, WNOHANG)) == data_pid)
+   {
+      trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ssh_child_up", NULL,
+                "SSH process terminated.");
+      data_pid = -2;
+      return(NO);
+   }
+
+   return(YES);
 }
 
 
@@ -1345,6 +1388,9 @@ get_passwd_reply(int fd)
    fd_set         rset;
    struct timeval timeout;
 
+#ifdef WITH_TRACE
+read_passwd_reply:
+#endif
    FD_ZERO(&rset);
    FD_SET(fd, &rset);
    timeout.tv_usec = 0L;
@@ -1358,6 +1404,7 @@ get_passwd_reply(int fd)
                 _("Timeout while waiting for password responce."));
       timeout_flag = ON;
       status = INCORRECT;
+      msg_str[0] = '\0';
    }
    else if (FD_ISSET(fd, &rset))
         {
@@ -1365,19 +1412,159 @@ get_passwd_reply(int fd)
            {
               trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_passwd_reply", NULL,
                         _("read() error : %s"), strerror(errno));
+              status = INCORRECT;
+              msg_str[0] = '\0';
            }
-#ifdef WITH_TRACE
            else
            {
-              trace_log(NULL, 0, BIN_CMD_R_TRACE, msg_str, status, NULL);
-           }
+              if ((status == 1) && (msg_str[0] == '\n'))
+              {
+#ifdef WITH_TRACE
+                 trace_log(NULL, 0, BIN_CMD_R_TRACE, msg_str, status, NULL);
+                 goto read_passwd_reply;
+#else
+                 int flags;
+
+                 /*
+                  * There migth be more information, like login failed.
+                  * So let's try to continue reading, but without blocking.
+                  */
+                 if ((flags = fcntl(fd, F_GETFL, 0)) == -1)
+                 {
+                    trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
+                              "Failed to get flag via fcntl() : %s", strerror(errno));
+                    return(INCORRECT);
+                 }
+                 flags |= O_NONBLOCK;
+                 if (fcntl(fd, F_SETFL, flags) == -1)
+                 {
+                    trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
+                              "Failed to set O_NONBLOCK flag via fcntl() : %s",
+                              strerror(errno));
+                    return(INCORRECT);
+                 }
+                 if ((status = read(fd, msg_str, MAX_RET_MSG_LENGTH)) == -1)
+                 {
+                    if (errno == EAGAIN)
+                    {
+                       /* OK. Nothing to read. So let's assume everything */
+                       /* is good.                                        */
+                       status = SUCCESS;
+                       msg_str[0] = '\0';
+                    }
+                    if (ssh_child_up() == NO)
+                    {
+                       status = INCORRECT;
+                    }
+                 }
+                 else
+                 {
+                    if (status > 0)
+                    {
+                       msg_str[status] = '\0';
+                       if (lposi(msg_str, "Authenticated", 13) != NULL)
+                       {
+                          status = SUCCESS;
+                       }
+                       else
+                       {
+                          char *ptr = msg_str;
+
+                          status = INCORRECT;
+                          if ((ptr = lposi(ptr, "assword:", 8)) != NULL)
+                          {
+                             /* Let's remove the next line showing   */
+                             /* the password prompt. It confuses the */
+                             /* user since we show msg_str in the    */
+                             /* error message later.                 */
+                             ptr -= 9;
+                             while ((ptr > msg_str) && (*ptr != '\n'))
+                             {
+                                ptr--;
+                             }
+                             if (*ptr == '\n')
+                             {
+                                if (*(ptr - 1) == '\r')
+                                {
+                                   *(ptr - 1) = '\0';
+                                }
+                                else
+                                {
+                                   *ptr = '\0';
+                                }
+                             }
+                          }
+                       }
+                    }
+                    else
+                    {
+                       trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
+                                 "Hmmm, read() returned %d", status);
+                       status = INCORRECT;
+                       msg_str[0] = '\0';
+                    }
+                 }
+                 if ((flags = fcntl(fd, F_GETFL, 0)) == -1)
+                 {
+                    trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
+                              "Failed to get flag via fcntl() : %s", strerror(errno));
+                    return(INCORRECT);
+                 }
+                 flags &= ~O_NONBLOCK;
+                 if (fcntl(fd, F_SETFL, flags) == -1)
+                 {
+                    trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
+                              "Failed to unset O_NONBLOCK flag via fcntl() : %s",
+                              strerror(errno));
+                    return(INCORRECT);
+                 }
 #endif
+              }
+#ifdef WITH_TRACE
+              else
+              {
+                 char *ptr;
+
+                 trace_log(NULL, 0, CRLF_R_TRACE, msg_str, status, NULL);
+                 while ((status > 8) && (strncmp(msg_str, "debug1: ", 8) == 0))
+                 {
+                    ptr = msg_str + 8;
+                    while ((*ptr != '\r') && (*ptr != '\n') && (*ptr != '\0'))
+                    {
+                       ptr++;
+                    }
+                    while ((*ptr == '\r') || (*ptr == '\n'))
+                    {
+                       ptr++;
+                    }
+                    status = status - (ptr - msg_str);
+                    (void)memcpy(msg_str, ptr, status);
+                 }
+                 if (status > 0)
+                 {
+                    msg_str[status] = '\0';
+                 }
+              }
+#endif
+              if (status > 0)
+              {
+                  if (lposi(msg_str, "Authenticated", 13) != NULL)
+                  {
+                     status = SUCCESS;
+                  }
+                  else
+                  {
+                     status = INCORRECT;
+                  }
+              }
+           }
         }
         else
         {
            msg_str[0] = '\0';
            trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_passwd_reply", NULL,
                      _("select() error : %s"), strerror(errno));
+           status = INCORRECT;
         }
 
    return(status);
