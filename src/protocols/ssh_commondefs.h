@@ -20,11 +20,8 @@
 #ifndef __ssh_commondefs_h
 #define __ssh_commondefs_h
 
-#define DEFAULT_SSH_PORT     22
-#define SSH_COMMAND          "ssh"
-
-#define MIN_SSH_PROMPT_DELAY 1L
-#define MAX_SSH_PROMPT_DELAY 5L
+#define DEFAULT_SSH_PORT                     22
+#define SSH_COMMAND                          "ssh"
 
 #ifdef WITH_SSH_FINGERPRINT
 # ifdef WITH_REMOVE_FROM_KNOWNHOSTS

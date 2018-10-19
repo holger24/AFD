@@ -909,6 +909,7 @@ typedef unsigned long       u_long_64;
 #define TLS_STRICT_VERIFY          4194304
 #define FTP_DISABLE_MLST           8388608
 #define KEEP_CONNECTED_DISCONNECT  16777216
+#define DISABLE_STRICT_HOST_KEY    33554432
 
 #define FTP_SHEME                  "ftp"
 #define FTP_SHEME_LENGTH           (sizeof(FTP_SHEME) - 1)
@@ -2423,7 +2424,8 @@ struct filetransfer_status
                                             /*+------+------------------+*/
                                             /*|Bit(s)|     Meaning      |*/
                                             /*+------+------------------+*/
-                                            /*| 26-32| Not used.        |*/
+                                            /*| 27-32| Not used.        |*/
+                                            /*| 26   | DISABLE_STRICT_HOST_KEY|*/
                                             /*| 25   | KEEP_CONNECTED_DISCONNECT|*/
                                             /*| 24   | FTP_DISABLE_MLST |*/
                                             /*| 23   | TLS_STRICT_VERIFY|*/

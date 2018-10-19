@@ -1,6 +1,6 @@
 /*
  *  edit_hc.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -87,72 +87,73 @@
 #define HOST_ALIAS_LABEL_LENGTH (sizeof(HOST_ALIAS_LABEL) - 1)
 
 /* Definitions to show which values have been changed. */
-#define REAL_HOSTNAME_1_CHANGED       1
-#define REAL_HOSTNAME_2_CHANGED       2
-#define PROXY_NAME_CHANGED            4
-#define TRANSFER_TIMEOUT_CHANGED      8
-#define RETRY_INTERVAL_CHANGED        16
-#define MAX_ERRORS_CHANGED            32
-#define SUCCESSFUL_RETRIES_CHANGED    64
-#define ALLOWED_TRANSFERS_CHANGED     128
-#define BLOCK_SIZE_CHANGED            256
-#define FILE_SIZE_OFFSET_CHANGED      512
-#define NO_OF_NO_BURST_CHANGED        1024
-#define HOST_1_ID_CHANGED             2048
-#define HOST_2_ID_CHANGED             4096
-#define HOST_SWITCH_TOGGLE_CHANGED    8192
-#define AUTO_TOGGLE_CHANGED           16384
-#define FTP_MODE_CHANGED              32768
-#define FTP_SET_IDLE_TIME_CHANGED     65536
+#define REAL_HOSTNAME_1_CHANGED         1
+#define REAL_HOSTNAME_2_CHANGED         2
+#define PROXY_NAME_CHANGED              4
+#define TRANSFER_TIMEOUT_CHANGED        8
+#define RETRY_INTERVAL_CHANGED          16
+#define MAX_ERRORS_CHANGED              32
+#define SUCCESSFUL_RETRIES_CHANGED      64
+#define ALLOWED_TRANSFERS_CHANGED       128
+#define BLOCK_SIZE_CHANGED              256
+#define FILE_SIZE_OFFSET_CHANGED        512
+#define NO_OF_NO_BURST_CHANGED          1024
+#define HOST_1_ID_CHANGED               2048
+#define HOST_2_ID_CHANGED               4096
+#define HOST_SWITCH_TOGGLE_CHANGED      8192
+#define AUTO_TOGGLE_CHANGED             16384
+#define FTP_MODE_CHANGED                32768
+#define FTP_SET_IDLE_TIME_CHANGED       65536
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
-# define FTP_KEEPALIVE_CHANGED        131072
+# define FTP_KEEPALIVE_CHANGED          131072
 #endif
-#define FTP_FAST_RENAME_CHANGED       262144
-#define FTP_FAST_CD_CHANGED           524288
-#define TRANSFER_RATE_LIMIT_CHANGED   1048576
-#define TTL_CHANGED                   2097152
-#define FTP_IGNORE_BIN_CHANGED        4194304
-#define SOCKET_SEND_BUFFER_CHANGED    8388608
-#define SOCKET_RECEIVE_BUFFER_CHANGED 16777216
-#define KEEP_CONNECTED_CHANGED        33554432
+#define FTP_FAST_RENAME_CHANGED         262144
+#define FTP_FAST_CD_CHANGED             524288
+#define TRANSFER_RATE_LIMIT_CHANGED     1048576
+#define TTL_CHANGED                     2097152
+#define FTP_IGNORE_BIN_CHANGED          4194304
+#define SOCKET_SEND_BUFFER_CHANGED      8388608
+#define SOCKET_RECEIVE_BUFFER_CHANGED   16777216
+#define KEEP_CONNECTED_CHANGED          33554432
 #ifdef WITH_DUP_CHECK
-# define DC_TYPE_CHANGED              67108864
-# define DC_DELETE_CHANGED            134217728
-# define DC_STORE_CHANGED             268435456
-# define DC_WARN_CHANGED              536870912
-# define DC_TIMEOUT_CHANGED           1073741824
+# define DC_TYPE_CHANGED                67108864
+# define DC_DELETE_CHANGED              134217728
+# define DC_STORE_CHANGED               268435456
+# define DC_WARN_CHANGED                536870912
+# define DC_TIMEOUT_CHANGED             1073741824
 #endif
-#define FTP_EXTENDED_MODE_CHANGED     2147483648U
+#define FTP_EXTENDED_MODE_CHANGED       2147483648U
 #ifdef _WITH_BURST_2
-# define ALLOW_BURST_CHANGED          1
+# define ALLOW_BURST_CHANGED            1
 #endif
-#define FTP_PASSIVE_REDIRECT_CHANGED  2
-#define ERROR_OFFLINE_STATIC_CHANGED  4
-#define KC_DIRECTION_CHANGED          8
-#define FILE_WHEN_LOCAL_CHANGED       16
-#define TCP_KEEPALIVE_CHANGED         32
-#define DO_NOT_DELETE_DATA_CHANGED    64
+#define FTP_PASSIVE_REDIRECT_CHANGED    2
+#define ERROR_OFFLINE_STATIC_CHANGED    4
+#define KC_DIRECTION_CHANGED            8
+#define FILE_WHEN_LOCAL_CHANGED         16
+#define TCP_KEEPALIVE_CHANGED           32
+#define DO_NOT_DELETE_DATA_CHANGED      64
 #ifdef WITH_DUP_CHECK
-# define DC_REF_CHANGED               128
-# define DC_CRC_CHANGED               256
-# define DC_TIMEOUT_FIXED_CHANGED     512
+# define DC_REF_CHANGED                 128
+# define DC_CRC_CHANGED                 256
+# define DC_TIMEOUT_FIXED_CHANGED       512
 #endif
-#define USE_SEQUENCE_LOCKING_CHANGED  1024
-#define WARN_TIME_DAYS_CHANGED        2048
-#define WARN_TIME_HOURS_CHANGED       4096
-#define WARN_TIME_MINS_CHANGED        8192
-#define WARN_TIME_SECS_CHANGED        16384
-#define COMPRESION_CHANGED            32768
-#define KEEP_TIME_STAMP_CHANGED       65536
-#define SORT_FILE_NAMES_CHANGED       131072
-#define NO_AGEING_JOBS_CHANGED        262144
-#define CHECK_SIZE_CHANGED            524288
-#define TIMEOUT_TRANSFER_CHANGED      1048576
-#define FTPS_CCC_CHANGED              2097152
-#define USE_LIST_CHANGED              4194304
-#define STRICT_TLS_CHANGED            8388608
-#define DISABLE_MLST_CHANGED          16777216
-#define DISCONNECT_CHANGED            33554432
+#define USE_SEQUENCE_LOCKING_CHANGED    1024
+#define WARN_TIME_DAYS_CHANGED          2048
+#define WARN_TIME_HOURS_CHANGED         4096
+#define WARN_TIME_MINS_CHANGED          8192
+#define WARN_TIME_SECS_CHANGED          16384
+#define COMPRESION_CHANGED              32768
+#define KEEP_TIME_STAMP_CHANGED         65536
+#define SORT_FILE_NAMES_CHANGED         131072
+#define NO_AGEING_JOBS_CHANGED          262144
+#define CHECK_SIZE_CHANGED              524288
+#define TIMEOUT_TRANSFER_CHANGED        1048576
+#define FTPS_CCC_CHANGED                2097152
+#define USE_LIST_CHANGED                4194304
+#define STRICT_TLS_CHANGED              8388608
+#define DISABLE_MLST_CHANGED            16777216
+#define DISCONNECT_CHANGED              33554432
+#define DISABLE_STRICT_HOST_KEY_CHANGED 67108864
 
 /* Structure holding all changed entries of one host. */
 struct changed_entry

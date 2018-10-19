@@ -291,8 +291,7 @@ main(int argc, char *argv[])
 
    /* Connect to remote SFTP-server. */
    if ((status = sftp_connect(db.hostname, db.port, db.ssh_protocol,
-                              (fsa->protocol_options & ENABLE_COMPRESSION) ? YES : NO,
-                              db.user,
+                              fsa->protocol_options, db.user,
 #ifdef WITH_SSH_FINGERPRINT
                               db.ssh_fingerprint,
 #endif

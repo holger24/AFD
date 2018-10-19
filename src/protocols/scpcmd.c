@@ -26,6 +26,7 @@ DESCR__S_M3
  **
  ** SYNOPSIS
  **   int  scp_connect(char *hostname, int port, char *user,
+ **                    unsigned char ssh_protocol, int ssh_options,
  **                    char *fingerprint, char *passwd, char *dir)
  **   int  scp_open_file(char *filename, off_t size, mode_t mode)
  **   int  scp_close_file(void)
@@ -106,7 +107,7 @@ int
 scp_connect(char          *hostname,
             int           port,
             unsigned char ssh_protocol,
-            int           compression,
+            int           ssh_options,
             char          *user,
 #ifdef WITH_SSH_FINGERPRINT
             char          *fingerprint,
@@ -158,7 +159,7 @@ scp_connect(char          *hostname,
    {
 # endif
 #endif
-      if ((status = ssh_exec(hostname, port, ssh_protocol, compression, user,
+      if ((status = ssh_exec(hostname, port, ssh_protocol, ssh_options, user,
                              passwd, cmd, NULL, &data_fd)) == SUCCESS)
       {
 #ifdef WITH_SSH_FINGERPRINT

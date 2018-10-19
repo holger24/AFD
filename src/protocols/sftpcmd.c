@@ -32,6 +32,7 @@ DESCR__S_M3
  **   int          sftp_close_dir(void)
  **   int          sftp_close_file(void)
  **   int          sftp_connect(char *hostname, int port, char *user,
+ **                             unsigned char ssh_protocol, int ssh_options,
  **                             char *fingerprint, char *passwd, char *dir,
  **                             char debug)
  **   int          sftp_dele(char *filename)
@@ -235,7 +236,7 @@ int
 sftp_connect(char          *hostname,
              int           port,
              unsigned char ssh_protocol,
-             int           compression,
+             int           ssh_options,
              char          *user,
 #ifdef WITH_SSH_FINGERPRINT
              char          *fingerprint,
@@ -290,7 +291,7 @@ retry_connect:
       return(SUCCESS);
    }
 
-   if ((status = ssh_exec(hostname, port, ssh_protocol, compression, user,
+   if ((status = ssh_exec(hostname, port, ssh_protocol, ssh_options, user,
                           passwd, NULL, "sftp", &data_fd)) == SUCCESS)
    {
       unsigned int ui_var = 5;

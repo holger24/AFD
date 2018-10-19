@@ -26,7 +26,7 @@ DESCR__S_M3
  **
  ** SYNOPSIS
  **   int     ssh_exec(char *host, int port, unsigned char ssh_protocol,
- **                    int compression, char *user, char *passwd,
+ **                    int ssh_options, char *user, char *passwd,
  **                    char *cmd, char *subsystem, int *fd)
  **   int     ssh_login(int data_fd, char *passwd)
  **   size_t  pipe_write(int fd, char *buf, size_t count)
@@ -49,6 +49,8 @@ DESCR__S_M3
  **   03.08.2012 H.Kiehl In function ssh_login() use O_NONBLOCK for reading
  **                      initial string from ssh process instead of an
  **                      alarm().
+ **   19.10.2018 H.Kiehl Change compression parameter to ssh_options to be
+ **                      able to path more options.
  */
 DESCR__E_M3
 
@@ -126,7 +128,7 @@ int
 ssh_exec(char          *host,
          int           port,
          unsigned char ssh_protocol,
-         int           compression,
+         int           ssh_options,
          char          *user,
          char          *passwd,
          char          *cmd,
@@ -229,7 +231,7 @@ ssh_exec(char          *host,
          {
             if ((data_pid = fork()) == 0)  /* Child process. */
             {
-               char *args[23],
+               char *args[25],
                     dummy,
                     str_protocol[1 + 3 + 1],
                     str_port[MAX_INT_LENGTH],
@@ -277,9 +279,16 @@ ssh_exec(char          *host,
                   (void)snprintf(str_protocol, 1 + 3 + 1,
                                  "-%d", (int)ssh_protocol);
                }
-               if (compression == YES)
+               if (ssh_options & ENABLE_COMPRESSION)
                {
                   args[argcount] = "-C";
+                  argcount++;
+               }
+               if (ssh_options & DISABLE_STRICT_HOST_KEY)
+               {
+                  args[argcount] = "-oUserKnownHostsFile /dev/null";
+                  argcount++;
+                  args[argcount] = "-oStrictHostKeyChecking no";
                   argcount++;
                }
 #ifdef WITH_TRACE

@@ -1,6 +1,6 @@
 /*
  *  edit_hc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -165,6 +165,7 @@ Widget                     active_mode_w,
                            dc_crc32c_w,
 #endif
                            disable_mlst_w,
+                           disable_strict_host_key_w,
                            disconnect_w,
                            do_not_delete_data_toggle_w,
                            extended_mode_w,
@@ -2231,7 +2232,7 @@ main(int argc, char *argv[])
                        NULL);
    XtAddCallback(compression_w, XmNvalueChangedCallback,
                  (XtCallbackProc)toggle_button2, (XtPointer)COMPRESION_CHANGED);
-   keep_time_stamp_w = XtVaCreateManagedWidget("Keep time stamp",
+   disable_strict_host_key_w = XtVaCreateManagedWidget("Strict Host Key",
                        xmToggleButtonGadgetClass, box_w,
                        XmNfontList,               fontlist,
                        XmNset,                    False,
@@ -2239,6 +2240,18 @@ main(int argc, char *argv[])
                        XmNtopOffset,              SIDE_OFFSET,
                        XmNleftAttachment,         XmATTACH_WIDGET,
                        XmNleftWidget,             compression_w,
+                       XmNbottomAttachment,       XmATTACH_FORM,
+                       NULL);
+   XtAddCallback(disable_strict_host_key_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)toggle_button2, (XtPointer)DISABLE_STRICT_HOST_KEY_CHANGED);
+   keep_time_stamp_w = XtVaCreateManagedWidget("Keep time stamp",
+                       xmToggleButtonGadgetClass, box_w,
+                       XmNfontList,               fontlist,
+                       XmNset,                    True,
+                       XmNtopAttachment,          XmATTACH_FORM,
+                       XmNtopOffset,              SIDE_OFFSET,
+                       XmNleftAttachment,         XmATTACH_WIDGET,
+                       XmNleftWidget,             disable_strict_host_key_w,
                        XmNbottomAttachment,       XmATTACH_FORM,
                        NULL);
    XtAddCallback(keep_time_stamp_w, XmNvalueChangedCallback,

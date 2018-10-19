@@ -1,7 +1,7 @@
 /*
  *  edit_hc_callbacks.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -103,6 +103,7 @@ extern Widget                     active_mode_w,
                                   dc_crc32c_w,
 #endif
                                   disable_mlst_w,
+                                  disable_strict_host_key_w,
                                   disconnect_w,
                                   do_not_delete_data_toggle_w,
                                   extended_mode_w,
@@ -1453,6 +1454,7 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(sort_file_names_w, False);
          XtSetSensitive(no_ageing_jobs_w, False);
          XtSetSensitive(compression_w, False);
+         XtSetSensitive(disable_strict_host_key_w, False);
          XtSetSensitive(rm_button_w, True);
       }
       else
@@ -2603,10 +2605,20 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
             {
                XtVaSetValues(compression_w, XmNset, False, NULL);
             }
+            XtSetSensitive(disable_strict_host_key_w, True);
+            if (fsa[cur_pos].protocol_options & DISABLE_STRICT_HOST_KEY)
+            {
+               XtVaSetValues(disable_strict_host_key_w, XmNset, False, NULL);
+            }
+            else
+            {
+               XtVaSetValues(disable_strict_host_key_w, XmNset, True, NULL);
+            }
          }
          else
          {
             XtSetSensitive(compression_w, False);
+            XtSetSensitive(disable_strict_host_key_w, False);
          }
 
          /* See if we need to disable the remove button. */
@@ -3227,6 +3239,11 @@ submite_button(Widget w, XtPointer client_data, XtPointer call_data)
          if (ce[i].value_changed2 & COMPRESION_CHANGED)
          {
             fsa[i].protocol_options ^= ENABLE_COMPRESSION;
+            changes++;
+         }
+         if (ce[i].value_changed2 & DISABLE_STRICT_HOST_KEY_CHANGED)
+         {
+            fsa[i].protocol_options ^= DISABLE_STRICT_HOST_KEY;
             changes++;
          }
          if (ce[i].value_changed2 & KEEP_TIME_STAMP_CHANGED)
