@@ -46,7 +46,7 @@ DESCR__S_M3
  **   and rule.rename_to.
  **
  ** RETURN VALUES
- **   None. It will exit with INCORRECT if it fails to allocate memory
+ **   None. It will return if it fails to allocate memory
  **   or fails to open the rule_file.
  **
  ** AUTHOR
@@ -74,10 +74,7 @@ DESCR__E_M3
 #include <stdlib.h>          /* calloc(), free()                         */
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>          /* read(), close()                          */
-#ifdef HAVE_FCNTL_H
-# include <fcntl.h>
-#endif
+#include <unistd.h>          /* eaccess(), F_OK                          */
 #include <errno.h>
 #include "amgdefs.h"
 
@@ -103,7 +100,6 @@ get_rename_rules(int verbose)
                  read_size = 1024,
                  total_no_of_rules = 0;
    time_t        current_times = 0;
-   off_t         max_size = 0;
    struct stat   stat_buf;
 
    if (config_file == NULL)
@@ -301,7 +297,6 @@ get_rename_rules(int verbose)
       }
       else
       {
-         max_size += stat_buf.st_size;
          if (stat_buf.st_blksize > read_size)
          {
             read_size = stat_buf.st_blksize;
@@ -313,16 +308,16 @@ get_rename_rules(int verbose)
    if (last_read_times != current_times)
    {
       register int i;
-      int          bytes_read,
-                   fd;
-      off_t        bytes_buffered;
-      char         *last_ptr,
+      off_t        bytes_buffered,
+                   bytes_stored;
+      char         *buffer = NULL,
+                   *last_ptr,
                    *ptr,
-                   *buffer;
+                   *tmp_buffer = NULL;
 
       if (first_time == YES)
       {
-         first_time = NO;
+         first_time = NEITHER;
       }
       else
       {
@@ -357,49 +352,74 @@ get_rename_rules(int verbose)
       }
       last_read_times = current_times;
 
-      /* Allocate memory to store file. */
-      if ((buffer = malloc(1 + max_size + 1 + read_size)) == NULL)
-      {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("malloc() error : %s"), strerror(errno));
-         return;
-      }
-
-      buffer[0] = '\n';
       bytes_buffered = 0;
       for (count = 0; count < no_of_rename_rule_files; count++)
       {
-         /* Open file. */
-         if ((fd = open(rule_file[count], O_RDONLY)) == -1)
+         if (((bytes_stored = read_file_no_cr(rule_file[count], &tmp_buffer, YES,
+                                              __FILE__, __LINE__)) == INCORRECT) ||
+             (tmp_buffer == NULL) || (tmp_buffer[0] == '\0'))
          {
-            system_log((errno == ENOENT) ? INFO_SIGN : WARN_SIGN, __FILE__, __LINE__,
-                       _("Failed to open() `%s' : %s"),
-                       rule_file[count], strerror(errno));
+            if ((first_time == YES) || (first_time == NEITHER))
+            {
+               first_time = NO;
+               if (tmp_buffer == NULL)
+               {
+                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                             "Configuration file `%s' could not be read.",
+                             rule_file[count]);
+               }
+               else if (tmp_buffer[0] == '\0')
+                    {
+                       system_log(WARN_SIGN, __FILE__, __LINE__,
+                                  "Configuration file `%s' is empty.",
+                                  rule_file[count]);
+                    }
+            }
          }
          else
          {
-            /* Read file into buffer. */
-            do
+            if (bytes_stored > 0)
             {
-               if ((bytes_read = read(fd, &buffer[1] + bytes_buffered,
-                                      read_size)) == -1)
+               if (bytes_buffered == 0)
                {
-                  system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             _("Failed to read() `%s' : %s"),
-                             rule_file[count], strerror(errno));
-                  break;
+                  if ((buffer = malloc(bytes_stored)) == NULL)
+                  {
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                 _("malloc() error : %s"), strerror(errno));
+                     return;
+                  }
+                  else
+                  {
+                     bytes_buffered = bytes_stored;
+                     (void)memcpy(buffer, tmp_buffer, bytes_stored);
+                     free(tmp_buffer);
+                     tmp_buffer = NULL;
+                  }
                }
-               bytes_buffered += bytes_read;
-            } while (bytes_read == read_size);
-            buffer[bytes_buffered] = '\n';
-
-            if (close(fd) == -1)
-            {
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          _("close() error : %s"), strerror(errno));
+               else
+               {
+                  if ((buffer = realloc(buffer, bytes_buffered + bytes_stored)) == NULL)
+                  {
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                 _("realloc() error : %s"), strerror(errno));
+                     return;
+                  }
+                  else
+                  {
+                     (void)memcpy(&buffer[bytes_buffered], tmp_buffer, bytes_stored);
+                     bytes_buffered += bytes_stored;
+                     free(tmp_buffer);
+                     tmp_buffer = NULL;
+                  }
+               }
             }
          }
       } /* for (count = 0; count < no_of_rename_rule_files; count++) */
+
+      if (first_time == NEITHER)
+      {
+         first_time = NO;
+      }
       buffer[bytes_buffered] = '\0';
 
       if (bytes_buffered > 0)
@@ -464,57 +484,61 @@ get_rename_rules(int verbose)
                   {
                      search_ptr++; /* Away with the '\n'. */
 
-                     /* Ignore any comments. */
-                     if ((*search_ptr == '#') &&
-                         (search_ptr > ptr) && (*(search_ptr - 1) != '\\'))
+                     if (*search_ptr != '\n') /* Ignore empty line. */
                      {
-                        while ((*search_ptr != '\n') && (*search_ptr != '\0'))
+                        /* Ignore any comments. */
+                        if ((*search_ptr == '#') &&
+                            (search_ptr > ptr) && (*(search_ptr - 1) != '\\'))
                         {
-                           search_ptr++;
+                           while ((*search_ptr != '\n') && (*search_ptr != '\0'))
+                           {
+                              search_ptr++;
+                           }
                         }
-                     }
-                     else
-                     {
-                        count = 0;
-                        while ((*search_ptr != ' ') && (*search_ptr != '\t') &&
-                               (*search_ptr != '\n') && (*search_ptr != '\0') &&
-                               (search_ptr < last_ptr))
+                        else
                         {
-                           if ((*search_ptr == '\\') &&
-                               ((*(search_ptr + 1) == ' ') ||
-                                 (*(search_ptr + 1) == '#') ||
-                                 (*(search_ptr + 1) == '\t')))
+                           count = 0;
+                           while ((*search_ptr != ' ') && (*search_ptr != '\t') &&
+                                  (*search_ptr != '\n') && (*search_ptr != '\0') &&
+                                  (search_ptr < last_ptr))
+                           {
+                              if ((*search_ptr == '\\') &&
+                                  ((*(search_ptr + 1) == ' ') ||
+                                    (*(search_ptr + 1) == '#') ||
+                                    (*(search_ptr + 1) == '\t')))
+                              {
+                                 count++; search_ptr++;
+                              }
+                              count++; search_ptr++;
+                           }
+                           if (search_ptr == last_ptr)
+                           {
+                              break;
+                           }
+                           if (count > max_filter_length)
+                           {
+                              max_filter_length = count;
+                           }
+                           while ((*search_ptr == ' ') || (*search_ptr == '\t'))
+                           {
+                              search_ptr++;
+                           }
+                           count = 0;
+                           while ((*search_ptr != '\n') && (*search_ptr != '\0'))
                            {
                               count++; search_ptr++;
                            }
-                           count++; search_ptr++;
+                           if (count > max_rule_length)
+                           {
+                              max_rule_length = count;
+                           }
+                           no_of_rules++;
                         }
-                        if (search_ptr == last_ptr)
-                        {
-                           break;
-                        }
-                        if (count > max_filter_length)
-                        {
-                           max_filter_length = count;
-                        }
-                        while ((*search_ptr == ' ') || (*search_ptr == '\t'))
-                        {
-                           search_ptr++;
-                        }
-                        count = 0;
-                        while ((*search_ptr != '\n') && (*search_ptr != '\0'))
-                        {
-                           count++; search_ptr++;
-                        }
-                        if (count > max_rule_length)
-                        {
-                           max_rule_length = count;
-                        }
-                        no_of_rules++;
                      }
-                     if ((*search_ptr == '\n') && ((*(search_ptr + 1) == '[') ||
-                         ((*(search_ptr + 1) == '\n') &&
-                          (*(search_ptr + 2) == '['))))
+                     if ((*search_ptr == '\n') &&
+                         ((*(search_ptr + 1) == '[') ||
+                          ((*(search_ptr + 1) == '\n') &&
+                           (*(search_ptr + 2) == '['))))
                      {
                         break;
                      }
