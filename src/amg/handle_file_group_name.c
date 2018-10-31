@@ -132,24 +132,20 @@ get_file_group(char             *group_name,
          do
          {
             ptr++;
-            if (*ptr == '\\')
+            if (*ptr == '#')
             {
-               ptr++;
+               while ((*ptr != '\n') && (*ptr != '\0'))
+               {
+                  ptr++;
+               }
+               if (length > 0)
+               {
+                  dir->file[dir->fgc].files[*total_length + length] = '\0';
+                  *total_length += length + 1;
+                  dir->file[dir->fgc].fc++;
+                  length = 0;
+               }
             }
-            else if (*ptr == '#')
-                 {
-                    while ((*ptr != '\n') && (*ptr != '\0'))
-                    {
-                       ptr++;
-                    }
-                    if (length > 0)
-                    {
-                       dir->file[dir->fgc].files[*total_length + length] = '\0';
-                       *total_length += length + 1;
-                       dir->file[dir->fgc].fc++;
-                       length = 0;
-                    }
-                 }
             else if ((*ptr == ' ') || (*ptr == '\t'))
                  {
                     /* Ignore spaces! */;
@@ -217,24 +213,20 @@ get_file_group(char             *group_name,
             do
             {
                ptr++;
-               if (*ptr == '\\')
+               if (*ptr == '#')
                {
-                  ptr++;
+                  while ((*ptr != '\n') && (*ptr != '\0'))
+                  {
+                     ptr++;
+                  }
+                  if (length > 0)
+                  {
+                     dir->file[dir->fgc].files[*total_length + length] = '\0';
+                     *total_length += length + 1;
+                     dir->file[dir->fgc].fc++;
+                     length = 0;
+                  }
                }
-               else if (*ptr == '#')
-                    {
-                       while ((*ptr != '\n') && (*ptr != '\0'))
-                       {
-                          ptr++;
-                       }
-                       if (length > 0)
-                       {
-                          dir->file[dir->fgc].files[*total_length + length] = '\0';
-                          *total_length += length + 1;
-                          dir->file[dir->fgc].fc++;
-                          length = 0;
-                       }
-                    }
                else if ((*ptr == ' ') || (*ptr == '\t'))
                     {
                        /* Ignore spaces! */;

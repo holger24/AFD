@@ -145,26 +145,22 @@ init_recipient_group_name(char *location,
       do
       {
          ptr++;
-         if (*ptr == '\\')
+         if (*ptr == '#')
          {
-            ptr++;
+            while ((*ptr != '\n') && (*ptr != '\0'))
+            {
+               ptr++;
+            }
+            if (length > 0)
+            {
+               if (length > max_length)
+               {
+                  max_length = length;
+               }
+               length = 0;
+               no_listed++;
+            }
          }
-         else if (*ptr == '#')
-              {
-                 while ((*ptr != '\n') && (*ptr != '\0'))
-                 {
-                    ptr++;
-                 }
-                 if (length > 0)
-                 {
-                    if (length > max_length)
-                    {
-                       max_length = length;
-                    }
-                    length = 0;
-                    no_listed++;
-                 }
-              }
          else if ((*ptr == ' ') || (*ptr == '\t'))
               {
                  /* Ignore spaces! */;
@@ -201,30 +197,26 @@ init_recipient_group_name(char *location,
          do
          {
             ptr++;
-            if (*ptr == '\\')
+            if (*ptr == '#')
             {
-               ptr++;
+               while ((*ptr != '\n') && (*ptr != '\0'))
+               {
+                  ptr++;
+               }
+               if (length > 0)
+               {
+                  group_list[counter][length] = '\0';
+                  if ((counter + 1) < no_listed)
+                  {
+                     length = 0;
+                     counter++;
+                  }
+                  else
+                  {
+                     break;
+                  }
+               }
             }
-            else if (*ptr == '#')
-                 {
-                    while ((*ptr != '\n') && (*ptr != '\0'))
-                    {
-                       ptr++;
-                    }
-                    if (length > 0)
-                    {
-                       group_list[counter][length] = '\0';
-                       if ((counter + 1) < no_listed)
-                       {
-                          length = 0;
-                          counter++;
-                       }
-                       else
-                       {
-                          break;
-                       }
-                    }
-                 }
             else if ((*ptr == ' ') || (*ptr == '\t'))
                  {
                     /* Ignore spaces! */;
