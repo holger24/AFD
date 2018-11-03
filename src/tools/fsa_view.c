@@ -1,6 +1,6 @@
 /*
  *  fsa_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -351,6 +351,10 @@ main(int argc, char *argv[])
          {
             (void)fprintf(stdout, "compression ");
          }
+         if (fsa[j].protocol_options & DISABLE_STRICT_HOST_KEY)
+         {
+            (void)fprintf(stdout, "disable_strict_host_key ");
+         }
       }
       if (fsa[j].protocol & LOC_FLAG)
       {
@@ -386,10 +390,16 @@ main(int argc, char *argv[])
       if (fsa[j].protocol & SCP_FLAG)
       {
          (void)fprintf(stdout, "SCP ");
-         if (((fsa[j].protocol & SFTP_FLAG) == 0) &&
-             (fsa[j].protocol_options & ENABLE_COMPRESSION))
+         if ((fsa[j].protocol & SFTP_FLAG) == 0)
          {
-            (void)fprintf(stdout, "compression ");
+            if (fsa[j].protocol_options & ENABLE_COMPRESSION)
+            {
+               (void)fprintf(stdout, "compression ");
+            }
+            if (fsa[j].protocol_options & DISABLE_STRICT_HOST_KEY)
+            {
+               (void)fprintf(stdout, "disable_strict_host_key ");
+            }
          }
       }
 #endif
