@@ -382,7 +382,7 @@ get_rename_rules(int verbose)
             {
                if (bytes_buffered == 0)
                {
-                  if ((buffer = malloc(bytes_stored)) == NULL)
+                  if ((buffer = malloc(bytes_stored + 1)) == NULL)
                   {
                      system_log(ERROR_SIGN, __FILE__, __LINE__,
                                  _("malloc() error : %s"), strerror(errno));
@@ -398,7 +398,7 @@ get_rename_rules(int verbose)
                }
                else
                {
-                  if ((buffer = realloc(buffer, bytes_buffered + bytes_stored)) == NULL)
+                  if ((buffer = realloc(buffer, bytes_buffered + bytes_stored + 1)) == NULL)
                   {
                      system_log(ERROR_SIGN, __FILE__, __LINE__,
                                  _("realloc() error : %s"), strerror(errno));
