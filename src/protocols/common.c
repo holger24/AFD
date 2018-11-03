@@ -1,6 +1,6 @@
 /*
  *  common.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,10 +26,13 @@ DESCR__S_M3
  **
  ** SYNOPSIS
  **   int     command(int fd, char *fmt, ...)
- **   int     ssl_connect(int sock_fd, char *func_name, int strict)
+ **   int     ssl_connect(int sock_fd, char *hostname,
+ **                       char *func_name, int strict)
  **   ssize_t ssl_write(SSL *ssl, const char *buf, size_t count)
- **   char    *ssl_error_msg(char *function, SSL *ssl, int *ssl_ret, int reply, char *msg_str)
- **   int     connect_with_timeout(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
+ **   char    *ssl_error_msg(char *function, SSL *ssl, int *ssl_ret,
+ **                          int reply, char *msg_str)
+ **   int     connect_with_timeout(int sockfd, const struct sockaddr *addr,
+ **                                socklen_t addrlen)
  **
  ** DESCRIPTION
  **
@@ -42,6 +45,7 @@ DESCR__S_M3
  **   10.03.2004 H.Kiehl Created
  **   26.06.2005 H.Kiehl Don't show password during a trace.
  **   27.02.2013 H.Kiehl Added function connect_with_timeout().
+ **   03.11.2018 H.Kiehl Implemented ServerNameIndication for TLS.
  */
 DESCR__E_M3
 
@@ -203,7 +207,7 @@ command(int fd, char *fmt, ...)
 #ifdef WITH_SSL
 /*############################ ssl_connect() ############################*/
 int
-ssl_connect(int sock_fd, char *func_name, int strict)
+ssl_connect(int sock_fd, char *hostname, char *func_name, int strict)
 {
    int  reply;
    char *p_env,
@@ -230,7 +234,15 @@ ssl_connect(int sock_fd, char *func_name, int strict)
 #   ifdef NO_SSLv23
    SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 #   else
+#    ifdef NO_SSLv23TLS1_0
+   SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1);
+#    else
+#     ifdef NO_SSLv23TLS1_0TLS1_1
+   SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
+#     else
    SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL);
+#     endif
+#    endif
 #   endif
 #  endif
 # endif
@@ -264,6 +276,15 @@ ssl_connect(int sock_fd, char *func_name, int strict)
    ssl_con = (SSL *)SSL_new(ssl_ctx);
    SSL_set_connect_state(ssl_con);
    SSL_set_fd(ssl_con, sock_fd);
+   if (!SSL_set_tlsext_host_name(ssl_con, hostname))
+   {
+      trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_ssl_auth", NULL,
+                _("SSL_set_tlsext_host_name() failed to enable ServerNameIndication for %s"),
+                hostname);
+      (void)close(sock_fd);
+      sock_fd = -1;
+      return(INCORRECT);
+   }
 
    /*
     * NOTE: Because we have set SSL_MODE_AUTO_RETRY, a SSL_read() can

@@ -63,6 +63,7 @@ DESCR__S_M3
  **   12.08.2012 H.Kiehl Use getaddrinfo() instead of gethostname() to
  **                      support IPv6.
  **   11.09.2014 H.Kiehl Added simulation mode.
+ **   03.11.2018 H.Kiehl Implemented ServerNameIndication for TLS.
  */
 DESCR__E_M3
 
@@ -727,7 +728,15 @@ http_connect(char *hostname,
 #   ifdef NO_SSLv23
          SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 #   else
+#    ifdef NO_SSLv23TLS1_0
+         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1);
+#    else
+#     ifdef NO_SSLv23TLS1_0TLS1_1
+         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
+#     else
          SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL);
+#     endif
+#    endif
 #   endif
 #  endif
 # endif
@@ -761,6 +770,15 @@ http_connect(char *hostname,
          ssl_con = (SSL *)SSL_new(ssl_ctx);
          SSL_set_connect_state(ssl_con);
          SSL_set_fd(ssl_con, http_fd);
+         if (!SSL_set_tlsext_host_name(ssl_con, hostname))
+         {
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_connect", NULL,
+                      _("SSL_set_tlsext_host_name() failed to enable ServerNameIndication for %s"),
+                      hostname);
+            (void)close(http_fd);
+            http_fd = -1;
+            return(INCORRECT);
+         }
 
          /*
           * NOTE: Because we have set SSL_MODE_AUTO_RETRY, a SSL_read() can

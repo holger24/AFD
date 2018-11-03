@@ -1,6 +1,6 @@
 /*
  *  smtpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -160,6 +160,9 @@ extern long                            transfer_timeout;
 
 /* Local global variables. */
 static int                             smtp_fd;
+#ifdef WITH_SSL
+static char                            connected_hostname[MAX_REAL_HOSTNAME_LENGTH];
+#endif
 static struct timeval                  timeout;
 static struct smtp_server_capabilities ssc;
 
@@ -477,6 +480,9 @@ smtp_connect(char *hostname, int port, int sockbuf_size)
          return(reply);
       }
    }
+#ifdef WITH_SSL
+   (void)memcpy(connected_hostname, hostname, MAX_REAL_HOSTNAME_LENGTH);
+#endif
 
    return(SUCCESS);
 }
@@ -546,7 +552,8 @@ smtp_smarttls(int strict)
                }
                else
                {
-                  if ((reply = ssl_connect(smtp_fd, "smtp_smarttls", strict)) == SUCCESS)
+                  if ((reply = ssl_connect(smtp_fd, connected_hostname,
+                                           "smtp_smarttls", strict)) == SUCCESS)
                   {
                      ssc.ssl_enabled = YES;
                   }

@@ -1,6 +1,6 @@
 /*
  *  ftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -208,6 +208,7 @@ DESCR__S_M3
  **                      support IPv6.
  **   06.02.2014 H.Kiehl Added CCC comand to end encryption.
  **   10.09.2014 H.Kiehl Added simulation mode.
+ **   03.11.2018 H.Kiehl Implemented ServerNameIndication for TLS.
  */
 DESCR__E_M3
 
@@ -294,6 +295,7 @@ static int                control_fd,
 #ifdef WITH_SSL
 static SSL                *ssl_data = NULL;
 static SSL_CTX            *ssl_ctx = NULL;
+static char               connected_hostname[MAX_REAL_HOSTNAME_LENGTH];
 #endif
 static sigjmp_buf         env_alrm;
 static struct sockaddr_in ctrl,
@@ -765,6 +767,9 @@ ftp_connect(char *hostname, int port)
          return(reply);
       }
    }
+#ifdef WITH_SSL
+   (void)memcpy(connected_hostname, hostname, MAX_REAL_HOSTNAME_LENGTH);
+#endif
 
    return(SUCCESS);
 }
@@ -809,7 +814,15 @@ ftp_ssl_auth(int strict)
 #   ifdef NO_SSLv23
             SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 #   else
+#    ifdef NO_SSLv23TLS1_0
+            SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1);
+#    else
+#     ifdef NO_SSLv23TLS1_0TLS1_1
+            SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
+#     else
             SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL);
+#     endif
+#    endif
 #   endif
 #  endif
 # endif
@@ -843,6 +856,15 @@ ftp_ssl_auth(int strict)
             ssl_con = (SSL *)SSL_new(ssl_ctx);
             SSL_set_connect_state(ssl_con);
             SSL_set_fd(ssl_con, control_fd);
+            if (!SSL_set_tlsext_host_name(ssl_con, connected_hostname))
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_ssl_auth", NULL,
+                         _("SSL_set_tlsext_host_name() failed to enable ServerNameIndication for %s"),
+                         connected_hostname);
+               (void)close(control_fd);
+               control_fd = -1;
+               return(INCORRECT);
+            }
 
             if (signal(SIGALRM, sig_handler) == SIG_ERR)
             {
