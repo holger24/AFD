@@ -3381,37 +3381,37 @@ ftp_data(char  *filename,
                               if ((reply != 150) && (reply != 125))
                               {
                                  (void)close(new_sock_fd);
-                                 return(reply);
+                                 return(-reply);
                               }
                            }
                            else
                            {
                               (void)close(new_sock_fd);
-                              return(reply);
+                              return(-reply);
                            }
                         }
                         else
                         {
                            (void)close(new_sock_fd);
-                           return(reply);
+                           return(-reply);
                         }
                      }
                      else
                      {
                         (void)close(new_sock_fd);
-                        return(reply);
+                        return(-reply);
                      }
                   }
                   else
                   {
                      (void)close(new_sock_fd);
-                     return(reply);
+                     return(-reply);
                   }
                }
                else
                {
                   (void)close(new_sock_fd);
-                  return(reply);
+                  return(--reply);
                }
             }
          }
