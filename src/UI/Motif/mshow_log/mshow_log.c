@@ -328,32 +328,52 @@ main(int argc, char *argv[])
                                     NULL);
    XtAddCallback(toggle, XmNvalueChangedCallback,
                  (XtCallbackProc)toggled, (XtPointer)SHOW_ERROR);
-   toggle = XtVaCreateManagedWidget(toggle_label[4],
-                                    xmToggleButtonGadgetClass, togglebox,
-                                    XmNfontList,               fontlist,
-                                    XmNset,                    False,
-                                    NULL);
-   XtAddCallback(toggle, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggled, (XtPointer)SHOW_OFFLINE);
-   toggle = XtVaCreateManagedWidget(toggle_label[5],
-                                    xmToggleButtonGadgetClass, togglebox,
-                                    XmNfontList,               fontlist,
-                                    XmNset,                    False,
-                                    NULL);
-   XtAddCallback(toggle, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggled, (XtPointer)SHOW_DEBUG);
    if (log_type_flag == TRANS_DB_LOG_TYPE)
    {
+      toggle = XtVaCreateManagedWidget(toggle_label[4],
+                                       xmToggleButtonGadgetClass, togglebox,
+                                       XmNfontList,               fontlist,
+                                       XmNset,                    True,
+                                       NULL);
+      XtAddCallback(toggle, XmNvalueChangedCallback,
+                    (XtCallbackProc)toggled, (XtPointer)SHOW_OFFLINE);
+      toggle = XtVaCreateManagedWidget(toggle_label[5],
+                                       xmToggleButtonGadgetClass, togglebox,
+                                       XmNfontList,               fontlist,
+                                       XmNset,                    True,
+                                       NULL);
+      XtAddCallback(toggle, XmNvalueChangedCallback,
+                    (XtCallbackProc)toggled, (XtPointer)SHOW_DEBUG);
       toggle = XtVaCreateManagedWidget(toggle_label[6],
+                                       xmToggleButtonGadgetClass, togglebox,
+                                       XmNfontList,               fontlist,
+                                       XmNset,                    True,
+                                       NULL);
+      XtAddCallback(toggle, XmNvalueChangedCallback,
+                    (XtCallbackProc)toggled, (XtPointer)SHOW_TRACE);
+      toggles_set = SHOW_INFO | SHOW_CONFIG | SHOW_WARN | SHOW_ERROR |
+                    SHOW_FATAL | SHOW_OFFLINE | SHOW_DEBUG | SHOW_TRACE;
+   }
+   else
+   {
+      toggle = XtVaCreateManagedWidget(toggle_label[4],
                                        xmToggleButtonGadgetClass, togglebox,
                                        XmNfontList,               fontlist,
                                        XmNset,                    False,
                                        NULL);
       XtAddCallback(toggle, XmNvalueChangedCallback,
-                    (XtCallbackProc)toggled, (XtPointer)SHOW_TRACE);
+                    (XtCallbackProc)toggled, (XtPointer)SHOW_OFFLINE);
+      toggle = XtVaCreateManagedWidget(toggle_label[5],
+                                       xmToggleButtonGadgetClass, togglebox,
+                                       XmNfontList,               fontlist,
+                                       XmNset,                    False,
+                                       NULL);
+      XtAddCallback(toggle, XmNvalueChangedCallback,
+                    (XtCallbackProc)toggled, (XtPointer)SHOW_DEBUG);
+      toggles_set = SHOW_INFO | SHOW_CONFIG | SHOW_WARN | SHOW_ERROR |
+                    SHOW_FATAL;
    }
    XtManageChild(togglebox);
-   toggles_set = SHOW_INFO | SHOW_CONFIG | SHOW_WARN | SHOW_ERROR | SHOW_FATAL;
 
    /* Create the first horizontal separator. */
    argcount = 0;
