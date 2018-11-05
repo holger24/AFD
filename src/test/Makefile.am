@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2017 Holger Kiehl
+## Copyright (C) 2001 - 2018 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -47,3 +47,6 @@ url_check_SOURCES    = url_check.c
 url_check_LDADD      = ../common/libafd.a
 html_listing_SOURCES = html_listing.c
 html_listing_LDADD   = ../common/libafd.a
+
+clean-local:
+	-rm -rf .deps

@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2015 Holger Kiehl
+## Copyright (C) 2015 - 2018 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -29,3 +29,6 @@ demcd_SOURCES           = check_demcd_queue_space.c\
 demcd_LDADD             = ../../common/libafd.a
 demcd_queue_spy_SOURCES = demcd_queue_spy.c
 demcd_queue_spy_LDADD   = ../../common/libafd.a
+
+clean-local:
+	-rm -rf .deps

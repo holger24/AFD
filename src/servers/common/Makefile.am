@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2015 Holger Kiehl
+## Copyright (C) 2015 - 2018 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -21,3 +21,6 @@ noinst_HEADERS         = server_common_defs.h
 AM_CPPFLAGS            = -I../.. -I../../init_afd
 lib_LIBRARIES          = libserverafd.a
 libserverafd_a_SOURCES = get_free_connection.c
+
+clean-local:
+	-rm -rf .deps

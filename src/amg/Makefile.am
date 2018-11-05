@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2017 Holger Kiehl
+## Copyright (C) 2001 - 2018 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -125,3 +125,6 @@ test_in_time_SOURCES   = in_time.c\
 test_in_time_LDADD     = ../common/libafd.a
 show_amg_data_SOURCES  = show_amg_data.c
 show_amg_data_LDADD    = ../common/libafd.a
+
+clean-local:
+	-rm -rf .deps

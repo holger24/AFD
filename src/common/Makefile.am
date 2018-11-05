@@ -248,3 +248,7 @@ libafd_a_SOURCES     = attach_afd_status.c\
                        ../init_afd/afddefs.h\
                        ../afdsetup.h\
                        ../../config.h
+
+clean-local:
+	-rm -rf .deps
+

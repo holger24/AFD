@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2015 Holger Kiehl
+## Copyright (C) 2001 - 2018 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -33,3 +33,6 @@ afdd_SOURCES         = afdd.c\
                        show_job_list.c\
                        show_summary_stat.c
 afdd_LDADD           = ../../common/libafd.a ../common/libserverafd.a @EXTRA_SOCKET_LIBS@
+
+clean-local:
+	-rm -rf .deps

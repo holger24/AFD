@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2015 Holger Kiehl
+## Copyright (C) 2001 - 2018 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -512,3 +512,6 @@ gf_http_LDADD         = @EXTRA_SOCKET_LIBS@ ../protocols/libprotocols.a\
 gf_http_trace_SOURCES = $(gf_http_SOURCES) trace_log.c
 gf_http_trace_LDADD   = @EXTRA_SOCKET_LIBS@ ../protocols/libtraceprotocols.a\
                         ../common/libafd.a @AFD_SSL_LIBS@
+
+clean-local:
+	-rm -rf .deps

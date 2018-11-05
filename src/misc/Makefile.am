@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2015 Holger Kiehl
+## Copyright (C) 2001 - 2018 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -44,3 +44,6 @@ EXTRA_PROGRAMS               = create_eumetsat_name todos
 create_eumetsat_name_SOURCES = create_eumetsat_name.c
 todos_SOURCES                = todos.c
 CLEANFILES                   = gmon.out core core.* $(EXTRA_PROGRAMS)
+
+clean-local:
+	-rm -rf .deps

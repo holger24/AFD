@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2007 - 2016 Holger Kiehl
+## Copyright (C) 2007 - 2018 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -38,3 +38,6 @@ libuiafd_a_SOURCES   = check_host_permissions.c\
                        view_data.c\
                        view_data_no_filter.c\
                        window_id.c
+
+clean-local:
+	-rm -rf .deps

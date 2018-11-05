@@ -42,3 +42,6 @@ show_istat_SOURCES      = show_istat.c\
 show_istat_LDADD        = ../common/libafd.a
 show_bench_stat_SOURCES = show_bench_stat.c
 show_bench_stat_LDADD   = ../common/libafd.a
+
+clean-local:
+	-rm -rf .deps

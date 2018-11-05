@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2014 Holger Kiehl
+## Copyright (C) 2001 - 2018 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -32,3 +32,6 @@ show_ilog_SOURCES    = calculate_summary.c\
                        show_ilog.c
 show_ilog_LDADD      = ../common/libmotifafd.a ../../common/libuiafd.a\
                        ../../../common/libafd.a @AFD_MOTIF_LIBS@
+
+clean-local:
+	-rm -rf .deps

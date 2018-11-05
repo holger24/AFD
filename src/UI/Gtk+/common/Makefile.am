@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2007 - 2013 Holger Kiehl
+## Copyright (C) 2007 - 2018 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -30,3 +30,6 @@ libgtkafd_a_SOURCES  = check_info_file.c\
                        update_time.c\
                        wait_visible.c\
                        xrec.c
+
+clean-local:
+	-rm -rf .deps
