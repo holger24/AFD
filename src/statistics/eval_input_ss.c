@@ -61,6 +61,7 @@ DESCR__S_M3
  **                               in unix time.
  **           -C                  Output in CSV format.
  **           -N                  Show directory name not alias.
+ **           -n                  Show alias and directory name.
  **           -T                  Numeric total only.
  **
  ** RETURN VALUES
@@ -80,6 +81,7 @@ DESCR__S_M3
  **   19.02.2003 H.Kiehl Added -t[u] option.
  **   23.07.2006 H.Kiehl Added -T option.
  **   30.04.2018 H.Kiehl Added -C, -N and -o option.
+ **   05.11.2018 H.Kiehl Added -n option.
  **
  */
 DESCR__E_M3
@@ -338,6 +340,11 @@ eval_input_ss(int  argc,
                *show_alias = NO;
                break;
 
+            case 'n': /* Show alias and directory name. */
+
+               *show_alias = BOTH;
+               break;
+
             case 'y': /* Show year minus x */
 
                if ((argc == 1) || (*(argv + 1)[0] == '-') ||
@@ -424,6 +431,7 @@ usage(int input)
    if (input == YES)
    {
       (void)fprintf(stderr, "           -N            Show directory name not alias.\n");
+      (void)fprintf(stderr, "           -n            Show alias and directory name.\n");
    }
    (void)fprintf(stderr, "           -T            Show numeric total only.\n");
    (void)fprintf(stderr, "           -y [<x>]      Show information of all years [or year minus x].\n");

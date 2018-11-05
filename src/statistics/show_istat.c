@@ -47,6 +47,7 @@ DESCR__S_M1
  **                               in unix time.
  **               -C              Output in CSV format.
  **               -N              Show directory name not alias.
+ **               -n              Show alias and directory name.
  **               -T              Numeric total only.
  **               --version       Show version.
  **
@@ -67,6 +68,7 @@ DESCR__S_M1
  **   01.03.2003 H.Kiehl   Created
  **   23.07.2006 H.Kiehl   Added -T option.
  **   27.04.2018 S.Schuetz Added option to format output in CSV format.
+ **   05.11.2018 H.Kiehl   Added -n option.
  **
  */
 DESCR__E_M1
@@ -167,7 +169,7 @@ main(int argc, char *argv[])
    prev_name[0] = '\0';
    p_work_dir = work_dir;
 
-   if (show_alias == NO)
+   if ((show_alias == NO) || (show_alias == BOTH))
    {
       get_max_name_length();
    }
@@ -397,9 +399,17 @@ main(int argc, char *argv[])
             }
             else if (display_format == CSV_FORMAT)
                  {
-                    (void)fprintf(output_fp,
-                                  "%s;val1;current;val2;files;size\n",
-                                  (show_alias == YES) ? "alias" : "name");
+                    if (show_alias == BOTH)
+                    {
+                       (void)fprintf(output_fp,
+                                     "alias;name;val1;current;val2;files;size\n");
+                    }
+                    else
+                    {
+                       (void)fprintf(output_fp,
+                                     "%s;val1;current;val2;files;size\n",
+                                     (show_alias == YES) ? "alias" : "name");
+                    }
                  }
 
             if (dir_counter > 0)
@@ -498,9 +508,17 @@ main(int argc, char *argv[])
                }
                else if (display_format == CSV_FORMAT)
                     {
-                       (void)fprintf(output_fp,
-                                     "%s;val1;current;val2;files;size\n",
-                                     (show_alias == YES) ? "alias" : "name");
+                       if (show_alias == BOTH)
+                       {
+                          (void)fprintf(output_fp,
+                                        "alias;name;val1;current;val2;files;size\n");
+                       }
+                       else
+                       {
+                          (void)fprintf(output_fp,
+                                        "%s;val1;current;val2;files;size\n",
+                                        (show_alias == YES) ? "alias" : "name");
+                       }
                     }
                if (dir_counter < 0)
                {
@@ -662,9 +680,17 @@ main(int argc, char *argv[])
                }
                else if (display_format == CSV_FORMAT)
                     {
-                       (void)fprintf(output_fp,
-                                     "%s;val1;current;val2;files;size\n",
-                                     (show_alias == YES) ? "alias" : "name");
+                       if (show_alias == BOTH)
+                       {
+                          (void)fprintf(output_fp,
+                                        "alias;name;val1;current;val2;files;size\n");
+                       }
+                       else
+                       {
+                          (void)fprintf(output_fp,
+                                        "%s;val1;current;val2;files;size\n",
+                                        (show_alias == YES) ? "alias" : "name");
+                       }
                     }
                for (j = 0; j < DAYS_PER_YEAR; j++)
                {
@@ -832,9 +858,17 @@ main(int argc, char *argv[])
             }
             else if (display_format == CSV_FORMAT)
                  {
-                    (void)fprintf(output_fp,
-                                  "%s;val1;current;val2;files;size\n",
-                                  (show_alias == YES) ? "alias" : "name");
+                    if (show_alias == BOTH)
+                    {
+                       (void)fprintf(output_fp,
+                                     "alias;name;val1;current;val2;files;size\n");
+                    }
+                    else
+                    {
+                       (void)fprintf(output_fp,
+                                     "%s;val1;current;val2;files;size\n",
+                                     (show_alias == YES) ? "alias" : "name");
+                    }
                  }
             if (dir_counter < 0)
             {
@@ -969,9 +1003,17 @@ main(int argc, char *argv[])
             }
             else if (display_format == CSV_FORMAT)
                  {
-                    (void)fprintf(output_fp,
-                                  "%s;val1;current;val2;files;size\n",
-                                  (show_alias == YES) ? "alias" : "name");
+                    if (show_alias == BOTH)
+                    {
+                       (void)fprintf(output_fp,
+                                     "alias;name;val1;current;val2;files;size\n");
+                    }
+                    else
+                    {
+                       (void)fprintf(output_fp,
+                                     "%s;val1;current;val2;files;size\n",
+                                     (show_alias == YES) ? "alias" : "name");
+                    }
                  }
 
             if (dir_counter > 0)
@@ -1071,9 +1113,17 @@ main(int argc, char *argv[])
                }
                else if (display_format == CSV_FORMAT)
                     {
-                       (void)fprintf(output_fp,
-                                     "%s;val1;current;val2;files;size\n",
-                                     (show_alias == YES) ? "alias" : "name");
+                       if (show_alias == BOTH)
+                       {
+                          (void)fprintf(output_fp,
+                                        "alias;name;val1;current;val2;files;size\n");
+                       }
+                       else
+                       {
+                          (void)fprintf(output_fp,
+                                        "%s;val1;current;val2;files;size\n",
+                                        (show_alias == YES) ? "alias" : "name");
+                       }
                     }
                if (dir_counter < 0)
                {
@@ -1238,9 +1288,17 @@ main(int argc, char *argv[])
                }
                else if (display_format == CSV_FORMAT)
                     {
-                       (void)fprintf(output_fp,
-                                     "%s;val1;current;val2;files;size\n",
-                                     (show_alias == YES) ? "alias" : "name");
+                       if (show_alias == BOTH)
+                       {
+                          (void)fprintf(output_fp,
+                                        "alias;name;val1;current;val2;files;size\n");
+                       }
+                       else
+                       {
+                          (void)fprintf(output_fp,
+                                        "%s;val1;current;val2;files;size\n",
+                                        (show_alias == YES) ? "alias" : "name");
+                       }
                     }
                for (j = 0; j < p_ts->tm_yday; j++)
                {
@@ -1302,9 +1360,17 @@ main(int argc, char *argv[])
                }
                else if (display_format == CSV_FORMAT)
                     {
-                       (void)fprintf(output_fp,
-                                     "%s;val1;current;val2;files;size\n",
-                                     (show_alias == YES) ? "alias" : "name");
+                       if (show_alias == BOTH)
+                       {
+                          (void)fprintf(output_fp,
+                                        "alias;name;val1;current;val2;files;size\n");
+                       }
+                       else
+                       {
+                          (void)fprintf(output_fp,
+                                        "%s;val1;current;val2;files;size\n",
+                                        (show_alias == YES) ? "alias" : "name");
+                       }
                     }
                if (dir_counter < 0)
                {
@@ -1503,9 +1569,17 @@ main(int argc, char *argv[])
                }
                else if (display_format == CSV_FORMAT)
                     {
-                       (void)fprintf(output_fp,
-                                     "%s;val1;current;val2;files;size\n",
-                                     (show_alias == YES) ? "alias" : "name");
+                       if (show_alias == BOTH)
+                       {
+                          (void)fprintf(output_fp,
+                                        "alias;name;val1;current;val2;files;size\n");
+                       }
+                       else
+                       {
+                          (void)fprintf(output_fp,
+                                        "%s;val1;current;val2;files;size\n",
+                                        (show_alias == YES) ? "alias" : "name");
+                       }
                     }
                for (j = 0; j < afd_istat[0].hour_counter; j++)
                {
@@ -1589,9 +1663,17 @@ main(int argc, char *argv[])
                }
                else if (display_format == CSV_FORMAT)
                     {
-                       (void)fprintf(output_fp,
-                                     "%s;val1;current;val2;files;size\n",
-                                     (show_alias == YES) ? "alias" : "name");
+                       if (show_alias == BOTH)
+                       {
+                          (void)fprintf(output_fp,
+                                        "alias;name;val1;current;val2;files;size\n");
+                       }
+                       else
+                       {
+                          (void)fprintf(output_fp,
+                                        "%s;val1;current;val2;files;size\n",
+                                        (show_alias == YES) ? "alias" : "name");
+                       }
                     }
                if (dir_counter < 0)
                {
@@ -1822,9 +1904,17 @@ main(int argc, char *argv[])
                }
                else if (display_format == CSV_FORMAT)
                     {
-                       (void)fprintf(output_fp,
-                                     "%s;val1;current;val2;files;size\n",
-                                     (show_alias == YES) ? "alias" : "name");
+                       if (show_alias == BOTH)
+                       {
+                          (void)fprintf(output_fp,
+                                        "alias;name;val1;current;val2;files;size\n");
+                       }
+                       else
+                       {
+                          (void)fprintf(output_fp,
+                                        "%s;val1;current;val2;files;size\n",
+                                        (show_alias == YES) ? "alias" : "name");
+                       }
                     }
             }
             if (show_min_summary == 0)
@@ -2049,13 +2139,31 @@ display_data(int    position,
    {
       /* Total */
       name[0] = 'T'; name[1] = 'o'; name[2] = 't'; name[3] = 'a';
-      name[4] = 'l'; name[5] = '\0';
+      name[4] = 'l';
+      if ((show_alias == BOTH) && (display_format == CSV_FORMAT))
+      {
+         name[5] = ';';
+         name[6] = '\0';
+      }
+      else
+      {
+         name[5] = '\0';
+      }
    }
    else if (position == SHOW_BIG_TOTAL)
         {
            /* TOTAL */
            name[0] = 'T'; name[1] = 'O'; name[2] = 'T'; name[3] = 'A';
-           name[4] = 'L'; name[5] = '\0';
+           name[4] = 'L';
+           if ((show_alias == BOTH) && (display_format == CSV_FORMAT))
+           {
+              name[5] = ';';
+              name[6] = '\0';
+           }
+           else
+           {
+              name[5] = '\0';
+           }
         }
    else if (position == SHOW_SPACE)
         {
@@ -2070,7 +2178,20 @@ display_data(int    position,
            }
            else
            {
-              get_dir_name(afd_istat[position].dir_alias, name);
+              size_t offset;
+
+              if (show_alias == BOTH)
+              {
+                 (void)strcpy(name, afd_istat[position].dir_alias);
+                 offset = strlen(name);
+                 name[offset] = ';';
+                 offset++;
+              }
+              else
+              {
+                 offset = 0;
+              }
+              get_dir_name(afd_istat[position].dir_alias, &name[offset]);
            }
         }
 
