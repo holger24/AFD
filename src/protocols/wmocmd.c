@@ -1,6 +1,6 @@
 /*
  *  wmocmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -148,6 +148,7 @@ wmo_connect(char *hostname, int port, int sndbuf_size)
          trans_log(ERROR_SIGN, __FILE__, __LINE__, "wmo_connect", NULL,
                    _("Failed to getaddrinfo() %s : %s"),
                    hostname, gai_strerror(reply));
+         freeaddrinfo(result);
          return(INCORRECT);
       }
 
@@ -223,6 +224,7 @@ wmo_connect(char *hostname, int port, int sndbuf_size)
                  (void)close(wmo_fd);
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "wmo_connect", NULL,
                           _("Failed to connect() to %s"), hostname);
+                 freeaddrinfo(result);
                  return(INCORRECT);
               }
 
@@ -243,6 +245,7 @@ wmo_connect(char *hostname, int port, int sndbuf_size)
             trans_log(ERROR_SIGN, __FILE__, __LINE__, "wmo_connect", NULL,
                       _("Failed to connect() to %s"), hostname);
          }
+         freeaddrinfo(result);
          return(INCORRECT);
       }
 

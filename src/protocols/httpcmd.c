@@ -268,6 +268,7 @@ http_connect(char *hostname,
                trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_connect", NULL,
                          _("Failed to getaddrinfo() %s : %s"),
                          ip_str, gai_strerror(reply));
+               freeaddrinfo(result);
                return(INCORRECT);
             }
 
@@ -279,6 +280,7 @@ http_connect(char *hostname,
             trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_connect", NULL,
                       _("Failed to getaddrinfo() %s : %s"),
                       p_hostname, gai_strerror(reply));
+            freeaddrinfo(result);
             return(INCORRECT);
 # ifdef WITH_IP_DB
          }
@@ -385,6 +387,7 @@ http_connect(char *hostname,
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_connect", NULL,
                            _("Failed to connect() to %s at port %d"),
                            hostname, port);
+                 freeaddrinfo(result);
                  return(INCORRECT);
               }
 
@@ -408,6 +411,7 @@ http_connect(char *hostname,
          }
          (void)close(http_fd);
          http_fd = -1;
+         freeaddrinfo(result);
 
          return(INCORRECT);
       }

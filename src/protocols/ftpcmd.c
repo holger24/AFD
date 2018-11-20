@@ -387,6 +387,7 @@ ftp_connect(char *hostname, int port)
                trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_connect", NULL,
                          _("Failed to getaddrinfo() %s : %s"),
                          ip_str, gai_strerror(reply));
+               freeaddrinfo(result);
                return(INCORRECT);
             }
 
@@ -398,6 +399,7 @@ ftp_connect(char *hostname, int port)
             trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_connect", NULL,
                       _("Failed to getaddrinfo() %s : %s"),
                       hostname, gai_strerror(reply));
+            freeaddrinfo(result);
             return(INCORRECT);
 # ifdef WITH_IP_DB
          }
@@ -475,6 +477,7 @@ ftp_connect(char *hostname, int port)
                  (void)close(control_fd);
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_connect", NULL,
                            _("Failed to connect() to %s"), hostname);
+                 freeaddrinfo(result);
                  return(INCORRECT);
               }
 
@@ -495,6 +498,7 @@ ftp_connect(char *hostname, int port)
             trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_connect", NULL,
                       _("Failed to connect() to %s"), hostname);
          }
+         freeaddrinfo(result);
          return(INCORRECT);
       }
 
@@ -507,6 +511,7 @@ ftp_connect(char *hostname, int port)
          trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_connect", NULL,
                    _("malloc() error : %s"), strerror(errno));
          (void)close(control_fd);
+         freeaddrinfo(result);
          return(INCORRECT);
       }
       (void)memcpy(ai_addr, rp->ai_addr, rp->ai_addrlen);

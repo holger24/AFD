@@ -228,6 +228,7 @@ smtp_connect(char *hostname, int port, int sockbuf_size)
          trans_log(ERROR_SIGN, __FILE__, __LINE__, "smtp_connect", NULL,
                    _("Failed to getaddrinfo() %s : %s"),
                    hostname, gai_strerror(reply));
+         freeaddrinfo(result);
          return(INCORRECT);
       }
 
@@ -311,6 +312,7 @@ smtp_connect(char *hostname, int port, int sockbuf_size)
                  (void)close(smtp_fd);
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "smtp_connect", NULL,
                            _("Failed to connect() to %s"), hostname);
+                 freeaddrinfo(result);
                  return(INCORRECT);
               }
 
@@ -331,6 +333,7 @@ smtp_connect(char *hostname, int port, int sockbuf_size)
             trans_log(ERROR_SIGN, __FILE__, __LINE__, "smtp_connect", NULL,
                       _("Failed to connect() to %s"), hostname);
          }
+         freeaddrinfo(result);
          return(INCORRECT);
       }
 
