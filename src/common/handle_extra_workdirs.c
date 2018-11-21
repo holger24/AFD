@@ -1155,11 +1155,11 @@ get_extra_work_dirs(char                   *afd_config_buffer,
             (*ewl)[i].time_dir_length = 0;
          }
       }
+   }
 
-      if (afd_config_buffer == NULL)
-      {
-         free(buffer);
-      }
+   if (afd_config_buffer == NULL)
+   {
+      free(buffer);
    }
 
    return;
