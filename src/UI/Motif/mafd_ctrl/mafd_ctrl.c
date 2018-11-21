@@ -1,6 +1,6 @@
 /*
  *  mafd_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -688,7 +688,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
 #endif
 
    /* Do not start if binary dataset matches the one stort on disk. */
-   if (check_typesize_data(NULL, stdout) > 0)
+   if (check_typesize_data(NULL, stdout, NO) > 0)
    {
       (void)fprintf(stderr,
                     "The compiled binary does not match stored database.\n");

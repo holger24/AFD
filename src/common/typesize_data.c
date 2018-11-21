@@ -1,6 +1,6 @@
 /*
  *  typesize_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,7 +28,9 @@ DESCR__S_M3
  **                         by the AFD database
  **
  ** SYNOPSIS
- **   int check_typesize_data(int *old_value_list, FILE *output_fp)
+ **   int check_typesize_data(int  *old_value_list,
+ **                           FILE *output_fp,
+ **                           int  do_conversion)
  **   int write_typesize_data(void)
  **
  ** DESCRIPTION
@@ -47,6 +49,8 @@ DESCR__S_M3
  **
  ** HISTORY
  **   17.10.2011 H.Kiehl Created
+ **   16.11.2018 H.Kiehl Add option to do conversion of pwb database
+ **                      if some of it's variables change.
  **
  */
 DESCR__E_M3
@@ -78,10 +82,13 @@ DESCR__E_M3
 /* External global variables. */
 extern char *p_work_dir;
 
+/* Local function prototypes. */
+static int  adapt_pwb_database(int, int);
+
 
 /*######################## check_typesize_data() ########################*/
 int
-check_typesize_data(int *old_value_list, FILE *output_fp)
+check_typesize_data(int *old_value_list, FILE *output_fp, int do_conversion)
 {
    int  fd,
         not_match = 0;
@@ -330,6 +337,13 @@ check_typesize_data(int *old_value_list, FILE *output_fp)
                                           }
                                        }
                                     }
+                                    else
+                                    {
+                                       if (old_value_list != NULL)
+                                       {
+                                          old_value_list[j + 1] = val;
+                                       }
+                                    }
                                  }
                               }
                               else
@@ -377,6 +391,17 @@ check_typesize_data(int *old_value_list, FILE *output_fp)
                   system_log(ERROR_SIGN, __FILE__, __LINE__,
                              "Failed to munmap() `%s' : %s",
                              typesize_filename, strerror(errno));
+               }
+
+               if ((old_value_list != NULL) && (do_conversion == YES))
+               {
+                  /* Check if we must convert the password database file. */
+                  if ((old_value_list[0] & MAX_REAL_HOSTNAME_LENGTH_NR) ||
+                      (old_value_list[0] & MAX_USER_NAME_LENGTH_NR))
+                  {
+                     (void)adapt_pwb_database(old_value_list[MAX_REAL_HOSTNAME_LENGTH_POS + 1],
+                                              old_value_list[MAX_USER_NAME_LENGTH_POS + 1]);
+                  }
                }
             }
          }
@@ -458,4 +483,364 @@ write_typesize_data(void)
    }
 
    return(SUCCESS);
+}
+
+
+/*+++++++++++++++++++++++++ adapt_pwb_database() ++++++++++++++++++++++++*/
+static int
+adapt_pwb_database(int old_real_hostname_length, int old_user_name_length)
+{
+   int  do_rename = NO,
+        old_pwb_fd,
+        ret,
+        truncated = 0,
+        truncated_uh_name = 0,
+        truncated_password = 0;
+   char new_pwb_file_name[MAX_PATH_LENGTH],
+        old_pwb_file_name[MAX_PATH_LENGTH];
+
+   (void)strcpy(old_pwb_file_name, p_work_dir);
+   (void)strcat(old_pwb_file_name, FIFO_DIR);
+   (void)strcat(old_pwb_file_name, PWB_DATA_FILE);
+   if ((old_pwb_fd = open(old_pwb_file_name, O_RDONLY)) == -1)
+   {
+      if (errno == ENOENT)
+      {
+         /*
+          * It can be that there are absolutly no passwords in DIR_CONFIG,
+          * so PWB_DATA_FILE is not created.
+          */
+         ret = SUCCESS;
+      }
+      else
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("Failed to open() `%s' : %s"),
+                    old_pwb_file_name, strerror(errno));
+         ret = INCORRECT;
+      }
+   }
+   else
+   {
+      struct stat stat_buf;
+
+#ifdef LOCK_DEBUG
+      rlock_region(old_pwb_fd, 1, __FILE__, __LINE__);
+#else
+      rlock_region(old_pwb_fd, 1);
+#endif
+      if (fstat(old_pwb_fd, &stat_buf) == -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("Failed to fstat() `%s' : %s"),
+                    old_pwb_file_name, strerror(errno));
+         ret = INCORRECT;
+      }
+      else
+      {
+         if (stat_buf.st_size <= AFD_WORD_OFFSET)
+         {
+            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       _("Password file %s is not long enough to contain any valid data."),
+                       old_pwb_file_name);
+            ret = SUCCESS;
+         }
+         else
+         {
+            char *old_ptr;
+
+#ifdef HAVE_MMAP
+            if ((old_ptr = mmap(NULL, stat_buf.st_size, PROT_READ, MAP_SHARED,
+                                old_pwb_fd, 0)) == (caddr_t) -1)
+#else
+            if ((old_ptr = mmap_emu(NULL, stat_buf.st_size, PROT_READ,
+                                    MAP_SHARED,
+                                    old_pwb_file_name, 0)) == (caddr_t) -1)
+#endif
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          _("Failed to mmap() `%s' : %s"),
+                          old_pwb_file_name, strerror(errno));
+               ret = INCORRECT;
+            }
+            else
+            {
+               if (*(old_ptr + SIZEOF_INT + 1 + 1 + 1) != CURRENT_PWB_VERSION)
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Incorrect password version, unable to adapt password database.");
+
+                  /*
+                   * Let's return SUCCESS, the conversion should be done
+                   * by the function that handles the version change
+                   * of the password database. It will then automatically
+                   * do the conversion of any variable length changes.
+                   */
+                  ret = SUCCESS;
+               }
+               else
+               {
+                  int                   new_pwb_fd,
+                                        no_of_passwd;
+                  size_t                new_size;
+                  char                  *new_ptr;
+                  struct old_passwd_buf
+                         {
+                            char          uh_name[old_user_name_length + old_real_hostname_length + 1];
+                            unsigned char passwd[old_user_name_length];
+                            signed char   dup_check;
+                         } *old_pwb;
+
+                  no_of_passwd = *(int *)old_ptr;
+                  old_ptr += AFD_WORD_OFFSET;
+                  old_pwb = (struct old_passwd_buf *)old_ptr;
+
+                  new_size = AFD_WORD_OFFSET +
+                             (((no_of_passwd / PWB_STEP_SIZE) + 1) *
+                              PWB_STEP_SIZE * sizeof(struct passwd_buf));
+#ifdef _DEBUG
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "new_size=%lld sizeof(struct passwd_buf)=%lld no_of_passwd=%d",
+                             new_size, sizeof(struct passwd_buf), no_of_passwd);
+#endif
+                  (void)snprintf(new_pwb_file_name, MAX_PATH_LENGTH,
+                                 "%s%s/.tmp_pwb_data_file",
+                                 p_work_dir, FIFO_DIR);
+                  (void)unlink(new_pwb_file_name);
+                  if ((new_pwb_fd = open(new_pwb_file_name,
+                                         (O_RDWR | O_CREAT | O_TRUNC),
+#ifdef GROUP_CAN_WRITE
+                                         (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP))) == -1)
+#else
+                                         (S_IRUSR | S_IWUSR))) == -1)
+#endif
+                  {
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                "Failed to open() %s : %s",
+                                new_pwb_file_name, strerror(errno));
+                     ret = INCORRECT;
+                  }
+                  else
+                  {
+                     int  i,
+                          loops,
+                          rest;
+                     char buffer[4096];
+
+                     ret = SUCCESS;
+                     loops = new_size / 4096;
+                     rest = new_size % 4096;
+                     (void)memset(buffer, 0, 4096);
+                     for (i = 0; i < loops; i++)
+                     {
+                        if (write(new_pwb_fd, buffer, 4096) != 4096)
+                        {
+                           system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                      "write() error : %s", strerror(errno));
+                           ret = INCORRECT;
+                           break;
+                        }
+                     }
+                     if ((rest > 0) && (ret != INCORRECT))
+                     {
+                        if (write(new_pwb_fd, buffer, rest) != rest)
+                        {
+                           system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                      "write() error : %s", strerror(errno));
+                           ret = INCORRECT;
+                        }
+                     }
+                     if (ret != INCORRECT)
+                     {
+#ifdef HAVE_MMAP
+                        if ((new_ptr = mmap(NULL, new_size,
+                                            (PROT_READ | PROT_WRITE), MAP_SHARED,
+                                            new_pwb_fd, 0)) == (caddr_t) -1)
+#else
+                        if ((new_ptr = mmap_emu(NULL, new_size,
+                                                (PROT_READ | PROT_WRITE), MAP_SHARED,
+                                                new_pwb_file_name, 0)) == (caddr_t) -1)
+#endif
+                        {
+                           system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                      "Failed to mmap() to %s : %s",
+                                      new_pwb_file_name, strerror(errno));
+                           ret = INCORRECT;
+                        }
+                        else
+                        {
+                           int               truncated_flag;
+                           struct passwd_buf *new_pwb;
+
+                           *(int *)new_ptr = no_of_passwd;
+                           *(new_ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
+                           *(new_ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
+                           *(new_ptr + SIZEOF_INT + 1 + 1 + 1) = CURRENT_PWB_VERSION;
+                           (void)memset((new_ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+                           *(new_ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
+                           *(new_ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
+                           *(new_ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
+                           *(new_ptr + SIZEOF_INT + 4 + SIZEOF_INT + 3) = 0;        /* Not used. */
+                           new_ptr += AFD_WORD_OFFSET;
+                           new_pwb = (struct passwd_buf *)new_ptr;
+
+                           for (i = 0; i < no_of_passwd; i++)
+                           {
+                              truncated_flag = NO;
+                              if (strlen((char *)old_pwb[i].uh_name) >
+                                  (MAX_USER_NAME_LENGTH + MAX_REAL_HOSTNAME_LENGTH))
+                              {
+                                 system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                            "Truncating uh_name %s to %d characters.",
+                                            old_pwb[i].uh_name,
+                                            MAX_USER_NAME_LENGTH + MAX_REAL_HOSTNAME_LENGTH);
+                                 truncated_uh_name++;
+                                 truncated_flag = YES;
+                              }
+                              if ((old_user_name_length + old_real_hostname_length) <= (MAX_USER_NAME_LENGTH + MAX_REAL_HOSTNAME_LENGTH))
+                              {
+                                 (void)memcpy(new_pwb[i].uh_name,
+                                              old_pwb[i].uh_name,
+                                              old_user_name_length + old_real_hostname_length);
+                              }
+                              else
+                              {
+                                 (void)memcpy(new_pwb[i].uh_name,
+                                              old_pwb[i].uh_name,
+                                              MAX_USER_NAME_LENGTH + MAX_REAL_HOSTNAME_LENGTH);
+                              }
+                              if (strlen((char *)old_pwb[i].passwd) > MAX_USER_NAME_LENGTH)
+                              {
+                                 system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                            "Truncating password for uh_name %s to %d characters.",
+                                            old_pwb[i].uh_name, MAX_USER_NAME_LENGTH);
+                                 truncated_password++;
+                                 truncated_flag = YES;
+                              }
+                              if (old_user_name_length <= MAX_USER_NAME_LENGTH)
+                              {
+                                 (void)memcpy(new_pwb[i].passwd,
+                                              old_pwb[i].passwd,
+                                              old_user_name_length);
+                              }
+                              else
+                              {
+                                 (void)memcpy(new_pwb[i].passwd,
+                                              old_pwb[i].passwd,
+                                              MAX_USER_NAME_LENGTH);
+                              }
+
+                              new_pwb[i].dup_check = old_pwb[i].dup_check;
+                              if (truncated_flag == YES)
+                              {
+                                 truncated++;
+                              }
+                           }
+                           new_ptr -= AFD_WORD_OFFSET;
+#ifdef HAVE_MMAP
+                           if (munmap(new_ptr, new_size) == -1)
+#else
+                           if (munmap_emu(new_ptr) == -1)
+#endif
+                           {
+                              system_log(WARN_SIGN, __FILE__, __LINE__,
+                                         _("Failed to munmap() from `%s' : %s"),
+                                         new_pwb_file_name, strerror(errno));
+                           }
+                        }
+                     }
+
+                     if (close(new_pwb_fd) == -1)
+                     {
+                        system_log(WARN_SIGN, __FILE__, __LINE__,
+                                   _("close() error : %s"), strerror(errno));
+                     }
+                  }
+                  old_ptr -= AFD_WORD_OFFSET;
+                  do_rename = YES;
+               }
+#ifdef HAVE_MMAP
+               if (munmap(old_ptr, stat_buf.st_size) == -1)
+#else
+               if (munmap_emu(old_ptr) == -1)
+#endif
+               {
+                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                             _("Failed to munmap() from `%s' : %s"),
+                             old_pwb_file_name, strerror(errno));
+               }
+            }
+         }
+      }
+      if (close(old_pwb_fd) == -1)
+      {
+         system_log(WARN_SIGN, __FILE__, __LINE__, _("close() error : %s"),
+                    strerror(errno));
+      }
+   }
+
+   if (do_rename == YES)
+   {
+      if ((truncated_uh_name > 0) || (truncated_password > 0))
+      {
+         char save_pwb_file_name[MAX_PATH_LENGTH];
+
+         (void)strcpy(save_pwb_file_name, old_pwb_file_name);
+         (void)strcat(save_pwb_file_name, ".save");
+         (void)unlink(save_pwb_file_name);
+         if (rename(old_pwb_file_name, save_pwb_file_name) == -1)
+         {
+            system_log(INFO_SIGN, __FILE__, __LINE__,
+                      _("Failed to rename() `%s' to `%s' : %s"),
+                      old_pwb_file_name, save_pwb_file_name, strerror(errno));
+            (void)unlink(old_pwb_file_name);
+         }
+         else
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "Since the password database was resized (%d -> %d + %d -> %d) and the size is smaller some passwords and/or user hostname identifiers had to be truncated. Made a backup copy of the database file %s",
+                       old_real_hostname_length, MAX_REAL_HOSTNAME_LENGTH,
+                       old_user_name_length, MAX_USER_NAME_LENGTH,
+                       save_pwb_file_name);
+         }
+      }
+      else
+      {
+         if ((unlink(old_pwb_file_name) == -1) && (errno != ENOENT))
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       _("Failed to unlink() `%s' : %s"),
+                       old_pwb_file_name, strerror(errno));
+         }
+      }
+      if (rename(new_pwb_file_name, old_pwb_file_name) == -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                   _("Failed to rename() `%s' to `%s' : %s"),
+                   new_pwb_file_name, old_pwb_file_name, strerror(errno));
+         ret = INCORRECT;
+      }
+      else
+      {
+         if ((truncated_uh_name > 0) || (truncated_password > 0))
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "Converted password database %s due to changes in structure length (MAX_REAL_HOSTNAME_LENGTH: %d->%d MAX_USER_NAME_LENGTH: %d->%d). However %d are lost because they had to be truncated (passwords=%d uh_name=%d)",
+                       old_pwb_file_name,
+                       old_real_hostname_length, MAX_REAL_HOSTNAME_LENGTH,
+                       old_user_name_length, MAX_USER_NAME_LENGTH, truncated,
+                       truncated_password, truncated_uh_name);
+         }
+         else
+         {
+            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       "Successfully converted password database %s due to changes in structure length (MAX_REAL_HOSTNAME_LENGTH: %d->%d MAX_USER_NAME_LENGTH: %d->%d).",
+                       old_pwb_file_name,
+                       old_real_hostname_length, MAX_REAL_HOSTNAME_LENGTH,
+                       old_user_name_length, MAX_USER_NAME_LENGTH);
+         }
+      }
+   }
+
+   return(ret);
 }

@@ -496,7 +496,7 @@ main(int argc, char *argv[])
               {
                  int changes;
 
-                 changes = check_typesize_data(NULL, stdout);
+                 changes = check_typesize_data(NULL, stdout, NO);
                  if (changes > 0)
                  {
                     (void)fprintf(stdout,

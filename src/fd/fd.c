@@ -367,7 +367,7 @@ main(int argc, char *argv[])
    }
 
    /* Do not start if binary dataset matches the one stort on disk. */
-   if (check_typesize_data(NULL, NULL) > 0)
+   if (check_typesize_data(NULL, NULL, NO) > 0)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "The compiled binary does not match stored database.");

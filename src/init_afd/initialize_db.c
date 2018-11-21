@@ -1,6 +1,6 @@
 /*
  *  initialize_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,6 +39,9 @@ DESCR__S_M3
  **   04.11.2012 H.Kiehl When deleting data try only delete the data
  **                      that has changed, ie. that what is really
  **                      necessary.
+ **   20.11.2018 H.Kiehl Since at startup function check_typesize_data()
+ **                      converts the password database, we no longer
+ **                      must delete it here.
  **
  */
 DESCR__E_M3
@@ -206,7 +209,6 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
          filelistflag[FSA_ID_FILE_NO] = YES;
          mfilelistflag[FSA_STAT_FILE_ALL_NO] = YES;
          mfilelistflag[AFD_STATUS_FILE_ALL_NO] = YES;
-         filelistflag[PWB_DATA_FILE_NO] = YES;
       }
       if (old_value_list[0] & MAX_PROXY_NAME_LENGTH_NR)
       {
@@ -260,7 +262,7 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
       }
       if (old_value_list[0] & MAX_USER_NAME_LENGTH_NR)
       {
-         filelistflag[PWB_DATA_FILE_NO] = YES;
+         /* Password are changed by check_typesize_data(). */;
       }
       if ((old_value_list[0] & CHAR_NR) ||
           (old_value_list[0] & INT_NR))

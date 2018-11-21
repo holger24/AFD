@@ -1,6 +1,6 @@
 /*
  *  startup_afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2013 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -92,7 +92,7 @@ startup_afd(void)
     * the current saved database data. If not lets initialize
     * everything.
     */
-   if ((status = check_typesize_data(old_value_list, NULL)) > 0)
+   if ((status = check_typesize_data(old_value_list, NULL, YES)) > 0)
    {
       system_log(WARN_SIGN, __FILE__, __LINE__,
                  "Initialize database due to %d change(s).", status);

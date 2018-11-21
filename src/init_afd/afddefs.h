@@ -2163,56 +2163,81 @@ typedef unsigned long       u_long_64;
 #define CONNECT_STATUS             20
 
 /* In case some key values of any structure are changed. */
-#define MAX_MSG_NAME_LENGTH_NR      1
-#define MAX_FILENAME_LENGTH_NR      2
-#define MAX_HOSTNAME_LENGTH_NR      4
-#define MAX_REAL_HOSTNAME_LENGTH_NR 8
-#define MAX_AFDNAME_LENGTH_NR       16
-#define MAX_PROXY_NAME_LENGTH_NR    32
-#define MAX_TOGGLE_STR_LENGTH_NR    64
-#define ERROR_HISTORY_LENGTH_NR     128
-#define MAX_NO_PARALLEL_JOBS_NR     256
-#define MAX_DIR_ALIAS_LENGTH_NR     512
-#define MAX_RECIPIENT_LENGTH_NR     1024
-#define MAX_WAIT_FOR_LENGTH_NR      2048
-#define MAX_FRA_TIME_ENTRIES_NR     4096
-#define MAX_OPTION_LENGTH_NR        8192
-#define MAX_PATH_LENGTH_NR          16384
-#define MAX_USER_NAME_LENGTH_NR     32768
-#define CHAR_NR                     65536
-#define INT_NR                      131072
-#define OFF_T_NR                    262144
-#define TIME_T_NR                   524288
-#define SHORT_NR                    1048576
-#define LONG_LONG_NR                2097152
-#define PID_T_NR                    4194304
-#define MAX_TIMEZONE_LENGTH_NR      8388608
-#define MAX_CHANGEABLE_VARS         1 + 24 /* First is used as flag*/
-                                       /* which of the below values*/
-                                       /* are set.                 */
-                                       /* MAX_MSG_NAME_LENGTH      */
-                                       /* MAX_FILENAME_LENGTH      */
-                                       /* MAX_HOSTNAME_LENGTH      */
-                                       /* MAX_REAL_HOSTNAME_LENGTH */
-                                       /* MAX_AFDNAME_LENGTH       */
-                                       /* MAX_PROXY_NAME_LENGTH    */
-                                       /* MAX_TOGGLE_STR_LENGTH    */
-                                       /* ERROR_HISTORY_LENGTH     */
-                                       /* MAX_NO_PARALLEL_JOBS     */
-                                       /* MAX_DIR_ALIAS_LENGTH     */
-                                       /* MAX_RECIPIENT_LENGTH     */
-                                       /* MAX_WAIT_FOR_LENGTH      */
-                                       /* MAX_FRA_TIME_ENTRIES     */
-                                       /* MAX_OPTION_LENGTH        */
-                                       /* MAX_PATH_LENGTH          */
-                                       /* MAX_USER_NAME_LENGTH     */
-                                       /* CHAR                     */
-                                       /* INT                      */
-                                       /* OFF_T                    */
-                                       /* TIME_T                   */
-                                       /* SHORT                    */
-                                       /* LONG_LONG                */
-                                       /* MAX_TIMEZONE_LENGTH      */
+#define MAX_MSG_NAME_LENGTH_NR       1
+#define MAX_FILENAME_LENGTH_NR       2
+#define MAX_HOSTNAME_LENGTH_NR       4
+#define MAX_REAL_HOSTNAME_LENGTH_NR  8
+#define MAX_AFDNAME_LENGTH_NR        16
+#define MAX_PROXY_NAME_LENGTH_NR     32
+#define MAX_TOGGLE_STR_LENGTH_NR     64
+#define ERROR_HISTORY_LENGTH_NR      128
+#define MAX_NO_PARALLEL_JOBS_NR      256
+#define MAX_DIR_ALIAS_LENGTH_NR      512
+#define MAX_RECIPIENT_LENGTH_NR      1024
+#define MAX_WAIT_FOR_LENGTH_NR       2048
+#define MAX_FRA_TIME_ENTRIES_NR      4096
+#define MAX_OPTION_LENGTH_NR         8192
+#define MAX_PATH_LENGTH_NR           16384
+#define MAX_USER_NAME_LENGTH_NR      32768
+#define CHAR_NR                      65536
+#define INT_NR                       131072
+#define OFF_T_NR                     262144
+#define TIME_T_NR                    524288
+#define SHORT_NR                     1048576
+#define LONG_LONG_NR                 2097152
+#define PID_T_NR                     4194304
+#define MAX_TIMEZONE_LENGTH_NR       8388608
+
+#define MAX_MSG_NAME_LENGTH_POS      0
+#define MAX_FILENAME_LENGTH_POS      1
+#define MAX_HOSTNAME_LENGTH_POS      2
+#define MAX_REAL_HOSTNAME_LENGTH_POS 3
+#define MAX_AFDNAME_LENGTH_POS       4
+#define MAX_PROXY_NAME_LENGTH_POS    5
+#define MAX_TOGGLE_STR_LENGTH_POS    6
+#define ERROR_HISTORY_LENGTH_POS     7
+#define MAX_NO_PARALLEL_JOBS_POS     8
+#define MAX_DIR_ALIAS_LENGTH_POS     9
+#define MAX_RECIPIENT_LENGTH_POS     10
+#define MAX_WAIT_FOR_LENGTH_POS      11
+#define MAX_FRA_TIME_ENTRIES_POS     12
+#define MAX_OPTION_LENGTH_POS        13
+#define MAX_PATH_LENGTH_POS          14
+#define MAX_USER_NAME_LENGTH_POS     15
+#define CHAR_POS                     16
+#define INT_POS                      17
+#define OFF_T_POS                    18
+#define TIME_T_POS                   19
+#define SHORT_POS                    20
+#define LONG_LONG_POS                21
+#define PID_T_POS                    22
+#define MAX_TIMEZONE_LENGTH_POS      23
+#define MAX_CHANGEABLE_VARS          1 + 24 /* First is used as flag*/
+                                        /* which of the below values*/
+                                        /* are set.                 */
+                                        /* MAX_MSG_NAME_LENGTH      */
+                                        /* MAX_FILENAME_LENGTH      */
+                                        /* MAX_HOSTNAME_LENGTH      */
+                                        /* MAX_REAL_HOSTNAME_LENGTH */
+                                        /* MAX_AFDNAME_LENGTH       */
+                                        /* MAX_PROXY_NAME_LENGTH    */
+                                        /* MAX_TOGGLE_STR_LENGTH    */
+                                        /* ERROR_HISTORY_LENGTH     */
+                                        /* MAX_NO_PARALLEL_JOBS     */
+                                        /* MAX_DIR_ALIAS_LENGTH     */
+                                        /* MAX_RECIPIENT_LENGTH     */
+                                        /* MAX_WAIT_FOR_LENGTH      */
+                                        /* MAX_FRA_TIME_ENTRIES     */
+                                        /* MAX_OPTION_LENGTH        */
+                                        /* MAX_PATH_LENGTH          */
+                                        /* MAX_USER_NAME_LENGTH     */
+                                        /* CHAR                     */
+                                        /* INT                      */
+                                        /* OFF_T                    */
+                                        /* TIME_T                   */
+                                        /* SHORT                    */
+                                        /* LONG_LONG                */
+                                        /* MAX_TIMEZONE_LENGTH      */
 
 /* Definitions for the different lock positions in the FSA. */
 #define LOCK_FIU                   3   /* File name in use (job_status) */
@@ -3950,7 +3975,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     check_msa(void),
                     check_msg_name(char *),
                     check_time_str(char *, FILE *),
-                    check_typesize_data(int *, FILE *),
+                    check_typesize_data(int *, FILE *, int),
                     coe_open(char *, int, ...),
                     convert_grib2wmo(char *, off_t *, char *),
                     copy_file(char *, char *, struct stat *),

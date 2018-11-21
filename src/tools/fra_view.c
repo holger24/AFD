@@ -114,7 +114,7 @@ main(int argc, char *argv[])
    }
 
    /* Do not start if binary dataset matches the one stort on disk. */
-   if (check_typesize_data(NULL, stdout) > 0)
+   if (check_typesize_data(NULL, stdout, NO) > 0)
    {
       (void)fprintf(stderr,
                     "The compiled binary does not match stored database.\n");
