@@ -3416,7 +3416,7 @@ ftp_data(char  *filename,
                else
                {
                   (void)close(new_sock_fd);
-                  return(--reply);
+                  return(-reply);
                }
             }
          }
