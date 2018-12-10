@@ -235,7 +235,7 @@ http_connect(char *hostname,
       int                reply;
       char               str_port[MAX_INT_LENGTH];
       struct addrinfo    hints,
-                         *result,
+                         *result = NULL,
                          *rp;
 
       if (http_proxy[0] == '\0')

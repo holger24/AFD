@@ -133,7 +133,7 @@ wmo_connect(char *hostname, int port, int sndbuf_size)
 #if defined (HAVE_GETADDRINFO) && defined (HAVE_GAI_STRERROR)
       char            str_port[MAX_INT_LENGTH];
       struct addrinfo hints,
-                      *result,
+                      *result = NULL,
                       *rp;
 
       (void)memset((struct addrinfo *) &hints, 0, sizeof(struct addrinfo));

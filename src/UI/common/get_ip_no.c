@@ -70,7 +70,7 @@ get_ip_no(char *host_name, char *p_dest)
 #if defined (HAVE_GETADDRINFO) && defined (HAVE_GAI_STRERROR)
       int             reply;
       struct addrinfo hints,
-                      *result;
+                      *result = NULL;
 
       (void)memset(&hints, 0, sizeof(hints));
       hints.ai_family = AF_UNSPEC;
