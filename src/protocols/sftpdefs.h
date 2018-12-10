@@ -69,8 +69,6 @@
 #define SSH_FXP_EXTENDED                    200        /* 3 - 6+  */
 #define SSH_FXP_EXTENDED_REPLY              201        /* 3 - 6+  */
 
-#define MAX_SFTP_CMD_LENGTH                 22
-
 /* Possible flags for renaming. */
 #define SSH_FXF_RENAME_OVERWRITE            0x00000001 /* 6+      */
 #define SSH_FXF_RENAME_ATOMIC               0x00000002 /* 6+      */
