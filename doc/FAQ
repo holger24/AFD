@@ -2,7 +2,7 @@
    Author      : Holger Kiehl
    email       : Holger.Kiehl@dwd.de
    Version     : 0.2
-   Last Updated: 06 August 2005
+   Last Updated: 12 December 2018
    Copyright   : GPL
 
    ======================================================================
@@ -117,13 +117,16 @@
    1.2 Where can I get AFD?
 
    You can get information from the following locations:
-      http://www.dwd.de/AFD                - Homepage
-      ftp://ftp.dwd.de/pub/afd             - directory containing the stable
-                                             releasese of AFD
-      ftp://ftp.dwd.de/pub/afd/development - directory with unstable
-                                             releases of AFD
-      ftp://ftp.dwd.de/pub/afd/bin         - here you will find precompiled
-                                             binaries
+      https://download.dwd.de/pub/afd/stable/doc  - Homepage
+      https://download.dwd.de/pub/afd             - directory containing
+                                                    the stable release of
+                                                    AFD
+      https://download.dwd.de/pub/afd/development - directory with unstable
+                                                    releases of AFD
+      https://download.dwd.de/pub/afd/RPMS        - pre compiled RPMS for
+                                                    some Linux Distributions
+      https://github.com/holger24/AFD             - get or follow the lattest
+                                                    development of AFD
 
 
    1.3 Will AFD run with Windows XXX?
@@ -133,12 +136,12 @@
 
    1.4 What is the history of AFD?
 
-   In 1995 the German Weater Service (Deutscher Wetterdienst (DWD)) was
+   In 1995 the German Weather Service (Deutscher Wetterdienst (DWD)) was
    doing its international file exchange via scripts. It was soon realized
    that this did cause a very high cpu load and was not very flexible.
    For this reason it was decided to develop a file distribution system
    that was to be very portable and easy to handle by a single person.
-   Here follow some important millestones of the AFD:
+   Here follow some important milestones of the AFD:
 
       - 04.02.1996 First release and first operational use at DWD
                    (only for distributing files to international partners).
@@ -192,7 +195,7 @@
 
       2.2.1 Single user
 
-      This is the default and you need to set no addititional flags
+      This is the default and you need to set no additional flags
       with configure. Here only the user that has started the AFD
       may have access and may control it.
 
@@ -209,7 +212,7 @@
       To allow any user to have access you must set the flag
       --enable-setuid_progs in configure. This will set the setuid flag
       for some binaries. The access can be further restricted in the
-      $AFD_WORK_DIR/etc/afd.users file. It is not recommendet to set
+      $AFD_WORK_DIR/etc/afd.users file. It is not recommended to set
       this if you install the binaries as root.
       
    2.3 I get the following error when compiling:
@@ -218,7 +221,7 @@
 
       HPUX for example does not include the Xaw libraries and headers.
       You can either install these on your system or in
-      src/UI/Motif/Makefile.am comment out all occurance of afd_load. Then
+      src/UI/Motif/Makefile.am comment out all occurrence of afd_load. Then
       AFD will compile without the dialog afd_load, which is not required
       for running AFD.
 
@@ -343,7 +346,7 @@
       a lot of jobs queue up and it will start them again as soon as the
       network comes back. If unsure you can stop AMG so no more jobs will
       be generated for FD. FD will still continue to try and distribute
-      files at regular intervalls.
+      files at regular interval's.
 
       5.2.2 The connection to one host is down and the job queue counter
             is constantly increasing. What action is necessary?
@@ -402,7 +405,7 @@
            permission, ie. AFD must have read permission for those
            files.
          - Ensure that the input queue or transfer is NOT stopped
-           in the afd_ctrl dialog. The two leds next to the hostname
+           in the afd_ctrl dialog. The two LED's next to the hostname
            and debug led must be green.
 
 
@@ -457,12 +460,12 @@
       6.1.8 Failed to connect() to XXXXX : Connection refused.
 
       Here we do reach the remote host via the network but there is no
-      FTP daemon running or listining at the expected port.
+      FTP daemon running or listening at the expected port.
 
       6.1.9 421-Service not available, closing control connection.
 
       This error message can appear after we connected to the remote
-      host. It means that it is currently being shuttown and not able
+      host. It means that it is currently being shutdown and not able
       to handle any further requests.
 
       6.1.10 Remote hang up.
@@ -474,7 +477,7 @@
       If this error appears in conjunction with another error message,
       for example: Failed to change directory to YYYY. Then the remote
       host has just cut the connection, either because it is being
-      shuttdown or has a very high load.
+      shutdown or has a very high load.
 
 
 
