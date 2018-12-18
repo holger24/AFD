@@ -552,6 +552,7 @@ struct dir_data
                                             /*+----+--------------------+*/
                                             /*|Bit |      Meaning       |*/
                                             /*+----+--------------------+*/
+                                            /*|  4 | INOTIFY_DELETE_FLAG|*/
                                             /*|  3 | INOTIFY_CREATE_FLAG|*/
                                             /*|  2 | INOTIFY_CLOSE_FLAG |*/
                                             /*|  1 | INOTIFY_RENAME_FLAG|*/

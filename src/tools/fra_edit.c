@@ -1,6 +1,6 @@
 /*
  *  fra_edit.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -255,10 +255,12 @@ main(int argc, char *argv[])
                                   (fra[position].dir_flag & INOTIFY_CLOSE) ? 1 : 0);
                     (void)fprintf(stdout, "     INOTIFY_CREATE [%d]...........(h)\n",
                                   (fra[position].dir_flag & INOTIFY_CREATE) ? 1 : 0);
+                    (void)fprintf(stdout, "     INOTIFY_DELETE [%d]...........(i)\n",
+                                  (fra[position].dir_flag & INOTIFY_DELETE) ? 1 : 0);
 #endif
-                    (void)fprintf(stdout, "     ALL_DISABLED [%d].............(i)\n",
+                    (void)fprintf(stdout, "     ALL_DISABLED [%d].............(j)\n",
                                   (fra[position].dir_flag & ALL_DISABLED) ? 1 : 0);
-                    (void)fprintf(stdout, "     CREATE_R_SRC_DIR [%d].........(j)\n",
+                    (void)fprintf(stdout, "     CREATE_R_SRC_DIR [%d].........(k)\n",
                                   (fra[position].dir_flag & CREATE_R_SRC_DIR) ? 1 : 0);
                     (void)fprintf(stderr, "     None..........................(Z) ");
 
@@ -301,10 +303,12 @@ main(int argc, char *argv[])
                                   break;
                        case 'h' : fra[position].dir_flag ^= INOTIFY_CREATE;
                                   break;
-#endif
-                       case 'i' : fra[position].dir_flag ^= ALL_DISABLED;
+                       case 'i' : fra[position].dir_flag ^= INOTIFY_DELETE;
                                   break;
-                       case 'j' : fra[position].dir_flag ^= CREATE_R_SRC_DIR;
+#endif
+                       case 'j' : fra[position].dir_flag ^= ALL_DISABLED;
+                                  break;
+                       case 'k' : fra[position].dir_flag ^= CREATE_R_SRC_DIR;
                                   break;
                        case 'Z' : break;
                        default  : (void)printf(_("Wrong choice!\n"));

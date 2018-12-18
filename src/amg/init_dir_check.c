@@ -1,6 +1,6 @@
 /*
  *  init_dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2018 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -912,7 +912,8 @@ init_dir_check(int    argc,
       {
          if (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) ||
               (fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) ||
-              (fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE)) &&
+              (fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) ||
+              (fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE)) &&
              ((fra[de[i].fra_pos].no_of_time_entries == 0) ||
               (fra[de[i].fra_pos].host_alias[0] != '\0')) &&
              (fra[de[i].fra_pos].force_reread == NO))
@@ -946,7 +947,8 @@ init_dir_check(int    argc,
          {
             if (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) ||
                  (fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) ||
-                 (fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE)) &&
+                 (fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) ||
+                 (fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE)) &&
                 ((fra[de[i].fra_pos].no_of_time_entries == 0) ||
                  (fra[de[i].fra_pos].host_alias[0] != '\0')) &&
                 (fra[de[i].fra_pos].force_reread == NO))
@@ -963,6 +965,10 @@ init_dir_check(int    argc,
                if (fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE)
                {
                   mask |= IN_CREATE;
+               }
+               if (fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE)
+               {
+                  mask |= IN_DELETE;
                }
 
                if ((iwl[j].wd = inotify_add_watch(inotify_fd, de[i].dir, mask)) == -1)

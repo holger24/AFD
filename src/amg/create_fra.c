@@ -1,6 +1,6 @@
 /*
  *  create_fra.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -473,6 +473,10 @@ create_fra(int no_of_dirs)
          {
             fra[i].dir_flag |= INOTIFY_CREATE;
          }
+         if (dd[i].inotify_flag & INOTIFY_DELETE_FLAG)
+         {
+            fra[i].dir_flag |= INOTIFY_DELETE;
+         }
 #endif
          if (fra[i].no_of_time_entries > 0)
          {
@@ -691,6 +695,16 @@ create_fra(int no_of_dirs)
                  {
                     fra[i].dir_flag |= INOTIFY_CREATE;
                  }
+            if ((fra[i].dir_flag & INOTIFY_DELETE) &&
+                ((dd[i].inotify_flag & INOTIFY_DELETE_FLAG) == 0))
+            {
+               fra[i].dir_flag &= ~INOTIFY_DELETE;
+            }
+            else if (((fra[i].dir_flag & INOTIFY_DELETE) == 0) &&
+                     (dd[i].inotify_flag & INOTIFY_DELETE_FLAG))
+                 {
+                    fra[i].dir_flag |= INOTIFY_DELETE;
+                 }
 #endif
             fra[i].queued                 = old_fra[k].queued;
             (void)memcpy(&fra[i].ate, &old_fra[k].ate,
@@ -752,6 +766,10 @@ create_fra(int no_of_dirs)
             if (dd[i].inotify_flag & INOTIFY_CREATE_FLAG)
             {
                fra[i].dir_flag |= INOTIFY_CREATE;
+            }
+            if (dd[i].inotify_flag & INOTIFY_DELETE_FLAG)
+            {
+               fra[i].dir_flag |= INOTIFY_DELETE;
             }
 #endif
             fra[i].queued                 = 0;

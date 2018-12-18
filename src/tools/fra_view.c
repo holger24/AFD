@@ -1,6 +1,6 @@
 /*
  *  fra_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -448,6 +448,10 @@ main(int argc, char *argv[])
             if (fra[i].dir_flag & INOTIFY_CREATE)
             {
                (void)fprintf(stdout, "INOTIFY_CREATE ");
+            }
+            if (fra[i].dir_flag & INOTIFY_DELETE)
+            {
+               (void)fprintf(stdout, "INOTIFY_DELETE ");
             }
 #endif
             if (fra[i].dir_flag & ALL_DISABLED)

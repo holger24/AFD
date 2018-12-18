@@ -1981,6 +1981,9 @@ typedef unsigned long       u_long_64;
 #define INFO_TIME_REACHED          1048576
 #define DO_NOT_PARALLELIZE         2097152
 #define DO_NOT_MOVE                4194304
+#ifdef WITH_INOTIFY
+# define INOTIFY_DELETE            8388608
+#endif
 
 #ifdef WITH_INOTIFY
 /*
@@ -1990,6 +1993,7 @@ typedef unsigned long       u_long_64;
 # define INOTIFY_RENAME_FLAG       1
 # define INOTIFY_CLOSE_FLAG        2
 # define INOTIFY_CREATE_FLAG       4
+# define INOTIFY_DELETE_FLAG       8
 #endif
 
 
@@ -2851,7 +2855,8 @@ struct fileretrieve_status
                                             /*+------+------------------+*/
                                             /*|Bit(s)|     Meaning      |*/
                                             /*+------+------------------+*/
-                                            /*|24-32 | Not used.        |*/
+                                            /*|25-32 | Not used.        |*/
+                                            /*|   24 | INOTIFY_DELETE   |*/
                                             /*|   23 | DO_NOT_MOVE      |*/
                                             /*|   22 | DO_NOT_PARALLELIZ|*/
                                             /*|   21 | INFO_TIME_REACHED|*/

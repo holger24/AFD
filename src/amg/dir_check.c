@@ -964,6 +964,23 @@ main(int argc, char *argv[])
                              }
                           }
                        }
+                       else if (event->mask & IN_DELETE)
+                            {
+                               for (j = 0; j < no_of_inotify_dirs; j++)
+                               {
+                                  if (event->wd == iwl[j].wd)
+                                  {
+                                     /*
+                                      * Assume this is the case where for
+                                      * example SFTP does a not atomic
+                                      * rename. That is delete and create
+                                      * event.
+                                      */
+                                     fra[de[iwl[j].de_pos].fra_pos].dir_flag |= INOTIFY_NEEDS_SCAN;
+                                     break;
+                                  }
+                               }
+                            }
                        i += (sizeof(struct inotify_event)) + event->len;
                     } /* while (i < n) */
 
@@ -1122,7 +1139,8 @@ main(int argc, char *argv[])
                  (fra[de[i].fra_pos].force_reread == YES) ||
                  (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) == 0) &&
                   ((fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) == 0) &&
-                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) == 0))) &&
+                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) == 0) &&
+                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE) == 0))) &&
 # endif
                 ((fra[de[i].fra_pos].fsa_pos != -1) ||
                  (fra[de[i].fra_pos].no_of_time_entries == 0) ||
@@ -1209,7 +1227,8 @@ main(int argc, char *argv[])
                  (fra[de[i].fra_pos].dir_flag & FILES_IN_QUEUE) ||
                  (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) == 0) &&
                   ((fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) == 0) &&
-                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) == 0))) &&
+                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) == 0) &&
+                  ((fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE) == 0))) &&
 # endif
                 ((fra[de[i].fra_pos].fsa_pos != -1) ||
                  (fra[de[i].fra_pos].no_of_time_entries == 0) ||
