@@ -964,7 +964,8 @@ main(int argc, char *argv[])
                              }
                           }
                        }
-                       else if (event->mask & IN_DELETE)
+                       else if ((event->mask & IN_DELETE) &&
+                                ((event->mask & IN_ISDIR) == 0))
                             {
                                for (j = 0; j < no_of_inotify_dirs; j++)
                                {
@@ -973,10 +974,43 @@ main(int argc, char *argv[])
                                      /*
                                       * Assume this is the case where for
                                       * example SFTP does a not atomic
-                                      * rename. That is delete and create
+                                      * rename. That is create and delete
                                       * event.
                                       */
-                                     fra[de[iwl[j].de_pos].fra_pos].dir_flag |= INOTIFY_NEEDS_SCAN;
+                                     if ((iwl[j].no_of_files % INOTIFY_FL_STEP_SIZE) == 0)
+                                     {
+                                        size_t new_size;
+
+                                        new_size = ((iwl[j].no_of_files / INOTIFY_FL_STEP_SIZE) + 1) *
+                                                   INOTIFY_FL_STEP_SIZE * sizeof(short);
+                                        if ((iwl[j].fnl = realloc(iwl[j].fnl, new_size)) == NULL)
+                                        {
+                                           system_log(FATAL_SIGN, __FILE__, __LINE__,
+# if SIZEOF_SIZE_T == 4
+                                                      "Could not reallocate memory [%d bytes] for file name length list : %s",
+# else
+                                                      "Could not reallocate memory [%lld bytes] for file name length list : %s",
+# endif
+                                                      (pri_size_t)new_size, strerror(errno));
+                                           exit(INCORRECT);
+                                        }
+                                     }
+                                     iwl[j].fnl[iwl[j].no_of_files] = strlen(&event->name[1]);
+                                     if ((iwl[j].cur_fn_length + iwl[j].fnl[iwl[j].no_of_files] + 1) > iwl[j].alloc_fn_length)
+                                     {
+                                        iwl[j].alloc_fn_length += (iwl[j].fnl[iwl[j].no_of_files] + 1 + (10 * MAX_FILENAME_LENGTH));
+                                        if ((iwl[j].file_name = realloc(iwl[j].file_name, iwl[j].alloc_fn_length)) == NULL)
+                                        {
+                                           system_log(FATAL_SIGN, __FILE__, __LINE__,
+                                                      "Could not reallocate memory [%d bytes] for file name length list : %s",
+                                                      iwl[j].alloc_fn_length, strerror(errno));
+                                           exit(INCORRECT);
+                                        }
+                                     }
+                                     (void)strcpy(&iwl[j].file_name[iwl[j].cur_fn_length], &event->name[0]);
+                                     iwl[j].cur_fn_length += iwl[j].fnl[iwl[j].no_of_files] + 1;
+                                     iwl[j].no_of_files++;
+                                     valid_events++;
                                      break;
                                   }
                                }
