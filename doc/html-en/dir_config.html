@@ -286,10 +286,10 @@ defaults is shown in the table below:
           <td><a name="inotify_close">2</a></td>
           <td>Close</td>
           <td>Catches the inotify close event. If the process closes
-              the file will be caugth by this event. Note that this
+              the file will be caught by this event. Note that this
               is not save when files are being given to AFD, since
               a close event does not mean the process has finished
-              writting. It could have crashed or the network connection
+              writing. It could have crashed or the network connection
               went down. Only a rename event and in some cases a delete
               event are save.</td>
        </tr>
@@ -297,7 +297,7 @@ defaults is shown in the table below:
           <td><a name="inotify_create">4</a></td>
           <td>Create</td>
           <td>Catches the inotify create event. The create event
-              can be usefull for files that are created instantanously
+              can be useful for files that are created instantaneously
               for example via touch.</td>
        </tr>
        <tr>
@@ -305,13 +305,13 @@ defaults is shown in the table below:
           <td>Delete</td>
           <td>Catches the inotify delete event. The delete event
               is handled specially in AFD. It only triggers on files that
-              start with a leading dot. This is usefull where some
-              programms do not use the atomic rename() function to
+              start with a leading dot. This is useful where some
+              programs do not use the atomic rename() function to
               rename a file.</td>
        </tr>
        </table></center>
        One can also combine the events. The following table lists
-       some usefull combinations:
+       some useful combinations:
        <center><table border>
        <tr>
           <th>Bit</th>
@@ -345,7 +345,7 @@ defaults is shown in the table below:
        it will override the value given in "old file time". If you specify
        a value of 0, it will be deleted after 120 (DEFAULT_TRANSFER_TIMEOUT)
        seconds. This can be overwritten by setting -1. Then the file
-       will be deleted immediatly. Only use the -1 if you really know what
+       will be deleted immediately. Only use the -1 if you really know what
        you are doing.</td>
    <td align=center>X</td>
    <td align=center>X</td>
@@ -417,7 +417,7 @@ defaults is shown in the table below:
    <td>Sometimes some application may not be able to send files with
        a leading dot and then rename these files after they have send all
        data. With this option AFD will wait until the character specified
-       with &lt;decimal number&gt; will appear a the last character in the
+       with &lt;decimal number&gt; will appear as the last character in the
        file before it will grab the file.</td>
    <td align=center>X</td>
    <td align=center>&nbsp;</td>
@@ -519,7 +519,7 @@ defaults is shown in the table below:
        additional polling is required. However when set for SFTP it
        will only fetch the file once.</p>
        <p>When append is set, it only fetches the new appended data.
-       This can be usefull if you want to retrieve for example log data
+       This can be useful if you want to retrieve for example log data
        that is always appended. It will only retrieve the new appended
        data and not the whole file.</p></td>
    <td align=center>X</td>
@@ -529,7 +529,7 @@ defaults is shown in the table below:
 <tr>
    <td width="30%"><a name="ls_data_filename">ls data filename &lt;name&gt;</a></td>
    <td>By default the ls data filename will be that of the directory alias
-       name. In some situations it may be usefull if several directories
+       name. In some situations it may be useful if several directories
        use the same file. One such situation is if the directory has the
        %T modifier set in the directory path. If there are several directories
        with the same path but different times.</td>
@@ -877,7 +877,7 @@ follow some more additional options that one can insert into the file filter:
 <p>
 The number file mask entries is unlimited, however the maximum length
 of a single entry should not exceed 256 (FILE_MASK_STEP_SIZE) characters.
-There is also no limit to the numner of file groups.
+There is also no limit to the number of file groups.
 </p>
 <p>
 To make the handling of large number of file mask entries easier, one can
@@ -912,7 +912,7 @@ If you do not want to write the password in clear text into the DIR_CONFIG
 you can set it via the program <a href="tools.html#set_pw">set_pw</a>. If
 you have an external tool that generates the DIR_CONFIG automatically
 and you want to write the encoded passwords, ie. not in clear text, it
-can be done specifiying the encoding with $&lt;encode type&gt;$ and then
+can be done specifying the encoding with $&lt;encode type&gt;$ and then
 the encoded password (eg. $2$XRZ5WwxA). For the exact details please
 read the code or contact the author. Currently only 3 types are known:
 0, 1 and 2. 0 is in clear plain text. 1 is the AFD internal version. And 2
@@ -1851,7 +1851,7 @@ section. Valid options can be taken from the following table:
          <td><b>sohetx[+nnn]</b></td>
          <td>Adds &lt;SOH&gt;&lt;CR&gt;&lt;CR&gt;&lt;LF&gt; to the beginning
              of the file and &lt;CR&gt;&lt;CR&gt;&lt;LF&gt;&lt;ETX&gt;
-             to the end of the file. Optionaly one can add with the plus
+             to the end of the file. Optionally one can add with the plus
              sign a sequence number. The maximum of digits is specified
              by the number of n's. So for example +nnn would add a three
              digit sequence number.</td>
@@ -1861,7 +1861,7 @@ section. Valid options can be taken from the following table:
          <td>Just add WMO 8 byte ascii length and 2 bytes type indicator.
              If the message contains &lt;SOH&gt;&lt;CR&gt;&lt;CR&gt;&lt;LF&gt;
              at start and &lt;CR&gt;&lt;CR&gt;&lt;LF&gt;&lt;ETX&gt; at the
-             end, these will be removed. Optionaly one can add with the plus
+             end, these will be removed. Optionally one can add with the plus
              sign a sequence number. The maximum of digits is specified
              by the number of n's. So for example +nnn would add a three
              digit sequence number.</td>
@@ -1871,7 +1871,7 @@ section. Valid options can be taken from the following table:
          <td>Adds WMO 8 byte ascii length and 2 bytes type indicator plus
              &lt;SOH&gt;&lt;CR&gt;&lt;CR&gt;&lt;LF&gt; at start and
              &lt;CR&gt;&lt;CR&gt;&lt;LF&gt;&lt;ETX&gt; to end if they are
-             not there. Optionaly one can add with the plus sign a sequence
+             not there. Optionally one can add with the plus sign a sequence
              number. The maximum of digits is specified by the number of
              n's. So for example +nnn would add a three digit sequence
              number.</td>
@@ -1881,7 +1881,7 @@ section. Valid options can be taken from the following table:
          <td>converts a file that contains many ascii bulletins starting
              with SOH and ending with ETX to the WMO standard (8 byte ascii
              length and 2 bytes type indicators). The SOH and ETX will be
-             copied to the new file. Optionaly one can add with the plus
+             copied to the new file. Optionally one can add with the plus
              sign a sequence number. The maximum of digits is specified
              by the number of n's. So for example +nnn would add a three
              digit sequence number.</td>
@@ -1899,7 +1899,7 @@ section. Valid options can be taken from the following table:
              end, for the individual fields.</td>
       </tr>
          <td><b>iso8859_2ascii</b></td>
-         <td>Converts ISO8859 to ASCII. Curently only the following
+         <td>Converts ISO8859 to ASCII. Currently only the following
              conversions have been implemented:
              <pre>
                 &auml; (e4) -&gt; ae    &Auml; (c4) -&gt; Ae | AE | A E
@@ -2605,7 +2605,7 @@ section. Valid options can be taken from the following table:
 <tr>
    <td><a name="encode_ansi">encode ansi</a></td>
    <td>This converts ASCII to ISO8859 when mailing the content. Note
-       not all characters are converted, mainly only the german characters
+       not all characters are converted, mainly only the German characters
        are working.  Please contact developer if you need more.</td>
    <td><pre>&nbsp;</pre></td>
    <td><pre>&nbsp;</pre></td>
