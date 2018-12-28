@@ -264,16 +264,73 @@ defaults is shown in the table below:
    <th>Default</th>
 </tr>
 <tr>
-   <td width="30%"><a name="inotify">inotify &lt;flag&gt;</a></td>
+   <td width="30%"><a name="inotify">inotify &lt;bit(s)&gt;</a></td>
    <td>This option uses a feature of the operating system that notifies
        the application when some change occurs in the monitored directory.
        It is much faster than scanning the directory for new files.
-       For the flag option it possible to specify 1 for rename event only,
-       2 for close event only and 4 for create event (link) only. One
-       can also combine the events. For example 3 for both rename and
-       close event. Or 5 for rename and create event. Do not use this
-       option together with: <a href="#dir_options_time">time</a>,
-       <a href="#force_reread">force reread</a>, <a href="#wait_for">
+       The following flags can be set:
+       <center><table border>
+       <tr>
+          <th>Bit</th>
+          <th>Name</th>
+          <th>Description</th>
+       </tr>
+       <tr>
+          <td><a name="inotify_rename">1</a></td>
+          <td>Rename to</td>
+          <td>For rename there are two events 'rename from' and 'rename to'.
+              This just catches the 'rename to' inotify event. So this
+              catches if a file is renamed from .name to name.</td>
+       </tr>
+       <tr>
+          <td><a name="inotify_close">2</a></td>
+          <td>Close</td>
+          <td>Catches the inotify close event. If the process closes
+              the file will be caugth by this event. Note that this
+              is not save when files are being given to AFD, since
+              a close event does not mean the process has finished
+              writting. It could have crashed or the network connection
+              went down. Only a rename event and in some cases a delete
+              event are save.</td>
+       </tr>
+       <tr>
+          <td><a name="inotify_create">4</a></td>
+          <td>Create</td>
+          <td>Catches the inotify create event. The create event
+              can be usefull for files that are created instantanously
+              for example via touch.</td>
+       </tr>
+       <tr>
+          <td><a name="inotify_delete">8</a></td>
+          <td>Delete</td>
+          <td>Catches the inotify delete event. The delete event
+              is handled specially in AFD. It only triggers on files that
+              start with a leading dot. This is usefull where some
+              programms do not use the atomic rename() function to
+              rename a file.</td>
+       </tr>
+       </table></center>
+       One can also combine the events. The following table lists
+       some usefull combinations:
+       <center><table border>
+       <tr>
+          <th>Bit</th>
+          <th>Name</th>
+          <th>Description</th>
+       </tr>
+       <tr>
+          <td><a name="inotify_rename_close">3</a></td>
+          <td>Rename + Close</td>
+          <td>Catches both files being renamed and files being created.</td>
+       </tr>
+       <tr>
+          <td><a name="inotify_rename_create">5</a></td>
+          <td>Rename + Create</td>
+          <td>Catches both files being renamed and files being created.</td>
+       </tr>
+       </table></center>
+       Do not use this option together with: <a href="#dir_options_time">
+       time</a>, <a href="#force_reread">force reread</a>, <a href="#wait_for">
        wait for</a>, <a href="#accumulate">accumulate</a> and
        <a href="#accumulate_size">accumulate size</a></td>
    <td align=center>X</td>
@@ -2849,7 +2906,7 @@ section. Valid options can be taken from the following table:
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2018 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 07.08.2018
+   Last updated: 28.12.2018
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
