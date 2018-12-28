@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_http.c - Part of AFD, an automatic file distribution
  *                                 program.
- *  Copyright (c) 2006 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -261,10 +261,10 @@ static int                        check_list(char *, int, time_t, off_t, off_t,
                                              int *, off_t *, int *),
                                   check_name(char *, int, off_t, time_t,
                                              unsigned int *, off_t *),
-                                  eval_html_dir_list(char *, int *, off_t *,
-                                                     int *, unsigned int *,
-                                                     off_t *, unsigned int *,
-                                                     off_t *);
+                                  eval_html_dir_list(char *, off_t, int *,
+                                                     off_t *, int *,
+                                                     unsigned int *, off_t *,
+                                                     unsigned int *, off_t *);
 static off_t                      convert_size(char *, off_t *);
 #ifdef WITH_ATOM_FEED_SUPPORT
 static time_t                     extract_feed_date(char *);
@@ -742,11 +742,10 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
 #else
             listbuffer[bytes_buffered] = '\0';
 #endif
-            if (eval_html_dir_list(listbuffer, &files_to_retrieve,
-                                   file_size_to_retrieve,
-                                   more_files_in_list,
-                                   &list_length, &list_size,
-                                   &files_deleted,
+            if (eval_html_dir_list(listbuffer, bytes_buffered,
+                                   &files_to_retrieve, file_size_to_retrieve,
+                                   more_files_in_list, &list_length,
+                                   &list_size, &files_deleted,
                                    &file_size_deleted) == INCORRECT)
             {
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -939,6 +938,7 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
 /*++++++++++++++++++++++++ eval_html_dir_list() +++++++++++++++++++++++++*/
 static int
 eval_html_dir_list(char         *html_buffer,
+                   off_t        bytes_buffered,
                    int          *files_to_retrieve,
                    off_t        *file_size_to_retrieve,
                    int          *more_files_in_list,
@@ -979,9 +979,9 @@ eval_html_dir_list(char         *html_buffer,
    else
    {
 #endif
-      if ((ptr = lposi(html_buffer, "<h1>", 4)) == NULL)
+      if ((ptr = llposi(html_buffer, (size_t)bytes_buffered, "<h1>", 4)) == NULL)
       {
-         if ((ptr = lposi(html_buffer, "<PRE>", 5)) == NULL)
+         if ((ptr = llposi(html_buffer, (size_t)bytes_buffered, "<PRE>", 5)) == NULL)
          {
             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                       "Unknown HTML directory listing. Please send author a link so that this can be implemented.");

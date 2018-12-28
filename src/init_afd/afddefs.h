@@ -3922,6 +3922,7 @@ extern char         *convert_ls_data(int, char *, off_t *, int, char *,
                                            int *),
 #endif
                     *lock_proc(int, int),
+                    *llposi(char *, const size_t, char *, const size_t),
                     *lposi(char *, char *, const size_t),
                     *posi(char *, char *);
 extern unsigned int get_afd_status_struct_size(void),
