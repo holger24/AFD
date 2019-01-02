@@ -48,6 +48,12 @@
 #define PREFIX_ENTER            33
 #define PROXY_NO_ENTER          34
 #define PROXY_ENTER             35
+#define RENAME_RULE_NO_ENTER    36
+#define RENAME_RULE_ENTER       37
+#define RENAME_FILT_NO_ENTER    38
+#define RENAME_FILT_ENTER       39
+#define RENAME_PATT_NO_ENTER    40
+#define RENAME_PATT_ENTER       41
 
 #define CREATE_DIR_TOGGLE       0
 #define ATTACH_FILE_TOGGLE      1
@@ -121,6 +127,10 @@
                          (XtPointer)PASSWORD_ENTER);                   \
         }
 
+#define SET_RENAME_ON           1
+#define SET_RENAME_RULE         2
+#define SET_RENAME_MANUAL       4
+
 /* Structure holding all data of for sending files. */
 struct send_data
        {
@@ -137,6 +147,10 @@ struct send_data
           XT_PTR_TYPE lock;           /* DOT, DOT_VMS, OFF, etc.     */
           XT_PTR_TYPE transfer_mode;
           XT_PTR_TYPE protocol;
+          XT_PTR_TYPE rename_do;
+          int         rename_num;
+          char        rename_filt[MAX_FILENAME_LENGTH];
+          char        rename_patt[MAX_FILENAME_LENGTH];
           int         port;
           int         debug;
           time_t      timeout;
@@ -156,6 +170,77 @@ extern void close_button(Widget, XtPointer, XtPointer),
             protocol_toggled(Widget, XtPointer, XtPointer),
             send_button(Widget, XtPointer, XtPointer),
             send_file(void),
-            send_save_input(Widget, XtPointer, XtPointer);
+            send_save_input(Widget, XtPointer, XtPointer),
+            rename_onoff(Widget, XtPointer, XtPointer),
+            rename_toggle(Widget, XtPointer, XtPointer),
+            rename_eval(Widget, XtPointer, XtPointer);
+extern int  rr_file_name_file(struct rule*, int, char*, char*);
+
+#define _set_rename_boxies(what) if ((what) == OFF)\
+   {\
+      if ((db->protocol != FTP)\
+            && (db->protocol != LOC))\
+      {\
+         XtSetSensitive(rename_label_w[0], False);\
+         XtSetSensitive(rename_onoff_w, False);\
+      }\
+      XtSetSensitive(rename_toggle_w, False);\
+      if (rename_label_w[3])\
+      {\
+         XtSetSensitive(rename_label_w[3], False);\
+      }\
+      XtSetSensitive(rename_menu_w, False);\
+      XtSetSensitive(rename_label_w[1], False);\
+      XtSetSensitive(rename_label_w[2], False);\
+      XtSetSensitive(rename_filt_w, False);\
+      XtSetSensitive(rename_patt_w, False);\
+   }\
+   else\
+   {\
+      XtSetSensitive(rename_label_w[0], True);\
+      XtSetSensitive(rename_onoff_w, True);\
+      if (db->rename_do & SET_RENAME_ON)\
+      {\
+         XtSetSensitive(rename_toggle_w, True);\
+         if (db->rename_do & SET_RENAME_MANUAL)\
+         {\
+            if (rename_label_w[3])\
+            {\
+               XtSetSensitive(rename_label_w[3], False);\
+            }\
+            XtSetSensitive(rename_menu_w, False);\
+            XtSetSensitive(rename_label_w[1], True);\
+            XtSetSensitive(rename_label_w[2], True);\
+            XtSetSensitive(rename_filt_w, True);\
+            XtSetSensitive(rename_patt_w, True);\
+         }\
+         else\
+         {\
+            if (rename_label_w[3])\
+            {\
+               XtSetSensitive(rename_label_w[3], True);\
+            }\
+            XtSetSensitive(rename_menu_w, True);\
+            XtSetSensitive(rename_label_w[1], False);\
+            XtSetSensitive(rename_label_w[2], False);\
+            XtSetSensitive(rename_filt_w, False);\
+            XtSetSensitive(rename_patt_w, False);\
+         }\
+      }\
+      else\
+      {\
+         XtSetSensitive(rename_toggle_w, False);\
+         if (rename_label_w[3])\
+         {\
+            XtSetSensitive(rename_label_w[3], False);\
+         }\
+         XtSetSensitive(rename_menu_w, False);\
+         XtSetSensitive(rename_label_w[1], False);\
+         XtSetSensitive(rename_label_w[2], False);\
+         XtSetSensitive(rename_filt_w, False);\
+         XtSetSensitive(rename_patt_w, False);\
+      }\
+   }\
+/* END define _set_rename_boxies */
 
 #endif /* __xsend_file_h */

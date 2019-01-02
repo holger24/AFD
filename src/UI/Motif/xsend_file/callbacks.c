@@ -37,6 +37,7 @@ DESCR__S_M3
  ** HISTORY
  **   24.01.2005 H.Kiehl Created
  **   11.02.2014 A.Maul  Properly set and unset active, passive mode.
+ **   02.01.2019 A.Maul  Added select rename-rule with rename option.
  **
  */
 DESCR__E_M3
@@ -96,13 +97,83 @@ extern Widget           active_passive_w,
                         statusbox_w,
                         timeout_label_w,
                         timeout_w,
+                        rename_label_w[4],
+                        rename_menu_w,
+                        rename_toggle_w,
+                        rename_onoff_w,
+                        rename_filt_w,
+                        rename_patt_w,
                         user_name_label_w,
                         user_name_w;
 extern XtInputId        cmd_input_id;
 extern XmTextPosition   wpr_position;
 extern XmFontList       fontlist;
 extern struct send_data *db;
+extern int              no_of_rule_headers;
+extern struct rule      *rule;
 
+/*############################ rename_toggle() ##########################*/
+void
+rename_onoff(Widget w, XtPointer client_data, XtPointer call_data)
+{
+   XmString xstr;
+
+   if (db->rename_do & SET_RENAME_ON)
+   {
+      db->rename_do &= ~SET_RENAME_ON;
+      _set_rename_boxies(OFF);
+      xstr = XmStringCreateLtoR("Off", XmFONTLIST_DEFAULT_TAG);
+      XtVaSetValues(w, XmNlabelString, xstr, NULL);
+      XmStringFree(xstr);
+   }
+   else
+   {
+      db->rename_do |= SET_RENAME_ON;
+      _set_rename_boxies(ON);
+      xstr = XmStringCreateLtoR("On ", XmFONTLIST_DEFAULT_TAG);
+      XtVaSetValues(w, XmNlabelString, xstr, NULL);
+      XmStringFree(xstr);
+   }
+   return;
+}
+
+/*############################ rename_toggle() ##########################*/
+void
+rename_toggle(Widget w, XtPointer client_data, XtPointer call_data)
+{
+   XmString xstr;
+
+   if (db->rename_do & SET_RENAME_MANUAL)
+   {
+      db->rename_do &= ~SET_RENAME_MANUAL;
+      db->rename_do |= SET_RENAME_RULE;
+      _set_rename_boxies(ON);
+      xstr = XmStringCreateLtoR("Rule  ", XmFONTLIST_DEFAULT_TAG);
+      XtVaSetValues(w, XmNlabelString, xstr, NULL);
+      XmStringFree(xstr);
+   }
+   else
+   {
+      db->rename_do &= ~SET_RENAME_RULE;
+      db->rename_do |= SET_RENAME_MANUAL;
+      _set_rename_boxies(ON);
+      xstr = XmStringCreateLtoR("Manual", XmFONTLIST_DEFAULT_TAG);
+      XtVaSetValues(w, XmNlabelString, xstr, NULL);
+      XmStringFree(xstr);
+   }
+   return;
+}
+
+/*############################ rename_eval() ############################*/
+void
+rename_eval(Widget w, XtPointer client_data, XtPointer call_data)
+{
+   XT_PTR_TYPE rule_num = (XT_PTR_TYPE)client_data;
+   if (rule_num < no_of_rule_headers)
+   {
+      db->rename_num = rule_num;
+   }
+}
 
 /*############################ close_button() ###########################*/
 void
@@ -286,6 +357,36 @@ send_button(Widget w, XtPointer client_data, XtPointer call_data)
             show_message(statusbox_w, "No protocol selected, or unknown.");
             break;
       }
+      /*
+       * check filter/pattern + rule, call rewrite file_name_file
+       */
+      if (db->rename_do & SET_RENAME_ON)
+      {
+         if (db->rename_do & SET_RENAME_MANUAL)
+         {
+            if (db->rename_filt[0] == '\0')
+            {
+               show_message(statusbox_w, "No rename filter given!");
+               XmProcessTraversal(rename_filt_w, XmTRAVERSE_CURRENT);
+               return;
+            }
+            if (db->rename_patt[0] == '\0')
+            {
+               show_message(statusbox_w, "No rename pattern given!");
+               XmProcessTraversal(rename_patt_w, XmTRAVERSE_CURRENT);
+               return;
+            }
+         }
+         else
+         {
+            if (db->rename_num == INCORRECT)
+            {
+               show_message(statusbox_w, "Invalid rename-rule name!");
+               XmProcessTraversal(rename_menu_w, XmTRAVERSE_CURRENT);
+               return;
+            }
+         }
+      }
 
       if (wpr_position != 0)
       {
@@ -295,6 +396,37 @@ send_button(Widget w, XtPointer client_data, XtPointer call_data)
          wpr_position = 0;
       }
       create_url_file();
+
+      if ((db->rename_do & SET_RENAME_ON) && (
+            (db->protocol == FTP) || (db->protocol == SFTP) || (db->protocol == LOC))
+            )
+      {
+         if (db->rename_do & SET_RENAME_RULE)
+         {
+            if (rr_file_name_file(rule, db->rename_num, NULL, NULL) == INCORRECT)
+            {
+               show_message(statusbox_w, "Evaluating rename-rule(s) failed!");
+               return;
+            }
+         }
+         if (db->rename_do & SET_RENAME_MANUAL)
+         {
+            if (rr_file_name_file(rule, -1, db->rename_filt, db->rename_patt) == INCORRECT)
+            {
+               show_message(statusbox_w, "Evaluating rename-rule( failed!");
+               return;
+            }
+         }
+      }
+      else
+      {
+         if (rr_file_name_file(rule, -1, NULL, NULL) == INCORRECT)
+         {
+            show_message(statusbox_w, "Resetting rename-rule evaluation failed!");
+            return;
+         }
+      }
+
       send_file();
 
       /* Set Stop button. */
@@ -360,6 +492,7 @@ protocol_toggled(Widget w, XtPointer client_data, XtPointer call_data)
    {
       return;
    }
+   db->protocol = (XT_PTR_TYPE)client_data;
    switch ((XT_PTR_TYPE)client_data)
    {
       case FTP :
@@ -474,6 +607,8 @@ protocol_toggled(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(mode_box_w, True);
          XtSetSensitive(lock_box_w, True);
          XtSetSensitive(prefix_w, True);
+
+         _set_rename_boxies(ON);
 
          XmTextSetString(proxy_w, db->proxy_name);
          XtSetSensitive(proxy_label_w, True);
@@ -593,6 +728,8 @@ protocol_toggled(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(mode_box_w, True);
          XtSetSensitive(lock_box_w, True);
          XtSetSensitive(prefix_w, True);
+
+         _set_rename_boxies(ON);
 
          XtSetSensitive(proxy_label_w, False);
          XtSetSensitive(proxy_w, False);
@@ -722,6 +859,8 @@ protocol_toggled(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(lock_box_w, False);
          XtSetSensitive(prefix_w, False);
 
+         _set_rename_boxies(OFF);
+
          XtSetSensitive(proxy_label_w, False);
          XtSetSensitive(proxy_w, False);
          break;
@@ -747,6 +886,7 @@ protocol_toggled(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(mode_box_w, False);
          XtSetSensitive(lock_box_w, True);
          XtSetSensitive(prefix_w, True);
+         _set_rename_boxies(ON);
          break;
 
 #ifdef _WITH_SCP_SUPPORT
@@ -771,6 +911,7 @@ protocol_toggled(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(mode_box_w, False);
          XtSetSensitive(lock_box_w, True);
          XtSetSensitive(prefix_w, True);
+         _set_rename_boxies(ON);
          if (db->port == 0)
          {
             char str_line[MAX_PORT_DIGITS + 1];
@@ -849,6 +990,8 @@ protocol_toggled(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(lock_box_w, False);
          XtSetSensitive(prefix_w, False);
 
+         _set_rename_boxies(OFF);
+
          XtSetSensitive(proxy_label_w, False);
          XtSetSensitive(proxy_w, False);
          break;
@@ -858,7 +1001,6 @@ protocol_toggled(Widget w, XtPointer client_data, XtPointer call_data)
          (void)fprintf(stderr, "Junk programmer!\n");
          exit(INCORRECT);
    }
-   db->protocol = (XT_PTR_TYPE)client_data;
 
    return;
 }
@@ -1006,6 +1148,43 @@ send_save_input(Widget w, XtPointer client_data, XtPointer call_data)
          (void)strcpy(db->prefix, value);
          reset_message(statusbox_w);
          XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         break;
+
+      /*
+       * save rename values
+       */
+      case RENAME_FILT_NO_ENTER :
+         (void)strcpy(db->rename_filt, value);
+         break;
+      case RENAME_FILT_ENTER :
+         (void)strcpy(db->rename_filt, value);
+         reset_message(statusbox_w);
+         XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         break;
+
+      case RENAME_PATT_NO_ENTER :
+         (void)strcpy(db->rename_patt, value);
+         break;
+      case RENAME_PATT_ENTER :
+         (void)strcpy(db->rename_patt, value);
+         reset_message(statusbox_w);
+         XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         break;
+
+      case RENAME_RULE_NO_ENTER :
+      case RENAME_RULE_ENTER :
+         db->rename_num = get_rule(value, no_of_rule_headers);
+         if (db->rename_num == INCORRECT)
+         {
+            show_message(statusbox_w, "Invalid rename-rule name!");
+            XtFree(value);
+            return;
+         }
+         if (type == RENAME_RULE_ENTER)
+         {
+            XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         }
+         reset_message(statusbox_w);
          break;
 
       default :

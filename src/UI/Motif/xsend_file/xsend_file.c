@@ -39,7 +39,7 @@ DESCR__S_M1
  ** HISTORY
  **   24.01.2005 H.Kiehl Created
  **   12.08.2006 H.Kiehl Added extended active/passive mode option.
- **
+ **   02.01.2019 A.Maul  Added select rename-rule with rename option.
  */
 DESCR__E_M1
 
@@ -112,6 +112,12 @@ Widget           active_passive_w,
                  statusbox_w,
                  timeout_label_w,
                  timeout_w,
+                 rename_label_w[4],
+                 rename_menu_w,
+                 rename_toggle_w,
+                 rename_onoff_w,
+                 rename_filt_w,
+                 rename_patt_w,
                  user_name_label_w = NULL,
                  user_name_w = NULL;
 XmFontList       fontlist;
@@ -120,12 +126,15 @@ int              button_flag,
                  sys_log_fd = STDERR_FILENO;
 pid_t            cmd_pid;
 char             file_name_file[MAX_PATH_LENGTH],
+                 file_name_file_copy[MAX_PATH_LENGTH],
                  url_file_name[MAX_PATH_LENGTH],
                  work_dir[MAX_PATH_LENGTH],
                  font_name[20],
                  *p_work_dir;
 struct send_data *db;
 const char       *sys_log_name = SYSTEM_LOG_FIFO;
+int              no_of_rule_headers = 0;
+struct rule      *rule = NULL;
 
 /* Local function prototypes. */
 static void      init_xsend_file(int *, char **, char *, char *),
@@ -140,6 +149,10 @@ static void      init_xsend_file(int *, char **, char *, char *),
 int
 main(int argc, char *argv[])
 {
+   long            i;
+   unsigned int    glyph_height,
+                   screen_height;
+   XFontStruct     *font_struct;
    char            window_title[40];
    static String   fallback_res[] =
                    {
@@ -157,6 +170,7 @@ main(int argc, char *argv[])
                    criteriabox_w,
                    main_form_w,
                    optionbox_w,
+                   optionbox2_w,
                    pane_w,
                    radio_w,
                    separator_w,
@@ -240,6 +254,15 @@ main(int argc, char *argv[])
    }
    fontlist = XmFontListAppendEntry(NULL, entry);
    XmFontListEntryFree(&entry);
+
+   /* get screen and font height, then calculate size of pulldown-select. */
+   if ((font_struct = XLoadQueryFont(display, font_name)) == NULL)
+   {
+      (void)fprintf(stderr, "Could not query %s font.\n", font_name);
+      exit(INCORRECT);
+   }
+   screen_height = DisplayHeight(display, DefaultScreen(display));
+   glyph_height = font_struct->ascent + font_struct->descent;
 
    /*---------------------------------------------------------------*/
    /*                         Button Box                            */
@@ -518,6 +541,7 @@ main(int argc, char *argv[])
                         XmNtopAttachment,    XmATTACH_FORM,
                         XmNbottomAttachment, XmATTACH_FORM,
                         XmNleftAttachment,   XmATTACH_FORM,
+                        XmNleftOffset,       3,
                         XmNalignment,        XmALIGNMENT_END,
                         NULL);
    dir_subject_w = XtVaCreateManagedWidget("",
@@ -610,6 +634,248 @@ main(int argc, char *argv[])
                  (XtPointer)TIMEOUT_ENTER);
 
    XtManageChild(optionbox_w);
+
+   /*---------------------------------------------------------------*/
+   /*                      Horizontal Separator                     */
+   /*---------------------------------------------------------------*/
+   argcount = 0;
+   XtSetArg(args[argcount], XmNorientation,     XmHORIZONTAL);
+   argcount++;
+   XtSetArg(args[argcount], XmNtopAttachment,   XmATTACH_WIDGET);
+   argcount++;
+   XtSetArg(args[argcount], XmNtopWidget,       optionbox_w);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftAttachment,  XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNrightAttachment, XmATTACH_FORM);
+   argcount++;
+   separator_w = XmCreateSeparator(criteriabox_w, "separator", args, argcount);
+   XtManageChild(separator_w);
+
+   optionbox_w = XtVaCreateManagedWidget("optionbox4",
+                        xmFormWidgetClass,  criteriabox_w,
+                        XmNtopAttachment,   XmATTACH_WIDGET,
+                        XmNtopWidget,       separator_w,
+                        XmNleftAttachment,  XmATTACH_FORM,
+                        XmNrightAttachment, XmATTACH_FORM,
+                        NULL);
+
+   /* Label Rename. */
+   rename_label_w[0] = XtVaCreateManagedWidget("Rename :",
+                        xmLabelGadgetClass,  optionbox_w,
+                        XmNfontList,         fontlist,
+                        XmNtopAttachment,    XmATTACH_FORM,
+                        XmNbottomAttachment, XmATTACH_FORM,
+                        XmNleftAttachment,   XmATTACH_FORM,
+                        XmNleftOffset,       3,
+                        XmNalignment,        XmALIGNMENT_END,
+                        NULL);
+   XtManageChild(rename_label_w[0]);
+
+   /* Toggle box for enabling rename. */
+   rename_onoff_w = XtVaCreateWidget("rename_onoff_box",
+                        xmRowColumnWidgetClass, optionbox_w,
+                        XmNorientation,         XmHORIZONTAL,
+                        XmNpacking,             XmPACK_TIGHT,
+                        XmNnumColumns,          1,
+                        XmNleftAttachment,      XmATTACH_WIDGET,
+                        XmNleftWidget,          rename_label_w[0],
+                        XmNresizable,           False,
+                        NULL);
+   button_w = XtVaCreateManagedWidget("Off",
+                        xmToggleButtonGadgetClass, rename_onoff_w,
+                        XmNfontList,               fontlist,
+                        XmNset,                    False,
+                        NULL);
+   XtAddCallback(button_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)rename_onoff, NULL);
+   XtManageChild(rename_onoff_w);
+
+   /* Decide if there are too many rules to display */
+   if (no_of_rule_headers < ((screen_height / (glyph_height + 8))))
+   {
+      /*
+       * display of pulldown menu is possible ...
+       */
+      rename_label_w[3] = NULL;
+      /* Dropdown-box selecting rename-rule. */
+      argcount = 0;
+      XtSetArg(args[argcount], XmNfontList, fontlist);
+      argcount++;
+      pane_w = XmCreatePulldownMenu(optionbox_w, "pane", args, argcount);
+
+      argcount = 0;
+      XtSetArg(args[argcount], XmNsubMenuId,      pane_w);
+      argcount++;
+      XtSetArg(args[argcount], XmNleftAttachment, XmATTACH_WIDGET);
+      argcount++;
+      XtSetArg(args[argcount], XmNleftWidget,     rename_onoff_w);
+      argcount++;
+      XtSetArg(args[argcount], XmNtopAttachment,  XmATTACH_FORM);
+      argcount++;
+      XtSetArg(args[argcount], XmNtopOffset,      -2);
+      argcount++;
+      rename_menu_w = XmCreateOptionMenu(optionbox_w, "rename_selection",
+                                         args, argcount);
+      XtManageChild(rename_menu_w);
+
+      argcount = 0;
+      XtSetArg(args[argcount], XmNfontList,       fontlist);
+      argcount++;
+      XtSetValues(XmOptionLabelGadget(rename_menu_w), args, argcount);
+
+      /* Add all possible buttons. */
+      argcount = 0;
+      XtSetArg(args[argcount], XmNfontList, fontlist);
+      argcount++;
+      for (i=0;i<no_of_rule_headers;i++) {
+         button_w = XtCreateManagedWidget(rule[i].header, xmPushButtonWidgetClass,
+                                          pane_w, args, argcount);
+         XtAddCallback(button_w, XmNactivateCallback, (XtCallbackProc)rename_eval, (XtPointer)i);
+      }
+      db->rename_num = 0;
+   }
+   else
+   {
+      /*
+       * too many rules for acceptable pulldown menu, so create a text-box ...
+       */
+      rename_label_w[3] = XtVaCreateManagedWidget("Rule-name:",
+                           xmLabelGadgetClass,  optionbox_w,
+                           XmNfontList,         fontlist,
+                           XmNtopAttachment,    XmATTACH_FORM,
+                           XmNbottomAttachment, XmATTACH_FORM,
+                           XmNleftAttachment,   XmATTACH_WIDGET,
+                           XmNleftWidget,       rename_onoff_w,
+                           XmNalignment,        XmALIGNMENT_END,
+                           NULL);
+      XtManageChild(rename_label_w[3]);
+      rename_menu_w = XtVaCreateManagedWidget("rename_name",
+                           xmTextWidgetClass,   optionbox_w,
+                           XmNfontList,         fontlist,
+                           XmNmarginHeight,     1,
+                           XmNmarginWidth,      1,
+                           XmNshadowThickness,  1,
+                           XmNtopAttachment,    XmATTACH_FORM,
+                           XmNtopOffset,        6,
+                           XmNbottomAttachment, XmATTACH_FORM,
+                           XmNbottomOffset,     6,
+                           XmNleftAttachment,   XmATTACH_WIDGET,
+                           XmNleftWidget,       rename_label_w[3],
+                           XmNrows,             1,
+                           XmNcolumns,          20,
+                           XmNmaxLength,        MAX_RULE_HEADER_LENGTH -1,
+                           NULL);
+      XtAddCallback(rename_menu_w, XmNlosingFocusCallback, send_save_input,
+                    (XtPointer)RENAME_RULE_NO_ENTER);
+      XtAddCallback(rename_menu_w, XmNactivateCallback, send_save_input,
+                    (XtPointer)RENAME_RULE_ENTER);
+      XtManageChild(rename_menu_w);
+   }
+
+   /* Toggle box for rename by rule or manual entry. */
+   rename_toggle_w = XtVaCreateWidget("rename_togglebox",
+                        xmRowColumnWidgetClass, optionbox_w,
+                        XmNorientation,         XmHORIZONTAL,
+                        XmNpacking,             XmPACK_TIGHT,
+                        XmNnumColumns,          1,
+                        XmNleftAttachment,      XmATTACH_WIDGET,
+                        XmNleftWidget,          rename_menu_w,
+                        XmNresizable,           False,
+                        NULL);
+   button_w = XtVaCreateManagedWidget("Rule  ",
+                        xmToggleButtonGadgetClass, rename_toggle_w,
+                        XmNfontList,               fontlist,
+                        XmNset,                    False,
+                        NULL);
+   XtAddCallback(button_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)rename_toggle, NULL);
+   XtManageChild(rename_toggle_w);
+
+   optionbox2_w = optionbox_w;
+   /* text fields for rename filter and pattern. */
+   optionbox_w = XtVaCreateManagedWidget("optionbox5",
+                        xmFormWidgetClass,  criteriabox_w,
+                        XmNtopAttachment,   XmATTACH_WIDGET,
+                        XmNtopWidget,       optionbox2_w,
+                        XmNleftAttachment,  XmATTACH_FORM,
+                        XmNrightAttachment, XmATTACH_FORM,
+                        NULL);
+
+   rename_label_w[1] = XtVaCreateManagedWidget("Filter:",
+                        xmLabelGadgetClass,  optionbox_w,
+                        XmNfontList,         fontlist,
+                        XmNtopAttachment,    XmATTACH_FORM,
+                        XmNbottomAttachment, XmATTACH_FORM,
+                        XmNbottomOffset,     6,
+                        XmNleftAttachment,   XmATTACH_FORM,
+                        XmNleftOffset,       3,
+                        XmNalignment,        XmALIGNMENT_END,
+                        NULL);
+   XtManageChild(rename_label_w[1]);
+   rename_filt_w = XtVaCreateManagedWidget("rename_filter",
+                        xmTextWidgetClass,   optionbox_w,
+                        XmNfontList,         fontlist,
+                        XmNmarginHeight,     1,
+                        XmNmarginWidth,      1,
+                        XmNshadowThickness,  1,
+                        XmNtopAttachment,    XmATTACH_FORM,
+                        XmNbottomAttachment, XmATTACH_FORM,
+                        XmNbottomOffset,     6,
+                        XmNleftAttachment,   XmATTACH_WIDGET,
+                        XmNleftWidget,       rename_label_w[1],
+                        XmNcolumns,          40,
+                        XmNmaxLength,        MAX_FILENAME_LENGTH - 1,
+                        NULL);
+   XtAddCallback(rename_filt_w, XmNlosingFocusCallback, send_save_input,
+                 (XtPointer)RENAME_FILT_NO_ENTER);
+   XtAddCallback(rename_filt_w, XmNactivateCallback, send_save_input,
+                 (XtPointer)RENAME_FILT_ENTER);
+   XtManageChild(rename_filt_w);
+
+   rename_label_w[2] = XtVaCreateManagedWidget("Pattern:",
+                        xmLabelGadgetClass,  optionbox_w,
+                        XmNfontList,         fontlist,
+                        XmNtopAttachment,    XmATTACH_FORM,
+                        XmNbottomAttachment, XmATTACH_FORM,
+                        XmNbottomOffset,     6,
+                        XmNleftAttachment,   XmATTACH_WIDGET,
+                        XmNleftOffset,       6,
+                        XmNleftWidget,       rename_filt_w,
+                        XmNalignment,        XmALIGNMENT_END,
+                        NULL);
+   XtManageChild(rename_label_w[2]);
+   rename_patt_w = XtVaCreateManagedWidget("rename_pattern",
+                        xmTextWidgetClass,   optionbox_w,
+                        XmNfontList,         fontlist,
+                        XmNmarginHeight,     1,
+                        XmNmarginWidth,      1,
+                        XmNshadowThickness,  1,
+                        XmNtopAttachment,    XmATTACH_FORM,
+                        XmNbottomAttachment, XmATTACH_FORM,
+                        XmNbottomOffset,     6,
+                        XmNleftAttachment,   XmATTACH_WIDGET,
+                        XmNleftWidget,       rename_label_w[2],
+                        XmNcolumns,          40,
+                        XmNmaxLength,        MAX_FILENAME_LENGTH - 1,
+                        NULL);
+   XtAddCallback(rename_patt_w, XmNlosingFocusCallback, send_save_input,
+                 (XtPointer)RENAME_PATT_NO_ENTER);
+   XtAddCallback(rename_patt_w, XmNactivateCallback, send_save_input,
+                 (XtPointer)RENAME_PATT_ENTER);
+   XtManageChild(rename_patt_w);
+
+   if (db->protocol != FTP)
+   {
+      db->rename_do = OFF;
+      _set_rename_boxies(OFF);
+   }
+   else
+   {
+      db->rename_do = SET_RENAME_RULE;
+      _set_rename_boxies(ON);
+   }
+
 
    /*---------------------------------------------------------------*/
    /*                      Horizontal Separator                     */
@@ -1108,6 +1374,7 @@ init_xsend_file(int  *argc,
                 char *title_name,
                 char *file_name_file)
 {
+   int i;
    if ((get_arg(argc, argv, "-?", NULL, 0) == SUCCESS) ||
        (get_arg(argc, argv, "-help", NULL, 0) == SUCCESS) ||
        (get_arg(argc, argv, "--help", NULL, 0) == SUCCESS))
@@ -1133,6 +1400,7 @@ init_xsend_file(int  *argc,
    }
    (void)my_strncpy(file_name_file, argv[1], MAX_PATH_LENGTH);
    url_file_name[0] = '\0';
+   file_name_file_copy[0] = '\0';
 
    /* Prepare title for window. */
    (void)strcpy(title_name, "xsend_file ");
@@ -1148,6 +1416,12 @@ init_xsend_file(int  *argc,
       exit(INCORRECT);
    }
    memset(db, 0, sizeof(struct send_data));
+
+   /* load rename.rule */
+   if (rule == NULL)
+   {
+      get_rename_rules(NO);
+   }
 
    /* Now set some default values. */
    button_flag = SEND_BUTTON;
@@ -1182,6 +1456,9 @@ init_xsend_file(int  *argc,
            db->port = -1;
         }
 #endif
+   db->rename_num = INCORRECT;
+   db->rename_filt[0] = '\0';
+   db->rename_patt[0] = '\0';
 
    return;
 }
@@ -1216,6 +1493,10 @@ xsend_file_exit(void)
       }
    }
    (void)unlink(file_name_file);
+   if (file_name_file_copy[0] != '\0')
+   {
+      (void)unlink(file_name_file_copy);
+   }
    if (url_file_name[0] != '\0')
    {
       (void)unlink(url_file_name);
@@ -1229,7 +1510,7 @@ static void
 sig_segv(int signo)
 {
    (void)fprintf(stderr, "Aaarrrggh! Received SIGSEGV. (%s %d)\n",
-                 __FILE__, __LINE__);                   
+                 __FILE__, __LINE__);
    abort();
 }
 
@@ -1237,7 +1518,7 @@ sig_segv(int signo)
 /*++++++++++++++++++++++++++++++ sig_bus() ++++++++++++++++++++++++++++++*/
 static void
 sig_bus(int signo)
-{                 
+{
    (void)fprintf(stderr, "Uuurrrggh! Received SIGBUS. (%s %d)\n",
                  __FILE__, __LINE__);
    abort();
