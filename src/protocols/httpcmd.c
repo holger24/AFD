@@ -1449,10 +1449,40 @@ retry_options:
               }
          else if (reply == 403) /* Forbidden */
               {
-                 (void)flush_read();
+                 int try_restore_msg_buffer;
+
+                 if (hmr.bytes_buffered > 0)
+                 {
+                    try_restore_msg_buffer = YES;
+                 }
+                 else
+                 {
+                    try_restore_msg_buffer = NO;
+                 }
+
+                 if ((flush_read() == NO) && (hmr.chunked == YES))
+                 {
+                    read_last_chunk();
+                 }
+                 if (try_restore_msg_buffer == YES)
+                 {
+                    /* get_http_reply() has already overwritten the */
+                    /* error message since read_msg() has read more */
+                    /* then required. So in msg_str there is now    */
+                    /* garbage. Let's try to restore at least the   */
+                    /* first line.                                  */
+                    if (hmr.header_length > 0)
+                    {
+                       (void)memcpy(msg_str, hmr.msg_header, hmr.header_length);
+                    }
+                    else
+                    {
+                       /* So we do not show any garbage. */
+                       msg_str[0] = '\0';
+                    }
+                 }
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
-                 (void)check_connection();
                  reply = SUCCESS;
               }
          else if (reply == CONNECTION_REOPENED)
@@ -1461,9 +1491,40 @@ retry_options:
               }
               else
               {
+                 int try_restore_msg_buffer;
+
+                 if (hmr.bytes_buffered > 0)
+                 {
+                    try_restore_msg_buffer = YES;
+                 }
+                 else
+                 {
+                    try_restore_msg_buffer = NO;
+                 }
+
+                 if ((flush_read() == NO) && (hmr.chunked == YES))
+                 {
+                    read_last_chunk();
+                 }
+                 if (try_restore_msg_buffer == YES)
+                 {
+                    /* get_http_reply() has already overwritten the */
+                    /* error message since read_msg() has read more */
+                    /* then required. So in msg_str there is now    */
+                    /* garbage. Let's try to restore at least the   */
+                    /* first line.                                  */
+                    if (hmr.header_length > 0)
+                    {
+                       (void)memcpy(msg_str, hmr.msg_header, hmr.header_length);
+                    }
+                    else
+                    {
+                       /* So we do not show any garbage. */
+                       msg_str[0] = '\0';
+                    }
+                 }
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
-                 (void)check_connection();
               }
       }
    }
@@ -2350,7 +2411,7 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
 
          /*
           * Now lets read the headers and lets store that what we
-          * think might be usefull later.
+          * think might be useful later.
           */
          for (;;)
          {
