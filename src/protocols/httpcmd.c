@@ -1047,7 +1047,7 @@ retry_get_range:
       }
 retry_get:
       if ((reply = command(http_fd,
-                           "GET %s HTTP/1.1\r\n%sUser-Agent: AFD/%s\r\n%sHost: %s\r\nAccept: */*\r\n",
+                           "GET %s HTTP/1.1\r\n%sUser-Agent: AFD/%s\r\n%sHost: %s\r\nContent-length: 0\r\nAccept: */*\r\n",
                            resource, range, PACKAGE_VERSION,
                            (hmr.authorization == NULL) ? "" : hmr.authorization,
                            host)) == SUCCESS)
@@ -1306,7 +1306,7 @@ http_del(char *host, char *path, char *filename)
       }
 retry_del:
       if ((reply = command(http_fd,
-                           "DELETE %s HTTP/1.1\r\nUser-Agent: AFD/%s\r\n%sHost: %s\r\n",
+                           "DELETE %s HTTP/1.1\r\nUser-Agent: AFD/%s\r\n%sHost: %s\r\nContent-length: 0\r\n",
                            resource, PACKAGE_VERSION,
                            (hmr.authorization == NULL) ? "" : hmr.authorization,
                            host)) == SUCCESS)
@@ -1410,7 +1410,7 @@ http_options(char *host, char *path)
       }
 retry_options:
       if ((reply = command(http_fd,
-                           "OPTIONS %s HTTP/1.1\r\nUser-Agent: AFD/%s\r\n%sHost: %s\r\nAccept: */*\r\n",
+                           "OPTIONS %s HTTP/1.1\r\nUser-Agent: AFD/%s\r\n%sHost: %s\r\nContent-length: 0\r\nAccept: */*\r\n",
                            resource,
                            PACKAGE_VERSION,
                            (hmr.authorization == NULL) ? "" : hmr.authorization,
@@ -1612,7 +1612,7 @@ http_head(char   *host,
       }
 retry_head:
       if ((reply = command(http_fd,
-                           "HEAD %s HTTP/1.1\r\nUser-Agent: AFD/%s\r\n%sHost: %s\r\nAccept: */*\r\n",
+                           "HEAD %s HTTP/1.1\r\nUser-Agent: AFD/%s\r\n%sHost: %s\r\nContent-length: 0\r\nAccept: */*\r\n",
                            resource, PACKAGE_VERSION,
                            (hmr.authorization == NULL) ? "" : hmr.authorization,
                            host)) == SUCCESS)
