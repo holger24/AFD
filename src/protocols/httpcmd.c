@@ -1,6 +1,6 @@
 /*
  *  httpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -940,10 +940,12 @@ http_get(char  *host,
          else
          {
             if ((reply == 405) || /* Method Not Allowed */
+                (reply == 403) || /* Forbidden */
                 (reply == 501))   /* Not Implemented */
             {
                *content_length = end;
                hmr.retries = 0;
+               hmr.http_options_not_working |= HTTP_OPTION_HEAD;
             }
             else
             {
@@ -1368,6 +1370,11 @@ http_options(char *host, char *path)
    {
       char resource[MAX_RECIPIENT_LENGTH];
 
+      if (hmr.http_options_not_working & HTTP_OPTION_OPTIONS)
+      {
+         return(SUCCESS);
+      }
+
       hmr.retries = 0;
       hmr.date = -1;
       if (*path == '\0')
@@ -1447,7 +1454,9 @@ retry_options:
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
               }
-         else if (reply == 403) /* Forbidden */
+         else if ((reply == 403) || /* Forbidden */
+                  (reply == 405) || /* Not Allowed */
+                  (reply == 500))   /* Internal Server Error */
               {
                  int try_restore_msg_buffer;
 
@@ -1484,6 +1493,7 @@ retry_options:
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
                  reply = SUCCESS;
+                 hmr.http_options_not_working |= HTTP_OPTION_OPTIONS;
               }
          else if (reply == CONNECTION_REOPENED)
               {
@@ -1650,6 +1660,7 @@ retry_head:
                  hmr.bytes_read = 0;
               }
          else if ((reply == 405) || /* Method Not Allowed */
+                  (reply == 403) || /* Forbidden */
                   (reply == 501))   /* Not Implemented */
               {
                  hmr.http_options_not_working |= HTTP_OPTION_HEAD;
@@ -2367,7 +2378,7 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
          reply = 200;
       }
       hmr.chunked = NO;
-      hmr.http_options = HTTP_OPTION_DELETE | HTTP_OPTION_HEAD | HTTP_OPTION_GET | HTTP_OPTION_PUT | HTTP_OPTION_MOVE | HTTP_OPTION_DELETE | HTTP_OPTION_POST | HTTP_OPTION_OPTIONS;
+      hmr.http_options = HTTP_OPTION_DELETE | HTTP_OPTION_HEAD | HTTP_OPTION_GET | HTTP_OPTION_PUT | HTTP_OPTION_MOVE | HTTP_OPTION_POST | HTTP_OPTION_OPTIONS;
 
       return(reply);
    }
