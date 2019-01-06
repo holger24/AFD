@@ -386,6 +386,7 @@ main(int argc, char *argv[])
       if ((in_burst_loop == NO) || (values_changed & TARGET_DIR_CHANGED))
       {
 #endif /* _WITH_BURST_2 */
+#ifdef WITH_OPTIONS_CALL
          if ((status = http_options(db.hostname, db.target_dir)) != SUCCESS)
          {
             trans_log((timeout_flag == ON) ? ERROR_SIGN : DEBUG_SIGN,
@@ -405,6 +406,7 @@ main(int argc, char *argv[])
                             "Got HTTP server options.");
             }
          }
+#endif /* WITH_OPTIONS_CALL */
 #ifdef _WITH_BURST_2
       }
 #endif /* _WITH_BURST_2 */
