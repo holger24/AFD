@@ -2457,7 +2457,8 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
 
          /* Set option menu for Filesize Offset. */
          if ((fsa[cur_pos].protocol & FTP_FLAG) ||
-             (fsa[cur_pos].protocol & SFTP_FLAG))
+             (fsa[cur_pos].protocol & SFTP_FLAG) ||
+             (fsa[cur_pos].protocol & HTTP_FLAG))
          {
             int     i,
                     max_fso_buttons;

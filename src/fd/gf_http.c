@@ -1,6 +1,6 @@
 /*
  *  gf_http.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -66,6 +66,8 @@ DESCR__E_M1
 #include "httpdefs.h"
 #include "fddefs.h"
 #include "version.h"
+
+/* #define WITH_DEBUG_HTTP_READ */
 
 /* Global variables. */
 unsigned int               special_flag = 0;
@@ -545,6 +547,7 @@ main(int argc, char *argv[])
                      else
                      {
                         offset = stat_buf.st_size;
+                        prev_download_exists = YES;
                      }
                   }
                   else
@@ -567,7 +570,7 @@ main(int argc, char *argv[])
                   {
                      content_length = rl[i].size;
                   }
-                  tmp_content_length = rl[i].size;
+                  tmp_content_length = content_length;
 
 #ifdef _OUTPUT_LOG 
                   if (db.output_log == YES)
@@ -576,25 +579,26 @@ main(int argc, char *argv[])
                   }
 #endif
                   if (((status = http_get(db.hostname, db.target_dir,
-                                          rl[i].file_name,
-                                          &tmp_content_length, offset)) != SUCCESS) &&
+                                          rl[i].file_name, &tmp_content_length,
+                                          offset)) != SUCCESS) &&
                       (status != CHUNKED) && (status != NOTHING_TO_FETCH) &&
                       (status != 301) && (status != 400) && (status != 404))
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                "Failed to open remote file %s in %s (%d).",
-                               rl[i].file_name, fra[db.fra_pos].dir_alias, status);
+                               rl[i].file_name, fra[db.fra_pos].dir_alias,
+                               status);
                      (void)http_quit();
                      exit(eval_timeout(OPEN_REMOTE_ERROR));
                   }
                   if (tmp_content_length != content_length)
                   {
                      content_length = tmp_content_length;
-                     adjust_rl_size = NO;
+                     adjust_rl_size = YES;
                   }
                   else
                   {
-                     adjust_rl_size = YES;
+                     adjust_rl_size = NO;
                   }
                   if ((status == 301) || /* Moved Permanently. */
                       (status == 400) || /* Bad Requeuest. */
@@ -603,7 +607,8 @@ main(int argc, char *argv[])
                      bytes_done = 0;
                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                "Failed to open remote file %s in %s (%d).",
-                               rl[i].file_name, fra[db.fra_pos].dir_alias, status);
+                               rl[i].file_name, fra[db.fra_pos].dir_alias,
+                               status);
 
                      /*
                       * Mark this file as retrieved or else we will always
@@ -646,8 +651,8 @@ main(int argc, char *argv[])
                         /* Total file size. */
                         if (rl[i].size > 0)
                         {
-                           fsa->total_file_size -= (rl[i].size - offset);
-                           file_size_to_retrieve_shown -= (rl[i].size - offset);
+                           fsa->total_file_size -= rl[i].size;
+                           file_size_to_retrieve_shown -= rl[i].size;
 #ifdef _VERIFY_FSA
                            if (fsa->total_file_size < 0)
                            {
@@ -724,12 +729,13 @@ main(int argc, char *argv[])
                      }
                      else
                      {
+                        fd = open(local_tmp_file,
 #ifdef O_LARGEFILE
-                        fd = open(local_tmp_file, O_WRONLY | O_CREAT | O_LARGEFILE,
-                                  FILE_MODE);
+                                  O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE,
 #else
-                        fd = open(local_tmp_file, O_WRONLY | O_CREAT, FILE_MODE);
+                                  O_WRONLY | O_CREAT | O_TRUNC,
 #endif
+                                  FILE_MODE);
                      }
                      if (fd == -1)
                      {
@@ -1231,11 +1237,12 @@ main(int argc, char *argv[])
                         }
 #endif
 
-                        if ((rl[i].size != content_length) && (content_length > 0))
+                        if ((content_length > 0) &&
+                            (rl[i].size != (content_length + offset)))
                         {
-                           fsa->total_file_size += content_length;
-                           file_size_to_retrieve_shown += content_length;
-                           fsa->job_status[(int)db.job_no].file_size += content_length;
+                           fsa->total_file_size += (content_length + offset);
+                           file_size_to_retrieve_shown += (content_length + offset);
+                           fsa->job_status[(int)db.job_no].file_size += (content_length + offset);
                            if (adjust_rl_size == YES)
                            {
                               trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -1244,9 +1251,9 @@ main(int argc, char *argv[])
 #else
                                         "content_length (%lld) != rl[i].size (%lld)",
 #endif
-                                        (pri_off_t)content_length,
+                                        (pri_off_t)(content_length + offset),
                                         (pri_off_t)rl[i].size);
-                              rl[i].size = content_length;
+                              rl[i].size = content_length + offset;
                            }
                         }
 
@@ -1489,7 +1496,7 @@ main(int argc, char *argv[])
                       * the originator.
                       */
                      if ((content_length > 0) &&
-                         ((bytes_done + offset) != content_length))
+                         (rl[i].size != (content_length + offset)))
                      {
                         trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
 #if SIZEOF_OFF_T == 4
@@ -1499,8 +1506,8 @@ main(int argc, char *argv[])
 #endif
                                   rl[i].file_name,
                                   (db.fra_pos == INCORRECT) ? "unknown" : fra[db.fra_pos].dir_alias,
-                                  (pri_off_t)content_length,
-                                  (pri_off_t)(bytes_done + offset));
+                                  (pri_off_t)rl[i].size,
+                                  (pri_off_t)(content_length + offset));
                      }
 
                      /* Rename the file so AMG can grab it. */
@@ -1566,7 +1573,7 @@ main(int argc, char *argv[])
                            ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
                            ol_file_name[*ol_file_name_length + 1] = '\0';
                            (*ol_file_name_length)++;
-                           *ol_file_size = bytes_done;
+                           *ol_file_size = rl[i].size;
                            *ol_job_number = db.id.dir;
                            *ol_retries = db.retries;
                            *ol_unl = 0;
@@ -1584,7 +1591,7 @@ main(int argc, char *argv[])
                      }
                   }
                   files_retrieved++;
-                  file_size_retrieved += bytes_done;
+                  file_size_retrieved += bytes_done + offset;
                } /* if (rl[i].retrieved == NO) */
 
                if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
