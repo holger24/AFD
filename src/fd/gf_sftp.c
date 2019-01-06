@@ -1,6 +1,6 @@
 /*
  *  gf_sftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -125,11 +125,12 @@ off_t                      fra_size,
                            fsa_size;
 #endif
 long                       transfer_timeout;
+time_t                     *dir_mtime;
 clock_t                    clktck;
 char                       msg_str[MAX_RET_MSG_LENGTH],
                            *p_work_dir = NULL,
                            tr_hostname[MAX_HOSTNAME_LENGTH + 2];
-struct retrieve_list       *rl;
+struct retrieve_list       *rl = NULL;
 #ifdef _DELETE_LOG
 struct delete_log          dl;
 #endif
@@ -1462,6 +1463,7 @@ main(int argc, char *argv[])
                                         local_tmp_file, local_file);
                         }
                         rl[i].retrieved = YES;
+                        rl[i].assigned = 0;
 
 #ifdef _OUTPUT_LOG
                         if (db.output_log == YES)
@@ -1795,6 +1797,18 @@ gf_sftp_exit(void)
 {
    if ((fra != NULL) && (db.fra_pos >= 0))
    {
+      if ((rl_fd != -1) && (rl != NULL))
+      {
+         int i;
+
+         for (i = 0; i < *no_of_listed_files; i++)
+         {
+            if (rl[i].assigned == ((unsigned char)db.job_no + 1))
+            {
+               rl[i].assigned = 0;
+            }
+         }
+      }
       if ((fra[db.fra_pos].stupid_mode == YES) ||
           (fra[db.fra_pos].remove == YES))
       {

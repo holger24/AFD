@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2018 Holger Kiehl
+## Copyright (C) 2001 - 2019 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -118,8 +118,8 @@ bin_PROGRAMS          = fd $(EXEC_PROG) $(FTP_PROG) $(SMTP_PROG) $(SCP_PROG)\
                         $(HTTP_PROG) $(AFD_DFAX_PROG)
 EXTRA_PROGRAMS        = $(EXTRA_MAP_PROG) $(EXTRA_FTP_PROG) $(EXTRA_SFTP_PROG)\
                         $(EXTRA_WMO_PROG) $(EXTRA_HTTP_PROG) $(EXTRA_SCP_PROG)\
-			$(EXTRA_EXEC_PROG) $(EXTRA_LOC_PROG) $(EXTRA_SMTP_PROG)\
-			$(EXTRA_DFAX_PROG)
+                        $(EXTRA_EXEC_PROG) $(EXTRA_LOC_PROG) $(EXTRA_SMTP_PROG)\
+                        $(EXTRA_DFAX_PROG)
 EXTRA_DIST            = $(EXTRA_TRANS_EXEC_PTRS) $(EXTRA_DEMCD_LOG_FD)\
                         $(EXTRA_DEMCD_LOG_PTRS)
 MAINTAINERCLEANFILES  = Makefile.in
@@ -133,8 +133,10 @@ fd_SOURCES            = check_fra_fd.c\
                         get_job_data.c\
                         get_new_positions.c\
                         handle_delete_fifo.c\
+                        handle_ls_data.c\
                         init_fifos_fd.c\
                         init_fra_data.c\
+                        init_ls_data.c\
                         init_msg_buffer.c\
                         init_msg_ptrs.c\
                         lookup_job_id.c\

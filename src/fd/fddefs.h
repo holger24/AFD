@@ -1,6 +1,6 @@
 /*
  *  fddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -804,7 +804,7 @@ struct trl_cache
 /* Function prototypes. */
 extern int   append_compare(char *, char *),
              archive_file(char *, char *, struct job *),
-             attach_ls_data(void),
+             attach_ls_data(int, int, unsigned int, int),
              check_burst_gf(unsigned int *),
              check_burst_sf(char *, int *, int,
 #ifdef _WITH_INTERRUPT_JOB
@@ -844,7 +844,7 @@ extern int   append_compare(char *, char *),
              read_file_mask(char *, int *, struct file_mask **),
              recount_jobs_queued(int),
              recreate_msg(unsigned int),
-             reset_ls_data(void),
+             reset_ls_data(int),
              send_mail(char *, char *, char *, char *, char *);
 extern void  calc_trl_per_process(int),
              check_fsa_entries(int),
@@ -877,6 +877,7 @@ extern void  calc_trl_per_process(int),
              init_gf(int, char **, int),
              init_gf_burst2(struct job *, unsigned int *),
              init_limit_transfer_rate(void),
+             init_ls_data(void),
              init_msg_buffer(void),
              init_msg_ptrs(time_t **, unsigned int **, unsigned int **,
                            unsigned int **, off_t **,

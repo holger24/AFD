@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_http.c - Part of AFD, an automatic file distribution
  *                                 program.
- *  Copyright (c) 2006 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -288,7 +288,7 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
    {
       if (rl_fd == -1)
       {
-         if (attach_ls_data() == INCORRECT)
+         if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag, YES) == INCORRECT)
          {
             http_quit();
             exit(INCORRECT);
@@ -468,7 +468,7 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
       if ((fra[db.fra_pos].stupid_mode == YES) ||
           (fra[db.fra_pos].remove == YES))
       {
-         if (reset_ls_data() == INCORRECT)
+         if (reset_ls_data(db.fra_pos) == INCORRECT)
          {
             http_quit();
             exit(INCORRECT);
@@ -478,7 +478,7 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
       {
          if (rl_fd == -1)
          {
-            if (attach_ls_data() == INCORRECT)
+            if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag, YES) == INCORRECT)
             {
                http_quit();
                exit(INCORRECT);
@@ -523,7 +523,7 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
             if (!((timeout_flag == ON) || (timeout_flag == CON_RESET) ||
                   (timeout_flag == CON_REFUSED)))
             {
-               if (reset_ls_data() != SUCCESS)
+               if (reset_ls_data(db.fra_pos) != SUCCESS)
                {
                   http_quit();
                   exit(INCORRECT);
@@ -739,9 +739,8 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
                              strerror(errno));
                }
             }
-#else
-            listbuffer[bytes_buffered] = '\0';
 #endif
+            listbuffer[bytes_buffered] = '\0';
             if (eval_html_dir_list(listbuffer, bytes_buffered,
                                    &files_to_retrieve, file_size_to_retrieve,
                                    more_files_in_list, &list_length,
@@ -823,13 +822,6 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
          free(fml[i].file_list);
       }
       free(fml);
-
-      if ((fra[db.fra_pos].dir_flag & DONT_GET_DIR_LIST) == 0)
-      {
-      }
-      else
-      {
-      }
 
       /*
        * Remove all files from the remote_list structure that are not
@@ -1913,8 +1905,9 @@ check_list(char   *file,
          if (CHECK_STRCMP(rl[i].file_name, file) == 0)
          {
             rl[i].in_list = YES;
-            if ((fra[db.fra_pos].stupid_mode == GET_ONCE_ONLY) &&
-                (rl[i].retrieved == YES))
+            if ((rl[i].assigned != 0) ||
+                ((fra[db.fra_pos].stupid_mode == GET_ONCE_ONLY) &&
+                 (rl[i].retrieved == YES)))
             {
                return(1);
             }

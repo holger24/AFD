@@ -1,6 +1,6 @@
 /*
  *  gf_sql.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -94,6 +94,7 @@ off_t                      fra_size,
                            fsa_size;
 #endif
 long                       transfer_timeout;
+time_t                     *dir_mtime;
 clock_t                    clktck;
 char                       msg_str[MAX_RET_MSG_LENGTH],
                            *p_work_dir = NULL,
@@ -892,6 +893,7 @@ main(int argc, char *argv[])
                                      local_tmp_file, local_file);
                      }
                      rl[i].retrieved = YES;
+                     rl[i].assigned = 0;
                   }
 
          files_retrieved++;

@@ -1,6 +1,6 @@
 /*
  *  gf_exec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2013 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -94,6 +94,7 @@ off_t                      file_size_to_retrieve_shown = 0;
 off_t                      fra_size,
                            fsa_size;
 #endif
+time_t                     *dir_mtime;
 long                       transfer_timeout;
 char                       msg_str[MAX_RET_MSG_LENGTH],
                            *p_work_dir = NULL,

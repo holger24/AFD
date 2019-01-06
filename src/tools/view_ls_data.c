@@ -1,6 +1,6 @@
 /*
  *  view_ls_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2005 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -38,6 +38,7 @@ DESCR__S_M1
  ** HISTORY
  **   08.04.2005 H.Kiehl Created
  **   15.10.2017 H.Kiehl Add the full path name for the ls_data directory.
+ **   06.01.2019 H.Kiehl Show last directory modification time.
  **
  */
 DESCR__E_M1
@@ -69,8 +70,7 @@ main(int argc, char *argv[])
 {
    int                  fd,
                         i,
-                        j,
-                        no_of_listed_files;
+                        j;
    char                 fullname[MAX_PATH_LENGTH],
                         *ptr,
                         time_str[25],
@@ -120,10 +120,13 @@ main(int argc, char *argv[])
             }
             else
             {
-               int version;
+               int    no_of_listed_files,
+                      version;
+               time_t dir_mtime;
 
                no_of_listed_files = *(int *)ptr;
                version = (int)(*(ptr + SIZEOF_INT + 1 + 1 + 1));
+               dir_mtime = (time_t)(*(ptr + SIZEOF_INT + 4 + SIZEOF_INT));
                if (version != CURRENT_RL_VERSION)
                {
                   (void)fprintf(stderr,
@@ -135,8 +138,9 @@ main(int argc, char *argv[])
                   ptr += AFD_WORD_OFFSET;
                   rl = (struct retrieve_list *)ptr;
 
-                  (void)fprintf(stdout, "\n        %s (%d entries  Struct Version: %d)\n\n",
-                                argv[i], no_of_listed_files, version);
+                  (void)strftime(time_str, 25, "%c", localtime(&dir_mtime));
+                  (void)fprintf(stdout, "\n        %s (%d entries  Struct Version: %d  Dir mtime: %s)\n\n",
+                                argv[i], no_of_listed_files, version, time_str);
                   (void)fprintf(stdout, "                        |            |  Previous  |Got |    | In |Assi|\n");
                   (void)fprintf(stdout, "          Date          |    Size    |    Size    |date|Retr|list|nged|Flag|   File name\n");
                   (void)fprintf(stdout, "------------------------+------------+------------+----+----+----+----+----+-------------------------------\n");

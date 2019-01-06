@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_sftp.c - Part of AFD, an automatic file distribution
  *                                 program.
- *  Copyright (c) 2006 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -98,7 +98,7 @@ get_remote_file_names_sftp(off_t *file_size_to_retrieve,
    {
       if (rl_fd == -1)
       {
-         if (attach_ls_data() == INCORRECT)
+         if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag, YES) == INCORRECT)
          {
             sftp_quit();
             exit(INCORRECT);
@@ -230,7 +230,7 @@ get_remote_file_names_sftp(off_t *file_size_to_retrieve,
       if ((fra[db.fra_pos].stupid_mode == YES) ||
           (fra[db.fra_pos].remove == YES))
       {
-         if (reset_ls_data() == INCORRECT)
+         if (reset_ls_data(db.fra_pos) == INCORRECT)
          {
             sftp_quit();
             exit(INCORRECT);
@@ -240,7 +240,7 @@ get_remote_file_names_sftp(off_t *file_size_to_retrieve,
       {
          if (rl_fd == -1)
          {
-            if (attach_ls_data() == INCORRECT)
+            if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag, YES) == INCORRECT)
             {
                sftp_quit();
                exit(INCORRECT);

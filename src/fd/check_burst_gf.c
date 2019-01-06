@@ -1,6 +1,6 @@
 /*
  *  check_burst_gf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -64,8 +64,10 @@ DESCR__E_M3
 /* External global variables. */
 extern int                        no_of_dirs,
                                   no_of_hosts,
+                                  *no_of_listed_files,
                                   *p_no_of_hosts,
-                                  prev_no_of_files_done;
+                                  prev_no_of_files_done,
+                                  rl_fd;
 extern unsigned int               burst_2_counter;
 extern u_off_t                    prev_file_size_done;
 extern char                       msg_str[],
@@ -73,6 +75,7 @@ extern char                       msg_str[],
 extern struct fileretrieve_status *fra;
 extern struct filetransfer_status *fsa;
 extern struct job                 db;
+extern struct retrieve_list       *rl;
 
 /* Local variables. */
 static sig_atomic_t               signal_caught;
@@ -508,6 +511,18 @@ check_burst_gf(unsigned int *values_changed)
          {
             time_t next_check_time;
 
+            if ((rl_fd != -1) && (rl != NULL))
+            {
+               int i;
+
+               for (i = 0; i < *no_of_listed_files; i++)
+               {
+                  if (rl[i].assigned == ((unsigned char)db.job_no + 1))
+                  {
+                     rl[i].assigned = 0;
+                  }
+               }
+            }
             if ((fra[db.fra_pos].stupid_mode == YES) ||
                 (fra[db.fra_pos].remove == YES))
             {

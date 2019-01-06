@@ -1,6 +1,6 @@
 /*
  *  fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -649,6 +649,7 @@ main(int argc, char *argv[])
 #ifdef HAVE_HW_CRC32
    have_hw_crc32 = detect_cpu_crc32();
 #endif
+   init_ls_data();
 
    /* Find largest file descriptor. */
    max_fd = read_fin_fd;
