@@ -747,10 +747,8 @@ retry_cd:
                   /*
                    * Some older versions of openssh have the bug
                    * that they return the directory name even if that
-                   * directory does not exist. So we must do a sftp_lstat()
-                   * to make sure the directory does exist. Note, we must
-                   * use sftp_lstat() because using sftp_stat() does not
-                   * work when the directory is a symbolic link.
+                   * directory does not exist. So we must do a sftp_stat()
+                   * to make sure the directory does exist.
                    */
                   if (scd.version < 4)
                   {
@@ -932,7 +930,7 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
    else
    {
       msg[4] = SSH_FXP_STAT;
-      if (scd.cwd == NULL)
+      if ((scd.cwd == NULL) || (filename[0] == '/'))
       {
          status = strlen(filename);
          set_xfer_str(&msg[4 + 1 + 4], filename, status);
