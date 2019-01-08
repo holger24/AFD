@@ -204,7 +204,7 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
             return(INCORRECT);
          }
          no_of_listed_files = (int *)ptr;
-         dir_mtime = (time_t *)(ptr + SIZEOF_INT + 4 + SIZEOF_INT);
+         dir_mtime = (time_t *)(ptr + SIZEOF_INT + 4);
          ptr += AFD_WORD_OFFSET;
          rl = (struct retrieve_list *)ptr;
          if (stat_buf.st_size == 0)
@@ -326,7 +326,7 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
                      *(new_ptr + SIZEOF_INT + 1) = 0;      /* Not used. */
                      *(new_ptr + SIZEOF_INT + 1 + 1) = 0;  /* Not used. */
                      *(new_ptr + SIZEOF_INT + 1 + 1 + 1) = CURRENT_RL_VERSION;
-                     new_dir_mtime = (time_t *)(new_ptr+ SIZEOF_INT + 4 + SIZEOF_INT);
+                     new_dir_mtime = (time_t *)(new_ptr + SIZEOF_INT + 4);
                      new_ptr += AFD_WORD_OFFSET;
                      nrl = (struct retrieve_list *)new_ptr;
                      *no_of_new_listed_files = no_of_old_listed_files;
@@ -484,7 +484,7 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
                           *(new_ptr + SIZEOF_INT + 1) = 0;      /* Not used. */
                           *(new_ptr + SIZEOF_INT + 1 + 1) = 0;  /* Not used. */
                           *(new_ptr + SIZEOF_INT + 1 + 1 + 1) = CURRENT_RL_VERSION;
-                          new_dir_mtime = (time_t *)(new_ptr+ SIZEOF_INT + 4 + SIZEOF_INT);
+                          new_dir_mtime = (time_t *)(new_ptr + SIZEOF_INT + 4);
                           new_ptr += AFD_WORD_OFFSET;
                           nrl = (struct retrieve_list *)new_ptr;
                           *no_of_new_listed_files = no_of_old_listed_files;
@@ -576,7 +576,7 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
                              else
                              {
                                 no_of_listed_files = (int *)ptr;
-                                dir_mtime = (time_t *)(ptr + SIZEOF_INT + 4 + SIZEOF_INT);
+                                dir_mtime = (time_t *)(ptr + SIZEOF_INT + 4);
                                 ptr += AFD_WORD_OFFSET;
                                 rl = (struct retrieve_list *)ptr;
                              }
@@ -662,7 +662,7 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
                              *(ptr + SIZEOF_INT + 1) = 0;     /* Not used. */
                              *(ptr + SIZEOF_INT + 1 + 1) = 0; /* Not used. */
                              *(ptr + SIZEOF_INT + 1 + 1 + 1) = CURRENT_RL_VERSION;
-                             dir_mtime = (time_t *)(ptr + SIZEOF_INT + 4 + SIZEOF_INT);
+                             dir_mtime = (time_t *)(ptr + SIZEOF_INT + 4);
                              ptr += AFD_WORD_OFFSET;
                              rl = (struct retrieve_list *)ptr;
                              *no_of_listed_files = 0;
@@ -687,7 +687,7 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
                      else
                      {
                         no_of_listed_files = (int *)ptr;
-                        dir_mtime = (time_t *)(ptr + SIZEOF_INT + 4 + SIZEOF_INT);
+                        dir_mtime = (time_t *)(ptr + SIZEOF_INT + 4);
                         ptr += AFD_WORD_OFFSET;
                         rl = (struct retrieve_list *)ptr;
                      }
@@ -711,7 +711,7 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
                      return(INCORRECT);
                   }
                   no_of_listed_files = (int *)ptr;
-                  dir_mtime = (time_t *)(ptr + SIZEOF_INT + 4 + SIZEOF_INT);
+                  dir_mtime = (time_t *)(ptr + SIZEOF_INT + 4);
                   ptr += AFD_WORD_OFFSET;
                   rl = (struct retrieve_list *)ptr;
                   if (*no_of_listed_files < 0)

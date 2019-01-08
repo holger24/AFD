@@ -126,7 +126,7 @@ main(int argc, char *argv[])
 
                no_of_listed_files = *(int *)ptr;
                version = (int)(*(ptr + SIZEOF_INT + 1 + 1 + 1));
-               dir_mtime = (time_t)(*(ptr + SIZEOF_INT + 4 + SIZEOF_INT));
+               dir_mtime = *(time_t *)(ptr + SIZEOF_INT + 4);
                if (version != CURRENT_RL_VERSION)
                {
                   (void)fprintf(stderr,
