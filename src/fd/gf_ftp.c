@@ -819,6 +819,47 @@ main(int argc, char *argv[])
           */
          db.keep_connected = 0;
       }
+#ifdef WHEN_WE_HAVE_TIME
+      else
+      {
+         if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag,
+                            NO) == SUCCESS)
+         {
+            time_t current_dir_mtime;
+
+            /*
+             * Unfortunatly MDTM (ftp_date()) does only work files
+             * NOT directories.
+             * We need to check if we can implement this via MLST.
+             * However ony very few server can handle MLST.
+             * Do NOT use LIST, the time is to inaccurate and
+             * changes over time.
+             */
+            if ((status = ftp_date(db.target_dir,
+                                   &current_dir_mtime)) == SUCCESS)
+            {
+               if (*dir_mtime == current_dir_mtime)
+               {
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+#if SIZEOF_TIME_T == 4
+                            "0 files 0 bytes found for retrieving. Directory time (%ld) unchanged.",
+#else
+                            "0 files 0 bytes found for retrieving. Directory time (%lld) unchanged.",
+#endif
+                            (pri_time_t)*dir_mtime);
+                  detach_ls_data(db.fra_pos);
+                  continue;
+               }
+               else
+               {
+                  *dir_mtime = current_dir_mtime;
+               }
+            }
+            detach_ls_data(db.fra_pos);
+         }
+      }
+#endif /* WHEN_WE_HAVE_TIME */
+
       more_files_in_list = NO;
       loop_counter = 0;
       do

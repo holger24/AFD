@@ -462,6 +462,36 @@ main(int argc, char *argv[])
           */
          db.keep_connected = 0;
       }
+      else
+      {
+         if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag,
+                            NO) == SUCCESS)
+         {
+            struct stat rdir_stat_buf;
+
+            if ((status = sftp_stat(db.target_dir, &rdir_stat_buf)) == SUCCESS)
+            {
+               if (*dir_mtime == rdir_stat_buf.st_mtime)
+               {
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+#if SIZEOF_TIME_T == 4
+                            "0 files 0 bytes found for retrieving. Directory time (%ld) unchanged.",
+#else
+                            "0 files 0 bytes found for retrieving. Directory time (%lld) unchanged.",
+#endif
+                            (pri_time_t)*dir_mtime);
+                  detach_ls_data(db.fra_pos);
+                  continue;
+               }
+               else
+               {
+                  *dir_mtime = rdir_stat_buf.st_mtime;
+               }
+            }
+            detach_ls_data(db.fra_pos);
+         }
+      }
+
       more_files_in_list = NO;
       loop_counter = 0;
       do
