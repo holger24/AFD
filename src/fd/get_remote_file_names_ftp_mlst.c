@@ -937,8 +937,9 @@ check_list(char   *file,
          if (CHECK_STRCMP(rl[i].file_name, file) == 0)
          {
             rl[i].in_list = YES;
-            if ((fra[db.fra_pos].stupid_mode == GET_ONCE_ONLY) &&
-                (rl[i].retrieved == YES))
+            if ((rl[i].assigned != 0) ||
+                ((fra[db.fra_pos].stupid_mode == GET_ONCE_ONLY) &&
+                 (rl[i].retrieved == YES)))
             {
                return(1);
             }
