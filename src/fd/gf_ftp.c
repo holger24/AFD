@@ -847,7 +847,7 @@ main(int argc, char *argv[])
                             "0 files 0 bytes found for retrieving. Directory time (%lld) unchanged.",
 #endif
                             (pri_time_t)*dir_mtime);
-                  detach_ls_data(db.fra_pos);
+                  detach_ls_data(NO);
                   continue;
                }
                else
@@ -855,7 +855,7 @@ main(int argc, char *argv[])
                   *dir_mtime = current_dir_mtime;
                }
             }
-            detach_ls_data(db.fra_pos);
+            detach_ls_data(NO);
          }
       }
 #endif /* WHEN_WE_HAVE_TIME */
@@ -2170,6 +2170,7 @@ gf_ftp_exit(void)
             }
          }
       }
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
       if ((fra[db.fra_pos].stupid_mode == YES) ||
           (fra[db.fra_pos].remove == YES))
       {
@@ -2177,8 +2178,11 @@ gf_ftp_exit(void)
       }
       else
       {
+#endif
          detach_ls_data(NO);
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
       }
+#endif
    }
 
    if ((fsa != NULL) && (db.fsa_pos >= 0))
