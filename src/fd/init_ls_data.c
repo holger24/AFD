@@ -71,7 +71,7 @@ init_ls_data(void)
          {
             rl[j].assigned = 0;
          }
-         detach_ls_data(i);
+         detach_ls_data(NO);
       }
    }
    return;
