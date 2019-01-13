@@ -1,6 +1,6 @@
 /*
  *  mshow_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -328,15 +328,15 @@ main(int argc, char *argv[])
                                     NULL);
    XtAddCallback(toggle, XmNvalueChangedCallback,
                  (XtCallbackProc)toggled, (XtPointer)SHOW_ERROR);
+   toggle = XtVaCreateManagedWidget(toggle_label[4],
+                                    xmToggleButtonGadgetClass, togglebox,
+                                    XmNfontList,               fontlist,
+                                    XmNset,                    True,
+                                    NULL);
+   XtAddCallback(toggle, XmNvalueChangedCallback,
+                 (XtCallbackProc)toggled, (XtPointer)SHOW_OFFLINE);
    if (log_type_flag == TRANS_DB_LOG_TYPE)
    {
-      toggle = XtVaCreateManagedWidget(toggle_label[4],
-                                       xmToggleButtonGadgetClass, togglebox,
-                                       XmNfontList,               fontlist,
-                                       XmNset,                    True,
-                                       NULL);
-      XtAddCallback(toggle, XmNvalueChangedCallback,
-                    (XtCallbackProc)toggled, (XtPointer)SHOW_OFFLINE);
       toggle = XtVaCreateManagedWidget(toggle_label[5],
                                        xmToggleButtonGadgetClass, togglebox,
                                        XmNfontList,               fontlist,
@@ -356,13 +356,6 @@ main(int argc, char *argv[])
    }
    else
    {
-      toggle = XtVaCreateManagedWidget(toggle_label[4],
-                                       xmToggleButtonGadgetClass, togglebox,
-                                       XmNfontList,               fontlist,
-                                       XmNset,                    False,
-                                       NULL);
-      XtAddCallback(toggle, XmNvalueChangedCallback,
-                    (XtCallbackProc)toggled, (XtPointer)SHOW_OFFLINE);
       toggle = XtVaCreateManagedWidget(toggle_label[5],
                                        xmToggleButtonGadgetClass, togglebox,
                                        XmNfontList,               fontlist,
@@ -371,7 +364,7 @@ main(int argc, char *argv[])
       XtAddCallback(toggle, XmNvalueChangedCallback,
                     (XtCallbackProc)toggled, (XtPointer)SHOW_DEBUG);
       toggles_set = SHOW_INFO | SHOW_CONFIG | SHOW_WARN | SHOW_ERROR |
-                    SHOW_FATAL;
+                    SHOW_OFFLINE| SHOW_FATAL;
    }
    XtManageChild(togglebox);
 
