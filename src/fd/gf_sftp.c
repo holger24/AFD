@@ -476,7 +476,11 @@ main(int argc, char *argv[])
                          "0 files 0 bytes found for retrieving. Directory time (%lld) unchanged.",
 #endif
                          (pri_time_t)rdir_stat_buf.st_mtime);
+#ifdef _WITH_BURST_2
+               goto burst2_no_new_dir_mtime;
+#else
                continue;
+#endif
             }
             else
             {
@@ -1779,6 +1783,7 @@ main(int argc, char *argv[])
                (more_files_in_list == YES));
 
 #ifdef _WITH_BURST_2
+burst2_no_new_dir_mtime:
        in_burst_loop = YES;
        diff_time = time(NULL) - connected;
        if (((fsa->protocol_options & KEEP_CONNECTED_DISCONNECT) &&
