@@ -1,6 +1,6 @@
 /*
  *  ftpdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -98,6 +98,7 @@ extern int  ftp_account(char *),
             ftp_idle(int),
             ftp_keepalive(void),
             ftp_list(int, int, ...),
+            ftp_mlst(char *, time_t *),
             ftp_move(char *, char *, int, int, char *, char *),
             ftp_noop(void),
             ftp_pass(char *),

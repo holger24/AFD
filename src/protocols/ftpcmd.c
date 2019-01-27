@@ -1,6 +1,6 @@
 /*
  *  ftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,7 +40,8 @@ DESCR__S_M3
  **   int ftp_ssl_disable_ctrl_encrytion(void)
  **   int ftp_feat(unsigned int *)
  **   int ftp_data(char *filename, off_t seek, int mode, int type)
- **   int ftp_date(char *filenname, time_t *file_mtime)
+ **   int ftp_date(char *filename, time_t *file_mtime)
+ **   int ftp_mlst(char *filename, time_t *file_mtime)
  **   int ftp_dele(char *filename)
  **   int ftp_exec(char *cmd, char *filename)
  **   int ftp_get_reply(void)
@@ -308,6 +309,7 @@ static int                check_data_socket(int, int, int *, char *, int,
                           get_extended_number(char *),
                           get_number(char **, char),
                           get_reply(char *, int, int),
+                          get_mlst_reply(char *, int, time_t *, int),
 #ifdef WITH_SSL
                           encrypt_data_connection(int),
                           read_data_line(int, SSL *, char *),
@@ -2082,6 +2084,29 @@ ftp_set_date(char *filename, time_t file_mtime)
          if (reply == 213)
          {
             reply = SUCCESS;
+         }
+      }
+   }
+
+   return(reply);
+}
+
+
+/*############################## ftp_mlst() #############################*/
+int
+ftp_mlst(char *filename, time_t *file_mtime)
+{
+   int reply;
+
+   *file_mtime = 0L;
+   if ((reply = command(control_fd, "MLST %s", filename)) == SUCCESS)
+   {
+      if ((reply = get_mlst_reply(ERROR_SIGN, 999,
+                                  file_mtime, __LINE__)) != INCORRECT)
+      {
+         if ((reply == 250) && (*file_mtime != 0))
+         {
+            return(SUCCESS);
          }
       }
    }
@@ -4736,6 +4761,89 @@ get_reply(char *sign, int reply, int line)
       if (read_msg(sign, line) == INCORRECT)
       {
          return(INCORRECT);
+      }
+
+      /*
+       * Lets ignore anything we get from the remote site
+       * not starting with three digits and a dash.
+       */
+      if ((isdigit((int)msg_str[0]) != 0) && (isdigit((int)msg_str[1]) != 0) &&
+          (isdigit((int)msg_str[2]) != 0) && (msg_str[3] != '-'))
+      {
+         break;
+      }
+   }
+
+   return(((msg_str[0] - '0') * 100) + ((msg_str[1] - '0') * 10) +
+          (msg_str[2] - '0'));
+}
+
+
+/*+++++++++++++++++++++++++++ get_mlst_reply() ++++++++++++++++++++++++++*/
+static int
+get_mlst_reply(char *sign, int reply, time_t *file_mtime, int line)
+{
+   char *ptr;
+
+   if (simulation_mode == YES)
+   {
+      return(reply);
+   }
+
+   for (;;)
+   {
+      if (read_msg(sign, line) == INCORRECT)
+      {
+         return(INCORRECT);
+      }
+
+      ptr = msg_str;
+      while ((*ptr == ' ') || (*ptr == '\t'))
+      {
+         ptr++;
+      }
+
+      /* modify=YYYYMMDDHHMMSS[.sss]; */
+      if (((*ptr == 'M') || (*ptr == 'm')) &&
+          ((*(ptr + 1) == 'O')  || (*(ptr + 1) == 'o')) &&
+          ((*(ptr + 2) == 'D')  || (*(ptr + 2) == 'd')) &&
+          ((*(ptr + 3) == 'I')  || (*(ptr + 3) == 'i')) &&
+          ((*(ptr + 4) == 'F')  || (*(ptr + 4) == 'f')) &&
+          ((*(ptr + 5) == 'Y')  || (*(ptr + 5) == 'y')) &&
+          (*(ptr + 6) == '=') &&
+          (isdigit((int)(*(ptr + 7)))) &&
+          (isdigit((int)(*(ptr + 8)))) &&
+          (isdigit((int)(*(ptr + 9)))) &&
+          (isdigit((int)(*(ptr + 10)))) &&
+          (isdigit((int)(*(ptr + 11)))) &&
+          (isdigit((int)(*(ptr + 12)))) &&
+          (isdigit((int)(*(ptr + 13)))) &&
+          (isdigit((int)(*(ptr + 14)))) &&
+          (isdigit((int)(*(ptr + 15)))) &&
+          (isdigit((int)(*(ptr + 16)))) &&
+          (isdigit((int)(*(ptr + 17)))) &&
+          (isdigit((int)(*(ptr + 18)))) &&
+          (isdigit((int)(*(ptr + 19)))) &&
+          (isdigit((int)(*(ptr + 20)))))
+      {
+         struct tm bd_time;
+
+         bd_time.tm_isdst = 0;
+         bd_time.tm_year  = (((*(ptr + 7) - '0') * 1000) +
+                            ((*(ptr + 8) - '0') * 100) +
+                            ((*(ptr + 9) - '0') * 10) +
+                            (*(ptr + 10) - '0')) - 1900;
+         bd_time.tm_mon   = ((*(ptr + 11) - '0') * 10) +
+                            *(ptr + 12) - '0' - 1;
+         bd_time.tm_mday  = ((*(ptr + 13) - '0') * 10) +
+                            *(ptr + 14) - '0';
+         bd_time.tm_hour  = ((*(ptr + 15) - '0') * 10) +
+                            *(ptr + 16) - '0';
+         bd_time.tm_min   = ((*(ptr + 17) - '0') * 10) +
+                            *(ptr + 18) - '0';
+         bd_time.tm_sec   = ((*(ptr + 19) - '0') * 10) +
+                            *(ptr + 20) - '0';
+         *file_mtime = mktime(&bd_time);
       }
 
       /*
