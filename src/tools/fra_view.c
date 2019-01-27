@@ -1,6 +1,6 @@
 /*
  *  fra_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@ DESCR__S_M1
  **   07.06.2005 H.Kiehl Added dupcheck entries.
  **   05.10.2005 H.Kiehl Added in_dc_flag entry.
  **   28.05.2012 H.Kiehl Added dir_mode and 'create source dir' support.
+ **   26.01.2019 H.Kiehl Added dir_time.
  **
  */
 DESCR__E_M1
@@ -209,6 +210,11 @@ main(int argc, char *argv[])
          (void)fprintf(stdout, "Directory alias      : %s\n", fra[i].dir_alias);
          (void)fprintf(stdout, "Directory ID         : %x\n", fra[i].dir_id);
          (void)fprintf(stdout, "URL                  : %s\n", fra[i].url);
+#if SIZEOF_TIME_T == 4
+         (void)fprintf(stdout, "Dir mtime            : %ld\n", (pri_time_t)fra[i].dir_mtime);
+#else
+         (void)fprintf(stdout, "Dir mtime            : %lld\n", (pri_time_t)fra[i].dir_mtime);
+#endif
          (void)fprintf(stdout, "ls data alias        : %s\n", fra[i].ls_data_alias);
          (void)fprintf(stdout, "Retrieve work dir    : %s\n", fra[i].retrieve_work_dir);
          (void)fprintf(stdout, "Host alias           : %s\n", fra[i].host_alias);

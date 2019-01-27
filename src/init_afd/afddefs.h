@@ -1,6 +1,6 @@
 /*
  *  afddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -2311,6 +2311,22 @@ typedef unsigned long       u_long_64;
  *       8   | unsigned char | Version of this structure.
  *    -------+---------------+---------------------------------------
  *    9 - 16 |               | Not used.
+ *
+ * And also for struct retrieve_list with the following meaning:
+ *     Byte  | Type          | Description
+ *    -------+---------------+---------------------------------------
+ *     1 - 4 | int           | The number of files in the list.
+ *    -------+---------------+---------------------------------------
+ *       5   | unsigned char | Not used.
+ *    -------+---------------+---------------------------------------
+ *       6   | unsigned char | Not used.
+ *    -------+---------------+---------------------------------------
+ *       7   | unsigned char | Not used.
+ *    -------+---------------+---------------------------------------
+ *       8   | unsigned char | Version of this structure.
+ *    -------+---------------+---------------------------------------
+ *    9 - 16 | time_t        | The creation time of this retrieve
+ *           |               | list.
  *-----------------------------------------------------------------------*/
 #define AFD_WORD_OFFSET               (SIZEOF_INT + 4 + SIZEOF_INT + 4)
 #define AFD_FEATURE_FLAG_OFFSET_START 5  /* From start */
@@ -2746,7 +2762,7 @@ struct bd_time_entry
        };
 
 /* Structure holding all neccessary data for retrieving files. */
-# define CURRENT_FRA_VERSION     6
+# define CURRENT_FRA_VERSION     7
 #define MAX_FRA_TIME_ENTRIES     12
 #define MAX_FRA_TIME_ENTRIES_STR "MAX_FRA_TIME_ENTRIES"
 #define MAX_WAIT_FOR_LENGTH      64
@@ -3002,6 +3018,8 @@ struct fileretrieve_status
                                             /* specified event.          */
           time_t        end_event_handle;   /* Time when to remove the   */
                                             /* specified event.          */
+          time_t        dir_mtime;          /* The modification time of  */
+                                            /* monitored directory.      */
           int           unreadable_file_time; /* After how many hours    */
                                             /* can a unreadable file be  */
                                             /* deleted.                  */

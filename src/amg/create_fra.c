@@ -1,6 +1,6 @@
 /*
  *  create_fra.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@ DESCR__S_M3
  **                      alarm times.
  **   24.02.2007 H.Kiehl Added inotify support.
  **   28.05.2012 H.Kiehl Added 'create sourde dir' support.
+ **   26.01.2019 H.Kiehl Added dir_mtime support.
  **
  */
 DESCR__E_M3
@@ -419,6 +420,7 @@ create_fra(int no_of_dirs)
          fra[i].last_retrieval         = 0L;
          fra[i].start_event_handle     = 0L;
          fra[i].end_event_handle       = 0L;
+         fra[i].dir_mtime              = 0;
          fra[i].bytes_received         = 0;
          fra[i].files_in_dir           = 0;
          fra[i].files_queued           = 0;
@@ -589,6 +591,7 @@ create_fra(int no_of_dirs)
             fra[i].last_retrieval         = old_fra[k].last_retrieval;
             fra[i].start_event_handle     = old_fra[k].start_event_handle;
             fra[i].end_event_handle       = old_fra[k].end_event_handle;
+            fra[i].dir_mtime              = old_fra[k].dir_mtime;
             fra[i].bytes_received         = old_fra[k].bytes_received;
             fra[i].files_received         = old_fra[k].files_received;
             fra[i].files_in_dir           = old_fra[k].files_in_dir;
@@ -715,6 +718,7 @@ create_fra(int no_of_dirs)
             fra[i].last_retrieval         = 0L;
             fra[i].start_event_handle     = 0L;
             fra[i].end_event_handle       = 0L;
+            fra[i].dir_mtime              = 0;
             fra[i].bytes_received         = 0;
             fra[i].files_received         = 0;
             fra[i].files_in_dir           = 0;
