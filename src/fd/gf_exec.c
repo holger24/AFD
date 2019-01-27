@@ -94,7 +94,6 @@ off_t                      file_size_to_retrieve_shown = 0;
 off_t                      fra_size,
                            fsa_size;
 #endif
-time_t                     *dir_mtime;
 long                       transfer_timeout;
 char                       msg_str[MAX_RET_MSG_LENGTH],
                            *p_work_dir = NULL,

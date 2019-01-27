@@ -131,7 +131,6 @@ off_t                      fra_size,
 #endif
 long                       transfer_timeout;
 clock_t                    clktck;
-time_t                     *dir_mtime;
 char                       msg_str[MAX_RET_MSG_LENGTH],
                            *p_work_dir = NULL,
                            tr_hostname[MAX_HOSTNAME_LENGTH + 2];

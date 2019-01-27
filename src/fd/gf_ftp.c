@@ -131,7 +131,6 @@ off_t                      fra_size,
                            fsa_size;
 #endif
 long                       transfer_timeout;
-time_t                     *dir_mtime;
 clock_t                    clktck;
 char                       msg_str[MAX_RET_MSG_LENGTH],
                            *p_work_dir = NULL,

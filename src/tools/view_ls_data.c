@@ -39,6 +39,10 @@ DESCR__S_M1
  **   08.04.2005 H.Kiehl Created
  **   15.10.2017 H.Kiehl Add the full path name for the ls_data directory.
  **   06.01.2019 H.Kiehl Show last directory modification time.
+ **   26.01.2019 H.Kiehl Hmmm, storing last directory modification time
+ **                      here is wrong. It must be in the FRA. Let's
+ **                      just keep it and store the time when this file
+ **                      was created.
  **
  */
 DESCR__E_M1
@@ -122,11 +126,11 @@ main(int argc, char *argv[])
             {
                int    no_of_listed_files,
                       version;
-               time_t dir_mtime;
+               time_t create_time;
 
                no_of_listed_files = *(int *)ptr;
                version = (int)(*(ptr + SIZEOF_INT + 1 + 1 + 1));
-               dir_mtime = *(time_t *)(ptr + SIZEOF_INT + 4);
+               create_time = *(time_t *)(ptr + SIZEOF_INT + 4);
                if (version != CURRENT_RL_VERSION)
                {
                   (void)fprintf(stderr,
@@ -138,7 +142,7 @@ main(int argc, char *argv[])
                   ptr += AFD_WORD_OFFSET;
                   rl = (struct retrieve_list *)ptr;
 
-                  (void)strftime(time_str, 25, "%c", localtime(&dir_mtime));
+                  (void)strftime(time_str, 25, "%c", localtime(&create_time));
                   (void)fprintf(stdout, "\n        %s (%d entries  Struct Version: %d  Dir mtime: %s)\n\n",
                                 argv[i], no_of_listed_files, version, time_str);
                   (void)fprintf(stdout, "                        |            |  Previous  |Got |    | In |Assi|\n");

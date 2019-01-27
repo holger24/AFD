@@ -159,8 +159,7 @@ off_t                      fra_size,
                            fsa_size;
 #endif
 off_t                      *file_size_buffer = NULL;
-time_t                     *dir_mtime,
-                           *file_mtime_buffer = NULL;
+time_t                     *file_mtime_buffer = NULL;
 u_off_t                    prev_file_size_done = 0;
 char                       *p_work_dir = NULL,
                            tr_hostname[MAX_HOSTNAME_LENGTH + 2],
