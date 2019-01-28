@@ -173,6 +173,7 @@ main(int argc, char *argv[])
                     diff_time,
 #endif
                     end_transfer_time_file,
+                    new_dir_mtime,
                     start_transfer_time_file = 0;
 #ifdef SA_FULLDUMP
    struct sigaction sact;
@@ -326,6 +327,7 @@ main(int argc, char *argv[])
 #ifdef _WITH_BURST_2
    do
    {
+      new_dir_mtime = 0;
       if (in_burst_loop == YES)
       {
          fsa->job_status[(int)db.job_no].job_id = db.id.dir;
@@ -467,7 +469,8 @@ main(int argc, char *argv[])
 
          if ((status = sftp_stat(db.target_dir, &rdir_stat_buf)) == SUCCESS)
          {
-            if (fra[db.fra_pos].dir_mtime == rdir_stat_buf.st_mtime)
+            new_dir_mtime = rdir_stat_buf.st_mtime;
+            if (fra[db.fra_pos].dir_mtime == new_dir_mtime)
             {
                trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
 #if SIZEOF_TIME_T == 4
@@ -475,16 +478,12 @@ main(int argc, char *argv[])
 #else
                          "0 files 0 bytes found for retrieving. Directory time (%lld) unchanged.",
 #endif
-                         (pri_time_t)rdir_stat_buf.st_mtime);
+                         (pri_time_t)new_dir_mtime);
 #ifdef _WITH_BURST_2
                goto burst2_no_new_dir_mtime;
 #else
                continue;
 #endif
-            }
-            else
-            {
-               fra[db.fra_pos].dir_mtime = rdir_stat_buf.st_mtime;
             }
          }
       }
@@ -1781,6 +1780,11 @@ main(int argc, char *argv[])
                (((fsa->protocol_options & DISABLE_BURSTING) == 0) ||
                 (loop_counter == 1)) &&
                (more_files_in_list == YES));
+
+      if (new_dir_mtime != 0)
+      {
+         fra[db.fra_pos].dir_mtime = new_dir_mtime;
+      }
 
 #ifdef _WITH_BURST_2
 burst2_no_new_dir_mtime:
