@@ -257,7 +257,11 @@ main(int argc, char *argv[])
 
    if ((signal(SIGINT, sig_kill) == SIG_ERR) ||
        (signal(SIGQUIT, sig_exit) == SIG_ERR) ||
+#ifdef IGNORE_SIGTERM
        (signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
+#else
+       (signal(SIGTERM, sig_kill) == SIG_ERR) ||
+#endif
        (signal(SIGSEGV, sig_segv) == SIG_ERR) ||
        (signal(SIGBUS, sig_bus) == SIG_ERR) ||
        (signal(SIGHUP, SIG_IGN) == SIG_ERR) ||
@@ -1892,6 +1896,7 @@ gf_http_exit(void)
             }
          }
       }
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
       if ((fra[db.fra_pos].stupid_mode == YES) ||
           (fra[db.fra_pos].remove == YES))
       {
@@ -1899,8 +1904,11 @@ gf_http_exit(void)
       }
       else
       {
+#endif
          detach_ls_data(NO);
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
       }
+#endif
    }
 
    if ((fsa != NULL) && (db.fsa_pos >= 0))

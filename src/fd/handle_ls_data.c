@@ -90,6 +90,7 @@ extern struct fileretrieve_status *fra;
 int
 attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
 {
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
    if ((fra[fra_pos].stupid_mode == YES) ||
        (fra[fra_pos].remove == YES))
    {
@@ -114,6 +115,7 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
    }
    else
    {
+#endif /* DO_NOT_PARALLELIZE_ALL_FETCH */
       if (rl_fd == -1)
       {
          off_t       rl_size;
@@ -730,7 +732,9 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
             }
          }
       }
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
    }
+#endif
 
    return(SUCCESS);
 }
@@ -760,11 +764,13 @@ detach_ls_data(int remove)
          }
       }
    }
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
    else if (rl != NULL)
         {
            free((char *)rl - AFD_WORD_OFFSET);
            rl = NULL;
         }
+#endif
 
    return;
 }
@@ -774,6 +780,7 @@ detach_ls_data(int remove)
 int
 reset_ls_data(int fra_pos)
 {
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
    if ((fra[fra_pos].stupid_mode == YES) ||
        (fra[fra_pos].remove == YES))
    {
@@ -799,6 +806,7 @@ reset_ls_data(int fra_pos)
    }
    else
    {
+#endif /* DO_NOT_PARALLELIZE_ALL_FETCH */
       if ((rl_fd != -1) && (*no_of_listed_files > 0))
       {
          size_t new_size,
@@ -827,7 +835,9 @@ reset_ls_data(int fra_pos)
          }
          *no_of_listed_files = 0;
       }
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
    }
+#endif
 
    return(SUCCESS);
 }

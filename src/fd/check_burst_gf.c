@@ -523,6 +523,7 @@ check_burst_gf(unsigned int *values_changed)
                   }
                }
             }
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
             if ((fra[db.fra_pos].stupid_mode == YES) ||
                 (fra[db.fra_pos].remove == YES))
             {
@@ -530,8 +531,11 @@ check_burst_gf(unsigned int *values_changed)
             }
             else
             {
+#endif
                detach_ls_data(NO);
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
             }
+#endif
             db.id.dir = fsa->job_status[(int)db.job_no].job_id;
             if ((db.fra_pos = get_dir_id_position(fra, db.id.dir, no_of_dirs)) < 0)
             {

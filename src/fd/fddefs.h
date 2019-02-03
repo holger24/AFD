@@ -20,6 +20,9 @@
 #ifndef __fddefs_h
 #define __fddefs_h
 
+/* #define DO_NOT_PARALLELIZE_ALL_FETCH 1 */
+/* #define DEBUG_ASSIGNMENT 1 */
+
 #include <time.h>                /* clock_t                              */
 
 /* Definitions for group transfer rate limit (gtrl). */
