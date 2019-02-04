@@ -1,6 +1,6 @@
 /*
  *  bin_file_chopper.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1030,15 +1030,26 @@ bin_file_convert(char *src_ptr, off_t total_length, int to_fd)
 #endif
                            (pri_off_t)(data_length + 8));
             }
-            else
-            {
-               (void)snprintf(length_indicator, 15,
+            else if ((data_length + 8) < 0)
+                 {
+                    (void)strcpy(length_indicator, "00000000");
+                    receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
 #if SIZEOF_OFF_T == 4
-                              "%08ld00", (pri_off_t)(data_length + 8));
+                                "Data length (%ld) is less then 0, inserting 00000000.",
 #else
-                              "%08lld00", (pri_off_t)(data_length + 8));
+                                "Data length (%lld) is less then 0, inserting 00000000.",
 #endif
-            }
+                                (pri_off_t)(data_length + 8));
+                 }
+                 else
+                 {
+                    (void)snprintf(length_indicator, 15,
+#if SIZEOF_OFF_T == 4
+                                   "%08ld00", (pri_off_t)(data_length + 8));
+#else
+                                   "%08lld00", (pri_off_t)(data_length + 8));
+#endif
+                 }
             length_indicator[10] = 1;
             length_indicator[11] = 13;
             length_indicator[12] = 13;

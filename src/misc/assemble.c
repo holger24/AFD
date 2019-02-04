@@ -1,6 +1,6 @@
 /*
  *  assemble.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -525,10 +525,19 @@ write_length_indicator(int fd,
                         "Data length (%d) greater then what is possible in WMO header size, inserting maximum possible 99999999.",
                         length);
          }
-         else
-         {
-            (void)snprintf((char *)buffer, 10, "%08d", length);
-         }
+         else if (length < 0)
+              {
+                 buffer[0] = buffer[1] = buffer[2] = buffer[3] = '0';
+                 buffer[4] = buffer[5] = buffer[6] = buffer[7] = '0';
+                 buffer[8] = '\0';
+                 receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
+                             "Data length is less then 0 (%d), inserting 00000000.",
+                             length);
+              }
+              else
+              {
+                 (void)snprintf((char *)buffer, 10, "%08d", length);
+              }
          write_length = 10;
          buffer[8] = '0';
          if (have_sohetx == YES)
