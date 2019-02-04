@@ -1076,6 +1076,7 @@ eval_dir_config(off_t        db_size,
                                    strerror(errno));
                         exit(INCORRECT);
                      }
+                     dir->fgc = 0;
                   }
                   else
                   {
@@ -1756,6 +1757,9 @@ check_dummy_line:
                         *end_dest_ptr = tmp_dest_char;
                      }
 
+                     free(dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec);
+                     dir->file[dir->fgc].dest[dir->file[dir->fgc].dgc].rec = NULL;
+
                      /* Try to read the next destination. */
                      continue;
                   }
@@ -1891,6 +1895,9 @@ check_dummy_line:
                                 "Directory %s in %s does not have a destination entry for file group no. %d.",
                                 dir->location, dcl[dcd].dir_config_file,
                                 dir->fgc);
+
+                  free(dir->file[dir->fgc].files);
+                  dir->file[dir->fgc].files = NULL;
 
                   /* Reduce file counter, since this one is faulty. */
                   dir->fgc--;
@@ -2032,6 +2039,23 @@ check_dummy_line:
                                         directory, dir->location,
                                         &dir->location_length) == INCORRECT)
                   {
+                     if (dir->file != NULL)
+                     {
+                        int m, n;
+
+                        for (m = 0; m < dir->fgc; m++)
+                        {
+                           for (n = 0; n < dir->file[m].dgc; n++)
+                           {
+                              free(dir->file[m].dest[n].rec);
+                              dir->file[m].dest[n].rec= NULL;
+                           }
+                           free(dir->file[m].files);
+                           free(dir->file[m].dest);
+                        }
+                        free(dir->file);
+                        dir->file = NULL;
+                     }
                      continue;
                   }
                }
@@ -2205,6 +2229,23 @@ check_dummy_line:
                                               count_new_lines(database, dir_ptr),
                                               dcl[dcd].dir_config_file,
                                               strerror(errno));
+                                if (dir->file != NULL)
+                                {
+                                   int m, n;
+
+                                   for (m = 0; m < dir->fgc; m++)
+                                   {
+                                      for (n = 0; n < dir->file[m].dgc; n++)
+                                      {
+                                         free(dir->file[m].dest[n].rec);
+                                         dir->file[m].dest[n].rec= NULL;
+                                      }
+                                      free(dir->file[m].files);
+                                      free(dir->file[m].dest);
+                                   }
+                                   free(dir->file);
+                                   dir->file = NULL;
+                                }
                                 continue;
                              }
                              else
@@ -2235,6 +2276,23 @@ check_dummy_line:
                                               count_new_lines(database, dir_ptr),
                                               dcl[dcd].dir_config_file,
                                               strerror(errno));
+                                if (dir->file != NULL)
+                                {
+                                   int m, n;
+
+                                   for (m = 0; m < dir->fgc; m++)
+                                   {
+                                      for (n = 0; n < dir->file[m].dgc; n++)
+                                      {
+                                         free(dir->file[m].dest[n].rec);
+                                         dir->file[m].dest[n].rec= NULL;
+                                      }
+                                      free(dir->file[m].files);
+                                      free(dir->file[m].dest);
+                                   }
+                                   free(dir->file);
+                                   dir->file = NULL;
+                                }
                                 continue;
                              }
                              else
@@ -2357,22 +2415,22 @@ check_dummy_line:
                   /* Insert hostnames into temporary memory. */
                   insert_hostname(dir);
                } /* if (duplicate == NO) */
-
-               for (j = 0; j < dir->fgc; j++)
-               {
-                  int m;
-
-                  for (m = 0; m < dir->file[j].dgc; m++)
-                  {
-                     free(dir->file[j].dest[m].rec);
-                     dir->file[j].dest[m].rec= NULL;
-                  }
-                  free(dir->file[j].files);
-                  free(dir->file[j].dest);
-               }
-               free(dir->file);
-               dir->file = NULL;
             }
+
+            for (j = 0; j < dir->fgc; j++)
+            {
+               int m;
+
+               for (m = 0; m < dir->file[j].dgc; m++)
+               {
+                  free(dir->file[j].dest[m].rec);
+                  dir->file[j].dest[m].rec= NULL;
+               }
+               free(dir->file[j].files);
+               free(dir->file[j].dest);
+            }
+            free(dir->file);
+            dir->file = NULL;
          } while (next_dir_group_name(dir->location, &dir->location_length,
                                       dir->alias) == 1);
 
