@@ -1,6 +1,6 @@
 /*
  *  afd_stat.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -159,12 +159,19 @@ main(int argc, char *argv[])
     */
    hour = p_ts->tm_hour;
    current_year = p_ts->tm_year + 1900;
+   if ((current_year > 9999) || (current_year < 0))
+   {
+      (void)fprintf(stderr,
+                    "ERROR   : We can only handle a 4 digit centry :-( (%s %d)\n",
+                    __FILE__, __LINE__);
+      exit(INCORRECT);
+   }
    p_work_dir = work_dir;
    if (statistic_file_name[0] == '\0')
    {
       char str_year[6];
 
-      (void)sprintf(str_year, ".%d", current_year);
+      (void)snprintf(str_year, 6, ".%d", current_year);
       (void)strcpy(statistic_file, work_dir);
 #ifdef STAT_IN_FIFODIR
       (void)strcat(statistic_file, FIFO_DIR);
