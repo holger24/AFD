@@ -873,7 +873,7 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
    int pos,
        status;
 #ifdef WITH_TRACE
-   int length;
+   int length = 0;
 #endif
 
    if ((filename == NULL) && (scd.file_handle == NULL))
@@ -1047,7 +1047,7 @@ sftp_set_file_time(char *filename, time_t mtime, time_t atime)
    int pos,
        status;
 #ifdef WITH_TRACE
-   int length;
+   int length = 0;
 #endif
 
    if ((filename == NULL) && (scd.file_handle == NULL))
@@ -1229,7 +1229,7 @@ sftp_open_file(int    openmode,
    int pos,
        status;
 #ifdef WITH_TRACE
-   int length;
+   int length = 0;
 #endif
 
    if (scd.file_handle != NULL)
@@ -1523,7 +1523,7 @@ sftp_open_dir(char *dirname)
 {
    int status;
 #ifdef WITH_TRACE
-   int length;
+   int length = 0;
 #endif
 
    if (scd.dir_handle != NULL)
@@ -1812,7 +1812,7 @@ sftp_mkdir(char *directory, mode_t dir_mode)
    int attr_len,
        status;
 #ifdef WITH_TRACE
-   int length;
+   int length = 0;
 #endif
 
    /*
@@ -1943,7 +1943,7 @@ sftp_move(char   *from,
        status,
        to_length;
 #ifdef WITH_TRACE
-   int length;
+   int length = 0;
 #endif
 
    /*
@@ -2901,7 +2901,7 @@ sftp_dele(char *filename)
 {
    int status;
 #ifdef WITH_TRACE
-   int length;
+   int length = 0;
 #endif
 
    /*
@@ -2988,7 +2988,7 @@ sftp_chmod(char *filename, mode_t mode)
 {
    int status;
 #ifdef WITH_TRACE
-   int length;
+   int length = 0;
 #endif
 
    if ((filename == NULL) && (scd.file_handle == NULL))
