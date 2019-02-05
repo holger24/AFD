@@ -115,7 +115,8 @@ size_t                     ol_size,
                            ol_real_size;
 clock_t                    *ol_transfer_time;
 #endif
-off_t                      file_size_to_retrieve_shown = 0;
+off_t                      file_size_to_retrieve_shown = 0,
+                           rl_size = 0;
 u_off_t                    prev_file_size_done = 0;
 #ifdef _WITH_BURST_2
 unsigned int               burst_2_counter = 0;

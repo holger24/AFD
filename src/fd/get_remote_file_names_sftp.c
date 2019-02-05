@@ -68,6 +68,7 @@ extern int                        exitflag,
                                   timeout_flag;
 extern char                       msg_str[],
                                   *p_work_dir;
+extern off_t                      rl_size;
 extern struct job                 db;
 extern struct retrieve_list       *rl;
 extern struct fileretrieve_status *fra;
@@ -602,6 +603,7 @@ get_remote_file_names_sftp(off_t *file_size_to_retrieve,
                      sftp_quit();
                      exit(INCORRECT);
                   }
+                  rl_size = new_size;
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
                }
 #endif
@@ -970,6 +972,7 @@ check_list(char        *file,
             sftp_quit();
             exit(INCORRECT);
          }
+         rl_size = new_size;
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
       }
 #endif

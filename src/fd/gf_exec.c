@@ -89,7 +89,8 @@ int                        event_log_fd = STDERR_FILENO,
 #endif
                            sys_log_fd = STDERR_FILENO,
                            timeout_flag;
-off_t                      file_size_to_retrieve_shown = 0;
+off_t                      file_size_to_retrieve_shown = 0,
+                           rl_size = 0;
 #ifdef HAVE_MMAP
 off_t                      fra_size,
                            fsa_size;

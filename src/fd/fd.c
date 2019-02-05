@@ -176,7 +176,8 @@ long                       link_max;
 off_t                      fra_size,
                            fsa_size;
 #endif
-off_t                      *buf_file_size = NULL;
+off_t                      *buf_file_size = NULL,
+                           rl_size = 0;
 time_t                     loop_start_time = 0L;
 char                       stop_flag = 0,
                            *p_work_dir,

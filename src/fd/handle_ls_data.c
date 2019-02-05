@@ -82,6 +82,7 @@ static size_t                     list_file_length = 0;
 extern int                        *no_of_listed_files,
                                   rl_fd;
 extern char                       *p_work_dir;
+extern off_t                      rl_size;
 extern struct retrieve_list       *rl;
 extern struct fileretrieve_status *fra;
 
@@ -96,8 +97,7 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
    {
       if (rl == NULL)
       {
-         off_t       rl_size;
-         char        *ptr;
+         char *ptr;
 
          rl_size = (RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
                    AFD_WORD_OFFSET;
@@ -118,7 +118,6 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
 #endif /* DO_NOT_PARALLELIZE_ALL_FETCH */
       if (rl_fd == -1)
       {
-         off_t       rl_size;
          time_t      *create_time;
          char        *ptr;
          struct stat stat_buf;
@@ -712,6 +711,7 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
                                 "mmap_resize() error : %s", strerror(errno));
                      return(INCORRECT);
                   }
+                  rl_size = must_have_size;
                   no_of_listed_files = (int *)ptr;
                   create_time = (time_t *)(ptr + SIZEOF_INT + 4);
                   ptr += AFD_WORD_OFFSET;
@@ -748,7 +748,49 @@ detach_ls_data(int remove)
    {
       if (rl != NULL)
       {
-         unmap_data(rl_fd, (void *)&rl);
+         char *ptr = (char *)rl - AFD_WORD_OFFSET;
+
+#ifdef HAVE_MMAP
+         if (msync(ptr, rl_size, MS_SYNC) == -1)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "msync() error : %s", strerror(errno));
+         }
+         if (munmap(ptr, rl_size) == -1)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "munmap() error : %s", strerror(errno));
+         }
+         else
+         {
+            rl = NULL;
+            rl_size = 0;
+         }
+#else
+         if (msync_emu(ptr) == -1)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "msync_emu() error : %s", strerror(errno));
+         }
+         if (munmap_emu(ptr) == -1)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "munmap_emu() error : %s", strerror(errno));
+         }
+         else
+         {
+            rl = NULL;
+            rl_size = 0;
+         }
+#endif
+      }
+      if (close(rl_fd) == -1)
+      {
+         system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                    "close() error : %s", strerror(errno));
+      }
+      else
+      {
          rl_fd = -1;
       }
       if ((remove == YES) && (list_file != NULL))
@@ -829,6 +871,7 @@ reset_ls_data(int fra_pos)
                           "mmap_resize() error : %s", strerror(errno));
                return(INCORRECT);
             }
+            rl_size = new_size;
             no_of_listed_files = (int *)ptr;
             ptr += AFD_WORD_OFFSET;
             rl = (struct retrieve_list *)ptr;

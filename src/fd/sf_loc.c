@@ -1,6 +1,6 @@
 /*
  *  sf_loc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -158,7 +158,8 @@ long                       transfer_timeout; /* Not used [init_sf()]    */
 off_t                      fra_size,
                            fsa_size;
 #endif
-off_t                      *file_size_buffer = NULL;
+off_t                      *file_size_buffer = NULL,
+                           rl_size = 0;
 time_t                     *file_mtime_buffer = NULL;
 u_off_t                    prev_file_size_done = 0;
 char                       *p_work_dir = NULL,
@@ -197,7 +198,7 @@ main(int argc, char *argv[])
 {
    int              additional_length,
 #ifdef _WITH_BURST_2
-                    cb2_ret,
+                    cb2_ret = NO,
 #endif
                     exit_status = TRANSFER_SUCCESS,
                     fd,
