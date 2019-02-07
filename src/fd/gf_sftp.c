@@ -468,7 +468,7 @@ main(int argc, char *argv[])
       {
          struct stat rdir_stat_buf;
 
-         if ((status = sftp_stat(db.target_dir, &rdir_stat_buf)) == SUCCESS)
+         if ((status = sftp_stat(".", &rdir_stat_buf)) == SUCCESS)
          {
             new_dir_mtime = rdir_stat_buf.st_mtime;
             if (fra[db.fra_pos].dir_mtime == new_dir_mtime)

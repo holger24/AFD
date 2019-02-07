@@ -930,7 +930,8 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
    else
    {
       msg[4] = SSH_FXP_STAT;
-      if ((scd.cwd == NULL) || (filename[0] == '/'))
+      if ((scd.cwd == NULL) || (filename[0] == '/') ||
+          ((filename[0] == '.') && (filename[1] == '\0')))
       {
          status = strlen(filename);
          set_xfer_str(&msg[4 + 1 + 4], filename, status);
