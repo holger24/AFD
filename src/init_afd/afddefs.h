@@ -4123,6 +4123,11 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
 #ifdef WITH_IP_DB
                     remove_from_ip_db(char *),
 #endif
+#ifdef LOCK_DEBUG
+                    rlock_region(int, off_t, char *, int),
+#else
+                    rlock_region(const int, const off_t),
+#endif
                     search_insert_alias_name(char *, char *, int),
                     send_cmd(char, int),
                     shutdown_afd(char *, long, int),
@@ -4260,11 +4265,6 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
                                      off_t, char *, int),
                     remove_nnn_files(unsigned int),
                     reshuffel_log_files(int, char *, char *, int, int),
-#ifdef LOCK_DEBUG
-                    rlock_region(int, off_t, char *, int),
-#else
-                    rlock_region(const int, const off_t),
-#endif
                     t_hostname(char *, char *),
 #ifdef WITH_SETUID_PROGS
                     set_afd_euid(char *),

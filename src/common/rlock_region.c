@@ -1,6 +1,6 @@
 /*
  *  rlock_region.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2009 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -26,7 +26,7 @@ DESCR__S_M3
  **   rlock_region - sets a read lock for a specific region in a file
  **
  ** SYNOPSIS
- **   void rlock_region(const int fd, const off_t offset)
+ **   int rlock_region(const int fd, const off_t offset)
  **
  ** DESCRIPTION
  **   This function sets a read lock to the region specified by offset
@@ -35,14 +35,17 @@ DESCR__S_M3
  **   it is a read lock.
  **
  ** RETURN VALUES
- **   None. The function exits with LOCK_REGION_ERROR if fcntl() call
- **   fails.
+ **   Either LOCK_IS_SET when the region is locked or LOCK_IS_NOT_SET
+ **   when it has succesfully locked the region. The function exits
+ **   with LOCK_REGION_ERROR if fcntl() call fails.
  **
  ** AUTHOR
  **   H.Kiehl
  **
  ** HISTORY
  **   02.09.1997 H.Kiehl Created
+ **   08.02.2019 H.Kiehl Modified function with return value, to show
+ **                      that lock is already set or not.
  **
  */
 DESCR__E_M3
@@ -59,7 +62,7 @@ DESCR__E_M3
 
 
 /*########################### rlock_region() ############################*/
-void
+int
 #ifdef LOCK_DEBUG
 rlock_region(int fd, off_t offset, char *file, int line)
 #else
@@ -84,10 +87,18 @@ rlock_region(const int fd, const off_t offset)
 
    if (fcntl(fd, F_SETLKW, &rlock) == -1)
    {
-      system_log(FATAL_SIGN, __FILE__, __LINE__,
-                 _("fcntl() error : %s"), strerror(errno));
-      exit(LOCK_REGION_ERROR);
+      if ((errno == EACCES) || (errno == EAGAIN) || (errno == EBUSY))
+      {
+         /* The file is already locked! */
+         return(LOCK_IS_SET);
+      }
+      else
+      {
+         system_log(FATAL_SIGN, __FILE__, __LINE__,
+                    _("fcntl() error : %s"), strerror(errno));
+         exit(LOCK_REGION_ERROR);
+      }
    }
 
-   return;
+   return(LOCK_IS_NOT_SET);
 }
