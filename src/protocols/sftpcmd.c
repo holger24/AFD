@@ -930,8 +930,7 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
    else
    {
       msg[4] = SSH_FXP_STAT;
-      if ((scd.cwd == NULL) || (filename[0] == '/') ||
-          ((filename[0] == '.') && (filename[1] == '\0')))
+      if ((scd.cwd == NULL) || (filename[0] == '/'))
       {
          status = strlen(filename);
          set_xfer_str(&msg[4 + 1 + 4], filename, status);
@@ -944,22 +943,36 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
          }
 #endif
       }
-      else
-      {
-         char fullname[MAX_PATH_LENGTH];
-
-         status = snprintf(fullname, MAX_PATH_LENGTH,
-                           "%s/%s", scd.cwd, filename);
-         set_xfer_str(&msg[4 + 1 + 4], fullname, status);
+      else if ((scd.cwd != NULL) &&
+               (filename[0] == '.') && (filename[1] == '\0'))
+           {
+              status = strlen(scd.cwd);
+              set_xfer_str(&msg[4 + 1 + 4], scd.cwd, status);
 #ifdef WITH_TRACE
-         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
-         {
-            length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
-                              "sftp_stat(): request-id=%d SSH_FXP_STAT full_file_name=%s name_length=%d",
-                              scd.request_id, fullname, status);
-         }
+              if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+              {
+                 length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                   "sftp_stat(): request-id=%d SSH_FXP_STAT file_name=%s name_length=%d",
+                                   scd.request_id, scd.cwd, status);
+              }
 #endif
-      }
+           }
+           else
+           {
+              char fullname[MAX_PATH_LENGTH];
+
+              status = snprintf(fullname, MAX_PATH_LENGTH,
+                                "%s/%s", scd.cwd, filename);
+              set_xfer_str(&msg[4 + 1 + 4], fullname, status);
+#ifdef WITH_TRACE
+              if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+              {
+                 length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                   "sftp_stat(): request-id=%d SSH_FXP_STAT full_file_name=%s name_length=%d",
+                                   scd.request_id, fullname, status);
+              }
+#endif
+           }
    }
    pos = 4 + 1 + 4 + 4 + status;
    if (scd.version > 4)
