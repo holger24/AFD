@@ -1140,13 +1140,6 @@ main(int argc, char *argv[])
             {
                int file_is_duplicate = NO;
 
-#ifdef LOCK_DEBUG
-               lock_region_w(fsa_fd, db.lock_offset + LOCK_FIU + db.job_no,
-                             __FILE__, __LINE__);
-#else
-               lock_region_w(fsa_fd, db.lock_offset + LOCK_FIU + db.job_no);
-#endif
-
                /*
                 * Check if this file is not currently being transfered!
                 */
@@ -1293,19 +1286,9 @@ main(int argc, char *argv[])
                   fsa->job_status[(int)db.job_no].file_size_in_use = *p_file_size_buffer;
                   (void)strcpy(fsa->job_status[(int)db.job_no].file_name_in_use,
                                p_file_name_buffer);
-#ifdef LOCK_DEBUG
-                  unlock_region(fsa_fd, db.lock_offset + LOCK_FIU + db.job_no, __FILE__, __LINE__);
-#else
-                  unlock_region(fsa_fd, db.lock_offset + LOCK_FIU + db.job_no);
-#endif
                }
                else
                {
-#ifdef LOCK_DEBUG
-                  unlock_region(fsa_fd, db.lock_offset + LOCK_FIU + db.job_no, __FILE__, __LINE__);
-#else
-                  unlock_region(fsa_fd, db.lock_offset + LOCK_FIU + db.job_no);
-#endif
 #ifdef WITH_ERROR_QUEUE
                   if (fsa->host_status & ERROR_QUEUE_SET)
                   {

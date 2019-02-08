@@ -2244,14 +2244,12 @@ typedef unsigned long       u_long_64;
                                         /* MAX_TIMEZONE_LENGTH      */
 
 /* Definitions for the different lock positions in the FSA. */
-#define LOCK_FIU                   3   /* File name in use (job_status) */
-/* NOTE: We must keep a gap behind LOCK_FIU since we add the job_no to it! */
-#define LOCK_TFC                   20  /* Total file counter */
-#define LOCK_EC                    21  /* Error counter */
-#define LOCK_CON                   22  /* Connections */
-#define LOCK_EXEC                  23  /* Lock for exec and pexec option, */
+#define LOCK_TFC                   3   /* Total file counter */
+#define LOCK_EC                    4   /* Error counter */
+#define LOCK_CON                   5   /* Connections */
+#define LOCK_EXEC                  6   /* Lock for exec and pexec option, */
                                        /* this is ALSO used in FRA.       */
-#define LOCK_HS                    24  /* Lock host_status in FSA.        */
+#define LOCK_HS                    7   /* Lock host_status in FSA.        */
 #define LOCK_CHECK_FSA_ENTRIES     (AFD_WORD_OFFSET - 1)
 
 /*-----------------------------------------------------------------------*
