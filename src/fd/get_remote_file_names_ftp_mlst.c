@@ -106,7 +106,7 @@ get_remote_file_names_ftp_mlst(off_t *file_size_to_retrieve,
                                int   *more_files_in_list)
 {
    int              files_to_retrieve = 0,
-                    i;
+                    i = 0;
 
    *file_size_to_retrieve = 0;
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
@@ -118,10 +118,46 @@ get_remote_file_names_ftp_mlst(off_t *file_size_to_retrieve,
 #else
    if (rl_fd == -1)
    {
-      if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag, YES) == INCORRECT)
+try_attach_again:
+      if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag,
+                         YES) == INCORRECT)
       {
          (void)ftp_quit();
          exit(INCORRECT);
+      }
+      if ((db.special_flag & DISTRIBUTED_HELPER_JOB) &&
+          ((fra[db.fra_pos].stupid_mode == YES) ||
+           (fra[db.fra_pos].remove == YES)))
+      {
+# ifdef LOCK_DEBUG
+         if (rlock_region(rl_fd, LOCK_RETR_PROC,
+                          __FILE__, __LINE__) == LOCK_IS_SET)
+# else
+         if (rlock_region(rl_fd, LOCK_RETR_PROC) == LOCK_IS_SET)
+# endif
+         {
+            if (i == 0)
+            {
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                          "Hmm, lock is set. Assume ls_data file was just modified. Lets try it again. (job_no=%d fsa_pos=%d)",
+                          (int)db.job_no, db.fsa_pos);
+            }
+            else
+            {
+               if (i == 30)
+               {
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "Have waited %d seconds, but unable to get a lock. Terminating.",
+                            (i * 100000) / 1000000);
+                  (void)ftp_quit();
+                  exit(SUCCESS);
+               }
+               my_usleep(100000L);
+            }
+            detach_ls_data(NO);
+            i++;
+            goto try_attach_again;
+         }
       }
    }
 
@@ -157,9 +193,10 @@ get_remote_file_names_ftp_mlst(off_t *file_size_to_retrieve,
             {
                /* Lock this file in list. */
 #ifdef LOCK_DEBUG
-               if (lock_region(rl_fd, (off_t)i, __FILE__, __LINE__) == LOCK_IS_NOT_SET)
+               if (lock_region(rl_fd, (off_t)(LOCK_RETR_FILE + i),
+                               __FILE__, __LINE__) == LOCK_IS_NOT_SET)
 #else
-               if (lock_region(rl_fd, (off_t)i) == LOCK_IS_NOT_SET)
+               if (lock_region(rl_fd, (off_t)(LOCK_RETR_FILE + i)) == LOCK_IS_NOT_SET)
 #endif
                {
                   if ((fra[db.fra_pos].ignore_size == -1) ||
@@ -223,9 +260,10 @@ get_remote_file_names_ftp_mlst(off_t *file_size_to_retrieve,
 #endif /* DEBUG_ASSIGNMENT */
                   }
 #ifdef LOCK_DEBUG
-                  unlock_region(rl_fd, (off_t)i, __FILE__, __LINE__);
+                  unlock_region(rl_fd, (off_t)(LOCK_RETR_FILE + i),
+                                __FILE__, __LINE__);
 #else
-                  unlock_region(rl_fd, (off_t)i);
+                  unlock_region(rl_fd, (off_t)(LOCK_RETR_FILE + i));
 #endif
                }
             }
@@ -357,16 +395,12 @@ get_remote_file_names_ftp_mlst(off_t *file_size_to_retrieve,
              * collected, lets reset the ls_data structure or otherwise
              * it keeps on growing forever.
              */
-            gotcha = NO;
-            for (i = 0; i < *no_of_listed_files; i++)
-            {
-               if (rl[i].assigned != 0)
-               {
-                  gotcha = YES;
-                  break;
-               }
-            }
-            if (gotcha == NO)
+# ifdef LOCK_DEBUG
+            if (lock_region(rl_fd, LOCK_RETR_PROC,
+                            __FILE__, __LINE__) == LOCK_IS_NOT_SET)
+# else   
+            if (lock_region(rl_fd, LOCK_RETR_PROC) == LOCK_IS_NOT_SET)
+# endif
             {
                if (reset_ls_data(db.fra_pos) == INCORRECT)
                {
@@ -374,6 +408,11 @@ get_remote_file_names_ftp_mlst(off_t *file_size_to_retrieve,
                   exit(INCORRECT);
                }
             }
+# ifdef LOCK_DEBUG
+            unlock_region(rl_fd, LOCK_RETR_PROC, __FILE__, __LINE__);
+# else      
+            unlock_region(rl_fd, LOCK_RETR_PROC);
+# endif
          }
 #endif
 
@@ -913,9 +952,10 @@ check_list(char   *file,
             if (((rl[i].assigned == 0) || (rl[i].retrieved == YES)) &&
                 (((db.special_flag & OLD_ERROR_JOB) == 0) ||
 #ifdef LOCK_DEBUG
-                   (lock_region(rl_fd, (off_t)i, __FILE__, __LINE__) == LOCK_IS_NOT_SET)
+                   (lock_region(rl_fd, (off_t)(LOCK_RETR_FILE + i),
+                                __FILE__, __LINE__) == LOCK_IS_NOT_SET)
 #else
-                   (lock_region(rl_fd, (off_t)i) == LOCK_IS_NOT_SET)
+                   (lock_region(rl_fd, (off_t)(LOCK_RETR_FILE + i)) == LOCK_IS_NOT_SET)
 #endif
                   ))
             {
@@ -1020,9 +1060,10 @@ check_list(char   *file,
                if (db.special_flag & OLD_ERROR_JOB)
                {
 #ifdef LOCK_DEBUG
-                  unlock_region(rl_fd, (off_t)i, __FILE__, __LINE__);
+                  unlock_region(rl_fd, (off_t)(LOCK_RETR_FILE + i),
+                                __FILE__, __LINE__);
 #else
-                  unlock_region(rl_fd, (off_t)i);
+                  unlock_region(rl_fd, (off_t)(LOCK_RETR_FILE + i));
 #endif
                }
                return(ret);
@@ -1051,9 +1092,10 @@ check_list(char   *file,
 
             if (((db.special_flag & OLD_ERROR_JOB) == 0) ||
 #ifdef LOCK_DEBUG
-                (lock_region(rl_fd, (off_t)i, __FILE__, __LINE__) == LOCK_IS_NOT_SET)
+                (lock_region(rl_fd, (off_t)(LOCK_RETR_FILE + i),
+                             __FILE__, __LINE__) == LOCK_IS_NOT_SET)
 #else
-                (lock_region(rl_fd, (off_t)i) == LOCK_IS_NOT_SET)
+                (lock_region(rl_fd, (off_t)(LOCK_RETR_FILE + i)) == LOCK_IS_NOT_SET)
 #endif
                )
             {
@@ -1192,9 +1234,9 @@ check_list(char   *file,
                if (db.special_flag & OLD_ERROR_JOB)
                {
 #ifdef LOCK_DEBUG
-                  unlock_region(rl_fd, (off_t)i, __FILE__, __LINE__);
+                  unlock_region(rl_fd, (off_t)(LOCK_RETR_FILE + i), __FILE__, __LINE__);
 #else
-                  unlock_region(rl_fd, (off_t)i);
+                  unlock_region(rl_fd, (off_t)(LOCK_RETR_FILE + i));
 #endif
                }
                return(ret);

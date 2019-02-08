@@ -36,6 +36,13 @@
 #define FILES_COPIED             1
 #define FILES_MOVED              2
 
+/* Different lock positions in ls_data file. */
+#define LOCK_RETR_PROC           0   /* Lock retrieve jobs so that the  */
+                                     /* ls_data is not modified.        */
+#define LOCK_RETR_FILE           3   /* Lock position for each          */
+                                     /* individual file stored in       */
+                                     /* ls_data.                        */
+
 /* During burst check, if we want to scan the source. */
 #define RESCAN_SOURCE            6
 
