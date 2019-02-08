@@ -1015,7 +1015,7 @@ system_log(DEBUG_SIGN, NULL, 0,
        * Check if we must check for files on any remote system.
        */
       if ((p_afd_status->no_of_transfers < max_connections) &&
-          (no_of_retrieves > 0))
+          (no_of_retrieves > 0) && (fra != NULL))
       {
          if ((*(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) & DISABLE_RETRIEVE) == 0)
          {
