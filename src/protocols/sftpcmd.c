@@ -3298,7 +3298,7 @@ get_reply(unsigned int id, int line)
    {
       int i;
 
-      for (i = 0; i < scd.stored_replies; i++)
+      for (i = 0; i < scd.stored_replies && i < MAX_SFTP_REPLY_BUFFER; i++)
       {
          if (scd.sm[i].request_id == id)
          {
