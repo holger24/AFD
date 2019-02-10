@@ -143,7 +143,7 @@ main(int argc, char *argv[])
                   rl = (struct retrieve_list *)ptr;
 
                   (void)strftime(time_str, 25, "%c", localtime(&create_time));
-                  (void)fprintf(stdout, "\n        %s (%d entries  Struct Version: %d  Dir mtime: %s)\n\n",
+                  (void)fprintf(stdout, "\n        %s (%d entries  Struct Version: %d  Create time: %s)\n\n",
                                 argv[i], no_of_listed_files, version, time_str);
                   (void)fprintf(stdout, "                        |            |  Previous  |Got |    | In |Assi|\n");
                   (void)fprintf(stdout, "          Date          |    Size    |    Size    |date|Retr|list|nged|Flag|   File name\n");
