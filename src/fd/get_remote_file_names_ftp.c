@@ -75,7 +75,7 @@ DESCR__E_M3
 
 /* External global variables. */
 extern int                        exitflag,
-                                  *no_of_listed_files,
+                                  no_of_listed_files,
                                   rl_fd,
                                   timeout_flag;
 extern char                       msg_str[],
@@ -184,7 +184,7 @@ try_attach_again:
       }
 #endif
       *more_files_in_list = NO;
-      for (i = 0; i < *no_of_listed_files; i++)
+      for (i = 0; i < no_of_listed_files; i++)
       {
          if ((rl[i].retrieved == NO) && (rl[i].assigned == 0))
          {
@@ -461,7 +461,7 @@ try_attach_again:
                break;
             }
          }
-      } /* for (i = 0; i < *no_of_listed_files; i++) */
+      } /* for (i = 0; i < no_of_listed_files; i++) */
    }
    else
    {
@@ -782,12 +782,12 @@ try_attach_again:
       {
          trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
 #if SIZEOF_OFF_T == 4
-                   "%d files %ld bytes found for retrieving [%u files in %s (deleted %u files)]. @%x",
+                   "%d files %ld bytes found for retrieving %s[%u files in %s (deleted %u files)]. @%x",
 #else
-                   "%d files %lld bytes found for retrieving [%u files in %s (deleted %u files)]. @%x",
+                   "%d files %lld bytes found for retrieving %s[%u files in %s (deleted %u files)]. @%x",
 #endif
                    files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
-                   list_length,
+                   (*more_files_in_list == YES) ? "(+) " : "", list_length,
                    (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
                    files_deleted, db.id.dir);
       }
@@ -795,12 +795,12 @@ try_attach_again:
       {
          trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
 #if SIZEOF_OFF_T == 4
-                   "%d files %ld bytes found for retrieving [%u files in %s]. @%x",
+                   "%d files %ld bytes found for retrieving %s[%u files in %s]. @%x",
 #else
-                   "%d files %lld bytes found for retrieving [%u files in %s]. @%x",
+                   "%d files %lld bytes found for retrieving %s[%u files in %s]. @%x",
 #endif
                    files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
-                   list_length,
+                   (*more_files_in_list == YES) ? "(+) " : "", list_length,
                    (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
                    db.id.dir);
       }
@@ -816,20 +816,20 @@ try_attach_again:
                 i;
          size_t move_size;
 
-         for (i = 0; i < (*no_of_listed_files - files_removed); i++)
+         for (i = 0; i < (no_of_listed_files - files_removed); i++)
          {
             if (rl[i].in_list == NO)
             {
                int j = i;
 
                while ((rl[j].in_list == NO) &&
-                      (j < (*no_of_listed_files - files_removed)))
+                      (j < (no_of_listed_files - files_removed)))
                {
                   j++;
                }
-               if (j != (*no_of_listed_files - files_removed))
+               if (j != (no_of_listed_files - files_removed))
                {
-                  move_size = (*no_of_listed_files - files_removed - j) *
+                  move_size = (no_of_listed_files - files_removed - j) *
                               sizeof(struct retrieve_list);
                   (void)memmove(&rl[i], &rl[j], move_size);
                }
@@ -839,25 +839,25 @@ try_attach_again:
 
          if (files_removed > 0)
          {
-            int    current_no_of_listed_files = *no_of_listed_files;
+            int    current_no_of_listed_files = no_of_listed_files;
             size_t new_size,
                    old_size;
 
-            *no_of_listed_files -= files_removed;
-            if (*no_of_listed_files < 0)
+            no_of_listed_files -= files_removed;
+            if (no_of_listed_files < 0)
             {
                system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Hmmm, no_of_listed_files = %d", *no_of_listed_files);
-               *no_of_listed_files = 0;
+                          "Hmmm, no_of_listed_files = %d", no_of_listed_files);
+               no_of_listed_files = 0;
             }
-            if (*no_of_listed_files == 0)
+            if (no_of_listed_files == 0)
             {
                new_size = (RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
                           AFD_WORD_OFFSET;
             }
             else
             {
-               new_size = (((*no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
+               new_size = (((no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
                            RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
                           AFD_WORD_OFFSET;
             }
@@ -896,16 +896,10 @@ try_attach_again:
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
                }
 #endif
-               no_of_listed_files = (int *)ptr;
                ptr += AFD_WORD_OFFSET;
                rl = (struct retrieve_list *)ptr;
-               if (*no_of_listed_files < 0)
-               {
-                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                             "Hmmm, no_of_listed_files = %d", *no_of_listed_files);
-                  *no_of_listed_files = 0;
-               }
             }
+            *(int *)((char *)rl - AFD_WORD_OFFSET) = no_of_listed_files;
          }
       }
    }
@@ -930,7 +924,7 @@ check_list(char         *file,
    if ((fra[db.fra_pos].stupid_mode == YES) ||
        (fra[db.fra_pos].remove == YES))
    {
-      for (i = 0; i < *no_of_listed_files; i++)
+      for (i = 0; i < no_of_listed_files; i++)
       {
          if (CHECK_STRCMP(rl[i].file_name, file) == 0)
          {
@@ -1153,11 +1147,11 @@ check_list(char         *file,
                return(1);
             }
          }
-      } /* for (i = 0; i < *no_of_listed_files; i++) */
+      } /* for (i = 0; i < no_of_listed_files; i++) */
    }
    else
    {
-      for (i = 0; i < *no_of_listed_files; i++)
+      for (i = 0; i < no_of_listed_files; i++)
       {
          if (CHECK_STRCMP(rl[i].file_name, file) == 0)
          {
@@ -1430,15 +1424,15 @@ check_list(char         *file,
                return(1);
             }
          }
-      } /* for (i = 0; i < *no_of_listed_files; i++) */
+      } /* for (i = 0; i < no_of_listed_files; i++) */
    }
 
    /* Add this file to the list. */
-   if ((*no_of_listed_files != 0) &&
-       ((*no_of_listed_files % RETRIEVE_LIST_STEP_SIZE) == 0))
+   if ((no_of_listed_files != 0) &&
+       ((no_of_listed_files % RETRIEVE_LIST_STEP_SIZE) == 0))
    {
       char   *ptr;
-      size_t new_size = (((*no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
+      size_t new_size = (((no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
                          RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
                          AFD_WORD_OFFSET;
 
@@ -1469,19 +1463,19 @@ check_list(char         *file,
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
       }
 #endif
-      no_of_listed_files = (int *)ptr;
-      ptr += AFD_WORD_OFFSET;
-      rl = (struct retrieve_list *)ptr;
-      if (*no_of_listed_files < 0)
+      if (no_of_listed_files < 0)
       {
          system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                    "Hmmm, no_of_listed_files = %d", *no_of_listed_files);
-         *no_of_listed_files = 0;
+                    "Hmmm, no_of_listed_files = %d", no_of_listed_files);
+         no_of_listed_files = 0;
       }
+      *(int *)ptr = no_of_listed_files;
+      ptr += AFD_WORD_OFFSET;
+      rl = (struct retrieve_list *)ptr;
    }
-   (void)strcpy(rl[*no_of_listed_files].file_name, file);
-   rl[*no_of_listed_files].retrieved = NO;
-   rl[*no_of_listed_files].in_list = YES;
+   (void)strcpy(rl[no_of_listed_files].file_name, file);
+   rl[no_of_listed_files].retrieved = NO;
+   rl[no_of_listed_files].in_list = YES;
 
    if ((check_date == YES) && (get_date == YES))
    {
@@ -1494,8 +1488,8 @@ check_list(char         *file,
 
             if ((status = ftp_date(file, &file_mtime)) == SUCCESS)
             {
-               rl[*no_of_listed_files].file_mtime = file_mtime;
-               rl[*no_of_listed_files].got_date = YES;
+               rl[no_of_listed_files].file_mtime = file_mtime;
+               rl[no_of_listed_files].got_date = YES;
                if (fsa->debug > NORMAL_MODE)
                {
                   trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
@@ -1508,7 +1502,7 @@ check_list(char         *file,
                     {
                        check_date = NO;
                     }
-                    rl[*no_of_listed_files].got_date = NO;
+                    rl[no_of_listed_files].got_date = NO;
                     if (fsa->debug > NORMAL_MODE)
                     {
                        trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
@@ -1526,12 +1520,12 @@ check_list(char         *file,
                        (void)ftp_quit();
                        exit(DATE_ERROR);
                     }
-                    rl[*no_of_listed_files].got_date = NO;
+                    rl[no_of_listed_files].got_date = NO;
                  }
          }
          else
          {
-            rl[*no_of_listed_files].got_date = NO;
+            rl[no_of_listed_files].got_date = NO;
          }
       }
       else
@@ -1540,8 +1534,8 @@ check_list(char         *file,
 
          if ((status = ftp_date(file, &file_mtime)) == SUCCESS)
          {
-            rl[*no_of_listed_files].file_mtime = file_mtime;
-            rl[*no_of_listed_files].got_date = YES;
+            rl[no_of_listed_files].file_mtime = file_mtime;
+            rl[no_of_listed_files].got_date = YES;
             if (fsa->debug > NORMAL_MODE)
             {
                trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
@@ -1554,7 +1548,7 @@ check_list(char         *file,
                  {
                     check_date = NO;
                  }
-                 rl[*no_of_listed_files].got_date = NO;
+                 rl[no_of_listed_files].got_date = NO;
                  if (fsa->debug > NORMAL_MODE)
                  {
                     trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
@@ -1572,13 +1566,13 @@ check_list(char         *file,
                     (void)ftp_quit();
                     exit(DATE_ERROR);
                  }
-                 rl[*no_of_listed_files].got_date = NO;
+                 rl[no_of_listed_files].got_date = NO;
               }
       }
    }
    else
    {
-      rl[*no_of_listed_files].got_date = NO;
+      rl[no_of_listed_files].got_date = NO;
    }
 
    if (check_size == YES)
@@ -1587,7 +1581,7 @@ check_list(char         *file,
 
       if ((status = ftp_size(file, &size)) == SUCCESS)
       {
-         rl[*no_of_listed_files].size = size;
+         rl[no_of_listed_files].size = size;
          *file_size_to_retrieve += size;
          *files_to_retrieve += 1;
          if (fsa->debug > NORMAL_MODE)
@@ -1602,7 +1596,7 @@ check_list(char         *file,
               {
                  check_size = NO;
               }
-              rl[*no_of_listed_files].size = -1;
+              rl[no_of_listed_files].size = -1;
               if (fsa->debug > NORMAL_MODE)
               {
                  trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
@@ -1619,41 +1613,41 @@ check_list(char         *file,
                  (void)ftp_quit();
                  exit(DATE_ERROR);
               }
-              rl[*no_of_listed_files].size = -1;
+              rl[no_of_listed_files].size = -1;
            }
    }
    else
    {
-      rl[*no_of_listed_files].size = -1;
+      rl[no_of_listed_files].size = -1;
    }
-   rl[*no_of_listed_files].prev_size = 0;
+   rl[no_of_listed_files].prev_size = 0;
 
-   if (rl[*no_of_listed_files].got_date == NO)
+   if (rl[no_of_listed_files].got_date == NO)
    {
       *file_mtime = -1;
    }
    else
    {
-      *file_mtime = rl[*no_of_listed_files].file_mtime;
+      *file_mtime = rl[no_of_listed_files].file_mtime;
    }
    if ((fra[db.fra_pos].ignore_size == -1) ||
        ((fra[db.fra_pos].gt_lt_sign & ISIZE_EQUAL) &&
-        (fra[db.fra_pos].ignore_size == rl[*no_of_listed_files].size)) ||
+        (fra[db.fra_pos].ignore_size == rl[no_of_listed_files].size)) ||
        ((fra[db.fra_pos].gt_lt_sign & ISIZE_LESS_THEN) &&
-        (fra[db.fra_pos].ignore_size < rl[*no_of_listed_files].size)) ||
+        (fra[db.fra_pos].ignore_size < rl[no_of_listed_files].size)) ||
        ((fra[db.fra_pos].gt_lt_sign & ISIZE_GREATER_THEN) &&
-        (fra[db.fra_pos].ignore_size > rl[*no_of_listed_files].size)))
+        (fra[db.fra_pos].ignore_size > rl[no_of_listed_files].size)))
    {
-      if ((rl[*no_of_listed_files].got_date == NO) ||
+      if ((rl[no_of_listed_files].got_date == NO) ||
           (fra[db.fra_pos].ignore_file_time == 0))
       {
-         (*no_of_listed_files)++;
+         no_of_listed_files++;
       }
       else
       {
          time_t diff_time;
 
-         diff_time = current_time - rl[*no_of_listed_files].file_mtime;
+         diff_time = current_time - rl[no_of_listed_files].file_mtime;
          if (((fra[db.fra_pos].gt_lt_sign & IFTIME_EQUAL) &&
               (fra[db.fra_pos].ignore_file_time == diff_time)) ||
              ((fra[db.fra_pos].gt_lt_sign & IFTIME_LESS_THEN) &&
@@ -1661,13 +1655,13 @@ check_list(char         *file,
              ((fra[db.fra_pos].gt_lt_sign & IFTIME_GREATER_THEN) &&
               (fra[db.fra_pos].ignore_file_time > diff_time)))
          {
-            (*no_of_listed_files)++;
+            no_of_listed_files++;
          }
          else
          {
-            if (rl[*no_of_listed_files].size > 0)
+            if (rl[no_of_listed_files].size > 0)
             {
-               *file_size_to_retrieve -= rl[*no_of_listed_files].size;
+               *file_size_to_retrieve -= rl[no_of_listed_files].size;
             }
             *files_to_retrieve -= 1;
             return(1);
@@ -1683,18 +1677,19 @@ check_list(char         *file,
           (*file_size_to_retrieve < fra[db.fra_pos].max_copied_file_size))
 #endif
       {
-         rl[(*no_of_listed_files) - 1].assigned = (unsigned char)db.job_no + 1;
+         rl[no_of_listed_files - 1].assigned = (unsigned char)db.job_no + 1;
       }
       else
       {
-         rl[(*no_of_listed_files) - 1].assigned = 0;
-         if (rl[(*no_of_listed_files) - 1].size > 0)
+         rl[no_of_listed_files - 1].assigned = 0;
+         if (rl[no_of_listed_files - 1].size > 0)
          {
-            *file_size_to_retrieve -= rl[(*no_of_listed_files) - 1].size;
+            *file_size_to_retrieve -= rl[no_of_listed_files - 1].size;
          }
          *files_to_retrieve -= 1;
          *more_files_in_list = YES;
       }
+      *(int *)((char *)rl - AFD_WORD_OFFSET) = no_of_listed_files;
 #ifdef DEBUG_ASSIGNMENT
       trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
 # if SIZEOF_OFF_T == 4
@@ -1709,9 +1704,9 @@ check_list(char         *file,
    }
    else
    {
-      if (rl[*no_of_listed_files].size > 0)
+      if (rl[no_of_listed_files].size > 0)
       {
-         *file_size_to_retrieve -= rl[*no_of_listed_files].size;
+         *file_size_to_retrieve -= rl[no_of_listed_files].size;
       }
       *files_to_retrieve -= 1;
       return(1);

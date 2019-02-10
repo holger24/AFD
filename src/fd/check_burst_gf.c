@@ -64,7 +64,7 @@ DESCR__E_M3
 /* External global variables. */
 extern int                        no_of_dirs,
                                   no_of_hosts,
-                                  *no_of_listed_files,
+                                  no_of_listed_files,
                                   *p_no_of_hosts,
                                   prev_no_of_files_done,
                                   rl_fd;
@@ -515,7 +515,7 @@ check_burst_gf(unsigned int *values_changed)
             {
                int i;
 
-               for (i = 0; i < *no_of_listed_files; i++)
+               for (i = 0; i < no_of_listed_files; i++)
                {
                   if (rl[i].assigned == ((unsigned char)db.job_no + 1))
                   {

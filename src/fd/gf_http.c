@@ -86,7 +86,7 @@ int                        event_log_fd = STDERR_FILENO,
 #endif
                            no_of_dirs = 0,
                            no_of_hosts = 0,
-                           *no_of_listed_files,
+                           no_of_listed_files,
                            *p_no_of_hosts = NULL,
                            prev_no_of_files_done = 0,
                            rl_fd = -1,
@@ -522,7 +522,7 @@ main(int argc, char *argv[])
             }
 
             /* Retrieve all files. */
-            for (i = 0; i < *no_of_listed_files; i++)
+            for (i = 0; i < no_of_listed_files; i++)
             {
                if ((rl[i].retrieved == NO) &&
                    (rl[i].assigned == ((unsigned char)db.job_no + 1)))
@@ -1616,7 +1616,7 @@ main(int argc, char *argv[])
                                (struct job *)&db);
                   exit(TRANSFER_SUCCESS);
                }
-            } /* for (i = 0; i < *no_of_listed_files; i++) */
+            } /* for (i = 0; i < no_of_listed_files; i++) */
 
             diff_no_of_files_done = fsa->job_status[(int)db.job_no].no_of_files_done -
                                     prev_no_of_files_done;
@@ -1889,7 +1889,7 @@ gf_http_exit(void)
       {
          int i;
 
-         for (i = 0; i < *no_of_listed_files; i++)
+         for (i = 0; i < no_of_listed_files; i++)
          {
             if (rl[i].assigned == ((unsigned char)db.job_no + 1))
             {

@@ -45,7 +45,7 @@ DESCR__E_M3
 #include "fddefs.h"
 
 /* Global variables. */
-int                               *no_of_listed_files,
+int                               no_of_listed_files,
                                   rl_fd = -1;
 time_t                            *dir_mtime;
 struct retrieve_list              *rl = NULL;
@@ -67,7 +67,7 @@ init_ls_data(void)
       if (attach_ls_data(retrieve_list[i], fra[retrieve_list[i]].fsa_pos,
                          DISTRIBUTED_HELPER_JOB | OLD_ERROR_JOB, NO) == SUCCESS)
       {
-         for (j = 0; j < *no_of_listed_files; j++)
+         for (j = 0; j < no_of_listed_files; j++)
          {
             rl[j].assigned = 0;
          }

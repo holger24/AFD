@@ -112,7 +112,7 @@ int                        amg_flag = NO,
                            no_of_dirs = 0,
                            no_of_hosts,    /* This variable is not used */
                                            /* in this module.           */
-                           *no_of_listed_files,
+                           no_of_listed_files,
                            *p_no_of_hosts = NULL,
                            fra_fd = -1,
                            fra_id,

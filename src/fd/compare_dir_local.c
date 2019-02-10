@@ -62,7 +62,7 @@ DESCR__E_M3
 extern int                        fra_fd,
                                   fra_id,
                                   no_of_dirs,
-                                  *no_of_listed_files,
+                                  no_of_listed_files,
                                   rl_fd;
 #ifdef _DELETE_LOG
 extern struct delete_log          dl;
@@ -208,7 +208,7 @@ compare_dir_local(void)
             if (S_ISREG(stat_buf.st_mode))
             {
                gotcha = NO;
-               for (i = 0; i < *no_of_listed_files; i++)
+               for (i = 0; i < no_of_listed_files; i++)
                {
                   if (CHECK_STRCMP(p_dir->d_name, rl[i].file_name) == 0)
                   {

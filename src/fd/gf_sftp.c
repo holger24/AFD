@@ -55,6 +55,7 @@ DESCR__E_M1
 #include <string.h>                    /* strcpy(), strcat(), strcmp(),  */
                                        /* strerror()                     */
 #include <stdlib.h>                    /* malloc(), free(), abort()      */
+#include <time.h>                      /* strftime()                     */
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifdef _OUTPUT_LOG
@@ -84,7 +85,7 @@ int                        event_log_fd = STDERR_FILENO,
 #endif
                            no_of_dirs = 0,
                            no_of_hosts = 0,
-                           *no_of_listed_files,
+                           no_of_listed_files,
                            *p_no_of_hosts = NULL,
                            prev_no_of_files_done = 0,
                            rl_fd = -1,
@@ -474,14 +475,13 @@ main(int argc, char *argv[])
             new_dir_mtime = rdir_stat_buf.st_mtime;
             if (fra[db.fra_pos].dir_mtime == new_dir_mtime)
             {
-               trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
-#if SIZEOF_TIME_T == 4
-                         "0 files 0 bytes found for retrieving. Directory time (%ld) unchanged.",
-#else
-                         "0 files 0 bytes found for retrieving. Directory time (%lld) unchanged.",
-#endif
-                         (pri_time_t)new_dir_mtime);
+               char time_str[25];
 
+               (void)strftime(time_str, 25, "%c", localtime(&new_dir_mtime));
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "0 files 0 bytes found for retrieving. Directory time (%s) unchanged in %s.",
+                         time_str,
+                         (db.target_dir[0] == '\0') ? "home dir" : db.target_dir);
                check_reset_errors();
 
 #ifdef _WITH_BURST_2
@@ -603,7 +603,7 @@ main(int argc, char *argv[])
             }
 
             /* Retrieve all files. */
-            for (i = 0; i < *no_of_listed_files; i++)
+            for (i = 0; i < no_of_listed_files; i++)
             {
                if ((rl[i].retrieved == NO) &&
                    (rl[i].assigned == ((unsigned char)db.job_no + 1)))
@@ -1402,7 +1402,7 @@ main(int argc, char *argv[])
                      }
                   }
                } /* if (rl[i].retrieved == NO) */
-            } /* for (i = 0; i < *no_of_listed_files; i++) */
+            } /* for (i = 0; i < no_of_listed_files; i++) */
 
             diff_no_of_files_done = fsa->job_status[(int)db.job_no].no_of_files_done -
                                     prev_no_of_files_done;
@@ -1848,7 +1848,7 @@ gf_sftp_exit(void)
       {
          int i;
 
-         for (i = 0; i < *no_of_listed_files; i++)
+         for (i = 0; i < no_of_listed_files; i++)
          {
             if (rl[i].assigned == ((unsigned char)db.job_no + 1))
             {
