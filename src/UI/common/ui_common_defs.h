@@ -1,6 +1,6 @@
 /*
  *  ui_common_defs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,7 +49,11 @@
 #define ZOMBIE_CHECK_INTERVAL            2000 /* 2 seconds */
 #define MAX_VIEW_DATA_WINDOWS            4
 #define ADDITIONAL_INFO_LENGTH           50
-#define MAX_INFO_STRING_LENGTH           65
+#if MAX_REAL_HOSTNAME_LENGTH > 65
+# define MAX_INFO_STRING_LENGTH          MAX_REAL_HOSTNAME_LENGTH + 1
+#else
+# define MAX_INFO_STRING_LENGTH          65
+#endif
 #define MAX_WNINDOW_TITLE_LENGTH         80
 #define MULTI_SELECT_THRESHOLD           6
 
