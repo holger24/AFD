@@ -1,6 +1,6 @@
 /*
  *  print_alda_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,8 @@ DESCR__S_M3
  **   09.03.2010 H.Kiehl Handle case when user wants to print a % sign.
  **   14.09.2017 H.Kiehl Added format parameter %A to print information
  **                      about remote AFD.
+ **   11.02.2019 H.Kiehl Function pri_string() can now print only certain
+ **                      characters from the given string.
  **
  */
 DESCR__E_M3
@@ -93,7 +95,7 @@ static int               pri_duration(char *, int, int, int, char, double, int),
                                             unsigned char *, char, int),
 #endif
                          pri_size(char *, int, int, char, char, off_t, int),
-                         pri_string(int, int, const char *, int, int),
+                         pri_string(int, char *, int, const char *, int, int),
                          pri_time(char *, int, int, char, char, time_t,
                                   struct tm *, int);
 
@@ -106,6 +108,7 @@ print_alda_data(void)
         i = 0,
         j;
    char format_orientation[MAX_FORMAT_ORIENTATION_LENGTH],
+        *p_char_selection,
         *p_start,
         *ptr = format_str,
         str_number[MAX_INT_LENGTH + 1];
@@ -149,6 +152,29 @@ print_alda_data(void)
             else
             {
                right_side = YES;
+            }
+            if (*ptr == '[')
+            {
+               ptr++;
+               p_char_selection = ptr;
+               while ((*ptr != ']') &&
+                      ((isdigit((int)(*ptr))) ||
+                       (*ptr == ',') || (*ptr == '-') || (*ptr == '$')))
+               {
+                  ptr++;
+               }
+               if (*ptr != ']')
+               {
+                  p_char_selection = NULL;
+               }
+               else
+               {
+                  ptr++;
+               }
+            }
+            else
+            {
+               p_char_selection = NULL;
             }
             j = 0;
             while ((isdigit((int)(*(ptr + j)))) && (j < (1 + MAX_INT_LENGTH)))
@@ -224,8 +250,9 @@ print_alda_data(void)
                   switch (*(ptr + 1))
                   {
                      case 'T' : /* Input time. */
-                        if ((j = pri_time(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2), ilog.input_time,
+                        if ((j = pri_time(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
+                                          ilog.input_time,
                                           &ilog.bd_input_time, i)) == -1)
                         {
                            j = ptr + 2 - p_start;
@@ -236,14 +263,15 @@ print_alda_data(void)
                         break;
 
                      case 'F' : /* Input file name. */
-                        i += pri_string(right_side, max_length,
-                                        ilog.filename, ilog.filename_length, i);
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, ilog.filename,
+                                        ilog.filename_length, i);
                         ptr++;
                         break;
 
                      case 'S' : /* Input file size. */
-                        if ((j = pri_size(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2),
+                        if ((j = pri_size(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
                                           ilog.file_size, i)) == -1)
                         {
                            j = ptr + 2 - p_start;
@@ -267,7 +295,8 @@ print_alda_data(void)
                            get_full_source(ilog.dir_id, ilog.full_source,
                                            &ilog.full_source_length);
                         }
-                        i += pri_string(right_side, max_length, ilog.full_source,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, ilog.full_source,
                                         ilog.full_source_length, i);
 #  else
                         if (ulog.full_source[0] == '\0')
@@ -275,7 +304,8 @@ print_alda_data(void)
                            get_full_source(ulog.dir_id, ulog.full_source,
                                            &ulog.full_source_length);
                         }
-                        i += pri_string(right_side, max_length, ilog.full_source,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, ilog.full_source,
                                         ulog.full_source_length, i);
 #  endif
                         ptr++;
@@ -302,8 +332,9 @@ print_alda_data(void)
                   switch (*(ptr + 1))
                   {
                      case 'T' : /* Input time. */
-                        if ((j = pri_time(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2), ulog.input_time,
+                        if ((j = pri_time(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
+                                          ulog.input_time,
                                           &ulog.bd_input_time, i)) == -1)
                         {
                            j = ptr + 2 - p_start;
@@ -314,8 +345,8 @@ print_alda_data(void)
                         break;
 
                      case 't' : /* Distribution time. */
-                        if ((j = pri_time(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2),
+                        if ((j = pri_time(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
                                           ulog.distribution_time,
                                           &ulog.bd_distribution_time, i)) == -1)
                         {
@@ -327,14 +358,15 @@ print_alda_data(void)
                         break;
 
                      case 'F' : /* Input file name. */
-                        i += pri_string(right_side, max_length,
-                                        ulog.filename, ulog.filename_length, i);
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, ulog.filename,
+                                        ulog.filename_length, i);
                         ptr++;
                         break;
 
                      case 'S' : /* Input file size. */
-                        if ((j = pri_size(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2),
+                        if ((j = pri_size(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
                                           ulog.file_size, i)) == -1)
                         {
                            j = ptr + 2 - p_start;
@@ -398,8 +430,9 @@ print_alda_data(void)
                   switch (*(ptr + 1))
                   {
                      case 't' : /* Time when production starts. */
-                        if ((j = pri_time(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2), plog.input_time,
+                        if ((j = pri_time(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
+                                          plog.input_time,
                                           &plog.bd_input_time, i)) == -1)
                         {
                            j = ptr + 2 - p_start;
@@ -410,8 +443,9 @@ print_alda_data(void)
                         break;
 
                      case 'T' : /* Time when production finished. */
-                        if ((j = pri_time(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2), plog.output_time,
+                        if ((j = pri_time(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
+                                          plog.output_time,
                                           &plog.bd_output_time, i)) == -1)
                         {
                            j = ptr + 2 - p_start;
@@ -464,8 +498,9 @@ print_alda_data(void)
                         break;
 
                      case 'Z' : /* Job creation time. */
-                        if ((j = pri_time(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2), plog.input_time,
+                        if ((j = pri_time(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
+                                          plog.input_time,
                                           &plog.bd_input_time, i)) == -1)
                         {
                            j = ptr + 2 - p_start;
@@ -488,21 +523,22 @@ print_alda_data(void)
                         break;
 
                      case 'f' : /* Input file name. */
-                        i += pri_string(right_side, max_length,
-                                        plog.original_filename,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, plog.original_filename,
                                         plog.original_filename_length, i);
                         ptr++;
                         break;
 
                      case 'F' : /* Produced file name. */
-                        i += pri_string(right_side, max_length, plog.new_filename,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, plog.new_filename,
                                         plog.new_filename_length, i);
                         ptr++;
                         break;
 
                      case 's' : /* Original file size. */
-                        if ((j = pri_size(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2),
+                        if ((j = pri_size(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
                                           plog.original_file_size, i)) == -1)
                         {
                            j = ptr + 2 - p_start;
@@ -513,8 +549,8 @@ print_alda_data(void)
                         break;
 
                      case 'S' : /* Produced file size. */
-                        if ((j = pri_size(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2),
+                        if ((j = pri_size(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
                                           plog.new_file_size, i)) == -1)
                         {
                            j = ptr + 2 - p_start;
@@ -525,7 +561,8 @@ print_alda_data(void)
                         break;
 
                      case 'C' : /* Command execueted. */
-                        i += pri_string(right_side, max_length, plog.what_done,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, plog.what_done,
                                         plog.what_done_length, i);
                         ptr++;
                         break;
@@ -550,8 +587,8 @@ print_alda_data(void)
                   switch (*(ptr + 1))
                   {
                      case 't' : /* Time when sending starts. */
-                        if ((j = pri_time(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2),
+                        if ((j = pri_time(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
                                           olog.send_start_time,
                                           &olog.bd_send_start_time, i)) == -1)
                         {
@@ -563,8 +600,9 @@ print_alda_data(void)
                         break;
 
                      case 'T' : /* Time when file is transmitted. */
-                        if ((j = pri_time(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2), olog.output_time,
+                        if ((j = pri_time(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
+                                          olog.output_time,
                                           &olog.bd_output_time, i)) == -1)
                         {
                            j = ptr + 2 - p_start;
@@ -587,20 +625,22 @@ print_alda_data(void)
                         break;
 
                      case 'f' : /* Local output file name. */
-                        i += pri_string(right_side, max_length,
-                                        olog.local_filename,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, olog.local_filename,
                                         olog.local_filename_length, i);
                         ptr++;
                         break;
 
                      case 'F' : /* Remote output file name/directory. */
-                        i += pri_string(right_side, max_length, olog.remote_name,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, olog.remote_name,
                                         olog.remote_name_length, i);
                         ptr++;
                         break;
 
                      case 'M' : /* Mail Queue ID. */
-                        i += pri_string(right_side, max_length, olog.mail_id,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, olog.mail_id,
                                         olog.mail_id_length, i);
                         ptr++;
                         break;
@@ -608,14 +648,14 @@ print_alda_data(void)
                      case 'E' : /* Final output file name/directory. */
                         if (olog.remote_name[0] == '\0')
                         {
-                           i += pri_string(right_side, max_length,
-                                           olog.local_filename,
+                           i += pri_string(right_side, p_char_selection,
+                                           max_length, olog.local_filename,
                                            olog.local_filename_length, i);
                         }
                         else
                         {
-                           i += pri_string(right_side, max_length,
-                                           olog.remote_name,
+                           i += pri_string(right_side, p_char_selection,
+                                           max_length, olog.remote_name,
                                            olog.remote_name_length, i);
                         }
                         ptr++;
@@ -624,93 +664,94 @@ print_alda_data(void)
                      case 'P' : /* Protocol used for transmission. */
                         if (olog.output_time == -1)
                         {
-                           i += pri_string(right_side, max_length, "", 0, i);
+                           i += pri_string(right_side, p_char_selection,
+                                           max_length, "", 0, i);
                         }
                         else
                         {
                            switch (olog.protocol)
                            {
                               case ALDA_FTP_FLAG :
-                                 i += pri_string(right_side, max_length,
-                                                 ALDA_FTP_SHEME,
+                                 i += pri_string(right_side, p_char_selection,
+                                                 max_length, ALDA_FTP_SHEME,
                                                  ALDA_FTP_SHEME_LENGTH, i);
                                  break;
 
                               case ALDA_LOC_FLAG :
-                                 i += pri_string(right_side, max_length,
-                                                 ALDA_LOC_SHEME,
+                                 i += pri_string(right_side, p_char_selection,
+                                                 max_length, ALDA_LOC_SHEME,
                                                  ALDA_LOC_SHEME_LENGTH, i);
                                  break;
 
                               case ALDA_EXEC_FLAG :
-                                 i += pri_string(right_side, max_length,
-                                                 ALDA_EXEC_SHEME,
+                                 i += pri_string(right_side, p_char_selection,
+                                                 max_length, ALDA_EXEC_SHEME,
                                                  ALDA_EXEC_SHEME_LENGTH, i);
                                  break;
 
                               case ALDA_SMTP_FLAG :
-                                 i += pri_string(right_side, max_length,
-                                                 ALDA_SMTP_SHEME,
+                                 i += pri_string(right_side, p_char_selection,
+                                                 max_length, ALDA_SMTP_SHEME,
                                                  ALDA_SMTP_SHEME_LENGTH, i);
                                  break;
 
                               case ALDA_DE_MAIL_FLAG :
-                                 i += pri_string(right_side, max_length,
-                                                 ALDA_DEMAIL_SHEME,
+                                 i += pri_string(right_side, p_char_selection,
+                                                 max_length, ALDA_DEMAIL_SHEME,
                                                  ALDA_DEMAIL_SHEME_LENGTH, i);
                                  break;
 
                               case ALDA_SFTP_FLAG :
-                                 i += pri_string(right_side, max_length,
-                                                 ALDA_SFTP_SHEME,
+                                 i += pri_string(right_side, p_char_selection,
+                                                 max_length, ALDA_SFTP_SHEME,
                                                  ALDA_SFTP_SHEME_LENGTH, i);
                                  break;
 
                               case ALDA_SCP_FLAG :
-                                 i += pri_string(right_side, max_length,
-                                                 ALDA_SCP_SHEME,
+                                 i += pri_string(right_side, p_char_selection,
+                                                 max_length, ALDA_SCP_SHEME,
                                                  ALDA_SCP_SHEME_LENGTH, i);
                                  break;
 
                               case ALDA_HTTP_FLAG :
-                                 i += pri_string(right_side, max_length,
-                                                 ALDA_HTTP_SHEME,
+                                 i += pri_string(right_side, p_char_selection,
+                                                 max_length, ALDA_HTTP_SHEME,
                                                  ALDA_HTTP_SHEME_LENGTH, i);
                                  break;
 
                               case ALDA_HTTPS_FLAG :
-                                 i += pri_string(right_side, max_length,
-                                                 ALDA_HTTPS_SHEME,
+                                 i += pri_string(right_side, p_char_selection,
+                                                 max_length, ALDA_HTTPS_SHEME,
                                                  ALDA_HTTPS_SHEME_LENGTH, i);
                                  break;
 
                               case ALDA_FTPS_FLAG :
-                                 i += pri_string(right_side, max_length,
-                                                 ALDA_FTPS_SHEME,
+                                 i += pri_string(right_side, p_char_selection,
+                                                 max_length, ALDA_FTPS_SHEME,
                                                  ALDA_FTPS_SHEME_LENGTH, i);
                                  break;
 
                               case ALDA_WMO_FLAG :
-                                 i += pri_string(right_side, max_length,
-                                                 ALDA_WMO_SHEME,
+                                 i += pri_string(right_side, p_char_selection,
+                                                 max_length, ALDA_WMO_SHEME,
                                                  ALDA_WMO_SHEME_LENGTH, i);
                                  break;
 
                               case ALDA_MAP_FLAG :
-                                 i += pri_string(right_side, max_length,
-                                                 ALDA_MAP_SHEME,
+                                 i += pri_string(right_side, p_char_selection,
+                                                 max_length, ALDA_MAP_SHEME,
                                                  ALDA_MAP_SHEME_LENGTH, i);
                                  break;
 
                               case ALDA_DFAX_FLAG :
-                                 i += pri_string(right_side, max_length,
-                                                 ALDA_DFAX_SHEME,
+                                 i += pri_string(right_side, p_char_selection,
+                                                 max_length, ALDA_DFAX_SHEME,
                                                  ALDA_DFAX_SHEME_LENGTH, i);
                                  break;
 
                               default :
-                                 i += pri_string(right_side, max_length,
-                                                 ALDA_UNKNOWN_SHEME,
+                                 i += pri_string(right_side, p_char_selection,
+                                                 max_length, ALDA_UNKNOWN_SHEME,
                                                  ALDA_UNKNOWN_SHEME_LENGTH, i);
                                  break;
                            }
@@ -725,8 +766,8 @@ print_alda_data(void)
                         break;
 
                      case 'S' : /* Output file size. */
-                        if ((j = pri_size(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2),
+                        if ((j = pri_size(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
                                           olog.file_size, i)) == -1)
                         {
                            j = ptr + 2 - p_start;
@@ -749,14 +790,15 @@ print_alda_data(void)
                         break;
 
                      case 'A' : /* Archive directory. */
-                        i += pri_string(right_side, max_length, olog.archive_dir,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, olog.archive_dir,
                                         olog.archive_dir_length, i);
                         ptr++;
                         break;
 
                      case 'Z' : /* Job creation time. */
-                        if ((j = pri_time(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2),
+                        if ((j = pri_time(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
                                           olog.job_creation_time,
                                           &olog.bd_job_creation_time, i)) == -1)
                         {
@@ -786,13 +828,15 @@ print_alda_data(void)
                                                    olog.current_toggle,
                                                    olog.real_hostname);
                         }
-                        i += pri_string(right_side, max_length, olog.real_hostname,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, olog.real_hostname,
                                         strlen(olog.real_hostname), i);
                         ptr++;
                         break;
 
                      case 'H' : /* Target alias name. */
-                        i += pri_string(right_side, max_length, olog.alias_name,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, olog.alias_name,
                                         olog.alias_name_length, i);
                         ptr++;
                         break;
@@ -806,15 +850,15 @@ print_alda_data(void)
                      case 'O' : /* Output type string. */
                         if (olog.output_type <= MAX_OUTPUT_TYPES)
                         {
-                           i += pri_string(right_side, max_length,
-                                           otstr[olog.output_type],
+                           i += pri_string(right_side, p_char_selection,
+                                           max_length, otstr[olog.output_type],
                                            strlen(otstr[olog.output_type]),
                                            i);
                         }
                         else
                         {
-                           i += pri_string(right_side, max_length,
-                                           otstr[OT_UNKNOWN],
+                           i += pri_string(right_side, p_char_selection,
+                                           max_length, otstr[OT_UNKNOWN],
                                            strlen(otstr[OT_UNKNOWN]),
                                            i);
                         }
@@ -822,8 +866,8 @@ print_alda_data(void)
                         break;
 
                      case 'R' : /* Recipient of job. */
-                        i += pri_string(right_side, max_length,
-                                        olog.recipient,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, olog.recipient,
                                         strlen(olog.recipient), i);
                         ptr++;
                         break;
@@ -842,8 +886,8 @@ print_alda_data(void)
                   switch (*(ptr + 1))
                   {
                      case 't' : /* Job creation time. */
-                        if ((j = pri_time(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2),
+                        if ((j = pri_time(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
                                           dlog.job_creation_time,
                                           &dlog.bd_job_creation_time, i)) == -1)
                         {
@@ -855,8 +899,9 @@ print_alda_data(void)
                         break;
 
                      case 'T' : /* Time when file was deleted. */
-                        if ((j = pri_time(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2), dlog.delete_time,
+                        if ((j = pri_time(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
+                                          dlog.delete_time,
                                           &dlog.bd_delete_time, i)) == -1)
                         {
                            j = ptr + 2 - p_start;
@@ -875,21 +920,23 @@ print_alda_data(void)
                      case 'R' : /* Delete reason string. */
                         if (dlog.delete_time == -1)
                         {
-                           i += pri_string(right_side, max_length, "", 0, i);
+                           i += pri_string(right_side, p_char_selection,
+                                           max_length, "", 0, i);
                         }
                         else
                         {
                            if (dlog.deletion_type <= MAX_DELETE_REASONS)
                            {
-                              i += pri_string(right_side, max_length,
+                              i += pri_string(right_side, p_char_selection,
+                                              max_length,
                                               drstr[dlog.deletion_type],
                                               strlen(drstr[dlog.deletion_type]),
                                               i);
                            }
                            else
                            {
-                              i += pri_string(right_side, max_length,
-                                              UKN_DEL_REASON_STR,
+                              i += pri_string(right_side, p_char_selection,
+                                              max_length, UKN_DEL_REASON_STR,
                                               UKN_DEL_REASON_STR_LENGTH, i);
                            }
                         }
@@ -897,20 +944,22 @@ print_alda_data(void)
                         break;
 
                      case 'W' : /* User/program causing deletion. */
-                        i += pri_string(right_side, max_length, dlog.user_process,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, dlog.user_process,
                                         dlog.user_process_length, i);
                         ptr++;
                         break;
 
                      case 'A' : /* Additional reason. */
-                        i += pri_string(right_side, max_length, dlog.add_reason,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, dlog.add_reason,
                                         dlog.add_reason_length, i);
                         ptr++;
                         break;
 
                      case 'Z' : /* Job creation time. */
-                        if ((j = pri_time(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2),
+                        if ((j = pri_time(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
                                           dlog.job_creation_time,
                                           &dlog.bd_job_creation_time, i)) == -1)
                         {
@@ -934,14 +983,15 @@ print_alda_data(void)
                         break;
 
                      case 'F' : /* File name of deleted file. */
-                        i += pri_string(right_side, max_length, dlog.filename,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, dlog.filename,
                                         dlog.filename_length, i);
                         ptr++;
                         break;
 
                      case 'S' : /* File size of deleted file. */
-                        if ((j = pri_size(format_orientation, fo_pos, max_length,
-                                          base_char, *(ptr + 2),
+                        if ((j = pri_size(format_orientation, fo_pos,
+                                          max_length, base_char, *(ptr + 2),
                                           dlog.file_size, i)) == -1)
                         {
                            j = ptr + 2 - p_start;
@@ -971,7 +1021,8 @@ print_alda_data(void)
 
                            get_full_source(dlog.dir_id, full_source,
                                            &full_source_length);
-                           i += pri_string(right_side, max_length, full_source,
+                           i += pri_string(right_side, p_char_selection,
+                                           max_length, full_source,
                                            full_source_length, i);
                         }
                         ptr++;
@@ -983,7 +1034,8 @@ print_alda_data(void)
                            get_alias_name(dlog.job_id, dlog.alias_name,
                                           &dlog.alias_name_length);
                         }
-                        i += pri_string(right_side, max_length, dlog.alias_name,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, dlog.alias_name,
                                         dlog.alias_name_length, i);
                         ptr++;
                         break;
@@ -1001,20 +1053,22 @@ print_alda_data(void)
                   switch (*(ptr + 1))
                   {
                      case 'h' : /* AFD real hostname/IP. */
-                        i += pri_string(right_side, max_length,
-                                        afd.hostname,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, afd.hostname,
                                         afd.hostname_length, i);
                         ptr++;
                         break;
 
                      case 'H' : /* AFD alias name. */
-                        i += pri_string(right_side, max_length, afd.aliasname,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, afd.aliasname,
                                         afd.aliasname_length, i);
                         ptr++;
                         break;
 
                      case 'V' : /* AFD Version. */
-                        i += pri_string(right_side, max_length, afd.version,
+                        i += pri_string(right_side, p_char_selection,
+                                        max_length, afd.version,
                                         afd.version_length, i);
                         ptr++;
                         break;
@@ -1102,6 +1156,7 @@ pri_string(char       *format_orientation,
 /*+++++++++++++++++++++++++++++++ pri_string() ++++++++++++++++++++++++++*/
 static int
 pri_string(int        right_side,
+           char       *p_char_selection,
            int        max_length,
            const char *string,
            int        str_length,
@@ -1109,8 +1164,106 @@ pri_string(int        right_side,
 {
    if (max_length == 0)
    {
-      (void)memcpy(&output_line[pos], string, str_length);
-      output_line[pos + str_length] = '\0';
+      if (p_char_selection == NULL)
+      {
+         (void)memcpy(&output_line[pos], string, str_length);
+         output_line[pos + str_length] = '\0';
+      }
+      else
+      {
+         int  bytes_written = 0,
+              i,
+              number1,
+              number2;
+         char *ptr = p_char_selection,
+              str_number[MAX_INT_LENGTH];
+
+         do
+         {
+            if (*ptr == '$')
+            {
+               number1 = str_length - 1;
+               ptr++;
+            }
+            else
+            {
+               i = 0;
+               while ((isdigit((int)(*ptr))) && (i < MAX_INT_LENGTH))
+               {
+                  str_number[i] = *ptr;
+                  ptr++; i++;
+               }
+               if (i >= MAX_INT_LENGTH)
+               {
+                  while (isdigit((int)(*ptr)))
+                  {
+                     ptr++;
+                  }
+               }
+               str_number[i] = '\0';
+               number1 = atoi(str_number);
+               if (number1 > str_length)
+               {
+                  number1 = str_length - 1;
+               }
+            }
+            if ((*ptr == ',') || (*ptr == ']'))
+            {
+               output_line[pos] = string[number1];
+               pos++;
+               bytes_written++;
+               if (*ptr == ',')
+               {
+                  ptr++;
+               }
+            }
+            else if (*ptr == '-')
+                 {
+                    ptr++;
+                    if (*ptr == '$')
+                    {
+                       number2 = str_length - 1;
+                       ptr++;
+                    }
+                    else
+                    {
+                       i = 0;
+                       while ((isdigit((int)(*ptr))) && (i < MAX_INT_LENGTH))
+                       {
+                          str_number[i] = *ptr;
+                          ptr++; i++;
+                       }
+                       if (i >= MAX_INT_LENGTH)
+                       {
+                          while (isdigit((int)(*ptr)))
+                          {
+                             ptr++;
+                          }
+                       }
+                       str_number[i] = '\0';
+                       number2 = atoi(str_number);
+                       if (number2 > str_length)
+                       {
+                          number2 = str_length - 1;
+                       }
+                    }
+                    (void)memcpy(&output_line[pos], &string[number1],
+                                 (number2 - number1) + 1);
+                    pos += ((number2 - number1) + 1);
+                    bytes_written += ((number2 - number1) + 1);
+                    if (*ptr == ',')
+                    {
+                       ptr++;
+                    }
+                 }
+                 else /* Ignore character. */
+                 {
+                    ptr++;
+                 }
+         } while (*ptr != ']');
+         output_line[pos] = '\0';
+         str_length = bytes_written;
+      }
 
       return(str_length);
    }

@@ -1,6 +1,6 @@
 /*
  *  eval_input_alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -141,7 +141,7 @@ DESCR__S_M3
  **              %[Y]AV                 - AFD version
  **
  **               [X] -> [-][0]#[.#]] or [-][0]#[d|o|x]
- **               [Y] -> [-]#
+ **               [Y] -> [-]# or [<individual character positions>]
  **               [Z] -> [-][0]#[d|o|x]
  **
  **            (used second chars: AbBcCDeEfFhHIJjLNnpOoPrRsStTuUWYZ)
@@ -2354,7 +2354,7 @@ usage(char *progname)
    (void)fprintf(stderr, "              %%[Y]AH                 - AFD alias name\n");
    (void)fprintf(stderr, "              %%[Y]AV                 - AFD version\n");
    (void)fprintf(stderr, "\n               [X] -> [-][0]#[.#]] or [-][0]#[d|o|x]\n");
-   (void)fprintf(stderr, "               [Y] -> [-]#\n");
+   (void)fprintf(stderr, "               [Y] -> [-]# or [<individual character positions>]\n");
    (void)fprintf(stderr, "               [Z] -> [-][0]#[d|o|x]\n");
    (void)fprintf(stderr, "\n            Time character (t,T):\n");
    (void)fprintf(stderr, "                 a - Abbreviated weekday name: Tue\n");
