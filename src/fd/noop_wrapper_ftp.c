@@ -1,6 +1,6 @@
 /*
  *  noop_wrapper_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ DESCR__E_M3
 #include "ftpdefs.h"
 
 /* External global variabal. */
+extern int  exitflag;
 extern char msg_str[];
 
 
@@ -58,11 +59,28 @@ noop_wrapper(void)
    ret = ftp_noop();
    if (ret != SUCCESS)
    {
-      trans_log(WARN_SIGN, __FILE__, __LINE__, NULL,
-                (ret == INCORRECT) ? NULL : msg_str,
-                "Failed to send NOOP command.");
-      (void)ftp_quit();
-      exit(NOOP_ERROR);
+      if ((ret >= 400) &&
+          (lposi(&msg_str[3], "closing control connection", 26) != NULL))
+      {
+         /*
+          * Since the server told us he has closed the control connection
+          * there is no need for us to send a quit. And lets return
+          * TRANSFER_SUCCESS because the server does not want us to
+          * remain connected any longer. So this is not an error.
+          */
+         trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                   "Failed to send NOOP command.");
+         exitflag = 0;
+         exit(TRANSFER_SUCCESS);
+      }
+      else
+      {
+         trans_log(WARN_SIGN, __FILE__, __LINE__, NULL,
+                   (ret == INCORRECT) ? NULL : msg_str,
+                   "Failed to send NOOP command.");
+         (void)ftp_quit();
+         exit(NOOP_ERROR);
+      }
    }
    
    return(ret);
