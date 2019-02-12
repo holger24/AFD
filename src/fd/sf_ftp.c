@@ -236,7 +236,7 @@ main(int argc, char *argv[])
                     now,
                     *p_file_mtime_buffer;
 #ifdef _WITH_BURST_2
-   int              cb2_ret,
+   int              cb2_ret = NO,
                     disconnect = NO,
                     reconnected = NO;
    unsigned int     values_changed = 0;
@@ -1743,11 +1743,24 @@ main(int argc, char *argv[])
                }
                else
                {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                            "Failed to open remote file `%s' (%d).",
-                            initial_filename, status);
-                  (void)ftp_quit();
-                  exit(eval_timeout(OPEN_REMOTE_ERROR));
+                  if ((-status >= 400) &&
+                      (lposi(&msg_str[3], "Idle timeout", 12) != NULL) &&
+                      (lposi(&msg_str[3], "closing control connection", 26) != NULL))
+                  {
+                     trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                               "Failed to open remote file `%s' (%d).",
+                               initial_filename, status);
+                     exitflag = 0;
+                     exit(TRANSFER_SUCCESS);
+                  }
+                  else
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                               "Failed to open remote file `%s' (%d).",
+                               initial_filename, status);
+                     (void)ftp_quit();
+                     exit(eval_timeout(OPEN_REMOTE_ERROR));
+                  }
                }
             }
             else
