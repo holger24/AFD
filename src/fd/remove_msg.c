@@ -1,6 +1,6 @@
 /*
  *  remove_msg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -66,12 +66,9 @@ remove_msg(int qb_pos)
       /* Dequeue in FRA. */
       fra[qb[qb_pos].pos].queued -= 1;
 
-      if (fra[qb[qb_pos].pos].queued < 1)
+      if (fra[qb[qb_pos].pos].queued < 0)
       {
-         if (fra[qb[qb_pos].pos].queued < 0)
-         {
-            fra[qb[qb_pos].pos].queued = 0;
-         }
+         fra[qb[qb_pos].pos].queued = 0;
       }
 
       if (fra[qb[qb_pos].pos].error_counter > 0)
