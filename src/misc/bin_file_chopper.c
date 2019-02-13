@@ -40,7 +40,10 @@ DESCR__S_M3
  **                          clock_t      clktck,
  **                          char         *full_option,
  **                          char         *p_file_name)
- **   off_t bin_file_convert(char *src_ptr, off_t total_length, int to_fd)
+ **   off_t bin_file_convert(char         *src_ptr,
+ **                          off_t        total_length,
+ **                          int          to_fd,
+ **                          unsigned int job_id)
  **
  ** DESCRIPTION
  **   The function bin_file_chopper reads a binary WMO bulletin file,
@@ -75,6 +78,8 @@ DESCR__S_M3
  **                      we really nead.
  **   21.01.2009 H.Kiehl Added support for GRIB edition 2.
  **   20.01.2010 H.Kiehl Added support for DWD data type.
+ **   13.02.2019 H.Kiehl Show job ID in bin_file_convert() if something
+ **                      goes wrong.
  **
  */
 DESCR__E_M3
@@ -795,7 +800,10 @@ bin_file_chopper(char         *bin_file,
 
 /*########################## bin_file_convert() #########################*/
 off_t
-bin_file_convert(char *src_ptr, off_t total_length, int to_fd)
+bin_file_convert(char         *src_ptr,
+                 off_t        total_length,
+                 int          to_fd,
+                 unsigned int job_id)
 {
    off_t bytes_written = 0;
    char  *buffer,
@@ -830,19 +838,20 @@ bin_file_convert(char *src_ptr, off_t total_length, int to_fd)
          {
             receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
 #if SIZEOF_OFF_T == 4
-                        "Given length %ld is larger then the rest of the file %ld.",
+                        "Given length %ld is larger then the rest of the file %ld. #%x",
 #else
-                        "Given length %lld is larger then the rest of the file %lld.",
+                        "Given length %lld is larger then the rest of the file %lld. #%x",
 #endif
-                        (pri_off_t)data_length, (pri_off_t)total_length);
+                        (pri_off_t)data_length, (pri_off_t)total_length,
+                        job_id);
             data_length = total_length;
          }
          if (data_length > 99999991)
          {
             (void)strcpy(length_indicator, "9999999900\01\015\015\012");
             receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                        "Data length (%u) greater then what is possible in WMO header size, inserting maximum possible 99999999.",
-                        data_length + 4 + 4);
+                        "Data length (%u) greater then what is possible in WMO header size, inserting maximum possible 99999999. #%x",
+                        data_length + 4 + 4, job_id);
          }
          else
          {
@@ -913,7 +922,7 @@ bin_file_convert(char *src_ptr, off_t total_length, int to_fd)
                   continue;
 #else
                   receive_log(ERROR_SIGN, __FILE__, __LINE__, 0L,
-                              _("Failed to extract data."));
+                              _("Failed to extract data. #%x"), job_id);
                   return(INCORRECT);
 #endif
                }
@@ -946,8 +955,9 @@ bin_file_convert(char *src_ptr, off_t total_length, int to_fd)
                        if (first_time == YES)
                        {
                           receive_log(DEBUG_SIGN, __FILE__, __LINE__, 0L,
-                                      _("Hey! Whats this? Message length (%llu) > then total length (%u)"),
-                                      message_length, total_length + id_length[i]);
+                                      _("Hey! Whats this? Message length (%llu) > then total length (%u). #%x"),
+                                      message_length,
+                                      total_length + id_length[i], job_id);
                           first_time = NO;
                        }
                        buffer = ptr;
@@ -962,7 +972,8 @@ bin_file_convert(char *src_ptr, off_t total_length, int to_fd)
                        if (memcmp(tmp_ptr, end_id[i], end_id_length[i]) != 0)
                        {
                           receive_log(DEBUG_SIGN, __FILE__, __LINE__, 0L,
-                                      _("Hey! Whats this? End locator not where it should be!"));
+                                      _("Hey! Whats this? End locator not where it should be! #%x"),
+                                      job_id);
                           buffer = ptr;
                           continue;
                        }
@@ -985,8 +996,9 @@ bin_file_convert(char *src_ptr, off_t total_length, int to_fd)
                        if (first_time == YES)
                        {
                           receive_log(DEBUG_SIGN, __FILE__, __LINE__, 0L,
-                                      _("Hey! Whats this? Message length (%u) > then total length (%u)"),
-                                      message_length, total_length + id_length[i]);
+                                      _("Hey! Whats this? Message length (%u) > then total length (%u). #%x"),
+                                      message_length,
+                                      total_length + id_length[i], job_id);
                           first_time = NO;
                        }
                        buffer = ptr;
@@ -1001,7 +1013,8 @@ bin_file_convert(char *src_ptr, off_t total_length, int to_fd)
                        if (memcmp(tmp_ptr, end_id[i], end_id_length[i]) != 0)
                        {
                           receive_log(DEBUG_SIGN, __FILE__, __LINE__, 0L,
-                                      _("Hey! Whats this? End locator not where it should be!"));
+                                      _("Hey! Whats this? End locator not where it should be! #%x"),
+                                      job_id);
                           buffer = ptr;
                           continue;
                        }
@@ -1024,22 +1037,22 @@ bin_file_convert(char *src_ptr, off_t total_length, int to_fd)
                (void)strcpy(length_indicator, "99999999");
                receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
 #if SIZEOF_OFF_T == 4
-                           "Data length (%ld) greater then what is possible in WMO header size, inserting maximum possible 99999999.",
+                           "Data length (%ld) greater then what is possible in WMO header size, inserting maximum possible 99999999. #%x",
 #else
-                           "Data length (%lld) greater then what is possible in WMO header size, inserting maximum possible 99999999.",
+                           "Data length (%lld) greater then what is possible in WMO header size, inserting maximum possible 99999999. #%x",
 #endif
-                           (pri_off_t)(data_length + 8));
+                           (pri_off_t)(data_length + 8), job_id);
             }
             else if ((data_length + 8) < 0)
                  {
                     (void)strcpy(length_indicator, "00000000");
                     receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
 #if SIZEOF_OFF_T == 4
-                                "Data length (%ld) is less then 0, inserting 00000000.",
+                                "Data length (%ld) is less then 0, inserting 00000000. #%x",
 #else
-                                "Data length (%lld) is less then 0, inserting 00000000.",
+                                "Data length (%lld) is less then 0, inserting 00000000. #%x",
 #endif
-                                (pri_off_t)(data_length + 8));
+                                (pri_off_t)(data_length + 8), job_id);
                  }
                  else
                  {
@@ -1090,8 +1103,8 @@ bin_file_convert(char *src_ptr, off_t total_length, int to_fd)
                if ((data_length - total_length) > 5)
                {
                   receive_log(DEBUG_SIGN, __FILE__, __LINE__, 0L,
-                              _("Hmmm. data_length (%d) > total_length (%u)?"),
-                              data_length, total_length);
+                              _("Hmmm. data_length (%d) > total_length (%u)? #%x"),
+                              data_length, total_length, job_id);
                }
                total_length = 0;
             }

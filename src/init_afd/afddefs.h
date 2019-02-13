@@ -4137,7 +4137,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     write_typesize_data(void),
                     xor_decrypt(unsigned char *, int, unsigned char *),
                     xor_encrypt(unsigned char *, int, unsigned char *);
-extern off_t        bin_file_convert(char *, off_t, int),
+extern off_t        bin_file_convert(char *, off_t, int, unsigned int),
                     dwdtiff2gts(char *, char *),
                     gts2tiff(char *, char *),
                     iso8859_2ascii(char *, char *, off_t),
