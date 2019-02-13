@@ -144,6 +144,9 @@ main(int argc, char *argv[])
                   int  gotcha;
                   char *ptr = buffer;
 
+                  system_log(DEBUG_SIGN, NULL, 0,
+                             "ALDAD read %s", afd_config_file);
+
                   /*
                    * Read all alda daemons entries.
                    */
@@ -241,6 +244,17 @@ main(int argc, char *argv[])
                   }
 
                   free(buffer);
+
+                  if (no_of_process > 0)
+                  {
+                     system_log(INFO_SIGN, NULL, 0,
+                                "ALDAD %d process running.", no_of_process);
+                  }
+                  else
+                  {
+                     system_log(DEBUG_SIGN, NULL, 0,
+                                "ALDAD no definitions found.");
+                  }
                }
             }
          }
