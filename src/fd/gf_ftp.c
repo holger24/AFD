@@ -1706,9 +1706,9 @@ main(int argc, char *argv[])
                            }
                         }
 #endif /* _OUTPUT_LOG */
-                        files_retrieved++;
-                        file_size_retrieved += bytes_done;
                      }
+                     files_retrieved++;
+                     file_size_retrieved += bytes_done;
 
                      if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
                      {
