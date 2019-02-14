@@ -992,7 +992,8 @@ convert(char         *file_path,
                  }
 
                  if ((*file_size = bin_file_convert(src_ptr, stat_buf.st_size,
-                                                    to_fd, job_id)) < 0)
+                                                    to_fd, file_name,
+                                                    job_id)) < 0)
                  {
                     receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
                                 _("Failed to convert MRZ file `%s' to WMO-format."),

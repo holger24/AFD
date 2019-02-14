@@ -43,6 +43,7 @@ DESCR__S_M3
  **   off_t bin_file_convert(char         *src_ptr,
  **                          off_t        total_length,
  **                          int          to_fd,
+ **                          char         *file_name,
  **                          unsigned int job_id)
  **
  ** DESCRIPTION
@@ -803,6 +804,7 @@ off_t
 bin_file_convert(char         *src_ptr,
                  off_t        total_length,
                  int          to_fd,
+                 char         *file_name,
                  unsigned int job_id)
 {
    off_t bytes_written = 0;
@@ -838,20 +840,20 @@ bin_file_convert(char         *src_ptr,
          {
             receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
 #if SIZEOF_OFF_T == 4
-                        "Given length %ld is larger then the rest of the file %ld. #%x",
+                        "In file `%s' given length %ld is larger then the rest of the file %ld. #%x",
 #else
-                        "Given length %lld is larger then the rest of the file %lld. #%x",
+                        "In file `%s' given length %lld is larger then the rest of the file %lld. #%x",
 #endif
-                        (pri_off_t)data_length, (pri_off_t)total_length,
-                        job_id);
+                        file_name, (pri_off_t)data_length,
+                        (pri_off_t)total_length, job_id);
             data_length = total_length;
          }
          if (data_length > 99999991)
          {
             (void)strcpy(length_indicator, "9999999900\01\015\015\012");
             receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
-                        "Data length (%u) greater then what is possible in WMO header size, inserting maximum possible 99999999. #%x",
-                        data_length + 4 + 4, job_id);
+                        "In file `%s' data length (%u) greater then what is possible in WMO header size, inserting maximum possible 99999999. #%x",
+                        file_name, data_length + 4 + 4, job_id);
          }
          else
          {
@@ -955,8 +957,8 @@ bin_file_convert(char         *src_ptr,
                        if (first_time == YES)
                        {
                           receive_log(DEBUG_SIGN, __FILE__, __LINE__, 0L,
-                                      _("Hey! Whats this? Message length (%llu) > then total length (%u). #%x"),
-                                      message_length,
+                                      _("Hey! Whats this? In file `%s' message length (%llu) > then total length (%u). #%x"),
+                                      file_name, message_length,
                                       total_length + id_length[i], job_id);
                           first_time = NO;
                        }
@@ -972,8 +974,8 @@ bin_file_convert(char         *src_ptr,
                        if (memcmp(tmp_ptr, end_id[i], end_id_length[i]) != 0)
                        {
                           receive_log(DEBUG_SIGN, __FILE__, __LINE__, 0L,
-                                      _("Hey! Whats this? End locator not where it should be! #%x"),
-                                      job_id);
+                                      _("Hey! Whats this? In file `%s' end locator not where it should be! #%x"),
+                                      file_name, job_id);
                           buffer = ptr;
                           continue;
                        }
@@ -996,8 +998,8 @@ bin_file_convert(char         *src_ptr,
                        if (first_time == YES)
                        {
                           receive_log(DEBUG_SIGN, __FILE__, __LINE__, 0L,
-                                      _("Hey! Whats this? Message length (%u) > then total length (%u). #%x"),
-                                      message_length,
+                                      _("Hey! Whats this? In file `%s' message length (%u) > then total length (%u). #%x"),
+                                      file_name, message_length,
                                       total_length + id_length[i], job_id);
                           first_time = NO;
                        }
@@ -1013,8 +1015,8 @@ bin_file_convert(char         *src_ptr,
                        if (memcmp(tmp_ptr, end_id[i], end_id_length[i]) != 0)
                        {
                           receive_log(DEBUG_SIGN, __FILE__, __LINE__, 0L,
-                                      _("Hey! Whats this? End locator not where it should be! #%x"),
-                                      job_id);
+                                      _("Hey! Whats this? In file `%s' end locator not where it should be! #%x"),
+                                      file_name, job_id);
                           buffer = ptr;
                           continue;
                        }
@@ -1037,22 +1039,22 @@ bin_file_convert(char         *src_ptr,
                (void)strcpy(length_indicator, "99999999");
                receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
 #if SIZEOF_OFF_T == 4
-                           "Data length (%ld) greater then what is possible in WMO header size, inserting maximum possible 99999999. #%x",
+                           "In file `%s' data length (%ld) greater then what is possible in WMO header size, inserting maximum possible 99999999. #%x",
 #else
-                           "Data length (%lld) greater then what is possible in WMO header size, inserting maximum possible 99999999. #%x",
+                           "In file `%s' data length (%lld) greater then what is possible in WMO header size, inserting maximum possible 99999999. #%x",
 #endif
-                           (pri_off_t)(data_length + 8), job_id);
+                           file_name, (pri_off_t)(data_length + 8), job_id);
             }
             else if ((data_length + 8) < 0)
                  {
                     (void)strcpy(length_indicator, "00000000");
                     receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
 #if SIZEOF_OFF_T == 4
-                                "Data length (%ld) is less then 0, inserting 00000000. #%x",
+                                "In file `%s' data length (%ld) is less then 0, inserting 00000000. #%x",
 #else
-                                "Data length (%lld) is less then 0, inserting 00000000. #%x",
+                                "In file `%s' data length (%lld) is less then 0, inserting 00000000. #%x",
 #endif
-                                (pri_off_t)(data_length + 8), job_id);
+                                file_name, (pri_off_t)(data_length + 8), job_id);
                  }
                  else
                  {
