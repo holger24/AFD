@@ -660,6 +660,10 @@ main(int argc, char *argv[])
               {
                  (void)fprintf(stdout, "LOC\n");
               }
+         else if (fra[i].protocol == SFTP)
+              {
+                 (void)fprintf(stdout, "SFTP\n");
+              }
          else if (fra[i].protocol == HTTP)
               {
                  (void)fprintf(stdout, "HTTP\n");

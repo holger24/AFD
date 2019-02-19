@@ -1,6 +1,6 @@
 /*
  *  fsa_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1266,6 +1266,10 @@ main(int argc, char *argv[])
 
                   case SFTP_BURST_TRANSFER_ACTIVE :
                      (void)fprintf(stdout, "Connect status       : SFTP burst active\n");
+                     break;
+
+                  case SFTP_RETRIEVE_ACTIVE :
+                     (void)fprintf(stdout, "Connect status       : SFTP retrieve active\n");
                      break;
 
                   case LOC_ACTIVE :
