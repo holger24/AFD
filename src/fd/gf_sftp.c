@@ -659,15 +659,27 @@ main(int argc, char *argv[])
                                                offset, NULL, blocksize,
                                                &buffer_offset)) != SUCCESS)
                   {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                               "Failed to open remote file `%s' in %s (%d).",
-                               rl[i].file_name, fra[db.fra_pos].dir_alias,
-                               status);
-                     sftp_quit();
-                     reset_values(files_retrieved, file_size_retrieved,
-                                  files_to_retrieve, file_size_to_retrieve,
-                                  (struct job *)&db);
-                     exit(eval_timeout(OPEN_REMOTE_ERROR));
+                     if (status == SSH_FX_NO_SUCH_FILE)
+                     {
+                        trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                  "Failed to open remote file `%s' in %s (%d).",
+                                  rl[i].file_name, fra[db.fra_pos].dir_alias,
+                                  status);
+                        rl[i].assigned = 0;
+                        rl[i].in_list = NO;
+                     }
+                     else
+                     {
+                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                  "Failed to open remote file `%s' in %s (%d).",
+                                  rl[i].file_name, fra[db.fra_pos].dir_alias,
+                                  status);
+                        sftp_quit();
+                        reset_values(files_retrieved, file_size_retrieved,
+                                     files_to_retrieve, file_size_to_retrieve,
+                                     (struct job *)&db);
+                        exit(eval_timeout(OPEN_REMOTE_ERROR));
+                     }
                   }
                   else /* status == SUCCESS */
                   {
