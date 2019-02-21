@@ -74,6 +74,7 @@ DESCR__S_M1
 DESCR__E_M1
 
 /* #define WITH_MEMCHECK */
+#define WITH_CHECK_SINGLE_RETRIEVE_JOB 1
 
 #include <stdio.h>            /* fprintf()                               */
 #include <string.h>           /* strcpy(), strcat(), strerror(),         */
@@ -270,7 +271,11 @@ static void  check_zombie_queue(time_t, int),
 static int   check_dir_in_use(int),
              check_local_interface_names(char *),
              get_free_connection(void),
+#ifdef WITH_CHECK_SINGLE_RETRIEVE_JOB
+             get_free_disp_pos(int, int),
+#else
              get_free_disp_pos(int),
+#endif
              zombie_check(struct connection *, time_t, int *, int);
 static pid_t make_process(struct connection *, int),
              start_process(int, int, time_t, int);
@@ -2723,7 +2728,11 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
             }
             else
             {
+#ifdef WITH_CHECK_SINGLE_RETRIEVE_JOB
+               if ((connection[pos].job_no = get_free_disp_pos(fsa_pos, qb_pos)) != INCORRECT)
+#else
                if ((connection[pos].job_no = get_free_disp_pos(fsa_pos)) != INCORRECT)
+#endif
                {
                   if (qb[qb_pos].special_flag & FETCH_JOB)
                   {
@@ -5183,10 +5192,30 @@ get_free_connection(void)
 
 /*+++++++++++++++++++++++++ get_free_disp_pos() +++++++++++++++++++++++++*/
 static int
+#ifdef WITH_CHECK_SINGLE_RETRIEVE_JOB
+get_free_disp_pos(int pos, int qb_pos)
+#else
 get_free_disp_pos(int pos)
+#endif
 {
    register int i;
 
+#ifdef WITH_CHECK_SINGLE_RETRIEVE_JOB
+   if ((qb[qb_pos].special_flag & FETCH_JOB) &&
+       ((qb[qb_pos].special_flag & HELPER_JOB) == 0))
+   {
+      for (i = 0; i < fsa[pos].allowed_transfers; i++)
+      {
+         if (fsa[pos].job_status[i].job_id == fra[qb[qb_pos].pos].dir_id)
+         {
+            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       "Prevented multiple start of scanning same remote dir. [fsa_pos=%d fra_pos=%d qb_pos=%d i=%d] @%x",
+                       pos, qb[qb_pos].pos, qb_pos, i, fra[qb[qb_pos].pos].dir_id);
+            return(INCORRECT);
+         }
+      }
+   }
+#endif
    for (i = 0; i < fsa[pos].allowed_transfers; i++)
    {
       if (fsa[pos].job_status[i].proc_id == -1)
