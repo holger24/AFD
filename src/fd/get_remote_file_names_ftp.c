@@ -809,7 +809,7 @@ try_attach_again:
        * Remove all files from the remote_list structure that are not
        * in the current nlist buffer.
        */
-      if ((files_to_retrieve > 0) && (fra[db.fra_pos].stupid_mode != YES) &&
+      if ((fra[db.fra_pos].stupid_mode != YES) &&
           (fra[db.fra_pos].remove == NO))
       {
          int    files_removed = 0,
