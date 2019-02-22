@@ -533,14 +533,15 @@ retry_connect:
                            trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_connect", error_2_str(&msg[5]),
                                      _("Received invalid reply (%d = %s) from SSH_FXP_INIT."),
                                      (int)msg[0], response_2_str(msg[0]));
+                           status = get_xfer_uint(&msg[5]);
                         }
                         else
                         {
                            trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_connect", NULL,
                                      _("Received invalid reply (%d = %s) from SSH_FXP_INIT."),
                                      (int)msg[0], response_2_str(msg[0]));
+                           status = INCORRECT;
                         }
-                        status = INCORRECT;
                      }
                   }
                }
@@ -652,6 +653,7 @@ sftp_pwd(void)
                get_msg_str(&msg[9]);
                trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_pwd", NULL,
                          "%s", error_2_str(&msg[5]));
+               status = get_xfer_uint(&msg[5]);
             }
             else
             {
@@ -659,8 +661,8 @@ sftp_pwd(void)
                          _("Expecting %d (SSH_FXP_NAME) but got %d (%s) as reply."),
                          SSH_FXP_NAME, (int)msg[0], response_2_str(msg[0]));
                msg_str[0] = '\0';
+               status = INCORRECT;
             }
-            status = INCORRECT;
          }
       }
       else if (status == SIMULATION)
@@ -755,7 +757,7 @@ retry_cd:
                      char *tmp_cwd = scd.cwd;
 
                      scd.cwd = NULL;
-                     if (sftp_stat(tmp_cwd, NULL) == INCORRECT)
+                     if (sftp_stat(tmp_cwd, NULL) != SUCCESS)
                      {
                         SFTP_CD_TRY_CREATE_DIR();
                         free(scd.cwd);
@@ -840,7 +842,7 @@ retry_cd:
                   get_msg_str(&msg[9]);
                   trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_cd", NULL,
                             "%s", error_2_str(&msg[5]));
-                  status = INCORRECT;
+                  status = get_xfer_uint(&msg[5]);
                }
 #else
                SFTP_CD_TRY_CREATE_DIR();
@@ -1029,7 +1031,7 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
                  get_msg_str(&msg[9]);
                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_stat", NULL,
                            "%s", error_2_str(&msg[5]));
-                 status = INCORRECT;
+                 status = get_xfer_uint(&msg[5]);
               }
               else
               {
@@ -1210,6 +1212,7 @@ sftp_set_file_time(char *filename, time_t mtime, time_t atime)
                get_msg_str(&msg[9]);
                trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_set_file_time", NULL,
                          "%s", error_2_str(&msg[5]));
+               status = get_xfer_uint(&msg[5]);
             }
          }
          else
@@ -1644,7 +1647,7 @@ sftp_open_dir(char *dirname)
                  get_msg_str(&msg[9]);
                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_open_dir", NULL,
                            "%s", error_2_str(&msg[5]));
-                 status = INCORRECT;
+                 status = get_xfer_uint(&msg[5]);
               }
               else
               {
@@ -1712,7 +1715,7 @@ sftp_close_file(void)
                   get_msg_str(&msg[9]);
                   trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_close_file", NULL,
                             "%s", error_2_str(&msg[5]));
-                  status = INCORRECT;
+                  status = get_xfer_uint(&msg[5]);
                }
             }
             else
@@ -1921,7 +1924,7 @@ sftp_mkdir(char *directory, mode_t dir_mode)
                get_msg_str(&msg[9]);
                trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_mkdir", NULL,
                          "%s", error_2_str(&msg[5]));
-               status = INCORRECT;
+               status = get_xfer_uint(&msg[5]);
             }
          }
          else
@@ -2138,7 +2141,7 @@ retry_move:
                   get_msg_str(&msg[9]);
                   trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_move", NULL,
                             "%s", error_2_str(&msg[5]));
-                  status = INCORRECT;
+                  status = get_xfer_uint(&msg[5]);
                }
             }
          }
@@ -2805,7 +2808,7 @@ sftp_readdir(char *name, struct stat *p_stat_buf)
                      get_msg_str(&msg[9]);
                      trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_readdir", NULL,
                                "%s", error_2_str(&msg[5]));
-                     status = INCORRECT;
+                     status = get_xfer_uint(&msg[5]);
                   }
                }
                else
@@ -2974,7 +2977,7 @@ sftp_dele(char *filename)
                get_msg_str(&msg[9]);
                trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_dele", NULL,
                          "%s", error_2_str(&msg[5]));
-               status = INCORRECT;
+               status = get_xfer_uint(&msg[5]);
             }
          }
          else
@@ -3113,6 +3116,7 @@ sftp_chmod(char *filename, mode_t mode)
                get_msg_str(&msg[9]);
                trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_chmod", NULL,
                          "%s", error_2_str(&msg[5]));
+               status = get_xfer_uint(&msg[5]);
             }
          }
          else
