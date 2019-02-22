@@ -54,7 +54,7 @@ delete_wrapper(char *file_name)
 {
    int ret;
 
-   ret = ftp_dele(file_name);;
+   ret = ftp_dele(file_name);
    if (ret != SUCCESS)
    {
       trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
