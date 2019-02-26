@@ -667,6 +667,90 @@ main(int argc, char *argv[])
                                   status);
                         rl[i].assigned = 0;
                         rl[i].in_list = NO;
+                        files_retrieved++;
+                        if (rl[i].size > 0)
+                        {
+                           file_size_retrieved += rl[i].size;
+                        }
+                        if (gsf_check_fsa((struct job *)&db) != NEITHER)
+                        {
+#ifdef LOCK_DEBUG
+                           lock_region_w(fsa_fd, db.lock_offset + LOCK_TFC, __FILE__, __LINE__);
+#else
+                           lock_region_w(fsa_fd, db.lock_offset + LOCK_TFC);
+#endif
+                           fsa->job_status[(int)db.job_no].file_name_in_use[0] = '\0';
+                           fsa->job_status[(int)db.job_no].file_size_in_use = 0;
+                           fsa->job_status[(int)db.job_no].file_size_in_use_done = 0;
+
+                           /* Total file counter. */
+                           fsa->total_file_counter -= 1;
+                           files_to_retrieve_shown -= 1;
+#ifdef _VERIFY_FSA
+                           if (fsa->total_file_counter < 0)
+                           {
+                              int tmp_val;
+
+                              tmp_val = files_to_retrieve - (files_retrieved + 1);
+                              if (tmp_val < 0)
+                              {
+                                 tmp_val = 0;
+                              }
+                              trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                        "Total file counter less then zero. Correcting to %d.",
+                                        tmp_val);
+                              fsa->total_file_counter = tmp_val;
+                           }
+#endif
+
+                           /* Total file size. */
+                           if (rl[i].size != -1)
+                           {
+                              fsa->total_file_size -= (rl[i].size - offset);
+                              file_size_to_retrieve_shown -= (rl[i].size - offset);
+#ifdef _VERIFY_FSA
+                              if (fsa->total_file_size < 0)
+                              {
+                                 off_t new_size = file_size_to_retrieve - file_size_retrieved;
+
+                                 if (new_size < 0)
+                                 {
+                                    new_size = 0;
+                                 }
+                                 fsa->total_file_size = new_size;
+                                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                                           "Total file size overflowed. Correcting to %ld.",
+#else
+                                           "Total file size overflowed. Correcting to %lld.",
+#endif
+                                           (pri_off_t)fsa->total_file_size);
+                              }
+                              else if ((fsa->total_file_counter == 0) &&
+                                       (fsa->total_file_size > 0))
+                                   {
+                                      trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                                                "fc is zero but fs is not zero (%ld). Correcting.",
+#else
+                                                "fc is zero but fs is not zero (%lld). Correcting.",
+#endif
+                                                (pri_off_t)fsa->total_file_size);
+                                      fsa->total_file_size = 0;
+                                   }
+#endif
+                           }
+
+                           /* Update last activity time. */
+                           fsa->last_connection = time(NULL);
+#ifdef LOCK_DEBUG
+                           unlock_region(fsa_fd, db.lock_offset + LOCK_TFC, __FILE__, __LINE__);
+#else
+                           unlock_region(fsa_fd, db.lock_offset + LOCK_TFC);
+#endif
+
+                           check_reset_errors();
+                        }
                      }
                      else
                      {
