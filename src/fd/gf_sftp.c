@@ -468,27 +468,30 @@ main(int argc, char *argv[])
       }
       else
       {
-         struct stat rdir_stat_buf;
-
-         if ((status = sftp_stat(".", &rdir_stat_buf)) == SUCCESS)
+         if (fra[db.fra_pos].force_reread == NO)
          {
-            new_dir_mtime = rdir_stat_buf.st_mtime;
-            if (fra[db.fra_pos].dir_mtime == new_dir_mtime)
-            {
-               char time_str[25];
+            struct stat rdir_stat_buf;
 
-               (void)strftime(time_str, 25, "%c", localtime(&new_dir_mtime));
-               trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
-                         "0 files 0 bytes found for retrieving. Directory time (%s) unchanged in %s.",
-                         time_str,
-                         (db.target_dir[0] == '\0') ? "home dir" : db.target_dir);
-               check_reset_errors();
+            if ((status = sftp_stat(".", &rdir_stat_buf)) == SUCCESS)
+            {
+               new_dir_mtime = rdir_stat_buf.st_mtime;
+               if (fra[db.fra_pos].dir_mtime == new_dir_mtime)
+               {
+                  char time_str[25];
+
+                  (void)strftime(time_str, 25, "%c", localtime(&new_dir_mtime));
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "0 files 0 bytes found for retrieving. Directory time (%s) unchanged in %s.",
+                            time_str,
+                            (db.target_dir[0] == '\0') ? "home dir" : db.target_dir);
+                  check_reset_errors();
 
 #ifdef _WITH_BURST_2
-               goto burst2_no_new_dir_mtime;
+                  goto burst2_no_new_dir_mtime;
 #else
-               continue;
+                  continue;
 #endif
+               }
             }
          }
       }
