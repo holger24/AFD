@@ -683,6 +683,7 @@ main(int argc, char *argv[])
                            lock_region_w(fsa_fd, db.lock_offset + LOCK_TFC);
 #endif
                            fsa->job_status[(int)db.job_no].file_name_in_use[0] = '\0';
+                           fsa->job_status[(int)db.job_no].no_of_files_done++;
                            fsa->job_status[(int)db.job_no].file_size_in_use = 0;
                            fsa->job_status[(int)db.job_no].file_size_in_use_done = 0;
 
