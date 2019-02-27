@@ -1743,9 +1743,13 @@ main(int argc, char *argv[])
                }
                else
                {
-                  if ((-status >= 400) &&
-                      (lposi(&msg_str[3], "Idle timeout", 12) != NULL) &&
-                      (lposi(&msg_str[3], "closing control connection", 26) != NULL))
+                  if (status < INCORRECT)
+                  {
+                     status = -status;
+                  }
+                  if ((status >= 400) &&
+                      ((lposi(&msg_str[3], "Idle timeout", 12) != NULL) ||
+                       (lposi(&msg_str[3], "closing control connection", 26) != NULL)))
                   {
                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                "Failed to open remote file `%s' (%d).",
