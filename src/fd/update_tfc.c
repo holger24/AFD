@@ -1,6 +1,6 @@
 /*
  *  update_tfc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2009 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2009 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -84,10 +84,10 @@ update_tfc(int    file_counter,
       {
          total_file_counter = 0;
       }
-      system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                 "Total file counter for host %s less then zero. Correcting to %d. [%s] #%x",
-                 fsa->host_dsp_name, total_file_counter,
-                 db.msg_name, db.id.job);
+      trans_log(DEBUG_SIGN, __FILE__, __LINE__, "update_tfc", NULL,
+                "Total file counter for host %s less then zero. Correcting to %d. [%s] #%x",
+                fsa->host_dsp_name, total_file_counter,
+                db.msg_name, db.id.job);
       fsa->total_file_counter = total_file_counter;
    }
 #endif
@@ -106,21 +106,21 @@ update_tfc(int    file_counter,
       {
          fsa->total_file_size += *tmp_ptr;
       }
-      system_log(DEBUG_SIGN, __FILE__, __LINE__,
+      trans_log(DEBUG_SIGN, __FILE__, __LINE__, "update_tfc", NULL,
 # if SIZEOF_OFF_T == 4
-                 "Total file size for host %s overflowed. Correcting to %ld. [%s] #%x",
+                "Total file size for host %s overflowed. Correcting to %ld. [%s] #%x",
 # else
-                 "Total file size for host %s overflowed. Correcting to %lld. [%s] #%x",
+                "Total file size for host %s overflowed. Correcting to %lld. [%s] #%x",
 # endif
-                 fsa->host_dsp_name, (pri_off_t)fsa->total_file_size,
-                 db.msg_name, db.id.job);
+                fsa->host_dsp_name, (pri_off_t)fsa->total_file_size,
+                db.msg_name, db.id.job);
    }
    else if ((fsa->total_file_counter == 0) &&
             (fsa->total_file_size > 0))
         {
-           system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                      "fc for host %s is zero but fs is not zero. Correcting. [%s] #%x",
-                      fsa->host_dsp_name, db.msg_name, db.id.job);
+           trans_log(DEBUG_SIGN, __FILE__, __LINE__, "update_tfc", NULL,
+                     "fc for host %s is zero but fs is not zero. Correcting. [%s] #%x",
+                     fsa->host_dsp_name, db.msg_name, db.id.job);
            fsa->total_file_size = 0;
         }
 #endif
