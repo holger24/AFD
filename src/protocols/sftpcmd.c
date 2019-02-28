@@ -1511,8 +1511,18 @@ sftp_open_file(int    openmode,
       else if (status == SIMULATION)
            {
               scd.file_offset = offset;
-              scd.file_handle = NULL;
-              scd.file_handle_length = 0;
+              if ((scd.file_handle = malloc(5)) == NULL)
+              {
+                 trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_open_file", NULL,
+                           _("Failed to malloc() 5 bytes : %s"),
+                           strerror(errno));
+                 msg_str[0] = '\0';
+                 return(INCORRECT);
+              }
+              scd.file_handle[0] = scd.file_handle[2] = 'x';
+              scd.file_handle[1] = scd.file_handle[3] = 'X';
+              scd.file_handle[4] = '\0';
+              scd.file_handle_length = 4;
               if (openmode == SFTP_WRITE_FILE)
               {
                  scd.pending_write_counter = -1;
