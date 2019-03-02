@@ -1755,7 +1755,7 @@ main(int argc, char *argv[])
                                "Failed to open remote file `%s' (%d).",
                                initial_filename, status);
                      exitflag = 0;
-                     exit(TRANSFER_SUCCESS);
+                     exit(STILL_FILES_TO_SEND);
                   }
                   else
                   {
