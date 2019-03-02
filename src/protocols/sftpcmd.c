@@ -276,17 +276,20 @@ retry_connect:
             return(INCORRECT);
          }
       }
-      scd.version        = 3; /* OpenSSH */
-      scd.posix_rename   = 1;
-      scd.statvfs        = 2;
-      scd.fstatvfs       = 2;
-      scd.hardlink       = 1;
-      scd.fsync          = 1;
-      scd.request_id     = 0;
-      scd.stored_replies = 0;
-      scd.cwd            = NULL;
-      scd.file_handle    = NULL;
-      scd.dir_handle     = NULL;
+      scd.version            = 3; /* OpenSSH */
+      scd.posix_rename       = 1;
+      scd.statvfs            = 2;
+      scd.fstatvfs           = 2;
+      scd.hardlink           = 1;
+      scd.fsync              = 1;
+      scd.request_id         = 0;
+      scd.stored_replies     = 0;
+      scd.file_handle_length = 0;
+      scd.dir_handle_length  = 0;
+      scd.cwd                = NULL;
+      scd.file_handle        = NULL;
+      scd.dir_handle         = NULL;
+      scd.debug              = debug;
 
       return(SUCCESS);
    }
@@ -667,6 +670,11 @@ sftp_pwd(void)
       }
       else if (status == SIMULATION)
            {
+              if (scd.cwd != NULL)
+              {
+                 free(scd.cwd);
+                 scd.cwd = NULL;
+              }
               (void)strcpy(msg_str, "/simulated/pwd");
               status = SUCCESS;
            }
@@ -860,6 +868,22 @@ retry_cd:
       }
       else if (status == SIMULATION)
            {
+              if (scd.cwd != NULL)
+              {
+                 free(scd.cwd);
+                 scd.cwd = NULL;
+              }
+              status = strlen(directory) + 1;
+              if ((scd.cwd = malloc(status)) == NULL)
+              {
+                 trans_log(WARN_SIGN, __FILE__, __LINE__, "sftp_cd", NULL,
+                           _("Failed to malloc() %d bytes : %s"),
+                           status, strerror(errno));
+              }
+              else
+              {
+                 (void)strcpy(scd.cwd, directory);
+              }
               status = SUCCESS;
            }
    }
@@ -1044,6 +1068,11 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
       }
       else if (status == SIMULATION)
            {
+              (void)memset(&scd.stat_buf, 0, sizeof(struct stat));
+              if (p_stat_buf != NULL)
+              {
+                 (void)memcpy(p_stat_buf, &scd.stat_buf, sizeof(struct stat));
+              }
               status = SUCCESS;
            }
    }
@@ -1510,7 +1539,6 @@ sftp_open_file(int    openmode,
       }
       else if (status == SIMULATION)
            {
-              scd.file_offset = offset;
               if ((scd.file_handle = malloc(5)) == NULL)
               {
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_open_file", NULL,
@@ -1523,6 +1551,7 @@ sftp_open_file(int    openmode,
               scd.file_handle[1] = scd.file_handle[3] = 'X';
               scd.file_handle[4] = '\0';
               scd.file_handle_length = 4;
+              scd.file_offset = offset;
               if (openmode == SFTP_WRITE_FILE)
               {
                  scd.pending_write_counter = -1;
@@ -1536,6 +1565,7 @@ sftp_open_file(int    openmode,
               {
                  scd.max_pending_writes = 0;
               }
+              *buffer_offset = 4 + 1 + 4 + 4 + scd.file_handle_length + 8 + 4;
               status = SUCCESS;
            }
    }
@@ -1750,6 +1780,7 @@ sftp_close_file(void)
     */
    free(scd.file_handle);
    scd.file_handle = NULL;
+   scd.file_handle_length = 0;
 
    return(status);
 }
@@ -1815,6 +1846,7 @@ sftp_close_dir(void)
     */
    free(scd.dir_handle);
    scd.dir_handle = NULL;
+   scd.dir_handle_length = 0;
 
    if (scd.nl != NULL)
    {
@@ -3620,15 +3652,15 @@ write_msg(char *block, int size, int line)
               if (signal(SIGALRM, sig_handler) == SIG_ERR)
               {
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "write_msg", NULL,
-                           _("Failed to set signal handler [%d] : %s"),
-                           line, strerror(errno));
+                          _("Failed to set signal handler [%d] : %s"),
+                          line, strerror(errno));
                  return(INCORRECT);
               }
               if (sigsetjmp(env_alrm, 1) != 0)
               {
                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "write_msg", NULL,
-                           _("write() timeout (%ld) [%d]"),
-                           transfer_timeout, line);
+                          _("write() timeout (%ld) [%d]"),
+                          transfer_timeout, line);
                  timeout_flag = ON;
                  return(INCORRECT);
               }
