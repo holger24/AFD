@@ -893,7 +893,6 @@ handle_options(int          position,
 #endif
                                         position, newname, p_newname, fullname,
                                         p_file_name);
-                              break;
                            }
                            else if (ret == 1)
                                 {
