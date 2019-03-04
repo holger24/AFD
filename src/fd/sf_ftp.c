@@ -2556,10 +2556,6 @@ main(int argc, char *argv[])
          {
             off_t remote_size = -1;
 
-            if (simulation_mode == YES)
-            {
-               remote_size = no_of_bytes + append_offset + additional_length;
-            }
             if ((fsa->file_size_offset == AUTO_SIZE_DETECT) ||
                 (fsa->file_size_offset == -1)) /* ie. None */
             {
@@ -2574,6 +2570,10 @@ main(int argc, char *argv[])
                }
                else
                {
+                  if (simulation_mode == YES)
+                  {
+                     remote_size = no_of_bytes + append_offset + additional_length;
+                  }
                   if (fsa->debug > NORMAL_MODE)
                   {
                      trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,

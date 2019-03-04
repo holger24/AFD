@@ -211,7 +211,7 @@ main(int argc, char *argv[])
                     last_update_time,
                     *p_file_mtime_buffer;
 #ifdef _WITH_BURST_2
-   int              cb2_ret;
+   int              cb2_ret = NO;
    unsigned int     values_changed = 0;
 #endif
 #ifdef _OUTPUT_LOG
@@ -1433,10 +1433,6 @@ main(int argc, char *argv[])
          {
             struct stat stat_buf;
 
-            if (simulation_mode == YES)
-            {
-               stat_buf.st_size = *p_file_size_buffer;
-            }
             if ((status = sftp_stat(initial_filename,
                                     &stat_buf)) != SUCCESS)
             {
@@ -1445,6 +1441,10 @@ main(int argc, char *argv[])
                          initial_filename, status);
                sftp_quit();
                exit(eval_timeout(STAT_TARGET_ERROR));
+            }
+            if (simulation_mode == YES)
+            {
+               stat_buf.st_size = *p_file_size_buffer;
             }
 
             if (stat_buf.st_size != (no_of_bytes + append_offset + additional_length))
