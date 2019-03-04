@@ -1053,9 +1053,10 @@ main(int argc, char *argv[])
                       (status != -550))
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                               "Failed to open remote file %s in %s (status=%d data port=%d).",
+                               "Failed to open remote file %s in %s (status=%d data port=%d %s).",
                                rl[i].file_name, fra[db.fra_pos].dir_alias,
-                               status, ftp_data_port());
+                               status, ftp_data_port(),
+                               (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
                      (void)ftp_quit();
                      reset_values(files_retrieved, file_size_retrieved,
                                   files_to_retrieve, file_size_to_retrieve,
@@ -1067,9 +1068,10 @@ main(int argc, char *argv[])
                      time_t diff_time = time(NULL) - rl[i].file_mtime;
 
                      trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                               "Failed to open remote file %s in %s (%d).",
+                               "Failed to open remote file %s in %s (status=%d data port=%d %s).",
                                rl[i].file_name, fra[db.fra_pos].dir_alias,
-                               status, ftp_data_port());
+                               status, ftp_data_port(),
+                               (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
 
                      if ((eval_timeout(OPEN_REMOTE_ERROR) == OPEN_REMOTE_ERROR) &&
                          (diff_time > fra[db.fra_pos].unreadable_file_time) &&
@@ -1183,8 +1185,9 @@ main(int argc, char *argv[])
                      if (fsa->debug > NORMAL_MODE)
                      {
                         trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                     "Opened data connection for file %s (data port %d).",
-                                     rl[i].file_name, ftp_data_port());
+                                     "Opened data connection for file %s (data port %d %s).",
+                                     rl[i].file_name, ftp_data_port(),
+                                     (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
                      }
                      if ((created_path != NULL) && (created_path[0] != '\0'))
                      {

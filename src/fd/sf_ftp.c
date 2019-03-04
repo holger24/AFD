@@ -1022,8 +1022,9 @@ main(int argc, char *argv[])
                                 DATA_WRITE, 0, NO, NULL, NULL)) != SUCCESS)
          {
             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                      "Failed to send lock file `%s' (status=%d data port=%d).",
-                      db.lock_file_name, status, ftp_data_port());
+                      "Failed to send lock file `%s' (status=%d data port=%d %s).",
+                      db.lock_file_name, status, ftp_data_port(),
+                      (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
             (void)ftp_quit();
             exit(eval_timeout(WRITE_LOCK_ERROR));
          }
@@ -1032,8 +1033,9 @@ main(int argc, char *argv[])
             if (fsa->debug > NORMAL_MODE)
             {
                trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                            "Created lock file %s (data port %d).",
-                           db.lock_file_name, ftp_data_port());
+                            "Created lock file %s (data port %d %s).",
+                           db.lock_file_name, ftp_data_port(),
+                           (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
             }
          }
 #ifdef WITH_SSL
@@ -1724,8 +1726,9 @@ main(int argc, char *argv[])
                                          db.sndbuf_size, NO, NULL, NULL)) != SUCCESS)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                               "Failed to open remote file `%s' (satus=%d data port=%d).",
-                               initial_filename, status, ftp_data_port());
+                               "Failed to open remote file `%s' (satus=%d data port=%d %s).",
+                               initial_filename, status, ftp_data_port(),
+                               (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
                      (void)ftp_quit();
                      exit(eval_timeout(OPEN_REMOTE_ERROR));
                   }
@@ -1737,8 +1740,9 @@ main(int argc, char *argv[])
                      if (fsa->debug > NORMAL_MODE)
                      {
                         trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                                     "Open remote file `%s' (data port %d).",
-                                     initial_filename, ftp_data_port());
+                                     "Open remote file `%s' (data port %d %s).",
+                                     initial_filename, ftp_data_port(),
+                                     (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
                      }
                   }
                }
@@ -1753,16 +1757,18 @@ main(int argc, char *argv[])
                        (lposi(&msg_str[3], "closing control connection", 26) != NULL)))
                   {
                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                               "Failed to open remote file `%s' (stutus=%d data port=%d).",
-                               initial_filename, status, ftp_data_port());
+                               "Failed to open remote file `%s' (stutus=%d data port=%d %s).",
+                               initial_filename, status, ftp_data_port(),
+                               (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
                      exitflag = 0;
                      exit(STILL_FILES_TO_SEND);
                   }
                   else
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                               "Failed to open remote file `%s' (stutus=%d data port=%d).",
-                               initial_filename, status, ftp_data_port());
+                               "Failed to open remote file `%s' (stutus=%d data port=%d %s).",
+                               initial_filename, status, ftp_data_port(),
+                               (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
                      (void)ftp_quit();
                      exit(eval_timeout(OPEN_REMOTE_ERROR));
                   }
@@ -1773,8 +1779,9 @@ main(int argc, char *argv[])
                if (fsa->debug > NORMAL_MODE)
                {
                   trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                               "Open remote file `%s' (data port %d).",
-                               initial_filename, ftp_data_port());
+                               "Open remote file `%s' (data port %d %s).",
+                               initial_filename, ftp_data_port(),
+                               (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
                }
                if ((created_path != NULL) && (created_path[0] != '\0'))
                {
