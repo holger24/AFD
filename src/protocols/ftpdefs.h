@@ -72,6 +72,12 @@
 #define FTP_OPTION_MLST_TYPE             64
 #define FTP_OPTION_MLST_PERM             128
 
+struct ftp_connect_data
+       {
+          unsigned int   ftp_options;
+          unsigned short data_port;
+       };
+
 /* Function prototypes. */
 extern int  ftp_account(char *),
 #ifdef _BLOCK_MODE
@@ -90,6 +96,7 @@ extern int  ftp_account(char *),
             ftp_ssl_disable_ctrl_encrytion(void),
 #endif
             ftp_data(char *, off_t, int, int, int, int, char *, char *),
+            ftp_data_port(void),
             ftp_date(char *, time_t *),
             ftp_dele(char *),
             ftp_exec(char *, char *),

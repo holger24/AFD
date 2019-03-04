@@ -268,58 +268,59 @@ DESCR__E_M3
 #include "commondefs.h"
 
 #ifdef WITH_SSL
-SSL                       *ssl_con = NULL;
+SSL                            *ssl_con = NULL;
 #endif
 
 /* External global variables. */
-extern int                simulation_mode,
-                          timeout_flag;
+extern int                     simulation_mode,
+                               timeout_flag;
 #ifdef WITH_IP_DB
-extern int                use_ip_db;
+extern int                     use_ip_db;
 #endif
-extern unsigned int       special_flag;
-extern char               msg_str[];
+extern unsigned int            special_flag;
+extern char                    msg_str[];
 #ifdef LINUX
-extern char               *h_errlist[];  /* for gethostbyname()          */
-extern int                h_nerr;        /* for gethostbyname()          */
+extern char                    *h_errlist[];  /* for gethostbyname() */
+extern int                     h_nerr;        /* for gethostbyname() */
 #endif
-extern long               transfer_timeout;
+extern long                    transfer_timeout;
 
 /* Local global variables. */
 #if defined (HAVE_GETADDRINFO) && defined (HAVE_GAI_STRERROR)
-static int                ai_family;
-static size_t             ai_addrlen;
-static struct sockaddr    *ai_addr = NULL;
+static int                     ai_family;
+static size_t                  ai_addrlen;
+static struct sockaddr         *ai_addr = NULL;
 #endif
-static int                control_fd,
-                          data_fd = -1;
+static int                     control_fd,
+                               data_fd = -1;
 #ifdef WITH_SSL
-static SSL                *ssl_data = NULL;
-static SSL_CTX            *ssl_ctx = NULL;
-static char               connected_hostname[MAX_REAL_HOSTNAME_LENGTH];
+static SSL                     *ssl_data = NULL;
+static SSL_CTX                 *ssl_ctx = NULL;
+static char                    connected_hostname[MAX_REAL_HOSTNAME_LENGTH];
 #endif
-static sigjmp_buf         env_alrm;
-static struct sockaddr_in ctrl,
-                          sin;
-static struct timeval     timeout;
+static sigjmp_buf              env_alrm;
+static struct sockaddr_in      ctrl,
+                               sin;
+static struct timeval          timeout;
+static struct ftp_connect_data fcd;
 
 /* Local function prototypes. */
-static int                check_data_socket(int, int, int *, char *, int,
-                                            char *, char *),
-                          get_extended_number(char *),
-                          get_number(char **, char),
-                          get_reply(char *, int, int),
-                          get_mlst_reply(char *, int, time_t *, int),
+static int                     check_data_socket(int, int, int *, char *, int,
+                                                 char *, char *),
+                               get_extended_number(char *),
+                               get_number(char **, char),
+                               get_reply(char *, int, int),
+                               get_mlst_reply(char *, int, time_t *, int),
 #ifdef WITH_SSL
-                          encrypt_data_connection(int),
-                          read_data_line(int, SSL *, char *),
-                          read_data_to_buffer(int, SSL *, char ***),
+                               encrypt_data_connection(int),
+                               read_data_line(int, SSL *, char *),
+                               read_data_to_buffer(int, SSL *, char ***),
 #else
-                          read_data_line(int, char *),
-                          read_data_to_buffer(int, char ***),
+                               read_data_line(int, char *),
+                               read_data_to_buffer(int, char ***),
 #endif
-                          read_msg(char *, int);
-static void               sig_handler(int);
+                               read_msg(char *, int);
+static void                    sig_handler(int);
 
 
 /*########################## ftp_connect() ##############################*/
@@ -774,6 +775,8 @@ ftp_connect(char *hostname, int port)
          return(reply);
       }
    }
+   fcd.ftp_options = 0;
+   fcd.data_port = 0;
 #ifdef WITH_SSL
    (void)memcpy(connected_hostname, hostname, MAX_REAL_HOSTNAME_LENGTH);
 #endif
@@ -1191,6 +1194,7 @@ ftp_feat(unsigned int *ftp_options)
       if (simulation_mode == YES)
       {
          *ftp_options |= (FTP_OPTION_FEAT | FTP_OPTION_MDTM | FTP_OPTION_SIZE);
+         fcd.ftp_options = *ftp_options;
 
          return(SUCCESS);
       }
@@ -1312,6 +1316,7 @@ ftp_feat(unsigned int *ftp_options)
          reply = SUCCESS;
       }
    }
+   fcd.ftp_options = *ftp_options;
 
    return(reply);
 }
@@ -2314,6 +2319,7 @@ ftp_list(int mode, int type, ...)
                   (void)close(new_sock_fd);
                   return(INCORRECT);
                }
+               fcd.data_port = data.sin6_port;
                if (connect_with_timeout(new_sock_fd, (struct sockaddr *) &data,
                                         sizeof(data)) < 0)
                {
@@ -2449,6 +2455,7 @@ ftp_list(int mode, int type, ...)
                   (void)close(new_sock_fd);
                   return(INCORRECT);
                }
+               fcd.data_port = data.sin_port;
                if (connect_with_timeout(new_sock_fd, (struct sockaddr *) &data, sizeof(data)) < 0)
                {
                   if (errno)
@@ -2593,6 +2600,7 @@ ftp_list(int mode, int type, ...)
                (void)close(sock_fd);
                return(INCORRECT);
             }
+            fcd.data_port = data.sin6_port;
 
             /* Note, only extended mode is supported in IPv6. */
             reply = command(control_fd, "EPRT |2|%s|%d|",
@@ -2652,6 +2660,7 @@ ftp_list(int mode, int type, ...)
 
             h = (char *)&data.sin_addr;
             p = (char *)&data.sin_port;
+            fcd.data_port = data.sin_port;
             if ((mode & EXTENDED_MODE) == 0)
             {
                reply = command(control_fd, "PORT %d,%d,%d,%d,%d,%d",
@@ -3059,6 +3068,7 @@ ftp_data(char  *filename,
                                _("setsockopt() error : %s"), strerror(errno));
                   }
                }
+               fcd.data_port = data.sin6_port;
                if (connect_with_timeout(new_sock_fd, (struct sockaddr *) &data, sizeof(data)) < 0)
                {
                   if (errno)
@@ -3212,6 +3222,7 @@ ftp_data(char  *filename,
                                _("setsockopt() error : %s"), strerror(errno));
                   }
                }
+               fcd.data_port = data.sin_port;
                if (connect_with_timeout(new_sock_fd, (struct sockaddr *) &data, sizeof(data)) < 0)
                {
                   char *h,
@@ -3572,6 +3583,7 @@ try_again_ipv6:
 # ifdef FTP_REUSE_DATA_PORT
                data_port = data.sin6_port;
 # endif
+               fcd.data_port = data.sin6_port;
                if (inet_ntop(AF_INET6, &data.sin6_addr, buf, sizeof(buf)) == NULL)
                {
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_data", NULL,
@@ -3694,6 +3706,7 @@ try_again:
 #ifdef FTP_REUSE_DATA_PORT
                data_port = data.sin_port;
 #endif
+               fcd.data_port = data.sin_port;
 
                if ((mode & EXTENDED_MODE) == 0)
                {
@@ -4165,6 +4178,7 @@ ftp_open(char *filename, int seek)
 int
 ftp_close_data(void)
 {
+   fcd.data_port = 0;
    if (simulation_mode == YES)
    {
       if (close(data_fd) == -1)
@@ -4226,6 +4240,14 @@ ftp_close_data(void)
    }
 
    return(SUCCESS);
+}
+
+
+/*########################### ftp_data_port() ###########################*/
+int
+ftp_data_port(void)
+{
+   return((int)fcd.data_port);
 }
 
 
