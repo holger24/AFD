@@ -207,7 +207,14 @@ the new value:
        option may be used more then once, thus making it possible
        to read from multiple configuration files. If the name specified
        does not contain the absolute path, it will try to locate the
-       given file in $AFD_WORK_DIR/etc.</td>
+       given file in $AFD_WORK_DIR/etc. Some examples:
+       <pre>
+    DIR_CONFIG_NAME   DIR_CONFIG
+    DIR_CONFIG_NAME   DIR_CONFIG.radar
+    DIR_CONFIG_NAME   /home/afd/oper/etc/DIR_CONFIG_OTHER
+    DIR_CONFIG_NAME   /home/afd/oper/etc/configs/*.dir_config
+       </pre>
+       Note the last example is with wildcard.</td>
    <td valign=top>$AFD_WORK_DIR/etc/DIR_CONFIG</td>
    <td valign=top>amg</td>
 </tr>
@@ -849,9 +856,9 @@ restarted.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1999 - 2017 by H.Kiehl<br>
+   Copyright &copy; 1999 - 2019 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 11.12.2017
+   Last updated: 12.03.2019
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
