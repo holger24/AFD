@@ -489,6 +489,7 @@ eval_html_dir_list(char *html_buffer)
                /* Read line by line. */
                do
                {
+                  file_name_length = 0;
                   ptr += 6;
                   while ((*ptr != '>') &&
                          (*ptr != '\n') && (*ptr != '\r') && (*ptr != '\0'))
@@ -501,21 +502,85 @@ eval_html_dir_list(char *html_buffer)
                      while (*ptr == '<')
                      {
                         ptr++;
-                        while ((*ptr != '>') && (*ptr != '\n') &&
-                               (*ptr != '\r') && (*ptr != '\0'))
+                        if ((*ptr == 'a') && (*(ptr + 1) == ' ') &&
+                            (*(ptr + 2) == 'h') && (*(ptr + 3) == 'r') &&
+                            (*(ptr + 4) == 'e') && (*(ptr + 5) == 'f') &&
+                            (*(ptr + 6) == '=') && (*(ptr + 7) == '"'))
                         {
-                           ptr++;
+                           char *p_start;
+
+                           ptr += 8;
+                           p_start = ptr;
+
+                           /* Go to end of href statement and cut out */
+                           /* the file name.                          */
+                           while ((*ptr != '"') && (*ptr != '\n') &&
+                                  (*ptr != '\r') && (*ptr != '\0'))
+                           {
+                              ptr++;
+                           }
+                           if (*ptr == '"')
+                           {
+                              char *tmp_ptr = ptr;
+
+                              ptr--;
+                              while ((*ptr != '/') && (ptr != p_start))
+                              {
+                                 ptr--;
+                              }
+                              while (*ptr == '/')
+                              {
+                                 ptr++;
+                              }
+
+                              /* Store file name. */
+                              STORE_HTML_STRING(file_name, file_name_length,
+                                                MAX_FILENAME_LENGTH, '"');
+
+                              ptr = tmp_ptr + 1;
+                           }
+
+                           while ((*ptr != '>') && (*ptr != '\n') &&
+                                  (*ptr != '\r') && (*ptr != '\0'))
+                           {
+                              ptr++;
+                           }
+                           if (*ptr == '>')
+                           {
+                              ptr++;
+                           }
                         }
-                        if (*ptr == '>')
+                        else
                         {
-                           ptr++;
+                           while ((*ptr != '>') && (*ptr != '\n') &&
+                                  (*ptr != '\r') && (*ptr != '\0'))
+                           {
+                              ptr++;
+                           }
+                           if (*ptr == '>')
+                           {
+                              ptr++;
+                           }
                         }
                      }
                      if ((*ptr != '\n') && (*ptr != '\r') && (*ptr != '\0'))
                      {
-                        /* Store file name. */
-                        STORE_HTML_STRING(file_name, file_name_length,
-                                          MAX_FILENAME_LENGTH, '<');
+                        /* Ensure we do not already have the file name from */
+                        /* the href statement before.                       */
+                        if (file_name_length == 0)
+                        {
+                           /* Store file name. */
+                           STORE_HTML_STRING(file_name, file_name_length,
+                                             MAX_FILENAME_LENGTH, '<');
+                        }
+                        else
+                        {
+                           while ((*ptr != '<') && (*ptr != '\n') &&
+                                  (*ptr != '\r') && (*ptr != '\0'))
+                           {
+                              ptr++;
+                           }
+                        }
 
                         while (*ptr == '<')
                         {
@@ -635,6 +700,7 @@ eval_html_dir_list(char *html_buffer)
                  while (*ptr == '<')
                  {
                     file_name[0] = '\0';
+                    file_name_length = 0;
                     while (*ptr == '<')
                     {
                        ptr++;
