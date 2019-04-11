@@ -1,6 +1,6 @@
 /*
  *  eval_recipient.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -367,7 +367,7 @@ eval_recipient(char       *recipient,
                                    "Failed to attach to FSA position %d (%d).",
                                    p_db->fsa_pos, port);
                         p_db->fsa_pos = INCORRECT;
-                        port = NEITHER;
+                        port = INCORRECT;
                      }
                      else
                      {
@@ -382,11 +382,20 @@ eval_recipient(char       *recipient,
                         port = YES;
                      }
                   }
+                  else
+                  {
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                "Function get_host_position() failed to locate alias %s (%d).",
+                                p_db->host_alias, p_db->fsa_pos);
+                     port = INCORRECT;
+                  }
                }
                else
                {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "fsa_attach() failed.");
                   p_db->fsa_pos = INCORRECT;
-                  port = NEITHER;
+                  port = INCORRECT;
                }
             }
             else

@@ -1,6 +1,6 @@
 /*
  *  init_gf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -225,11 +225,10 @@ init_gf(int argc, char *argv[], int protocol)
    {
       next_check_time = 0;
    }
-   if (eval_recipient(fra[db.fra_pos].url, &db, NULL, next_check_time) == INCORRECT)
+   if (eval_recipient(fra[db.fra_pos].url, &db, NULL,
+                       next_check_time) == INCORRECT)
    {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to evaluate recipient for directory alias <%s>.",
-                 fra[db.fra_pos].dir_alias);
+      system_log(ERROR_SIGN, __FILE__,  __LINE__, "eval_recipient() failed.");
       exit(INCORRECT);
    }
    if ((protocol & FTP_FLAG) && (db.mode_flag == 0))

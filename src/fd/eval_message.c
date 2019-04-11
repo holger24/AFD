@@ -1,6 +1,6 @@
 /*
  *  eval_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -276,8 +276,7 @@ eval_message(char *message_name, struct job *p_db)
 
    if (eval_recipient(p_db->recipient, p_db, message_name, 0L) < 0)
    {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Message %s has a faulty recipient.", message_name);
+      system_log(ERROR_SIGN, __FILE__, __LINE__, "eval_recipient() failed.");
 
       /* Don't forget to free memory we have allocated. */
       free(msg_buf);
