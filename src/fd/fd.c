@@ -1388,6 +1388,7 @@ system_log(DEBUG_SIGN, NULL, 0,
                                 "Hmmm, qb_pos is -1! (pid=%lld bytes_done=%d n=%d no_msg_queued=%d)",
 # endif
                                 (pri_pid_t)pid, bytes_done, n, *no_msg_queued);
+                     start_new_process = NEITHER;
                   }
                   else
                   {
@@ -1426,8 +1427,13 @@ system_log(DEBUG_SIGN, NULL, 0,
                      }
                      else
                      {
+                        start_new_process = YES;
                         if (qb[qb_pos].special_flag & FETCH_JOB)
                         {
+                           /*
+                            * Since it is a retrieve job, it want's us
+                            * to start a helper job.
+                            */
                            if ((stop_flag == 0) &&
                                (p_afd_status->no_of_transfers < max_connections)  &&
                                (fsa[fra[qb[qb_pos].pos].fsa_pos].active_transfers < fsa[fra[qb[qb_pos].pos].fsa_pos].allowed_transfers) &&
@@ -1457,6 +1463,11 @@ system_log(DEBUG_SIGN, NULL, 0,
                               qb[new_qb_pos].pid = start_process(fra[qb[qb_pos].pos].fsa_pos,
                                                                  new_qb_pos, now,
                                                                  NO);
+                              /*
+                               * Note, if start_process() returns PENDING,
+                               * we must we must remove it because it was
+                               * planned as a helper job.
+                               */
                               if ((qb[new_qb_pos].pid == PENDING) ||
                                   (qb[new_qb_pos].pid == REMOVED))
                               {
@@ -1467,11 +1478,6 @@ system_log(DEBUG_SIGN, NULL, 0,
                                  (*no_msg_queued)--;
                               }
                            }
-                           start_new_process = NEITHER;
-                        }
-                        else
-                        {
-                           start_new_process = YES;
                         }
                      }
                   }
@@ -1768,7 +1774,7 @@ system_log(DEBUG_SIGN, NULL, 0,
          }
          status_done++;
       } /* RETRY */
-           
+
       /*
        * NEW MESSAGE ARRIVED
        * ===================
