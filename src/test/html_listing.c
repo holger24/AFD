@@ -222,7 +222,8 @@ eval_html_dir_list(char *html_buffer)
    {
       if ((ptr = lposi(html_buffer, "<PRE>", 5)) == NULL)
       {
-         (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented.\n");
+         (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented. (%s %d)\n",
+                      __FILE__, __LINE__);
          return(INCORRECT);
       }
       else
@@ -402,7 +403,8 @@ eval_html_dir_list(char *html_buffer)
          }
          else
          {
-            (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented.\n");
+            (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented. (%s %d)\n",
+                         __FILE__, __LINE__);
             return(INCORRECT);
          }
       }
@@ -674,7 +676,35 @@ eval_html_dir_list(char *html_buffer)
             }
             else
             {
-              (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented.\n");
+               if ((*ptr == ' ') && (*(ptr + 1) == ' ') &&
+                   (*(ptr + 2) == ' ') && (*(ptr + 3) == '<') &&
+                   (*(ptr + 4) == 't') && (*(ptr + 5) == 'r') &&
+                   (*(ptr + 6) == '>'))
+               {
+                  ptr += 7;
+                  while ((*ptr != '\n') && (*ptr != '\r') && (*ptr != '\0'))
+                  {
+                     ptr++;
+                  }
+                  while ((*ptr == '\n') || (*ptr == '\r'))
+                  {
+                     ptr++;
+                  }
+                  while ((*ptr == ' ') || (*ptr == '\t'))
+                  {
+                     ptr++;
+                  }
+                  if ((*ptr == '<') && (*(ptr + 1) == '/') &&
+                      (*(ptr + 2) == 't') && (*(ptr + 3) == 'a') &&
+                      (*(ptr + 4) == 'b') && (*(ptr + 5) == 'l') &&
+                      (*(ptr + 6) == 'e') && (*(ptr + 7) == '>'))
+                  {
+                     (void)printf("Directory empty.\n");
+                     return(INCORRECT);
+                  }
+               }
+               (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented. (%s %d)\n",
+                            __FILE__, __LINE__);
                return(INCORRECT);
             }
          }
@@ -918,13 +948,15 @@ eval_html_dir_list(char *html_buffer)
               }
               else
               {
-                 printf("Unknown HTML directory listing. Please send author a link so that this can be implemented.\n");
+                 printf("Unknown HTML directory listing. Please send author a link so that this can be implemented. (%s %d)\n",
+                        __FILE__, __LINE__);
                  return(INCORRECT);
               }
       }
       else
       {
-         (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented.\n");
+         (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented. (%s %d)\n",
+                      __FILE__, __LINE__);
          return(INCORRECT);
       }
    }
