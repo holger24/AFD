@@ -76,7 +76,7 @@ ftpparse(struct ftpparse *fp,
          mday,
          hour,
          minute;
-   off_t size;
+   off_t size = 0;
    char  tmp_char;
 
    flagneedbase = 1;
