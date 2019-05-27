@@ -677,10 +677,10 @@ main(int argc, char *argv[])
                         {
                            sign = WARN_SIGN;
                         }
-                        system_log(sign, __FILE__, __LINE__,
-                                   _("%-*s: Warn time reached."),
-                                   MAX_HOSTNAME_LENGTH, fsa[i].host_dsp_name);
-                        error_action(fsa[i].host_alias, "start", HOST_WARN_ACTION);
+                        ia_trans_log(sign, __FILE__, __LINE__, i,
+                                     _("Warn time reached."));
+                        error_action(fsa[i].host_alias, "start",
+                                     HOST_WARN_ACTION);
                         event_log(0L, EC_HOST, ET_AUTO, EA_WARN_TIME_SET, "%s",
                                   fsa[i].host_alias);
                      }
@@ -699,6 +699,8 @@ main(int argc, char *argv[])
                            lock_set = YES;
                         }
                         fsa[i].host_status &= ~HOST_WARN_TIME_REACHED;
+                        ia_trans_log(DEBUG_SIGN, __FILE__, __LINE__, i,
+                                     _("Warn time stopped."));
                         error_action(fsa[i].host_alias, "stop", HOST_WARN_ACTION);
                         event_log(0L, EC_HOST, ET_AUTO, EA_WARN_TIME_UNSET, "%s",
                                   fsa[i].host_alias);
