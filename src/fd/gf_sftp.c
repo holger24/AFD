@@ -468,7 +468,8 @@ main(int argc, char *argv[])
       }
       else
       {
-         if (fra[db.fra_pos].force_reread == NO)
+         if ((fra[db.fra_pos].force_reread == NO) ||
+             (fra[db.fra_pos].force_reread == LOCAL_ONLY))
          {
             struct stat rdir_stat_buf;
 

@@ -658,6 +658,8 @@ typedef unsigned long       u_long_64;
 #define DATA_COPIED                3
 #define NORMAL_IDENTIFIER          0
 #define GROUP_IDENTIFIER           1
+#define LOCAL_ONLY                 2
+#define REMOTE_ONLY                3
 
 #define NO_PRIORITY                -100   /* So it knows it does not need */
                                           /* to create the name with      */
@@ -992,6 +994,10 @@ typedef unsigned long       u_long_64;
 #define REP_UNKNOWN_FILES_ID_LENGTH      (sizeof(REP_UNKNOWN_FILES_ID) - 1)
 #define FORCE_REREAD_ID                  "force reread"
 #define FORCE_REREAD_ID_LENGTH           (sizeof(FORCE_REREAD_ID) - 1)
+#define FORCE_REREAD_LOCAL_ID            "force reread local"
+#define FORCE_REREAD_LOCAL_ID_LENGTH     (sizeof(FORCE_REREAD_LOCAL_ID) - 1)
+#define FORCE_REREAD_REMOTE_ID           "force reread remote"
+#define FORCE_REREAD_REMOTE_ID_LENGTH    (sizeof(FORCE_REREAD_REMOTE_ID) - 1)
 #define IMPORTANT_DIR_ID                 "important dir"
 #define IMPORTANT_DIR_ID_LENGTH          (sizeof(IMPORTANT_DIR_ID) - 1)
 #define IGNORE_SIZE_ID                   "ignore size"
@@ -2853,7 +2859,11 @@ struct fileretrieve_status
                                             /* in use.                   */
           char          force_reread;       /* Always read the directory.*/
                                             /* Don't check the directory */
-                                            /* time.                     */
+                                            /* time. If set to YES it is */
+                                            /* for local and remote dirs.*/
+                                            /* LOCAL_ONLY for local only.*/
+                                            /* REMOTE_ONLY is only for   */
+                                            /* remote directories.       */
           char          queued;             /* Used by FD, so it knows   */
                                             /* if the job is in the      */
                                             /* queue or not.             */

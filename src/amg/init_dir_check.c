@@ -1,6 +1,6 @@
 /*
  *  init_dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -916,7 +916,8 @@ init_dir_check(int    argc,
               (fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE)) &&
              ((fra[de[i].fra_pos].no_of_time_entries == 0) ||
               (fra[de[i].fra_pos].host_alias[0] != '\0')) &&
-             (fra[de[i].fra_pos].force_reread == NO))
+             ((fra[de[i].fra_pos].force_reread == NO) ||
+              (fra[de[i].fra_pos].force_reread == REMOTE_ONLY)))
          {
             no_of_inotify_dirs++;
 
@@ -951,7 +952,8 @@ init_dir_check(int    argc,
                  (fra[de[i].fra_pos].dir_flag & INOTIFY_DELETE)) &&
                 ((fra[de[i].fra_pos].no_of_time_entries == 0) ||
                  (fra[de[i].fra_pos].host_alias[0] != '\0')) &&
-                (fra[de[i].fra_pos].force_reread == NO))
+                ((fra[de[i].fra_pos].force_reread == NO) ||
+                 (fra[de[i].fra_pos].force_reread == REMOTE_ONLY)))
             {
                mask = 0;
                if (fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME)

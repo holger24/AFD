@@ -1,6 +1,6 @@
 /*
  *  dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1171,6 +1171,7 @@ main(int argc, char *argv[])
 # ifdef WITH_INOTIFY
                 ((fra[de[i].fra_pos].dir_flag & INOTIFY_NEEDS_SCAN) ||
                  (fra[de[i].fra_pos].force_reread == YES) ||
+                 (fra[de[i].fra_pos].force_reread == LOCAL_ONLY) ||
                  (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) == 0) &&
                   ((fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) == 0) &&
                   ((fra[de[i].fra_pos].dir_flag & INOTIFY_CREATE) == 0) &&
@@ -1258,6 +1259,7 @@ main(int argc, char *argv[])
 # ifdef WITH_INOTIFY
                 ((fra[de[i].fra_pos].dir_flag & INOTIFY_NEEDS_SCAN) ||
                  (fra[de[i].fra_pos].force_reread == YES) ||
+                 (fra[de[i].fra_pos].force_reread == LOCAL_ONLY) ||
                  (fra[de[i].fra_pos].dir_flag & FILES_IN_QUEUE) ||
                  (((fra[de[i].fra_pos].dir_flag & INOTIFY_RENAME) == 0) &&
                   ((fra[de[i].fra_pos].dir_flag & INOTIFY_CLOSE) == 0) &&
@@ -1329,6 +1331,7 @@ main(int argc, char *argv[])
                    * Handle any new files that have arrived.
                    */
                   if ((fra[de[i].fra_pos].force_reread == YES) ||
+                      (fra[de[i].fra_pos].force_reread == LOCAL_ONLY) ||
                       ((force_reread_interval) &&
                        ((now - de[i].search_time) > force_reread_interval)) ||
                       (dir_stat_buf.st_mtime >= de[i].search_time))
@@ -1942,6 +1945,7 @@ do_one_dir(void *arg)
     * Handle any new files that have arrived.
     */
    if ((fra[de[data->i].fra_pos].force_reread == YES) ||
+       (fra[de[data->i].fra_pos].force_reread == LOCAL_ONLY) ||
        (dir_stat_buf.st_mtime >= de[data->i].search_time))
    {
       /* The directory time has changed. New files */

@@ -1,6 +1,6 @@
 /*
  *  update_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -160,10 +160,18 @@ update_info(Widget w)
       {
          (void)sprintf(str_line, "%*s", DIR_INFO_LENGTH_L, "Yes");
       }
-      else
-      {
-         (void)sprintf(str_line, "%*s", DIR_INFO_LENGTH_L, "No");
-      }
+      else if (prev.force_reread == REMOTE_ONLY)
+           {
+              (void)sprintf(str_line, "%*s", DIR_INFO_LENGTH_L, "Remote");
+           }
+      else if (prev.force_reread == LOCAL_ONLY)
+           {
+              (void)sprintf(str_line, "%*s", DIR_INFO_LENGTH_L, "Local");
+           }
+           else
+           {
+              (void)sprintf(str_line, "%*s", DIR_INFO_LENGTH_L, "No");
+           }
       XmTextSetString(text_wl[FORCE_REREAD_POS], str_line);
       flush = YES;
    }

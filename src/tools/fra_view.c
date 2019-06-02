@@ -622,14 +622,22 @@ main(int argc, char *argv[])
             (void)fprintf(stdout, "\n");
          }
 #endif
-         if (fra[i].force_reread == NO)
-         {
-            (void)fprintf(stdout, "Force reread         : NO\n");
-         }
-         else
+         if (fra[i].force_reread == YES)
          {
             (void)fprintf(stdout, "Force reread         : YES\n");
          }
+         else if (fra[i].force_reread == REMOTE_ONLY)
+              {
+                 (void)fprintf(stdout, "Force reread         : REMOTE_ONLY\n");
+              }
+         else if (fra[i].force_reread == LOCAL_ONLY)
+              {
+                 (void)fprintf(stdout, "Force reread         : LOCAL_ONLY\n");
+              }
+              else
+              {
+                 (void)fprintf(stdout, "Force reread         : NO\n");
+              }
          (void)fprintf(stdout, "Queued               : %d\n", (int)fra[i].queued);
          if (fra[i].remove == NO)
          {

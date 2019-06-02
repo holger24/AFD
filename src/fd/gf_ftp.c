@@ -827,7 +827,8 @@ main(int argc, char *argv[])
       {
          if ((ftp_options & FTP_OPTION_MLST_MODIFY) &&
              ((fsa->protocol_options & FTP_DISABLE_MLST) == 0) &&
-             (fra[db.fra_pos].force_reread == NO))
+             ((fra[db.fra_pos].force_reread == NO) ||
+              (fra[db.fra_pos].force_reread == LOCAL_ONLY)))
          {
             if ((status = ftp_mlst(".", &new_dir_mtime)) == SUCCESS)
             {

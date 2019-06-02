@@ -1,7 +1,7 @@
 /*
  *  eval_dir_options.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 2000 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ DESCR__S_M3
  **        do not remove
  **        store retrieve list [once]
  **        priority <value>                      [DEFAULT 9]
- **        force reread
+ **        force reread [local|remote]
  **        ls data filename <file name>
  **        max process <value>                   [DEFAULT 10]
  **        max files <value>                     [DEFAULT ?]
@@ -1556,9 +1556,33 @@ eval_dir_options(int dir_pos, char *dir_options, FILE *cmd_fp)
               }
            }
       else if (((used & FORCE_REREAD_FLAG) == 0) &&
+               (strncmp(ptr, FORCE_REREAD_REMOTE_ID,
+                        FORCE_REREAD_REMOTE_ID_LENGTH) == 0))
+           {
+              used |= FORCE_REREAD_FLAG;
+              ptr += FORCE_REREAD_REMOTE_ID_LENGTH;
+              while ((*ptr != '\n') && (*ptr != '\0'))
+              {
+                 ptr++;
+              }
+              dd[dir_pos].force_reread = REMOTE_ONLY;
+           }
+      else if (((used & FORCE_REREAD_FLAG) == 0) &&
+               (strncmp(ptr, FORCE_REREAD_LOCAL_ID,
+                        FORCE_REREAD_LOCAL_ID_LENGTH) == 0))
+           {
+              used |= FORCE_REREAD_FLAG;
+              ptr += FORCE_REREAD_LOCAL_ID_LENGTH;
+              while ((*ptr != '\n') && (*ptr != '\0'))
+              {
+                 ptr++;
+              }
+              dd[dir_pos].force_reread = LOCAL_ONLY;
+           }
+      else if (((used & FORCE_REREAD_FLAG) == 0) &&
                (strncmp(ptr, FORCE_REREAD_ID, FORCE_REREAD_ID_LENGTH) == 0))
            {
-              used |= REP_UNKNOWN_FILES_FLAG;
+              used |= FORCE_REREAD_FLAG;
               ptr += FORCE_REREAD_ID_LENGTH;
               while ((*ptr != '\n') && (*ptr != '\0'))
               {

@@ -1,6 +1,6 @@
 /*
  *  get_dir_options.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -558,13 +558,34 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
          }
          if (fra[i].force_reread == YES)
          {
-            (void)strcpy(d_o->aoptions[d_o->no_of_dir_options], "force reread");
+            (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
+                         FORCE_REREAD_ID);
             d_o->no_of_dir_options++;
             if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
             {
                goto done;
             }
          }
+         else if (fra[i].force_reread == REMOTE_ONLY)
+              {
+                 (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
+                              FORCE_REREAD_REMOTE_ID);
+                 d_o->no_of_dir_options++;
+                 if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
+                 {
+                    goto done;
+                 }
+              }
+         else if (fra[i].force_reread == LOCAL_ONLY)
+              {
+                 (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
+                              FORCE_REREAD_LOCAL_ID);
+                 d_o->no_of_dir_options++;
+                 if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
+                 {
+                    goto done;
+                 }
+              }
          if (fra[i].end_character != -1)
          {
             (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],
