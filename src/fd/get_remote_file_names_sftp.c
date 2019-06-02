@@ -78,6 +78,7 @@ extern struct filetransfer_status *fsa;
 static time_t                     current_time;
 
 /* Local function prototypes. */
+static void                       do_scan(int *, off_t *, int *);
 static int                        check_list(char *, struct stat *, int *,
                                   off_t *, int *);
 
@@ -255,72 +256,81 @@ try_attach_again:
             }
          }
       }
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
+      if ((files_to_retrieve == 0) && (db.special_flag & OLD_ERROR_JOB))
+      {
+         do_scan(&files_to_retrieve, file_size_to_retrieve, more_files_in_list);
+      }
+#endif
    }
    else
    {
-      unsigned int     files_deleted = 0,
-                       list_length = 0;
-      int              gotcha,
-                       j,
-                       nfg,           /* Number of file mask. */
-                       status;
-      char             filename[MAX_FILENAME_LENGTH],
-                       *p_mask;
-      off_t            file_size_deleted = 0,
-                       list_size = 0;
-      struct file_mask *fml = NULL;
-      struct tm        *p_tm;
-      struct stat      stat_buf;
+      do_scan(&files_to_retrieve, file_size_to_retrieve, more_files_in_list);
+   }
 
-      /* Get all file masks for this directory. */
-      if ((j = read_file_mask(fra[db.fra_pos].dir_alias, &nfg, &fml)) == INCORRECT)
+   return(files_to_retrieve);
+}
+
+
+/*+++++++++++++++++++++++++++++++ do_scan() +++++++++++++++++++++++++++++*/
+static void
+do_scan(int   *files_to_retrieve,
+        off_t *file_size_to_retrieve,
+        int   *more_files_in_list)
+{
+   unsigned int     files_deleted = 0,
+                    list_length = 0;
+   int              gotcha,
+                    i,
+                    j,
+                    nfg,           /* Number of file mask. */
+                    status;
+   char             filename[MAX_FILENAME_LENGTH],
+                    *p_mask;
+   off_t            file_size_deleted = 0,
+                    list_size = 0;
+   struct file_mask *fml = NULL;
+   struct tm        *p_tm;
+   struct stat      stat_buf;
+
+   /* Get all file masks for this directory. */
+   if ((j = read_file_mask(fra[db.fra_pos].dir_alias, &nfg, &fml)) == INCORRECT)
+   {
+      if (j == LOCKFILE_NOT_THERE)
       {
-         if (j == LOCKFILE_NOT_THERE)
-         {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "Failed to set lock in file masks, because the file is not there.");
-         }
-         else if (j == LOCK_IS_SET)
-              {
-                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                            "Failed to get the file masks, because lock is already set");
-              }
-              else
-              {
-                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                            "Failed to get the file masks. (%d)", j);
-              }
-         if (fml != NULL)
-         {
-            free(fml);
-         }
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to set lock in file masks, because the file is not there.");
+      }
+      else if (j == LOCK_IS_SET)
+           {
+              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "Failed to get the file masks, because lock is already set");
+           }
+           else
+           {
+              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "Failed to get the file masks. (%d)", j);
+           }
+      if (fml != NULL)
+      {
+         free(fml);
+      }
+      sftp_quit();
+      exit(INCORRECT);
+   }
+
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
+   if ((fra[db.fra_pos].stupid_mode == YES) ||
+       (fra[db.fra_pos].remove == YES))
+   {
+      if (reset_ls_data(db.fra_pos) == INCORRECT)
+      {
          sftp_quit();
          exit(INCORRECT);
       }
-
-#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-      if ((fra[db.fra_pos].stupid_mode == YES) ||
-          (fra[db.fra_pos].remove == YES))
-      {
-         if (reset_ls_data(db.fra_pos) == INCORRECT)
-         {
-            sftp_quit();
-            exit(INCORRECT);
-         }
-      }
-      else
-      {
-         if (rl_fd == -1)
-         {
-            if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag,
-                               YES) == INCORRECT)
-            {
-               sftp_quit();
-               exit(INCORRECT);
-            }
-         }
-      }
-#else
+   }
+   else
+   {
       if (rl_fd == -1)
       {
          if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag,
@@ -330,332 +340,342 @@ try_attach_again:
             exit(INCORRECT);
          }
       }
-      if ((fra[db.fra_pos].stupid_mode == YES) ||
-          (fra[db.fra_pos].remove == YES))
+   }
+#else
+   if (rl_fd == -1)
+   {
+      if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag,
+                         YES) == INCORRECT)
       {
-         /*
-          * If all files from the previous listing have been
-          * collected, lets reset the ls_data structure or otherwise
-          * it keeps on growing forever.
-          */
-# ifdef LOCK_DEBUG
-         if (lock_region(rl_fd, LOCK_RETR_PROC,
-                         __FILE__, __LINE__) == LOCK_IS_NOT_SET)
-# else
-         if (lock_region(rl_fd, LOCK_RETR_PROC) == LOCK_IS_NOT_SET)
-# endif
-         {
-            if (reset_ls_data(db.fra_pos) == INCORRECT)
-            {
-               sftp_quit();
-               exit(INCORRECT);
-            }
-         }
-# ifdef LOCK_DEBUG
-         unlock_region(rl_fd, LOCK_RETR_PROC, __FILE__, __LINE__);
-# else
-         unlock_region(rl_fd, LOCK_RETR_PROC);
-# endif
+         sftp_quit();
+         exit(INCORRECT);
       }
+   }
+   if ((fra[db.fra_pos].stupid_mode == YES) ||
+       (fra[db.fra_pos].remove == YES))
+   {
+      /*
+       * If all files from the previous listing have been
+       * collected, lets reset the ls_data structure or otherwise
+       * it keeps on growing forever.
+       */
+# ifdef LOCK_DEBUG
+      if (lock_region(rl_fd, LOCK_RETR_PROC,
+                      __FILE__, __LINE__) == LOCK_IS_NOT_SET)
+# else
+      if (lock_region(rl_fd, LOCK_RETR_PROC) == LOCK_IS_NOT_SET)
+# endif
+      {
+         if (reset_ls_data(db.fra_pos) == INCORRECT)
+         {
+            sftp_quit();
+            exit(INCORRECT);
+         }
+      }
+# ifdef LOCK_DEBUG
+      unlock_region(rl_fd, LOCK_RETR_PROC, __FILE__, __LINE__);
+# else
+      unlock_region(rl_fd, LOCK_RETR_PROC);
+# endif
+   }
 #endif
 
-      if ((fra[db.fra_pos].ignore_file_time != 0) ||
-          (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES))
-      {
-         /* Note: FTP returns GMT so we need to convert this to GMT! */
-         current_time = time(NULL);
-         p_tm = gmtime(&current_time);
-         current_time = mktime(p_tm);
-      }
+   if ((fra[db.fra_pos].ignore_file_time != 0) ||
+       (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES))
+   {
+      /* Note: FTP returns GMT so we need to convert this to GMT! */
+      current_time = time(NULL);
+      p_tm = gmtime(&current_time);
+      current_time = mktime(p_tm);
+   }
 
-      /*
-       * Get a directory listing from the remote site so we can see
-       * what files are there.
-       */
-      if ((status = sftp_open_dir("")) == SUCCESS)
+   /*
+    * Get a directory listing from the remote site so we can see
+    * what files are there.
+    */
+   if ((status = sftp_open_dir("")) == SUCCESS)
+   {
+      if (fsa->debug > NORMAL_MODE)
+      {
+         trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                      "Opened remote directory.");
+      }
+      while ((status = sftp_readdir(filename, &stat_buf)) == SUCCESS)
+      {
+         if ((((filename[0] == '.') && (filename[1] == '\0')) ||
+              ((filename[0] == '.') && (filename[1] == '.') &&
+               (filename[2] == '\0'))) ||
+             (((fra[db.fra_pos].dir_flag & ACCEPT_DOT_FILES) == 0) &&
+              (filename[0] == '.')) ||
+             (S_ISREG(stat_buf.st_mode) == 0))
+         {
+            continue;
+         }
+         else
+         {
+            int namelen = strlen(filename);
+
+            list_length++;
+            list_size += stat_buf.st_size;
+            if (namelen >= (MAX_FILENAME_LENGTH - 1))
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "Remote file name `%s' is to long (%d), it may only be %d bytes long.",
+                         filename, namelen, (MAX_FILENAME_LENGTH - 1));
+               continue;
+            }
+            if (fsa->debug > NORMAL_MODE)
+            {
+               time_t mtime;
+               char   dstr[26],
+                      mstr[11];
+
+               mtime = stat_buf.st_mtime;
+               p_tm = gmtime(&mtime);
+               (void)strftime(dstr, 26, "%a %h %d %H:%M:%S %Y", p_tm);
+               mode_t2str(stat_buf.st_mode, mstr);
+               trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+#if SIZEOF_OFF_T == 4
+                            "%s %s size=%ld uid=%u gid=%u mode=%o %s",
+#else
+                            "%s %s size=%lld uid=%u gid=%u mode=%o %s",
+#endif
+                            mstr, dstr, (pri_off_t)stat_buf.st_size,
+                            (stat_buf.st_mode & ~S_IFMT),
+                            (unsigned int)stat_buf.st_uid,
+                            (unsigned int)stat_buf.st_gid, filename);
+            }
+
+            if (fra[db.fra_pos].dir_flag == ALL_DISABLED)
+            {
+               delete_remote_file(SFTP, filename, namelen,
+#ifdef _DELETE_LOG
+                                  DELETE_HOST_DISABLED,
+#endif
+                                  &files_deleted, &file_size_deleted,
+                                  stat_buf.st_size);
+            }
+            else
+            {
+               gotcha = NO;
+               for (i = 0; i < nfg; i++)
+               {
+                  p_mask = fml[i].file_list;
+                  for (j = 0; j < fml[i].fc; j++)
+                  {
+                     if ((status = pmatch(p_mask, filename, NULL)) == 0)
+                     {
+                        if (check_list(filename, &stat_buf,
+                                       files_to_retrieve,
+                                       file_size_to_retrieve,
+                                       more_files_in_list) == 0)
+                        {
+                           gotcha = YES;
+                        }
+                        else
+                        {
+                           gotcha = NEITHER;
+                        }
+                        break;
+                     }
+                     else if (status == 1)
+                          {
+                             /* This file is definitly NOT wanted! */
+                             /* Lets skip the rest of this group.  */
+                             break;
+                          }
+                     NEXT(p_mask);
+                  }
+                  if ((gotcha == YES) || (gotcha == NEITHER))
+                  {
+                     break;
+                  }
+               }
+
+               if ((gotcha == NO) && (status != 0) &&
+                   (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES))
+               {
+                  time_t diff_time = current_time - stat_buf.st_mtime;
+
+                  if ((fra[db.fra_pos].unknown_file_time == -2) ||
+                      ((diff_time > fra[db.fra_pos].unknown_file_time) &&
+                       (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
+                  {
+                     delete_remote_file(SFTP, filename, namelen,
+#ifdef _DELETE_LOG
+                                        DEL_UNKNOWN_FILE,
+#endif
+                                        &files_deleted, &file_size_deleted,
+                                        stat_buf.st_size);
+                  }
+               }
+            }
+         }
+      }
+      if (status == INCORRECT)
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                   "Failed to read remote directory.");
+         sftp_quit();
+         exit(LIST_ERROR);
+      }
+      if (sftp_close_dir() == INCORRECT)
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                   "Failed to close remote directory.");
+      }
+      else
       {
          if (fsa->debug > NORMAL_MODE)
          {
             trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                         "Opened remote directory.");
-         }
-         while ((status = sftp_readdir(filename, &stat_buf)) == SUCCESS)
-         {
-            if ((((filename[0] == '.') && (filename[1] == '\0')) ||
-                 ((filename[0] == '.') && (filename[1] == '.') &&
-                  (filename[2] == '\0'))) ||
-                (((fra[db.fra_pos].dir_flag & ACCEPT_DOT_FILES) == 0) &&
-                 (filename[0] == '.')) ||
-                (S_ISREG(stat_buf.st_mode) == 0))
-            {
-               continue;
-            }
-            else
-            {
-               int namelen = strlen(filename);
-
-               list_length++;
-               list_size += stat_buf.st_size;
-               if (namelen >= (MAX_FILENAME_LENGTH - 1))
-               {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "Remote file name `%s' is to long (%d), it may only be %d bytes long.",
-                            filename, namelen, (MAX_FILENAME_LENGTH - 1));
-                  continue;
-               }
-               if (fsa->debug > NORMAL_MODE)
-               {
-                  time_t mtime;
-                  char   dstr[26],
-                         mstr[11];
-
-                  mtime = stat_buf.st_mtime;
-                  p_tm = gmtime(&mtime);
-                  (void)strftime(dstr, 26, "%a %h %d %H:%M:%S %Y", p_tm);
-                  mode_t2str(stat_buf.st_mode, mstr);
-                  trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-#if SIZEOF_OFF_T == 4
-                               "%s %s size=%ld uid=%u gid=%u mode=%o %s",
-#else
-                               "%s %s size=%lld uid=%u gid=%u mode=%o %s",
-#endif
-                               mstr, dstr, (pri_off_t)stat_buf.st_size,
-                               (stat_buf.st_mode & ~S_IFMT),
-                               (unsigned int)stat_buf.st_uid,
-                               (unsigned int)stat_buf.st_gid, filename);
-               }
-
-               if (fra[db.fra_pos].dir_flag == ALL_DISABLED)
-               {
-                  delete_remote_file(SFTP, filename, namelen,
-#ifdef _DELETE_LOG
-                                     DELETE_HOST_DISABLED,
-#endif
-                                     &files_deleted, &file_size_deleted,
-                                     stat_buf.st_size);
-               }
-               else
-               {
-                  gotcha = NO;
-                  for (i = 0; i < nfg; i++)
-                  {
-                     p_mask = fml[i].file_list;
-                     for (j = 0; j < fml[i].fc; j++)
-                     {
-                        if ((status = pmatch(p_mask, filename, NULL)) == 0)
-                        {
-                           if (check_list(filename, &stat_buf,
-                                          &files_to_retrieve,
-                                          file_size_to_retrieve,
-                                          more_files_in_list) == 0)
-                           {
-                              gotcha = YES;
-                           }
-                           else
-                           {
-                              gotcha = NEITHER;
-                           }
-                           break;
-                        }
-                        else if (status == 1)
-                             {
-                                /* This file is definitly NOT wanted! */
-                                /* Lets skip the rest of this group.  */
-                                break;
-                             }
-                        NEXT(p_mask);
-                     }
-                     if ((gotcha == YES) || (gotcha == NEITHER))
-                     {
-                        break;
-                     }
-                  }
-
-                  if ((gotcha == NO) && (status != 0) &&
-                      (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES))
-                  {
-                     time_t diff_time = current_time - stat_buf.st_mtime;
-
-                     if ((fra[db.fra_pos].unknown_file_time == -2) ||
-                         ((diff_time > fra[db.fra_pos].unknown_file_time) &&
-                          (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
-                     {
-                        delete_remote_file(SFTP, filename, namelen,
-#ifdef _DELETE_LOG
-                                           DEL_UNKNOWN_FILE,
-#endif
-                                           &files_deleted, &file_size_deleted,
-                                           stat_buf.st_size);
-                     }
-                  }
-               }
-            }
-         }
-         if (status == INCORRECT)
-         {
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                      "Failed to read remote directory.");
-            sftp_quit();
-            exit(LIST_ERROR);
-         }
-         if (sftp_close_dir() == INCORRECT)
-         {
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                      "Failed to close remote directory.");
-         }
-         else
-         {
-            if (fsa->debug > NORMAL_MODE)
-            {
-               trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                            "Closed remote directory.");
-            }
-         }
-      }
-      else
-      {
-         trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                   "Failed to open remote directory for reading.");
-         sftp_quit();
-         exit(LIST_ERROR);
-      }
-
-      /* Free file mask list. */
-      for (i = 0; i < nfg; i++)
-      {
-         free(fml[i].file_list);
-      }
-      free(fml);
-
-      if (files_deleted > 0)
-      {
-         trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
-#if SIZEOF_OFF_T == 4
-                   "%d files %ld bytes found for retrieving %s[%u files with %ld bytes in %s (deleted %u files with %ld bytes)]. @%x",
-#else
-                   "%d files %lld bytes found for retrieving %s[%u files with %lld bytes in %s (deleted %u files with %lld bytes)]. @%x",
-#endif
-                   files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
-                   (*more_files_in_list == YES) ? "(+) " : "",
-                   list_length, (pri_off_t)list_size,
-                   (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
-                   files_deleted, (pri_off_t)file_size_deleted, db.id.dir);
-      }
-      else
-      {
-         trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
-#if SIZEOF_OFF_T == 4
-                   "%d files %ld bytes found for retrieving %s[%u files with %ld bytes in %s]. @%x",
-#else
-                   "%d files %lld bytes found for retrieving %s[%u files with %lld bytes in %s]. @%x",
-#endif
-                   files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
-                   (*more_files_in_list == YES) ? "(+) " : "",
-                   list_length, (pri_off_t)list_size,
-                   (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
-                   db.id.dir);
-      }
-
-      /*
-       * Remove all files from the remote_list structure that are not
-       * in the current buffer.
-       */
-      if ((fra[db.fra_pos].stupid_mode != YES) &&
-          (fra[db.fra_pos].remove == NO))
-      {
-         int    files_removed = 0,
-                i;
-         size_t move_size;
-
-         for (i = 0; i < (no_of_listed_files - files_removed); i++)
-         {
-            if (rl[i].in_list == NO)
-            {
-               int j = i;
-
-               while ((rl[j].in_list == NO) &&
-                      (j < (no_of_listed_files - files_removed)))
-               {
-                  j++;
-               }
-               if (j != (no_of_listed_files - files_removed))
-               {
-                  move_size = (no_of_listed_files - files_removed - j) *
-                              sizeof(struct retrieve_list);
-                  (void)memmove(&rl[i], &rl[j], move_size);
-               }
-               files_removed += (j - i);
-            }
-         }
-
-         if (files_removed > 0)
-         {
-            int    current_no_of_listed_files = no_of_listed_files;
-            size_t new_size,
-                   old_size;
-
-            no_of_listed_files -= files_removed;
-            if (no_of_listed_files < 0)
-            {
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Hmmm, no_of_listed_files = %d", no_of_listed_files);
-               no_of_listed_files = 0;
-            }
-            if (no_of_listed_files == 0)
-            {
-               new_size = (RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
-                          AFD_WORD_OFFSET;
-            }
-            else
-            {
-               new_size = (((no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
-                           RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
-                          AFD_WORD_OFFSET;
-            }
-            old_size = (((current_no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
-                        RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
-                       AFD_WORD_OFFSET;
-
-            if (old_size != new_size)
-            {
-               char   *ptr;
-
-               ptr = (char *)rl - AFD_WORD_OFFSET;
-#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-               if ((fra[db.fra_pos].stupid_mode == YES) ||
-                   (fra[db.fra_pos].remove == YES))
-               {
-                  if ((ptr = realloc(ptr, new_size)) == NULL)
-                  {
-                     system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                "realloc() error : %s", strerror(errno));
-                     sftp_quit();
-                     exit(INCORRECT);
-                  }
-               }
-               else
-               {
-#endif
-                  if ((ptr = mmap_resize(rl_fd, ptr, new_size)) == (caddr_t) -1)
-                  {
-                     system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                "mmap_resize() error : %s", strerror(errno));
-                     sftp_quit();
-                     exit(INCORRECT);
-                  }
-                  rl_size = new_size;
-#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-               }
-#endif
-               ptr += AFD_WORD_OFFSET;
-               rl = (struct retrieve_list *)ptr;
-            }
-            *(int *)((char *)rl - AFD_WORD_OFFSET) = no_of_listed_files;
+                         "Closed remote directory.");
          }
       }
    }
+   else
+   {
+      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                "Failed to open remote directory for reading.");
+      sftp_quit();
+      exit(LIST_ERROR);
+   }
 
-   return(files_to_retrieve);
+   /* Free file mask list. */
+   for (i = 0; i < nfg; i++)
+   {
+      free(fml[i].file_list);
+   }
+   free(fml);
+
+   if (files_deleted > 0)
+   {
+      trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                "%d files %ld bytes found for retrieving %s[%u files with %ld bytes in %s (deleted %u files with %ld bytes)]. @%x",
+#else
+                "%d files %lld bytes found for retrieving %s[%u files with %lld bytes in %s (deleted %u files with %lld bytes)]. @%x",
+#endif
+                *files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
+                (*more_files_in_list == YES) ? "(+) " : "",
+                list_length, (pri_off_t)list_size,
+                (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                files_deleted, (pri_off_t)file_size_deleted, db.id.dir);
+   }
+   else
+   {
+      trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                "%d files %ld bytes found for retrieving %s[%u files with %ld bytes in %s]. @%x",
+#else
+                "%d files %lld bytes found for retrieving %s[%u files with %lld bytes in %s]. @%x",
+#endif
+                *files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
+                (*more_files_in_list == YES) ? "(+) " : "",
+                list_length, (pri_off_t)list_size,
+                (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                db.id.dir);
+   }
+
+   /*
+    * Remove all files from the remote_list structure that are not
+    * in the current buffer.
+    */
+   if ((fra[db.fra_pos].stupid_mode != YES) &&
+       (fra[db.fra_pos].remove == NO))
+   {
+      int    files_removed = 0,
+             i;
+      size_t move_size;
+
+      for (i = 0; i < (no_of_listed_files - files_removed); i++)
+      {
+         if (rl[i].in_list == NO)
+         {
+            int j = i;
+
+            while ((rl[j].in_list == NO) &&
+                   (j < (no_of_listed_files - files_removed)))
+            {
+               j++;
+            }
+            if (j != (no_of_listed_files - files_removed))
+            {
+               move_size = (no_of_listed_files - files_removed - j) *
+                           sizeof(struct retrieve_list);
+               (void)memmove(&rl[i], &rl[j], move_size);
+            }
+            files_removed += (j - i);
+         }
+      }
+
+      if (files_removed > 0)
+      {
+         int    current_no_of_listed_files = no_of_listed_files;
+         size_t new_size,
+                old_size;
+
+         no_of_listed_files -= files_removed;
+         if (no_of_listed_files < 0)
+         {
+            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       "Hmmm, no_of_listed_files = %d", no_of_listed_files);
+            no_of_listed_files = 0;
+         }
+         if (no_of_listed_files == 0)
+         {
+            new_size = (RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
+                       AFD_WORD_OFFSET;
+         }
+         else
+         {
+            new_size = (((no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
+                        RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
+                       AFD_WORD_OFFSET;
+         }
+         old_size = (((current_no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
+                     RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
+                    AFD_WORD_OFFSET;
+
+         if (old_size != new_size)
+         {
+            char   *ptr;
+
+            ptr = (char *)rl - AFD_WORD_OFFSET;
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
+            if ((fra[db.fra_pos].stupid_mode == YES) ||
+                (fra[db.fra_pos].remove == YES))
+            {
+               if ((ptr = realloc(ptr, new_size)) == NULL)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "realloc() error : %s", strerror(errno));
+                  sftp_quit();
+                  exit(INCORRECT);
+               }
+            }
+            else
+            {
+#endif
+               if ((ptr = mmap_resize(rl_fd, ptr, new_size)) == (caddr_t) -1)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "mmap_resize() error : %s", strerror(errno));
+                  sftp_quit();
+                  exit(INCORRECT);
+               }
+               rl_size = new_size;
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
+            }
+#endif
+            ptr += AFD_WORD_OFFSET;
+            rl = (struct retrieve_list *)ptr;
+         }
+         *(int *)((char *)rl - AFD_WORD_OFFSET) = no_of_listed_files;
+      }
+   }
+
+   return;
 }
 
 

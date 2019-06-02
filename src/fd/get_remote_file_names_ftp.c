@@ -93,6 +93,7 @@ static int                        check_date = YES,
 static time_t                     current_time;
 
 /* Local function prototypes. */
+static void                       do_scan(int *, off_t *, int *, unsigned int);
 static int                        check_list(char *, int *, time_t *, off_t *,
                                              int *, unsigned int);
 
@@ -462,133 +463,148 @@ try_attach_again:
             }
          }
       } /* for (i = 0; i < no_of_listed_files; i++) */
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
+      if ((files_to_retrieve == 0) && (db.special_flag & OLD_ERROR_JOB))
+      {
+         do_scan(&files_to_retrieve, file_size_to_retrieve, more_files_in_list,
+                 ftp_options);
+      }
+#endif
    }
    else
    {
-      unsigned int     files_deleted = 0,
-                       list_length = 0;
-      int              gotcha,
-                       j,
-                       nfg,           /* Number of file mask. */
-                       status,
-                       type;
-      char             *nlist = NULL,
-                       *p_end,
-                       *p_list,
-                       *p_mask;
-      struct file_mask *fml = NULL;
-      struct tm        *p_tm;
+      do_scan(&files_to_retrieve, file_size_to_retrieve, more_files_in_list,
+              ftp_options);
+   }
 
-      /*
-       * Get a directory listing from the remote site so we can see
-       * what files are there.
-       */
+   return(files_to_retrieve);
+}
+
+
+/*+++++++++++++++++++++++++++++++ do_scan() +++++++++++++++++++++++++++++*/
+static void
+do_scan(int          *files_to_retrieve,
+        off_t        *file_size_to_retrieve,
+        int          *more_files_in_list,
+        unsigned int ftp_options)
+{
+   unsigned int     files_deleted = 0,
+                    list_length = 0;
+   int              gotcha,
+                    i,
+                    j,
+                    nfg,           /* Number of file mask. */
+                    status,
+                    type;
+   char             *nlist = NULL,
+                    *p_end,
+                    *p_list,
+                    *p_mask;
+   struct file_mask *fml = NULL;
+   struct tm        *p_tm;
+
+   /*
+    * Get a directory listing from the remote site so we can see
+    * what files are there.
+    */
 #ifdef WITH_SSL
-      if (db.auth == BOTH)
-      {
-         type = NLIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
-      }
-      else
-      {
+   if (db.auth == BOTH)
+   {
+      type = NLIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
+   }
+   else
+   {
 #endif
-         type = NLIST_CMD | BUFFERED_LIST;
+      type = NLIST_CMD | BUFFERED_LIST;
 #ifdef WITH_SSL
-      }
+   }
 #endif
-      if ((status = ftp_list(db.mode_flag, type, &nlist)) != SUCCESS)
+   if ((status = ftp_list(db.mode_flag, type, &nlist)) != SUCCESS)
+   {
+      if ((status == 550) || (status == 450))
       {
-         if ((status == 550) || (status == 450))
-         {
-            trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                      "Failed to send NLST command (%d).", status);
-            return(0);
-         }
-         else if (status == 226)
-              {
-                 trans_log(INFO_SIGN, NULL, 0, NULL, msg_str,
-                           "No files found (%d).", status);
-                 return(0);
-              }
-              else
-              {
-                 trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                           "Failed to send NLST command (%d).", status);
-                 (void)ftp_quit();
-                 exit(LIST_ERROR);
-              }
+         trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                   "Failed to send NLST command (%d).", status);
+         *files_to_retrieve = 0;
+         return;
       }
-      else
+      else if (status == 226)
+           {
+              trans_log(INFO_SIGN, NULL, 0, NULL, msg_str,
+                        "No files found (%d).", status);
+              *files_to_retrieve = 0;
+              return;
+           }
+           else
+           {
+              trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                        "Failed to send NLST command (%d).", status);
+              (void)ftp_quit();
+              exit(LIST_ERROR);
+           }
+   }
+   else
+   {
+      if (fsa->debug > NORMAL_MODE)
       {
-         if (fsa->debug > NORMAL_MODE)
-         {
-            trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                         "Send NLST command.");
-         }
+         trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
+                      "Send NLST command.");
       }
+   }
 
-      /*
-       * Some systems return 550 for the NLST command when no files
-       * are found, others return 125 (ie. success) but do not return
-       * any data. So check here if this is the second case.
-       */
-      if (nlist == NULL)
-      {
-         trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
-                   "0 files 0 bytes found for retrieving [0 files in %s]. @%x",
-                   (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
-                   db.id.dir);
-         return(0);
-      }
+   /*
+    * Some systems return 550 for the NLST command when no files
+    * are found, others return 125 (ie. success) but do not return
+    * any data. So check here if this is the second case.
+    */
+   if (nlist == NULL)
+   {
+      trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+                "0 files 0 bytes found for retrieving [0 files in %s]. @%x",
+                (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                db.id.dir);
+      *files_to_retrieve = 0;
+      return;
+   }
 
-      /* Get all file masks for this directory. */
-      if ((j = read_file_mask(fra[db.fra_pos].dir_alias, &nfg, &fml)) != SUCCESS)
+   /* Get all file masks for this directory. */
+   if ((j = read_file_mask(fra[db.fra_pos].dir_alias, &nfg, &fml)) != SUCCESS)
+   {
+      if (j == LOCKFILE_NOT_THERE)
       {
-         if (j == LOCKFILE_NOT_THERE)
-         {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "Failed to set lock in file masks for %s, because the file is not there.",
-                       fra[db.fra_pos].dir_alias);
-         }
-         else if (j == LOCK_IS_SET)
-              {
-                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                            "Failed to get the file masks for %s, because lock is already set",
-                            fra[db.fra_pos].dir_alias);
-              }
-              else
-              {
-                 system_log(ERROR_SIGN, __FILE__, __LINE__,
-                            "Failed to get the file masks for %s. (%d)",
-                            fra[db.fra_pos].dir_alias, j);
-              }
-         free(fml);
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to set lock in file masks for %s, because the file is not there.",
+                    fra[db.fra_pos].dir_alias);
+      }
+      else if (j == LOCK_IS_SET)
+           {
+              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "Failed to get the file masks for %s, because lock is already set",
+                         fra[db.fra_pos].dir_alias);
+           }
+           else
+           {
+              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "Failed to get the file masks for %s. (%d)",
+                         fra[db.fra_pos].dir_alias, j);
+           }
+      free(fml);
+      (void)ftp_quit();
+      exit(INCORRECT);
+   }
+
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
+   if ((fra[db.fra_pos].stupid_mode == YES) ||
+       (fra[db.fra_pos].remove == YES))
+   {
+      if (reset_ls_data(db.fra_pos) == INCORRECT)
+      {
          (void)ftp_quit();
          exit(INCORRECT);
       }
-
-#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-      if ((fra[db.fra_pos].stupid_mode == YES) ||
-          (fra[db.fra_pos].remove == YES))
-      {
-         if (reset_ls_data(db.fra_pos) == INCORRECT)
-         {
-            (void)ftp_quit();
-            exit(INCORRECT);
-         }
-      }
-      else
-      {
-         if (rl_fd == -1)
-         {
-            if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag,
-                               YES) == INCORRECT)
-            {
-               (void)ftp_quit();
-               exit(INCORRECT);
-            }
-         }
-      }
-#else
+   }
+   else
+   {
       if (rl_fd == -1)
       {
          if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag,
@@ -598,313 +614,323 @@ try_attach_again:
             exit(INCORRECT);
          }
       }
-      if ((fra[db.fra_pos].stupid_mode == YES) ||
-          (fra[db.fra_pos].remove == YES))
-      {
-         /*
-          * If all files from the previous listing have been
-          * collected, lets reset the ls_data structure or otherwise
-          * it keeps on growing forever.
-          */
-# ifdef LOCK_DEBUG
-         if (lock_region(rl_fd, LOCK_RETR_PROC,
-                         __FILE__, __LINE__) == LOCK_IS_NOT_SET)
-# else
-         if (lock_region(rl_fd, LOCK_RETR_PROC) == LOCK_IS_NOT_SET)
-# endif
-         {
-            if (reset_ls_data(db.fra_pos) == INCORRECT)
-            {
-               (void)ftp_quit();
-               exit(INCORRECT);
-            }
-         }
-# ifdef LOCK_DEBUG
-         unlock_region(rl_fd, LOCK_RETR_PROC, __FILE__, __LINE__);
-# else
-         unlock_region(rl_fd, LOCK_RETR_PROC);
-# endif
-      }
-#endif
-
-      if ((fra[db.fra_pos].ignore_file_time != 0) ||
-          (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES))
-      {
-         /* Note: FTP returns GMT so we need to convert this to GMT! */
-         current_time = time(NULL);
-         p_tm = gmtime(&current_time);
-         current_time = mktime(p_tm);
-      }
-
-      /* Reduce the list to what is really required. */
-      p_list = nlist;
-      do
-      {
-         p_end = p_list;
-         while ((*p_end != '\n') && (*p_end != '\r') && (*p_end != '\0'))
-         {
-            p_end++;
-         }
-         if (*p_end != '\0')
-         {
-            /* Some FTP Servers (WARDFTP) return ./filename in responce */
-            /* to a NLST command. Lets ignore the ./.                   */
-            if ((*p_list == '.') && (*(p_list + 1) == '/'))
-            {
-               p_list += 2;
-            }
-            if ((*p_list != '.') ||
-                (fra[db.fra_pos].dir_flag & ACCEPT_DOT_FILES))
-            {
-               *p_end = '\0';
-               list_length++;
-
-               /* Check that the file name is not to long! */
-               if ((p_end - p_list) >= (MAX_FILENAME_LENGTH - 1))
-               {
-                  /* File name to long! */
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "Remote file name `%s' is to long, it may only be %d bytes long.",
-                            p_list, (MAX_FILENAME_LENGTH - 1));
-               }
-               else
-               {
-                  if (fra[db.fra_pos].dir_flag == ALL_DISABLED)
-                  {
-                     delete_remote_file(FTP, p_list, strlen(p_list),
-#ifdef _DELETE_LOG
-                                        DELETE_HOST_DISABLED,
-#endif
-                                        &files_deleted, NULL, -1);
-                  }
-                  else
-                  {
-                     time_t file_mtime = 0; /* Silence compiler. */
-
-                     gotcha = NO;
-                     for (i = 0; i < nfg; i++)
-                     {
-                        p_mask = fml[i].file_list;
-                        for (j = 0; j < fml[i].fc; j++)
-                        {
-                           if ((status = pmatch(p_mask, p_list, NULL)) == 0)
-                           {
-                              if (check_list(p_list, &files_to_retrieve,
-                                             &file_mtime,
-                                             file_size_to_retrieve,
-                                             more_files_in_list,
-                                             ftp_options) == 0)
-                              {
-                                 gotcha = YES;
-                              }
-                              else
-                              {
-                                 gotcha = NEITHER;
-                              }
-                              break;
-                           }
-                           else if (status == 1)
-                                {
-                                   /* This file is definitly NOT wanted! */
-                                   /* Lets skip the rest of this group.  */
-                                   break;
-                                }
-#ifdef SHOW_FILTER_MISSES
-                           if ((status == -1) ||
-                               (fsa->debug > NORMAL_MODE))
-                           {
-                              char tmp_mask[MAX_FILENAME_LENGTH];
-
-                              if (expand_filter(p_mask, tmp_mask, time(NULL)) == YES)
-                              {
-                                 trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                              "%s (%s) not fitting %s",
-                                              p_mask, tmp_mask, p_list);
-                              }
-                              else
-                              {
-                                 trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                              "%s not fitting %s",
-                                              p_mask, p_list);
-                              }
-                           }
-#endif
-                           NEXT(p_mask);
-                        }
-                        if ((gotcha == YES) || (gotcha == NEITHER))
-                        {
-                           break;
-                        }
-                     }
-
-                     if ((gotcha == NO) && (status != 0) &&
-                         (file_mtime > 0) &&
-                         (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES))
-                     {
-                        time_t diff_time = current_time - file_mtime;
-
-                        if ((fra[db.fra_pos].unknown_file_time == -2) ||
-                            (file_mtime <= 0) ||
-                            ((diff_time > fra[db.fra_pos].unknown_file_time) &&
-                             (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
-                        {
-                           delete_remote_file(FTP, p_list, strlen(p_list),
-#ifdef _DELETE_LOG
-                                              DEL_UNKNOWN_FILE,
-#endif
-                                              &files_deleted, NULL, -1);
-                        }
-                     }
-                  }
-               }
-            }
-            p_list = p_end + 1;
-            while ((*p_list == '\r') || (*p_list == '\n'))
-            {
-               p_list++;
-            }
-         }
-         else
-         {
-            p_list = p_end;
-         }
-      } while (*p_list != '\0');
-
-      /* Free file mask list. */
-      free(nlist);
-      for (i = 0; i < nfg; i++)
-      {
-         free(fml[i].file_list);
-      }
-      free(fml);
-
-      if (files_deleted > 0)
-      {
-         trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
-#if SIZEOF_OFF_T == 4
-                   "%d files %ld bytes found for retrieving %s[%u files in %s (deleted %u files)]. @%x",
+   }
 #else
-                   "%d files %lld bytes found for retrieving %s[%u files in %s (deleted %u files)]. @%x",
-#endif
-                   files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
-                   (*more_files_in_list == YES) ? "(+) " : "", list_length,
-                   (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
-                   files_deleted, db.id.dir);
-      }
-      else
+   if (rl_fd == -1)
+   {
+      if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag,
+                         YES) == INCORRECT)
       {
-         trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
-#if SIZEOF_OFF_T == 4
-                   "%d files %ld bytes found for retrieving %s[%u files in %s]. @%x",
-#else
-                   "%d files %lld bytes found for retrieving %s[%u files in %s]. @%x",
-#endif
-                   files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
-                   (*more_files_in_list == YES) ? "(+) " : "", list_length,
-                   (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
-                   db.id.dir);
+         (void)ftp_quit();
+         exit(INCORRECT);
       }
-
+   }
+   if ((fra[db.fra_pos].stupid_mode == YES) ||
+       (fra[db.fra_pos].remove == YES))
+   {
       /*
-       * Remove all files from the remote_list structure that are not
-       * in the current nlist buffer.
+       * If all files from the previous listing have been
+       * collected, lets reset the ls_data structure or otherwise
+       * it keeps on growing forever.
        */
-      if ((fra[db.fra_pos].stupid_mode != YES) &&
-          (fra[db.fra_pos].remove == NO))
+# ifdef LOCK_DEBUG
+      if (lock_region(rl_fd, LOCK_RETR_PROC,
+                      __FILE__, __LINE__) == LOCK_IS_NOT_SET)
+# else
+      if (lock_region(rl_fd, LOCK_RETR_PROC) == LOCK_IS_NOT_SET)
+# endif
       {
-         int    files_removed = 0,
-                i;
-         size_t move_size;
-
-         for (i = 0; i < (no_of_listed_files - files_removed); i++)
+         if (reset_ls_data(db.fra_pos) == INCORRECT)
          {
-            if (rl[i].in_list == NO)
-            {
-               int j = i;
-
-               while ((rl[j].in_list == NO) &&
-                      (j < (no_of_listed_files - files_removed)))
-               {
-                  j++;
-               }
-               if (j != (no_of_listed_files - files_removed))
-               {
-                  move_size = (no_of_listed_files - files_removed - j) *
-                              sizeof(struct retrieve_list);
-                  (void)memmove(&rl[i], &rl[j], move_size);
-               }
-               files_removed += (j - i);
-            }
+            (void)ftp_quit();
+            exit(INCORRECT);
          }
+      }
+# ifdef LOCK_DEBUG
+      unlock_region(rl_fd, LOCK_RETR_PROC, __FILE__, __LINE__);
+# else
+      unlock_region(rl_fd, LOCK_RETR_PROC);
+# endif
+   }
+#endif
 
-         if (files_removed > 0)
+   if ((fra[db.fra_pos].ignore_file_time != 0) ||
+       (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES))
+   {
+      /* Note: FTP returns GMT so we need to convert this to GMT! */
+      current_time = time(NULL);
+      p_tm = gmtime(&current_time);
+      current_time = mktime(p_tm);
+   }
+
+   /* Reduce the list to what is really required. */
+   p_list = nlist;
+   do
+   {
+      p_end = p_list;
+      while ((*p_end != '\n') && (*p_end != '\r') && (*p_end != '\0'))
+      {
+         p_end++;
+      }
+      if (*p_end != '\0')
+      {
+         /* Some FTP Servers (WARDFTP) return ./filename in responce */
+         /* to a NLST command. Lets ignore the ./.                   */
+         if ((*p_list == '.') && (*(p_list + 1) == '/'))
          {
-            int    current_no_of_listed_files = no_of_listed_files;
-            size_t new_size,
-                   old_size;
+            p_list += 2;
+         }
+         if ((*p_list != '.') ||
+             (fra[db.fra_pos].dir_flag & ACCEPT_DOT_FILES))
+         {
+            *p_end = '\0';
+            list_length++;
 
-            no_of_listed_files -= files_removed;
-            if (no_of_listed_files < 0)
+            /* Check that the file name is not to long! */
+            if ((p_end - p_list) >= (MAX_FILENAME_LENGTH - 1))
             {
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Hmmm, no_of_listed_files = %d", no_of_listed_files);
-               no_of_listed_files = 0;
-            }
-            if (no_of_listed_files == 0)
-            {
-               new_size = (RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
-                          AFD_WORD_OFFSET;
+               /* File name to long! */
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "Remote file name `%s' is to long, it may only be %d bytes long.",
+                         p_list, (MAX_FILENAME_LENGTH - 1));
             }
             else
             {
-               new_size = (((no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
-                           RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
-                          AFD_WORD_OFFSET;
-            }
-            old_size = (((current_no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
-                        RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
-                       AFD_WORD_OFFSET;
-
-            if (old_size != new_size)
-            {
-               char *ptr;
-
-               ptr = (char *)rl - AFD_WORD_OFFSET;
-#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-               if ((fra[db.fra_pos].stupid_mode == YES) ||
-                   (fra[db.fra_pos].remove == YES))
+               if (fra[db.fra_pos].dir_flag == ALL_DISABLED)
                {
-                  if ((ptr = realloc(ptr, new_size)) == NULL)
-                  {
-                     system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                "realloc() error : %s", strerror(errno));
-                     (void)ftp_quit();
-                     exit(INCORRECT);
-                  }
+                  delete_remote_file(FTP, p_list, strlen(p_list),
+#ifdef _DELETE_LOG
+                                     DELETE_HOST_DISABLED,
+#endif
+                                     &files_deleted, NULL, -1);
                }
                else
                {
-#endif
-                  if ((ptr = mmap_resize(rl_fd, ptr, new_size)) == (caddr_t) -1)
+                  time_t file_mtime = 0; /* Silence compiler. */
+
+                  gotcha = NO;
+                  for (i = 0; i < nfg; i++)
                   {
-                     system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                "mmap_resize() error : %s", strerror(errno));
-                     (void)ftp_quit();
-                     exit(INCORRECT);
-                  }
-                  rl_size = new_size;
-#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-               }
+                     p_mask = fml[i].file_list;
+                     for (j = 0; j < fml[i].fc; j++)
+                     {
+                        if ((status = pmatch(p_mask, p_list, NULL)) == 0)
+                        {
+                           if (check_list(p_list, files_to_retrieve,
+                                          &file_mtime,
+                                          file_size_to_retrieve,
+                                          more_files_in_list,
+                                          ftp_options) == 0)
+                           {
+                              gotcha = YES;
+                           }
+                           else
+                           {
+                              gotcha = NEITHER;
+                           }
+                           break;
+                        }
+                        else if (status == 1)
+                             {
+                                /* This file is definitly NOT wanted! */
+                                /* Lets skip the rest of this group.  */
+                                break;
+                             }
+#ifdef SHOW_FILTER_MISSES
+                        if ((status == -1) ||
+                            (fsa->debug > NORMAL_MODE))
+                        {
+                           char tmp_mask[MAX_FILENAME_LENGTH];
+
+                           if (expand_filter(p_mask, tmp_mask, time(NULL)) == YES)
+                           {
+                              trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                           "%s (%s) not fitting %s",
+                                           p_mask, tmp_mask, p_list);
+                           }
+                           else
+                           {
+                              trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                           "%s not fitting %s",
+                                           p_mask, p_list);
+                           }
+                        }
 #endif
-               ptr += AFD_WORD_OFFSET;
-               rl = (struct retrieve_list *)ptr;
+                        NEXT(p_mask);
+                     }
+                     if ((gotcha == YES) || (gotcha == NEITHER))
+                     {
+                        break;
+                     }
+                  }
+
+                  if ((gotcha == NO) && (status != 0) &&
+                      (file_mtime > 0) &&
+                      (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES))
+                  {
+                     time_t diff_time = current_time - file_mtime;
+
+                     if ((fra[db.fra_pos].unknown_file_time == -2) ||
+                         (file_mtime <= 0) ||
+                         ((diff_time > fra[db.fra_pos].unknown_file_time) &&
+                          (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
+                     {
+                        delete_remote_file(FTP, p_list, strlen(p_list),
+#ifdef _DELETE_LOG
+                                           DEL_UNKNOWN_FILE,
+#endif
+                                           &files_deleted, NULL, -1);
+                     }
+                  }
+               }
             }
-            *(int *)((char *)rl - AFD_WORD_OFFSET) = no_of_listed_files;
          }
+         p_list = p_end + 1;
+         while ((*p_list == '\r') || (*p_list == '\n'))
+         {
+            p_list++;
+         }
+      }
+      else
+      {
+         p_list = p_end;
+      }
+   } while (*p_list != '\0');
+
+   /* Free file mask list. */
+   free(nlist);
+   for (i = 0; i < nfg; i++)
+   {
+      free(fml[i].file_list);
+   }
+   free(fml);
+
+   if (files_deleted > 0)
+   {
+      trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                "%d files %ld bytes found for retrieving %s[%u files in %s (deleted %u files)]. @%x",
+#else
+                "%d files %lld bytes found for retrieving %s[%u files in %s (deleted %u files)]. @%x",
+#endif
+                *files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
+                (*more_files_in_list == YES) ? "(+) " : "", list_length,
+                (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                files_deleted, db.id.dir);
+   }
+   else
+   {
+      trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                "%d files %ld bytes found for retrieving %s[%u files in %s]. @%x",
+#else
+                "%d files %lld bytes found for retrieving %s[%u files in %s]. @%x",
+#endif
+                *files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
+                (*more_files_in_list == YES) ? "(+) " : "", list_length,
+                (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                db.id.dir);
+   }
+
+   /*
+    * Remove all files from the remote_list structure that are not
+    * in the current nlist buffer.
+    */
+   if ((fra[db.fra_pos].stupid_mode != YES) &&
+       (fra[db.fra_pos].remove == NO))
+   {
+      int    files_removed = 0,
+             i;
+      size_t move_size;
+
+      for (i = 0; i < (no_of_listed_files - files_removed); i++)
+      {
+         if (rl[i].in_list == NO)
+         {
+            int j = i;
+
+            while ((rl[j].in_list == NO) &&
+                   (j < (no_of_listed_files - files_removed)))
+            {
+               j++;
+            }
+            if (j != (no_of_listed_files - files_removed))
+            {
+               move_size = (no_of_listed_files - files_removed - j) *
+                           sizeof(struct retrieve_list);
+               (void)memmove(&rl[i], &rl[j], move_size);
+            }
+            files_removed += (j - i);
+         }
+      }
+
+      if (files_removed > 0)
+      {
+         int    current_no_of_listed_files = no_of_listed_files;
+         size_t new_size,
+                old_size;
+
+         no_of_listed_files -= files_removed;
+         if (no_of_listed_files < 0)
+         {
+            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       "Hmmm, no_of_listed_files = %d", no_of_listed_files);
+            no_of_listed_files = 0;
+         }
+         if (no_of_listed_files == 0)
+         {
+            new_size = (RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
+                       AFD_WORD_OFFSET;
+         }
+         else
+         {
+            new_size = (((no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
+                        RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
+                       AFD_WORD_OFFSET;
+         }
+         old_size = (((current_no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
+                     RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
+                    AFD_WORD_OFFSET;
+
+         if (old_size != new_size)
+         {
+            char *ptr;
+
+            ptr = (char *)rl - AFD_WORD_OFFSET;
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
+            if ((fra[db.fra_pos].stupid_mode == YES) ||
+                (fra[db.fra_pos].remove == YES))
+            {
+               if ((ptr = realloc(ptr, new_size)) == NULL)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "realloc() error : %s", strerror(errno));
+                  (void)ftp_quit();
+                  exit(INCORRECT);
+               }
+            }
+            else
+            {
+#endif
+               if ((ptr = mmap_resize(rl_fd, ptr, new_size)) == (caddr_t) -1)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "mmap_resize() error : %s", strerror(errno));
+                  (void)ftp_quit();
+                  exit(INCORRECT);
+               }
+               rl_size = new_size;
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
+            }
+#endif
+            ptr += AFD_WORD_OFFSET;
+            rl = (struct retrieve_list *)ptr;
+         }
+         *(int *)((char *)rl - AFD_WORD_OFFSET) = no_of_listed_files;
       }
    }
 
-   return(files_to_retrieve);
+   return;
 }
 
 
