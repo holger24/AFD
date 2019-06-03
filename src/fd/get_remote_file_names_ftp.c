@@ -463,7 +463,7 @@ try_attach_again:
             }
          }
       } /* for (i = 0; i < no_of_listed_files; i++) */
-#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
+#ifndef DO_NOT_PARALLELIZE_ALL_FETCH
       if ((files_to_retrieve == 0) && (db.special_flag & OLD_ERROR_JOB))
       {
          do_scan(&files_to_retrieve, file_size_to_retrieve, more_files_in_list,
