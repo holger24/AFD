@@ -1955,7 +1955,7 @@ main(int argc, char *argv[])
 
       if (new_dir_mtime != 0)
       {
-         fra[db.fra_pos].dir_mtime = new_dir_mtime;
+         fra[db.fra_pos].dir_mtime = new_dir_mtime - 1;
       }
 
 #ifdef _WITH_BURST_2
