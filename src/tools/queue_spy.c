@@ -131,9 +131,9 @@ main(int argc, char *argv[])
                        qb[i].pos, qb[i].files_to_send,
                        (pri_off_t)qb[i].file_size_to_send,
                        qb[i].retries, qb[i].connect_pos,
-                       (qb[i].special_flag & RESEND_JOB) ? 'X' : ' ',
-                       (qb[i].special_flag & HELPER_JOB) ? 'X' : ' ',
-                       (qb[i].special_flag & FETCH_JOB) ? 'X' : ' ',
+                       (qb[i].special_flag & RESEND_JOB) ? 'R' : ' ',
+                       (qb[i].special_flag & HELPER_JOB) ? 'H' : ' ',
+                       (qb[i].special_flag & FETCH_JOB) ? 'F' : ' ',
                        qb[i].msg_name);
       }
    }
