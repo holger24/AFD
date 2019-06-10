@@ -1,6 +1,6 @@
 /*
  *  afd_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -90,6 +90,7 @@ Widget                     appshell,
                            info_w,
                            pll_widget,  /* Pixmap label left.  */
                            plr_widget;  /* Pixmap label right. */
+XmFontList                 fontlist;
 Pixmap                     active_pixmap = XmUNSPECIFIED_PIXMAP,
                            passive_pixmap = XmUNSPECIFIED_PIXMAP;
 Colormap                   default_cmap;
@@ -176,7 +177,6 @@ main(int argc, char *argv[])
                    v_separator;
    Pixel           default_background;
    XmFontListEntry entry;
-   XmFontList      fontlist;
    Arg             args[MAXARGS];
    Cardinal        argcount;
    uid_t           euid, /* Effective user ID. */

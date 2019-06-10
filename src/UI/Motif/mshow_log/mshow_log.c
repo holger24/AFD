@@ -108,6 +108,7 @@ Widget           appshell,
                  log_scroll_bar,
                  selectlog,
                  selectscroll;
+XmFontList       fontlist;
 int              alias_name_length,
                  current_log_number,
                  line_counter,
@@ -210,7 +211,6 @@ main(int argc, char *argv[])
    XmString        label;
 #endif
    XmFontListEntry entry;
-   XmFontList      fontlist;
    uid_t           euid, /* Effective user ID. */
                    ruid; /* Real user ID. */
 

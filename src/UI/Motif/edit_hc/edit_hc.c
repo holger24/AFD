@@ -1,6 +1,6 @@
 /*
  *  edit_hc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -242,6 +242,7 @@ Widget                     active_mode_w,
                            warn_time_mins_label_w,
                            warn_time_secs_w,
                            warn_time_secs_label_w;
+XmFontList                 fontlist;
 Atom                       compound_text;
 XtInputId                  db_update_cmd_id;
 int                        event_log_fd = STDERR_FILENO,
@@ -329,7 +330,6 @@ main(int argc, char *argv[])
    Arg             args[MAXARGS];
    Cardinal        argcount;
    XmFontListEntry entry;
-   XmFontList      fontlist;
    uid_t           euid, /* Effective user ID. */
                    ruid; /* Real user ID. */
 

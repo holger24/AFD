@@ -286,7 +286,7 @@
 #define FONT_7                           "7x14"
 #define FONT_8                           "8x13"
 #define FONT_9                           "8x16"
-#define FONT_10                          "9x15"
+#define FONT_10                          "9x15bold"
 #define FONT_11                          "10x20"
 #define FONT_12                          "12x24"
 #define DEFAULT_FONT                     "6x13"

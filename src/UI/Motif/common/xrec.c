@@ -1,6 +1,6 @@
 /*
  *  xrec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,6 +52,8 @@ DESCR__S_M3
  **
  ** HISTORY
  **   13.01.1998 H.Kiehl Created
+ **   10.06.2019 H.Kiehl Set font, so the dialog shows in the same size
+ **                      as the main dialog.
  **
  */
 DESCR__E_M3
@@ -60,11 +62,13 @@ DESCR__E_M3
 #include <stdlib.h>            /* abort(), exit()                        */
 #include <stdarg.h>
 #include <Xm/MessageB.h>
+#include <errno.h>
 #include "motif_common_defs.h"
 
 /* External global variables. */
 extern Widget       appshell;
 extern XtAppContext app;
+extern XmFontList   fontlist;
 
 /* Local function prototype. */
 static void         question_callback(Widget, XtPointer, XtPointer);
@@ -74,21 +78,21 @@ static void         question_callback(Widget, XtPointer, XtPointer);
 int
 xrec(char type, char *fmt, ...)
 {
-   int      n = 0;
    char     buf[MAX_LINE_LENGTH + 1];
    va_list  ap;
    Widget   dialog;
    XmString xstring;
-   Arg      arg[2];
+   Arg      arg[5];
 
    va_start(ap, fmt);
    (void)vsnprintf(buf, MAX_LINE_LENGTH, fmt, ap);
    xstring = XmStringCreateLtoR(buf, XmFONTLIST_DEFAULT_TAG);
-   XtSetArg(arg[n], XmNdialogStyle, XmDIALOG_FULL_APPLICATION_MODAL);
-   n++;
-   XtSetArg(arg[n], XmNmessageString, xstring);
-   n++;
-   dialog = XmCreateMessageDialog(appshell, "Message", arg, n);
+   XtSetArg(arg[0], XmNdialogStyle, XmDIALOG_FULL_APPLICATION_MODAL);
+   XtSetArg(arg[1], XmNmessageString, xstring);
+   XtSetArg(arg[2], XmNbuttonFontList, fontlist);
+   XtSetArg(arg[3], XmNlabelFontList, fontlist);
+   XtSetArg(arg[4], XmNtextFontList, fontlist);
+   dialog = XmCreateMessageDialog(appshell, "Message", arg, 5);
    XtUnmanageChild(XmMessageBoxGetChild(dialog, XmDIALOG_HELP_BUTTON));
    switch (type)
    {

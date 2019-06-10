@@ -1,6 +1,6 @@
 /*
  *  handle_event.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -89,6 +89,7 @@ Widget                     appshell,
                            start_time_w,
                            statusbox_w,
                            text_w;
+XmFontList                 fontlist;
 int                        acknowledge_type,
                            event_log_fd = STDERR_FILENO,
                            fra_id,         /* ID of FRA.                 */
@@ -152,7 +153,6 @@ main(int argc, char *argv[])
                    radiobox_w,
                    time_box_w;
    XmFontListEntry entry;
-   XmFontList      fontlist;
    XmFontType      dummy;
    Arg             args[21];
    Cardinal        argcount;

@@ -1,6 +1,6 @@
 /*
  *  mon_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -85,6 +85,7 @@ Widget                 appshell,
                        text_wr[NO_OF_MSA_ROWS],
                        label_l_widget[NO_OF_MSA_ROWS],
                        label_r_widget[NO_OF_MSA_ROWS];
+XmFontList             fontlist;
 int                    afd_position = -1,
                        editable = NO,
                        event_log_fd = STDERR_FILENO,
@@ -162,7 +163,6 @@ main(int argc, char *argv[])
                    h_separator2_w,
                    v_separator_w;
    XmFontListEntry entry;
-   XmFontList      fontlist;
    Arg             args[MAXARGS];
    Cardinal        argcount;
    uid_t           euid, /* Effective user ID. */

@@ -1,6 +1,6 @@
 /*
  *  view_dc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1999 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -91,6 +91,7 @@ XtAppContext app;
 Widget       appshell,
              searchbox_w,
              text_w;
+XmFontList   fontlist;
 int          sys_log_fd = STDERR_FILENO;
 char         dir_alias[MAX_DIR_ALIAS_LENGTH + 1],
              dir_id[MAX_INT_HEX_LENGTH + 1],
@@ -137,7 +138,6 @@ main(int argc, char *argv[])
                    h_separator_w;
    XmFontListEntry entry;
    XFontStruct     *font_struct;
-   XmFontList      fontlist;
    XmFontType      dummy;
    Arg             args[MAXARGS];
    Cardinal        argcount;
