@@ -247,7 +247,7 @@ static double              max_threshold;
                      * files are queued in another message    \
                      * or have been removed due to age.       \
                      */                                       \
-                    remove_msg(kk);                           \
+                    remove_msg(kk, NO);                       \
                     if (kk < *no_msg_queued)                  \
                     {                                         \
                        kk--;                                  \
@@ -545,7 +545,7 @@ main(int argc, char *argv[])
                        "FRA position %d is larger then the possible number of directories %d. Will remove job from queue.",
                        qb[i].pos, no_of_dirs);
          }
-         remove_msg(i);
+         remove_msg(i, NO);
          if (i < *no_msg_queued)
          {
             i--;
@@ -578,7 +578,7 @@ main(int argc, char *argv[])
                        last_job_id_lookup);
             if ((qb[i].pos = lookup_job_id(last_job_id_lookup)) == INCORRECT)
             {
-               remove_msg(i);
+               remove_msg(i, NO);
                if (i < *no_msg_queued)
                {
                   i--;
@@ -839,7 +839,7 @@ main(int argc, char *argv[])
                      if ((faulty = zombie_check(&connection[i], now, &qb_pos,
                                                 WNOHANG)) == NO)
                      {
-                        remove_msg(qb_pos);
+                        remove_msg(qb_pos, NO);
                      }
                      else if ((faulty == YES) || (faulty == NONE))
                           {
@@ -1642,7 +1642,7 @@ system_log(DEBUG_SIGN, NULL, 0,
                         {
 # endif
                            ABS_REDUCE(fsa_pos);
-                           remove_msg(qb_pos);
+                           remove_msg(qb_pos, NO);
 # ifdef _WITH_INTERRUPT_JOB
                         }
 # endif
@@ -1767,7 +1767,7 @@ system_log(DEBUG_SIGN, NULL, 0,
                                                       time(NULL),
                                                       YES)) == REMOVED)
                   {
-                     remove_msg(qb_pos);
+                     remove_msg(qb_pos, NO);
                   }
                }
             }
@@ -2171,7 +2171,7 @@ system_log(DEBUG_SIGN, NULL, 0,
                       * files are queued in another message
                       * or have been removed due to age.
                       */
-                     remove_msg(i);
+                     remove_msg(i, NO);
                      if (i < *no_msg_queued)
                      {
                         i--;
@@ -2654,7 +2654,7 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
                            calc_trl_per_process(fsa_pos);
                         }
                         ABS_REDUCE(fsa_pos);
-                        remove_msg(exec_qb_pos);
+                        remove_msg(exec_qb_pos, NO);
 
                         return(qb[qb_pos].pid);
                      }
@@ -3391,7 +3391,7 @@ check_zombie_queue(time_t now, int qb_pos)
                         (pri_pid_t)connection[qb[qb_pos].connect_pos].pid,
                         connection[qb[qb_pos].connect_pos].msg_name, faulty);
 #endif
-         remove_msg(qb_pos);
+         remove_msg(qb_pos, NO);
       }
       else if ((faulty == YES) || (faulty == NONE))
            {
@@ -3447,7 +3447,7 @@ check_zombie_queue(time_t now, int qb_pos)
                if ((faulty = zombie_check(&connection[zwl[i]], now, &tmp_qb_pos,
                                           WNOHANG)) == NO)
                {
-                  remove_msg(tmp_qb_pos);
+                  remove_msg(tmp_qb_pos, NO);
                   remove_from_zombie_queue = YES;
                }
                else if ((faulty == YES) || (faulty == NONE))
@@ -5216,7 +5216,9 @@ get_free_disp_pos(int pos)
          {
             system_log(DEBUG_SIGN, __FILE__, __LINE__,
                        "Prevented multiple start of scanning same remote dir. [fsa_pos=%d fra_pos=%d qb_pos=%d i=%d] @%x",
-                       pos, qb[qb_pos].pos, qb_pos, i, fra[qb[qb_pos].pos].dir_id);
+                       pos, qb[qb_pos].pos, qb_pos, i,
+                       fra[qb[qb_pos].pos].dir_id);
+            remove_msg(qb_pos, YES);
             return(INCORRECT);
          }
       }
@@ -5368,7 +5370,7 @@ fd_exit(void)
                         {
                            /* Process was in disconnection phase, so we */
                            /* can remove the message from the queue.    */
-                           remove_msg(qb_pos);
+                           remove_msg(qb_pos, NO);
                         }
                         else
                         {
@@ -5384,7 +5386,7 @@ fd_exit(void)
                   }
                   else if (faulty == NO)
                        {
-                          remove_msg(qb_pos);
+                          remove_msg(qb_pos, NO);
                        }
                }
             } /* if (connection[i].pid > 0) */
@@ -5445,7 +5447,7 @@ fd_exit(void)
                            {
                               /* Process was in disconnection phase, so we */
                               /* can remove the message from the queue.    */
-                              remove_msg(qb_pos);
+                              remove_msg(qb_pos, NO);
                            }
                            else
                            {
@@ -5461,7 +5463,7 @@ fd_exit(void)
                      }
                      else if (faulty == NO)
                           {
-                             remove_msg(qb_pos);
+                             remove_msg(qb_pos, NO);
                           }
                   }
                }
