@@ -1,7 +1,7 @@
 /*
  *  handle_setup_file.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -279,7 +279,13 @@ read_setup(char *file_name,
    /* Get the default font. */
    if ((ptr = posi(buffer, FONT_ID)) != NULL)
    {
-      int i = 0;
+      int  gotcha = NO,
+           i = 0;
+      char *font[NO_OF_FONTS] =
+           {
+              FONT_0, FONT_1, FONT_2, FONT_3, FONT_4, FONT_5, FONT_6,
+              FONT_7, FONT_8, FONT_9, FONT_10, FONT_11, FONT_12
+           };
 
       ptr--;
       while ((*ptr == ' ') || (*ptr == '\t'))
@@ -292,6 +298,25 @@ read_setup(char *file_name,
          i++; ptr++;
       }
       font_name[i] = '\0';
+
+      /*
+       * Check if this font is in our list.
+       */
+      for (i = 0; i < NO_OF_FONTS; i++)
+      {
+         if (CHECK_STRCMP(font_name, font[i]) == 0)
+         {
+            gotcha = YES;
+            break;
+         }
+      }
+      if (gotcha == NO)
+      {
+         (void)fprintf(stderr,
+                       "The font %s configured in %s is not compiled in, so picking %s\n",
+                       font_name, setup_file, DEFAULT_FONT);
+         (void)strcpy(font_name, DEFAULT_FONT);
+      }
    }
 
    /* Get the number of rows. */

@@ -1,6 +1,6 @@
 /*
  *  mon_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -2049,6 +2049,55 @@ create_pullright_font(Widget pullright_font)
       else
       {
          fw[i] = NULL;
+      }
+   }
+
+   /*
+    * It can happen that in the setup file there is a font name
+    * that is not in our list. If that is the case current_font
+    * is still -1! So lets check if this is the case and then
+    * try set DEFAULT_FONT.
+    */
+   if (current_font == -1)
+   {
+      for (i = 0; i < NO_OF_FONTS; i++)
+      {
+         if ((fw[i] != NULL) && (CHECK_STRCMP(DEFAULT_FONT, font[i]) == 0))
+         {
+            current_font = i;
+            (void)strcpy(font_name, DEFAULT_FONT);
+            return;
+         }
+      }
+
+      /*
+       * Uurghh! What now? Lets try pick the middle font that is available.
+       */
+      if (current_font == -1)
+      {
+         int available_fonts = 0;
+
+         for (i = 0; i < NO_OF_FONTS; i++)
+         {
+            if (fw[i] != NULL)
+            {
+               available_fonts++;
+            }
+         }
+         if (available_fonts == 0)
+         {
+            (void)fprintf(stderr, "ERROR : Could not find any font.");
+            exit(INCORRECT);
+         }
+         if (available_fonts == 1)
+         {
+            current_font = 0;
+         }
+         else
+         {
+            current_font = available_fonts / 2;
+         }
+         (void)strcpy(font_name, font[current_font]);
       }
    }
 
