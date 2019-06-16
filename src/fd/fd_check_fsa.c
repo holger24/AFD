@@ -126,8 +126,16 @@ fd_check_fsa(void)
       p_afd_status->amg_jobs &= ~FD_WAITING; /* Unset flag */
       if (gotcha == NO)
       {
-         system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                    "Hmmm, AMG does not reset REREADING_DIR_CONFIG flag!");
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "AMG does not reset REREADING_DIR_CONFIG flag!");
+
+         /*
+          * Not sure what the cause is, but sometimes it does not
+          * detect that REREADING_DIR_CONFIG flag is not unset, due
+          * to maybe someone holding the FSA or some other error.
+          * So lets just exit and ask init_afd to restart FD.
+          */
+         exit(PROCESS_NEEDS_RESTART);
       }
 #ifdef DEBUG_WAIT_LOOP
       else
