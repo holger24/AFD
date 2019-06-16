@@ -1,6 +1,6 @@
 /*
  *  create_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -436,6 +436,8 @@ create_db(FILE *udc_reply_fp, int write_fd)
    de[0].alias       = p_ptr[0].ptr[ALIAS_NAME_PTR_POS] + p_offset;
    if ((de[0].fra_pos = lookup_fra_pos(de[0].alias)) == INCORRECT)
    {
+      p_afd_status->amg_jobs ^= WRITTING_JID_STRUCT;
+      p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
       system_log(FATAL_SIGN, __FILE__, __LINE__,
                  "Failed to locate dir alias `%s' for directory `%s'",
                  de[0].alias, de[0].dir);
@@ -451,6 +453,8 @@ create_db(FILE *udc_reply_fp, int write_fd)
                strlen(fsa[fra[de[0].fra_pos].fsa_pos].host_alias) + 1;
       if ((de[0].paused_dir = malloc(length)) == NULL)
       {
+         p_afd_status->amg_jobs ^= WRITTING_JID_STRUCT;
+         p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
          system_log(FATAL_SIGN, __FILE__, __LINE__,
                     "Failed to malloc() %d bytes : %s",
                     length, strerror(errno));
@@ -563,6 +567,8 @@ create_db(FILE *udc_reply_fp, int write_fd)
          dir_counter++;
          if (dir_counter >= no_of_local_dirs)
          {
+            p_afd_status->amg_jobs ^= WRITTING_JID_STRUCT;
+            p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
             system_log(FATAL_SIGN, __FILE__, __LINE__,
                        "Aaarghhh, dir_counter (%d) >= no_of_local_dirs (%d)!?",
                        dir_counter, no_of_local_dirs);
@@ -572,6 +578,8 @@ create_db(FILE *udc_reply_fp, int write_fd)
          de[dir_counter].alias         = p_ptr[i].ptr[ALIAS_NAME_PTR_POS] + p_offset;
          if ((de[dir_counter].fra_pos = lookup_fra_pos(de[dir_counter].alias)) == INCORRECT)
          {
+            p_afd_status->amg_jobs ^= WRITTING_JID_STRUCT;
+            p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
             system_log(FATAL_SIGN, __FILE__, __LINE__,
                        "Failed to locate dir alias `%s' for directory `%s'",
                        de[dir_counter].alias, de[dir_counter].dir);
@@ -590,6 +598,8 @@ create_db(FILE *udc_reply_fp, int write_fd)
                      strlen(fsa[fra[de[dir_counter].fra_pos].fsa_pos].host_alias) + 1;
             if ((de[dir_counter].paused_dir = malloc(length)) == NULL)
             {
+               p_afd_status->amg_jobs ^= WRITTING_JID_STRUCT;
+               p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
                system_log(FATAL_SIGN, __FILE__, __LINE__,
                           "Failed to malloc() %d bytes : %s",
                           length, strerror(errno));
@@ -1227,6 +1237,8 @@ create_db(FILE *udc_reply_fp, int write_fd)
 #ifdef WITH_ERROR_QUEUE
    if ((cml = malloc(((no_of_jobs + dir_counter) * sizeof(int)))) == NULL)
    {
+      p_afd_status->amg_jobs ^= WRITTING_JID_STRUCT;
+      p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
       system_log(FATAL_SIGN, __FILE__, __LINE__,
                  "Failed to malloc() memory : %s", strerror(errno));
       exit(INCORRECT);
@@ -1300,6 +1312,8 @@ create_db(FILE *udc_reply_fp, int write_fd)
             if (((p_data[m].file_dist_pool[i][k].jid_list = malloc(j)) == NULL) ||
                 ((p_data[m].file_dist_pool[i][k].proc_cycles = malloc(max_jobs_per_file)) == NULL))
             {
+               p_afd_status->amg_jobs ^= WRITTING_JID_STRUCT;
+               p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
                system_log(FATAL_SIGN, __FILE__, __LINE__,
                           "malloc() error : %s",
                           strerror(errno));
@@ -1317,6 +1331,8 @@ create_db(FILE *udc_reply_fp, int write_fd)
          if (((file_dist_pool[i][k].jid_list = malloc(j)) == NULL) ||
              ((file_dist_pool[i][k].proc_cycles = malloc(max_jobs_per_file)) == NULL))
          {
+            p_afd_status->amg_jobs ^= WRITTING_JID_STRUCT;
+            p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
             system_log(FATAL_SIGN, __FILE__, __LINE__,
                        "malloc() error : %s",
                        strerror(errno));
@@ -1481,6 +1497,8 @@ write_current_job_list(int no_of_jobs)
    if ((fd = open(current_msg_list_file, (O_WRONLY | O_CREAT | O_TRUNC),
                   FILE_MODE)) == -1)
    {
+      p_afd_status->amg_jobs ^= WRITTING_JID_STRUCT;
+      p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
       system_log(FATAL_SIGN, __FILE__, __LINE__,
                  "Failed to open() `%s' : %s",
                  current_msg_list_file, strerror(errno));
@@ -1496,6 +1514,8 @@ write_current_job_list(int no_of_jobs)
    buf_size = (no_of_jobs + 1) * sizeof(unsigned int);
    if ((int_buf = malloc(buf_size)) == NULL)
    {
+      p_afd_status->amg_jobs ^= WRITTING_JID_STRUCT;
+      p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
       system_log(FATAL_SIGN, __FILE__, __LINE__,
                  "Failed to malloc() %d bytes : %s", buf_size, strerror(errno));
       exit(INCORRECT);
@@ -1509,6 +1529,8 @@ write_current_job_list(int no_of_jobs)
 
    if (write(fd, int_buf, buf_size) != buf_size)
    {
+      p_afd_status->amg_jobs ^= WRITTING_JID_STRUCT;
+      p_afd_status->amg_jobs &= ~REREADING_DIR_CONFIG;
       system_log(FATAL_SIGN, __FILE__, __LINE__,
                  "Failed to write() to `%s' : %s",
                  current_msg_list_file, strerror(errno));
