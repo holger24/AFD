@@ -516,6 +516,7 @@ main(int argc, char *argv[])
                             xmLabelGadgetClass,        frame_w,
                             XmNchildType,              XmFRAME_TITLE_CHILD,
                             XmNchildVerticalAlignment, XmALIGNMENT_CENTER,
+                            XmNfontList,               fontlist,
                             NULL);
 
    /* Create event input field as a ScrolledText window. */

@@ -1,6 +1,6 @@
 /*
  *  mafd_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1501,17 +1501,17 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
           (acp.trace != NO_PERMISSION) ||
           (acp.full_trace != NO_PERMISSION))
       {
-         Widget pullright_debug;
+         Widget pullright_debug_menu;
 
-         pullright_debug = XmCreateSimplePulldownMenu(pull_down_w,
-                                                      "pullright_debug",
-                                                      NULL, 0);
+         pullright_debug_menu = XmCreateSimplePulldownMenu(pull_down_w,
+                                                           "pullright_debug_menu",
+                                                           NULL, 0);
          ow[DEBUG_W] = XtVaCreateManagedWidget("Debug",
                                  xmCascadeButtonWidgetClass, pull_down_w,
                                  XmNfontList,                fontlist,
-                                 XmNsubMenuId,               pullright_debug,
+                                 XmNsubMenuId,               pullright_debug_menu,
                                  NULL);
-         create_pullright_debug(pullright_debug);
+         create_pullright_debug(pullright_debug_menu);
       }
       if (acp.simulation != NO_PERMISSION)
       {
@@ -2137,17 +2137,17 @@ init_popup_menu(Widget w)
       }
       if (acp.debug != NO_PERMISSION)
       {
-         Widget pullright_debug;
+         Widget pullright_debug_popup;
 
-         pullright_debug = XmCreateSimplePulldownMenu(popupmenu,
-                                                      "pullright_debug",
-                                                      NULL, 0);
+         pullright_debug_popup = XmCreateSimplePulldownMenu(popupmenu,
+                                                            "pullright_debug_popup",
+                                                            NULL, 0);
          pw[7] = XtVaCreateManagedWidget("Debug",
                                  xmCascadeButtonWidgetClass, popupmenu,
                                  XmNfontList,                fontlist,
-                                 XmNsubMenuId,               pullright_debug,
+                                 XmNsubMenuId,               pullright_debug_popup,
                                  NULL);
-         create_pullright_debug(pullright_debug);
+         create_pullright_debug(pullright_debug_popup);
       }
       if (acp.info != NO_PERMISSION)
       {

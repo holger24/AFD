@@ -1,6 +1,6 @@
 /*
  *  select_event_actions.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -220,6 +220,7 @@ select_event_actions(Widget w, XtPointer client_data, XtPointer call_data)
                         xmLabelGadgetClass,        frame_w,
                         XmNchildType,              XmFRAME_TITLE_CHILD,
                         XmNchildVerticalAlignment, XmALIGNMENT_CENTER,
+                        XmNfontList,               p_fontlist,
                         NULL);
 
       /*---------------------------------------------------------------*/
