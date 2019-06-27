@@ -439,7 +439,8 @@ do_scan(int   *files_to_retrieve,
 #endif
 
       if ((fra[db.fra_pos].ignore_file_time != 0) ||
-          (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES))
+          (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES) ||
+          (fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES))
       {
          /* Note: FTP returns GMT so we need to convert this to GMT! */
          current_time = time(NULL);
@@ -794,6 +795,58 @@ do_scan(int   *files_to_retrieve,
                               file_name);
                     continue;
                  }
+         }
+         else
+         {
+            if ((*(p_end + 1) == '.') && (file_type == FTP_TYPE_FILE) &&
+                (file_perm & FTP_PERM_DELETE) &&
+                (fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
+                (fra[db.fra_pos].locked_file_time != -1))
+            {
+               time_t diff_time = current_time - file_mtime;
+
+               if (diff_time < 0)
+               {
+                  diff_time = 0;
+               }
+               if ((diff_time > fra[db.fra_pos].locked_file_time) &&
+                   (diff_time > DEFAULT_TRANSFER_TIMEOUT))
+               {
+                  p_end++;
+                  i = 0;
+                  while ((*p_end != '\r') && (*p_end != '\n') &&
+                         (*p_end != '\0') && (i < MAX_FILENAME_LENGTH))
+                  {
+                     file_name[i] = *p_end;
+                     i++; p_end++;
+                  }
+                  file_name[i] = '\0';
+
+                  if ((*p_end == '\r') || (*p_end == '\n'))
+                  {
+                     delete_remote_file(FTP, file_name, i,
+#ifdef _DELETE_LOG
+                                        DEL_OLD_LOCKED_FILE,
+#endif
+                                        &files_deleted,
+                                        &file_size_deleted, file_size);
+                  }
+                  else if (i >= MAX_FILENAME_LENGTH)
+                       {
+                          trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                    "Remote file name `%s' is to long, it may only be %d bytes long.",
+                                    file_name, MAX_FILENAME_LENGTH);
+                          continue;
+                       }
+                       else
+                       {
+                          trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                    "Premature end of remote file name `%s'.",
+                                    file_name);
+                          continue;
+                       }
+               }
+            }
          }
 
          while ((*p_end != '\r') && (*p_end != '\n') && (*p_end != '\0'))

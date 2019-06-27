@@ -286,6 +286,7 @@ do_scan(int   *files_to_retrieve,
                     j,
                     k,
                     nfg,           /* Number of file mask. */
+                    ret,
                     status,
                     type;
    char             file_name[MAX_FILENAME_LENGTH + 1],
@@ -308,12 +309,28 @@ do_scan(int   *files_to_retrieve,
 #ifdef WITH_SSL
    if (db.auth == BOTH)
    {
-      type = LIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
+      if ((fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
+          (fra[db.fra_pos].locked_file_time != -1))
+      {
+         type = FLIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
+      }
+      else
+      {
+         type = LIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
+      }
    }
    else
    {
 #endif
-      type = LIST_CMD | BUFFERED_LIST;
+      if ((fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
+          (fra[db.fra_pos].locked_file_time != -1))
+      {
+         type = FLIST_CMD | BUFFERED_LIST;
+      }
+      else
+      {
+         type = LIST_CMD | BUFFERED_LIST;
+      }
 #ifdef WITH_SSL
    }
 #endif
@@ -422,7 +439,8 @@ do_scan(int   *files_to_retrieve,
 #endif
 
       if ((fra[db.fra_pos].ignore_file_time != 0) ||
-          (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES))
+          (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES) ||
+          (fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES))
       {
          /* Note: FTP returns GMT so we need to convert this to GMT! */
          current_time = time(NULL);
@@ -442,8 +460,8 @@ do_scan(int   *files_to_retrieve,
             p_end++;
          }
 
-         if ((ftpparse(&fp, &file_size, &file_mtime, p_start,
-                       p_end - p_start) == 1) &&
+         if (((ret = ftpparse(&fp, &file_size, &file_mtime, p_start,
+                              p_end - p_start) == 1)) &&
              ((fp.flagtryretr == 1) &&
               ((fp.name[0] != '.') ||
                (fra[db.fra_pos].dir_flag & ACCEPT_DOT_FILES))))
@@ -550,6 +568,33 @@ do_scan(int   *files_to_retrieve,
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                          "Remote file name `%s' is to long, it may only be %d bytes long.",
                          file_name, MAX_FILENAME_LENGTH);
+            }
+         }
+         else
+         {
+            if ((ret == 1) && (fp.name[0] == '.') && (fp.flagtryretr == 1) &&
+                (fp.namelen < MAX_FILENAME_LENGTH) &&
+                (fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
+                (fra[db.fra_pos].locked_file_time != -1))
+            {
+               time_t diff_time = current_time - file_mtime;
+
+               if (diff_time < 0)
+               {
+                  diff_time = 0;
+               }
+               if ((diff_time > fra[db.fra_pos].locked_file_time) &&
+                   (diff_time > DEFAULT_TRANSFER_TIMEOUT))
+               {
+                  (void)memcpy(file_name, fp.name, fp.namelen);
+                  file_name[fp.namelen] = '\0';
+                  delete_remote_file(FTP, file_name, fp.namelen,
+#ifdef _DELETE_LOG
+                                     DEL_OLD_LOCKED_FILE,
+#endif
+                                     &files_deleted,
+                                     &file_size_deleted, file_size);
+               }
             }
          }
          while ((*p_end == '\r') || (*p_end == '\n'))

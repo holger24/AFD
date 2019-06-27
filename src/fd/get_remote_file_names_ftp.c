@@ -510,12 +510,28 @@ do_scan(int          *files_to_retrieve,
 #ifdef WITH_SSL
    if (db.auth == BOTH)
    {
-      type = NLIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
+      if ((fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
+          (fra[db.fra_pos].locked_file_time != -1))
+      {
+         type = FNLIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
+      }
+      else
+      {
+         type = NLIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
+      }
    }
    else
    {
 #endif
-      type = NLIST_CMD | BUFFERED_LIST;
+      if ((fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
+          (fra[db.fra_pos].locked_file_time != -1))
+      {
+         type = FNLIST_CMD | BUFFERED_LIST;
+      }
+      else
+      {
+         type = NLIST_CMD | BUFFERED_LIST;
+      }
 #ifdef WITH_SSL
    }
 #endif
@@ -655,7 +671,8 @@ do_scan(int          *files_to_retrieve,
 #endif
 
    if ((fra[db.fra_pos].ignore_file_time != 0) ||
-       (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES))
+       (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES) ||
+       (fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES))
    {
       /* Note: FTP returns GMT so we need to convert this to GMT! */
       current_time = time(NULL);
@@ -781,6 +798,43 @@ do_scan(int          *files_to_retrieve,
 #endif
                                            &files_deleted, NULL, -1);
                      }
+                  }
+               }
+            }
+         }
+         else
+         {
+            if ((*p_list == '.') && (*(p_list + 1) != '.') &&
+                (*(p_list + 1) != '\r') && (*(p_list + 1) != '\n') &&
+                ((p_end - p_list) < MAX_FILENAME_LENGTH) &&
+                (fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
+                (fra[db.fra_pos].locked_file_time != -1))
+            {
+               time_t file_mtime = 0;
+
+               *p_end = '\0';
+               if ((status = ftp_date(p_list, &file_mtime)) == SUCCESS)
+               {
+                  time_t diff_time = current_time - file_mtime;
+
+                  if (fsa->debug > NORMAL_MODE)
+                  {
+                     trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
+                                  "Date for %s is %ld.", p_list, file_mtime);
+                  }
+
+                  if (diff_time < 0)
+                  {
+                     diff_time = 0;
+                  }
+                  if ((diff_time > fra[db.fra_pos].locked_file_time) &&
+                      (diff_time > DEFAULT_TRANSFER_TIMEOUT))
+                  {
+                     delete_remote_file(FTP, p_list, strlen(p_list),
+#ifdef _DELETE_LOG
+                                        DEL_OLD_LOCKED_FILE,
+#endif
+                                        &files_deleted, NULL, -1);
                   }
                }
             }

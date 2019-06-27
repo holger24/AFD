@@ -593,7 +593,8 @@ try_attach_again:
 #endif
 
       if ((fra[db.fra_pos].ignore_file_time != 0) ||
-          (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES))
+          (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES) ||
+          (fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES))
       {
          /* Note: FTP returns GMT so we need to convert this to GMT! */
          current_time = time(NULL);
@@ -2760,6 +2761,33 @@ check_name(char         *file_name,
                                      files_deleted, file_size_deleted,
                                      file_size);
                }
+            }
+         }
+      }
+   }
+   else
+   {
+      if ((file_name[1] != '\0') && (file_name[1] != '.') &&
+          (file_mtime != -1))
+      {
+         if ((fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
+             (fra[db.fra_pos].locked_file_time != -1))
+         {
+            time_t diff_time = current_time - file_mtime;
+
+            if (diff_time < 0)
+            {
+               diff_time = 0;
+            }
+            if ((diff_time > fra[db.fra_pos].locked_file_time) &&
+                (diff_time > DEFAULT_TRANSFER_TIMEOUT))
+            {
+               delete_remote_file(HTTP, file_name, file_name_length,
+#ifdef _DELETE_LOG
+                                  DEL_OLD_LOCKED_FILE,
+#endif
+                                  files_deleted, file_size_deleted,
+                                  file_size);
             }
          }
       }

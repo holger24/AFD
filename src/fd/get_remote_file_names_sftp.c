@@ -381,7 +381,8 @@ do_scan(int   *files_to_retrieve,
 #endif
 
    if ((fra[db.fra_pos].ignore_file_time != 0) ||
-       (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES))
+       (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES) ||
+       (fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES))
    {
       /* Note: FTP returns GMT so we need to convert this to GMT! */
       current_time = time(NULL);
@@ -409,7 +410,27 @@ do_scan(int   *files_to_retrieve,
               (filename[0] == '.')) ||
              (S_ISREG(stat_buf.st_mode) == 0))
          {
-            continue;
+            if ((filename[0] == '.') && (S_ISREG(stat_buf.st_mode) == 1) &&
+                (fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
+                (fra[db.fra_pos].locked_file_time != -1))
+            {
+               time_t diff_time = current_time - stat_buf.st_mtime;
+
+               if (diff_time < 0)
+               {
+                  diff_time = 0;
+               }
+               if ((diff_time > fra[db.fra_pos].locked_file_time) &&
+                   (diff_time > DEFAULT_TRANSFER_TIMEOUT))
+               {
+                  delete_remote_file(SFTP, filename, strlen(filename),
+#ifdef _DELETE_LOG
+                                     DEL_OLD_LOCKED_FILE,
+#endif
+                                     &files_deleted, &file_size_deleted,
+                                     stat_buf.st_size);
+               }
+            }
          }
          else
          {
@@ -511,7 +532,7 @@ do_scan(int   *files_to_retrieve,
                }
             }
          }
-      }
+      } /* while (sftp_readdir() == SUCCESS) */
       if (status == INCORRECT)
       {
          trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
