@@ -61,6 +61,8 @@
 # define ENCRYPT_DATA                    16
 #endif
 #define MLSD_CMD                         32
+#define FLIST_CMD                        64
+#define FNLIST_CMD                       128
 
 /* FTP options available. */
 #define FTP_OPTION_FEAT                  1

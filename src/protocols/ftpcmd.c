@@ -210,6 +210,7 @@ DESCR__S_M3
  **   06.02.2014 H.Kiehl Added CCC comand to end encryption.
  **   10.09.2014 H.Kiehl Added simulation mode.
  **   03.11.2018 H.Kiehl Implemented ServerNameIndication for TLS.
+ **   27.06.2019 H.Kiehl Extended list command to show hidden files.
  */
 DESCR__E_M3
 
@@ -2205,7 +2206,7 @@ ftp_list(int mode, int type, ...)
            {
               (void)command(control_fd, "simulated NLST");
            }
-           else
+      else if (type & LIST_CMD)
            {
               if (filename == NULL)
               {
@@ -2214,6 +2215,21 @@ ftp_list(int mode, int type, ...)
               else
               {
                  (void)command(control_fd, "simulated LIST %s", filename);
+              }
+           }
+      else if (type & FNLIST_CMD)
+           {
+              (void)command(control_fd, "simulated NLST -a");
+           }
+           else /* FLIST_CMD */
+           {
+              if (filename == NULL)
+              {
+                 (void)command(control_fd, "simulated LIST -al");
+              }
+              else
+              {
+                 (void)command(control_fd, "simulated LIST -al %s", filename);
               }
            }
 
@@ -2502,7 +2518,7 @@ ftp_list(int mode, int type, ...)
                  {
                     reply = command(control_fd, "NLST");
                  }
-                 else
+            else if (type & LIST_CMD)
                  {
                     if (filename == NULL)
                     {
@@ -2511,6 +2527,21 @@ ftp_list(int mode, int type, ...)
                     else
                     {
                        reply = command(control_fd, "LIST %s", filename);
+                    }
+                 }
+            else if (type & FNLIST_CMD)
+                 {
+                    reply = command(control_fd, "NLST -a");
+                 }
+                 else /* FLIST_CMD */
+                 {
+                    if (filename == NULL)
+                    {
+                       reply = command(control_fd, "LIST -al");
+                    }
+                    else
+                    {
+                       reply = command(control_fd, "LIST -al %s", filename);
                     }
                  }
 
@@ -2699,7 +2730,7 @@ ftp_list(int mode, int type, ...)
               {
                  reply = command(control_fd, "NLST");
               }
-              else
+         else if (type & LIST_CMD)
               {
                  if (filename == NULL)
                  {
@@ -2708,6 +2739,21 @@ ftp_list(int mode, int type, ...)
                  else
                  {
                     reply = command(control_fd, "LIST %s", filename);
+                 }
+              }
+         else if (type & FNLIST_CMD)
+              {
+                 reply = command(control_fd, "NLST -a");
+              }
+              else /* FLIST_CMD */
+              {
+                 if (filename == NULL)
+                 {
+                    reply = command(control_fd, "LIST -al");
+                 }
+                 else
+                 {
+                    reply = command(control_fd, "LIST -al %s", filename);
                  }
               }
 
