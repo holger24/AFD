@@ -114,9 +114,11 @@ main(int argc, char *argv[])
       for (i = 0; i < *no_msg_queued; i++)
       {
 #if SIZEOF_PID_T == 4
-         (void)fprintf(stdout, "%-15.0f %-6d ", qb[i].msg_number, (pri_pid_t)qb[i].pid);
+         (void)fprintf(stdout, "%-15.0f %-6d ",
+                       qb[i].msg_number, (pri_pid_t)qb[i].pid);
 #else
-         (void)fprintf(stdout, "%-15.0f %-6lld ", qb[i].msg_number, (pri_pid_t)qb[i].pid);
+         (void)fprintf(stdout, "%-15.0f %-6lld ",
+                       qb[i].msg_number, (pri_pid_t)qb[i].pid);
 #endif
 #if SIZEOF_TIME_T == 4
          (void)fprintf(stdout, "%-11ld ", (pri_time_t)qb[i].creation_time);
