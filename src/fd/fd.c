@@ -104,6 +104,7 @@ DESCR__E_M1
 
 #define FD_CHECK_FSA_INTERVAL        600 /* 10 minutes. */
 #define ABNORMAL_TERM_CHECK_INTERVAL 45  /* seconds */
+#define FRA_QUEUE_CHECK_TIME         900 /* 15 minutes. */
 
 /* #define WITH_MULTI_FSA_CHECKS */
 /* #define _MACRO_DEBUG */
@@ -311,6 +312,7 @@ main(int argc, char *argv[])
 #ifdef _WITH_INTERRUPT_JOB
                     interrupt_check_time,
 #endif
+                    next_fra_queue_check_time,
                     remote_file_check_time;
    off_t            *file_size_to_send;
 #ifdef MULTI_FS_SUPPORT
@@ -766,6 +768,8 @@ main(int argc, char *argv[])
                               ABNORMAL_TERM_CHECK_INTERVAL;
    fsa_check_time = ((now / FD_CHECK_FSA_INTERVAL) *
                      FD_CHECK_FSA_INTERVAL) + FD_CHECK_FSA_INTERVAL;
+   next_fra_queue_check_time = ((now / FRA_QUEUE_CHECK_TIME) *
+                                FRA_QUEUE_CHECK_TIME) + FRA_QUEUE_CHECK_TIME;
    remote_file_check_time = ((now / remote_file_check_interval) *
                              remote_file_check_interval) +
                             remote_file_check_interval;
@@ -1015,6 +1019,53 @@ system_log(DEBUG_SIGN, NULL, 0,
                                 PRIORITY_INTERRUPT_CHECK_TIME;
       }
 #endif /* _WITH_INTERRUPT_JOB */
+      if (next_fra_queue_check_time <= now)
+      {
+         if ((no_of_retrieves > 0) && (fra != NULL))
+         {
+            int gotcha,
+                j;
+
+#ifdef _DEBUG
+            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       "Checking %d retrieve entries ...", no_of_retrieves);
+#endif
+            for (i = 0; i < no_of_retrieves; i++)
+            {
+               if (fra[retrieve_list[i]].queued > 0)
+               {
+                  gotcha = NO;
+                  for (j = 0; j < *no_msg_queued; j++)
+                  {
+                     if ((qb[j].special_flag & FETCH_JOB) &&
+                         (qb[j].pos == retrieve_list[i]) &&
+                         (fra[retrieve_list[i]].dir_id == (unsigned int)strtoul(qb[j].msg_name, (char **)NULL, 16)))
+                     {
+                        gotcha = YES;
+                        break;
+                     }
+                  }
+                  if (gotcha == NO)
+                  {
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "Queued variable for FRA position %d (%s) is %d. But there is no job in queue! Decremeting queue counter by one. @%x",
+                                retrieve_list[i],
+                                fra[retrieve_list[i]].dir_alias,
+                                (int)fra[retrieve_list[i]].queued,
+                                fra[retrieve_list[i]].dir_id);
+                     fra[retrieve_list[i]].queued -= 1;
+                     if (fra[retrieve_list[i]].queued < 0)
+                     {
+                        fra[retrieve_list[i]].queued = 0;
+                     }
+                  }
+               }
+            }
+         }
+         next_fra_queue_check_time = ((now / FRA_QUEUE_CHECK_TIME) *
+                                      FRA_QUEUE_CHECK_TIME) +
+                                     FRA_QUEUE_CHECK_TIME;
+      }
 
       /*
        * Check if we must check for files on any remote system.
@@ -5275,7 +5326,7 @@ get_free_disp_pos(int pos)
    }
 
    /*
-    * Sometimes we constantly hang here in a tigth loop. Lets find out
+    * Sometimes we constantly hang here in a tight loop. Lets find out
     * if this is the case and when yes, lets exit so init_afd restarts
     * fd again.
     */
