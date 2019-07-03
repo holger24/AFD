@@ -205,6 +205,11 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
       old_file_time = default_old_file_time * 3600;
    }
    dd[dir_pos].delete_files_flag = default_delete_files_flag;
+   if ((type == REMOTE_DIR) &&
+       (dd[dir_pos].delete_files_flag & OLD_LOCKED_FILES))
+   {
+      dd[dir_pos].delete_files_flag &= ~OLD_LOCKED_FILES;
+   }
    dd[dir_pos].unknown_file_time = -1;
    dd[dir_pos].queued_file_time = -1;
    dd[dir_pos].locked_file_time = -1;
