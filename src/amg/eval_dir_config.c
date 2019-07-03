@@ -1999,7 +1999,7 @@ check_dummy_line:
                 */
                dd[no_of_local_dirs].in_dc_flag = 0;
                (void)strcpy(dd[no_of_local_dirs].dir_name, dir->location);
-               if ((j = eval_dir_options(no_of_local_dirs,
+               if ((j = eval_dir_options(no_of_local_dirs, dir->type,
                                          dir->dir_options, debug_fp)) != 0)
                {
                   char *end_ptr;

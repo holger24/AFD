@@ -360,19 +360,19 @@ the new value:
    <td valign=top><a name="default_delete_files_flag">DEFAULT_DELETE_FILES_FLAG</a></td>
    <td>What to do with files that have reached a certain age but cannot
        be transmitted because either there is no rule (Unknown), they are
-       being queued by AFD (Queued) or they are old locked files (Locked).
-       By specifying one of the above those files will be automatically
-       removed by AFD when DEFAULT_OLD_FILE_TIME value has been reached.
-       To specify more then one type, just add the next with a space or
-       comma as a separator sign and the whole string must be placed
-       in ".</td>
+       being queued by AFD (Queued), they are old locked files (Locked) or
+       they are old locked files on a remote host (Rlocked). By specifying
+       one of the above those files will be automatically removed by AFD
+       when DEFAULT_OLD_FILE_TIME value has been reached. To specify more
+       then one type, just add the next with a space or comma as a separator
+       sign and the whole string must be placed in ".</td>
    <td valign=top>Not set</td>
    <td valign=top>amg</td>
 </tr>
 <tr>
    <td valign=top><a name="default_old_file_time">DEFAULT_OLD_FILE_TIME</a></td>
-   <td>When to delete Unknown, Queued or Locked files from one of AFD's
-       input directories. The value is in hours.</td>
+   <td>When to delete Unknown, Queued, Locked or Rlocked files from one of
+       AFD's input directories. The value is in hours.</td>
    <td valign=top>24</td>
    <td valign=top>amg</td>
 </tr>
@@ -858,7 +858,7 @@ restarted.
    <td width="90%"><small><address>
    Copyright &copy; 1999 - 2019 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 12.03.2019
+   Last updated: 03.07.2019
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

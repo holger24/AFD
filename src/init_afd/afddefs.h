@@ -1046,6 +1046,7 @@ typedef unsigned long       u_long_64;
 #define QUEUED_FILES                     2
 #define OLD_LOCKED_FILES                 4
 #define UNREADABLE_FILES                 8
+#define OLD_RLOCKED_FILES                16
 
 /* Definitions for [options]. */
 #define TIFF2GTS_ID                      "tiff2gts"
@@ -2838,10 +2839,14 @@ struct fileretrieve_status
                                             /* UNREADABLE_FILES: Un-     */
                                             /* readable files are to be  */
                                             /* deleted.                  */
+                                            /* OLD_RLOCKED_FILES: Old    */
+                                            /* locked files on remote    */
+                                            /* hosts are to be deleted.  */
                                             /*+------+------------------+*/
                                             /*|Bit(s)|     Meaning      |*/
                                             /*+------+------------------+*/
-                                            /*|  5-8 | Not used.        |*/
+                                            /*|  6-8 | Not used.        |*/
+                                            /*|    5 | OLD_RLOCKED_FILES|*/
                                             /*|    4 | UNREADABLE_FILES |*/
                                             /*|    3 | OLD_LOCKED_FILES |*/
                                             /*|    2 | QUEUED_FILES     |*/

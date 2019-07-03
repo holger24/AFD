@@ -709,6 +709,10 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "QUEUED ");
             }
+            if (fra[i].delete_files_flag & OLD_RLOCKED_FILES)
+            {
+               (void)fprintf(stdout, "RLOCKED\n");
+            }
             if (fra[i].delete_files_flag & OLD_LOCKED_FILES)
             {
                (void)fprintf(stdout, "LOCKED\n");
@@ -739,7 +743,8 @@ main(int argc, char *argv[])
                (void)fprintf(stdout, "Queued file time (h) : %d\n",
                              fra[i].queued_file_time / 3600);
             }
-            if (fra[i].delete_files_flag & OLD_LOCKED_FILES)
+            if ((fra[i].delete_files_flag & OLD_LOCKED_FILES) ||
+                (fra[i].delete_files_flag & OLD_RLOCKED_FILES))
             {
                (void)fprintf(stdout, "Old lck file time (h): %d\n",
                              fra[i].locked_file_time / 3600);

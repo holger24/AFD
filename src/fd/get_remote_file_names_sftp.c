@@ -382,7 +382,7 @@ do_scan(int   *files_to_retrieve,
 
    if ((fra[db.fra_pos].ignore_file_time != 0) ||
        (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES) ||
-       (fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES))
+       (fra[db.fra_pos].delete_files_flag & OLD_RLOCKED_FILES))
    {
       /* Note: FTP returns GMT so we need to convert this to GMT! */
       current_time = time(NULL);
@@ -411,7 +411,7 @@ do_scan(int   *files_to_retrieve,
              (S_ISREG(stat_buf.st_mode) == 0))
          {
             if ((filename[0] == '.') && (S_ISREG(stat_buf.st_mode) == 1) &&
-                (fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
+                (fra[db.fra_pos].delete_files_flag & OLD_RLOCKED_FILES) &&
                 (fra[db.fra_pos].locked_file_time != -1))
             {
                time_t diff_time = current_time - stat_buf.st_mtime;

@@ -594,7 +594,7 @@ try_attach_again:
 
       if ((fra[db.fra_pos].ignore_file_time != 0) ||
           (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES) ||
-          (fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES))
+          (fra[db.fra_pos].delete_files_flag & OLD_RLOCKED_FILES))
       {
          /* Note: FTP returns GMT so we need to convert this to GMT! */
          current_time = time(NULL);
@@ -2770,7 +2770,7 @@ check_name(char         *file_name,
       if ((file_name[1] != '\0') && (file_name[1] != '.') &&
           (file_mtime != -1))
       {
-         if ((fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
+         if ((fra[db.fra_pos].delete_files_flag & OLD_RLOCKED_FILES) &&
              (fra[db.fra_pos].locked_file_time != -1))
          {
             time_t diff_time = current_time - file_mtime;

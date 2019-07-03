@@ -510,7 +510,7 @@ do_scan(int          *files_to_retrieve,
 #ifdef WITH_SSL
    if (db.auth == BOTH)
    {
-      if ((fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
+      if ((fra[db.fra_pos].delete_files_flag & OLD_RLOCKED_FILES) &&
           (fra[db.fra_pos].locked_file_time != -1))
       {
          type = FNLIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
@@ -523,7 +523,7 @@ do_scan(int          *files_to_retrieve,
    else
    {
 #endif
-      if ((fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
+      if ((fra[db.fra_pos].delete_files_flag & OLD_RLOCKED_FILES) &&
           (fra[db.fra_pos].locked_file_time != -1))
       {
          type = FNLIST_CMD | BUFFERED_LIST;
@@ -672,7 +672,7 @@ do_scan(int          *files_to_retrieve,
 
    if ((fra[db.fra_pos].ignore_file_time != 0) ||
        (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES) ||
-       (fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES))
+       (fra[db.fra_pos].delete_files_flag & OLD_RLOCKED_FILES))
    {
       /* Note: FTP returns GMT so we need to convert this to GMT! */
       current_time = time(NULL);
@@ -807,7 +807,7 @@ do_scan(int          *files_to_retrieve,
             if ((*p_list == '.') && (*(p_list + 1) != '.') &&
                 (*(p_list + 1) != '\r') && (*(p_list + 1) != '\n') &&
                 ((p_end - p_list) < MAX_FILENAME_LENGTH) &&
-                (fra[db.fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
+                (fra[db.fra_pos].delete_files_flag & OLD_RLOCKED_FILES) &&
                 (fra[db.fra_pos].locked_file_time != -1))
             {
                time_t file_mtime = 0;

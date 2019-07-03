@@ -264,12 +264,13 @@ AMG_DIR_RESCAN_TIME              5
 ##########################################################################
 # What to do with files that a certain age but cannot be transmited      #
 # because either there is no rule (Unknown), they are being queued by    #
-# AFD (Queued) or they are old locked files (Locked). By specifying      #
-# one of the above those files will be automatically removed by AFD      #
-# when DEFAULT_OLD_FILE_TIME value has been reached.                     #
+# AFD (Queued), they are old locked files (Locked) or they old locked    #
+# files in a remote directory. By specifying  one of the above those     #
+# files will be automatically removed by AFD when DEFAULT_OLD_FILE_TIME  #
+# value has been reached.                                                #
 # Default: None                                                          #
 ##########################################################################
-#DEFAULT_DELETE_FILES_FLAG        "Unknown Queued Locked"
+#DEFAULT_DELETE_FILES_FLAG        "Unknown Queued Locked Rlocked"
 
 ##########################################################################
 # When to delete Unknown, Queued or Locked files from one of AFD's input #

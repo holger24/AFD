@@ -1,6 +1,6 @@
 /*
  *  amg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -856,6 +856,10 @@ main(int argc, char *argv[])
       if (default_delete_files_flag & OLD_LOCKED_FILES)
       {
          (void)snprintf(ptr, 22 - (ptr - tmp_str), "LOCKED");
+      }
+      if (default_delete_files_flag & OLD_RLOCKED_FILES)
+      {
+         (void)snprintf(ptr, 22 - (ptr - tmp_str), "RLOCKED");
       }
       system_log(DEBUG_SIGN, NULL, 0,
                  _("AMG Configuration: Default delete file flag  %s"), tmp_str);
@@ -2039,6 +2043,7 @@ get_afd_config_value(int          *rescan_time,
             {
                ptr++;
             }
+            /* Unknown */
             if (((ptr + 7) < (config_file + MAX_PATH_LENGTH - 1)) &&
                 ((*ptr == 'U') || (*ptr == 'u')) &&
                 ((*(ptr + 1) == 'N') || (*(ptr + 1) == 'n')) &&
@@ -2056,6 +2061,7 @@ get_afd_config_value(int          *rescan_time,
                   *default_delete_files_flag |= UNKNOWN_FILES;
                }
             }
+                 /* Queued */
             else if (((ptr + 6) < (config_file + MAX_PATH_LENGTH - 1)) &&
                      ((*ptr == 'Q') || (*ptr == 'q')) &&
                      ((*(ptr + 1) == 'U') || (*(ptr + 1) == 'u')) &&
@@ -2072,6 +2078,7 @@ get_afd_config_value(int          *rescan_time,
                        *default_delete_files_flag |= QUEUED_FILES;
                     }
                  }
+                 /* Locked */
             else if (((ptr + 6) < (config_file + MAX_PATH_LENGTH - 1)) &&
                      ((*ptr == 'L') || (*ptr == 'l')) &&
                      ((*(ptr + 1) == 'O') || (*(ptr + 1) == 'o')) &&
@@ -2086,6 +2093,24 @@ get_afd_config_value(int          *rescan_time,
                     if ((*default_delete_files_flag & OLD_LOCKED_FILES) == 0)
                     {
                        *default_delete_files_flag |= OLD_LOCKED_FILES;
+                    }
+                 }
+                 /* RLocked */
+            else if (((ptr + 6) < (config_file + MAX_PATH_LENGTH - 1)) &&
+                     ((*ptr == 'R') || (*ptr == 'r')) &&
+                     ((*(ptr + 1) == 'L') || (*(ptr + 1) == 'l')) &&
+                     ((*(ptr + 2) == 'O') || (*(ptr + 2) == 'o')) &&
+                     ((*(ptr + 3) == 'C') || (*(ptr + 3) == 'c')) &&
+                     ((*(ptr + 4) == 'K') || (*(ptr + 4) == 'k')) &&
+                     ((*(ptr + 5) == 'E') || (*(ptr + 5) == 'e')) &&
+                     ((*(ptr + 6) == 'D') || (*(ptr + 6) == 'd')) &&
+                     ((*(ptr + 7) == ' ') || (*(ptr + 7) == '\t') ||
+                      (*(ptr + 7) == ',') || (*(ptr + 7) == '\0')))
+                 {
+                    ptr += 7;
+                    if ((*default_delete_files_flag & OLD_RLOCKED_FILES) == 0)
+                    {
+                       *default_delete_files_flag |= OLD_RLOCKED_FILES;
                     }
                  }
                  else

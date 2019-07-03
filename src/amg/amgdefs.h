@@ -908,7 +908,7 @@ extern int    amg_zombie_check(pid_t *, int),
 #else
               eval_dir_config(off_t, unsigned int *, FILE *, int *),
 #endif
-              eval_dir_options(int, char *, FILE *),
+              eval_dir_options(int, char, char *, FILE *),
               get_last_char(char *, off_t),
               handle_options(int, time_t, unsigned int, unsigned int,
                              char *, int *, off_t *),
