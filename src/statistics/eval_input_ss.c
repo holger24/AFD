@@ -1,6 +1,6 @@
 /*
  *  eval_input_ss.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -82,6 +82,7 @@ DESCR__S_M3
  **   23.07.2006 H.Kiehl Added -T option.
  **   30.04.2018 H.Kiehl Added -C, -N and -o option.
  **   05.11.2018 H.Kiehl Added -n option.
+ **   04.07.2019 H.Kiehl Improve detection of alias name or number.
  **
  */
 DESCR__E_M3
@@ -182,16 +183,28 @@ eval_input_ss(int  argc,
 
             case 'd': /* Show day minus x */
 
-               if ((argc == 1) || (*(argv + 1)[0] == '-') ||
-                   (isdigit((int)(*(argv + 1)[0])) == 0))
+               if ((argc == 1) || (*(argv + 1)[0] == '-'))
                {
                   *show_day = 0;
                }
                else
                {
-                  *show_day = atoi(*(argv + 1));
-                  argc--;
-                  argv++;
+                  int i = 0;
+
+                  while (isdigit((int)((*(argv + 1))[i])) == 0)
+                  {
+                     i++;
+                  }
+                  if ((*(argv + 1))[i] == '\0')
+                  {
+                     *show_day = atoi(*(argv + 1));
+                     argc--;
+                     argv++;
+                  }
+                  else
+                  {
+                     *show_day = 0;
+                  }
                }
                break;
 
@@ -213,16 +226,28 @@ eval_input_ss(int  argc,
 
             case 'h': /* Show hour minus x */
 
-               if ((argc == 1) || (*(argv + 1)[0] == '-') ||
-                   (isdigit((int)(*(argv + 1)[0])) == 0))
+               if ((argc == 1) || (*(argv + 1)[0] == '-'))
                {
                   *show_hour = 0;
                }
                else
                {
-                  *show_hour = atoi(*(argv + 1));
-                  argc--;
-                  argv++;
+                  int i = 0;
+
+                  while (isdigit((int)((*(argv + 1))[i])) == 0)
+                  {
+                     i++;
+                  }
+                  if ((*(argv + 1))[i] == '\0')
+                  {
+                     *show_hour = atoi(*(argv + 1));
+                     argc--;
+                     argv++;
+                  }
+                  else
+                  {
+                     *show_hour = 0;
+                  }
                }
                break;
 
@@ -247,70 +272,104 @@ eval_input_ss(int  argc,
                if ((*(argv[0] + 2) == 'r') && (*(argv[0] + 3) == '\0'))
                {
                   /* Show last x minutes. */
-                  if ((argc == 1) || (*(argv + 1)[0] == '-') ||
-                      (isdigit((int)(*(argv + 1)[0])) == 0))
+                  if ((argc == 1) || (*(argv + 1)[0] == '-'))
                   {
                      *show_min_range = 0;
                   }
                   else
                   {
-                     *show_min_range = atoi(*(argv + 1));
-                     if (*show_min_range > 60)
+                     int i = 0;
+
+                     while (isdigit((int)((*(argv + 1))[i])) == 0)
                      {
-                        (void)fprintf(stderr,
-                                      "WARN   : Setting to 60, value given %d is to high. (%s %d)\n",
-                                      *show_min_range, __FILE__, __LINE__);
-                        *show_min_range = 60;
+                        i++;
                      }
-                     argc--;
-                     argv++;
+                     if ((*(argv + 1))[i] == '\0')
+                     {
+                        *show_min_range = atoi(*(argv + 1));
+                        if (*show_min_range > 60)
+                        {
+                           (void)fprintf(stderr,
+                                         "WARN   : Setting to 60, value given %d is to high. (%s %d)\n",
+                                         *show_min_range, __FILE__, __LINE__);
+                           *show_min_range = 60;
+                        }
+                        argc--;
+                        argv++;
+                     }
+                     else
+                     {
+                        *show_min_range = 0;
+                     }
                   }
                }
                else /* Show hour minus x */
                {
-                  if ((argc == 1) || (*(argv + 1)[0] == '-') ||
-                      (isdigit((int)(*(argv + 1)[0])) == 0))
+                  if ((argc == 1) || (*(argv + 1)[0] == '-'))
                   {
                      *show_min = 0;
                   }
                   else
                   {
-                     *show_min = atoi(*(argv + 1));
-                     if (*show_min > 60)
+                     int i = 0;
+
+                     while (isdigit((int)((*(argv + 1))[i])) == 0)
                      {
-                        (void)fprintf(stderr,
-                                      "WARN   : Setting to 60, value given %d is to high. (%s %d)\n",
-                                      *show_min, __FILE__, __LINE__);
-                        *show_min = 60;
+                        i++;
                      }
-                     argc--;
-                     argv++;
+                     if ((*(argv + 1))[i] == '\0')
+                     {
+                        *show_min = atoi(*(argv + 1));
+                        if (*show_min > 60)
+                        {
+                           (void)fprintf(stderr,
+                                         "WARN   : Setting to 60, value given %d is to high. (%s %d)\n",
+                                         *show_min, __FILE__, __LINE__);
+                           *show_min = 60;
+                        }
+                        argc--;
+                        argv++;
+                     }
+                     else
+                     {
+                        *show_min = 0;
+                     }
                   }
                }
                break;
 
             case 'M': /* Show summary information of last hour. */
 
-               if ((argc == 1) || (*(argv + 1)[0] == '-') ||
-                   (isdigit((int)(*(argv + 1)[0])) == 0))
+               if ((argc == 1) || (*(argv + 1)[0] == '-'))
                {
                   *show_min_summary = 0;
-                  argc--;
-                  argv++;
                }
                else
                {
-                  *show_min_summary = atoi(*(argv + 1));
-                  if (*show_min_summary > 60)
+                  int i = 0;
+
+                  while (isdigit((int)((*(argv + 1))[i])) == 0)
                   {
-                     (void)fprintf(stderr,
-                                   "WARN   : Setting to 60, value given %d is to high. (%s %d)\n",
-                                   *show_min_summary, __FILE__, __LINE__);
-                     *show_min_summary = 60;
+                     i++;
                   }
-                  argc--;
-                  argv++;
+                  if ((*(argv + 1))[i] == '\0')
+                  {
+                     *show_min_summary = atoi(*(argv + 1));
+                     if (*show_min_summary > 60)
+                     {
+                        (void)fprintf(stderr,
+                                      "WARN   : Setting to 60, value given %d is to high. (%s %d)\n",
+                                      *show_min_summary, __FILE__, __LINE__);
+                        *show_min_summary = 60;
+                     }
+                  }
+                  else
+                  {
+                     *show_min_summary = 0;
+                  }
                }
+               argc--;
+               argv++;
                break;
 
             case 't': /* Put in timestamps for which time the output is valid */
@@ -347,16 +406,28 @@ eval_input_ss(int  argc,
 
             case 'y': /* Show year minus x */
 
-               if ((argc == 1) || (*(argv + 1)[0] == '-') ||
-                   (isdigit((int)(*(argv + 1)[0])) == 0))
+               if ((argc == 1) || (*(argv + 1)[0] == '-'))
                {
                   *show_year = 0;
                }
                else
                {
-                  *show_year = atoi(*(argv + 1));
-                  argc--;
-                  argv++;
+                  int i = 0;
+
+                  while (isdigit((int)((*(argv + 1))[i])) == 0)
+                  {
+                     i++;
+                  }
+                  if ((*(argv + 1))[i] == '\0')
+                  {
+                     *show_year = atoi(*(argv + 1));
+                     argc--;
+                     argv++;
+                  }
+                  else
+                  {
+                     *show_year = 0;
+                  }
                }
                break;
 
