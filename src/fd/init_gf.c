@@ -120,8 +120,8 @@ init_gf(int argc, char *argv[], int protocol)
    db.special_ptr = NULL;
 /* db.special_flag = 0; */
 /* db.mode_flag = 0; */
-/* db.dir_mode = 0; */
-/* db.dir_mode_str[0] = '\0'; */
+   db.dir_mode = 0;
+   db.dir_mode_str[0] = '\0';
    db.user_home_dir = NULL;
 /* db.password[0] = '\0'; */
 #ifdef WITH_SSH_FINGERPRINT

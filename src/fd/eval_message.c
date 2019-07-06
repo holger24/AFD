@@ -2876,46 +2876,62 @@ store_mode(char *ptr, struct job *p_db, char *option, int type)
                }
                break;
          }
-         if (type == CREATE_TARGET_DIR_FLAG)
+         if (error_flag == NO)
          {
-            p_db->dir_mode = mode;
-            if (p_db->protocol & SFTP_FLAG)
+            if (type == CREATE_TARGET_DIR_FLAG)
             {
-               p_db->dir_mode_str[0] = *ptr;
-               p_db->dir_mode_str[1] = *(ptr + 1);
-               p_db->dir_mode_str[2] = *(ptr + 2);
-               if (n == 4)
+               p_db->dir_mode = mode;
+               if (p_db->protocol & SFTP_FLAG)
                {
-                  p_db->dir_mode_str[3] = *(ptr + 3);
-                  p_db->dir_mode_str[4] = '\0';
+                  p_db->dir_mode_str[0] = *ptr;
+                  p_db->dir_mode_str[1] = *(ptr + 1);
+                  p_db->dir_mode_str[2] = *(ptr + 2);
+                  if (n == 4)
+                  {
+                     p_db->dir_mode_str[3] = *(ptr + 3);
+                     p_db->dir_mode_str[4] = '\0';
+                  }
+                  else
+                  {
+                     p_db->dir_mode_str[3] = '\0';
+                  }
                }
-               else
+            }
+            else
+            {
+               p_db->chmod = mode;
+               if (p_db->protocol & SFTP_FLAG)
                {
-                  p_db->dir_mode_str[3] = '\0';
+                  p_db->chmod_str[0] = *ptr;
+                  p_db->chmod_str[1] = *(ptr + 1);
+                  p_db->chmod_str[2] = *(ptr + 2);
+                  if (n == 4)
+                  {
+                     p_db->chmod_str[3] = *(ptr + 3);
+                     p_db->chmod_str[4] = '\0';
+                  }
+                  else
+                  {
+                     p_db->chmod_str[3] = '\0';
+                  }
                }
+               p_db->special_flag |= CHANGE_PERMISSION;
             }
          }
          else
          {
-            p_db->chmod = mode;
-            if (p_db->protocol & SFTP_FLAG)
+            /* Mode could not be determined, so lets ignore it. */
+            /* The user got a warning above.                    */
+            if (type == CREATE_TARGET_DIR_FLAG)
             {
-               p_db->chmod_str[0] = *ptr;
-               p_db->chmod_str[1] = *(ptr + 1);
-               p_db->chmod_str[2] = *(ptr + 2);
-               if (n == 4)
-               {
-                  p_db->chmod_str[3] = *(ptr + 3);
-                  p_db->chmod_str[4] = '\0';
-               }
-               else
-               {
-                  p_db->chmod_str[3] = '\0';
-               }
+               p_db->dir_mode = 0;
+               p_db->dir_mode_str[0] = '\0';
             }
-            if (error_flag == NO)
+            else
             {
-               p_db->special_flag |= CHANGE_PERMISSION;
+               p_db->chmod = 0;
+               p_db->chmod_str[0] = '\0';
+               p_db->special_flag &= ~CHANGE_PERMISSION;
             }
          }
       }

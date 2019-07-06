@@ -1,6 +1,6 @@
 /*
  *  init_sf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -165,9 +165,9 @@ init_sf(int argc, char *argv[], char *file_path, int protocol)
    db.lock = DEFAULT_LOCK;
 /* db.smtp_server[0] = '\0'; */
 /* db.http_proxy[0] = '\0'; */
-/* db.chmod_str[0] = '\0'; */
-/* db.dir_mode = 0; */
-/* db.dir_mode_str[0] = '\0'; */
+   db.chmod_str[0] = '\0';
+   db.dir_mode = 0;
+   db.dir_mode_str[0] = '\0';
 /* db.trans_rename_rule[0] = '\0'; */
    db.user_home_dir = NULL;
 /* db.password[0] = '\0'; */
