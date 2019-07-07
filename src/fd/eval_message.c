@@ -2878,6 +2878,7 @@ store_mode(char *ptr, struct job *p_db, char *option, int type)
          }
          if (error_flag == NO)
          {
+            ptr -= (n - 1);
             if (type == CREATE_TARGET_DIR_FLAG)
             {
                p_db->dir_mode = mode;
