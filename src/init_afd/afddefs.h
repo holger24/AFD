@@ -1074,6 +1074,8 @@ typedef unsigned long       u_long_64;
 #define RESTART_FILE_ID_LENGTH           (sizeof(RESTART_FILE_ID) - 1)
 #define TRANS_RENAME_ID                  "trans_rename"
 #define TRANS_RENAME_ID_LENGTH           (sizeof(TRANS_RENAME_ID) - 1)
+#define TRANS_SRENAME_ID                 "trans_srename"
+#define TRANS_SRENAME_ID_LENGTH          (sizeof(TRANS_SRENAME_ID) - 1)
 #ifdef _WITH_WMO_SUPPORT
 # define WITH_SEQUENCE_NUMBER_ID         "sequence numbering"
 # define WITH_SEQUENCE_NUMBER_ID_LENGTH  (sizeof(WITH_SEQUENCE_NUMBER_ID) - 1)

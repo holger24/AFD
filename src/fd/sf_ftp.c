@@ -1,6 +1,6 @@
 /*
  *  sf_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -75,6 +75,7 @@ DESCR__S_M1
  **   09.01.2004 H.Kiehl Added ftp_fast_move() command.
  **   01.02.2004 H.Kiehl Added TLS/SSL support.
  **   30.03.2012 H.Kiehl Inform when we created a directory.
+ **   06.07.2019 H.Kiehl Added trans_srename support.
  **
  */
 DESCR__E_M1
@@ -1312,23 +1313,37 @@ main(int argc, char *argv[])
          (void)strcpy(p_final_filename, p_file_name_buffer);
          (void)strcpy(p_fullname, p_file_name_buffer);
 
-         if (db.trans_rename_rule[0] != '\0')
+         if ((db.trans_rename_rule[0] != '\0') || (db.cn_filter != NULL))
          {
-            register int k;
-            char         tmp_initial_filename[MAX_PATH_LENGTH];
+            char tmp_initial_filename[MAX_PATH_LENGTH];
 
             tmp_initial_filename[0] = '\0';
-            for (k = 0; k < rule[db.trans_rule_pos].no_of_rules; k++)
+            if (db.trans_rename_rule[0] != '\0')
             {
-               if (pmatch(rule[db.trans_rule_pos].filter[k],
-                          p_file_name_buffer, NULL) == 0)
+               register int k;
+
+               for (k = 0; k < rule[db.trans_rule_pos].no_of_rules; k++)
                {
-                  change_name(p_file_name_buffer,
-                              rule[db.trans_rule_pos].filter[k],
-                              rule[db.trans_rule_pos].rename_to[k],
-                              tmp_initial_filename, MAX_PATH_LENGTH,
-                              &counter_fd, &unique_counter, db.id.job);
-                  break;
+                  if (pmatch(rule[db.trans_rule_pos].filter[k],
+                             p_file_name_buffer, NULL) == 0)
+                  {
+                     change_name(p_file_name_buffer,
+                                 rule[db.trans_rule_pos].filter[k],
+                                 rule[db.trans_rule_pos].rename_to[k],
+                                 tmp_initial_filename, MAX_PATH_LENGTH,
+                                 &counter_fd, &unique_counter, db.id.job);
+                     break;
+                  }
+               }
+            }
+            else
+            {
+               if (pmatch(db.cn_filter, p_file_name_buffer, NULL) == 0)
+               {
+                  change_name(p_file_name_buffer, db.cn_filter,
+                              db.cn_rename_to, tmp_initial_filename,
+                              MAX_PATH_LENGTH, &counter_fd, &unique_counter,
+                              db.id.job);
                }
             }
             if (tmp_initial_filename[0] == '\0')
@@ -1345,6 +1360,8 @@ main(int argc, char *argv[])
                   }
                   else
                   {
+                     int k;
+
                      k = strlen(db.lock_notation);
                      (void)my_strncpy(p_initial_filename, db.lock_notation, k);
                      p_initial_filename_offset += k;
@@ -1357,6 +1374,8 @@ main(int argc, char *argv[])
             }
             else
             {
+               int k;
+
                /*
                 * Check if we have a path in the name. If that is
                 * the case, we must get to the filename, so that in

@@ -1,6 +1,6 @@
 /*
  *  sf_sftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@ DESCR__S_M1
  **
  ** HISTORY
  **   03.01.2006 H.Kiehl Created
+ **   06.07.2019 H.Kiehl Added trans_srename support.
  **
  */
 DESCR__E_M1
@@ -1525,6 +1526,17 @@ main(int argc, char *argv[])
                   }
                }
             }
+            else if (db.cn_filter != NULL)
+                 {
+                    if (pmatch(db.cn_filter, p_final_filename, NULL) == 0)
+                    {
+                       change_name(p_final_filename, db.cn_filter,
+                                   db.cn_rename_to, p_remote_filename,
+                                   (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) - (p_remote_filename - remote_filename),
+                                   &counter_fd, &unique_counter, db.id.job);
+                    }
+                 }
+
             if (*p_remote_filename == '\0')
             {
                (void)my_strncpy(p_remote_filename, p_final_filename,

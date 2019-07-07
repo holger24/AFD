@@ -64,6 +64,7 @@ DESCR__S_M1
  **   28.03.2012 H.Kiehl Handle cross link errors in case we use
  **                      mount with bind option in linux.
  **   15.09.2014 H.Kiehl Added simulation mode.
+ **   06.07.2019 H.Kiehl Added trans_srename support.
  **
  */
 DESCR__E_M1
@@ -614,6 +615,16 @@ main(int argc, char *argv[])
                   }
                }
             }
+            else if (db.cn_filter != NULL)
+                 {
+                    if (pmatch(db.cn_filter, p_file_name_buffer, NULL) == 0)
+                    {
+                       change_name(p_file_name_buffer, db.cn_filter,
+                                   db.cn_rename_to, p_ff_name,
+                                   MAX_PATH_LENGTH - (p_ff_name - ff_name),
+                                   &counter_fd, &unique_counter, db.id.job);
+                    }
+                 }
 
 #ifdef _OUTPUT_LOG
             if (db.output_log == YES)

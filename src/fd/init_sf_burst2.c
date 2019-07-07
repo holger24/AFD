@@ -1,6 +1,6 @@
 /*
  *  init_sf_burst2.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   27.05.2001 H.Kiehl Created
+ **   07.07.2019 H.Kiehl Added support for trans_srename.
  **
  */
 DESCR__E_M3
@@ -181,6 +182,16 @@ init_sf_burst2(struct job   *p_new_db,
       {
          db.restart_file = p_new_db->restart_file;
       }
+      if (db.cn_filter != NULL)
+      {
+         free(db.cn_filter);
+      }
+      db.cn_filter = p_new_db->cn_filter;
+      if (db.cn_rename_to != NULL)
+      {
+         free(db.cn_rename_to);
+      }
+      db.cn_rename_to = p_new_db->cn_rename_to;
       if (p_new_db->trans_rename_rule[0] == '\0')
       {
          db.trans_rename_rule[0] = '\0';

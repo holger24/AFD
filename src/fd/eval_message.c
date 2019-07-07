@@ -92,6 +92,7 @@ DESCR__S_M3
  **   11.01.2014 H.Kiehl Added support for trans_rename with dupcheck.
  **   14.05.2017 H.Kiehl When storing mail address allow user to place
  **                      the current host name with the %H and %h option.
+ **   06.07.2019 H.Kiehl Added support for trans_srename.
  **
  */
 DESCR__E_M3
@@ -178,6 +179,7 @@ static char *store_mail_address(char *, char **, char *, unsigned int);
 # define CONF_OF_RETRIEVE_FLAG      256
 #endif
 #define SILENT_DEF_NO_LOCK_FLAG     512
+#define TRANS_SRENAME_FLAG          1024
 
 
 #define MAX_HUNK                    4096
@@ -663,6 +665,156 @@ eval_message(char *message_name, struct job *p_db)
                                     }
 #endif
                             }
+                       ptr = end_ptr;
+                    }
+                    while ((*ptr != '\n') && (*ptr != '\0'))
+                    {
+                       ptr++;
+                    }
+                    while (*ptr == '\n')
+                    {
+                       ptr++;
+                    }
+                 }
+            else if (((used & TRANS_SRENAME_FLAG) == 0) &&
+                     (CHECK_STRNCMP(ptr, TRANS_SRENAME_ID,
+                                    TRANS_SRENAME_ID_LENGTH) == 0))
+                 {
+                    used2 |= TRANS_SRENAME_FLAG;
+                    ptr += TRANS_SRENAME_ID_LENGTH;
+                    if (trans_rename_blocked == NO)
+                    {
+                       while ((*ptr == ' ') || (*ptr == '\t'))
+                       {
+                          ptr++;
+                       }
+                       end_ptr = ptr;
+                       n = 0;
+                       while ((*end_ptr != '\n') && (*end_ptr != ' ') &&
+                              (*end_ptr != '\0'))
+                       {
+                          end_ptr++; n++;
+                       }
+                       if ((*end_ptr == ' ') && (n > 0))
+                       {
+                          if ((p_db->cn_filter = malloc(n + 1)) == NULL)
+                          {
+                             system_log(WARN_SIGN, __FILE__, __LINE__,
+                                        "malloc() error : %s",
+                                        strerror(errno));
+                          }
+                          else
+                          {
+                             (void)memcpy(p_db->cn_filter, ptr, n);
+                             p_db->cn_filter[n] = '\0';
+
+                             while (*end_ptr == ' ')
+                             {
+                                end_ptr++;
+                             }
+                             ptr = end_ptr;
+                             n = 0;
+                             while ((*end_ptr != '\n') && (*end_ptr != ' ') &&
+                                    (*end_ptr != '\0'))
+                             {
+                                end_ptr++; n++;
+                             }
+                             if (n > 0)
+                             {
+                                if ((p_db->cn_rename_to = malloc(n + 1)) == NULL)
+                                {
+                                   system_log(WARN_SIGN, __FILE__, __LINE__,
+                                              "malloc() error : %s",
+                                              strerror(errno));
+                                   free(p_db->cn_filter);
+                                   p_db->cn_filter = NULL;
+                                }
+                                else
+                                {
+                                   (void)memcpy(p_db->cn_rename_to, ptr, n);
+                                   p_db->cn_rename_to[n] = '\0';
+
+                                   while (*end_ptr == ' ')
+                                   {
+                                      end_ptr++;
+                                   }
+                                   /* primary_only */
+                                   if ((*end_ptr == 'p') &&
+                                       (*(end_ptr + 1) == 'r') &&
+                                       (*(end_ptr + 2) == 'i') &&
+                                       (*(end_ptr + 3) == 'm') &&
+                                       (*(end_ptr + 4) == 'a') &&
+                                       (*(end_ptr + 5) == 'r') &&
+                                       (*(end_ptr + 6) == 'y') &&
+                                       (*(end_ptr + 7) == '_') &&
+                                       (*(end_ptr + 8) == 'o') &&
+                                       (*(end_ptr + 9) == 'n') &&
+                                       (*(end_ptr + 10) == 'l') &&
+                                       (*(end_ptr + 11) == 'y'))
+                                   {
+                                      p_db->special_flag |= TRANS_RENAME_PRIMARY_ONLY;
+                                      end_ptr += 11;
+                                   }
+                                        /* secondary_only */
+                                   else if ((*end_ptr == 's') &&
+                                            (*(end_ptr + 1) == 'e') &&
+                                            (*(end_ptr + 2) == 'c') &&
+                                            (*(end_ptr + 3) == 'o') &&
+                                            (*(end_ptr + 4) == 'n') &&
+                                            (*(end_ptr + 5) == 'd') &&
+                                            (*(end_ptr + 6) == 'a') &&
+                                            (*(end_ptr + 7) == 'r') &&
+                                            (*(end_ptr + 8) == 'y') &&
+                                            (*(end_ptr + 9) == '_') &&
+                                            (*(end_ptr + 10) == 'o') &&
+                                            (*(end_ptr + 11) == 'n') &&
+                                            (*(end_ptr + 12) == 'l') &&
+                                            (*(end_ptr + 13) == 'y'))
+                                        {
+                                           p_db->special_flag |= TRANS_RENAME_SECONDARY_ONLY;
+                                           end_ptr += 13;
+                                        }
+#ifdef WITH_DUP_CHECK
+                                   else if (CHECK_STRNCMP(end_ptr, DUPCHECK_ID, DUPCHECK_ID_LENGTH) == 0)
+                                        {
+                                           end_ptr = eval_dupcheck_options(end_ptr,
+                                                                           &p_db->trans_dup_check_timeout,
+                                                                           &p_db->trans_dup_check_flag,
+                                                                           NULL);
+                                           p_db->crc_id = p_db->id.job;
+# ifdef DEBUG_DUP_CHECK
+                                           system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#  if SIZEOF_TIME_T == 4
+                                                      "crc_id=%x timeout=%ld flag=%u",
+#  else
+                                                      "crc_id=%x timeout=%lld flag=%u",
+#  endif
+                                                      p_db->crc_id,
+                                                      (pri_time_t)p_db->trans_dup_check_timeout,
+                                                      p_db->trans_dup_check_flag);
+# endif
+                                        }
+#endif
+                                }
+                             }
+                             else
+                             {
+                                system_log(WARN_SIGN, __FILE__, __LINE__,
+                                           "No rename to part specified for trans_srename option. #%x",
+                                           p_db->id.job);
+                                free(p_db->cn_filter);
+                                p_db->cn_filter = NULL;
+                             }
+                          }
+                       }
+                       else
+                       {
+                          system_log(WARN_SIGN, __FILE__, __LINE__,
+                                     "No %s part specified for trans_srename option. #%x",
+                                     (n == 0) ? "filter" : "rename to",
+                                     p_db->id.job);
+                       }
+
                        ptr = end_ptr;
                     }
                     while ((*ptr != '\n') && (*ptr != '\0'))

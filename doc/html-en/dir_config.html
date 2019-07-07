@@ -1475,6 +1475,30 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
+   <td><a name="trans_srename">trans_srename &lt;filter&gt; &lt;rename to&gt; [primary_only|secondary_only|dupcheck[see dupcheck options]]</a></td>
+   <td>Rename files on the remote site after the files have been transmitted,
+       as defined by the filter and 'rename to' part. The pattern possible
+       here are as those specified in the
+       <a href="rename_rules.html">etc/rename.rule</a> file. This renaming
+       may include directory names, however the directories must exist on
+       the remote site. If the additional option primary_only is specified
+       and the system has a secondary host specified, the renaming will only
+       occur on the primary system. When secondary_only is set, the renaming
+       will only happen on the secondary node. The filter name an
+       'rename to' part itself may not be longer then 256 (MAX_FILENAME_LENGTH)
+       characters. If dupcheck is specified it will perform a duplicate check
+       on the renamed file.
+   </td>
+   <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
+   <td align=center>X</td>
+   <td><pre>&nbsp;</pre></td>
+   <td><pre>&nbsp;</pre></td>
+</tr>
+<tr>
    <td><a name="trans_rename">trans_rename &lt;rule&gt; [primary_only|secondary_only|dupcheck[see dupcheck options]]</a></td>
    <td>Rename files on the remote site after the files have been transmitted,
        as defined in the 'rule'-section of the
@@ -2910,7 +2934,7 @@ section. Valid options can be taken from the following table:
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2019 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 26.06.2019
+   Last updated: 07.07.2019
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

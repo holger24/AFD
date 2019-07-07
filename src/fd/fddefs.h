@@ -447,6 +447,8 @@ struct job
                                          /* it we just append the file.  */
                                          /* This is useful for large     */
                                          /* files.                       */
+          char          *cn_filter;      /* Change name filter part.     */
+          char          *cn_rename_to;   /* Change name rename to part.  */
           char          trans_rename_rule[MAX_RULE_HEADER_LENGTH + 1];
                                          /* FTP : Renaming files on      */
                                          /*       remote site. This is   */

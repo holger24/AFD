@@ -1,6 +1,6 @@
 /*
  *  check_burst_sf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -718,6 +718,8 @@ check_burst_sf(char         *file_path,
                p_new_db->chmod_str[0]             = '\0';
                p_new_db->dir_mode                 = 0;
                p_new_db->dir_mode_str[0]          = '\0';
+               p_new_db->cn_filter                = NULL;
+               p_new_db->cn_rename_to             = NULL;
                p_new_db->trans_rename_rule[0]     = '\0';
                p_new_db->user_rename_rule[0]      = '\0';
                p_new_db->rename_file_busy         = '\0';

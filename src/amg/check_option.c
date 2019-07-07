@@ -1,6 +1,6 @@
 /*
  *  check_option.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ DESCR__S_M3
  **                      is readable.
  **   11.05.2017 H.Kiehl Added parameter cmd_fp, so we can return warnings/
  **                      errors to command line tools.
+ **   07.07.2019 H.Kiehl Added trans_srename.
  **
  */
 DESCR__E_M3
@@ -324,8 +325,130 @@ check_option(char *option, FILE *cmd_fp)
               return(INCORRECT);
            }
         }
+   else if ((CHECK_STRNCMP(option, TRANS_SRENAME_ID,
+                           TRANS_SRENAME_ID_LENGTH) == 0) &&
+            ((*(option + TRANS_SRENAME_ID_LENGTH) == ' ') ||
+             (*(option + TRANS_SRENAME_ID_LENGTH) == '\t')))
+        {
+           int k = 0;
+
+           ptr += TRANS_SRENAME_ID_LENGTH + 1;
+           while ((*ptr == ' ') || (*ptr == '\t'))
+           {
+              ptr++;
+           }
+           if (*ptr == '\0')
+           {
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No filter and 'rename to' specified for %s",
+                            TRANS_SRENAME_ID);
+              return(INCORRECT);
+           }
+           while ((*ptr != ' ') && (*ptr != '\t') && (*ptr != '\n') &&
+                  (*ptr != '\0') && (k < MAX_FILENAME_LENGTH))
+           {
+              if ((*ptr == '\\') &&
+                  ((*(ptr + 1) == ' ') || (*(ptr + 1) == '#') ||
+                   (*(ptr + 1) == '\t')))
+              {
+                 ptr++;
+              }
+              ptr++; k++;
+           }
+           if ((*ptr != ' ') && (*ptr != '\t'))
+           {
+              if (k == MAX_FILENAME_LENGTH)
+              {
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "The filter for option %s is to long (%d)",
+                               TRANS_SRENAME_ID, MAX_FILENAME_LENGTH);
+              }
+              else
+              {
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "No filter specified for %s", TRANS_SRENAME_ID);
+              }
+              return(INCORRECT);
+           }
+           else
+           {
+              while ((*ptr == ' ') || (*ptr == '\t'))
+              {
+                 ptr++;
+              }
+              if (*ptr == '\0')
+              {
+                 update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                               "No 'rename to' part specified for option %s.",
+                               TRANS_SRENAME_ID);
+                 return(INCORRECT);
+              }
+              else
+              {
+                 k = 0;
+                 while ((*ptr != ' ') && (*ptr != '\t') && (*ptr != '\n') &&
+                        (*ptr != '\0') && (k < MAX_FILENAME_LENGTH))
+                 {
+                    if ((*ptr == '\\') &&
+                        ((*(ptr + 1) == ' ') || (*(ptr + 1) == '#') ||
+                         (*(ptr + 1) == '\t')))
+                    {
+                       ptr++;
+                    }
+                    ptr++; k++;
+                 }
+                 if (k == MAX_FILENAME_LENGTH)
+                 {
+                    update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                  "The 'rename to' part for option %s is to long (%d)",
+                                  TRANS_SRENAME_ID, MAX_FILENAME_LENGTH);
+                    return(INCORRECT);
+                 }
+
+                 /* primary_only/secondary_only/dupcheck */
+                 if ((*ptr == ' ') || (*ptr == '\t'))
+                 {
+                    ptr++;
+                    while ((*ptr == ' ') || (*ptr == '\t'))
+                    {
+                       ptr++;
+                    }
+                    /* primary_only/secondary_only */
+                    if ((*ptr == '\0') ||
+                        ((*ptr == 'p') && (*(ptr + 1) == 'r') && (*(ptr + 2) == 'i') &&
+                         (*(ptr + 3) == 'm') && (*(ptr + 4) == 'a') &&
+                         (*(ptr + 5) == 'r') && (*(ptr + 6) == 'y') &&
+                         (*(ptr + 7) == '_') && (*(ptr + 8) == 'o') &&
+                         (*(ptr + 9) == 'n') && (*(ptr + 10) == 'l') &&
+                         (*(ptr + 11) == 'y') && (*(ptr + 12) == '\0')) ||
+                        ((*ptr == 's') && (*(ptr + 1) == 'e') && (*(ptr + 2) == 'c') &&
+                         (*(ptr + 3) == 'o') && (*(ptr + 4) == 'n') &&
+                         (*(ptr + 5) == 'd') && (*(ptr + 6) == 'a') &&
+                         (*(ptr + 7) == 'r') && (*(ptr + 8) == 'y') &&
+                         (*(ptr + 9) == '_') && (*(ptr + 10) == 'o') &&
+                         (*(ptr + 11) == 'n') && (*(ptr + 12) == 'l') &&
+                         (*(ptr + 13) == 'y') && (*(ptr + 14) == '\0'))
+#ifdef WITH_DUP_CHECK
+                         || (CHECK_STRNCMP(ptr, DUPCHECK_ID, DUPCHECK_ID_LENGTH) == 0))
+#else
+                         )
+#endif
+                    {
+                       /* OK */;
+                    }
+                    else
+                    {
+                       update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                     "Unknown data behind option %s.",
+                                     TRANS_RENAME_ID);
+                       return(INCORRECT);
+                    }
+                 }
+              }
+           }
+        }
    else if ((CHECK_STRNCMP(option, TRANS_RENAME_ID,
-                          TRANS_RENAME_ID_LENGTH) == 0) &&
+                           TRANS_RENAME_ID_LENGTH) == 0) &&
             ((*(option + TRANS_RENAME_ID_LENGTH) == ' ') ||
              (*(option + TRANS_RENAME_ID_LENGTH) == '\t')))
         {
