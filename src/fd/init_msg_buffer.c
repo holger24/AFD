@@ -935,7 +935,7 @@ list_job_to_remove(int                cache_pos,
          remove_job_files(file_dir, -1, -1, __FILE__, __LINE__);
 #endif
          *p_file_dir = '\0';
-         remove_msg(j, NO);
+         remove_msg(j);
          if (j < *no_msg_queued)
          {
             j--;
