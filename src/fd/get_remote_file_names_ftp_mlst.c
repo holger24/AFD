@@ -915,8 +915,8 @@ do_scan(int   *files_to_retrieve,
          {
             int j = i;
 
-            while ((rl[j].in_list == NO) &&
-                   (j < (no_of_listed_files - files_removed)))
+            while ((j < (no_of_listed_files - files_removed)) &&
+                   (rl[j].in_list == NO))
             {
                j++;
             }
