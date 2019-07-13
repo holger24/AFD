@@ -1024,6 +1024,7 @@ system_log(DEBUG_SIGN, NULL, 0,
          if ((no_of_retrieves > 0) && (fra != NULL))
          {
             int gotcha,
+                incorrect_entries = 0,
                 j;
 
 #ifdef _DEBUG
@@ -1047,6 +1048,7 @@ system_log(DEBUG_SIGN, NULL, 0,
                   }
                   if (gotcha == NO)
                   {
+                     incorrect_entries++;
                      system_log(DEBUG_SIGN, __FILE__, __LINE__,
                                 "Queued variable for FRA position %d (%s) is %d. But there is no job in queue! Decremeting queue counter by one. @%x",
                                 retrieve_list[i],
@@ -1060,6 +1062,12 @@ system_log(DEBUG_SIGN, NULL, 0,
                      }
                   }
                }
+            }
+            if (incorrect_entries > 0)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "%d FRA queued %s corrected.", incorrect_entries,
+                          (incorrect_entries == 1) ? "counter" : "counters");
             }
          }
          next_fra_queue_check_time = ((now / FRA_QUEUE_CHECK_TIME) *
