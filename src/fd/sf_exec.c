@@ -194,7 +194,7 @@ main(int argc, char *argv[])
                     last_update_time,
                     now,
                     *p_file_mtime_buffer;
-   char             command_str[MAX_PATH_LENGTH + MAX_RECIPIENT_LENGTH],
+   char             command_str[3 + MAX_PATH_LENGTH + 4 + 1024 + 2],
                     file_name[MAX_FILENAME_LENGTH],
                     file_path[MAX_PATH_LENGTH],
                     *fnp,
@@ -206,7 +206,7 @@ main(int argc, char *argv[])
                     *return_str = NULL,
                     source_file[MAX_PATH_LENGTH],
                     tmp_char,
-                    tmp_option[MAX_PATH_LENGTH + MAX_RECIPIENT_LENGTH];
+                    tmp_option[1024 + 1];
    clock_t          clktck;
    struct job       *p_db;
 #ifdef SA_FULLDUMP
@@ -341,7 +341,8 @@ main(int argc, char *argv[])
          /* Prepare insert list. */
          p_end = p_command;
          k = 0;
-         while ((*p_end != '\0') && (ii < MAX_EXEC_FILE_SUBSTITUTION))
+         while ((*p_end != '\0') && (ii < MAX_EXEC_FILE_SUBSTITUTION) &&
+                (k < 1024))
          {
             if ((*p_end == '%') && (*(p_end + 1) == 's'))
             {
@@ -393,7 +394,8 @@ main(int argc, char *argv[])
                   start_time = times(&tmsdummy);
                }
 #endif
-               (void)snprintf(command_str, MAX_PATH_LENGTH + MAX_RECIPIENT_LENGTH,
+               (void)snprintf(command_str,
+                              3 + MAX_PATH_LENGTH + 4 + 1024 + 1,
                               "cd %s && %s", file_path, p_command);
                if (fsa->debug > NORMAL_MODE)
                {
@@ -470,7 +472,8 @@ main(int argc, char *argv[])
             insert_list[ii] = &tmp_option[last_k];
             tmp_char = *insert_list[0];
             *insert_list[0] = '\0';
-            length_start = snprintf(command_str, MAX_PATH_LENGTH + MAX_RECIPIENT_LENGTH,
+            length_start = snprintf(command_str,
+                                    3 + MAX_PATH_LENGTH + 4 + 1024 + 1,
                                     "cd %s && %s", file_path, p_command);
             *insert_list[0] = tmp_char;
 
@@ -495,14 +498,14 @@ main(int argc, char *argv[])
                if (mask_file_name == YES)
                {
                   length += snprintf(command_str + length_start + length,
-                                     MAX_PATH_LENGTH + MAX_RECIPIENT_LENGTH - (length_start + length),
+                                     3 + MAX_PATH_LENGTH + 4 + 1024 + 1 - (length_start + length),
                                      "\"%s\"%s", p_file_name_buffer,
                                      insert_list[k - 1] + 2);
                }
                else
                {
                   length += snprintf(command_str + length_start + length,
-                                     MAX_PATH_LENGTH + MAX_RECIPIENT_LENGTH - (length_start + length),
+                                     3 + MAX_PATH_LENGTH + 4 + 1024 + 1 - (length_start + length),
                                      "%s%s", p_file_name_buffer,
                                      insert_list[k - 1] + 2);
                }

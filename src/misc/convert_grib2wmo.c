@@ -145,7 +145,7 @@ convert_grib2wmo(char *file, off_t *file_size, char *default_CCCC)
                {
                   int   i;
                   off_t total_length = stat_buf.st_size;
-                  char  header[36],
+                  char  header[36 + 6], /* +6 for wmoheader_from_grib() */
                         *ptr,
                         *ptr_end;
 

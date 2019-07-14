@@ -1141,7 +1141,7 @@ handle_options(int          position,
 #endif
             char         *p_end = p_command,
                          *insert_list[MAX_EXEC_FILE_SUBSTITUTION],
-                         tmp_option[1024],
+                         tmp_option[1024 + 1],
                          command_str[3 + MAX_PATH_LENGTH + 4 + MAX_OPTION_LENGTH + 1],
                          *return_str = NULL;
             off_t        lock_offset = 0; /* Silence compiler. */
@@ -1182,7 +1182,8 @@ handle_options(int          position,
                lock_region_w(fra_fd, lock_offset + LOCK_EXEC);
 #endif
             }
-            while ((*p_end != '\0') && (ii < MAX_EXEC_FILE_SUBSTITUTION))
+            while ((*p_end != '\0') && (ii < MAX_EXEC_FILE_SUBSTITUTION) &&
+                   (k < 1024))
             {
                if ((*p_end == '%') && (*(p_end + 1) == 's'))
                {

@@ -1,6 +1,6 @@
 /*
  *  trans_exec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -101,12 +101,12 @@ trans_exec(char    *file_path,
                    *p_tmp_dir,
                    *insert_list[MAX_EXEC_FILE_SUBSTITUTION],
                    insert_type[MAX_EXEC_FILE_SUBSTITUTION],
-                   tmp_option[1024],
-                   command_str[1024],
+                   tmp_option[1024 + 1],
+                   command_str[3 + MAX_PATH_LENGTH + 4 + 1024 + 2],
                    *return_str = NULL;
 
       while ((*p_end != '\n') && (*p_end != '\0') &&
-             (ii < MAX_EXEC_FILE_SUBSTITUTION))
+             (ii < MAX_EXEC_FILE_SUBSTITUTION) && (k < 1024))
       {
          if ((*p_end == '%') &&
              ((*(p_end + 1) == 's') || (*(p_end + 1) == 'n')))
@@ -246,7 +246,7 @@ trans_exec(char    *file_path,
             insert_list[ii] = &tmp_option[k];
             tmp_char = *insert_list[0];
             *insert_list[0] = '\0';
-            length_start = snprintf(command_str, 1024,
+            length_start = snprintf(command_str, 3 + MAX_PATH_LENGTH + 4 + 1024 + 1,
                                     "cd %s && %s", file_path, p_command);
             *insert_list[0] = tmp_char;
 
@@ -284,14 +284,14 @@ trans_exec(char    *file_path,
                if (mask_file_name == YES)
                {
                   length += snprintf(command_str + length_start + length,
-                                     1024 - (length_start + length),
+                                     3 + MAX_PATH_LENGTH + 4 + 1024 + 1 - (length_start + length),
                                      "\"%s\"%s", p_name,
                                      insert_list[k - 1] + 2);
                }
                else
                {
                   length += snprintf(command_str + length_start + length,
-                                     1024 - (length_start + length),
+                                     3 + MAX_PATH_LENGTH + 4 + 1024 + 1 - (length_start + length),
                                      "%s%s", p_name, insert_list[k - 1] + 2);
                }
                *insert_list[k] = tmp_char;
@@ -341,10 +341,11 @@ trans_exec(char    *file_path,
          {
             int ret;
 
-            if (snprintf(command_str, 1024, "cd %s && %s", file_path, p_command) >= 1024)
+            if (snprintf(command_str, 3 + MAX_PATH_LENGTH + 4 + 1024 + 1, "cd %s && %s", file_path, p_command) >= (3 + MAX_PATH_LENGTH + 4 + 1024 + 1))
             {
                trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                         "Failed to copy full command to buffer since it is longer then 1024 bytes.");
+                         "Failed to copy full command to buffer since it is longer then %d bytes.",
+                         3 + MAX_PATH_LENGTH + 4 + 1024 + 1);
             }
             else
             {

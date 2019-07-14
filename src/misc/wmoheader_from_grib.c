@@ -1001,7 +1001,7 @@ wmoheader_from_grib(char *grib_buffer,
    }
    CCCC[4] = '\0';
 
-   (void)snprintf(TTAAii_CCCC_YYGGgg, 19, "%s%s%s_%s_%02d%02d%02d",
+   (void)snprintf(TTAAii_CCCC_YYGGgg, 25, "%s%s%s_%s_%02d%02d%02d",
                   TT, AA, ii, CCCC,
                   *(ptr + 18),  /* PDS 15 */
                   *(ptr + 19),  /* PDS 16 */
