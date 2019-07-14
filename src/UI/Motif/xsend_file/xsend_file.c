@@ -1055,20 +1055,18 @@ main(int argc, char *argv[])
 
    if (db->port > 0)
    {
-      char str_line[MAX_PORT_DIGITS + 1];
+      char str_line[MAX_PORT_DIGITS + 2];
 
-      (void)sprintf(str_line, "%d", db->port);
+      (void)snprintf(str_line, MAX_PORT_DIGITS + 1, "%d",
+                     (unsigned short)db->port);
       XmTextSetString(port_w, str_line);
    }
    if (db->timeout > 0)
    {
-      char str_line[MAX_TIMEOUT_DIGITS + 1];
+      char str_line[MAX_TIMEOUT_DIGITS + 4];
 
-#if SIZEOF_TIME_T == 4
-      (void)sprintf(str_line, "%ld", (pri_time_t)db->timeout);
-#else
-      (void)sprintf(str_line, "%lld", (pri_time_t)db->timeout);
-#endif
+      (void)snprintf(str_line, MAX_TIMEOUT_DIGITS + 1, "%d",
+                     (unsigned short)db->timeout % 10000);
       XmTextSetString(timeout_w, str_line);
    }
    wpr_position = 0;
