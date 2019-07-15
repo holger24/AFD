@@ -273,7 +273,7 @@ handle_delete_fifo(int delete_jobs_fd, size_t fifo_size, char *file_dir)
                      {
                         ABS_REDUCE(fsa_pos);
                      }
-                     remove_msg(i);
+                     remove_msg(i, NO);
                      if (i < *no_msg_queued)
                      {
                         i--;
@@ -393,7 +393,7 @@ handle_delete_fifo(int delete_jobs_fd, size_t fifo_size, char *file_dir)
                           {
                              ABS_REDUCE(mdb[qb[i].pos].fsa_pos);
                           }
-                          remove_msg(i);
+                          remove_msg(i, NO);
                           break;
                        }
                     } /* for (i = 0; i < *no_msg_queued; i++) */
