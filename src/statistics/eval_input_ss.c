@@ -191,7 +191,7 @@ eval_input_ss(int  argc,
                {
                   int i = 0;
 
-                  while (isdigit((int)((*(argv + 1))[i])) == 0)
+                  while (isdigit((int)((*(argv + 1))[i])))
                   {
                      i++;
                   }
@@ -234,7 +234,7 @@ eval_input_ss(int  argc,
                {
                   int i = 0;
 
-                  while (isdigit((int)((*(argv + 1))[i])) == 0)
+                  while (isdigit((int)((*(argv + 1))[i])))
                   {
                      i++;
                   }
@@ -280,7 +280,7 @@ eval_input_ss(int  argc,
                   {
                      int i = 0;
 
-                     while (isdigit((int)((*(argv + 1))[i])) == 0)
+                     while (isdigit((int)((*(argv + 1))[i])))
                      {
                         i++;
                      }
@@ -313,7 +313,7 @@ eval_input_ss(int  argc,
                   {
                      int i = 0;
 
-                     while (isdigit((int)((*(argv + 1))[i])) == 0)
+                     while (isdigit((int)((*(argv + 1))[i])))
                      {
                         i++;
                      }
@@ -348,7 +348,7 @@ eval_input_ss(int  argc,
                {
                   int i = 0;
 
-                  while (isdigit((int)((*(argv + 1))[i])) == 0)
+                  while (isdigit((int)((*(argv + 1))[i])))
                   {
                      i++;
                   }
@@ -414,7 +414,7 @@ eval_input_ss(int  argc,
                {
                   int i = 0;
 
-                  while (isdigit((int)((*(argv + 1))[i])) == 0)
+                  while (isdigit((int)((*(argv + 1))[i])))
                   {
                      i++;
                   }
