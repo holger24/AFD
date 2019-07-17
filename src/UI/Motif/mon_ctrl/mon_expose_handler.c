@@ -138,8 +138,7 @@ mon_expose_handler_line(Widget                      w,
     */
    if (ft_exposure_line == 0)
    {
-      int       bs_attribute,
-                i,
+      int       i,
                 j = 0,
                 x,
                 y;
