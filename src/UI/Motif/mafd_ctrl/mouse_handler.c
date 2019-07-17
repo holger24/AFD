@@ -1032,7 +1032,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                     cmd[2],
 #endif
        	            err_msg[1025 + 100];
-   size_t           new_size = (no_of_hosts + 14) * sizeof(char *);
+   size_t           new_size = (no_of_hosts + 15) * sizeof(char *);
    struct host_list *hl = NULL;
 
    if ((no_selected == 0) && (no_selected_static == 0) &&
