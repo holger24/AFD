@@ -33,6 +33,7 @@ DESCR__S_M1
  **             [-no_input]
  **             [-f <numeric font name>]
  **             [-t <title>]
+ **             [-bs]
  **
  ** DESCRIPTION
  **
@@ -56,6 +57,8 @@ DESCR__S_M1
  **   27.02.2016 H.Kiehl Remove long/short line code.
  **   14.09.2016 H.Kiehl Added production log.
  **   04.03.2017 H.Kiehl Added group support.
+ **   17.07.2019 H.Kiehl Added parameter -bs to disable backing store
+ **                      and save under.
  **
  */
 DESCR__E_M1
@@ -181,6 +184,7 @@ int                        amg_flag = NO,
                            line_height = 0,
                            magic_value,
                            log_angle,
+                           no_backing_store,
                            no_of_current_jobs,
                            no_of_dirs,
                            no_of_his_log,
@@ -668,7 +672,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
        (get_arg(argc, argv, "--help", NULL, 0) == SUCCESS))
    {
       (void)fprintf(stdout,
-                    "Usage: %s [-w <work_dir>] [-p <user profile>] [-u[ <fake user>]] [-no_input] [-f <numeric font name>] [-t <title>]\n",
+                    "Usage: %s [-w <work_dir>] [-p <user profile>] [-u[ <fake user>]] [-no_input] [-f <numeric font name>] [-t <title>] [-bs]\n",
                     argv[0]);
       exit(SUCCESS);
    }
@@ -706,6 +710,17 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
    {
       no_input = False;
    }
+
+   /* Disable backing store and save under? */
+   if (get_arg(argc, argv, "-bs", NULL, 0) == SUCCESS)
+   {
+      no_backing_store = True;
+   }
+   else
+   {
+      no_backing_store = False;
+   }
+
    if (get_arg(argc, argv, "-p", profile, MAX_PROFILE_NAME_LENGTH) == INCORRECT)
    {
       user_offset = 0;

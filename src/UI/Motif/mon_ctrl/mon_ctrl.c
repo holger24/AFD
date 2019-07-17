@@ -32,6 +32,7 @@ DESCR__S_M1
  **            [-u[ <user>]]
  **            [-f <font name>]
  **            [-no_input]
+ **            [-bs]
  **
  ** DESCRIPTION
  **
@@ -49,6 +50,8 @@ DESCR__S_M1
  **   27.02.2005 H.Kiehl Option to switch between two AFD's.
  **   08.06.2005 H.Kiehl Added button line at bottom.
  **   14.09.2016 H.Kiehl Added production log.
+ **   17.07.2019 H.Kiehl Added parameter -bs to disable backing store
+ **                      and save under.
  **
  */
 DESCR__E_M1
@@ -146,6 +149,7 @@ int                     bar_thickness_3,
                         his_log_set,
                         msa_fd = -1,
                         msa_id,
+                        no_backing_store,
                         no_input,
                         line_length,
                         line_height = 0,
@@ -592,7 +596,7 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
        (get_arg(argc, argv, "--help", NULL, 0) == SUCCESS))
    {
       (void)fprintf(stdout,
-                    "Usage: %s[ -w <work_dir>][ -p <profile/role>][ -u[ <user>][ -no_input][ -f <font name>]\n",
+                    "Usage: %s[ -w <work_dir>][ -p <profile/role>][ -u[ <user>][ -no_input][ -f <font name>][ -bs]\n",
                     argv[0]);
       exit(SUCCESS);
    }
@@ -620,6 +624,17 @@ init_mon_ctrl(int *argc, char *argv[], char *window_title)
    {
       no_input = False;
    }
+
+   /* Disable backing store and save under? */
+   if (get_arg(argc, argv, "-bs", NULL, 0) == SUCCESS)
+   {
+      no_backing_store = True;
+   }
+   else
+   {
+      no_backing_store = False;
+   }
+
    if (get_arg(argc, argv, "-p", profile, MAX_PROFILE_NAME_LENGTH) == INCORRECT)
    {
       user_offset = 0;

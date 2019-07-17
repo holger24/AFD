@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,6 +53,8 @@ DESCR__S_M3
  **   21.10.2003 H.Kiehl Log everything done by mon_ctrl dialog.
  **   27.06.2004 H.Kiehl Added error history.
  **   27.02.2005 H.Kiehl Option to switch between two AFD's.
+ **   17.07.2019 H.Kiehl Option to disable backing store and save
+ **                      under.
  **
  */
 DESCR__E_M3
@@ -111,6 +113,7 @@ extern GC                      letter_gc,
                                white_line_gc,
                                led_gc;
 extern int                     depth,
+                               no_backing_store,
                                no_of_active_process,
                                no_of_afds,
                                no_of_afds_invisible,
@@ -1479,6 +1482,11 @@ start_remote_prog(Widget    w,
                   {
                      offset = 0;
                   }
+                  if (no_backing_store == True)
+                  {
+                     args[arg_count + display_offset + offset + 10] = "-bs";
+                     offset += 1;
+                  }
                   if (profile[0] != '\0')
                   {
                      args[arg_count + display_offset + offset + 10] = "-p";
@@ -1875,6 +1883,11 @@ start_remote_prog(Widget    w,
                   else
                   {
                      offset = 0;
+                  }
+                  if (no_backing_store == True)
+                  {
+                     args[arg_count + display_offset + offset + 8] = "-bs";
+                     offset += 1;
                   }
                   if (profile[0] != '\0')
                   {

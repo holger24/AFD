@@ -1,7 +1,7 @@
 /*
  *  mon_expose_handler.c - Part of AFD, an automatic file distribution
  *                         program.
- *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,6 +52,8 @@ DESCR__S_M3
  ** HISTORY
  **   04.10.1998 H.Kiehl Created
  **   09.06.2005 H.Kiehl Added button line expose handler at bottom.
+ **   17.07.2019 H.Kiehl Option to disable backing store and save
+ **                      under.
  **
  */
 DESCR__E_M3
@@ -77,6 +79,7 @@ extern GC                      color_letter_gc,
                                default_bg_gc,
                                label_bg_gc;
 extern int                     magic_value,
+                               no_backing_store,
                                no_input,
                                no_of_afds,
                                line_length,
@@ -141,7 +144,6 @@ mon_expose_handler_line(Widget                      w,
                 x,
                 y;
       Dimension height;
-      Screen    *c_screen = ScreenOfDisplay(display, DefaultScreen(display));
 
       XFillRectangle(display, line_pixmap, default_bg_gc, 0, 0,
                      window_width, (line_height * no_of_rows));
@@ -160,56 +162,62 @@ mon_expose_handler_line(Widget                      w,
                             (XtTimerCallbackProc)check_afd_status, w);
       ft_exposure_line = 1;
 
-      if ((bs_attribute = DoesBackingStore(c_screen)) != NotUseful)
+      if (no_backing_store == False)
       {
-         XSetWindowAttributes attr;
+         int    bs_attribute;
+         Screen *c_screen = ScreenOfDisplay(display, DefaultScreen(display));
 
-         attr.backing_store = bs_attribute;
-         attr.save_under = DoesSaveUnders(c_screen);
-         XChangeWindowAttributes(display, line_window,
-                                 CWBackingStore | CWSaveUnder, &attr);
-         XChangeWindowAttributes(display, label_window,
-                                 CWBackingStore, &attr);
-         XChangeWindowAttributes(display, button_window,
-                                 CWBackingStore, &attr);
-         if (no_input == False)
+         if ((bs_attribute = DoesBackingStore(c_screen)) != NotUseful)
          {
-            XChangeWindowAttributes(display, XtWindow(mw[MON_W]),
+            XSetWindowAttributes attr;
+
+            attr.backing_store = bs_attribute;
+            attr.save_under = DoesSaveUnders(c_screen);
+            XChangeWindowAttributes(display, line_window,
+                                    CWBackingStore | CWSaveUnder, &attr);
+            XChangeWindowAttributes(display, label_window,
                                     CWBackingStore, &attr);
-
-            if ((mcp.show_slog != NO_PERMISSION) ||
-                (mcp.show_rlog != NO_PERMISSION) ||
-                (mcp.show_tlog != NO_PERMISSION) ||
-                (mcp.show_ilog != NO_PERMISSION) ||
-                (mcp.show_olog != NO_PERMISSION) ||
-                (mcp.show_elog != NO_PERMISSION) ||
-                (mcp.show_queue != NO_PERMISSION) ||
-                (mcp.afd_load != NO_PERMISSION))
-            {
-               XChangeWindowAttributes(display, XtWindow(mw[LOG_W]),
-                                       CWBackingStore, &attr);
-            }
-
-            if ((mcp.amg_ctrl != NO_PERMISSION) ||
-                (mcp.fd_ctrl != NO_PERMISSION) ||
-                (mcp.rr_dc != NO_PERMISSION) ||
-                (mcp.rr_hc != NO_PERMISSION) ||
-                (mcp.edit_hc != NO_PERMISSION) ||
-                (mcp.dir_ctrl != NO_PERMISSION) ||
-                (mcp.startup_afd != NO_PERMISSION) ||
-                (mcp.shutdown_afd != NO_PERMISSION))
-            {
-               XChangeWindowAttributes(display, XtWindow(mw[CONTROL_W]),
-                                       CWBackingStore, &attr);
-            }
-
-            XChangeWindowAttributes(display, XtWindow(mw[CONFIG_W]),
+            XChangeWindowAttributes(display, button_window,
                                     CWBackingStore, &attr);
+            if (no_input == False)
+            {
+               XChangeWindowAttributes(display, XtWindow(mw[MON_W]),
+                                       CWBackingStore, &attr);
+
+               if ((mcp.show_slog != NO_PERMISSION) ||
+                   (mcp.show_rlog != NO_PERMISSION) ||
+                   (mcp.show_tlog != NO_PERMISSION) ||
+                   (mcp.show_ilog != NO_PERMISSION) ||
+                   (mcp.show_olog != NO_PERMISSION) ||
+                   (mcp.show_elog != NO_PERMISSION) ||
+                   (mcp.show_queue != NO_PERMISSION) ||
+                   (mcp.afd_load != NO_PERMISSION))
+               {
+                  XChangeWindowAttributes(display, XtWindow(mw[LOG_W]),
+                                          CWBackingStore, &attr);
+               }
+
+               if ((mcp.amg_ctrl != NO_PERMISSION) ||
+                   (mcp.fd_ctrl != NO_PERMISSION) ||
+                   (mcp.rr_dc != NO_PERMISSION) ||
+                   (mcp.rr_hc != NO_PERMISSION) ||
+                   (mcp.edit_hc != NO_PERMISSION) ||
+                   (mcp.dir_ctrl != NO_PERMISSION) ||
+                   (mcp.startup_afd != NO_PERMISSION) ||
+                   (mcp.shutdown_afd != NO_PERMISSION))
+               {
+                  XChangeWindowAttributes(display, XtWindow(mw[CONTROL_W]),
+                                          CWBackingStore, &attr);
+               }
+
+               XChangeWindowAttributes(display, XtWindow(mw[CONFIG_W]),
+                                       CWBackingStore, &attr);
 #ifdef _WITH_HELP_PULLDOWN
-            XChangeWindowAttributes(display, XtWindow(mw[HELP_W]),
-                                    CWBackingStore, &attr);
+               XChangeWindowAttributes(display, XtWindow(mw[HELP_W]),
+                                       CWBackingStore, &attr);
 #endif
-         } /* if (no_input == False) */
+            } /* if (no_input == False) */
+         }
       }
 
       /*

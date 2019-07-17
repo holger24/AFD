@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -56,6 +56,8 @@ DESCR__S_M3
  **                      Receive Log, only show data of the selected hosts.
  **   25.07.2012 H.Kiehl When selecting a host with retrieve select the
  **                      directory for this host as well.
+ **   17.07.2019 H.Kiehl Option to disable backing store and save
+ **                      under.
  **
  */
 DESCR__E_M3
@@ -131,6 +133,7 @@ extern int                        bar_thickness_3,
                                   hostname_display_length,
                                   line_height,
                                   *line_length,
+                                  no_backing_store,
                                   no_of_active_process,
                                   no_of_current_jobs,
                                   no_of_dirs,
@@ -1751,6 +1754,11 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
             args[offset] = "-u";
             args[offset + 1] = fake_user;
             offset += 2;
+         }
+         if (no_backing_store == True)
+         {
+            args[offset] = "-bs";
+            offset += 1;
          }
          if (profile[0] != '\0')
          {

@@ -1,6 +1,6 @@
 /*
  *  expose_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -55,6 +55,8 @@ DESCR__S_M3
  **   10.01.1998 H.Kiehl Support for detailed view of transfers.
  **   30.07.2001 H.Kiehl Support for the show_queue dialog.
  **   08.11.2002 H.Kiehl Expose handler for short line drawing area.
+ **   17.07.2019 H.Kiehl Option to disable backing store and save
+ **                      under.
  **
  */
 DESCR__E_M3
@@ -86,6 +88,7 @@ extern GC                      color_letter_gc,
                                label_bg_gc;
 extern int                     ft_exposure_tv_line,
                                magic_value,
+                               no_backing_store,
                                no_input,
                                no_of_hosts_visible,
                                no_of_jobs_selected,
@@ -166,10 +169,8 @@ expose_handler_line(Widget                      w,
     */
    if (ft_exposure_line == 0)
    {
-      int       bs_attribute,
-                i;
+      int       i;
       Dimension height;
-      Screen    *c_screen = ScreenOfDisplay(display, DefaultScreen(display));
 
       XFillRectangle(display, line_pixmap, default_bg_gc, 0, 0,
                      window_width, (line_height * no_of_rows));
@@ -182,58 +183,64 @@ expose_handler_line(Widget                      w,
                             (XtTimerCallbackProc)check_host_status, w);
       ft_exposure_line = 1;
 
-      if ((bs_attribute = DoesBackingStore(c_screen)) != NotUseful)
+      if (no_backing_store == False)
       {
-         XSetWindowAttributes attr;
+         int    bs_attribute;
+         Screen *c_screen = ScreenOfDisplay(display, DefaultScreen(display));
 
-         attr.backing_store = bs_attribute;
-         attr.save_under = DoesSaveUnders(c_screen);
-         XChangeWindowAttributes(display, line_window,
-                                 CWBackingStore | CWSaveUnder, &attr);
-         XChangeWindowAttributes(display, button_window,
-                                 CWBackingStore, &attr);
-         XChangeWindowAttributes(display, label_window,
-                                 CWBackingStore, &attr);
-         if (no_input == False)
+         if ((bs_attribute = DoesBackingStore(c_screen)) != NotUseful)
          {
-            XChangeWindowAttributes(display, XtWindow(mw[HOST_W]),
+            XSetWindowAttributes attr;
+
+            attr.backing_store = bs_attribute;
+            attr.save_under = DoesSaveUnders(c_screen);
+            XChangeWindowAttributes(display, line_window,
+                                    CWBackingStore | CWSaveUnder, &attr);
+            XChangeWindowAttributes(display, button_window,
                                     CWBackingStore, &attr);
-
-            if ((acp.show_slog != NO_PERMISSION) ||
-                (acp.show_mlog != NO_PERMISSION) ||
-                (acp.show_rlog != NO_PERMISSION) ||
-                (acp.show_tlog != NO_PERMISSION) ||
-                (acp.show_dlog != NO_PERMISSION) ||
-                (acp.show_ilog != NO_PERMISSION) ||
-                (acp.show_olog != NO_PERMISSION) ||
-                (acp.show_queue != NO_PERMISSION) ||
-                (acp.show_elog != NO_PERMISSION) ||
-                (acp.view_jobs != NO_PERMISSION))
-            {
-               XChangeWindowAttributes(display, XtWindow(mw[LOG_W]),
-                                       CWBackingStore, &attr);
-            }
-
-            if ((acp.amg_ctrl != NO_PERMISSION) ||
-                (acp.fd_ctrl != NO_PERMISSION) ||
-                (acp.rr_dc != NO_PERMISSION) ||
-                (acp.rr_hc != NO_PERMISSION) ||
-                (acp.edit_hc != NO_PERMISSION) ||
-                (acp.startup_afd != NO_PERMISSION) ||
-                (acp.shutdown_afd != NO_PERMISSION) ||
-                (acp.dir_ctrl != NO_PERMISSION))
-            {
-               XChangeWindowAttributes(display, XtWindow(mw[CONTROL_W]),
-                                       CWBackingStore, &attr);
-            }
-
-            XChangeWindowAttributes(display, XtWindow(mw[CONFIG_W]),
+            XChangeWindowAttributes(display, label_window,
                                     CWBackingStore, &attr);
+            if (no_input == False)
+            {
+               XChangeWindowAttributes(display, XtWindow(mw[HOST_W]),
+                                       CWBackingStore, &attr);
+
+               if ((acp.show_slog != NO_PERMISSION) ||
+                   (acp.show_mlog != NO_PERMISSION) ||
+                   (acp.show_rlog != NO_PERMISSION) ||
+                   (acp.show_tlog != NO_PERMISSION) ||
+                   (acp.show_dlog != NO_PERMISSION) ||
+                   (acp.show_ilog != NO_PERMISSION) ||
+                   (acp.show_olog != NO_PERMISSION) ||
+                   (acp.show_queue != NO_PERMISSION) ||
+                   (acp.show_elog != NO_PERMISSION) ||
+                   (acp.view_jobs != NO_PERMISSION))
+               {
+                  XChangeWindowAttributes(display, XtWindow(mw[LOG_W]),
+                                          CWBackingStore, &attr);
+               }
+
+               if ((acp.amg_ctrl != NO_PERMISSION) ||
+                   (acp.fd_ctrl != NO_PERMISSION) ||
+                   (acp.rr_dc != NO_PERMISSION) ||
+                   (acp.rr_hc != NO_PERMISSION) ||
+                   (acp.edit_hc != NO_PERMISSION) ||
+                   (acp.startup_afd != NO_PERMISSION) ||
+                   (acp.shutdown_afd != NO_PERMISSION) ||
+                   (acp.dir_ctrl != NO_PERMISSION))
+               {
+                  XChangeWindowAttributes(display, XtWindow(mw[CONTROL_W]),
+                                          CWBackingStore, &attr);
+               }
+
+               XChangeWindowAttributes(display, XtWindow(mw[CONFIG_W]),
+                                       CWBackingStore, &attr);
 #ifdef _WITH_HELP_PULLDOWN
-            XChangeWindowAttributes(display, XtWindow(mw[HELP_W]),
-                                    CWBackingStore, &attr);
+               XChangeWindowAttributes(display, XtWindow(mw[HELP_W]),
+                                       CWBackingStore, &attr);
 #endif
-         } /* if (no_input == False) */
+            } /* if (no_input == False) */
+         }
       }
 
       /*
@@ -373,25 +380,28 @@ expose_handler_tv_line(Widget                      w,
        */
       if (ft_exposure_tv_line == 0)
       {
-         int bs_attribute;
-         Screen *c_screen = ScreenOfDisplay(display, DefaultScreen(display));
-
          detailed_window = XtWindow(detailed_window_w);
          interval_id_tv = XtAppAddTimeOut(app, TV_STARTING_REDRAW_TIME,
                                           (XtTimerCallbackProc)check_tv_status,
                                           w);
          ft_exposure_tv_line = 1;
 
-         if ((bs_attribute = DoesBackingStore(c_screen)) != NotUseful)
+         if (no_backing_store == False)
          {
-            XSetWindowAttributes attr;
+            int    bs_attribute;
+            Screen *c_screen = ScreenOfDisplay(display, DefaultScreen(display));
 
-            attr.backing_store = bs_attribute;
-            attr.save_under = DoesSaveUnders(c_screen);
-            XChangeWindowAttributes(display, detailed_window,
-                                    CWBackingStore, &attr);
-            XChangeWindowAttributes(display, tv_label_window,
-                                    CWBackingStore, &attr);
+            if ((bs_attribute = DoesBackingStore(c_screen)) != NotUseful)
+            {
+               XSetWindowAttributes attr;
+
+               attr.backing_store = bs_attribute;
+               attr.save_under = DoesSaveUnders(c_screen);
+               XChangeWindowAttributes(display, detailed_window,
+                                       CWBackingStore, &attr);
+               XChangeWindowAttributes(display, tv_label_window,
+                                       CWBackingStore, &attr);
+            }
          }
       }
 

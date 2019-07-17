@@ -32,6 +32,7 @@ DESCR__S_M1
  **            [-no_input]
  **            [-f <numeric font>]
  **            [-t <title>]
+ **            [-bs]
  **
  ** DESCRIPTION
  **
@@ -49,6 +50,8 @@ DESCR__S_M1
  **   27.03.2003 H.Kiehl Added profile option.
  **   25.05.2006 H.Kiehl Added View->Configuration option.
  **   26.09.2016 H.Kiehl Added production log.
+ **   17.07.2019 H.Kiehl Added parameter -bs to disable backing store
+ **                      and save under.
  **
  */
 DESCR__E_M1
@@ -136,6 +139,7 @@ int                        bar_thickness_3,
                            event_log_fd = STDERR_FILENO,
                            fra_fd = -1,
                            fra_id,
+                           no_backing_store,
                            no_input,
                            no_of_active_process = 0,
                            line_length,
@@ -513,7 +517,7 @@ init_dir_ctrl(int *argc, char *argv[], char *window_title)
        (get_arg(argc, argv, "--help", NULL, 0) == SUCCESS))
    {
       (void)fprintf(stdout,
-                    "Usage: %s [-w <work_dir>] [-p <profile>] [-u[ <user>]] [-no_input] [-f <font name>] [-t <title>]\n",
+                    "Usage: %s [-w <work_dir>] [-p <profile>] [-u[ <user>]] [-no_input] [-f <font name>] [-t <title>] [-bs]\n",
                     argv[0]);
       exit(SUCCESS);
    }
@@ -551,6 +555,17 @@ init_dir_ctrl(int *argc, char *argv[], char *window_title)
    {
       no_input = False;
    }
+
+   /* Disable backing store and save under? */
+   if (get_arg(argc, argv, "-bs", NULL, 0) == SUCCESS)
+   {
+      no_backing_store = True;
+   }
+   else
+   {
+      no_backing_store = False;
+   }
+
    if (get_arg(argc, argv, "-p", profile, MAX_PROFILE_NAME_LENGTH) == INCORRECT)
    {
       profile[0] = '\0';

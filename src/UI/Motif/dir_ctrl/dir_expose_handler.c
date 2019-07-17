@@ -1,7 +1,7 @@
 /*
  *  dir_expose_handler.c - Part of AFD, an automatic file distribution
  *                         program.
- *  Copyright (c) 2000 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -72,6 +72,7 @@ extern GC                      color_letter_gc,
                                default_bg_gc,
                                label_bg_gc;
 extern int                     magic_value,
+                               no_backing_store,
                                no_input,
                                no_of_dirs,
                                no_of_jobs_selected,
@@ -130,10 +131,8 @@ dir_expose_handler_line(Widget                      w,
     */
    if (ft_exposure_line == 0)
    {
-      int       bs_attribute,
-                i;
+      int       i;
       Dimension height;
-      Screen    *c_screen = ScreenOfDisplay(display, DefaultScreen(display));
 
       XFillRectangle(display, line_pixmap, default_bg_gc, 0, 0,
                      window_width, (line_height * no_of_rows));
@@ -146,40 +145,46 @@ dir_expose_handler_line(Widget                      w,
                             (XtTimerCallbackProc)check_dir_status, w);
       ft_exposure_line = 1;
 
-      if ((bs_attribute = DoesBackingStore(c_screen)) != NotUseful)
+      if (no_backing_store == False)
       {
-         XSetWindowAttributes attr;
+         int    bs_attribute;
+         Screen *c_screen = ScreenOfDisplay(display, DefaultScreen(display));
 
-         attr.backing_store = bs_attribute;
-         attr.save_under = DoesSaveUnders(c_screen);
-         XChangeWindowAttributes(display, line_window,
-                                 CWBackingStore | CWSaveUnder, &attr);
-         XChangeWindowAttributes(display, label_window,
-                                 CWBackingStore, &attr);
-         if (no_input == False)
+         if ((bs_attribute = DoesBackingStore(c_screen)) != NotUseful)
          {
-            XChangeWindowAttributes(display, XtWindow(mw[DIR_W]),
-                                    CWBackingStore, &attr);
+            XSetWindowAttributes attr;
 
-            if ((dcp.show_slog != NO_PERMISSION) ||
-                (dcp.show_rlog != NO_PERMISSION) ||
-                (dcp.show_tlog != NO_PERMISSION) ||
-                (dcp.show_ilog != NO_PERMISSION) ||
-                (dcp.show_olog != NO_PERMISSION) ||
-                (dcp.show_elog != NO_PERMISSION) ||
-                (dcp.info != NO_PERMISSION))
+            attr.backing_store = bs_attribute;
+            attr.save_under = DoesSaveUnders(c_screen);
+            XChangeWindowAttributes(display, line_window,
+                                    CWBackingStore | CWSaveUnder, &attr);
+            XChangeWindowAttributes(display, label_window,
+                                    CWBackingStore, &attr);
+            if (no_input == False)
             {
-               XChangeWindowAttributes(display, XtWindow(mw[LOG_W]),
+               XChangeWindowAttributes(display, XtWindow(mw[DIR_W]),
                                        CWBackingStore, &attr);
-            }
 
-            XChangeWindowAttributes(display, XtWindow(mw[CONFIG_W]),
-                                    CWBackingStore, &attr);
+               if ((dcp.show_slog != NO_PERMISSION) ||
+                   (dcp.show_rlog != NO_PERMISSION) ||
+                   (dcp.show_tlog != NO_PERMISSION) ||
+                   (dcp.show_ilog != NO_PERMISSION) ||
+                   (dcp.show_olog != NO_PERMISSION) ||
+                   (dcp.show_elog != NO_PERMISSION) ||
+                   (dcp.info != NO_PERMISSION))
+               {
+                  XChangeWindowAttributes(display, XtWindow(mw[LOG_W]),
+                                          CWBackingStore, &attr);
+               }
+
+               XChangeWindowAttributes(display, XtWindow(mw[CONFIG_W]),
+                                       CWBackingStore, &attr);
 #ifdef _WITH_HELP_PULLDOWN
-            XChangeWindowAttributes(display, XtWindow(mw[HELP_W]),
-                                    CWBackingStore, &attr);
+               XChangeWindowAttributes(display, XtWindow(mw[HELP_W]),
+                                       CWBackingStore, &attr);
 #endif
-         } /* if (no_input == False) */
+            } /* if (no_input == False) */
+         }
       }
 
       /*
