@@ -1216,24 +1216,6 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
       XtAddCallback(ow[MON_LOG_W], XmNactivateCallback, mon_popup_cb,
                     (XtPointer)MON_LOG_SEL);
    }
-#ifdef WITH_CTRL_ACCELERATOR
-   ow[MON_SELECT_W] = XtVaCreateManagedWidget("Search + (De)Select (Ctrl+s)",
-#else
-   ow[MON_SELECT_W] = XtVaCreateManagedWidget("Search + (De)Select (Alt+s)",
-#endif
-                         xmPushButtonWidgetClass, pull_down_w,
-                         XmNfontList,             fontlist,
-#ifdef WHEN_WE_KNOW_HOW_TO_FIX_THIS
-                         XmNmnemonic,             'S',
-#endif
-#ifdef WITH_CTRL_ACCELERATOR
-                         XmNaccelerator,          "Ctrl<Key>S",
-#else
-                         XmNaccelerator,          "Alt<Key>S",
-#endif
-                         NULL);
-   XtAddCallback(ow[MON_SELECT_W], XmNactivateCallback, select_afd_dialog,
-                 (XtPointer)0);
    if (mcp.retry != NO_PERMISSION)
    {
 #ifdef WITH_CTRL_ACCELERATOR
@@ -1276,6 +1258,24 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
       XtAddCallback(ow[MON_SWITCH_W], XmNactivateCallback, mon_popup_cb,
                     (XtPointer)MON_SWITCH_SEL);
    }
+#ifdef WITH_CTRL_ACCELERATOR
+   ow[MON_SELECT_W] = XtVaCreateManagedWidget("Search + (De)Select (Ctrl+s)",
+#else
+   ow[MON_SELECT_W] = XtVaCreateManagedWidget("Search + (De)Select (Alt+s)",
+#endif
+                         xmPushButtonWidgetClass, pull_down_w,
+                         XmNfontList,             fontlist,
+#ifdef WHEN_WE_KNOW_HOW_TO_FIX_THIS
+                         XmNmnemonic,             'S',
+#endif
+#ifdef WITH_CTRL_ACCELERATOR
+                         XmNaccelerator,          "Ctrl<Key>S",
+#else
+                         XmNaccelerator,          "Alt<Key>S",
+#endif
+                         NULL);
+   XtAddCallback(ow[MON_SELECT_W], XmNactivateCallback, select_afd_dialog,
+                 (XtPointer)0);
    if ((traceroute_cmd != NULL) || (ping_cmd != NULL))
    {
       XtVaCreateManagedWidget("Separator",
