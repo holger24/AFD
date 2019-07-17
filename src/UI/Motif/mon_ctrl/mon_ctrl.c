@@ -52,6 +52,9 @@ DESCR__S_M1
  **   14.09.2016 H.Kiehl Added production log.
  **   17.07.2019 H.Kiehl Added parameter -bs to disable backing store
  **                      and save under.
+ **                      In popup menu added calling remote progs
+ **                      afd_ctrl, receive log, system log and transfer
+ **                      log.
  **
  */
 DESCR__E_M1
@@ -135,7 +138,7 @@ Widget                  appshell,
                         lw[4],          /* AFD load */
                         lsw[3],         /* Select line style */
                         oow[3],         /* Other options */
-                        pw[6];          /* Popup menu */
+                        pw[10];         /* Popup menu */
 Window                  button_window,
                         label_window,
                         line_window;
@@ -1793,7 +1796,11 @@ init_popup_menu(Widget line_window_w)
        (mcp.retry != NO_PERMISSION) ||
        (mcp.switch_afd != NO_PERMISSION) ||
        (mcp.mon_info != NO_PERMISSION) ||
-       (mcp.disable != NO_PERMISSION))
+       (mcp.disable != NO_PERMISSION) ||
+       (mcp.afd_ctrl != NO_PERMISSION) ||
+       (mcp.show_rlog != NO_PERMISSION) ||
+       (mcp.show_slog != NO_PERMISSION) ||
+       (mcp.show_tlog != NO_PERMISSION))
    {
       if (mcp.show_ms_log != NO_PERMISSION)
       {
@@ -1898,6 +1905,71 @@ init_popup_menu(Widget line_window_w)
                        mon_popup_cb, (XtPointer)MON_DISABLE_SEL);
          XtManageChild(pw[5]);
          XmStringFree(x_string);
+      }
+      if ((mcp.afd_ctrl != NO_PERMISSION) ||
+          (mcp.show_rlog != NO_PERMISSION) ||
+          (mcp.show_slog != NO_PERMISSION) ||
+          (mcp.show_tlog != NO_PERMISSION))
+      {
+         XtVaCreateManagedWidget("Separator",
+                                 xmSeparatorWidgetClass, popupmenu,
+                                 NULL);
+         if (mcp.afd_ctrl != NO_PERMISSION)
+         {
+            argcount = 0;
+            x_string = XmStringCreateLocalized("AFD Control");
+            XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
+#ifdef WITH_CTRL_ACCELERATOR
+            XtSetArg(args[argcount], XmNaccelerator, "Ctrl<Key>A"); argcount++;
+#else
+            XtSetArg(args[argcount], XmNaccelerator, "Alt<Key>A"); argcount++;
+#endif
+#ifdef WHEN_WE_KNOW_HOW_TO_FIX_THIS
+            XtSetArg(args[argcount], XmNmnemonic, 'A'); argcount++;
+#endif
+            XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
+            pw[6] = XmCreatePushButton(popupmenu, "AFD Control", args, argcount);
+            XtAddCallback(pw[6], XmNactivateCallback,
+                          start_remote_prog, (XtPointer)AFD_CTRL_SEL);
+            XtManageChild(pw[6]);
+            XmStringFree(x_string);
+         }
+         if (mcp.show_rlog != NO_PERMISSION)
+         {
+            argcount = 0;
+            x_string = XmStringCreateLocalized("Receive Log");
+            XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
+            XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
+            pw[7] = XmCreatePushButton(popupmenu, "Receive Log", args, argcount);
+            XtAddCallback(pw[7], XmNactivateCallback,
+                          start_remote_prog, (XtPointer)R_LOG_SEL);
+            XtManageChild(pw[7]);
+            XmStringFree(x_string);
+         }
+         if (mcp.show_slog != NO_PERMISSION)
+         {
+            argcount = 0;
+            x_string = XmStringCreateLocalized("System Log");
+            XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
+            XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
+            pw[8] = XmCreatePushButton(popupmenu, "System Log", args, argcount);
+            XtAddCallback(pw[8], XmNactivateCallback,
+                          start_remote_prog, (XtPointer)S_LOG_SEL);
+            XtManageChild(pw[8]);
+            XmStringFree(x_string);
+         }
+         if (mcp.show_tlog != NO_PERMISSION)
+         {
+            argcount = 0;
+            x_string = XmStringCreateLocalized("Transfer Log");
+            XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
+            XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
+            pw[9] = XmCreatePushButton(popupmenu, "Transfer Log", args, argcount);
+            XtAddCallback(pw[9], XmNactivateCallback,
+                          start_remote_prog, (XtPointer)T_LOG_SEL);
+            XtManageChild(pw[9]);
+            XmStringFree(x_string);
+         }
       }
    }
 
