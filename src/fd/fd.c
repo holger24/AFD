@@ -612,6 +612,7 @@ main(int argc, char *argv[])
                  "malloc() error [%d bytes] : %s", fifo_size, strerror(errno));
       exit(INCORRECT);
    }
+   nmsg_read_ptr = nmsg_fifo_buffer; /* Silence compiler warning */
 
 #ifdef WITH_ERROR_QUEUE
    if (attach_error_queue() == INCORRECT)
