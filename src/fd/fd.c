@@ -1218,6 +1218,28 @@ system_log(DEBUG_SIGN, NULL, 0,
                         if (start_process(fra[retrieve_list[i]].fsa_pos,
                                           qb_pos, now, NO) == REMOVED)
                         {
+                           if (qb[qb_pos].pos < no_of_dirs)
+                           {
+                              if ((fra[retrieve_list[i]].fsa_pos >= 0) &&
+                                  (fra[retrieve_list[i]].fsa_pos < no_of_hosts))
+                              {
+                                 ABS_REDUCE(fra[retrieve_list[i]].fsa_pos);
+                              }
+                              else
+                              {
+                                 system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                            "Unable to reduce jobs_queued for FSA position %d since it is out of range (0 - %d), for queue position %d (i = %d).",
+                                            fra[retrieve_list[i]].fsa_pos,
+                                            no_of_hosts, retrieve_list[i],
+                                            qb_pos);
+                              }
+                           }
+                           else
+                           {
+                              system_log(WARN_SIGN, __FILE__, __LINE__,
+                                         "FRA position %d is larger then the possible number of directories %d. Will remove job from queue.",
+                                         retrieve_list[i], no_of_dirs);
+                           }
                            remove_msg(qb_pos, YES);
 #ifdef WITH_MULTIPLE_START_RESTART
                            multiple_start_errors++;
