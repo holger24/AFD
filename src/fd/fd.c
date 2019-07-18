@@ -75,6 +75,8 @@ DESCR__E_M1
 
 /* #define WITH_MEMCHECK */
 #define WITH_CHECK_SINGLE_RETRIEVE_JOB 1
+/* #define WITH_MULTIPLE_START_RESTART */
+#define FD_QUEUE_THRESHOLD             4096
 
 #include <stdio.h>            /* fprintf()                               */
 #include <string.h>           /* strcpy(), strcat(), strerror(),         */
@@ -295,6 +297,9 @@ main(int argc, char *argv[])
                     status,
                     status_done,
                     max_fd,
+#ifdef WITH_MULTIPLE_START_RESTART
+                    multiple_start_errors = 0,
+#endif
                     nmsg_bytes_read = 0,
                     nmsg_bytes_buffered;
    unsigned int     *files_to_send,
@@ -589,6 +594,24 @@ main(int argc, char *argv[])
          }
       }
    }
+
+   /*
+    * Initialize jobs_queued but only if the queue is not to large.
+    */
+   if (*no_msg_queued == 0)
+   {
+      for (i = 0; i < no_of_hosts; i++)
+      {
+         fsa[i].jobs_queued = 0;
+      }
+   }
+   else if (*no_msg_queued < FD_QUEUE_THRESHOLD)
+        {
+           for (i = 0; i < no_of_hosts; i++)
+           {
+              fsa[i].jobs_queued = recount_jobs_queued(i);
+           }
+        }
 
    /*
     * Determine the size of the fifo buffer. Then create a buffer
@@ -1196,6 +1219,15 @@ system_log(DEBUG_SIGN, NULL, 0,
                                           qb_pos, now, NO) == REMOVED)
                         {
                            remove_msg(qb_pos, YES);
+#ifdef WITH_MULTIPLE_START_RESTART
+                           multiple_start_errors++;
+                           if (multiple_start_errors == 3)
+                           {
+                              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                         "Something wrong with internal database, terminating for a new restart.");
+                              exit(PROCESS_NEEDS_RESTART);
+                           }
+#endif
                         }
                      }
                      else
@@ -5298,9 +5330,14 @@ get_free_disp_pos(int pos)
          if (fsa[pos].job_status[i].job_id == fra[qb[qb_pos].pos].dir_id)
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "Prevented multiple start of scanning same remote dir. [fsa_pos=%d fra_pos=%d qb_pos=%d i=%d] @%x",
+                       "Prevented multiple start of scanning same remote dir. [fsa_pos=%d fra_pos=%d qb_pos=%d i=%d queued=%d] @%x",
                        pos, qb[qb_pos].pos, qb_pos, i,
-                       fra[qb[qb_pos].pos].dir_id);
+                       fra[qb[qb_pos].pos].dir_id,
+                       (int)fra[qb[qb_pos].pos].queued);
+            if (fra[qb[qb_pos].pos].queued == 0)
+            {
+               fra[qb[qb_pos].pos].queued = 1;
+            }
             return(REMOVED);
          }
       }
