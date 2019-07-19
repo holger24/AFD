@@ -1,6 +1,6 @@
 /*
  *  eval_host_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -92,9 +92,10 @@ DESCR__S_M3
  **   31.12.2007 H.Kiehl Added warn time.
  **   21.09.2009 H.Kiehl Ensure that one cannot enter 0 as transfer block
  **                      size.
- **   04.03.2017 H.Kiehl Addwd group support.
+ **   04.03.2017 H.Kiehl Added group support.
  **   11.04.2017 H.Kiehl Added debug_fp parameter to print warnings and
  **                      errors.
+ **   19.07.2019 H.Kiehl Allow simulate mode for host_status.
  **
  */
 DESCR__E_M3
@@ -1411,14 +1412,14 @@ eval_host_config(int              *hosts_found,
            }
            else
            {
-              if (((*hl)[host_counter].host_status = (unsigned int)atoi(number)) > (PAUSE_QUEUE_STAT|STOP_TRANSFER_STAT|HOST_ERROR_OFFLINE_STATIC|HOST_CONFIG_HOST_DISABLED|HOST_NOT_IN_DIR_CONFIG|HOST_TWO_FLAG|DO_NOT_DELETE_DATA))
+              if (((*hl)[host_counter].host_status = (unsigned int)atoi(number)) > (PAUSE_QUEUE_STAT|STOP_TRANSFER_STAT|HOST_ERROR_OFFLINE_STATIC|HOST_CONFIG_HOST_DISABLED|HOST_NOT_IN_DIR_CONFIG|HOST_TWO_FLAG|DO_NOT_DELETE_DATA|SIMULATE_SEND_MODE))
               {
                  error_flag = YES;
                  update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
                                _("Unknown host status <%d> for host %s, largest value is %d. Setting to %d."),
                                (*hl)[host_counter].host_status,
                                (*hl)[host_counter].host_alias,
-                               (PAUSE_QUEUE_STAT|STOP_TRANSFER_STAT|HOST_ERROR_OFFLINE_STATIC|HOST_CONFIG_HOST_DISABLED|HOST_NOT_IN_DIR_CONFIG|HOST_TWO_FLAG|DO_NOT_DELETE_DATA),
+                               (PAUSE_QUEUE_STAT|STOP_TRANSFER_STAT|HOST_ERROR_OFFLINE_STATIC|HOST_CONFIG_HOST_DISABLED|HOST_NOT_IN_DIR_CONFIG|HOST_TWO_FLAG|DO_NOT_DELETE_DATA|SIMULATE_SEND_MODE),
                                DEFAULT_FSA_HOST_STATUS);
                  (*hl)[host_counter].host_status = DEFAULT_FSA_HOST_STATUS;
               }

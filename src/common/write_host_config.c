@@ -1,7 +1,7 @@
 /*
  *  write_host_config.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -63,6 +63,7 @@ DESCR__S_M3
  **   14.07.2013 H.Kiehl Added transfer timeout, keep connected no fetching
  **                      and no sending.
  **   04.03.2017 H.Kiehl Added group support.
+ **   19.07.2019 H.Kiehl Simulation mode is now stored in HOST_CONFIG.
  **
  */
 DESCR__E_M3
@@ -245,6 +246,7 @@ DESCR__E_M3
 #                          16(32768) - If set do not delete files due to\n\
 #                                      age-limit and 'delete queued files'\n\
 #                                      option.\n\
+#                          19(262144)- If set host is in simulation mode.\n\
 #                          DEFAULT: 0\n\
 # Protocol options       - To set some protocol specific features for this\n\
 #                          host. The following bits can be set (again the\n\

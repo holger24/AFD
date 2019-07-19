@@ -1,6 +1,6 @@
 /*
  *  create_fsa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -58,6 +58,7 @@ DESCR__S_M3
  **   08.03.2006 H.Kiehl Added duplicate check on a per host basis.
  **   13.02.2017 H.Kiehl Increase FSA by one host, so get_new_positions()
  **                      can write invisible data.
+ **   19.07.2019 H.Kiehl Added simulate mode for HOST_CONFIG.
  **
  */
 DESCR__E_M3
@@ -551,6 +552,10 @@ create_fsa(void)
          {
             fsa[i].host_status |= DO_NOT_DELETE_DATA;
          }
+         if (hl[i].host_status & SIMULATE_SEND_MODE)
+         {
+            fsa[i].host_status |= SIMULATE_SEND_MODE;
+         }
          fsa[i].error_counter       = 0;
          fsa[i].total_errors        = 0;
          for (k = 0; k < ERROR_HISTORY_LENGTH; k++)
@@ -946,6 +951,14 @@ create_fsa(void)
          {
             fsa[i].host_status &= ~DO_NOT_DELETE_DATA;
          }
+         if (hl[i].host_status & SIMULATE_SEND_MODE)
+         {
+            fsa[i].host_status |= SIMULATE_SEND_MODE;
+         }
+         else
+         {
+            fsa[i].host_status &= ~SIMULATE_SEND_MODE;
+         }
       } /* for (i = 0; i < no_of_hosts; i++) */
 
       /*
@@ -1166,6 +1179,10 @@ create_fsa(void)
                      if (fsa[j].host_status & DO_NOT_DELETE_DATA)
                      {
                         hl[j].host_status |= DO_NOT_DELETE_DATA;
+                     }
+                     if (fsa[j].host_status & SIMULATE_SEND_MODE)
+                     {
+                        hl[j].host_status |= SIMULATE_SEND_MODE;
                      }
 
                      i++;

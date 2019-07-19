@@ -651,6 +651,10 @@ main(int argc, char *argv[])
                {
                   hl[i].host_status |= DO_NOT_DELETE_DATA;
                }
+               if (fsa[i].host_status & SIMULATE_SEND_MODE)
+               {
+                  hl[i].host_status |= SIMULATE_SEND_MODE;
+               }
             }
 
             (void)fsa_detach(NO);
@@ -1075,6 +1079,10 @@ main(int argc, char *argv[])
                              if (fsa[i].host_status & DO_NOT_DELETE_DATA)
                              {
                                 hl[i].host_status |= DO_NOT_DELETE_DATA;
+                             }
+                             if (fsa[i].host_status & SIMULATE_SEND_MODE)
+                             {
+                                hl[i].host_status |= SIMULATE_SEND_MODE;
                              }
                           }
 

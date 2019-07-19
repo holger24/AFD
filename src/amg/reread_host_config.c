@@ -1,7 +1,7 @@
 /*
  *  reread_host_config.c - Part of AFD, an automatic file distribution
  *                         program.
- *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -58,6 +58,7 @@ DESCR__S_M3
  **   19.02.2002 H.Kiehl Stop process dir_check when we reorder the
  **                      FSA.
  **   03.05.2007 H.Kiehl Changed function that it returns what was done.
+ **   19.07.2019 H.Kiehl Simulate mode is stored in HOST_CONFIG.
  **
  */
 DESCR__E_M3
@@ -400,6 +401,14 @@ reread_host_config(time_t           *hc_old_time,
                else
                {
                   fsa[host_pos].host_status &= ~DO_NOT_DELETE_DATA;
+               }
+               if (hl[i].host_status & SIMULATE_SEND_MODE)
+               {
+                  fsa[host_pos].host_status |= SIMULATE_SEND_MODE;
+               }
+               else
+               {
+                  fsa[host_pos].host_status &= ~SIMULATE_SEND_MODE;
                }
             }
          }

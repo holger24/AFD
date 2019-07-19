@@ -1,6 +1,6 @@
 /*
  *  reread_dir_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -527,6 +527,14 @@ reread_dir_config(int              dc_changed,
                        else
                        {
                           fsa[host_pos].host_status &= ~DO_NOT_DELETE_DATA;
+                       }
+                       if (hl[i].host_status & SIMULATE_SEND_MODE)
+                       {
+                          fsa[host_pos].host_status |= SIMULATE_SEND_MODE;
+                       }
+                       else
+                       {
+                          fsa[host_pos].host_status &= ~SIMULATE_SEND_MODE;
                        }
                     }
                  }

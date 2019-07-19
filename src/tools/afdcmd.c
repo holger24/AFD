@@ -1,6 +1,6 @@
 /*
  *  afdcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -84,6 +84,7 @@ DESCR__S_M1
  **                      stopping of a directory.
  **   15.09.2014 H.Kiehl Added -I option to simulate sending files.
  **   31.03.2017 H.Kiehl Do not allow to set things on group identifier.
+ **   19.07.2019 H.Kiehl Write simulate mode to HOST_CONFIG.
  **
  */
 DESCR__E_M1
@@ -1975,6 +1976,7 @@ main(int argc, char *argv[])
                             "%s%c%s",
                             fsa[position].host_alias, SEPARATOR_CHAR, user);
                   fsa[position].host_status |= SIMULATE_SEND_MODE;
+                  hl[position].host_status |= SIMULATE_SEND_MODE;
                }
                else
                {
@@ -1986,6 +1988,7 @@ main(int argc, char *argv[])
                             "%s%c%s",
                             fsa[position].host_alias, SEPARATOR_CHAR, user);
                   fsa[position].host_status &= ~SIMULATE_SEND_MODE;
+                  hl[position].host_status &= ~SIMULATE_SEND_MODE;
                }
             }
          }
@@ -2002,7 +2005,8 @@ main(int argc, char *argv[])
            (options & STOP_TRANSFER_OPTION) ||
            (options & DISABLE_HOST_OPTION) || (options & ENABLE_HOST_OPTION) ||
            (options & TOGGLE_HOST_OPTION) || (options & SWITCH_OPTION) ||
-           (options & ENABLE_DELETE_DATA) || (options & DISABLE_DELETE_DATA)) &&
+           (options & ENABLE_DELETE_DATA) || (options & DISABLE_DELETE_DATA) ||
+           (options2 & SIMULATE_SEND_MODE_OPTION)) &&
           (ehc == NO) && (change_host_config == YES))
       {
          (void)write_host_config(no_of_hosts, host_config_file, hl);

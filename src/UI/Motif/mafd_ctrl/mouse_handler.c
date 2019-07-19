@@ -58,6 +58,7 @@ DESCR__S_M3
  **                      directory for this host as well.
  **   17.07.2019 H.Kiehl Option to disable backing store and save
  **                      under.
+ **   19.07.2019 H.Kiehl Added writing simulate mode to HOST_CONFIG.
  **
  */
 DESCR__E_M3
@@ -2701,17 +2702,28 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                break;
 
             case SIMULATION_SEL :
-               if (fsa[i].host_status & SIMULATE_SEND_MODE)
+               if (ehc == NO)
                {
-                  config_log(EC_HOST, ET_MAN, EA_DISABLE_SIMULATE_SEND_HOST,
-                             fsa[i].host_alias, NULL);
-                  fsa[i].host_status &= ~SIMULATE_SEND_MODE;
-               }
-               else
-               {
-                  config_log(EC_HOST, ET_MAN, EA_ENABLE_SIMULATE_SEND_HOST,
-                             fsa[i].host_alias, NULL);
-                  fsa[i].host_status |= SIMULATE_SEND_MODE;
+                  if (fsa[i].host_status & SIMULATE_SEND_MODE)
+                  {
+                     config_log(EC_HOST, ET_MAN, EA_DISABLE_SIMULATE_SEND_HOST,
+                                fsa[i].host_alias, NULL);
+                     fsa[i].host_status &= ~SIMULATE_SEND_MODE;
+                     hl[i].host_status &= ~SIMULATE_SEND_MODE;
+                  }
+                  else
+                  {
+                     if (xrec(QUESTION_DIALOG,
+                              "Are you sure that you want to simulate transfer for %s?",
+                              fsa[i].host_dsp_name) == YES)
+                     {
+                        config_log(EC_HOST, ET_MAN,
+                                   EA_ENABLE_SIMULATE_SEND_HOST,
+                                   fsa[i].host_alias, NULL);
+                        fsa[i].host_status |= SIMULATE_SEND_MODE;
+                        hl[i].host_status |= SIMULATE_SEND_MODE;
+                     }
+                  }
                }
                break;
 
@@ -3052,8 +3064,8 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
            }
         }
    else if ((sel_typ == QUEUE_SEL) || (sel_typ == TRANS_SEL) ||
-            (sel_typ == QUEUE_TRANS_SEL) ||
-            (sel_typ == DISABLE_SEL) || (sel_typ == SWITCH_SEL))
+            (sel_typ == QUEUE_TRANS_SEL) || (sel_typ == DISABLE_SEL) ||
+            (sel_typ == SWITCH_SEL) || (sel_typ == SIMULATION_SEL))
         {
            if ((ehc == NO) && (change_host_config == YES))
            {
