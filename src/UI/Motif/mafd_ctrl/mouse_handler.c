@@ -1101,6 +1101,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
       case QUEUE_TRANS_SEL:
       case DISABLE_SEL:
       case SWITCH_SEL:
+      case SIMULATION_SEL:
          (void)snprintf(host_config_file, MAX_PATH_LENGTH, "%s%s%s",
                         p_work_dir, ETC_DIR, DEFAULT_HOST_CONFIG_FILE);
          if (eaccess(host_config_file, (R_OK | W_OK)) == -1)
@@ -1134,7 +1135,6 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
       case DEBUG_SEL:
       case TRACE_SEL:
       case FULL_TRACE_SEL:
-      case SIMULATION_SEL:
          break;
 
       case PING_SEL : /* Ping test. */
@@ -2706,6 +2706,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                {
                   if (fsa[i].host_status & SIMULATE_SEND_MODE)
                   {
+                     change_host_config = YES;
                      config_log(EC_HOST, ET_MAN, EA_DISABLE_SIMULATE_SEND_HOST,
                                 fsa[i].host_alias, NULL);
                      fsa[i].host_status &= ~SIMULATE_SEND_MODE;
@@ -2717,6 +2718,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                               "Are you sure that you want to simulate transfer for %s?",
                               fsa[i].host_dsp_name) == YES)
                      {
+                        change_host_config = YES;
                         config_log(EC_HOST, ET_MAN,
                                    EA_ENABLE_SIMULATE_SEND_HOST,
                                    fsa[i].host_alias, NULL);

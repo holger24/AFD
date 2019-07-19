@@ -1990,6 +1990,7 @@ main(int argc, char *argv[])
                   fsa[position].host_status &= ~SIMULATE_SEND_MODE;
                   hl[position].host_status &= ~SIMULATE_SEND_MODE;
                }
+               change_host_config = YES;
             }
          }
       } /* for (i = 0; i < no_of_host_names; i++) */
