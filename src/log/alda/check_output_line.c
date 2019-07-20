@@ -630,9 +630,12 @@ check_output_line(char         *line,
                                                       }
                                                       else
                                                       {
+                                                         time_t now;
+
+                                                         now = time(NULL);
                                                          (void)fprintf(stderr,
-                                                                       "Unable to store the unique number since it is to large. (%s %d)\n",
-                                                                       __FILE__, __LINE__);
+                                                                       "[%s] Unable to store the unique number since it is to large. (%s %d)\n",
+                                                                       ctime(&now), __FILE__, __LINE__);
                                                          (void)fprintf(stderr, "line: %s", line);
                                                          olog.local_filename[0] = '\0';
                                                          olog.remote_name[0] = '\0';
@@ -692,10 +695,14 @@ check_output_line(char         *line,
                                                 }
                                                 else
                                                 {
+                                                   time_t now;
+
+                                                   now = time(NULL);
                                                    if (i == MAX_INT_HEX_LENGTH)
                                                    {
                                                       (void)fprintf(stderr,
-                                                                    "Unable to store the unique number since it is to large. (%s %d)\n",
+                                                                    "[%s] Unable to store the unique number since it is to large. (%s %d)\n",
+                                                                    ctime(&now),
                                                                     __FILE__, __LINE__);
                                                       (void)fprintf(stderr, "line: %s", line);
 # ifndef HAVE_GETLINE
@@ -708,7 +715,8 @@ check_output_line(char         *line,
                                                    else
                                                    {
                                                       (void)fprintf(stderr,
-                                                                    "Unable to store the unique number because end was not found. (%s %d)\n",
+                                                                    "[%s] Unable to store the unique number because end was not found. (%s %d)\n",
+                                                                    ctime(&now),
                                                                     __FILE__, __LINE__);
                                                       (void)fprintf(stderr, "line: %s", line);
                                                    }
@@ -764,11 +772,14 @@ check_output_line(char         *line,
                                           }
                                           else
                                           {
+                                             time_t now;
+
+                                             now = time(NULL);
                                              if (i == MAX_TIME_T_HEX_LENGTH)
                                              {
                                                 (void)fprintf(stderr,
-                                                              "Unable to store the input time since it is to large. (%s %d)\n",
-                                                              __FILE__, __LINE__);
+                                                              "[%s] Unable to store the input time since it is to large. (%s %d)\n",
+                                                              ctime(&now), __FILE__, __LINE__);
                                                 (void)fprintf(stderr, "line: %s", line);
 # ifndef HAVE_GETLINE
                                                 while (*(ptr + i) != '\0')
@@ -780,8 +791,8 @@ check_output_line(char         *line,
                                              else
                                              {
                                                 (void)fprintf(stderr,
-                                                              "Unable to store the input time because end was not found. (%s %d)\n",
-                                                              __FILE__, __LINE__);
+                                                              "[%s] Unable to store the input time because end was not found. (%s %d)\n",
+                                                              ctime(&now), __FILE__, __LINE__);
                                                 (void)fprintf(stderr, "line: %s", line);
                                              }
                                              olog.local_filename[0] = '\0';
@@ -835,11 +846,14 @@ check_output_line(char         *line,
                                  }
                                  else
                                  {
+                                    time_t now;
+
+                                    now = time(NULL);
                                     if (i == MAX_INT_HEX_LENGTH)
                                     {
                                        (void)fprintf(stderr,
-                                                     "Unable to store the job ID since it is to large. (%s %d)\n",
-                                                     __FILE__, __LINE__);
+                                                     "[%s] Unable to store the job ID since it is to large. (%s %d)\n",
+                                                     ctime(&now), __FILE__, __LINE__);
                                        (void)fprintf(stderr, "line: %s", line);
 # ifndef HAVE_GETLINE
                                        while (*(ptr + i) != '\0')
@@ -851,8 +865,8 @@ check_output_line(char         *line,
                                     else
                                     {
                                        (void)fprintf(stderr,
-                                                     "Unable to store the job ID because end was not found. (%s %d)\n",
-                                                     __FILE__, __LINE__);
+                                                     "[%s] Unable to store the job ID because end was not found. (%s %d)\n",
+                                                     ctime(&now), __FILE__, __LINE__);
                                        (void)fprintf(stderr, "line: %s", line);
                                     }
                                     olog.local_filename[0] = '\0';
@@ -897,11 +911,14 @@ check_output_line(char         *line,
                            }
                            else
                            {
+                              time_t now;
+
+                              now = time(NULL);
                               if (i == (MAX_TIME_T_HEX_LENGTH + 3))
                               {
                                  (void)fprintf(stderr,
-                                               "Unable to store the transmission time since it is to large. (%s %d)\n",
-                                               __FILE__, __LINE__);
+                                               "[%s] Unable to store the transmission time since it is to large. (%s %d)\n",
+                                               ctime(&now), __FILE__, __LINE__);
                                  (void)fprintf(stderr, "line: %s", line);
 # ifndef HAVE_GETLINE
                                  while (*(ptr + i) != '\0')
@@ -913,8 +930,8 @@ check_output_line(char         *line,
                               else
                               {
                                  (void)fprintf(stderr,
-                                               "Unable to store the transmission time because end was not found. (%s %d)\n",
-                                               __FILE__, __LINE__);
+                                               "[%s] Unable to store the transmission time because end was not found. (%s %d)\n",
+                                               ctime(&now), __FILE__, __LINE__);
                                  (void)fprintf(stderr, "line: %s", line);
                               }
                               olog.local_filename[0] = '\0';
@@ -959,11 +976,14 @@ check_output_line(char         *line,
                      }
                      else
                      {
+                        time_t now;
+
+                        now = time(NULL);
                         if (i == MAX_OFF_T_HEX_LENGTH)
                         {
                            (void)fprintf(stderr,
-                                         "Unable to store the file size since it is to large. (%s %d)\n",
-                                         __FILE__, __LINE__);
+                                         "[%s] Unable to store the file size since it is to large. (%s %d)\n",
+                                         ctime(&now), __FILE__, __LINE__);
                            (void)fprintf(stderr, "line: %s", line);
 # ifndef HAVE_GETLINE
                            while (*(ptr + i) != '\0')
@@ -975,8 +995,8 @@ check_output_line(char         *line,
                         else
                         {
                            (void)fprintf(stderr,
-                                         "Unable to store the file size because end was not found. (%s %d)\n",
-                                         __FILE__, __LINE__);
+                                         "[%s] Unable to store the file size because end was not found. (%s %d)\n",
+                                         ctime(&now), __FILE__, __LINE__);
                            (void)fprintf(stderr, "line: %s", line);
                         }
                         olog.local_filename[0] = '\0';
@@ -1022,11 +1042,14 @@ check_output_line(char         *line,
             }
             else
             {
+               time_t now;
+
+               now = time(NULL);
                if (i == MAX_FILENAME_LENGTH)
                {
                   (void)fprintf(stderr,
-                                "Unable to store the local filename since it is to large. (%s %d)\n",
-                                __FILE__, __LINE__);
+                                "[%s] Unable to store the local filename since it is to large. (%s %d)\n",
+                                ctime(&now), __FILE__, __LINE__);
                   (void)fprintf(stderr, "line: %s", line);
 # ifndef HAVE_GETLINE
                   while (*(ptr + i) != '\0')
@@ -1038,8 +1061,8 @@ check_output_line(char         *line,
                else
                {
                   (void)fprintf(stderr,
-                                "Unable to store the local filename because end was not found. (%s %d)\n",
-                                __FILE__, __LINE__);
+                                "[%s] Unable to store the local filename because end was not found. (%s %d)\n",
+                                ctime(&now), __FILE__, __LINE__);
                   (void)fprintf(stderr, "line: %s", line);
                }
                olog.local_filename[0] = '\0';
@@ -1058,9 +1081,12 @@ check_output_line(char         *line,
          }
          else
          {
+            time_t now;
+
+            now = time(NULL);
             (void)fprintf(stderr,
-                          "Unable to locate the local filename. (%s %d)\n",
-                          __FILE__, __LINE__);
+                          "[%s] Unable to locate the local filename. (%s %d)\n",
+                          ctime(&now), __FILE__, __LINE__);
             (void)fprintf(stderr, "line: %s", line);
             olog.alias_name[0] = '\0';
             olog.alias_name_length = 0;
@@ -1079,11 +1105,14 @@ check_output_line(char         *line,
       }
       else
       {
+         time_t now;
+
+         now = time(NULL);
          if (i == MAX_REAL_HOSTNAME_LENGTH)
          {
             (void)fprintf(stderr,
-                          "Unable to store the alias name since it is to large. (%s %d)\n",
-                          __FILE__, __LINE__);
+                          "[%s] Unable to store the alias name since it is to large. (%s %d)\n",
+                          ctime(&now), __FILE__, __LINE__);
             (void)fprintf(stderr, "line: %s", line);
 # ifndef HAVE_GETLINE
             while (*(ptr + i) != '\0')
@@ -1095,8 +1124,8 @@ check_output_line(char         *line,
          else
          {
             (void)fprintf(stderr,
-                          "Unable to store the alias name because end was not found. (%s %d)\n",
-                          __FILE__, __LINE__);
+                          "[%s] Unable to store the alias name because end was not found. (%s %d)\n",
+                          ctime(&now), __FILE__, __LINE__);
             (void)fprintf(stderr, "line: %s", line);
          }
          olog.alias_name[0] = '\0';
