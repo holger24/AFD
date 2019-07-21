@@ -2853,9 +2853,9 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
             else
             {
 #ifdef WITH_CHECK_SINGLE_RETRIEVE_JOB
-               if ((connection[pos].job_no = get_free_disp_pos(fsa_pos, qb_pos)) != INCORRECT)
+               if ((connection[pos].job_no = get_free_disp_pos(fsa_pos, qb_pos)) >= 0)
 #else
-               if ((connection[pos].job_no = get_free_disp_pos(fsa_pos)) != INCORRECT)
+               if ((connection[pos].job_no = get_free_disp_pos(fsa_pos)) >= 0)
 #endif
                {
                   if (qb[qb_pos].special_flag & FETCH_JOB)
