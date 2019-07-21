@@ -1,6 +1,6 @@
 /*
  *  queue_spy.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -110,14 +110,14 @@ main(int argc, char *argv[])
       int i;
 
       (void)fprintf(stdout,
-                    "Message number  Pid    time        Pos  FC  FS         Ret CP RHF Message name\n");
+                    "Message number    Pid    time        Pos    FC  FS         Retr CP RHF Message name\n");
       for (i = 0; i < *no_msg_queued; i++)
       {
 #if SIZEOF_PID_T == 4
-         (void)fprintf(stdout, "%-15.0f %-6d ",
+         (void)fprintf(stdout, "%-17.0f %-6d ",
                        qb[i].msg_number, (pri_pid_t)qb[i].pid);
 #else
-         (void)fprintf(stdout, "%-15.0f %-6lld ",
+         (void)fprintf(stdout, "%-17.0f %-6lld ",
                        qb[i].msg_number, (pri_pid_t)qb[i].pid);
 #endif
 #if SIZEOF_TIME_T == 4
@@ -126,9 +126,9 @@ main(int argc, char *argv[])
          (void)fprintf(stdout, "%-11lld ", (pri_time_t)qb[i].creation_time);
 #endif
 #if SIZEOF_OFF_T == 4
-         (void)fprintf(stdout, "%-4d %-3u %-10ld %-3u %-3d%c%c%c %s\n",
+         (void)fprintf(stdout, "%-6d %-3u %-10ld %-4u %-3d%c%c%c %s\n",
 #else
-         (void)fprintf(stdout, "%-4d %-3u %-10lld %-3u %-3d%c%c%c %s\n",
+         (void)fprintf(stdout, "%-6d %-3u %-10lld %-4u %-3d%c%c%c %s\n",
 #endif
                        qb[i].pos, qb[i].files_to_send,
                        (pri_off_t)qb[i].file_size_to_send,
