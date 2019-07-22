@@ -26,7 +26,7 @@ DESCR__S_M1
  **              directory
  **
  ** SYNOPSIS
- **   fra_view [--version] [-w <working directory>] dir-alias|position
+ **   fra_view [--version] [-w <working directory>] position|dir-id|dir-alias
  **
  ** DESCRIPTION
  **   This program shows all information about a specific directory in
@@ -50,13 +50,15 @@ DESCR__S_M1
  **   05.10.2005 H.Kiehl Added in_dc_flag entry.
  **   28.05.2012 H.Kiehl Added dir_mode and 'create source dir' support.
  **   26.01.2019 H.Kiehl Added dir_time.
+ **   22.07.2019 H.Kiehl Added posibility to specify as search value
+ **                      the dir-id.
  **
  */
 DESCR__E_M1
 
 #include <stdio.h>                       /* fprintf(), stderr            */
 #include <string.h>                      /* strcpy(), strerror()         */
-#include <stdlib.h>                      /* atoi()                       */
+#include <stdlib.h>                      /* atoi(), strtoul()            */
 #include <ctype.h>                       /* isdigit()                    */
 #include <time.h>                        /* ctime()                      */
 #include <sys/types.h>
@@ -89,13 +91,14 @@ static void                convert2bin(char *, unsigned char),
 int
 main(int argc, char *argv[])
 {
-   int  i,
-        last = 0,
-        mode = 0,
-        position = -1;
-   char dir_alias[MAX_DIR_ALIAS_LENGTH + 1],
-        *ptr,
-        work_dir[MAX_PATH_LENGTH];
+   int          i,
+                last = 0,
+                mode = 0,
+                position = -1;
+   unsigned int dir_id = 0;
+   char         dir_alias[MAX_DIR_ALIAS_LENGTH + 1],
+                *ptr,
+                work_dir[MAX_PATH_LENGTH];
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -126,14 +129,31 @@ main(int argc, char *argv[])
 
    if (argc == 2)
    {
-      if (isdigit((int)(argv[1][0])) != 0)
+      i = 0;
+      while (isdigit((int)((*(argv + 1))[i])))
+      {
+         i++;
+      }
+      if ((*(argv + 1))[i] == '\0')
       {
          position = atoi(argv[1]);
          last = position + 1;
       }
       else
       {
-         (void)strcpy(dir_alias, argv[1]);
+         i = 0;
+         while (isxdigit((int)((*(argv + 1))[i])))
+         {
+            i++;
+         }
+         if ((*(argv + 1))[i] == '\0')
+         {
+            dir_id = (unsigned int)strtoul(argv[1], (char **)NULL, 16);
+         }
+         else
+         {
+            (void)strcpy(dir_alias, argv[1]);
+         }
       }
    }
    else if (argc == 1)
@@ -174,12 +194,30 @@ main(int argc, char *argv[])
 
    if (position == -1)
    {
-      if ((position = get_dir_position(fra, dir_alias, no_of_dirs)) < 0)
+      if (dir_id == 0)
       {
-         (void)fprintf(stderr,
-                       _("WARNING : Could not find directory %s in FRA. (%s %d)\n"),
-                       dir_alias, __FILE__, __LINE__);
-         exit(INCORRECT);
+         if ((position = get_dir_position(fra, dir_alias, no_of_dirs)) < 0)
+         {
+            (void)fprintf(stderr,
+                          _("WARNING : Could not find directory %s in FRA. (%s %d)\n"),
+                          dir_alias, __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+      }
+      else
+      {
+         if ((position = get_dir_id_position(fra, dir_id, no_of_dirs)) < 0)
+         {
+            /* As a fallback to old behaviour, try it as alias. */
+            (void)strcpy(dir_alias, argv[1]);
+            if ((position = get_dir_position(fra, dir_alias, no_of_dirs)) < 0)
+            {
+               (void)fprintf(stderr,
+                             _("WARNING : Could not find directory ID %x in FRA. (%s %d)\n"),
+                             dir_id, __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
+         }
       }
       last = position + 1;
    }
@@ -190,10 +228,16 @@ main(int argc, char *argv[])
         }
    else if (position >= no_of_dirs)
         {
-           (void)fprintf(stderr,
-                         _("WARNING : There are only %d directories in the FRA. (%s %d)\n"),
-                         no_of_dirs, __FILE__, __LINE__);
-           exit(INCORRECT);
+           /* Hmm, maybe the user meant a alias-host-id? */
+           dir_id = (unsigned int)strtoul(argv[1], (char **)NULL, 16);
+           if ((position = get_dir_id_position(fra, dir_id, no_of_dirs)) < 0)
+           {
+              (void)fprintf(stderr,
+                            _("WARNING : There are only %d directories in the FRA. (%s %d)\n"),
+                            no_of_dirs, __FILE__, __LINE__);
+              exit(INCORRECT);
+           }
+           last = position + 1;
         }
 
    ptr =(char *)fra;
@@ -1098,6 +1142,6 @@ static void
 usage(void)
 {
    (void)fprintf(stderr,
-                 _("SYNTAX  : fra_view [--version] [-w working directory] dir-alias|position\n"));
+                 _("SYNTAX  : fra_view [--version] [-w working directory] position|dir-id|dir-alias\n"));
    return;
 }

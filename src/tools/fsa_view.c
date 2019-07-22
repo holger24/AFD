@@ -27,7 +27,7 @@ DESCR__S_M1
  **              host
  **
  ** SYNOPSIS
- **   fsa_view [--version] [-w working directory] [-l|-s] hostname|position
+ **   fsa_view [--version] [-w working directory] [-l|-s] position|host-alias-id|host-alias
  **
  ** DESCRIPTION
  **   This program shows all information about a specific host in the
@@ -52,13 +52,15 @@ DESCR__S_M1
  **   27.03.2006 H.Kiehl Option with long view with full filenames.
  **   18.10.2013 H.Kiehl Beautified output so it shows the table aligned
  **                      properly.
+ **   22.07.2019 H.Kiehl Added posibility to specify as search value
+ **                      the host-alias-id.
  **
  */
 DESCR__E_M1
 
 #include <stdio.h>                       /* fprintf(), stderr, stdout    */
 #include <string.h>                      /* strcpy(), strerror()         */
-#include <stdlib.h>                      /* atoi()                       */
+#include <stdlib.h>                      /* atoi(), strtoul()            */
 #include <ctype.h>                       /* isdigit()                    */
 #include <time.h>                        /* ctime()                      */
 #include <sys/types.h>
@@ -101,13 +103,14 @@ const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 int
 main(int argc, char *argv[])
 {
-   int  i, j,
-        last = 0,
-        position = -1,
-        view_type = SHORT_VIEW;
-   char hostname[MAX_HOSTNAME_LENGTH + 1],
-        *ptr,
-        work_dir[MAX_PATH_LENGTH];
+   int          i, j,
+                last = 0,
+                position = -1,
+                view_type = SHORT_VIEW;
+   unsigned int host_id = 0;
+   char         hostname[MAX_HOSTNAME_LENGTH + 1],
+                *ptr,
+                work_dir[MAX_PATH_LENGTH];
 
    CHECK_FOR_VERSION(argc, argv);
 
@@ -137,14 +140,31 @@ main(int argc, char *argv[])
 
    if (argc == 2)
    {
-      if (isdigit((int)(argv[1][0])) != 0)
+      i = 0;
+      while (isdigit((int)((*(argv + 1))[i])))
+      {
+         i++;
+      }
+      if ((*(argv + 1))[i] == '\0')
       {
          position = atoi(argv[1]);
          last = position + 1;
       }
       else
       {
-         t_hostname(argv[1], hostname);
+         i = 0;
+         while (isxdigit((int)((*(argv + 1))[i])))
+         {
+            i++;
+         }
+         if ((*(argv + 1))[i] == '\0')
+         {
+            host_id = (unsigned int)strtoul(argv[1], (char **)NULL, 16);
+         }
+         else
+         {
+            t_hostname(argv[1], hostname);
+         }
       }
    }
    else if (argc == 1)
@@ -185,12 +205,30 @@ main(int argc, char *argv[])
 
    if (position == -1)
    {
-      if ((position = get_host_position(fsa, hostname, no_of_hosts)) < 0)
+      if (host_id == 0)
       {
-         (void)fprintf(stderr,
-                       _("WARNING : Could not find host `%s' in FSA. (%s %d)\n"),
-                       hostname, __FILE__, __LINE__);
-         exit(INCORRECT);
+         if ((position = get_host_position(fsa, hostname, no_of_hosts)) < 0)
+         {
+            (void)fprintf(stderr,
+                          _("WARNING : Could not find host `%s' in FSA. (%s %d)\n"),
+                          hostname, __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+      }
+      else
+      {
+         if ((position = get_host_id_position(fsa, host_id, no_of_hosts)) < 0)
+         {
+            /* As a fallback to old behaviour, try it as alias. */
+            t_hostname(argv[1], hostname);
+            if ((position = get_host_position(fsa, hostname, no_of_hosts)) < 0)
+            {
+               (void)fprintf(stderr,
+                             _("WARNING : Could not find host ID %x in FSA. (%s %d)\n"),
+                             host_id, __FILE__, __LINE__);
+               exit(INCORRECT);
+            }
+         }
       }
       last = position + 1;
    }
@@ -201,10 +239,17 @@ main(int argc, char *argv[])
         }
    else if (position >= no_of_hosts)
         {
-           (void)fprintf(stderr,
-                         _("WARNING : There are only %d hosts in the FSA. (%s %d)\n"),
-                         no_of_hosts, __FILE__, __LINE__);
-           exit(INCORRECT);
+           /* Hmm, maybe the user meant a alias-host-id? */
+           host_id = (unsigned int)strtoul(argv[1], (char **)NULL, 16);
+           if (((position = get_host_id_position(fsa, host_id, no_of_hosts)) < 0) ||
+               (position >= no_of_hosts))
+           {
+              (void)fprintf(stderr,
+                            _("WARNING : There are only %d hosts in the FSA. (%s %d)\n"),
+                            no_of_hosts, __FILE__, __LINE__);
+              exit(INCORRECT);
+           }
+           last = position + 1;
         }
 
    ptr =(char *)fsa;
@@ -1383,7 +1428,7 @@ static void
 usage(void)
 {
    (void)fprintf(stderr,
-                 _("SYNTAX  : fsa_view [--version] [-w working directory] [-l|-s] hostname|position\n"));
+                 _("SYNTAX  : fsa_view [--version] [-w working directory] [-l|-s] position|host-alias-id|host-alias\n"));
    (void)fprintf(stderr,
                  _("          Options:\n"));
    (void)fprintf(stderr,
