@@ -1,7 +1,7 @@
 /*
  *  edit_hc_callbacks.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -553,7 +553,7 @@ host_switch_toggle(Widget w, XtPointer client_data, XtPointer call_data)
       else
       {
          int  toggle_pos;
-         char host_dsp_name[MAX_HOSTNAME_LENGTH + 1],
+         char host_dsp_name[MAX_HOSTNAME_LENGTH + 2],
               toggle_str[2];
 
          XtSetSensitive(second_label_w, True);
