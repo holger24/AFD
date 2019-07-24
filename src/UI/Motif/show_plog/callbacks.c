@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2016 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -243,7 +243,7 @@ item_selection(Widget w, XtPointer client_data, XtPointer call_data)
               for (i = 0; i < cbs->selected_item_count; i++)
               {
                  if (get_sum_data((cbs->selected_item_positions[i] - 1), &date,
-                                  &current_new_file_size,
+                                  &current_orig_file_size,
                                   &current_new_file_size, &current_prod_time,
                                   &current_cpu_time) == INCORRECT)
                  {
