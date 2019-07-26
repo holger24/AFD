@@ -1,6 +1,6 @@
 /*
  *  get_rename_rules.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -415,6 +415,13 @@ get_rename_rules(int verbose)
             }
          }
       } /* for (count = 0; count < no_of_rename_rule_files; count++) */
+
+      if (buffer == NULL)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("Could not find any valid rename rules."));
+         return;
+      }
 
       if (first_time == NEITHER)
       {
