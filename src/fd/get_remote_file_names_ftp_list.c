@@ -40,6 +40,8 @@ DESCR__S_M3
  ** HISTORY
  **   03.05.2014 H.Kiehl Created
  **   03.09.2017 H.Kiehl Added option to get only appended part.
+ **   29.07.2019 H.Kiehl Added check if ls_data file is changed while we
+ **                      work with it.
  **
  */
 DESCR__E_M3
@@ -62,9 +64,11 @@ DESCR__E_M3
 #include "ftpparse.h"
 #include "fddefs.h"
 
+/* #define DEBUG_INDIVIDUAL_FILE_LOCK */
 
 /* External global variables. */
-extern int                        exitflag,
+extern int                        *current_no_of_listed_files,
+                                  exitflag,
                                   no_of_listed_files,
                                   rl_fd,
                                   timeout_flag;
@@ -91,7 +95,8 @@ get_remote_file_names_ftp_list(off_t *file_size_to_retrieve,
                                int   *more_files_in_list)
 {
    int files_to_retrieve = 0,
-       i = 0;
+       i = 0,
+       notified = NO;
 
    *file_size_to_retrieve = 0;
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
@@ -163,6 +168,27 @@ try_attach_again:
       *more_files_in_list = NO;
       for (i = 0; i < no_of_listed_files; i++)
       {
+         if (*current_no_of_listed_files != no_of_listed_files)
+         {
+            if (notified == NO)
+            {
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                          "*current_no_of_listed_files (%d) != no_of_listed_files (%d) [fra_pos=%d] @%x",
+                          *current_no_of_listed_files, no_of_listed_files,
+                          db.fra_pos, db.id.dir);
+               notified = YES;
+            }
+            if (i >= *current_no_of_listed_files)
+            {
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                          "AND has been reduced!!! Bailing out!");
+
+               /* Just in case we do not fall over this in some other */
+               /* code path. Let's hope this does not break anything. */
+               no_of_listed_files = *current_no_of_listed_files;
+               break;
+            }
+         }
          if ((rl[i].retrieved == NO) && (rl[i].assigned == 0))
          {
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
@@ -183,6 +209,10 @@ try_attach_again:
                if (lock_region(rl_fd, (off_t)(LOCK_RETR_FILE + i)) == LOCK_IS_NOT_SET)
 #endif
                {
+#ifdef DEBUG_INDIVIDUAL_FILE_LOCK
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "Locked %s (i=%d).", rl[i].file_name, i);
+#endif
                   if ((fra[db.fra_pos].ignore_size == -1) ||
                       ((fra[db.fra_pos].gt_lt_sign & ISIZE_EQUAL) &&
                        (fra[db.fra_pos].ignore_size == rl[i].size)) ||
@@ -250,6 +280,13 @@ try_attach_again:
                   unlock_region(rl_fd, (off_t)(LOCK_RETR_FILE + i));
 #endif
                }
+#ifdef DEBUG_INDIVIDUAL_FILE_LOCK
+               else
+               {
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "%s (i=%d) is locked.", rl[i].file_name, i);
+               }
+#endif
             }
             else
             {
@@ -676,7 +713,7 @@ do_scan(int   *files_to_retrieve,
 
       if (files_removed > 0)
       {
-         int    current_no_of_listed_files = no_of_listed_files;
+         int    tmp_current_no_of_listed_files = no_of_listed_files;
          size_t new_size,
                 old_size;
 
@@ -698,7 +735,7 @@ do_scan(int   *files_to_retrieve,
                         RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
                        AFD_WORD_OFFSET;
          }
-         old_size = (((current_no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
+         old_size = (((tmp_current_no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
                      RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
                     AFD_WORD_OFFSET;
 
@@ -733,6 +770,7 @@ do_scan(int   *files_to_retrieve,
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
             }
 #endif
+            current_no_of_listed_files = (int *)ptr;
             ptr += AFD_WORD_OFFSET;
             rl = (struct retrieve_list *)ptr;
          }
@@ -889,7 +927,7 @@ check_list(char   *file,
          }
       } /* for (i = 0; i < no_of_listed_files; i++) */
    }
-   else
+   else /* We remove and/or do not remember what we fetched. */
    {
       /* Check if this file is in the list. */
       for (i = 0; i < no_of_listed_files; i++)
@@ -1107,6 +1145,7 @@ check_list(char   *file,
          no_of_listed_files = 0;
       }
       *(int *)ptr = no_of_listed_files;
+      current_no_of_listed_files = (int *)ptr;
       ptr += AFD_WORD_OFFSET;
       rl = (struct retrieve_list *)ptr;
    }

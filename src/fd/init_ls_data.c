@@ -45,7 +45,8 @@ DESCR__E_M3
 #include "fddefs.h"
 
 /* Global variables. */
-int                               no_of_listed_files,
+int                               *current_no_of_listed_files,
+                                  no_of_listed_files,
                                   rl_fd = -1;
 time_t                            *dir_mtime;
 struct retrieve_list              *rl = NULL;

@@ -63,7 +63,8 @@ DESCR__E_M1
 #include "fddefs.h"
 #include "version.h"
 
-int                        event_log_fd = STDERR_FILENO,
+int                        *current_no_of_listed_files,
+                           event_log_fd = STDERR_FILENO,
                            exitflag = IS_FAULTY_VAR,
                            files_to_retrieve_shown = 0,
                            fra_fd = -1,

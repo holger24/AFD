@@ -71,7 +71,8 @@ DESCR__E_M1
 
 /* Global variables. */
 unsigned int               special_flag = 0;
-int                        event_log_fd = STDERR_FILENO,
+int                        *current_no_of_listed_files,
+                           event_log_fd = STDERR_FILENO,
                            exitflag = IS_FAULTY_VAR,
                            files_to_retrieve_shown = 0,
                            fra_fd = -1,
@@ -258,11 +259,7 @@ main(int argc, char *argv[])
 
    if ((signal(SIGINT, sig_kill) == SIG_ERR) ||
        (signal(SIGQUIT, sig_exit) == SIG_ERR) ||
-#ifdef IGNORE_SIGTERM
        (signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
-#else
-       (signal(SIGTERM, sig_kill) == SIG_ERR) ||
-#endif
        (signal(SIGSEGV, sig_segv) == SIG_ERR) ||
        (signal(SIGBUS, sig_bus) == SIG_ERR) ||
        (signal(SIGHUP, SIG_IGN) == SIG_ERR) ||
