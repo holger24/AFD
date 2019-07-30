@@ -321,6 +321,55 @@ datestr2unixtime(char *date_str)
               }
            }
         }
+        /* HTML directory list: 2019-07-28 00:03 */
+   else if ((isdigit((int)(*ptr))) && (isdigit((int)(*(ptr + 1)))) &&
+            (isdigit((int)(*(ptr + 2)))) && (isdigit((int)(*(ptr + 3)))) &&
+            (*(ptr + 4) == '-'))
+        {
+           tp->tm_year = (((*ptr - '0') * 1000) +
+                          ((*(ptr + 1) - '0') * 100) +
+                          ((*(ptr + 2) - '0') * 10) +
+                          (*(ptr + 3) - '0')) - 1900;
+           if (*(ptr + 4) == '-')
+           {
+              tp->tm_mon = ((*(ptr + 5) - '0') * 10) + *(ptr + 6) - '0';
+              if (*(ptr + 7) == '-')
+              {
+                 tp->tm_mday = ((*(ptr + 8) - '0') * 10) + *(ptr + 9) - '0';
+                 if (*(ptr + 10) == ' ')
+                 {
+                    ptr += 11;
+                    if ((isdigit((int)(*ptr))) && (*(ptr + 2) == ':') &&
+                        (isdigit((int)(*(ptr + 1)))))
+                    {
+                       tp->tm_hour = ((*ptr - '0') * 10) + *(ptr + 1) - '0';
+                       ptr += 3;
+                       if ((isdigit((int)(*ptr))) && (isdigit((int)(*(ptr + 1)))))
+                       {
+                          tp->tm_min = ((*ptr - '0') * 10) + *(ptr + 1) - '0';
+                          ptr += 2;
+                          if ((*ptr == ':') && (isdigit((int)(*(ptr + 1)))) &&
+                              (isdigit((int)(*(ptr + 2)))))
+                          {
+                             tp->tm_sec = ((*(ptr + 1) - '0') * 10) +
+                                          *(ptr + 2) - '0';
+                          }
+                          else
+                          {
+                             tp->tm_sec = 0;
+                          }
+                          return(mktime(tp));
+                       }
+                    }
+                 }
+                 else
+                 {
+                    tp->tm_hour = tp->tm_min = tp->tm_sec = 0;
+                    return(mktime(tp));
+                 }
+              }
+           }
+        }
         else
         {
            int i = 0;
