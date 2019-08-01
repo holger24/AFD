@@ -1,7 +1,7 @@
 /*
  *  delete_remote_file.c - Part of AFD, an automatic file distribution
  *                         program.
- *  Copyright (c) 2014 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -136,7 +136,7 @@ delete_remote_file(int          type,
          *dl.file_size = file_size;
       }
       *dl.job_id = 0;
-      *dl.dir_id = fra[db.fra_pos].dir_id;
+      *dl.dir_id = fra->dir_id;
       *dl.input_time = db.creation_time;
       *dl.split_job_counter = db.split_job_counter;
       *dl.unique_number = db.unique_number;

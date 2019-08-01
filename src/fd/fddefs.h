@@ -357,6 +357,8 @@ struct job
                                          /* structure.                   */
           off_t         lock_offset;     /* Position in FSA where to do  */
                                          /* the locking for this job.    */
+          off_t         fra_lock_offset; /* Position in FRA where to do  */
+                                         /* the locking for this job.    */
           int           fra_pos;         /* Position of host in FRA      */
                                          /* structure.                   */
           int           archive_time;    /* The time how long the files  */
@@ -837,6 +839,7 @@ extern int   append_compare(char *, char *),
              eval_message(char *, struct job *),
              eval_recipient(char *, struct job *, char *, time_t),
              fd_check_fsa(void),
+             fra_attach_pos(int),
              fsa_attach_pos(int),
              get_file_names(char *, off_t *),
              get_job_data(unsigned int, int, time_t, off_t),
@@ -845,7 +848,7 @@ extern int   append_compare(char *, char *),
              get_remote_file_names_ftp_mlst(off_t *, int *),
              get_remote_file_names_http(off_t *, int *),
              get_remote_file_names_sftp(off_t *, int *),
-             gsf_check_fra(void),
+             gsf_check_fra(struct job *),
              gsf_check_fsa(struct job *),
              init_fifos_fd(void),
              init_sf(int, char **, char *, int),
@@ -880,6 +883,7 @@ extern void  calc_trl_per_process(int),
                             size_t *, unsigned char **, char *),
 #endif
              detach_ls_data(int),
+             fra_detach_pos(int),
              fsa_detach_pos(int),
              get_group_list(char *, struct job *),
              get_new_positions(void),

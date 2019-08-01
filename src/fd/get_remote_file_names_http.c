@@ -289,8 +289,7 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
    if ((*more_files_in_list == YES) ||
        (db.special_flag & DISTRIBUTED_HELPER_JOB) ||
        ((db.special_flag & OLD_ERROR_JOB) && (db.retries < 30) &&
-        (fra[db.fra_pos].stupid_mode != YES) &&
-        (fra[db.fra_pos].remove != YES)))
+        (fra->stupid_mode != YES) && (fra->remove != YES)))
 #else
    if (rl_fd == -1)
    {
@@ -373,13 +372,12 @@ try_attach_again:
          if ((rl[i].retrieved == NO) && (rl[i].assigned == 0))
          {
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-            if ((fra[db.fra_pos].stupid_mode == YES) ||
-                (fra[db.fra_pos].remove == YES) ||
-                ((files_to_retrieve < fra[db.fra_pos].max_copied_files) &&
-                 (*file_size_to_retrieve < fra[db.fra_pos].max_copied_file_size)))
+            if ((fra->stupid_mode == YES) || (fra->remove == YES) ||
+                ((files_to_retrieve < fra->max_copied_files) &&
+                 (*file_size_to_retrieve < fra->max_copied_file_size)))
 #else
-            if ((files_to_retrieve < fra[db.fra_pos].max_copied_files) &&
-                (*file_size_to_retrieve < fra[db.fra_pos].max_copied_file_size))
+            if ((files_to_retrieve < fra->max_copied_files) &&
+                (*file_size_to_retrieve < fra->max_copied_file_size))
 #endif
             {
                /* Lock this file in list. */
@@ -441,21 +439,21 @@ try_attach_again:
                      rl[i].got_date = YES;
                   }
 
-                  if ((fra[db.fra_pos].ignore_size == -1) ||
-                      ((fra[db.fra_pos].gt_lt_sign & ISIZE_EQUAL) &&
-                       (fra[db.fra_pos].ignore_size == rl[i].size)) ||
-                      ((fra[db.fra_pos].gt_lt_sign & ISIZE_LESS_THEN) &&
-                       (fra[db.fra_pos].ignore_size < rl[i].size)) ||
-                      ((fra[db.fra_pos].gt_lt_sign & ISIZE_GREATER_THEN) &&
-                       (fra[db.fra_pos].ignore_size > rl[i].size)))
+                  if ((fra->ignore_size == -1) ||
+                      ((fra->gt_lt_sign & ISIZE_EQUAL) &&
+                       (fra->ignore_size == rl[i].size)) ||
+                      ((fra->gt_lt_sign & ISIZE_LESS_THEN) &&
+                       (fra->ignore_size < rl[i].size)) ||
+                      ((fra->gt_lt_sign & ISIZE_GREATER_THEN) &&
+                       (fra->ignore_size > rl[i].size)))
                   {
                      if ((rl[i].got_date == NO) ||
-                         (fra[db.fra_pos].ignore_file_time == 0))
+                         (fra->ignore_file_time == 0))
                      {
                         files_to_retrieve++;
                         if (rl[i].size > 0)
                         {
-                           if ((fra[db.fra_pos].stupid_mode == APPEND_ONLY) &&
+                           if ((fra->stupid_mode == APPEND_ONLY) &&
                                (rl[i].size > rl[i].prev_size))
                            {
                               *file_size_to_retrieve += (rl[i].size - rl[i].prev_size);
@@ -472,17 +470,17 @@ try_attach_again:
                         time_t diff_time;
 
                         diff_time = current_time - rl[i].file_mtime;
-                        if (((fra[db.fra_pos].gt_lt_sign & IFTIME_EQUAL) &&
-                             (fra[db.fra_pos].ignore_file_time == diff_time)) ||
-                            ((fra[db.fra_pos].gt_lt_sign & IFTIME_LESS_THEN) &&
-                             (fra[db.fra_pos].ignore_file_time < diff_time)) ||
-                            ((fra[db.fra_pos].gt_lt_sign & IFTIME_GREATER_THEN) &&
-                             (fra[db.fra_pos].ignore_file_time > diff_time)))
+                        if (((fra->gt_lt_sign & IFTIME_EQUAL) &&
+                             (fra->ignore_file_time == diff_time)) ||
+                            ((fra->gt_lt_sign & IFTIME_LESS_THEN) &&
+                             (fra->ignore_file_time < diff_time)) ||
+                            ((fra->gt_lt_sign & IFTIME_GREATER_THEN) &&
+                             (fra->ignore_file_time > diff_time)))
                         {
                            files_to_retrieve++;
                            if (rl[i].size > 0)
                            {
-                              if ((fra[db.fra_pos].stupid_mode == APPEND_ONLY) &&
+                              if ((fra->stupid_mode == APPEND_ONLY) &&
                                   (rl[i].size > rl[i].prev_size))
                               {
                                  *file_size_to_retrieve += (rl[i].size - rl[i].prev_size);
@@ -502,7 +500,7 @@ try_attach_again:
 # else
                                "%s assigned %d: file_name=%s assigned=%d size=%lld",
 # endif
-                               (fra[db.fra_pos].ls_data_alias[0] == '\0') ? fra[db.fra_pos].dir_alias : fra[db.fra_pos].ls_data_alias,
+                               (fra->ls_data_alias[0] == '\0') ? fra->dir_alias : fra->ls_data_alias,
                                i, rl[i].file_name, (int)rl[i].assigned,
                                (pri_off_t)rl[i].size);
 #endif /* DEBUG_ASSIGNMENT */
@@ -531,25 +529,25 @@ try_attach_again:
       struct tm *p_tm;
 
       /* Get all file masks for this directory. */
-      if ((j = read_file_mask(fra[db.fra_pos].dir_alias, &nfg, &fml)) != SUCCESS)
+      if ((j = read_file_mask(fra->dir_alias, &nfg, &fml)) != SUCCESS)
       {
          if (j == LOCKFILE_NOT_THERE)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        "Failed to set lock in file masks for %s, because the file is not there.",
-                       fra[db.fra_pos].dir_alias);
+                       fra->dir_alias);
          }
          else if (j == LOCK_IS_SET)
               {
                  system_log(ERROR_SIGN, __FILE__, __LINE__,
                             "Failed to get the file masks for %s, because lock is already set.",
-                            fra[db.fra_pos].dir_alias);
+                            fra->dir_alias);
               }
               else
               {
                  system_log(ERROR_SIGN, __FILE__, __LINE__,
                             "Failed to get the file masks for %s. (%d)",
-                            fra[db.fra_pos].dir_alias, j);
+                            fra->dir_alias, j);
               }
          free(fml);
          http_quit();
@@ -557,8 +555,7 @@ try_attach_again:
       }
 
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-      if ((fra[db.fra_pos].stupid_mode == YES) ||
-          (fra[db.fra_pos].remove == YES))
+      if ((fra->stupid_mode == YES) || (fra->remove == YES))
       {
          if (reset_ls_data(db.fra_pos) == INCORRECT)
          {
@@ -588,8 +585,7 @@ try_attach_again:
             exit(INCORRECT);
          }
       }
-      if ((fra[db.fra_pos].stupid_mode == YES) ||
-          (fra[db.fra_pos].remove == YES))
+      if ((fra->stupid_mode == YES) || (fra->remove == YES))
       {
          /*
           * If all files from the previous listing have been
@@ -617,9 +613,9 @@ try_attach_again:
       }
 #endif
 
-      if ((fra[db.fra_pos].ignore_file_time != 0) ||
-          (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES) ||
-          (fra[db.fra_pos].delete_files_flag & OLD_RLOCKED_FILES))
+      if ((fra->ignore_file_time != 0) ||
+          (fra->delete_files_flag & UNKNOWN_FILES) ||
+          (fra->delete_files_flag & OLD_RLOCKED_FILES))
       {
          /* Note: FTP returns GMT so we need to convert this to GMT! */
          current_time = time(NULL);
@@ -637,7 +633,7 @@ try_attach_again:
        * listing. This can be done by setting the diretory option
        * 'do not get dir list' in DIR_CONFIG.
        */
-      if ((fra[db.fra_pos].dir_flag & DONT_GET_DIR_LIST) == 0)
+      if ((fra->dir_flag & DONT_GET_DIR_LIST) == 0)
       {
          unsigned int files_deleted = 0,
                       list_length = 0;
@@ -961,8 +957,7 @@ try_attach_again:
        * Remove all files from the remote_list structure that are not
        * in the current directory listing.
        */
-      if ((fra[db.fra_pos].stupid_mode != YES) &&
-          (fra[db.fra_pos].remove == NO))
+      if ((fra->stupid_mode != YES) && (fra->remove == NO))
       {
          int    files_removed = 0,
                 i;
@@ -1023,8 +1018,7 @@ try_attach_again:
 
                ptr = (char *)rl - AFD_WORD_OFFSET;
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-               if ((fra[db.fra_pos].stupid_mode == YES) ||
-                   (fra[db.fra_pos].remove == YES))
+               if ((fra->stupid_mode == YES) || (fra->remove == YES))
                {
                   if ((ptr = realloc(ptr, new_size)) == NULL)
                   {
@@ -1958,8 +1952,7 @@ check_list(char   *file,
       return(1);
    }
 
-   if ((fra[db.fra_pos].stupid_mode == YES) ||
-       (fra[db.fra_pos].remove == YES))
+   if ((fra->stupid_mode == YES) || (fra->remove == YES))
    {
       for (i = 0; i < no_of_listed_files; i++)
       {
@@ -1978,9 +1971,8 @@ check_list(char   *file,
             {
                int ret;
 
-               if ((file_mtime == -1) &&
-                   (fra[db.fra_pos].ignore_file_time != 0) &&
-                   ((fra[db.fra_pos].dir_flag & DONT_GET_DIR_LIST) == 0))
+               if ((file_mtime == -1) && (fra->ignore_file_time != 0) &&
+                   ((fra->dir_flag & DONT_GET_DIR_LIST) == 0))
                {
                   int status;
 
@@ -2032,15 +2024,15 @@ check_list(char   *file,
                   rl[i].got_date = YES;
                }
 
-               if ((fra[db.fra_pos].ignore_size == -1) ||
-                   ((fra[db.fra_pos].gt_lt_sign & ISIZE_EQUAL) &&
-                    (fra[db.fra_pos].ignore_size == rl[i].size)) ||
-                   ((fra[db.fra_pos].gt_lt_sign & ISIZE_LESS_THEN) &&
-                    (fra[db.fra_pos].ignore_size < rl[i].size)) ||
-                   ((fra[db.fra_pos].gt_lt_sign & ISIZE_GREATER_THEN) &&
-                    (fra[db.fra_pos].ignore_size > rl[i].size)))
+               if ((fra->ignore_size == -1) ||
+                   ((fra->gt_lt_sign & ISIZE_EQUAL) &&
+                    (fra->ignore_size == rl[i].size)) ||
+                   ((fra->gt_lt_sign & ISIZE_LESS_THEN) &&
+                    (fra->ignore_size < rl[i].size)) ||
+                   ((fra->gt_lt_sign & ISIZE_GREATER_THEN) &&
+                    (fra->ignore_size > rl[i].size)))
                {
-                  if (fra[db.fra_pos].ignore_file_time == 0)
+                  if (fra->ignore_file_time == 0)
                   {
                      *files_to_retrieve += 1;
                      if (rl[i].size > 0)
@@ -2048,13 +2040,12 @@ check_list(char   *file,
                         *file_size_to_retrieve += rl[i].size;
                      }
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-                     if ((fra[db.fra_pos].stupid_mode == YES) ||
-                         (fra[db.fra_pos].remove == YES) ||
-                         ((*files_to_retrieve < fra[db.fra_pos].max_copied_files) &&
-                          (*file_size_to_retrieve < fra[db.fra_pos].max_copied_file_size)))
+                     if ((fra->stupid_mode == YES) || (fra->remove == YES) ||
+                         ((*files_to_retrieve < fra->max_copied_files) &&
+                          (*file_size_to_retrieve < fra->max_copied_file_size)))
 #else
-                     if ((*files_to_retrieve < fra[db.fra_pos].max_copied_files) &&
-                         (*file_size_to_retrieve < fra[db.fra_pos].max_copied_file_size))
+                     if ((*files_to_retrieve < fra->max_copied_files) &&
+                         (*file_size_to_retrieve < fra->max_copied_file_size))
 #endif
                      {
                         rl[i].retrieved = NO;
@@ -2077,12 +2068,12 @@ check_list(char   *file,
                      time_t diff_time;
 
                      diff_time = current_time - rl[i].file_mtime;
-                     if (((fra[db.fra_pos].gt_lt_sign & IFTIME_EQUAL) &&
-                          (fra[db.fra_pos].ignore_file_time == diff_time)) ||
-                         ((fra[db.fra_pos].gt_lt_sign & IFTIME_LESS_THEN) &&
-                          (fra[db.fra_pos].ignore_file_time < diff_time)) ||
-                         ((fra[db.fra_pos].gt_lt_sign & IFTIME_GREATER_THEN) &&
-                          (fra[db.fra_pos].ignore_file_time > diff_time)))
+                     if (((fra->gt_lt_sign & IFTIME_EQUAL) &&
+                          (fra->ignore_file_time == diff_time)) ||
+                         ((fra->gt_lt_sign & IFTIME_LESS_THEN) &&
+                          (fra->ignore_file_time < diff_time)) ||
+                         ((fra->gt_lt_sign & IFTIME_GREATER_THEN) &&
+                          (fra->ignore_file_time > diff_time)))
                      {
                         *files_to_retrieve += 1;
                         if (rl[i].size > 0)
@@ -2090,13 +2081,13 @@ check_list(char   *file,
                            *file_size_to_retrieve += rl[i].size;
                         }
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-                        if ((fra[db.fra_pos].stupid_mode == YES) ||
-                            (fra[db.fra_pos].remove == YES) ||
-                            ((*files_to_retrieve < fra[db.fra_pos].max_copied_files) &&
-                             (*file_size_to_retrieve < fra[db.fra_pos].max_copied_file_size)))
+                        if ((fra->stupid_mode == YES) ||
+                            (fra->remove == YES) ||
+                            ((*files_to_retrieve < fra->max_copied_files) &&
+                             (*file_size_to_retrieve < fra->max_copied_file_size)))
 #else
-                        if ((*files_to_retrieve < fra[db.fra_pos].max_copied_files) &&
-                            (*file_size_to_retrieve < fra[db.fra_pos].max_copied_file_size))
+                        if ((*files_to_retrieve < fra->max_copied_files) &&
+                            (*file_size_to_retrieve < fra->max_copied_file_size))
 #endif
                         {
                            rl[i].retrieved = NO;
@@ -2126,7 +2117,7 @@ check_list(char   *file,
 # else
                             "%s assigned %d: file_name=%s assigned=%d size=%lld",
 # endif
-                            (fra[db.fra_pos].ls_data_alias[0] == '\0') ? fra[db.fra_pos].dir_alias : fra[db.fra_pos].ls_data_alias,
+                            (fra->ls_data_alias[0] == '\0') ? fra->dir_alias : fra->ls_data_alias,
                             i, rl[i].file_name, (int)rl[i].assigned,
                             (pri_off_t)rl[i].size);
 #endif /* DEBUG_ASSIGNMENT */
@@ -2161,7 +2152,7 @@ check_list(char   *file,
          {
             rl[i].in_list = YES;
             if ((rl[i].assigned != 0) ||
-                ((fra[db.fra_pos].stupid_mode == GET_ONCE_ONLY) &&
+                ((fra->stupid_mode == GET_ONCE_ONLY) &&
                  (rl[i].retrieved == YES)))
             {
                return(1);
@@ -2179,7 +2170,7 @@ check_list(char   *file,
                off_t prev_size = 0;
 
                /* Try to get remote date and size. */
-               if (((fra[db.fra_pos].dir_flag & DONT_GET_DIR_LIST) == 0) &&
+               if (((fra->dir_flag & DONT_GET_DIR_LIST) == 0) &&
                    ((file_mtime == -1) || (file_size == -1) || (exact_size != 1)))
                {
                   if ((status = http_head(db.hostname, db.target_dir, file,
@@ -2256,18 +2247,18 @@ check_list(char   *file,
 
                if (rl[i].retrieved == NO)
                {
-                  if ((fra[db.fra_pos].ignore_size == -1) ||
-                      ((fra[db.fra_pos].gt_lt_sign & ISIZE_EQUAL) &&
-                       (fra[db.fra_pos].ignore_size == rl[i].size)) ||
-                      ((fra[db.fra_pos].gt_lt_sign & ISIZE_LESS_THEN) &&
-                       (fra[db.fra_pos].ignore_size < rl[i].size)) ||
-                      ((fra[db.fra_pos].gt_lt_sign & ISIZE_GREATER_THEN) &&
-                       (fra[db.fra_pos].ignore_size > rl[i].size)))
+                  if ((fra->ignore_size == -1) ||
+                      ((fra->gt_lt_sign & ISIZE_EQUAL) &&
+                       (fra->ignore_size == rl[i].size)) ||
+                      ((fra->gt_lt_sign & ISIZE_LESS_THEN) &&
+                       (fra->ignore_size < rl[i].size)) ||
+                      ((fra->gt_lt_sign & ISIZE_GREATER_THEN) &&
+                       (fra->ignore_size > rl[i].size)))
                   {
                      off_t size_to_retrieve;
 
                      if ((rl[i].got_date == NO) ||
-                         (fra[db.fra_pos].ignore_file_time == 0))
+                         (fra->ignore_file_time == 0))
                      {
                         if (rl[i].size == -1)
                         {
@@ -2275,7 +2266,7 @@ check_list(char   *file,
                         }
                         else
                         {
-                           if ((fra[db.fra_pos].stupid_mode == APPEND_ONLY) &&
+                           if ((fra->stupid_mode == APPEND_ONLY) &&
                                (rl[i].size > prev_size))
                            {
                               size_to_retrieve = rl[i].size - prev_size;
@@ -2287,13 +2278,13 @@ check_list(char   *file,
                         }
                         rl[i].prev_size = prev_size;
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-                        if ((fra[db.fra_pos].stupid_mode == YES) ||
-                            (fra[db.fra_pos].remove == YES) ||
-                            (((*files_to_retrieve + 1) < fra[db.fra_pos].max_copied_files) &&
-                             ((*file_size_to_retrieve + size_to_retrieve) < fra[db.fra_pos].max_copied_file_size)))
+                        if ((fra->stupid_mode == YES) ||
+                            (fra->remove == YES) ||
+                            (((*files_to_retrieve + 1) < fra->max_copied_files) &&
+                             ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size)))
 #else
-                        if (((*files_to_retrieve + 1) < fra[db.fra_pos].max_copied_files) &&
-                            ((*file_size_to_retrieve + size_to_retrieve) < fra[db.fra_pos].max_copied_file_size))
+                        if (((*files_to_retrieve + 1) < fra->max_copied_files) &&
+                            ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size))
 #endif
                         {
                            rl[i].assigned = (unsigned char)db.job_no + 1;
@@ -2312,12 +2303,12 @@ check_list(char   *file,
                         time_t diff_time;
 
                         diff_time = current_time - rl[i].file_mtime;
-                        if (((fra[db.fra_pos].gt_lt_sign & IFTIME_EQUAL) &&
-                             (fra[db.fra_pos].ignore_file_time == diff_time)) ||
-                            ((fra[db.fra_pos].gt_lt_sign & IFTIME_LESS_THEN) &&
-                             (fra[db.fra_pos].ignore_file_time < diff_time)) ||
-                            ((fra[db.fra_pos].gt_lt_sign & IFTIME_GREATER_THEN) &&
-                             (fra[db.fra_pos].ignore_file_time > diff_time)))
+                        if (((fra->gt_lt_sign & IFTIME_EQUAL) &&
+                             (fra->ignore_file_time == diff_time)) ||
+                            ((fra->gt_lt_sign & IFTIME_LESS_THEN) &&
+                             (fra->ignore_file_time < diff_time)) ||
+                            ((fra->gt_lt_sign & IFTIME_GREATER_THEN) &&
+                             (fra->ignore_file_time > diff_time)))
                         {
                            if (rl[i].size == -1)
                            {
@@ -2325,7 +2316,7 @@ check_list(char   *file,
                            }
                            else
                            {
-                              if ((fra[db.fra_pos].stupid_mode == APPEND_ONLY) &&
+                              if ((fra->stupid_mode == APPEND_ONLY) &&
                                   (rl[i].size > prev_size))
                               {
                                  size_to_retrieve = rl[i].size - prev_size;
@@ -2337,13 +2328,13 @@ check_list(char   *file,
                            }
                            rl[i].prev_size = prev_size;
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-                           if ((fra[db.fra_pos].stupid_mode == YES) ||
-                               (fra[db.fra_pos].remove == YES) ||
-                               (((*files_to_retrieve + 1) < fra[db.fra_pos].max_copied_files) &&
-                                ((*file_size_to_retrieve + size_to_retrieve) < fra[db.fra_pos].max_copied_file_size)))
+                           if ((fra->stupid_mode == YES) ||
+                               (fra->remove == YES) ||
+                               (((*files_to_retrieve + 1) < fra->max_copied_files) &&
+                                ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size)))
 #else
-                           if (((*files_to_retrieve + 1) < fra[db.fra_pos].max_copied_files) &&
-                               ((*file_size_to_retrieve + size_to_retrieve) < fra[db.fra_pos].max_copied_file_size))
+                           if (((*files_to_retrieve + 1) < fra->max_copied_files) &&
+                               ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size))
 #endif
                            {
                               rl[i].assigned = (unsigned char)db.job_no + 1;
@@ -2369,7 +2360,7 @@ check_list(char   *file,
 # else
                                "%s assigned %d: file_name=%s assigned=%d size=%lld",
 # endif
-                               (fra[db.fra_pos].ls_data_alias[0] == '\0') ? fra[db.fra_pos].dir_alias : fra[db.fra_pos].ls_data_alias,
+                               (fra->ls_data_alias[0] == '\0') ? fra->dir_alias : fra->ls_data_alias,
                                i, rl[i].file_name, (int)rl[i].assigned,
                                (pri_off_t)rl[i].size);
 #endif /* DEBUG_ASSIGNMENT */
@@ -2413,8 +2404,7 @@ check_list(char   *file,
 
       ptr = (char *)rl - AFD_WORD_OFFSET;
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-      if ((fra[db.fra_pos].stupid_mode == YES) ||
-          (fra[db.fra_pos].remove == YES))
+      if ((fra->stupid_mode == YES) || (fra->remove == YES))
       {
          if ((ptr = realloc(ptr, new_size)) == NULL)
          {
@@ -2453,7 +2443,7 @@ check_list(char   *file,
    rl[no_of_listed_files].retrieved = NO;
    rl[no_of_listed_files].in_list = YES;
 
-   if (((fra[db.fra_pos].dir_flag & DONT_GET_DIR_LIST) == 0) &&
+   if (((fra->dir_flag & DONT_GET_DIR_LIST) == 0) &&
        ((file_mtime == -1) || (file_size == -1) || (exact_size != 1)))
    {
       int status;
@@ -2505,16 +2495,16 @@ check_list(char   *file,
       rl[no_of_listed_files].got_date = YES;
    }
 
-   if ((fra[db.fra_pos].ignore_size == -1) ||
-       ((fra[db.fra_pos].gt_lt_sign & ISIZE_EQUAL) &&
-        (fra[db.fra_pos].ignore_size == rl[no_of_listed_files].size)) ||
-       ((fra[db.fra_pos].gt_lt_sign & ISIZE_LESS_THEN) &&
-        (fra[db.fra_pos].ignore_size < rl[no_of_listed_files].size)) ||
-       ((fra[db.fra_pos].gt_lt_sign & ISIZE_GREATER_THEN) &&
-        (fra[db.fra_pos].ignore_size > rl[no_of_listed_files].size)))
+   if ((fra->ignore_size == -1) ||
+       ((fra->gt_lt_sign & ISIZE_EQUAL) &&
+        (fra->ignore_size == rl[no_of_listed_files].size)) ||
+       ((fra->gt_lt_sign & ISIZE_LESS_THEN) &&
+        (fra->ignore_size < rl[no_of_listed_files].size)) ||
+       ((fra->gt_lt_sign & ISIZE_GREATER_THEN) &&
+        (fra->ignore_size > rl[no_of_listed_files].size)))
    {
       if ((rl[no_of_listed_files].got_date == NO) ||
-          (fra[db.fra_pos].ignore_file_time == 0))
+          (fra->ignore_file_time == 0))
       {
          *files_to_retrieve += 1;
          if (file_size > 0)
@@ -2528,12 +2518,12 @@ check_list(char   *file,
          time_t diff_time;
 
          diff_time = current_time - rl[no_of_listed_files].file_mtime;
-         if (((fra[db.fra_pos].gt_lt_sign & IFTIME_EQUAL) &&
-              (fra[db.fra_pos].ignore_file_time == diff_time)) ||
-             ((fra[db.fra_pos].gt_lt_sign & IFTIME_LESS_THEN) &&
-              (fra[db.fra_pos].ignore_file_time < diff_time)) ||
-             ((fra[db.fra_pos].gt_lt_sign & IFTIME_GREATER_THEN) &&
-              (fra[db.fra_pos].ignore_file_time > diff_time)))
+         if (((fra->gt_lt_sign & IFTIME_EQUAL) &&
+              (fra->ignore_file_time == diff_time)) ||
+             ((fra->gt_lt_sign & IFTIME_LESS_THEN) &&
+              (fra->ignore_file_time < diff_time)) ||
+             ((fra->gt_lt_sign & IFTIME_GREATER_THEN) &&
+              (fra->ignore_file_time > diff_time)))
          {
             *files_to_retrieve += 1;
             if (file_size > 0)
@@ -2548,13 +2538,12 @@ check_list(char   *file,
          }
       }
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-      if ((fra[db.fra_pos].stupid_mode == YES) ||
-          (fra[db.fra_pos].remove == YES) ||
-          ((*files_to_retrieve < fra[db.fra_pos].max_copied_files) &&
-           (*file_size_to_retrieve < fra[db.fra_pos].max_copied_file_size)))
+      if ((fra->stupid_mode == YES) || (fra->remove == YES) ||
+          ((*files_to_retrieve < fra->max_copied_files) &&
+           (*file_size_to_retrieve < fra->max_copied_file_size)))
 #else
-      if ((*files_to_retrieve < fra[db.fra_pos].max_copied_files) &&
-          (*file_size_to_retrieve < fra[db.fra_pos].max_copied_file_size))
+      if ((*files_to_retrieve < fra->max_copied_files) &&
+          (*file_size_to_retrieve < fra->max_copied_file_size))
 #endif
       {
          rl[no_of_listed_files - 1].assigned = (unsigned char)db.job_no + 1;
@@ -2577,7 +2566,7 @@ check_list(char   *file,
 # else
                 "%s assigned %d: file_name=%s assigned=%d size=%lld",
 # endif
-                (fra[db.fra_pos].ls_data_alias[0] == '\0') ? fra[db.fra_pos].dir_alias : fra[db.fra_pos].ls_data_alias,
+                (fra->ls_data_alias[0] == '\0') ? fra->dir_alias : fra->ls_data_alias,
                 i, rl[i].file_name, (int)rl[i].assigned, (pri_off_t)rl[i].size);
 #endif /* DEBUG_ASSIGNMENT */
       return(0);
@@ -2712,14 +2701,13 @@ check_name(char         *file_name,
    int  gotcha = NO;
    char *p_mask;
 
-   if ((file_name[0] != '.') ||
-       (fra[db.fra_pos].dir_flag & ACCEPT_DOT_FILES))
+   if ((file_name[0] != '.') || (fra->dir_flag & ACCEPT_DOT_FILES))
    {
       int i,
           j,
           status;
 
-      if (fra[db.fra_pos].dir_flag == ALL_DISABLED)
+      if (fra->dir_flag == ALL_DISABLED)
       {
          delete_remote_file(HTTP, file_name, file_name_length,
 #ifdef _DELETE_LOG
@@ -2754,21 +2742,20 @@ check_name(char         *file_name,
          }
 
          if ((gotcha == NO) && (status != 0) &&
-             (fra[db.fra_pos].delete_files_flag & UNKNOWN_FILES))
+             (fra->delete_files_flag & UNKNOWN_FILES))
          {
             time_t diff_time = current_time - file_mtime;
 
-            if ((fra[db.fra_pos].unknown_file_time == -2) ||
+            if ((fra->unknown_file_time == -2) ||
                 ((file_mtime != -1) && /* We do not have the time! */
-                 (diff_time > fra[db.fra_pos].unknown_file_time) &&
+                 (diff_time > fra->unknown_file_time) &&
                  (diff_time > DEFAULT_TRANSFER_TIMEOUT)))
             {
                /*
                 * Before we delete the file make sure that some
                 * helper job is currently getting this file.
                 */
-               if ((fra[db.fra_pos].stupid_mode == YES) ||
-                   (fra[db.fra_pos].remove == YES))
+               if ((fra->stupid_mode == YES) || (fra->remove == YES))
                {
                   for (i = 0; i < no_of_listed_files; i++)
                   {
@@ -2797,8 +2784,8 @@ check_name(char         *file_name,
       if ((file_name[1] != '\0') && (file_name[1] != '.') &&
           (file_mtime != -1))
       {
-         if ((fra[db.fra_pos].delete_files_flag & OLD_RLOCKED_FILES) &&
-             (fra[db.fra_pos].locked_file_time != -1))
+         if ((fra->delete_files_flag & OLD_RLOCKED_FILES) &&
+             (fra->locked_file_time != -1))
          {
             time_t diff_time = current_time - file_mtime;
 
@@ -2806,7 +2793,7 @@ check_name(char         *file_name,
             {
                diff_time = 0;
             }
-            if ((diff_time > fra[db.fra_pos].locked_file_time) &&
+            if ((diff_time > fra->locked_file_time) &&
                 (diff_time > DEFAULT_TRANSFER_TIMEOUT))
             {
                delete_remote_file(HTTP, file_name, file_name_length,

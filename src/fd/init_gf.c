@@ -60,8 +60,6 @@ DESCR__E_M3
 
 /* External global variables. */
 extern int                        fsa_fd,
-                                  no_of_hosts,
-                                  no_of_dirs,
 #ifdef WITHOUT_FIFO_RW_SUPPORT
                                   transfer_log_readfd,
 #endif
@@ -146,25 +144,22 @@ init_gf(int argc, char *argv[], int protocol)
       send_proc_fin(NO);
       exit(-status);
    }
-   if (fra_attach() != SUCCESS)
-   {
-      system_log(ERROR_SIGN, __FILE__, __LINE__, "Failed to attach to FRA.");
-      exit(INCORRECT);
-   }
-   if ((db.fra_pos = get_dir_id_position(fra, db.id.dir, no_of_dirs)) < 0)
+   if (fra_attach_pos(db.fra_pos) != SUCCESS)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to locate dir_id %x in the FRA.", db.id.dir);
-      exit(INCORRECT);          
+                 "Failed to attach to FRA position %d.", db.fra_pos);
+      exit(INCORRECT);
    }
-   if ((db.special_flag & OLD_ERROR_JOB) && (fra[db.fra_pos].queued == 1))
+   db.fra_lock_offset = AFD_WORD_OFFSET +
+                        (db.fra_pos * sizeof(struct fileretrieve_status));
+   if ((db.special_flag & OLD_ERROR_JOB) && (fra->queued == 1))
    {
       /* No need to do any locking in get_remote_file_names_xxx(). */
       db.special_flag &= ~OLD_ERROR_JOB;
    }
-   if (fra[db.fra_pos].keep_connected > 0)
+   if (fra->keep_connected > 0)
    {
-      db.keep_connected = fra[db.fra_pos].keep_connected;
+      db.keep_connected = fra->keep_connected;
    }
    else if ((fsa->keep_connected > 0) &&
             ((fsa->special_flag & KEEP_CON_NO_FETCH) == 0))
@@ -175,7 +170,7 @@ init_gf(int argc, char *argv[], int protocol)
         {
            db.keep_connected = 0;
         }
-   db.no_of_time_entries = fra[db.fra_pos].no_of_time_entries;
+   db.no_of_time_entries = fra->no_of_time_entries;
    if (db.no_of_time_entries == 0)
    {
       if ((db.te = malloc(sizeof(struct bd_time_entry))) == NULL)
@@ -194,8 +189,8 @@ init_gf(int argc, char *argv[], int protocol)
    }
    else
    {
-      db.te = &fra[db.fra_pos].te[0];
-      (void)strcpy(db.timezone, fra[db.fra_pos].timezone);
+      db.te = &fra->te[0];
+      (void)strcpy(db.timezone, fra->timezone);
    }
 #ifdef WITH_SSL
    if ((fsa->protocol & HTTP_FLAG) && (fsa->protocol & SSL_FLAG) &&
@@ -217,15 +212,15 @@ init_gf(int argc, char *argv[], int protocol)
       db.rcvbuf_size = fsa->sockrcv_bufsize;
    }
 
-   if ((fsa->error_counter > 0) && (fra[db.fra_pos].no_of_time_entries > 0))
+   if ((fsa->error_counter > 0) && (fra->no_of_time_entries > 0))
    {
-      next_check_time = fra[db.fra_pos].next_check_time;
+      next_check_time = fra->next_check_time;
    }
    else
    {
       next_check_time = 0;
    }
-   if (eval_recipient(fra[db.fra_pos].url, &db, NULL,
+   if (eval_recipient(fra->url, &db, NULL,
                        next_check_time) == INCORRECT)
    {
       system_log(ERROR_SIGN, __FILE__,  __LINE__, "eval_recipient() failed.");

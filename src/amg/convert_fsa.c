@@ -518,14 +518,21 @@ convert_fsa(int           old_fsa_fd,
             unsigned char old_version,
             unsigned char new_version)
 {
-   int         i, j;
+   int         i, j,
+               pagesize;
    size_t      new_size;
    char        *ptr;
    struct stat stat_buf;
 
+   if ((pagesize = (int)sysconf(_SC_PAGESIZE)) == -1)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "Failed to determine the pagesize with sysconf() : %s",
+                 strerror(errno));
+   }
+
    if ((old_version == 0) && (new_version == 1))
    {
-      int                          pagesize;
       struct filetransfer_status_0 *old_fsa;
       struct filetransfer_status_1 *new_fsa;
 
@@ -746,12 +753,6 @@ convert_fsa(int           old_fsa_fd,
       ptr -= AFD_WORD_OFFSET_1;
       *(ptr + SIZEOF_INT + 1 + 1) = 0;               /* Not used. */
       *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-      if ((pagesize = (int)sysconf(_SC_PAGESIZE)) == -1)
-      {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "Failed to determine the pagesize with sysconf() : %s",
-                    strerror(errno));
-      }
       *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
       *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;      /* Not used. */
       *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;  /* Not used. */
@@ -765,7 +766,6 @@ convert_fsa(int           old_fsa_fd,
    }
    else if ((old_version == 0) && (new_version == 2))
         {
-           int                          pagesize;
            struct filetransfer_status_0 *old_fsa;
            struct filetransfer_status_2 *new_fsa;
 
@@ -998,12 +998,6 @@ convert_fsa(int           old_fsa_fd,
            ptr -= AFD_WORD_OFFSET_2;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;               /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           if ((pagesize = (int)sysconf(_SC_PAGESIZE)) == -1)
-           {
-              system_log(ERROR_SIGN, __FILE__, __LINE__,
-                         "Failed to determine the pagesize with sysconf() : %s",
-                         strerror(errno));
-           }
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;      /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;  /* Not used. */
@@ -1017,7 +1011,6 @@ convert_fsa(int           old_fsa_fd,
         }
    else if ((old_version == 1) && (new_version == 2))
         {
-           int                          pagesize;
            struct filetransfer_status_1 *old_fsa;
            struct filetransfer_status_2 *new_fsa;
 
@@ -1184,12 +1177,6 @@ convert_fsa(int           old_fsa_fd,
            ptr -= AFD_WORD_OFFSET_2;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;               /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           if ((pagesize = (int)sysconf(_SC_PAGESIZE)) == -1)
-           {
-              system_log(ERROR_SIGN, __FILE__, __LINE__,
-                         "Failed to determine the pagesize with sysconf() : %s",
-                         strerror(errno));
-           }
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;      /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;  /* Not used. */
@@ -1203,7 +1190,6 @@ convert_fsa(int           old_fsa_fd,
         }
    else if ((old_version == 0) && (new_version == 3))
         {
-           int                          pagesize;
            struct filetransfer_status_0 *old_fsa;
            struct filetransfer_status_3 *new_fsa;
 
@@ -1440,12 +1426,6 @@ convert_fsa(int           old_fsa_fd,
            ptr -= AFD_WORD_OFFSET_3;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;               /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           if ((pagesize = (int)sysconf(_SC_PAGESIZE)) == -1)
-           {
-              system_log(ERROR_SIGN, __FILE__, __LINE__,
-                         "Failed to determine the pagesize with sysconf() : %s",
-                         strerror(errno));
-           }
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;      /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;  /* Not used. */
@@ -1459,7 +1439,6 @@ convert_fsa(int           old_fsa_fd,
         }
    else if ((old_version == 1) && (new_version == 3))
         {
-           int                          pagesize;
            struct filetransfer_status_1 *old_fsa;
            struct filetransfer_status_3 *new_fsa;
 
@@ -1630,12 +1609,6 @@ convert_fsa(int           old_fsa_fd,
            ptr -= AFD_WORD_OFFSET_3;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;               /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           if ((pagesize = (int)sysconf(_SC_PAGESIZE)) == -1)
-           {
-              system_log(ERROR_SIGN, __FILE__, __LINE__,
-                         "Failed to determine the pagesize with sysconf() : %s",
-                         strerror(errno));
-           }
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;      /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;  /* Not used. */
@@ -1649,7 +1622,6 @@ convert_fsa(int           old_fsa_fd,
         }
    else if ((old_version == 2) && (new_version == 3))
         {
-           int                          pagesize;
            struct filetransfer_status_2 *old_fsa;
            struct filetransfer_status_3 *new_fsa;
 
@@ -1820,12 +1792,6 @@ convert_fsa(int           old_fsa_fd,
            ptr -= AFD_WORD_OFFSET_3;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;               /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           if ((pagesize = (int)sysconf(_SC_PAGESIZE)) == -1)
-           {
-              system_log(ERROR_SIGN, __FILE__, __LINE__,
-                         "Failed to determine the pagesize with sysconf() : %s",
-                         strerror(errno));
-           }
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;      /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;  /* Not used. */
@@ -1840,8 +1806,7 @@ convert_fsa(int           old_fsa_fd,
 #ifdef NEW_FSA
    else if ((old_version == 3) && (new_version == 4))
         {
-           int                          ignore_first_errors,
-                                        pagesize;
+           int                          ignore_first_errors;
            struct filetransfer_status_3 *old_fsa;
            struct filetransfer_status_4 *new_fsa;
 
@@ -2021,12 +1986,6 @@ convert_fsa(int           old_fsa_fd,
            ptr -= AFD_WORD_OFFSET_4;
            *(ptr + SIZEOF_INT + 1 + 1) = ignore_first_errors;
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           if ((pagesize = (int)sysconf(_SC_PAGESIZE)) == -1)
-           {
-              system_log(ERROR_SIGN, __FILE__, __LINE__,
-                         "Failed to determine the pagesize with sysconf() : %s",
-                         strerror(errno));
-           }
            *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;      /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;  /* Not used. */

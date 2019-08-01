@@ -60,6 +60,7 @@ DESCR__S_M3
  **   24.02.2007 H.Kiehl Added inotify support.
  **   28.05.2012 H.Kiehl Added 'create sourde dir' support.
  **   26.01.2019 H.Kiehl Added dir_mtime support.
+ **   01.08.2019 H.Kiehl Added pagesize.
  **
  */
 DESCR__E_M3
@@ -101,6 +102,7 @@ create_fra(int no_of_dirs)
                               old_fra_fd = -1,
                               old_fra_id,
                               old_no_of_dirs = -1,
+                              pagesize,
                               rest;
    off_t                      old_fra_size = -1;
    time_t                     current_time;
@@ -795,7 +797,13 @@ create_fra(int no_of_dirs)
    ptr -= AFD_WORD_OFFSET;
    *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
    *(ptr + SIZEOF_INT + 1 + 1 + 1) = CURRENT_FRA_VERSION; /* FRA version number. */
-   (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+   if ((pagesize = (int)sysconf(_SC_PAGESIZE)) == -1)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "Failed to determine the pagesize with sysconf() : %s",
+                 strerror(errno));
+   }
+   *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
    *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
    *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
    *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */

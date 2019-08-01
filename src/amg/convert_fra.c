@@ -51,6 +51,7 @@ DESCR__S_M1
  **   31.12.2007 H.Kiehl Added Version 5.
  **   28.05.2012 H.Kiehl Added Version 6.
  **   26.01.2019 H.Kiehl Added Version 7.
+ **   01.08.2019 H.Kiehl Added pagesize.
  **
  */
 DESCR__E_M1
@@ -63,7 +64,7 @@ DESCR__E_M1
 #ifdef HAVE_MMAP
 # include <sys/mman.h>                /* mmap()                          */
 #endif
-#include <unistd.h>
+#include <unistd.h>                   /* sysconf()                       */
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>                   /* O_RDWR, O_CREAT, O_WRONLY, etc  */
 #endif
@@ -659,10 +660,18 @@ convert_fra(int           old_fra_fd,
             unsigned char old_version,
             unsigned char new_version)
 {
-   int         i;
+   int         i,
+               pagesize;
    size_t      new_size;
    char        *ptr;
    struct stat stat_buf;
+
+   if ((pagesize = (int)sysconf(_SC_PAGESIZE)) == -1)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "Failed to determine the pagesize with sysconf() : %s",
+                 strerror(errno));
+   }
 
    system_log(INFO_SIGN, NULL, 0, "Converting FRA...");
    if ((old_version == 0) && (new_version == 1))
@@ -942,7 +951,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -1103,7 +1112,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -1268,7 +1277,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -1423,7 +1432,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -1584,7 +1593,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -1749,7 +1758,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -1920,7 +1929,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -2094,7 +2103,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -2268,7 +2277,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -2434,7 +2443,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -2602,7 +2611,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -2777,7 +2786,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -2952,7 +2961,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -3121,7 +3130,7 @@ convert_fra(int           old_fra_fd,
            ptr -= AFD_WORD_OFFSET_5;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -3293,7 +3302,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -3467,7 +3476,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -3648,7 +3657,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -3829,7 +3838,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -4004,7 +4013,7 @@ convert_fra(int           old_fra_fd,
            ptr -= AFD_WORD_OFFSET_6;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -4180,7 +4189,7 @@ convert_fra(int           old_fra_fd,
            ptr -= AFD_WORD_OFFSET_6;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -4353,7 +4362,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -4528,7 +4537,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -4710,7 +4719,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -4892,7 +4901,7 @@ convert_fra(int           old_fra_fd,
            *(ptr + SIZEOF_INT + 1) = 0;                         /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -5068,7 +5077,7 @@ convert_fra(int           old_fra_fd,
            ptr -= AFD_WORD_OFFSET_7;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -5245,7 +5254,7 @@ convert_fra(int           old_fra_fd,
            ptr -= AFD_WORD_OFFSET_7;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */
@@ -5422,7 +5431,7 @@ convert_fra(int           old_fra_fd,
            ptr -= AFD_WORD_OFFSET_7;
            *(ptr + SIZEOF_INT + 1 + 1) = 0;                     /* Not used. */
            *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
-           (void)memset((ptr + SIZEOF_INT + 4), 0, SIZEOF_INT); /* Not used. */
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;            /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;        /* Not used. */
            *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;        /* Not used. */

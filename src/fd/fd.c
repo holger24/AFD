@@ -3052,15 +3052,17 @@ make_process(struct connection *con, int qb_pos)
    int   argcount;
    pid_t pid;
 #ifdef HAVE_HW_CRC32
-   char  *args[24],
+   char  *args[25],
 #else
-   char  *args[23],
+   char  *args[24],
 #endif
 #ifdef USE_SPRINTF
          str_job_no[MAX_INT_LENGTH],
+         str_fra_pos[MAX_INT_LENGTH],
          str_fsa_pos[MAX_INT_LENGTH],
 #else
          str_job_no[4],
+         str_fra_pos[6],
          str_fsa_pos[6],
 #endif
          str_retries[MAX_INT_LENGTH];
@@ -3361,6 +3363,60 @@ make_process(struct connection *con, int qb_pos)
    }
    else
    {
+      /* Add FRA position. */
+#ifdef USE_SPRINTF
+      (void)snprintf(str_fra_pos, MAX_INT_LENGTH, "%d", con->fra_pos);
+#else
+      if (con->fra_pos < 10)
+      {
+         str_fra_pos[0] = con->fra_pos + '0';
+         str_fra_pos[1] = '\0';
+      }
+      else if (con->fra_pos < 100)
+           {
+              str_fra_pos[0] = (con->fra_pos / 10) + '0';
+              str_fra_pos[1] = (con->fra_pos % 10) + '0';
+              str_fra_pos[2] = '\0';
+           }
+      else if (con->fra_pos < 1000)
+           {
+              str_fra_pos[0] = (con->fra_pos / 100) + '0';
+              str_fra_pos[1] = ((con->fra_pos / 10) % 10) + '0';
+              str_fra_pos[2] = (con->fra_pos % 10) + '0';
+              str_fra_pos[3] = '\0';
+           }
+      else if (con->fra_pos < 10000)
+           {
+              str_fra_pos[0] = (con->fra_pos / 1000) + '0';
+              str_fra_pos[1] = ((con->fra_pos / 100) % 10) + '0';
+              str_fra_pos[2] = ((con->fra_pos / 10) % 10) + '0';
+              str_fra_pos[3] = (con->fra_pos % 10) + '0';
+              str_fra_pos[4] = '\0';
+           }
+      else if (con->fra_pos < 100000)
+           {
+              str_fra_pos[0] = (con->fra_pos / 10000) + '0';
+              str_fra_pos[1] = ((con->fra_pos / 1000) % 10) + '0';
+              str_fra_pos[2] = ((con->fra_pos / 100) % 10) + '0';
+              str_fra_pos[3] = ((con->fra_pos / 10) % 10) + '0';
+              str_fra_pos[4] = (con->fra_pos % 10) + '0';
+              str_fra_pos[5] = '\0';
+           }
+           else
+           {
+              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "Insert a '#define USE_SPRINTF' in this program! Or else you are in deep trouble!");
+              str_fra_pos[0] = ((con->fra_pos / 10000) % 10) + '0';
+              str_fra_pos[1] = ((con->fra_pos / 1000) % 10) + '0';
+              str_fra_pos[2] = ((con->fra_pos / 100) % 10) + '0';
+              str_fra_pos[3] = ((con->fra_pos / 10) % 10) + '0';
+              str_fra_pos[4] = (con->fra_pos % 10) + '0';
+              str_fra_pos[5] = '\0';
+           }
+#endif
+      argcount++;
+      args[argcount] = str_fra_pos;
+
       if (qb[qb_pos].special_flag & HELPER_JOB)
       {
          argcount++;

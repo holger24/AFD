@@ -93,8 +93,7 @@ int
 attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
 {
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-   if ((fra[fra_pos].stupid_mode == YES) ||
-       (fra[fra_pos].remove == YES))
+   if ((fra->stupid_mode == YES) || (fra->remove == YES))
    {
       if (rl == NULL)
       {
@@ -141,13 +140,13 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
                return(INCORRECT);
             }
          }
-         if (fra[fra_pos].ls_data_alias[0] == '\0')
+         if (fra->ls_data_alias[0] == '\0')
          {
-            ptr = fra[fra_pos].dir_alias;
+            ptr = fra->dir_alias;
          }
          else
          {
-            ptr = fra[fra_pos].ls_data_alias;
+            ptr = fra->ls_data_alias;
          }
          (void)snprintf(list_file, list_file_length, "%s%s%s%s/%s",
                         p_work_dir, AFD_FILE_DIR, INCOMING_DIR, LS_DATA_DIR,
@@ -275,7 +274,7 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
                                     "%s%s%s%s/.%s",
                                     p_work_dir, AFD_FILE_DIR,
                                     INCOMING_DIR, LS_DATA_DIR,
-                                    (fra[fra_pos].ls_data_alias[0] == '\0') ? fra[fra_pos].dir_alias : fra[fra_pos].ls_data_alias);
+                                    (fra->ls_data_alias[0] == '\0') ? fra->dir_alias : fra->ls_data_alias);
                      if ((new_rl_fd = open(new_list_file,
                                            O_RDWR | O_CREAT | O_TRUNC,
                                            FILE_MODE)) == -1)
@@ -432,7 +431,7 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
                                          "%s%s%s%s/.%s",
                                          p_work_dir, AFD_FILE_DIR,
                                          INCOMING_DIR, LS_DATA_DIR,
-                                         (fra[fra_pos].ls_data_alias[0] == '\0') ? fra[fra_pos].dir_alias : fra[fra_pos].ls_data_alias);
+                                         (fra->ls_data_alias[0] == '\0') ? fra->dir_alias : fra->ls_data_alias);
                           if ((new_rl_fd = open(new_list_file,
                                                 O_RDWR | O_CREAT | O_TRUNC,
                                                 FILE_MODE)) == -1)
@@ -830,11 +829,10 @@ int
 reset_ls_data(int fra_pos)
 {
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-   if ((fra[fra_pos].stupid_mode == YES) ||
-       (fra[fra_pos].remove == YES))
+   if ((fra->stupid_mode == YES) || (fra->remove == YES))
    {
-      off_t       rl_size;
-      char        *ptr;
+      off_t rl_size;
+      char  *ptr;
 
       if (rl != NULL)
       {

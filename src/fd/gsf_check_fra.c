@@ -1,6 +1,6 @@
 /*
  *  gsf_check_fra.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ DESCR__S_M3
  **   gsf_check_fra - checks if FRA has been changed
  **
  ** SYNOPSIS
- **   int gsf_check_fra(void)
+ **   int gsf_check_fra(struct job *p_db)
  **
  ** DESCRIPTION
  **   Checks if the FRA has changed. If it did change it attaches
@@ -45,116 +45,97 @@ DESCR__S_M3
  **
  ** HISTORY
  **   08.03.2008 H.Kiehl Created
+ **   01.08.2019 H.Kiehl Rewrite so it can be used with fra_attach_pos().
  **
  */
 DESCR__E_M3
 
 #include <stdio.h>
-#include <string.h>             /* strerror()                            */
-#include <stdlib.h>             /* malloc()                              */
-#ifdef HAVE_MMAP
-# include <sys/mman.h>          /* munmap()                              */
-#endif
+#include <stdlib.h>             /* malloc(), free(), exit()              */
 #include <errno.h>
 #include "fddefs.h"
 
 /* Global variables. */
-extern int                        no_of_dirs;
-#ifdef HAVE_MMAP
-extern off_t                      fra_size;
-#endif
+extern int                        *p_no_of_dirs,
+                                  no_of_dirs;
 extern struct fileretrieve_status *fra;
-extern struct job                 db;
 
 
 /*########################### gsf_check_fra() ###########################*/
 int
-gsf_check_fra(void)
+gsf_check_fra(struct job *p_db)
 {
    int ret;
 
-   if (db.fra_pos == INCORRECT)
+   if (p_db->fra_pos == INCORRECT)
    {
       ret = NEITHER;
    }
    else
    {
-      if (fra != NULL)
+      if ((p_no_of_dirs != NULL) && (*p_no_of_dirs == STALE))
       {
-         char *ptr;
+         unsigned char prev_no_of_time_entries;
 
-         ptr = (char *)fra;
-         ptr -= AFD_WORD_OFFSET;
-
-         if (*(int *)ptr == STALE)
+         prev_no_of_time_entries = fra->no_of_time_entries;
+         fra_detach_pos(p_db->fra_pos);
+         if (fra_attach() == SUCCESS)
          {
-            unsigned char prev_no_of_time_entries;
-
-            prev_no_of_time_entries = fra[db.fra_pos].no_of_time_entries;
-
-            /* Detach from FRA. */
-#ifdef HAVE_MMAP
-            if (munmap(((char *)fra - AFD_WORD_OFFSET), fra_size) != -1)
-#else
-            if (munmap_emu((void *)((char *)fra - AFD_WORD_OFFSET)) != -1)
-#endif
+            p_db->fra_pos = get_dir_id_position(fra, p_db->id.dir, no_of_dirs);
+            (void)fra_detach();
+            if (p_db->fra_pos != INCORRECT)
             {
-               fra = NULL;
-               if (fra_attach() == SUCCESS)
+               if ((ret = fra_attach_pos(p_db->fra_pos)) != SUCCESS)
                {
-                  db.fra_pos = get_dir_id_position(fra, db.id.dir, no_of_dirs);
-                  if (db.fra_pos != INCORRECT)
-                  {
-                     if (fra[db.fra_pos].no_of_time_entries == 0)
-                     {
-                        if (prev_no_of_time_entries > 0)
-                        {
-                           if ((db.te = malloc(sizeof(struct bd_time_entry))) == NULL)
-                           {
-                              system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                         "Could not malloc() memory : %s",
-                                         strerror(errno));
-                              exit(ALLOC_ERROR);
-                           }
-                           if (eval_time_str("* * * * *", &db.te[0], NULL) != SUCCESS)
-                           {
-                              system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                         "Failed to evaluate time string.");
-                              exit(INCORRECT);
-                           }
-                        }
-                     }
-                     else
-                     {
-                        if (prev_no_of_time_entries == 0)
-                        {
-                           free(db.te);
-                        }
-                        db.te = &fra[db.fra_pos].te[0];
-                     }
-                     ret = YES;
-                  }
-                  else
-                  {
-                     ret = NEITHER;
-                  }
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "Failed to attach to FRA position %d (%d).",
+                             p_db->fra_pos, ret);
+                  p_db->fra_pos = INCORRECT;
+                  ret = NEITHER;
                }
                else
                {
-                  db.fra_pos = INCORRECT;
-                  ret = NEITHER;
+                  if (fra->no_of_time_entries == 0)
+                  {
+                     if (prev_no_of_time_entries > 0)
+                     {
+                        if ((p_db->te = malloc(sizeof(struct bd_time_entry))) == NULL)
+                        {
+                           system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                      "Could not malloc() memory : %s",
+                                      strerror(errno));
+                           exit(ALLOC_ERROR);
+                        }
+                        if (eval_time_str("* * * * *", &p_db->te[0], NULL) != SUCCESS)
+                        {
+                           system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                      "Failed to evaluate time string.");
+                           exit(INCORRECT);
+                        }
+                     }
+                  }
+                  else
+                  {
+                     if (prev_no_of_time_entries == 0)
+                     {
+                        free(p_db->te);
+                     }
+                     p_db->te = &fra->te[0];
+                  }
+                  p_db->fra_lock_offset = AFD_WORD_OFFSET +
+                                          (p_db->fra_pos * sizeof(struct fileretrieve_status));
+                  ret = YES;
                }
             }
             else
             {
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          "Failed to unmap from FRA : %s", strerror(errno));
                ret = NEITHER;
             }
          }
          else
          {
-            ret = NO;
+            p_db->fra_pos = INCORRECT;
+            ret = NEITHER;
          }
       }
       else

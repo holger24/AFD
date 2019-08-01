@@ -245,8 +245,9 @@ main(int argc, char *argv[])
    if (mode == 0)
    {
       (void)fprintf(stdout,
-                    _("     Number of directories: %d   FRA ID: %d  Struct Version: %d\n\n"),
-                    no_of_dirs, fra_id, (int)(*(ptr + SIZEOF_INT + 1 + 1 + 1)));
+                    _("     Number of directories: %d   FRA ID: %d  Struct Version: %d  Pagesize: %d\n\n"),
+                    no_of_dirs, fra_id, (int)(*(ptr + SIZEOF_INT + 1 + 1 + 1)),
+                    *(int *)(ptr + SIZEOF_INT + 4));
       for (i = position; i < last; i++)
       {
          (void)fprintf(stdout, "=============================> %s (%d) <=============================\n",

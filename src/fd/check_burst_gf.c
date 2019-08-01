@@ -63,9 +63,7 @@ DESCR__E_M3
 
 /* External global variables. */
 extern int                        no_of_dirs,
-                                  no_of_hosts,
                                   no_of_listed_files,
-                                  *p_no_of_hosts,
                                   prev_no_of_files_done,
                                   rl_fd;
 extern unsigned int               burst_2_counter;
@@ -524,8 +522,7 @@ check_burst_gf(unsigned int *values_changed)
                }
             }
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-            if ((fra[db.fra_pos].stupid_mode == YES) ||
-                (fra[db.fra_pos].remove == YES))
+            if ((fra->stupid_mode == YES) || (fra->remove == YES))
             {
                detach_ls_data(YES);
             }
@@ -536,12 +533,26 @@ check_burst_gf(unsigned int *values_changed)
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
             }
 #endif
+            fra_detach_pos(db.fra_pos);
             db.id.dir = fsa->job_status[(int)db.job_no].job_id;
+            if (fra_attach() != SUCCESS)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "Failed to attach to FRA.");
+               return(NO);
+            }
             if ((db.fra_pos = get_dir_id_position(fra, db.id.dir, no_of_dirs)) < 0)
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           "Failed to locate dir_id %x in the FRA.",
                           db.id.dir);
+               return(NO);
+            }
+            (void)fra_detach();
+            if (fra_attach_pos(db.fra_pos) != SUCCESS)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "Failed to attach to FRA position %d.", db.fra_pos);
                return(NO);
             }
             if ((p_new_db = malloc(sizeof(struct job))) == NULL)
@@ -623,16 +634,15 @@ check_burst_gf(unsigned int *values_changed)
 #ifdef HAVE_SETPRIORITY
             p_new_db->afd_config_mtime = db.afd_config_mtime;
 #endif
-            if ((fsa->error_counter > 0) &&
-                (fra[db.fra_pos].no_of_time_entries > 0))
+            if ((fsa->error_counter > 0) && (fra->no_of_time_entries > 0))
             {
-               next_check_time = fra[db.fra_pos].next_check_time;
+               next_check_time = fra->next_check_time;
             }
             else
             {
                next_check_time = 0;
             }
-            if (eval_recipient(fra[db.fra_pos].url, p_new_db, NULL,
+            if (eval_recipient(fra->url, p_new_db, NULL,
                                next_check_time) == INCORRECT)
             {
                free(p_new_db);
@@ -706,8 +716,7 @@ check_burst_gf(unsigned int *values_changed)
                unsigned int error_mask;
                time_t       now = time(NULL);
 
-               if ((error_mask = url_evaluate(fra[db.fra_pos].url, NULL, NULL,
-                                              NULL, NULL,
+               if ((error_mask = url_evaluate(fra->url, NULL, NULL, NULL, NULL,
 #ifdef WITH_SSH_FINGERPRINT
                                               NULL, NULL,
 #endif
@@ -720,7 +729,7 @@ check_burst_gf(unsigned int *values_changed)
                   url_get_error(error_mask, error_msg, MAX_URL_ERROR_MSG);
                   system_log(WARN_SIGN, __FILE__, __LINE__,
                              "Incorrect url `%s'. Error is: %s.",
-                             fra[db.fra_pos].url, error_msg);
+                             fra->url, error_msg);
                   ret = NO;
                   db.keep_connected = 0;
                }
@@ -771,14 +780,14 @@ check_burst_gf(unsigned int *values_changed)
       }
       else if ((ret == NO) && (db.keep_connected > 0))
            {
-              (void)gsf_check_fra();
+              (void)gsf_check_fra((struct job *)&db);
               if (db.fra_pos != INCORRECT)
               {
                  time_t timeup;
 
-                 if (fra[db.fra_pos].keep_connected > 0)
+                 if (fra->keep_connected > 0)
                  {
-                    db.keep_connected = fra[db.fra_pos].keep_connected;
+                    db.keep_connected = fra->keep_connected;
                  }
                  else if ((fsa->keep_connected > 0) &&
                           ((fsa->special_flag & KEEP_CON_NO_FETCH) == 0))
@@ -794,31 +803,31 @@ check_burst_gf(unsigned int *values_changed)
                  timeup = start_time + db.keep_connected;
                  if (db.no_of_time_entries == 0)
                  {
-                    fra[db.fra_pos].next_check_time = start_time + db.remote_file_check_interval;
+                    fra->next_check_time = start_time + db.remote_file_check_interval;
                  }
                  else
                  {
-                    fra[db.fra_pos].next_check_time = calc_next_time_array(db.no_of_time_entries,
-                                                                           db.te,
+                    fra->next_check_time = calc_next_time_array(db.no_of_time_entries,
+                                                                db.te,
 #ifdef WITH_TIMEZONE
-                                                                           NULL,
+                                                                NULL,
 #endif
-                                                                           start_time,
-                                                                           __FILE__, __LINE__);
+                                                                start_time,
+                                                                __FILE__, __LINE__);
                  }
-                 if (fra[db.fra_pos].next_check_time > timeup)
+                 if (fra->next_check_time > timeup)
                  {
                     return(NO);
                  }
                  else
                  {
-                    if (fra[db.fra_pos].next_check_time < start_time)
+                    if (fra->next_check_time < start_time)
                     {
                        return(YES);
                     }
                     else
                     {
-                       timeup = fra[db.fra_pos].next_check_time;
+                       timeup = fra->next_check_time;
                     }
                  }
                  if (gsf_check_fsa((struct job *)&db) != NEITHER)
@@ -841,7 +850,7 @@ check_burst_gf(unsigned int *values_changed)
                     do
                     {
                        (void)sleep(sleeptime);
-                       (void)gsf_check_fra();
+                       (void)gsf_check_fra((struct job *)&db);
                        if (db.fra_pos == INCORRECT)
                        {
                           return(NO);
@@ -911,7 +920,7 @@ check_burst_gf(unsigned int *values_changed)
                              {
                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                           "Failed to send NOOP command (%d). [%s]",
-                                          status, fra[db.fra_pos].dir_alias);
+                                          status, fra->dir_alias);
                                 return(NO);
                              }
                           }
@@ -927,7 +936,7 @@ check_burst_gf(unsigned int *values_changed)
                     {
                        unsigned int error_mask;
 
-                       if ((error_mask = url_evaluate(fra[db.fra_pos].url, NULL,
+                       if ((error_mask = url_evaluate(fra->url, NULL,
                                                       NULL, NULL, NULL,
 #ifdef WITH_SSH_FINGERPRINT
                                                       NULL, NULL,
@@ -943,7 +952,7 @@ check_burst_gf(unsigned int *values_changed)
                                         MAX_URL_ERROR_MSG);
                           trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                     "Failed to determine directory from %s. Error is: %s",
-                                    fra[db.fra_pos].url, error_msg);
+                                    fra->url, error_msg);
                           return(NO);
                        }
                        if (db.protocol == HTTP_FLAG)

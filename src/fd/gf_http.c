@@ -88,6 +88,7 @@ int                        *current_no_of_listed_files,
                            no_of_dirs = 0,
                            no_of_hosts = 0,
                            no_of_listed_files,
+                           *p_no_of_dirs = NULL,
                            *p_no_of_hosts = NULL,
                            prev_no_of_files_done = 0,
                            rl_fd = -1,
@@ -333,13 +334,13 @@ main(int argc, char *argv[])
       {
          trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                    "HTTP connection to %s at port %d failed (%d). [%s]",
-                   db.hostname, db.port, status, fra[db.fra_pos].dir_alias);
+                   db.hostname, db.port, status, fra->dir_alias);
       }
       else
       {
          trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                    "HTTP connection to HTTP proxy %s at port %d failed (%d). [%s]",
-                   db.http_proxy, db.port, status, fra[db.fra_pos].dir_alias);
+                   db.http_proxy, db.port, status, fra->dir_alias);
       }
       exit(CONNECT_ERROR);
    }
@@ -431,7 +432,7 @@ main(int argc, char *argv[])
             int diff_no_of_files_done;
 
             if ((more_files_in_list == YES) &&
-                ((fra[db.fra_pos].dir_flag & DO_NOT_PARALLELIZE) == 0) &&
+                ((fra->dir_flag & DO_NOT_PARALLELIZE) == 0) &&
                 (fsa->active_transfers < fsa->allowed_transfers))
             {
                /* Tell fd that he may start some more helper jobs that */
@@ -466,7 +467,7 @@ main(int argc, char *argv[])
                file_size_to_retrieve_shown += file_size_to_retrieve;
             }
 
-            (void)gsf_check_fra();
+            (void)gsf_check_fra((struct job *)&db);
             if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
             {
                /*
@@ -483,14 +484,13 @@ main(int argc, char *argv[])
 
             /* Get directory where files are to be stored and */
             /* prepare some pointers for the file names.      */
-            if (create_remote_dir(fra[db.fra_pos].url,
-                                  fra[db.fra_pos].retrieve_work_dir, NULL,
+            if (create_remote_dir(fra->url, fra->retrieve_work_dir, NULL,
                                   NULL, NULL, local_file,
                                   &local_file_length) == INCORRECT)
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           "Failed to determine local incoming directory for <%s>.",
-                          fra[db.fra_pos].dir_alias);
+                          fra->dir_alias);
                http_quit();
                reset_values(files_retrieved, file_size_retrieved,
                             files_to_retrieve, file_size_to_retrieve,
@@ -539,7 +539,7 @@ main(int argc, char *argv[])
                   {
                      if (stat(local_tmp_file, &stat_buf) == -1)
                      {
-                        if (fra[db.fra_pos].stupid_mode == APPEND_ONLY)
+                        if (fra->stupid_mode == APPEND_ONLY)
                         {
                            offset = rl[i].prev_size;
                         }
@@ -556,7 +556,7 @@ main(int argc, char *argv[])
                   }
                   else
                   {
-                     if (fra[db.fra_pos].stupid_mode == APPEND_ONLY)
+                     if (fra->stupid_mode == APPEND_ONLY)
                      {
                         offset = rl[i].prev_size;
                      }
@@ -590,8 +590,7 @@ main(int argc, char *argv[])
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                "Failed to open remote file %s in %s (%d).",
-                               rl[i].file_name, fra[db.fra_pos].dir_alias,
-                               status);
+                               rl[i].file_name, fra->dir_alias, status);
                      (void)http_quit();
                      exit(eval_timeout(OPEN_REMOTE_ERROR));
                   }
@@ -611,8 +610,7 @@ main(int argc, char *argv[])
                      bytes_done = 0;
                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                "Failed to open remote file %s in %s (%d).",
-                               rl[i].file_name, fra[db.fra_pos].dir_alias,
-                               status);
+                               rl[i].file_name, fra->dir_alias, status);
 
                      /*
                       * Mark this file as retrieved or else we will always
@@ -836,8 +834,7 @@ main(int argc, char *argv[])
                                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                               "Failed to read from remote file %s in %s (%d)",
                                               rl[i].file_name,
-                                              fra[db.fra_pos].dir_alias,
-                                              status);
+                                              fra->dir_alias, status);
                                     reset_values(files_retrieved,
                                                  file_size_retrieved,
                                                  files_to_retrieve,
@@ -914,7 +911,7 @@ main(int argc, char *argv[])
                                                        "Transfer timeout reached for `%s' in %s after %lld seconds.",
 #endif
                                                        fsa->job_status[(int)db.job_no].file_name_in_use,
-                                                       fra[db.fra_pos].dir_alias,
+                                                       fra->dir_alias,
                                                        (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
                                              http_quit();
                                              exit(STILL_FILES_TO_SEND);
@@ -970,8 +967,7 @@ main(int argc, char *argv[])
                                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                               "Failed to read from remote file %s in %s (%d)",
                                               rl[i].file_name,
-                                              fra[db.fra_pos].dir_alias,
-                                              status);
+                                              fra->dir_alias, status);
                                     reset_values(files_retrieved,
                                                  file_size_retrieved,
                                                  files_to_retrieve,
@@ -1047,7 +1043,7 @@ main(int argc, char *argv[])
                                                        "Transfer timeout reached for `%s' in %s after %lld seconds.",
 #endif
                                                        fsa->job_status[(int)db.job_no].file_name_in_use,
-                                                       fra[db.fra_pos].dir_alias,
+                                                       fra->dir_alias,
                                                        (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
                                              http_quit();
                                              exit(STILL_FILES_TO_SEND);
@@ -1098,7 +1094,7 @@ main(int argc, char *argv[])
                               {
                                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                            "Failed to read from remote file %s in %s",
-                                           rl[i].file_name, fra[db.fra_pos].dir_alias);
+                                           rl[i].file_name, fra->dir_alias);
                                  reset_values(files_retrieved, file_size_retrieved,
                                               files_to_retrieve, file_size_to_retrieve,
                                               (struct job *)&db);
@@ -1187,15 +1183,14 @@ main(int argc, char *argv[])
                      }
 
                      /* Check if remote file is to be deleted. */
-                     if (fra[db.fra_pos].remove == YES)
+                     if (fra->remove == YES)
                      {
                         if ((status = http_del(db.hostname, db.target_dir,
                                                rl[i].file_name)) != SUCCESS)
                         {
                            trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                      "Failed to delete remote file %s in %s (%d).",
-                                     rl[i].file_name,
-                                     fra[db.fra_pos].dir_alias, status);
+                                     rl[i].file_name, fra->dir_alias, status);
                         }
                         else
                         {
@@ -1203,8 +1198,7 @@ main(int argc, char *argv[])
                            {
                               trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
                                            "Deleted remote file %s in %s.",
-                                           rl[i].file_name,
-                                           fra[db.fra_pos].dir_alias);
+                                           rl[i].file_name, fra->dir_alias);
                            }
                         }
                      }
@@ -1316,36 +1310,37 @@ main(int argc, char *argv[])
                         unlock_region(fsa_fd, db.lock_offset + LOCK_TFC);
 #endif
 
-                        (void)gsf_check_fra();
+                        (void)gsf_check_fra((struct job *)&db);
                         if (db.fra_pos != INCORRECT)
                         {
-                           if (fra[db.fra_pos].error_counter > 0)
+                           if (fra->error_counter > 0)
                            {
-                              lock_region_w(fra_fd,
 #ifdef LOCK_DEBUG
-                                            (char *)&fra[db.fra_pos].error_counter - (char *)fra, __FILE__, __LINE__);
+                              lock_region_w(fra_fd,
+                                            db.fra_lock_offset + LOCK_EC, __FILE__, __LINE__);
 #else
-                                            (char *)&fra[db.fra_pos].error_counter - (char *)fra);
+                              lock_region_w(fra_fd,
+                                            db.fra_lock_offset + LOCK_EC);
 #endif
-                              fra[db.fra_pos].error_counter = 0;
-                              if (fra[db.fra_pos].dir_flag & DIR_ERROR_SET)
+                              fra->error_counter = 0;
+                              if (fra->dir_flag & DIR_ERROR_SET)
                               {
-                                 fra[db.fra_pos].dir_flag &= ~DIR_ERROR_SET;
-                                 SET_DIR_STATUS(fra[db.fra_pos].dir_flag,
-                                                time(NULL),
-                                                fra[db.fra_pos].start_event_handle,
-                                                fra[db.fra_pos].end_event_handle,
-                                                fra[db.fra_pos].dir_status);
-                                 error_action(fra[db.fra_pos].dir_alias, "stop",
+                                 fra->dir_flag &= ~DIR_ERROR_SET;
+                                 SET_DIR_STATUS(fra->dir_flag, time(NULL),
+                                                fra->start_event_handle,
+                                                fra->end_event_handle,
+                                                fra->dir_status);
+                                 error_action(fra->dir_alias, "stop",
                                               DIR_ERROR_ACTION);
                                  event_log(0L, EC_DIR, ET_EXT, EA_ERROR_END, "%s",
-                                           fra[db.fra_pos].dir_alias);
+                                           fra->dir_alias);
                               }
-                              unlock_region(fra_fd,
 #ifdef LOCK_DEBUG
-                                            (char *)&fra[db.fra_pos].error_counter - (char *)fra, __FILE__, __LINE__);
+                              unlock_region(fra_fd,
+                                            db.fra_lock_offset + LOCK_EC, __FILE__, __LINE__);
 #else
-                                            (char *)&fra[db.fra_pos].error_counter - (char *)fra);
+                              unlock_region(fra_fd,
+                                            db.fra_lock_offset + LOCK_EC);
 #endif
                            }
                         }
@@ -1510,7 +1505,7 @@ main(int argc, char *argv[])
                                   "File size of file %s in %s changed from %lld to %lld when it was retrieved.",
 #endif
                                   rl[i].file_name,
-                                  (db.fra_pos == INCORRECT) ? "unknown" : fra[db.fra_pos].dir_alias,
+                                  (db.fra_pos == INCORRECT) ? "unknown" : fra->dir_alias,
                                   (pri_off_t)rl[i].size,
                                   (pri_off_t)(content_length + offset));
                      }
@@ -1790,7 +1785,7 @@ main(int argc, char *argv[])
                  }
 #endif
 
-                 (void)gsf_check_fra();
+                 (void)gsf_check_fra((struct job *)&db);
                  if (db.fra_pos == INCORRECT)
                  {
                     /* We must stop here if fra_pos is INCORRECT  */
@@ -1803,33 +1798,29 @@ main(int argc, char *argv[])
                                  (struct job *)&db);
                     exit(TRANSFER_SUCCESS);
                  }
-                 if (fra[db.fra_pos].error_counter > 0)
+                 if (fra->error_counter > 0)
                  {
-                    lock_region_w(fra_fd,
 #ifdef LOCK_DEBUG
-                                  (char *)&fra[db.fra_pos].error_counter - (char *)fra, __FILE__, __LINE__);
+                    lock_region_w(fra_fd, db.fra_lock_offset + LOCK_EC, __FILE__, __LINE__);
 #else
-                                  (char *)&fra[db.fra_pos].error_counter - (char *)fra);
+                    lock_region_w(fra_fd, db.fra_lock_offset + LOCK_EC);
 #endif
-                    fra[db.fra_pos].error_counter = 0;
-                    if (fra[db.fra_pos].dir_flag & DIR_ERROR_SET)
+                    fra->error_counter = 0;
+                    if (fra->dir_flag & DIR_ERROR_SET)
                     {
-                       fra[db.fra_pos].dir_flag &= ~DIR_ERROR_SET;
-                       SET_DIR_STATUS(fra[db.fra_pos].dir_flag,
-                                      time(NULL),
-                                      fra[db.fra_pos].start_event_handle,
-                                      fra[db.fra_pos].end_event_handle,
-                                      fra[db.fra_pos].dir_status);
-                       error_action(fra[db.fra_pos].dir_alias, "stop",
-                                    DIR_ERROR_ACTION);
+                       fra->dir_flag &= ~DIR_ERROR_SET;
+                       SET_DIR_STATUS(fra->dir_flag, time(NULL),
+                                      fra->start_event_handle,
+                                      fra->end_event_handle,
+                                      fra->dir_status);
+                       error_action(fra->dir_alias, "stop", DIR_ERROR_ACTION);
                        event_log(0L, EC_DIR, ET_EXT, EA_ERROR_END, "%s",
-                                 fra[db.fra_pos].dir_alias);
+                                 fra->dir_alias);
                     }
-                    unlock_region(fra_fd,
 #ifdef LOCK_DEBUG
-                                  (char *)&fra[db.fra_pos].error_counter - (char *)fra, __FILE__, __LINE__);
+                    unlock_region(fra_fd, db.fra_lock_offset + LOCK_EC, __FILE__, __LINE__);
 #else
-                                  (char *)&fra[db.fra_pos].error_counter - (char *)fra);
+                    unlock_region(fra_fd, db.fra_lock_offset + LOCK_EC);
 #endif
                  }
               }
@@ -1895,8 +1886,7 @@ gf_http_exit(void)
          }
       }
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-      if ((fra[db.fra_pos].stupid_mode == YES) ||
-          (fra[db.fra_pos].remove == YES))
+      if ((fra->stupid_mode == YES) || (fra->remove == YES))
       {
          detach_ls_data(YES);
       }

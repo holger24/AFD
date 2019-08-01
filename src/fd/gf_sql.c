@@ -78,6 +78,7 @@ int                        *current_no_of_listed_files,
 #endif
                            no_of_dirs = 0,
                            no_of_hosts = 0,
+                           *p_no_of_dirs = NULL,
                            *p_no_of_hosts = NULL,
                            no_of_listed_files,
                            rl_fd = -1,
@@ -330,7 +331,7 @@ main(int argc, char *argv[])
             file_size_to_retrieve_shown += file_size_to_retrieve;
          }
 
-         (void)gsf_check_fra();
+         (void)gsf_check_fra((struct job *)&db);
          if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
          {
             /*
@@ -345,14 +346,13 @@ main(int argc, char *argv[])
 
          /* Get directory where files are to be stored and */
          /* prepare some pointers for the file names.      */
-         if (create_remote_dir(fra[db.fra_pos].url,
-                               fra[db.fra_pos].retrieve_work_dir, NULL, NULL,
+         if (create_remote_dir(fra->url, fra->retrieve_work_dir, NULL, NULL,
                                NULL, local_file,
                                &local_file_length) == INCORRECT)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        "Failed to determine local incoming directory for <%s>.",
-                       fra[db.fra_pos].dir_alias);
+                       fra->dir_alias);
             sql_quit();
             reset_values(files_retrieved, file_size_retrieved,
                          files_to_retrieve, file_size_to_retrieve,
@@ -564,7 +564,7 @@ main(int argc, char *argv[])
                   }
 
                   /* Check if remote data is to be deleted. */
-                  if (fra[db.fra_pos].remove == YES)
+                  if (fra->remove == YES)
                   {
                   }
 
@@ -671,36 +671,33 @@ main(int argc, char *argv[])
                      unlock_region(fsa_fd, db.lock_offset + LOCK_TFC);
 #endif
 
-                     (void)gsf_check_fra();
+                     (void)gsf_check_fra((struct job *)&db);
                      if (db.fra_pos != INCORRECT)
                      {
-                        if (fra[db.fra_pos].error_counter > 0)
+                        if (fra->error_counter > 0)
                         {
-                           lock_region_w(fra_fd,
 #ifdef LOCK_DEBUG
-                                         (char *)&fra[db.fra_pos].error_counter - (char *)fra, __FILE__, __LINE__);
+                           lock_region_w(fra_fd, db.fra_lock_offset + LOCK_EC, __FILE__, __LINE__);
 #else
-                                         (char *)&fra[db.fra_pos].error_counter - (char *)fra);
+                           lock_region_w(fra_fd, db.fra_lock_offset + LOCK_EC);
 #endif
-                           fra[db.fra_pos].error_counter = 0;
-                           if (fra[db.fra_pos].dir_flag & DIR_ERROR_SET)
+                           fra->error_counter = 0;
+                           if (fra->dir_flag & DIR_ERROR_SET)
                            {
-                              fra[db.fra_pos].dir_flag &= ~DIR_ERROR_SET;
-                              SET_DIR_STATUS(fra[db.fra_pos].dir_flag,
-                                             time(NULL),
-                                             fra[db.fra_pos].start_event_handle,
-                                             fra[db.fra_pos].end_event_handle,
-                                             fra[db.fra_pos].dir_status);
-                              error_action(fra[db.fra_pos].dir_alias, "stop",
+                              fra->dir_flag &= ~DIR_ERROR_SET;
+                              SET_DIR_STATUS(fra->dir_flag, time(NULL),
+                                             fra->start_event_handle,
+                                             fra->end_event_handle,
+                                             fra->dir_status);
+                              error_action(fra->dir_alias, "stop",
                                            DIR_ERROR_ACTION);
                               event_log(0L, EC_DIR, ET_EXT, EA_ERROR_END, "%s",
-                                        fra[db.fra_pos].dir_alias);
+                                        fra->dir_alias);
                            }
-                           unlock_region(fra_fd,
 #ifdef LOCK_DEBUG
-                                         (char *)&fra[db.fra_pos].error_counter - (char *)fra, __FILE__, __LINE__);
+                           unlock_region(fra_fd, db.fra_lock_offset + LOCK_EC, __FILE__, __LINE__);
 #else
-                                         (char *)&fra[db.fra_pos].error_counter - (char *)fra);
+                           unlock_region(fra_fd, db.fra_lock_offset + LOCK_EC);
 #endif
                         }
                      }
@@ -1088,14 +1085,14 @@ sql_timeup(void)
    time_t now,
           timeup;
 
-   (void)gsf_check_fra();
+   (void)gsf_check_fra((struct job *)&db);
    if (db.fra_pos == INCORRECT)                 
    {
       return(INCORRECT);
    }
-   if (fra[db.fra_pos].keep_connected > 0)
+   if (fra->keep_connected > 0)
    {
-      db.keep_connected = fra[db.fra_pos].keep_connected;
+      db.keep_connected = fra->keep_connected;
    }
    else if ((fsa->keep_connected > 0) &&
             ((fsa->special_flag & KEEP_CON_NO_FETCH) == 0))
@@ -1111,25 +1108,25 @@ sql_timeup(void)
    timeup = now + db.keep_connected;
    if (db.no_of_time_entries == 0)
    {
-      fra[db.fra_pos].next_check_time = now + db.remote_file_check_interval;
+      fra->next_check_time = now + db.remote_file_check_interval;
    }
    else
    {
-      fra[db.fra_pos].next_check_time = calc_next_time_array(db.no_of_time_entries,
-                                                             db.te,
+      fra->next_check_time = calc_next_time_array(db.no_of_time_entries,
+                                                  db.te,
 #ifdef WITH_TIMEZONE
-                                                             db.timezone,
+                                                  db.timezone,
 #endif
-                                                             now,
-                                                             __FILE__, __LINE__);
+                                                  now,
+                                                  __FILE__, __LINE__);
    }
-   if (fra[db.fra_pos].next_check_time > timeup)
+   if (fra->next_check_time > timeup)
    {
       return(INCORRECT);
    }
    else
    {
-      if (fra[db.fra_pos].next_check_time < now)
+      if (fra->next_check_time < now)
       {
          system_log(DEBUG_SIGN, __FILE__, __LINE__,
 #if SIZEOF_TIME_T == 4
@@ -1137,13 +1134,13 @@ sql_timeup(void)
 #else
                     "BUG in calc_next_time(): next_check_time (%lld) < now (%lld)",
 #endif
-                    (pri_time_t)fra[db.fra_pos].next_check_time,
+                    (pri_time_t)fra->next_check_time,
                     (pri_time_t)now);
          return(INCORRECT);
       }
       else
       {
-         timeup = fra[db.fra_pos].next_check_time;
+         timeup = fra->next_check_time;
       }
    }
    if (gsf_check_fsa((struct job *)&db) != NEITHER)
@@ -1166,7 +1163,7 @@ sql_timeup(void)
       do
       {
          (void)sleep(sleeptime);
-         (void)gsf_check_fra();
+         (void)gsf_check_fra((struct job *)&db);
          if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
          {
             return(INCORRECT);

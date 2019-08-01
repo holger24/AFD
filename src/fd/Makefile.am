@@ -396,7 +396,6 @@ sf_exec_SOURCES       = append.c\
                         handle_ls_data.c\
                         check_burst_sf.c\
                         check_exec_type.c\
-                        compare_dir_local.c\
                         eval_input_sf.c\
                         eval_message.c\
                         eval_recipient.c\
@@ -418,6 +417,7 @@ sf_exec_SOURCES       = append.c\
 sf_exec_LDADD         = ../common/libafd.a
 gf_exec_SOURCES       = eval_input_gf.c\
                         eval_recipient.c\
+                        fra_attach_pos.c\
                         fsa_attach_pos.c\
                         get_group_list.c\
                         gf_exec.c\
@@ -436,6 +436,7 @@ gf_ftp_SOURCES        = check_burst_gf.c\
                         delete_wrapper_ftp.c\
                         eval_input_gf.c\
                         eval_recipient.c\
+                        fra_attach_pos.c\
                         fsa_attach_pos.c\
                         get_group_list.c\
                         get_remote_file_names_ftp.c\
@@ -466,6 +467,7 @@ gf_sftp_SOURCES       = check_burst_gf.c\
                         delete_wrapper_sftp.c\
                         eval_input_gf.c\
                         eval_recipient.c\
+                        fra_attach_pos.c\
                         fsa_attach_pos.c\
                         get_group_list.c\
                         get_remote_file_names_sftp.c\
@@ -493,6 +495,7 @@ gf_http_SOURCES       = check_burst_gf.c\
                         delete_wrapper_http.c\
                         eval_input_gf.c\
                         eval_recipient.c\
+                        fra_attach_pos.c\
                         fsa_attach_pos.c\
                         get_group_list.c\
                         get_remote_file_names_http.c\

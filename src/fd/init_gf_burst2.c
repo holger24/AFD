@@ -1,6 +1,6 @@
 /*
  *  init_gf_burst2.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,9 +50,7 @@ DESCR__E_M3
 #include "fddefs.h"
 
 /* External global variables. */
-extern int                        *p_no_of_hosts,
-                                  fsa_fd,
-                                  no_of_hosts;
+extern int                        fsa_fd;
 extern long                       transfer_timeout;
 extern char                       *p_work_dir;
 extern struct fileretrieve_status *fra;
@@ -145,13 +143,13 @@ init_gf_burst2(struct job   *p_new_db,
       db.special_flag      = p_new_db->special_flag;
       db.mode_flag         = p_new_db->mode_flag;
       old_no_of_time_entries = db.no_of_time_entries;
-      db.no_of_time_entries = fra[db.fra_pos].no_of_time_entries;
+      db.no_of_time_entries = fra->no_of_time_entries;
       if (old_no_of_time_entries == 0)
       {
          if (db.no_of_time_entries != 0)
          {
             free(db.te);
-            db.te = &fra[db.fra_pos].te[0];
+            db.te = &fra->te[0];
          }
       }
       else
@@ -174,7 +172,7 @@ init_gf_burst2(struct job   *p_new_db,
          }
          else
          {
-            db.te = &fra[db.fra_pos].te[0];
+            db.te = &fra->te[0];
          }
       }
 
