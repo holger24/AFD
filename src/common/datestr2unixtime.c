@@ -35,6 +35,7 @@ DESCR__S_M3
  **     2) RFC850 (pre HTTP/1.1) Friday, 03-Oct-97 02:15:31 GMT
  **     3) asctime()             Fri Oct  3 02:15:31 1997
  **     4) HTML directory list   03-Oct-1997 02:15
+ **     5) HTML directory list   2019-07-28 00:03
  **
  **   Note that in format 2) we do NOT evaluate the year, instead we
  **   just take the current year.
