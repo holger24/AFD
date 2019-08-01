@@ -108,8 +108,7 @@ get_remote_file_names_ftp(off_t        *file_size_to_retrieve,
                           unsigned int ftp_options)
 {
    int files_to_retrieve = 0,
-       i = 0,
-       notified = NO;
+       i = 0;
 
    *file_size_to_retrieve = 0;
    if ((fra->stupid_mode == GET_ONCE_ONLY) && (fra->ignore_file_time == 0))
@@ -191,18 +190,11 @@ try_attach_again:
       {
          if (*current_no_of_listed_files != no_of_listed_files)
          {
-            if (notified == NO)
-            {
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "*current_no_of_listed_files (%d) != no_of_listed_files (%d) [fra_pos=%d] @%x",
-                          *current_no_of_listed_files, no_of_listed_files,
-                          db.fra_pos, db.id.dir);
-               notified = YES;
-            }
             if (i >= *current_no_of_listed_files)
             {
                system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "AND has been reduced!!! Bailing out!");
+                          "no_of_listed_files has been reduced (%d -> %d)!!! Bailing out!",
+                          no_of_listed_files, *current_no_of_listed_files);
 
                /* Just in case we do not fall over this in some other */
                /* code path. Let's hope this does not break anything. */
