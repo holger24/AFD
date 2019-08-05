@@ -1773,6 +1773,7 @@ typedef unsigned long       u_long_64;
 #define RECIPIENT_GROUP_NAME          "/recipient"
 #define RECIPIENT_GROUP_NAME_LENGTH   (sizeof(RECIPIENT_GROUP_NAME) - 1)
 #define FILE_GROUP_NAME               "/files"
+#define FILE_GROUP_NAME_LENGTH        (sizeof(FILE_GROUP_NAME) - 1)
 #define INCOMING_DIR                  "/incoming"
 #define INCOMING_DIR_LENGTH           (sizeof(INCOMING_DIR) - 1)
 #define OUTGOING_DIR                  "/outgoing"
