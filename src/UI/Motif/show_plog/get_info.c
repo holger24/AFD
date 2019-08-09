@@ -1,7 +1,7 @@
 /*
  *  get_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016, 2017 Deutscher Wetterdienst (DWD),
- *                           Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2016 - 2019 Deutscher Wetterdienst (DWD),
+ *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -273,12 +273,12 @@ get_info(int item)
               {
                  size_t j = 0;
 
-                 while ((j < MAX_RECIPIENT_LENGTH) && (jd[i].host_alias[j] != '\0'))
+                 while ((j < MAX_HOSTNAME_LENGTH) && (jd[i].host_alias[j] != '\0'))
                  {
                     id.host_alias[j] = jd[i].host_alias[j];
                     j++;
                  }
-                 if (j == MAX_RECIPIENT_LENGTH)
+                 if (j == MAX_HOSTNAME_LENGTH)
                  {
                     id.host_alias[j - 1] = SEPARATOR_CHAR;
                     id.host_alias[j] = '\0';
