@@ -1,6 +1,6 @@
 /*
  *  sdr_str.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,7 +45,12 @@ static const char *sdrstr[] = /*Short delete reason string. */
                      "Mail recp rej",  /* 20 */
                      "Mirror delete",  /* 21 */
                      "Queue error  ",  /* 22 */
-                     "Int. link err"   /* 23 */
+                     "Int. link err",  /* 23 */
+                     "Del unreadabl",  /* 24 */
+                     "Unk. file (G)",  /* 25 */
+                     "Old lock (G) ",  /* 26 */
+                     "Old lck re(G)",  /* 27 */
+                     "Queued (G)   "   /* 28 */
                   };
 
 #endif /* __sdr_str_h */

@@ -575,7 +575,7 @@ do_scan(int   *files_to_retrieve,
                      {
                         delete_remote_file(FTP, file_name, fp.namelen,
 #ifdef _DELETE_LOG
-                                           DEL_UNKNOWN_FILE,
+                                           (fra->in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB,
 #endif
                                            &files_deleted,
                                            &file_size_deleted, file_size);
@@ -612,7 +612,7 @@ do_scan(int   *files_to_retrieve,
                   file_name[fp.namelen] = '\0';
                   delete_remote_file(FTP, file_name, fp.namelen,
 #ifdef _DELETE_LOG
-                                     DEL_OLD_LOCKED_FILE,
+                                     (fra->in_dc_flag & OLD_LOCKED_FILES_IDC) ? DEL_OLD_LOCKED_FILE : DEL_OLD_RLOCKED_FILE_GLOB,
 #endif
                                      &files_deleted,
                                      &file_size_deleted, file_size);

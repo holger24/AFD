@@ -2762,7 +2762,7 @@ check_name(char         *file_name,
                {
                   delete_remote_file(HTTP, file_name, file_name_length,
 #ifdef _DELETE_LOG
-                                     DEL_UNKNOWN_FILE,
+                                     (fra->in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB,
 #endif
                                      files_deleted, file_size_deleted,
                                      file_size);
@@ -2790,7 +2790,7 @@ check_name(char         *file_name,
             {
                delete_remote_file(HTTP, file_name, file_name_length,
 #ifdef _DELETE_LOG
-                                  DEL_OLD_LOCKED_FILE,
+                                  (fra->in_dc_flag & OLD_LOCKED_FILES_IDC) ? DEL_OLD_LOCKED_FILE : DEL_OLD_RLOCKED_FILE_GLOB,
 #endif
                                   files_deleted, file_size_deleted,
                                   file_size);

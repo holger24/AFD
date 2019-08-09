@@ -1,6 +1,6 @@
 /*
  *  check_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1293,7 +1293,7 @@ check_files(struct directory_entry *p_de,
                                              MAX_HOSTNAME_LENGTH + 4 + 1,
                                              "%-*s %03x",
                                              MAX_HOSTNAME_LENGTH, "-",
-                                             DEL_UNKNOWN_FILE);
+                                             (fra[p_de->fra_pos].in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB);
                               *dl.file_size = stat_buf.st_size;
                               *dl.dir_id = p_de->dir_id;
                               *dl.job_id = 0;
@@ -1368,7 +1368,8 @@ check_files(struct directory_entry *p_de,
                                    file_name_length + 1);
                   (void)snprintf(dl.host_name, MAX_HOSTNAME_LENGTH + 4 + 1,
                                  "%-*s %03x",
-                                 MAX_HOSTNAME_LENGTH, "-", DEL_UNKNOWN_FILE);
+                                 MAX_HOSTNAME_LENGTH, "-",
+                                 (fra[p_de->fra_pos].in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB);
                   *dl.file_size = stat_buf.st_size;
                   *dl.dir_id = p_de->dir_id;
                   *dl.job_id = 0;

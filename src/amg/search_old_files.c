@@ -1,6 +1,6 @@
 /*
  *  search_old_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -191,7 +191,14 @@ search_old_files(time_t current_time)
                            {
                               delete_file = YES;
 #ifdef _DELETE_LOG
-                              reason = DEL_OLD_LOCKED_FILE;
+                              if (fra[de[i].fra_pos].in_dc_flag & UNKNOWN_FILES_IDC)
+                              {
+                                 reason = DEL_OLD_LOCKED_FILE;
+                              }
+                              else
+                              {
+                                 reason = DEL_OLD_LOCKED_FILE_GLOB;
+                              }
 #endif
                            }
                            else
@@ -209,7 +216,14 @@ search_old_files(time_t current_time)
                            {
                               delete_file = YES;
 #ifdef _DELETE_LOG
-                              reason = DEL_UNKNOWN_FILE;
+                              if (fra[de[i].fra_pos].in_dc_flag & UNKNOWN_FILES_IDC)
+                              {
+                                 reason = DEL_UNKNOWN_FILE;
+                              }
+                              else
+                              {
+                                 reason = DEL_UNKNOWN_FILE_GLOB;
+                              }
 #endif
                               if (de[i].paused_dir == NULL)
                               {
@@ -338,7 +352,7 @@ search_old_files(time_t current_time)
                                        MAX_HOSTNAME_LENGTH + 4 + 1,
                                        "%-*s %03x",
                                        MAX_HOSTNAME_LENGTH, "-",
-                                       DEL_QUEUED_FILE);
+                                       (fra[de[i].fra_pos].in_dc_flag & QUEUED_FILES_IDC) ?  DEL_QUEUED_FILE : DEL_QUEUED_FILE_GLOB);
                         *dl.file_size = stat_buf.st_size;
                         *dl.dir_id = de[i].dir_id;
                         *dl.job_id = 0;
@@ -448,7 +462,7 @@ search_old_files(time_t current_time)
                                                         "%-*s %03x",
                                                         MAX_HOSTNAME_LENGTH,
                                                         fsa[pos].host_alias,
-                                                        DEL_QUEUED_FILE);
+                                                        (fra[de[i].fra_pos].in_dc_flag & QUEUED_FILES_IDC) ?  DEL_QUEUED_FILE : DEL_QUEUED_FILE_GLOB);
                                          *dl.file_size = stat_buf.st_size;
                                          *dl.dir_id = de[i].dir_id;
                                          *dl.job_id = 0;

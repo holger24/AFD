@@ -1,7 +1,7 @@
 /*
  *  del_unknown_inotify_files.c - Part of AFD, an automatic file
  *                                distribution program.
- *  Copyright (c) 2013, 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -162,7 +162,7 @@ del_unknown_inotify_files(time_t current_time)
                                                 MAX_HOSTNAME_LENGTH + 4 + 1,
                                                 "%-*s %03x",
                                                 MAX_HOSTNAME_LENGTH, "-",
-                                                DEL_UNKNOWN_FILE);
+                                                (fra[de[iwl[i].de_pos].fra_pos].in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB);
                                  *dl.file_size = stat_buf.st_size;
                                  *dl.dir_id = de[iwl[i].de_pos].dir_id;
                                  *dl.job_id = 0;

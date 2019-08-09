@@ -414,11 +414,15 @@ typedef unsigned long       u_long_64;
 # define MKDIR_QUEUE_ERROR          22
 # define INTERNAL_LINK_FAILED       23
 # define DEL_UNREADABLE_FILE        24
-# define MAX_DELETE_REASONS         24
+# define DEL_UNKNOWN_FILE_GLOB      25
+# define DEL_OLD_LOCKED_FILE_GLOB   26
+# define DEL_OLD_RLOCKED_FILE_GLOB  27
+# define DEL_QUEUED_FILE_GLOB       28
+# define MAX_DELETE_REASONS         28
 # define UKN_DEL_REASON_STR         "Unknown delete reason"
 # define UKN_DEL_REASON_STR_LENGTH  (sizeof(UKN_DEL_REASON_STR) - 1)
 /* NOTE: Only 4096 (0 - fff) may be defined here. */
-#define MAX_DELETE_REASON_LENGTH    (sizeof("Delete old locked file [dir options]") - 1)
+#define MAX_DELETE_REASON_LENGTH    (sizeof("Delete old locked file remote (AFD_CONFIG)") - 1)
 /* Check dr_str.h! */
 #endif
 

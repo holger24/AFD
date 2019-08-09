@@ -1,6 +1,6 @@
 /*
  *  show_dlog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1240,7 +1240,11 @@ init_show_dlog(int *argc, char *argv[], char *window_title)
                      (1 << (MIRROR_REMOVE + 1)) |
                      (1 << (MKDIR_QUEUE_ERROR + 1)) |
                      (1 << (INTERNAL_LINK_FAILED + 1)) |
-                     (1 << (DEL_UNREADABLE_FILE + 1))) + 1;
+                     (1 << (DEL_UNREADABLE_FILE + 1)) |
+                     (1 << (DEL_UNKNOWN_FILE_GLOB + 1)) |
+                     (1 << (DEL_OLD_LOCKED_FILE_GLOB + 1)) |
+                     (1 << (DEL_OLD_RLOCKED_FILE_GLOB + 1)) |
+                     (1 << (DEL_QUEUED_FILE_GLOB + 1))) + 1;
 
    /* Get the maximum number of logfiles we keep for history. */
    get_max_log_values(&max_delete_log_files, MAX_DELETE_LOG_FILES_DEF,

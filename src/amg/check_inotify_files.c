@@ -1,6 +1,6 @@
 /*
  *  check_inotify_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -813,7 +813,7 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                           MAX_HOSTNAME_LENGTH + 4 + 1,
                                           "%-*s %03x",
                                           MAX_HOSTNAME_LENGTH, "-",
-                                          DEL_UNKNOWN_FILE);
+                                          (fra[p_de->fra_pos].in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB);
                            *dl.file_size = stat_buf.st_size;
                            *dl.dir_id = p_de->dir_id;
                            *dl.job_id = 0;
