@@ -29,6 +29,10 @@ DESCR__S_M3
  **   void delete_remote_file(int          type,
  **                           char         *file_name,
  **                           int          namelen,
+ **                           int          delete_reason,
+ **                           time_t       diff_time,
+ **                           time_t       now,
+ **                           time_t       file_mtime,
  **                           unsigned int *files_deleted,
  **                           off_t        *file_size_deleted,
  **                           off_t        file_size)
@@ -43,6 +47,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   18.07.2014 H.Kiehl Created
+ **   09.08.2019 H.Kiehl Show file mtime and the diff time when provided.
  **
  */
 DESCR__E_M3
@@ -71,6 +76,9 @@ delete_remote_file(int          type,
                    int          namelen,
 #ifdef _DELETE_LOG
                    int          delete_reason,
+                   time_t       diff_time,
+                   time_t       now,
+                   time_t       file_mtime,
 #endif
                    unsigned int *files_deleted,
                    off_t        *file_size_deleted,
@@ -141,11 +149,28 @@ delete_remote_file(int          type,
       *dl.split_job_counter = db.split_job_counter;
       *dl.unique_number = db.unique_number;
       *dl.file_name_length = namelen;
-      dl_real_size = *dl.file_name_length + dl.size +
-                     snprintf((dl.file_name + *dl.file_name_length + 1),
-                              MAX_FILENAME_LENGTH + 1,
-                              "%s%c(%s %d)",
-                              procname, SEPARATOR_CHAR, __FILE__, __LINE__);
+      if ((file_mtime == 0) && (now == 0))
+      {
+         dl_real_size = *dl.file_name_length + dl.size +
+                        snprintf((dl.file_name + *dl.file_name_length + 1),
+                                 MAX_FILENAME_LENGTH + 1,
+                                 "%s%c(%s %d)",
+                                 procname, SEPARATOR_CHAR, __FILE__, __LINE__);
+      }
+      else
+      {
+         dl_real_size = *dl.file_name_length + dl.size +
+                        snprintf((dl.file_name + *dl.file_name_length + 1),
+                                 MAX_FILENAME_LENGTH + 1,
+# if SIZEOF_TIME_T == 4
+                                 "%s%c>%ld [now=%ld file_mtime=%ld] (%s %d)",
+# else
+                                 "%s%c>%lld [now=%lld file_mtime=%lld] (%s %d)",
+# endif
+                                 procname, SEPARATOR_CHAR,
+                                 (pri_time_t)diff_time, (pri_time_t)now,
+                                 (pri_time_t)file_mtime, __FILE__, __LINE__);
+      }
       if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,

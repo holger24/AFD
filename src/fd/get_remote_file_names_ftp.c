@@ -729,6 +729,7 @@ do_scan(int          *files_to_retrieve,
                   delete_remote_file(FTP, p_list, strlen(p_list),
 #ifdef _DELETE_LOG
                                      DELETE_HOST_DISABLED,
+                                     0, 0, 0,
 #endif
                                      &files_deleted, NULL, -1);
                }
@@ -806,6 +807,7 @@ do_scan(int          *files_to_retrieve,
                         delete_remote_file(FTP, p_list, strlen(p_list),
 #ifdef _DELETE_LOG
                                            (fra->in_dc_flag & UNKNOWN_FILES_IDC) ?  DEL_UNKNOWN_FILE : DEL_UNKNOWN_FILE_GLOB,
+                                           diff_time, current_time, file_mtime,
 #endif
                                            &files_deleted, NULL, -1);
                      }
@@ -844,6 +846,7 @@ do_scan(int          *files_to_retrieve,
                      delete_remote_file(FTP, p_list, strlen(p_list),
 #ifdef _DELETE_LOG
                                         (fra->in_dc_flag & OLD_LOCKED_FILES_IDC) ? DEL_OLD_LOCKED_FILE : DEL_OLD_RLOCKED_FILE_GLOB,
+                                        diff_time, current_time, file_mtime,
 #endif
                                         &files_deleted, NULL, -1);
                   }

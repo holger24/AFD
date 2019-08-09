@@ -1066,7 +1066,8 @@ main(int argc, char *argv[])
                   }
                   if (status == -550) /* ie. file has been deleted or is NOT a file. */
                   {
-                     time_t diff_time = time(NULL) - rl[i].file_mtime;
+                     time_t current_time = time(NULL),
+                            diff_time = current_time - rl[i].file_mtime;
 
                      trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                "Failed to open remote file %s in %s (status=%d data port=%d %s).",
@@ -1082,6 +1083,8 @@ main(int argc, char *argv[])
                                            strlen(rl[i].file_name),
 #ifdef _DELETE_LOG
                                            DEL_UNREADABLE_FILE,
+                                           diff_time, current_time,
+                                           rl[i].file_mtime,
 #endif
                                            NULL, NULL, rl[i].size);
                      }

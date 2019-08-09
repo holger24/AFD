@@ -869,7 +869,7 @@ extern void  calc_trl_per_process(int),
              compare_dir_local(void),
              delete_remote_file(int, char *, int,
 #ifdef _DELETE_LOG
-                                int,
+                                int, time_t, time_t, time_t,
 #endif
                                 unsigned int *, off_t *, off_t),
 #ifdef _WITH_DE_MAIL_SUPPORT
