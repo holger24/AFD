@@ -121,8 +121,8 @@ only possible to have one of this dialog open at the same time.
               this value is only set when retrieving files. When 'Send'
               is set the value is only valid for sending files. 'Disconnect'
               will make AFD to disconnect after the specified number
-              of seconds above, even if there are still files comming.
-              This is usefull if you do not want an active connection
+              of seconds above, even if there are still files coming.
+              This is useful if you do not want an active connection
               for a very long time.</td>
        </tr>
        <tr>
@@ -241,7 +241,7 @@ only possible to have one of this dialog open at the same time.
               performance. CRC32c computes better checksums at the cost of
               slightly higher memory usage but computes twice as fast as
               the first algorithm CRC-32. If you CPU supports SSE4.2, this
-              calculation is done hardware and approximatly six time faster
+              calculation is done hardware and approximately six time faster
               then CRC-32.</td>
        </tr>
        </table>
@@ -308,6 +308,12 @@ only possible to have one of this dialog open at the same time.
               time. In this case you can set this option and AFD will
               use the LIST command (ls -al) and try determine from
               this output the date and size of each file.</td>
+       </tr>
+       <tr>
+          <td><a name="disable_mlst">Disable MLST</a></td>
+          <td>Since AFD will try to automatically pick MLST when
+              the FTP server provides it, some of the implementations
+              are broken and can be disabled with this option.</td>
        </tr>
        <tr>
           <td><a name="ccc">Clear Control Connection</a></td>
@@ -396,6 +402,12 @@ only possible to have one of this dialog open at the same time.
               SFTP.</td>
        </tr>
        <tr>
+          <td><a name="strict_host_key">Strict Host Key</a></td>
+          <td>For SSH, that is SFTP and SCP, strict host key checking
+              can be disabled via this option. Do not unset this
+              option unless you really know what you are doing.</td>
+       </tr>
+       <tr>
           <td><a name="keep_time_stamp">Keep time stamp</a></td>
           <td>This tries to preserve the original time stamp of the
               file being transmitted. Currently this only works
@@ -407,7 +419,7 @@ only possible to have one of this dialog open at the same time.
        </tr>
        <tr>
           <td><a name="no_ageing_jobs">No ageing jobs</a></td>
-          <td>When during tranmission an error occurs, the job with this
+          <td>When during transmission an error occurs, the job with this
               error starts to age. This means its priority decreases so much
               that even jobs that have a lower priority become more important
               and can bypass an error job. If you set this button it
@@ -418,6 +430,10 @@ only possible to have one of this dialog open at the same time.
           <td>After file is transmitted check the size of the destination
               file with that of the local file just send. If they do not
               match, show an error and then resend the file.</td>
+       </tr>
+       <tr>
+          <td><a name="strict_tls">Strict TLS</a></td>
+          <td>Todo. Not yet ready.</td>
        </tr>
        </table>
    </td>
@@ -441,9 +457,9 @@ only possible to have one of this dialog open at the same time.
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 1997 - 2016 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2019 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 13.01.2016
+   Last updated: 12.08.2019
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
