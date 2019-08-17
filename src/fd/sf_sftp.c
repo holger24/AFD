@@ -664,169 +664,178 @@ main(int argc, char *argv[])
          additional_length = 0;
          if (gsf_check_fsa(p_db) != NEITHER)
          {
-            if ((fsa->active_transfers > 1) &&
-                (*p_file_size_buffer > blocksize))
-            {
-               int file_is_duplicate = NO;
+            int file_is_duplicate = NO;
 
-               /*
-                * Check if this file is not currently being transfered!
-                */
-               for (j = 0; j < fsa->allowed_transfers; j++)
+#ifdef LOCK_DEBUG
+            lock_region_w(fsa_fd, db.lock_offset + LOCK_FIU, __FILE__, __LINE__);
+#else
+            lock_region_w(fsa_fd, db.lock_offset + LOCK_FIU);
+#endif
+
+            /*
+             * Check if this file is not currently being transfered!
+             */
+            for (j = 0; j < fsa->allowed_transfers; j++)
+            {
+               if ((j != db.job_no) &&
+                   (fsa->job_status[j].job_id == db.id.job) &&
+                   (CHECK_STRCMP(fsa->job_status[j].file_name_in_use,
+                                 p_file_name_buffer) == 0))
                {
-                  if ((j != db.job_no) &&
-                      (fsa->job_status[j].job_id == fsa->job_status[(int)db.job_no].job_id) &&
-                      (CHECK_STRCMP(fsa->job_status[j].file_name_in_use, p_file_name_buffer) == 0))
-                  {
 #ifdef _DELETE_LOG
-                     size_t dl_real_size;
+                  size_t dl_real_size;
 #endif
 
 #ifdef _OUTPUT_LOG
-                     if (db.output_log == YES)
+                  if (db.output_log == YES)
+                  {
+                     if (ol_fd == -2)
                      {
-                        if (ol_fd == -2)
-                        {
 #  ifdef WITHOUT_FIFO_RW_SUPPORT
-                           output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
+                        output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
 #  else
-                           output_log_fd(&ol_fd, &db.output_log);
+                        output_log_fd(&ol_fd, &db.output_log);
 #  endif
-                        }
-                        if (ol_fd > -1)
+                     }
+                     if (ol_fd > -1)
+                     {
+                        if (ol_data == NULL)
                         {
-                           if (ol_data == NULL)
-                           {
-                              output_log_ptrs(&ol_retries,
-                                              &ol_job_number,
-                                              &ol_data,   /* Pointer to buffer. */
-                                              &ol_file_name,
-                                              &ol_file_name_length,
-                                              &ol_archive_name_length,
-                                              &ol_file_size,
-                                              &ol_unl,
-                                              &ol_size,
-                                              &ol_transfer_time,
-                                              &ol_output_type,
-                                              db.host_alias,
-                                              (current_toggle - 1),
-                                              SFTP,
-                                              &db.output_log);
-                           }
-                           (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-                           (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-                           *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                           ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                           ol_file_name[*ol_file_name_length + 1] = '\0';
-                           (*ol_file_name_length)++;
-                           *ol_file_size = *p_file_size_buffer;
-                           *ol_job_number = db.id.job;
-                           *ol_retries = db.retries;
-                           *ol_unl = db.unl;
-                           *ol_transfer_time = 0L;
-                           *ol_archive_name_length = 0;
-                           *ol_output_type = OT_OTHER_PROC_DELETE + '0';
-                           ol_real_size = *ol_file_name_length + ol_size;
-                           if (write(ol_fd, ol_data, ol_real_size) != ol_real_size)
-                           {
-                              system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                         "write() error : %s", strerror(errno));
-                           }
+                           output_log_ptrs(&ol_retries,
+                                           &ol_job_number,
+                                           &ol_data,   /* Pointer to buffer. */
+                                           &ol_file_name,
+                                           &ol_file_name_length,
+                                           &ol_archive_name_length,
+                                           &ol_file_size,
+                                           &ol_unl,
+                                           &ol_size,
+                                           &ol_transfer_time,
+                                           &ol_output_type,
+                                           db.host_alias,
+                                           (current_toggle - 1),
+                                           SFTP,
+                                           &db.output_log);
+                        }
+                        (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
+                        (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
+                        *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+                        ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+                        ol_file_name[*ol_file_name_length + 1] = '\0';
+                        (*ol_file_name_length)++;
+                        *ol_file_size = *p_file_size_buffer;
+                        *ol_job_number = db.id.job;
+                        *ol_retries = db.retries;
+                        *ol_unl = db.unl;
+                        *ol_transfer_time = 0L;
+                        *ol_archive_name_length = 0;
+                        *ol_output_type = OT_OTHER_PROC_DELETE + '0';
+                        ol_real_size = *ol_file_name_length + ol_size;
+                        if (write(ol_fd, ol_data, ol_real_size) != ol_real_size)
+                        {
+                           system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                      "write() error : %s", strerror(errno));
                         }
                      }
+                  }
 #endif
 
 #ifdef _DELETE_LOG
-                     if (dl.fd == -1)
-                     {
-                        delete_log_ptrs(&dl);
-                     }
-                     (void)strcpy(dl.file_name, p_file_name_buffer);
-                     (void)snprintf(dl.host_name, MAX_HOSTNAME_LENGTH + 4 + 1,
-                                    "%-*s %03x", MAX_HOSTNAME_LENGTH,
-                                    fsa->host_alias, FILE_CURRENTLY_TRANSMITTED);
-                     *dl.file_size = *p_file_size_buffer;
-                     *dl.job_id = db.id.job;
-                     *dl.dir_id = 0;
-                     *dl.input_time = db.creation_time;
-                     *dl.split_job_counter = db.split_job_counter;
-                     *dl.unique_number = db.unique_number;
-                     *dl.file_name_length = strlen(p_file_name_buffer);
-                     dl_real_size = snprintf((dl.file_name + *dl.file_name_length + 1),
-                                             MAX_FILENAME_LENGTH + 1,
-                                             "%s%c(%s %d)",
-                                             SEND_FILE_SFTP, SEPARATOR_CHAR,
-                                             __FILE__, __LINE__);
-                     if (dl_real_size > (MAX_FILENAME_LENGTH + 1))
-                     {
-                        dl_real_size = MAX_FILENAME_LENGTH + 1;
-                     }
-                     dl_real_size = *dl.file_name_length + dl.size + dl_real_size;
-                     if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
-                     {
-                        system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                   "write() error : %s", strerror(errno));
-                     }
-#endif
-                     (void)strcpy(p_fullname, p_file_name_buffer);
-                     if (unlink(fullname) == -1)
-                     {
-                        system_log(WARN_SIGN, __FILE__, __LINE__,
-                                   "Failed to unlink() duplicate file `%s' : %s",
-                                   fullname, strerror(errno));
-                     }
-                     trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                               "File `%s' is currently transmitted by job %d. Will NOT send file again!",
-                               p_file_name_buffer, j);
-
-                     fsa->job_status[(int)db.job_no].no_of_files_done++;
-
-                     local_file_size += *p_file_size_buffer;
-                     local_file_counter += 1;               
-                     now = time(NULL);
-                     if (now >= (last_update_time + LOCK_INTERVAL_TIME))
-                     {
-                        last_update_time = now;
-                        update_tfc(local_file_counter, local_file_size,
-                                   p_file_size_buffer, files_to_send,
-                                   files_send, now);
-                        local_file_size = 0;
-                        local_file_counter = 0;
-                     }
-
-                     file_is_duplicate = YES;
-                     p_file_name_buffer += MAX_FILENAME_LENGTH;
-                     p_file_size_buffer++;
-                     if (file_mtime_buffer != NULL)
-                     {
-                        p_file_mtime_buffer++;
-                     }
-                     break;
-                  }
-               } /* for (j = 0; j < allowed_transfers; j++) */
-
-               if (file_is_duplicate == NO)
-               {
-                  fsa->job_status[(int)db.job_no].file_size_in_use = *p_file_size_buffer;
-                  (void)strcpy(fsa->job_status[(int)db.job_no].file_name_in_use,
-                               p_file_name_buffer);
-               }
-               else
-               {
-#ifdef WITH_ERROR_QUEUE
-                  if (fsa->host_status & ERROR_QUEUE_SET)
+                  if (dl.fd == -1)
                   {
-                     remove_from_error_queue(db.id.job, fsa, db.fsa_pos, fsa_fd);
+                     delete_log_ptrs(&dl);
+                  }
+                  (void)strcpy(dl.file_name, p_file_name_buffer);
+                  (void)snprintf(dl.host_name, MAX_HOSTNAME_LENGTH + 4 + 1,
+                                 "%-*s %03x", MAX_HOSTNAME_LENGTH,
+                                 fsa->host_alias, FILE_CURRENTLY_TRANSMITTED);
+                  *dl.file_size = *p_file_size_buffer;
+                  *dl.job_id = db.id.job;
+                  *dl.dir_id = 0;
+                  *dl.input_time = db.creation_time;
+                  *dl.split_job_counter = db.split_job_counter;
+                  *dl.unique_number = db.unique_number;
+                  *dl.file_name_length = strlen(p_file_name_buffer);
+                  dl_real_size = snprintf((dl.file_name + *dl.file_name_length + 1),
+                                          MAX_FILENAME_LENGTH + 1,
+                                          "%s%c(%s %d)",
+                                          SEND_FILE_SFTP, SEPARATOR_CHAR,
+                                          __FILE__, __LINE__);
+                  if (dl_real_size > (MAX_FILENAME_LENGTH + 1))
+                  {
+                     dl_real_size = MAX_FILENAME_LENGTH + 1;
+                  }
+                  dl_real_size = *dl.file_name_length + dl.size + dl_real_size;
+                  if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
+                  {
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                "write() error : %s", strerror(errno));
                   }
 #endif
-                  continue;
+                  (void)strcpy(p_fullname, p_file_name_buffer);
+                  if (unlink(fullname) == -1)
+                  {
+                     system_log(WARN_SIGN, __FILE__, __LINE__,
+                                "Failed to unlink() duplicate file `%s' : %s",
+                                fullname, strerror(errno));
+                  }
+                  trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "File `%s' is currently transmitted by job %d. Will NOT send file again!",
+                            p_file_name_buffer, j);
+
+                  fsa->job_status[(int)db.job_no].no_of_files_done++;
+
+                  local_file_size += *p_file_size_buffer;
+                  local_file_counter += 1;               
+                  now = time(NULL);
+                  if (now >= (last_update_time + LOCK_INTERVAL_TIME))
+                  {
+                     last_update_time = now;
+                     update_tfc(local_file_counter, local_file_size,
+                                p_file_size_buffer, files_to_send,
+                                files_send, now);
+                     local_file_size = 0;
+                     local_file_counter = 0;
+                  }
+
+                  file_is_duplicate = YES;
+                  p_file_name_buffer += MAX_FILENAME_LENGTH;
+                  p_file_size_buffer++;
+                  if (file_mtime_buffer != NULL)
+                  {
+                     p_file_mtime_buffer++;
+                  }
+                  break;
                }
-            }
-            else
+            } /* for (j = 0; j < allowed_transfers; j++) */
+
+            if (file_is_duplicate == NO)
             {
                fsa->job_status[(int)db.job_no].file_size_in_use = *p_file_size_buffer;
                (void)strcpy(fsa->job_status[(int)db.job_no].file_name_in_use,
                             p_file_name_buffer);
+#ifdef LOCK_DEBUG
+               unlock_region(fsa_fd, db.lock_offset + LOCK_FIU,
+                             __FILE__, __LINE__);
+#else
+               unlock_region(fsa_fd, db.lock_offset + LOCK_FIU);
+#endif
+            }
+            else
+            {
+#ifdef LOCK_DEBUG
+               unlock_region(fsa_fd, db.lock_offset + LOCK_FIU,
+                             __FILE__, __LINE__);
+#else
+               unlock_region(fsa_fd, db.lock_offset + LOCK_FIU);
+#endif
+#ifdef WITH_ERROR_QUEUE
+               if (fsa->host_status & ERROR_QUEUE_SET)
+               {
+                  remove_from_error_queue(db.id.job, fsa, db.fsa_pos, fsa_fd);
+               }
+#endif
+               continue;
             }
          }
 

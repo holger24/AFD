@@ -2264,6 +2264,7 @@ typedef unsigned long       u_long_64;
 #define LOCK_EXEC                  6   /* Lock for exec and pexec option, */
                                        /* this is ALSO used in FRA.       */
 #define LOCK_HS                    7   /* Lock host_status in FSA.        */
+#define LOCK_FIU                   8   /* Lock the file_name_in_use.      */
 #define LOCK_CHECK_FSA_ENTRIES     (AFD_WORD_OFFSET - 1)
 
 /*-----------------------------------------------------------------------*
