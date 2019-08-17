@@ -78,9 +78,9 @@ rlock_region(const int fd, const off_t offset)
 #ifdef LOCK_DEBUG
    system_log(DEBUG_SIGN, NULL, 0,
 # if SIZEOF_OFF_T == 4
-              "lock_region_w(): fd=%d start=%ld length=1 file=%s line=%d",
+              "rlock_region(): fd=%d start=%ld length=1 file=%s line=%d",
 # else
-              "lock_region_w(): fd=%d start=%lld length=1 file=%s line=%d",
+              "rlock_region(): fd=%d start=%lld length=1 file=%s line=%d",
 # endif
               fd, (pri_off_t)offset, file, line);                                 
 #endif
