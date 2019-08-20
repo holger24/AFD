@@ -138,7 +138,8 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                   goto done;
                }
             }
-            if ((fra[i].delete_files_flag & OLD_LOCKED_FILES) &&
+            if (((fra[i].delete_files_flag & OLD_LOCKED_FILES) ||
+                 (fra[i].delete_files_flag & OLD_RLOCKED_FILES)) &&
                 (fra[i].in_dc_flag & OLD_LOCKED_FILES_IDC))
             {
                (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],
