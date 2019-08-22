@@ -855,11 +855,11 @@ main(int argc, char *argv[])
          else
          {
             /*
-             * Unfortunatly MDTM (ftp_date()) does only work files
+             * Unfortunately MDTM (ftp_date()) does only work with files
              * NOT directories.
              * LIST on a directory does not work for this, since it
              * shows the directory content and that is what we try
-             * to avaoid.
+             * to avoid.
              */
          }
       }
