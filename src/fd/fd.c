@@ -5410,8 +5410,8 @@ get_free_disp_pos(int pos)
             system_log(WARN_SIGN, __FILE__, __LINE__,
                        "Prevented multiple start of scanning same remote dir. [fsa_pos=%d fra_pos=%d qb[%d].special_flag=%d qb[%d].retries=%u i=%d queued=%d] @%x",
                        pos, qb[qb_pos].pos, qb_pos,
-                       (int)qb[qb_pos].special_flag, i,
-                       qb_pos, qb[qb_pos].retries,
+                       (int)qb[qb_pos].special_flag,
+                       qb_pos, qb[qb_pos].retries, i,
                        (int)fra[qb[qb_pos].pos].queued,
                        fra[qb[qb_pos].pos].dir_id);
             if (fra[qb[qb_pos].pos].queued == 0)
