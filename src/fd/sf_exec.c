@@ -728,7 +728,7 @@ main(int argc, char *argv[])
 try_again_unlink:
 #endif
             /* Delete the file we just have executed. */
-            if (unlink(source_file) == -1)
+            if ((unlink(source_file) == -1) && (errno != ENOENT))
             {
 #ifdef WITH_UNLINK_DELAY
                if ((errno == EBUSY) && (unlink_loops < 20))
