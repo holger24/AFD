@@ -646,11 +646,11 @@ main(int argc, char *argv[])
                 * NOTE: We _MUST_ delete the file we just send,
                 *       else the file directory will run full!
                 */
-               if (unlink(source_file) == -1)
+               if ((unlink(source_file) == -1) && (errno != ENOENT))
                {
-                  system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             "Could not unlink() local file `%s' after copying it successfully : %s",
-                             source_file, strerror(errno));
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "Failed to unlink() local file `%s' : %s",
+                            source_file, strerror(errno));
                }
 
 #ifdef _OUTPUT_LOG
@@ -738,9 +738,9 @@ try_again_unlink:
                   goto try_again_unlink;
                }
 #endif
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          "Could not unlink() local file %s after copying it successfully : %s",
-                          source_file, strerror(errno));
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "Could not unlink() local file %s after transmitting it successfully : %s",
+                         source_file, strerror(errno));
             }
 
 #ifdef _OUTPUT_LOG
@@ -949,7 +949,7 @@ try_again_unlink:
       /* Do not forget to remove lock file if we have created one. */
       if ((db.lock == LOCKFILE) && (fsa->active_transfers == 1))
       {
-         if (unlink(db.lock_file_name) == -1)
+         if ((unlink(db.lock_file_name) == -1) && (errno != ENOENT))
          {
             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                       "Failed to unlink() lock file `%s' : %s",
