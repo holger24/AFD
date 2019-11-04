@@ -111,19 +111,23 @@ int                        event_log_fd = STDERR_FILENO,
                            fra_id,
                            fsa_fd = -1,
                            fsa_id,
+                           jid_fd = -1,
                            no_of_dirs = 0,
                            no_of_host_names,
-                           no_of_hosts = 0;
+                           no_of_hosts = 0,
+                           no_of_job_ids = 0;
 unsigned int               options = 0,
                            options2 = 0;
 #ifdef HAVE_MMAP
 off_t                      fra_size,
-                           fsa_size;
+                           fsa_size,
+                           jid_size;
 #endif
 char                       **hosts = NULL,
                            *p_work_dir;
 struct filetransfer_status *fsa;
 struct fileretrieve_status *fra;
+struct job_id_data         *jid;
 struct afd_status          *p_afd_status;
 const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 
@@ -1423,6 +1427,8 @@ main(int argc, char *argv[])
                                fsa[position].host_alias, SEPARATOR_CHAR, user);
                      fsa[position].special_flag ^= HOST_DISABLED;
                      hl[position].host_status &= ~HOST_CONFIG_HOST_DISABLED;
+                     check_fra_disable_all_flag(fsa[position].host_id,
+                                                (fsa[position].special_flag & HOST_DISABLED));
                      change_host_config = YES;
                   }
                   else
@@ -1574,6 +1580,9 @@ main(int argc, char *argv[])
                                       DEL_TIME_JOB_FIFO, strerror(errno));
                         }
                      }
+
+                     check_fra_disable_all_flag(fsa[position].host_id,
+                                                (fsa[position].special_flag & HOST_DISABLED));
                   }
                }
 
@@ -1726,6 +1735,8 @@ main(int argc, char *argv[])
                         }
                      }
                   }
+                  check_fra_disable_all_flag(fsa[position].host_id,
+                                             (fsa[position].special_flag & HOST_DISABLED));
                   change_host_config = YES;
                }
 

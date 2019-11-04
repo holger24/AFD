@@ -174,6 +174,7 @@ int                        amg_flag = NO,
                            fra_id,
                            fsa_fd = -1,
                            fsa_id,
+                           jid_fd = -1,
                            ft_exposure_tv_line = 0,
                            have_groups = NO,
                            hostname_display_length,
@@ -188,6 +189,7 @@ int                        amg_flag = NO,
                            no_of_current_jobs,
                            no_of_dirs,
                            no_of_his_log,
+                           no_of_job_ids = 0,
                            no_input,
                            no_selected,
                            no_selected_static,
@@ -238,7 +240,8 @@ Dimension                  tv_window_height,
 #ifdef HAVE_MMAP
 off_t                      afd_active_size,
                            fra_size,
-                           fsa_size;
+                           fsa_size,
+                           jid_size;
 #endif
 time_t                     afd_active_time;
 unsigned short             step_size;
@@ -279,6 +282,7 @@ struct afd_status          *p_afd_status,
                            prev_afd_status;
 struct filetransfer_status *fsa;
 struct fileretrieve_status *fra;
+struct job_id_data         *jid;
 struct afd_control_perm    acp;
 const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 

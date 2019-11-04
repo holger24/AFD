@@ -2313,6 +2313,8 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                         hl[i].host_status &= ~HOST_CONFIG_HOST_DISABLED;
                         config_log(EC_HOST, ET_MAN, EA_ENABLE_HOST,
                                    fsa[i].host_alias, NULL);
+                        check_fra_disable_all_flag(fsa[i].host_id,
+                                                   (fsa[i].special_flag & HOST_DISABLED));
                      }
                      else
                      {
@@ -2452,6 +2454,8 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
                                             DEL_TIME_JOB_FIFO, strerror(errno));
                               }
                            }
+                           check_fra_disable_all_flag(fsa[i].host_id,
+                                                      (fsa[i].special_flag & HOST_DISABLED));
                         }
                      }
                      change_host_config = YES;

@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2018 Holger Kiehl
+## Copyright (C) 2001 - 2019 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -161,10 +161,11 @@ libafd_a_SOURCES     = attach_afd_status.c\
                        fra_detach.c\
                        fsa_attach.c\
                        fsa_detach.c\
+                       fra_disable_all_flag.c\
                        get_additional_locked_files.c\
                        get_afd_name.c\
                        get_afd_path.c\
-		       get_afd_status_struct_size.c\
+                       get_afd_status_struct_size.c\
                        get_arg.c\
                        get_checksum.c\
                        get_checksum_crc32c.c\
@@ -189,12 +190,14 @@ libafd_a_SOURCES     = attach_afd_status.c\
                        $(HANDLE_ERROR_QUEUE)\
                        $(HANDLE_EXTRA_WORK_DIRS)\
                        $(HANDLE_IP)\
-		       handle_jid.c\
-		       handle_jis.c\
+                       handle_jid.c\
+                       handle_jis.c\
                        handle_xor_crypt.c\
                        inform_fd_about_fsa_change.c\
                        $(DUPCHECK)\
                        is_msgname.c\
+			     jid_attach.c\
+			     jid_detach.c\
                        lock_file.c\
                        lock_proc.c\
                        lock_region.c\
@@ -202,7 +205,7 @@ libafd_a_SOURCES     = attach_afd_status.c\
                        $(MAINTAINER_LOG)\
                        make_fifo.c\
                        map_file.c\
-		       mode_t2str.c\
+                       mode_t2str.c\
                        $(AFD_MAPPER)\
                        mmap_resize.c\
                        $(AFD_MON_PROGS)\
@@ -212,7 +215,7 @@ libafd_a_SOURCES     = attach_afd_status.c\
                        my_strncpy.c\
                        my_usleep.c\
                        $(OPEN_FIFO_RW)\
-		       $(OUTPUT_LOG_PTRS)\
+                       $(OUTPUT_LOG_PTRS)\
                        posi.c\
                        pmatch.c\
                        $(PRODUCTION_LOG)\
@@ -241,7 +244,7 @@ libafd_a_SOURCES     = attach_afd_status.c\
                        typesize_data.c\
                        unlock_region.c\
                        unmap_data.c\
-		       update_db_log.c\
+                       update_db_log.c\
                        url.c\
                        write_host_config.c\
                        writen.c\

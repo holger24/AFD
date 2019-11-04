@@ -4108,6 +4108,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                              int, int),
 #endif
                     is_msgname(const char *),
+                    jid_detach(int),
                     lock_file(char *, int),
 #ifdef LOCK_DEBUG
                     lock_region(int, off_t, char *, int),
@@ -4206,7 +4207,9 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
                     change_alias_order(char **, int),
                     change_name(char *, char *, char *, char *,
                                 int, int *, int **, unsigned int),
+                    check_every_fra_disable_all_flag(void),
                     check_fake_user(int *, char **, char *, char *),
+                    check_fra_disable_all_flag(unsigned int, int),
                     check_permissions(void),
                     close_counter_file(int, int **),
                     clr_fl(int, int),
@@ -4249,6 +4252,7 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
 #ifdef WITH_DUP_CHECK
                     isdup_detach(void),
 #endif
+                    jid_attach(int),
 #ifdef LOCK_DEBUG
                     lock_region_w(int, off_t, char *, int),
 #else

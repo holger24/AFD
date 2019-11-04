@@ -137,10 +137,12 @@ int                        alfbl,    /* Additional locked file buffer length */
 #ifdef WITH_ONETIME
                            no_of_ot_dir_configs = 0,
 #endif
+                           no_of_job_ids = 0,
                            fra_fd = -1,
                            fra_id,
                            fsa_fd = -1,
                            fsa_id,
+                           jid_fd = -1,
                            remove_unused_hosts = NO,
                            sys_log_fd = STDERR_FILENO,
                            stop_flag = 0,
@@ -154,6 +156,7 @@ long                       default_transfer_timeout = DEFAULT_TRANSFER_TIMEOUT;
 pid_t                      dc_pid;      /* dir_check pid                 */
 off_t                      fra_size,
                            fsa_size,
+                           jid_size,
                            max_copied_file_size = MAX_COPIED_FILE_SIZE * MAX_COPIED_FILE_SIZE_UNIT;
 mode_t                     create_source_dir_mode = DIR_MODE;
 time_t                     default_warn_time = DEFAULT_DIR_WARN_TIME;
@@ -169,6 +172,7 @@ char                       *alfiles = NULL, /* Additional locked files */
 struct host_list           *hl;
 struct fileretrieve_status *fra;
 struct filetransfer_status *fsa = NULL;
+struct job_id_data         *jid = NULL;
 struct afd_status          *p_afd_status;
 struct dir_name_buf        *dnb = NULL;
 struct dc_filter_list      *dcfl;
@@ -805,6 +809,12 @@ main(int argc, char *argv[])
       }
    }
 
+   /*
+    * When starting, ensure that ALL_DISABLED is still
+    * correct in fra[].dir_flag
+    */
+   check_every_fra_disable_all_flag();
+
    /* Start process dir_check if database has information. */
    if (data_length > 0)
    {
@@ -1294,6 +1304,7 @@ main(int argc, char *argv[])
                                                  strerror(errno));
                                    }
                                 }
+                                check_every_fra_disable_all_flag();
                              }
                           }
                           break;
