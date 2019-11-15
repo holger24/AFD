@@ -1,6 +1,6 @@
 /*
  *  update_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -58,6 +58,8 @@ DESCR__S_M1
  **                      -u and -p.
  **   20.04.2017 H.Kiehl Added parameter -j to list the job ID's of
  **                      changed configs.
+ **   14.11.2019 H.Kiehl When calling get_dc_data we must pass $AFD_WORK_DIR.
+ **                      Increase time we wait for a command reply.
  **
  */
 DESCR__E_M1
@@ -159,6 +161,7 @@ main(int argc, char *argv[])
       verbose_level = 2;
       show_job_ids = YES;
       cmd_length = GET_DC_DATA_LENGTH +
+                   1 + 2 + 1 + strlen(work_dir) + /* -w work_dir */
                    1 + 2 + 1 + /* -C */ 
                    (DC_ID_STEP_SIZE * (MAX_INT_HEX_LENGTH + 1));
       if ((get_dc_data_cmd = malloc(cmd_length)) == NULL)
@@ -167,7 +170,8 @@ main(int argc, char *argv[])
                        strerror(errno), __FILE__, __LINE__);
          exit(INCORRECT);
       }
-      cmd_pos = snprintf(get_dc_data_cmd, cmd_length, "%s -C ", GET_DC_DATA);
+      cmd_pos = snprintf(get_dc_data_cmd, cmd_length, "%s -w %s -C ",
+                         GET_DC_DATA, work_dir);
    }
 /*   if (get_arg(&argc, argv, "-vv", NULL, 0) == SUCCESS)
    {
@@ -424,8 +428,8 @@ main(int argc, char *argv[])
    for (;;)
    {
       FD_SET(db_update_reply_fd, &rset);
-      timeout.tv_usec = 50000;
-      timeout.tv_sec = 0;
+      timeout.tv_usec = 500000;
+      timeout.tv_sec = 1;
       status = select(db_update_reply_fd + 1, &rset, NULL, NULL, &timeout);
 
       if ((status > 0) && (FD_ISSET(db_update_reply_fd, &rset)))
