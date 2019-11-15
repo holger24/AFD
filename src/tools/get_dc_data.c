@@ -1,6 +1,6 @@
 /*
  *  get_dc_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -56,6 +56,8 @@ DESCR__S_M3
  **   06.02.2016 H.Kiehl Added -H option.
  **   19.04.2017 H.Kiehl Added -c and -C option, to view job ID's per
  **                      config.
+ **   14.11.2019 H.Kiehl When -C is set show from where it comes when
+ **                      only one configuration file was updated.
  **
  */
 DESCR__E_M3
@@ -978,7 +980,7 @@ get_job_ids_per_config(int  is_id,
       return;
    }
 
-   if ((no_of_elements > 1) || (is_id != YES))
+   if ((no_of_elements > 0) || (is_id != YES))
    {
       int    dcl_fd;
 
@@ -1032,7 +1034,7 @@ get_job_ids_per_config(int  is_id,
       }
    }
 
-   if (no_of_elements > 1)
+   if (no_of_elements > 0)
    {
       RT_ARRAY(dir_config_name, no_of_elements, (MAX_PATH_LENGTH + 1), char);
    }
@@ -1042,7 +1044,7 @@ get_job_ids_per_config(int  is_id,
       for (i = 0; i < no_of_elements; i++)
       {
          dir_config_id[i] = (unsigned int)strtoul(search_str[i], NULL, 16);
-         if (no_of_elements > 1)
+         if (no_of_elements > 0)
          {
             for (j = 0; j < no_of_dc_ids; j++)
             {
@@ -1065,7 +1067,7 @@ get_job_ids_per_config(int  is_id,
             if (my_strcmp(search_str[i], dcl[j].dir_config_file) == 0)
             {
                dir_config_id[i] = dcl[j].dc_id;
-               if (no_of_elements > 1)
+               if (no_of_elements > 0)
                {
                   (void)strcpy(dir_config_name[i], search_str[i]);
                }
@@ -1106,7 +1108,7 @@ get_job_ids_per_config(int  is_id,
 
       if (no_of_job_ids_to_show > 0)
       {
-         if (no_of_elements > 1)
+         if (no_of_elements > 0)
          {
             (void)fprintf(stdout, "%s (%x) with %d Job ID's:\n#%x",
                           dir_config_name[i], dir_config_id[i],
@@ -1138,7 +1140,7 @@ get_job_ids_per_config(int  is_id,
    }
 
    /* Free all memory that was allocated or mapped. */
-   if (no_of_elements > 1)
+   if (no_of_elements > 0)
    {
       FREE_RT_ARRAY(dir_config_name);
    }
