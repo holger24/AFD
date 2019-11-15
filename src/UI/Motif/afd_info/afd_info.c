@@ -798,9 +798,6 @@ main(int argc, char *argv[])
    XtManageChild(info_w);
    XtManageChild(form);
 
-   /* Free font list. */
-   XmFontListFree(fontlist);
-
 #ifdef WITH_EDITRES
    XtAddEventHandler(appshell, (EventMask)0, True,
                      _XEditResCheckMessages, NULL);

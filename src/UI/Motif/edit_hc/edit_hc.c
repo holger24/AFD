@@ -2312,9 +2312,6 @@ main(int argc, char *argv[])
    XtManageChild(box_w);
    XtManageChild(form_w);
 
-   /* Free font list. */
-   XmFontListFree(fontlist);
-
 #ifdef WITH_EDITRES
    XtAddEventHandler(appshell, (EventMask)0, True,
                      _XEditResCheckMessages, NULL);
