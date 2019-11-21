@@ -81,7 +81,7 @@ resize_tv_window(void)
                         root_y;
 #endif
       static int        old_line_height = 0;
-      Arg               args[5];
+      Arg               args[2];
       Cardinal          argcount;
 
       argcount = 0;
