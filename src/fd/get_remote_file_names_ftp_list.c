@@ -339,11 +339,25 @@ do_scan(int   *files_to_retrieve,
       if ((fra->delete_files_flag & OLD_RLOCKED_FILES) &&
           (fra->locked_file_time != -1))
       {
-         type = FLIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
+         if (fsa->protocol_options & USE_STAT_LIST)
+         {
+            type = SLIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
+         }
+         else
+         {
+            type = FLIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
+         }
       }
       else
       {
-         type = LIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
+         if (fsa->protocol_options & USE_STAT_LIST)
+         {
+            type = SLIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
+         }
+         else
+         {
+            type = LIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
+         }
       }
    }
    else
@@ -352,11 +366,25 @@ do_scan(int   *files_to_retrieve,
       if ((fra->delete_files_flag & OLD_RLOCKED_FILES) &&
           (fra->locked_file_time != -1))
       {
-         type = FLIST_CMD | BUFFERED_LIST;
+         if (fsa->protocol_options & USE_STAT_LIST)
+         {
+            type = SLIST_CMD | BUFFERED_LIST;
+         }
+         else
+         {
+            type = FLIST_CMD | BUFFERED_LIST;
+         }
       }
       else
       {
-         type = LIST_CMD | BUFFERED_LIST;
+         if (fsa->protocol_options & USE_STAT_LIST)
+         {
+            type = SLIST_CMD | BUFFERED_LIST;
+         }
+         else
+         {
+            type = LIST_CMD | BUFFERED_LIST;
+         }
       }
 #ifdef WITH_SSL
    }

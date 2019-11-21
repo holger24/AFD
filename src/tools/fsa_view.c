@@ -369,6 +369,10 @@ main(int argc, char *argv[])
          {
             (void)fprintf(stdout, "use_list ");
          }
+         if (fsa[j].protocol_options & USE_STAT_LIST)
+         {
+            (void)fprintf(stdout, "use_stat_list ");
+         }
          if (fsa[j].protocol_options & FTP_DISABLE_MLST)
          {
             (void)fprintf(stdout, "disable_mlst ");

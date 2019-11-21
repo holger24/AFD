@@ -1600,7 +1600,8 @@ eval_host_config(int              *hosts_found,
        * have different values. So we must do this check here.
        */
       if (((*hl)[host_counter].protocol_options != 0) &&
-          (((*hl)[host_counter].protocol_options > (DISABLE_STRICT_HOST_KEY|
+          (((*hl)[host_counter].protocol_options > (USE_STAT_LIST |
+                                                    DISABLE_STRICT_HOST_KEY|
                                                     KEEP_CONNECTED_DISCONNECT |
                                                     FTP_DISABLE_MLST |
                                                     TLS_STRICT_VERIFY |
@@ -1637,7 +1638,8 @@ eval_host_config(int              *hosts_found,
                        _("Unknown protocol option <%d> for host %s, largest value is %d and smallest %d. Setting to 0."),
                        (*hl)[host_counter].protocol_options,
                        (*hl)[host_counter].host_alias,
-                       (DISABLE_STRICT_HOST_KEY |
+                       (USE_STAT_LIST |
+                        DISABLE_STRICT_HOST_KEY |
                         KEEP_CONNECTED_DISCONNECT |
                         FTP_DISABLE_MLST |
                         TLS_STRICT_VERIFY |

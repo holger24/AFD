@@ -878,7 +878,8 @@ main(int argc, char *argv[])
          }
          else
          {
-            if (fsa->protocol_options & FTP_USE_LIST)
+            if ((fsa->protocol_options & FTP_USE_LIST) ||
+                (fsa->protocol_options & USE_STAT_LIST))
             {
                files_to_retrieve = get_remote_file_names_ftp_list(&file_size_to_retrieve,
                                                                   &more_files_in_list);

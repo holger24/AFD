@@ -63,6 +63,7 @@
 #define MLSD_CMD                         32
 #define FLIST_CMD                        64
 #define FNLIST_CMD                       128
+#define SLIST_CMD                        256
 
 /* FTP options available. */
 #define FTP_OPTION_FEAT                  1

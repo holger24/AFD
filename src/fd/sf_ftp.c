@@ -1646,12 +1646,26 @@ main(int argc, char *argv[])
 #ifdef WITH_SSL
                   if (db.auth == BOTH)
                   {
-                     type = LIST_CMD | ENCRYPT_DATA;
+                     if (fsa->protocol_options & USE_STAT_LIST)
+                     {
+                        type = SLIST_CMD | ENCRYPT_DATA;
+                     }
+                     else
+                     {
+                        type = LIST_CMD | ENCRYPT_DATA;
+                     }
                   }
                   else
                   {
 #endif
-                     type = LIST_CMD;
+                     if (fsa->protocol_options & USE_STAT_LIST)
+                     {
+                        type = SLIST_CMD;
+                     }
+                     else
+                     {
+                        type = LIST_CMD;
+                     }
 #ifdef WITH_SSL
                   }
 #endif
@@ -2572,12 +2586,26 @@ main(int argc, char *argv[])
 #ifdef WITH_SSL
                if (db.auth == BOTH)
                {
-                  type = LIST_CMD | ENCRYPT_DATA;
+                  if (fsa->protocol_options & USE_STAT_LIST)
+                  {
+                     type = SLIST_CMD | ENCRYPT_DATA;
+                  }
+                  else
+                  {
+                     type = LIST_CMD | ENCRYPT_DATA;
+                  }
                }
                else
                {
 #endif
-                  type = LIST_CMD;
+                  if (fsa->protocol_options & USE_STAT_LIST)
+                  {
+                     type = SLIST_CMD;
+                  }
+                  else
+                  {
+                     type = LIST_CMD;
+                  }
 #ifdef WITH_SSL
                }
 #endif
@@ -2664,12 +2692,26 @@ main(int argc, char *argv[])
 #ifdef WITH_SSL
                   if (db.auth == BOTH)
                   {
-                     type = LIST_CMD | ENCRYPT_DATA;
+                     if (fsa->protocol_options & USE_STAT_LIST)
+                     {
+                        type = SLIST_CMD | ENCRYPT_DATA;
+                     }
+                     else
+                     {
+                        type = LIST_CMD | ENCRYPT_DATA;
+                     }
                   }
                   else
                   {
 #endif
-                     type = LIST_CMD;
+                     if (fsa->protocol_options & USE_STAT_LIST)
+                     {
+                        type = SLIST_CMD;
+                     }
+                     else
+                     {
+                        type = LIST_CMD;
+                     }
 #ifdef WITH_SSL
                   }
 #endif

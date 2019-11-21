@@ -233,6 +233,7 @@ Widget                     active_mode_w,
                            transfer_timeout_w,
                            use_file_when_local_w,
                            use_list_w,
+                           use_stat_list_w,
                            warn_time_days_w,
                            warn_time_days_label_w,
                            warn_time_hours_w,
@@ -2039,7 +2040,7 @@ main(int argc, char *argv[])
                            NULL);
    XtAddCallback(use_list_w, XmNvalueChangedCallback,
                  (XtCallbackProc)toggle_button2, (XtPointer)USE_LIST_CHANGED);
-   disable_mlst_w = XtVaCreateManagedWidget("Disable MLST",
+   use_stat_list_w = XtVaCreateManagedWidget("STAT",
                            xmToggleButtonGadgetClass, box_w,
                            XmNfontList,               fontlist,
                            XmNset,                    False,
@@ -2047,6 +2048,19 @@ main(int argc, char *argv[])
                            XmNtopOffset,              SIDE_OFFSET,
                            XmNleftAttachment,         XmATTACH_WIDGET,
                            XmNleftWidget,             use_list_w,
+                           XmNbottomAttachment,       XmATTACH_FORM,
+                           NULL);
+   XtAddCallback(use_stat_list_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)toggle_button2,
+                 (XtPointer)USE_STAT_LIST_CHANGED);
+   disable_mlst_w = XtVaCreateManagedWidget("Disable MLST",
+                           xmToggleButtonGadgetClass, box_w,
+                           XmNfontList,               fontlist,
+                           XmNset,                    False,
+                           XmNtopAttachment,          XmATTACH_FORM,
+                           XmNtopOffset,              SIDE_OFFSET,
+                           XmNleftAttachment,         XmATTACH_WIDGET,
+                           XmNleftWidget,             use_stat_list_w,
                            XmNbottomAttachment,       XmATTACH_FORM,
                            NULL);
    XtAddCallback(disable_mlst_w, XmNvalueChangedCallback,

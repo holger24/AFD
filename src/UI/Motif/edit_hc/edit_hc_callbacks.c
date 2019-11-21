@@ -171,6 +171,7 @@ extern Widget                     active_mode_w,
                                   transfer_rate_limit_w,
                                   use_file_when_local_w,
                                   use_list_w,
+                                  use_stat_list_w,
                                   warn_time_days_w,
                                   warn_time_days_label_w,
                                   warn_time_hours_w,
@@ -1429,6 +1430,7 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(passive_redirect_w, False);
          XtSetSensitive(ftps_label_w, False);
          XtSetSensitive(use_list_w, False);
+         XtSetSensitive(use_stat_list_w, False);
          XtSetSensitive(disable_mlst_w, False);
          XtSetSensitive(ssl_ccc_w, False);
          XtSetSensitive(ftp_idle_time_w, False);
@@ -1899,6 +1901,15 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
             {
                XtVaSetValues(use_list_w, XmNset, False, NULL);
             }
+            XtSetSensitive(use_stat_list_w, True);
+            if (fsa[cur_pos].protocol_options & USE_STAT_LIST)
+            {
+               XtVaSetValues(use_stat_list_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(use_stat_list_w, XmNset, False, NULL);
+            }
             XtSetSensitive(disable_mlst_w, True);
             if (fsa[cur_pos].protocol_options & FTP_DISABLE_MLST)
             {
@@ -1982,6 +1993,7 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
             XtSetSensitive(passive_redirect_w, False);
             XtSetSensitive(ftps_label_w, False);
             XtSetSensitive(use_list_w, False);
+            XtSetSensitive(use_stat_list_w, False);
             XtSetSensitive(disable_mlst_w, False);
             XtSetSensitive(ssl_ccc_w, False);
             XtSetSensitive(ftp_idle_time_w, False);
@@ -3339,6 +3351,11 @@ submite_button(Widget w, XtPointer client_data, XtPointer call_data)
          if (ce[i].value_changed2 & USE_LIST_CHANGED)
          {
             fsa[i].protocol_options ^= FTP_USE_LIST;
+            changes++;
+         }
+         if (ce[i].value_changed2 & USE_STAT_LIST_CHANGED)
+         {
+            fsa[i].protocol_options ^= USE_STAT_LIST;
             changes++;
          }
          if (ce[i].value_changed2 & DISABLE_MLST_CHANGED)

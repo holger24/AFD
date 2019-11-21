@@ -1,6 +1,6 @@
 /*
  *  edit_hc.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2019 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -154,6 +154,7 @@
 #define DISABLE_MLST_CHANGED            16777216
 #define DISCONNECT_CHANGED              33554432
 #define DISABLE_STRICT_HOST_KEY_CHANGED 67108864
+#define USE_STAT_LIST_CHANGED           134217728
 
 /* Structure holding all changed entries of one host. */
 struct changed_entry
