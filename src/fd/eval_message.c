@@ -1046,10 +1046,7 @@ eval_message(char *message_name, struct job *p_db)
                                     SILENT_NOT_LOCKED_FILE_ID_LENGTH) == 0))
                  {
                     used2 |= SILENT_DEF_NO_LOCK_FLAG;
-                    if (p_db->special_flag & SILENT_NOT_LOCKED_FILE)
-                    {
-                       p_db->special_flag ^= SILENT_NOT_LOCKED_FILE;
-                    }
+                    p_db->special_flag |= SILENT_NOT_LOCKED_FILE;
                     while ((*ptr != '\n') && (*ptr != '\0'))
                     {
                        ptr++;
