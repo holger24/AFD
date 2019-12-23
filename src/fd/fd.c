@@ -3987,6 +3987,7 @@ zombie_check(struct connection *p_con,
                case WRITE_REMOTE_ERROR    : /* */
                case MOVE_REMOTE_ERROR     : /* */
                case OPEN_REMOTE_ERROR     : /* Failed to open remote file. */
+               case DELETE_REMOTE_ERROR   : /* Failed to delete remote file. */
                case LIST_ERROR            : /* Sending the LIST command failed. */
                case EXEC_ERROR            : /* Failed to execute command for */
                                             /* scheme exec.                  */

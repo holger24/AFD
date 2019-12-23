@@ -1188,9 +1188,31 @@ main(int argc, char *argv[])
                         if ((status = http_del(db.hostname, db.target_dir,
                                                rl[i].file_name)) != SUCCESS)
                         {
-                           trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                                     "Failed to delete remote file %s in %s (%d).",
-                                     rl[i].file_name, fra->dir_alias, status);
+                           if (fra->stupid_mode != YES)
+                           {
+                              trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                        "Failed to delete remote file %s in %s (%d).",
+                                        rl[i].file_name, fra->dir_alias,
+                                        status);
+                           }
+                           else
+                           {
+                              /* When we do not remember what we */
+                              /* already retrieved we must exit. */
+                              /* Otherwise we are in a constant  */
+                              /* loop fetching the same files!   */
+                              trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                        "Failed to delete remote file %s in %s (%d).",
+                                        rl[i].file_name, fra->dir_alias,
+                                        status);
+                              (void)http_quit();
+                              reset_values(files_retrieved,
+                                           file_size_retrieved,
+                                           files_to_retrieve,
+                                           file_size_to_retrieve,
+                                           (struct job *)&db);
+                              exit(eval_timeout(DELETE_REMOTE_ERROR));
+                           }
                         }
                         else
                         {
