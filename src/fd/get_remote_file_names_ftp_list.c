@@ -506,6 +506,12 @@ do_scan(int   *files_to_retrieve,
       p_end = list;
       do
       {
+         if (*p_end == ' ')
+         {
+            /* ProFTPD inserts a space when using STAT listing. */
+            /* ftpparse() does not like this. So remove it.     */
+            p_end++;
+         }
          p_start = p_end;
          while ((*p_end != '\r') && (*p_end != '\n') && (*p_end != '\0'))
          {
