@@ -8,11 +8,10 @@
 <hr size=3 noshade>
 <p>
 There are two possibilities to hold information of a certain host. The first
-is in INFO-&lt;host alias name&gt; in directory $AFD_WORK_DIR/etc.
+is in &lt;host alias name&gt; in directory $AFD_WORK_DIR/etc/info.
 Everything stored in this file will be shown in <a href="afd_info.html">
-afd_info</a> dialog. If you have many hosts configured it might be
-better to store these in the central $AFD_WORK_DIR/etc/host.info file.
-The format of this file is as follows:
+afd_info</a> dialog. Another method is to store these in the central
+$AFD_WORK_DIR/etc/host.info file. The format of this file is as follows:
 </p>
 <pre>
           &lt;alias name 1&gt;
@@ -28,15 +27,15 @@ The format of this file is as follows:
 <p>
 Its also possible to specify both types, it will then first look into
 $AFD_WORK_DIR/etc/host.info and if the host alias name is not found in there
-try to get the information from $AFD_WORK_DIR/etc/INFO-&lt;host alias name&gt;.
+try to get the information from $AFD_WORK_DIR/etc/info/&lt;host alias name&gt;.
 </p>
 <hr size=3 noshade>
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 2005 by H.Kiehl<br>
+   Copyright &copy; 2005-2019 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 26.06.2005
+   Last updated: 25.12.2019
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

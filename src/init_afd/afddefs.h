@@ -1760,6 +1760,8 @@ typedef unsigned long       u_long_64;
 #define RLOG_DIR                      "/rlog"  /* Only used for afd_mon. */
 #define ETC_DIR                       "/etc"
 #define ETC_DIR_LENGTH                (sizeof(ETC_DIR) - 1)
+#define INFO_DIR                      "/info"
+#define INFO_DIR_LENGTH               (sizeof(INFO_DIR) - 1)
 #define ACTION_DIR                    "/action"
 #define ACTION_DIR_LENGTH             (sizeof(ACTION_DIR) - 1)
 #define ACTION_TARGET_DIR             "/target"

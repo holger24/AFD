@@ -1,6 +1,6 @@
 /*
  *  handle_info_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,6 +53,7 @@ DESCR__S_M3
  **   09.11.1996 H.Kiehl Created
  **   09.02.2005 H.Kiehl Added support for central host info file.
  **   20.09.2010 H.Kiehl Added function write_info_file().
+ **   25.12.2019 H.Kiehl Handle separate info directory.
  **
  */
 DESCR__E_M3
@@ -75,12 +76,14 @@ DESCR__E_M3
 #include <Xm/Xm.h>
 #include <Xm/Text.h>
 
+#define IN_ETC_DIR 111
+
 /* External global variables. */
 extern char *info_data,
             *p_work_dir;
 
 /* Local global variables. */
-static int  data_from_central_info_file;
+static int  data_from_central_info_file = NO;
 
 /* Local function prototypes. */
 static void fill_default_info(void);
@@ -326,9 +329,16 @@ write_info_file(Widget w, char *alias_name, char *central_info_filename)
    }
    else
    {
-
-      (void)snprintf(info_file, MAX_PATH_LENGTH, "%s%s/%s%s", p_work_dir,
-                     ETC_DIR, INFO_IDENTIFIER, alias_name);
+      if (data_from_central_info_file == IN_ETC_DIR)
+      {
+         (void)snprintf(info_file, MAX_PATH_LENGTH, "%s%s/%s%s", p_work_dir,
+                        ETC_DIR, INFO_IDENTIFIER, alias_name);
+      }
+      else
+      {
+         (void)snprintf(info_file, MAX_PATH_LENGTH, "%s%s%s/%s", p_work_dir,
+                        ETC_DIR, INFO_DIR, alias_name);
+      }
       if ((fd = open(info_file, O_WRONLY | O_CREAT | O_TRUNC,
                      FILE_MODE)) == -1)
       {
@@ -514,10 +524,22 @@ check_info_file(char *alias_name, char *central_info_filename, int check_mtime)
     * No central Info file or alias not found in it. So lets
     * search for alias info file.
     */
-   (void)snprintf(alias_info_file, MAX_PATH_LENGTH, "%s%s/%s%s", p_work_dir,
-                  ETC_DIR, INFO_IDENTIFIER, alias_name);
-   if (((ret = stat(alias_info_file, &stat_buf)) == 0) &&
-       (stat_buf.st_size > 0))
+   (void)snprintf(alias_info_file, MAX_PATH_LENGTH, "%s%s%s/%s", p_work_dir,
+                  ETC_DIR, INFO_DIR, alias_name);
+   if ((ret = stat(alias_info_file, &stat_buf)) == 0)
+   {
+      data_from_central_info_file = NO;
+   }
+   else
+   {
+      (void)snprintf(alias_info_file, MAX_PATH_LENGTH, "%s%s/%s%s", p_work_dir,
+                     ETC_DIR, INFO_IDENTIFIER, alias_name);
+      if ((ret = stat(alias_info_file, &stat_buf)) == 0)
+      {
+         data_from_central_info_file = IN_ETC_DIR;
+      }
+   }
+   if ((ret == 0) && (stat_buf.st_size > 0))
    {
       if ((check_mtime == NO) || (stat_buf.st_mtime > last_mtime_host))
       {
@@ -533,10 +555,6 @@ check_info_file(char *alias_name, char *central_info_filename, int check_mtime)
                if (errno == ENOENT)
                {
                   data_from_central_info_file = NEITHER;
-               }
-               else
-               {
-                  data_from_central_info_file = NO;
                }
             }
             (void)xrec(ERROR_DIALOG, "Failed to open() %s : %s (%s %d)",
@@ -566,7 +584,6 @@ check_info_file(char *alias_name, char *central_info_filename, int check_mtime)
 
          first_time = YES;
          file_changed = YES;
-         data_from_central_info_file = NO;
       }
       else
       {
@@ -586,10 +603,6 @@ check_info_file(char *alias_name, char *central_info_filename, int check_mtime)
          if (tmp_errno == ENOENT)
          {
             data_from_central_info_file = NEITHER;
-         }
-         else
-         {
-            data_from_central_info_file = NO;
          }
       }
       if ((ret == -1) && (tmp_errno != ENOENT))

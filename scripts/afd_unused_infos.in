@@ -1,12 +1,13 @@
 #!/bin/sh
 #
-# Description   : This script checks for INFO- files which have no
+# Description   : This script checks for $AFD_WORK_DIR/etc/INFO-* and
+#                 $AFD_WORK_DIR/etc/info/* files which have no
 #                 corresponding entry in DIR_CONFIG. The user can
 #                 then opt to delete, move or just show those files.
 # Synopsis      : afd_unused_info [-r] | [-m <path where files are to be moved>]
 # Author        : H.Kiehl
 # Date          : 20.09.2007
-# Modifications :
+# Modifications : 25.12.2019 H.Kiehl Added extra info directory.
 #
 
 todo=0
@@ -39,6 +40,27 @@ do
    shift
 done
 
+
+for i in `ls $AFD_WORK_DIR/etc/info/*`
+do
+   $AFD_BIN_DIR/fsa_view ${i#$AFD_WORK_DIR/etc/info/} 2>&1 >/dev/null
+   if [ $? -ne 0 ]
+   then
+      case $todo in
+         1) # move unused info files
+            echo "Moving ${i#$AFD_WORK_DIR/etc/info/} to $MOVE_PATH"
+            mv ${i} $MOVE_PATH
+            ;;
+         2) # delete unused info files
+            echo "Deleting ${i#$AFD_WORK_DIR/etc/info/}"
+            rm ${i}
+            ;;
+         *) # show unused info files
+            echo "${i#$AFD_WORK_DIR/etc/info/} not used."
+            ;;
+      esac
+   fi
+done
 for i in `ls $AFD_WORK_DIR/etc/INFO-*`
 do
    $AFD_BIN_DIR/fsa_view ${i#$AFD_WORK_DIR/etc/INFO-} 2>&1 >/dev/null
