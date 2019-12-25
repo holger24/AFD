@@ -93,6 +93,7 @@ jid_attach(int writeable)
                  _("Failed to fstat() `%s' : %s"),
                  jid_file, strerror(errno));
       (void)close(jid_fd);
+      jid_fd = -1;
       exit(INCORRECT);
    }
 #ifdef HAVE_MMAP
@@ -108,6 +109,7 @@ jid_attach(int writeable)
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  _("mmap() error : %s"), strerror(errno));
       (void)close(jid_fd);
+      jid_fd = -1;
       exit(INCORRECT);
    }
    if (close(jid_fd) == -1)
@@ -115,6 +117,7 @@ jid_attach(int writeable)
       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                  _("Failed to close() %s : %s"), jid_file, strerror(errno));
    }
+   jid_fd = -1;
    if (*(ptr + SIZEOF_INT + 1 + 1 + 1) != CURRENT_JID_VERSION)
    {
       (void)fprintf(stderr, _("Incorrect JID version (data=%d current=%d)!\n"),
