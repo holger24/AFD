@@ -61,7 +61,8 @@ DESCR__E_M1
 #define TIME_BUFFER_LENGTH 20   /* YYYY-MM-DD HH:MM:SS */
 
 /* Global variables. */
-int         sys_log_fd = STDERR_FILENO,   /* Not used!    */
+int         interval,
+            sys_log_fd = STDERR_FILENO,   /* Not used!    */
             verbose = 0;
 char        *p_work_dir;
 const char  *sys_log_name = SYSTEM_LOG_FIFO;
@@ -86,13 +87,15 @@ static void eval_line(char *, int, char **, int, char **),
 int
 main(int argc, char *argv[])
 {
-   int     i,
+   int     i, j,
            no_of_search_host_alias = 0,
            no_of_search_ips = 0;
    size_t  line_length;
 #ifdef HAVE_GETLINE
    ssize_t n;
 #endif
+   time_t  tmp_timeval;
+   off_t   bytes_done;
    char    current_tr_file[MAX_PATH_LENGTH],
 #ifdef HAVE_GETLINE
            *line = NULL,
@@ -170,11 +173,31 @@ main(int argc, char *argv[])
    /* Show what we have. */
    for (i = 0; i < tr_counter; i++)
    {
+      j = 1;
+      bytes_done = trd[i].bytes_done;
+      while (((i + j) < tr_counter) && (trd[i].timeval == trd[i + j].timeval))
+      {
+         bytes_done += trd[i + j].bytes_done;
+         j++;
+      }
       (void)strftime(time_buffer, TIME_BUFFER_LENGTH, "%Y-%m-%d %H:%M:%S",
                      localtime(&trd[i].timeval));
-      (void)fprintf(stdout, "%s %c %s %ld\n",
-                    time_buffer, trd[i].type, trd[i].alias_ip,
-                    trd[i].bytes_done);
+      (void)fprintf(stdout, "%s %ld\n", time_buffer, bytes_done);
+      i += j;
+      j = 1;
+      tmp_timeval = trd[i].timeval + interval;
+      while (((i + j) < tr_counter) && (trd[i + 1].timeval < tmp_timeval))
+      {
+         (void)strftime(time_buffer, TIME_BUFFER_LENGTH, "%Y-%m-%d %H:%M:%S",
+                        localtime(&tmp_timeval));
+         (void)fprintf(stdout, "%s 0\n", time_buffer);
+         j++;
+         tmp_timeval = trd[i].timeval + (j * interval);
+      }
+      if (j > 1)
+      {
+         i += j;
+      }
    }
 
    exit(SUCCESS);
@@ -190,7 +213,6 @@ eval_line(char *line,
           char **search_ips)
 {
    int    i,
-          interval,
           version;
    time_t starttime,
           timeval;
