@@ -1,7 +1,7 @@
 /*
  *  handle_extra_workdirs.c - Part of AFD, an automatic file distribution
  *                            program.
- *  Copyright (c) 2015 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2015 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -202,7 +202,7 @@ get_extra_work_dirs(char                   *afd_config_buffer,
             {
                system_log(FATAL_SIGN, __FILE__, __LINE__,
                           _("Failed to symlink() `%s' to `%s' : %s"),
-                          linkpath, (*ewl)[0].afd_file_dir);
+                          linkpath, (*ewl)[0].afd_file_dir, strerror(errno));
                exit(INCORRECT);
             }
          }
@@ -212,7 +212,7 @@ get_extra_work_dirs(char                   *afd_config_buffer,
       {
          system_log(FATAL_SIGN, __FILE__, __LINE__,
                     _("Failed to symlink() `%s' to `%s' : %s"),
-                    linkpath, (*ewl)[0].afd_file_dir);
+                    linkpath, (*ewl)[0].afd_file_dir, strerror(errno));
          exit(INCORRECT);
       }
    }
@@ -287,7 +287,7 @@ get_extra_work_dirs(char                   *afd_config_buffer,
             {
                system_log(FATAL_SIGN, __FILE__, __LINE__,
                           _("Failed to symlink() `%s' to `%s' : %s"),
-                          linkpath, (*ewl)[0].afd_file_dir);
+                          linkpath, (*ewl)[0].afd_file_dir, strerror(errno));
                exit(INCORRECT);
             }
          }
@@ -297,7 +297,7 @@ get_extra_work_dirs(char                   *afd_config_buffer,
       {
          system_log(FATAL_SIGN, __FILE__, __LINE__,
                     _("Failed to symlink() `%s' to `%s' : %s"),
-                    linkpath, (*ewl)[0].afd_file_dir);
+                    linkpath, (*ewl)[0].afd_file_dir, strerror(errno));
          exit(INCORRECT);
       }
    }
@@ -347,7 +347,8 @@ get_extra_work_dirs(char                   *afd_config_buffer,
             {
                system_log(FATAL_SIGN, __FILE__, __LINE__,
                           _("Failed to symlink() `%s' to `%s' : %s"),
-                          linkpath, (*ewl)[0].outgoing_file_dir);
+                          linkpath, (*ewl)[0].outgoing_file_dir,
+                          strerror(errno));
                exit(INCORRECT);
             }
          }
@@ -357,7 +358,7 @@ get_extra_work_dirs(char                   *afd_config_buffer,
       {
          system_log(FATAL_SIGN, __FILE__, __LINE__,
                     _("Failed to symlink() `%s' to `%s' : %s"),
-                    linkpath, (*ewl)[0].outgoing_file_dir);
+                    linkpath, (*ewl)[0].outgoing_file_dir, strerror(errno));
          exit(INCORRECT);
       }
    }
@@ -405,7 +406,7 @@ get_extra_work_dirs(char                   *afd_config_buffer,
             {
                system_log(FATAL_SIGN, __FILE__, __LINE__,
                           _("Failed to symlink() `%s' to `%s' : %s"),
-                          linkpath, (*ewl)[0].time_dir);
+                          linkpath, (*ewl)[0].time_dir, strerror(errno));
                exit(INCORRECT);
             }
          }
@@ -415,7 +416,7 @@ get_extra_work_dirs(char                   *afd_config_buffer,
       {
          system_log(FATAL_SIGN, __FILE__, __LINE__,
                     _("Failed to symlink() `%s' to `%s' : %s"),
-                    linkpath, (*ewl)[0].time_dir);
+                    linkpath, (*ewl)[0].time_dir, strerror(errno));
          exit(INCORRECT);
       }
    }
@@ -655,7 +656,7 @@ get_extra_work_dirs(char                   *afd_config_buffer,
                            {
                               system_log(FATAL_SIGN, __FILE__, __LINE__,
                                          _("Failed to symlink() `%s' to `%s' : %s"),
-                                         linkpath, new_path);
+                                         linkpath, new_path, strerror(errno));
                               exit(INCORRECT);
                            }
                         }
@@ -665,7 +666,7 @@ get_extra_work_dirs(char                   *afd_config_buffer,
                      {
                         system_log(FATAL_SIGN, __FILE__, __LINE__,
                                    _("Failed to symlink() `%s' to `%s' : %s"),
-                                   linkpath, new_path);
+                                   linkpath, new_path, strerror(errno));
                         exit(INCORRECT);
                      }
                   }
@@ -823,7 +824,8 @@ get_extra_work_dirs(char                   *afd_config_buffer,
                                  {
                                     system_log(FATAL_SIGN, __FILE__, __LINE__,
                                                _("Failed to symlink() `%s' to `%s' : %s"),
-                                               linkpath, new_path);
+                                               linkpath, new_path,
+                                               strerror(errno));
                                     exit(INCORRECT);
                                  }
                               }
@@ -833,7 +835,7 @@ get_extra_work_dirs(char                   *afd_config_buffer,
                            {
                               system_log(FATAL_SIGN, __FILE__, __LINE__,
                                          _("Failed to symlink() `%s' to `%s' : %s"),
-                                         linkpath, new_path);
+                                         linkpath, new_path, strerror(errno));
                               exit(INCORRECT);
                            }
                         }
@@ -948,7 +950,8 @@ get_extra_work_dirs(char                   *afd_config_buffer,
                                        system_log(FATAL_SIGN, __FILE__, __LINE__,
                                                   _("Failed to symlink() `%s' to `%s' : %s"),
                                                   linkpath,
-                                                  (*ewl)[i].outgoing_file_dir);
+                                                  (*ewl)[i].outgoing_file_dir,
+                                                  strerror(errno));
                                        exit(INCORRECT);
                                     }
                                  }
@@ -959,7 +962,8 @@ get_extra_work_dirs(char                   *afd_config_buffer,
                                  system_log(FATAL_SIGN, __FILE__, __LINE__,
                                             _("Failed to symlink() `%s' to `%s' : %s"),
                                             linkpath,
-                                            (*ewl)[i].outgoing_file_dir);
+                                            (*ewl)[i].outgoing_file_dir,
+                                            strerror(errno));
                                  exit(INCORRECT);
                               }
                            }
@@ -1077,7 +1081,8 @@ get_extra_work_dirs(char                   *afd_config_buffer,
                                           system_log(FATAL_SIGN, __FILE__, __LINE__,
                                                      _("Failed to symlink() `%s' to `%s' : %s"),
                                                      linkpath,
-                                                     (*ewl)[i].time_dir);
+                                                     (*ewl)[i].time_dir,
+                                                     strerror(errno));
                                           exit(INCORRECT);
                                        }
                                     }
@@ -1087,7 +1092,8 @@ get_extra_work_dirs(char                   *afd_config_buffer,
                                  {
                                     system_log(FATAL_SIGN, __FILE__, __LINE__,
                                                _("Failed to symlink() `%s' to `%s' : %s"),
-                                               linkpath, (*ewl)[i].time_dir);
+                                               linkpath, (*ewl)[i].time_dir,
+                                               strerror(errno));
                                     exit(INCORRECT);
                                  }
                               }
