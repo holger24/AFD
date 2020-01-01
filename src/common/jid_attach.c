@@ -1,6 +1,6 @@
 /*
  *  jid_attach.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2019, 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ DESCR__S_M3
  **   jid_attach - attaches to job ID data (JID)
  **
  ** SYNOPSIS
- **   void jid_attach(void)
+ **   int jid_attach(int writeable, char *who)
  **
  ** DESCRIPTION
  **   The function jid_attach() attaches to the job ID data (JID).
@@ -69,8 +69,8 @@ extern struct job_id_data *jid;
 
 
 /*############################# jid_attach() ############################*/
-void
-jid_attach(int writeable)
+int
+jid_attach(int writeable, char *who)
 {
    char        *ptr,
                jid_file[MAX_PATH_LENGTH];
@@ -82,10 +82,19 @@ jid_attach(int writeable)
    if ((jid_fd = coe_open(jid_file,
                           (writeable == YES) ? O_RDWR : O_RDONLY)) == -1)
    {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 _("Failed to open() `%s' : %s"),
-                 jid_file, strerror(errno));
-      exit(INCORRECT);
+      if (errno == ENOENT)
+      {
+         system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                    _("Failed to open() `%s' : %s"),
+                    jid_file, strerror(errno));
+      }
+      else
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("Failed to open() `%s' : %s"),
+                    jid_file, strerror(errno));
+      }
+      return(INCORRECT);
    }
    if (fstat(jid_fd, &stat_buf) == -1)
    {
@@ -94,7 +103,7 @@ jid_attach(int writeable)
                  jid_file, strerror(errno));
       (void)close(jid_fd);
       jid_fd = -1;
-      exit(INCORRECT);
+      return(INCORRECT);
    }
 #ifdef HAVE_MMAP
    if ((ptr = mmap(NULL, stat_buf.st_size,
@@ -110,24 +119,31 @@ jid_attach(int writeable)
                  _("mmap() error : %s"), strerror(errno));
       (void)close(jid_fd);
       jid_fd = -1;
-      exit(INCORRECT);
+      return(INCORRECT);
    }
-   if (close(jid_fd) == -1)
-   {
-      system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                 _("Failed to close() %s : %s"), jid_file, strerror(errno));
-   }
-   jid_fd = -1;
    if (*(ptr + SIZEOF_INT + 1 + 1 + 1) != CURRENT_JID_VERSION)
    {
-      (void)fprintf(stderr, _("Incorrect JID version (data=%d current=%d)!\n"),
-                    *(ptr + SIZEOF_INT + 1 + 1 + 1), CURRENT_JID_VERSION);
-      exit(INCORRECT);
+      system_log(WARN_SIGN, __FILE__, __LINE__,
+                 "This code is compiled for JID version %d, but the JID we try to attach is %d [%s].",
+                 CURRENT_JID_VERSION, *(ptr + SIZEOF_INT + 1 + 1 + 1), who);
+      (void)close(jid_fd);
+      jid_fd = -1;
+#ifdef HAVE_MMAP
+      if (munmap(ptr, stat_buf.st_size) == -1)
+#else
+      if (munmap_emu(ptr) == -1)
+#endif
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("Failed to munmap() JID [%s] : %s"),
+                    who, strerror(errno));
+      }
+      return(INCORRECT);
    }
    no_of_job_ids = *(int *)ptr;
    ptr += AFD_WORD_OFFSET;
    jid = (struct job_id_data *)ptr;
    jid_size = stat_buf.st_size;
 
-   return;
+   return(SUCCESS);
 }

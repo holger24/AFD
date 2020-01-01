@@ -1,7 +1,7 @@
 /*
  *  fra_disable_all_flag.c - Part of AFD, an automatic file distribution
  *                           program.
- *  Copyright (c) 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2019, 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -90,7 +90,14 @@ check_every_fra_disable_all_flag(void)
    }
    if (jid_fd == -1)
    {
-      jid_attach(NO);
+      if (jid_attach(NO, "check_every_fra_disable_all_flag()") != SUCCESS)
+      {
+         if (fsa_attached == YES)
+         {
+            fsa_detach(NO);
+         }
+         return;
+      }
       jid_attached = YES;
    }
 
@@ -149,7 +156,18 @@ check_fra_disable_all_flag(unsigned int host_id, int host_disabled)
    }
    if (jid_fd == -1)
    {
-      jid_attach(NO);
+      if (jid_attach(NO, "check_fra_disable_all_flag()") != SUCCESS)
+      {
+         if (fra_attached == YES)
+         {
+            fra_detach();
+         }
+         if (fsa_attached == YES)
+         {
+            fsa_detach(NO);
+         }
+         return;
+      }
       jid_attached = YES;
    }
 

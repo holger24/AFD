@@ -1,6 +1,6 @@
 /*
  *  afddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -4112,6 +4112,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                              int, int),
 #endif
                     is_msgname(const char *),
+                    jid_attach(int, char *),
                     jid_detach(int),
                     lock_file(char *, int),
 #ifdef LOCK_DEBUG
@@ -4256,7 +4257,6 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
 #ifdef WITH_DUP_CHECK
                     isdup_detach(void),
 #endif
-                    jid_attach(int),
 #ifdef LOCK_DEBUG
                     lock_region_w(int, off_t, char *, int),
 #else
