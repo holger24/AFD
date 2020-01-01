@@ -1,6 +1,6 @@
 /*
  *  rec_rmdir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2009 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -53,7 +53,7 @@ DESCR__E_M3
 #include <string.h>             /* strcpy(), strlen()                    */
 #include <unistd.h>             /* unlink(), rmdir()                     */
 #include <sys/types.h>
-#include <sys/stat.h>           /* stat(), S_ISDIR()                     */
+#include <sys/stat.h>           /* lstat(), S_ISDIR()                    */
 #include <dirent.h>             /* opendir(), readdir(), closedir()      */
 #include <errno.h>
 
@@ -68,12 +68,12 @@ rec_rmdir(char *dirname)
    DIR           *dp;
    int           ret = 0;
 
-   if (stat(dirname, &stat_buf) == -1)
+   if (lstat(dirname, &stat_buf) == -1)
    {
       if (errno != ENOENT)
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("Failed to stat() `%s' : %s"), dirname, strerror(errno));
+                    _("Failed to lstat() `%s' : %s"), dirname, strerror(errno));
          return(INCORRECT);
       }
       else
