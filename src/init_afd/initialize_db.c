@@ -1,6 +1,6 @@
 /*
  *  initialize_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -820,6 +820,9 @@ delete_log_files(char *logdir, int offset, int dry_run)
            EVENT_LOG_NAME_ALL,
            RECEIVE_LOG_NAME_ALL,
            TRANSFER_LOG_NAME_ALL,
+#ifdef _TRANSFER_RATE_LOG
+           TRANSFER_RATE_LOG_NAME_ALL,
+#endif
 #ifdef _INPUT_LOG
            INPUT_BUFFER_FILE_ALL,
 #endif
