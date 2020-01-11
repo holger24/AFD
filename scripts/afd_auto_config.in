@@ -18,7 +18,7 @@ then
    AFD_WORK_DIR="$1"
    export AFD_WORK_DIR
 else
-   if [ "$AFD_WORK_DIR" == "" ]
+   if [ "$AFD_WORK_DIR" = "" ]
    then
       echo "Environment variable AFD_WORK_DIR not set."
       echo "Usage: $0 <work dir>"
@@ -67,6 +67,10 @@ else
    then
       if [ -f @docdir@/etc/INFO-LOOP.sample ]
       then
+         if [ ! -d $AFD_WORK_DIR/etc/info ]
+         then
+            mkdir $AFD_WORK_DIR/etc/info
+         fi
          cp @docdir@/etc/INFO-LOOP.sample $AFD_WORK_DIR/etc/info/LOOP
       fi
    fi
@@ -118,7 +122,7 @@ else
    fi
 fi
 
-if [ $GOTCHA == "NO" ]
+if [ $GOTCHA = "NO" ]
 then
    if [ ! -f "$AFD_WORK_DIR/etc/DIR_CONFIG" ]
    then
@@ -173,7 +177,7 @@ else
    fi
 fi
 
-if [ $GOTCHA == "NO" ]
+if [ $GOTCHA = "NO" ]
 then
    if [ -f @docdir@/etc/rename.rule.sample ]
    then

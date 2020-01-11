@@ -19,7 +19,7 @@ then
    AFD_WORK_DIR="$1"
    export AFD_WORK_DIR
 else
-   if [ "$AFD_WORK_DIR" == "" ]
+   if [ "$AFD_WORK_DIR" = "" ]
    then
       echo "Environment variable AFD_WORK_DIR not set."
       echo "Usage: $0 <work dir>"
@@ -54,7 +54,7 @@ then
       counter=`expr "$counter" + 1`
    done
 
-   if [ "$ERROR_LIST" != "" ]
+   if [ ! "$ERROR_LIST" = "" ]
    then
       echo $ERROR_LIST
    fi
