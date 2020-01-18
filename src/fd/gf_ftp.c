@@ -1158,6 +1158,7 @@ main(int argc, char *argv[])
                               new_size = 0;
                            }
                            fsa->total_file_size = new_size;
+                           file_size_to_retrieve_shown = new_size;
                            trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
 # if SIZEOF_OFF_T == 4
                                      "Total file size overflowed. Correcting to %ld.",
@@ -1177,6 +1178,7 @@ main(int argc, char *argv[])
 # endif
                                           (pri_off_t)fsa->total_file_size);
                                 fsa->total_file_size = 0;
+                                file_size_to_retrieve_shown = 0;
                              }
 #endif
 #ifdef LOCK_DEBUG
@@ -1612,6 +1614,7 @@ main(int argc, char *argv[])
                                  new_size = 0;
                               }
                               fsa->total_file_size = new_size;
+                              file_size_to_retrieve_shown = new_size;
                               trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
 #if SIZEOF_OFF_T == 4
                                         "Total file size overflowed. Correcting to %ld.",
@@ -1631,6 +1634,7 @@ main(int argc, char *argv[])
 #endif
                                              (pri_off_t)fsa->total_file_size);
                                    fsa->total_file_size = 0;
+                                   file_size_to_retrieve_shown = 0;
                                 }
 #endif
                         }
