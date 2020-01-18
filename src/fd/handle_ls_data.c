@@ -1,6 +1,6 @@
 /*
  *  handle_ls_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2009 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2009 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -799,6 +799,7 @@ detach_ls_data(int remove)
       {
          rl_fd = -1;
       }
+      current_no_of_listed_files = NULL;
       if ((remove == YES) && (list_file != NULL))
       {
          if (unlink(list_file) == -1)

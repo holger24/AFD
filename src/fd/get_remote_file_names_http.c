@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_http.c - Part of AFD, an automatic file distribution
  *                                 program.
- *  Copyright (c) 2006 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -298,34 +298,38 @@ try_attach_again:
          http_quit();
          exit(INCORRECT);
       }
+      if ((db.special_flag & DISTRIBUTED_HELPER_JOB) &&
+          ((fra->stupid_mode == YES) || (fra->remove == YES)))
+      {
 # ifdef LOCK_DEBUG
-      if (rlock_region(rl_fd, LOCK_RETR_PROC,
+         if (rlock_region(rl_fd, LOCK_RETR_PROC,
                           __FILE__, __LINE__) == LOCK_IS_SET)
 # else
-      if (rlock_region(rl_fd, LOCK_RETR_PROC) == LOCK_IS_SET)
+         if (rlock_region(rl_fd, LOCK_RETR_PROC) == LOCK_IS_SET)
 # endif
-      {
-         if (i == 0)
          {
-            system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                       "Hmm, lock is set. Assume ls_data file was just modified. Lets try it again. (job_no=%d fsa_pos=%d)",
-                       (int)db.job_no, db.fsa_pos);
-         }
-         else
-         {
-            if (i == 30)
+            if (i == 0)
             {
-               trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
-                         "Have waited %d seconds, but unable to get a lock. Terminating.",
-                         (i * 100000) / 1000000);
-               http_quit();
-               exit(SUCCESS);
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                          "Hmm, lock is set. Assume ls_data file was just modified. Lets try it again. (job_no=%d fsa_pos=%d)",
+                          (int)db.job_no, db.fsa_pos);
             }
-            my_usleep(100000L);
+            else
+            {
+               if (i == 30)
+               {
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "Have waited %d seconds, but unable to get a lock. Terminating.",
+                            (i * 100000) / 1000000);
+                  http_quit();
+                  exit(SUCCESS);
+               }
+               my_usleep(100000L);
+            }
+            detach_ls_data(NO);
+            i++;
+            goto try_attach_again;
          }
-         detach_ls_data(NO);
-         i++;
-         goto try_attach_again;
       }
    }
 
@@ -349,15 +353,12 @@ try_attach_again:
       {
          if (*current_no_of_listed_files != no_of_listed_files)
          {
+            no_of_listed_files = *current_no_of_listed_files;
             if (i >= *current_no_of_listed_files)
             {
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "no_of_listed_files has been reduced (%d -> %d)!!! Bailing out!",
-                          no_of_listed_files, *current_no_of_listed_files);
-
-               /* Just in case we do not fall over this in some other */
-               /* code path. Let's hope this does not break anything. */
-               no_of_listed_files = *current_no_of_listed_files;
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "no_of_listed_files has been reduced (%d -> %d)!",
+                         no_of_listed_files, *current_no_of_listed_files);
                break;
             }
          }

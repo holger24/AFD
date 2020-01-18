@@ -1,6 +1,6 @@
 /*
  *  gf_http.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ DESCR__E_M1
 
 /* Global variables. */
 unsigned int               special_flag = 0;
-int                        *current_no_of_listed_files,
+int                        *current_no_of_listed_files = NULL,
                            event_log_fd = STDERR_FILENO,
                            exitflag = IS_FAULTY_VAR,
                            files_to_retrieve_shown = 0,
@@ -176,8 +176,7 @@ main(int argc, char *argv[])
    int              cb2_ret = NO;
    unsigned int     values_changed = 0;
 #endif
-   off_t            bytes_done,
-                    content_length,
+   off_t            content_length,
                     file_size_retrieved = 0,
                     file_size_to_retrieve = 0,
                     tmp_content_length;
@@ -422,6 +421,7 @@ main(int argc, char *argv[])
           */
          db.keep_connected = 0;
       }
+
       more_files_in_list = NO;
       loop_counter = 0;
       do
@@ -429,7 +429,8 @@ main(int argc, char *argv[])
          if ((files_to_retrieve = get_remote_file_names_http(&file_size_to_retrieve,
                                                              &more_files_in_list)) > 0)
          {
-            int diff_no_of_files_done;
+            int   diff_no_of_files_done;
+            off_t bytes_done;
 
             if ((more_files_in_list == YES) &&
                 ((fra->dir_flag & DO_NOT_PARALLELIZE) == 0) &&
@@ -479,6 +480,7 @@ main(int argc, char *argv[])
                reset_values(files_retrieved, file_size_retrieved,
                             files_to_retrieve, file_size_to_retrieve,
                             (struct job *)&db);
+               exitflag = 0;
                exit(TRANSFER_SUCCESS);
             }
 
@@ -515,12 +517,31 @@ main(int argc, char *argv[])
                           "Failed to malloc() %d bytes : %s",
                           blocksize + 4, strerror(errno));
                http_quit();
+               reset_values(files_retrieved, file_size_retrieved,
+                            files_to_retrieve, file_size_to_retrieve,
+                            (struct job *)&db);
                exit(ALLOC_ERROR);
             }
 
             /* Retrieve all files. */
             for (i = 0; i < no_of_listed_files; i++)
             {
+               if (*current_no_of_listed_files != no_of_listed_files)
+               {
+                  no_of_listed_files = *current_no_of_listed_files;
+                  if (i >= *current_no_of_listed_files)
+                  {
+                     trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "no_of_listed_files has been reduced (%d -> %d)!",
+                               no_of_listed_files, *current_no_of_listed_files);
+                     (void)http_quit();
+                     reset_values(files_retrieved, file_size_retrieved,
+                                  files_to_retrieve, file_size_to_retrieve,
+                                  (struct job *)&db);
+                     exitflag = 0;
+                     exit(TRANSFER_SUCCESS);
+                  }
+               }
                if ((rl[i].retrieved == NO) &&
                    (rl[i].assigned == ((unsigned char)db.job_no + 1)))
                {
@@ -592,6 +613,9 @@ main(int argc, char *argv[])
                                "Failed to open remote file %s in %s (%d).",
                                rl[i].file_name, fra->dir_alias, status);
                      (void)http_quit();
+                     reset_values(files_retrieved, file_size_retrieved,
+                                  files_to_retrieve, file_size_to_retrieve,
+                                  (struct job *)&db);
                      exit(eval_timeout(OPEN_REMOTE_ERROR));
                   }
                   if (tmp_content_length != content_length)
@@ -690,6 +714,15 @@ main(int argc, char *argv[])
                                 }
 #endif
                         }
+                        else
+                        {
+                           if ((fsa->total_file_counter == 0) &&
+                               (fsa->total_file_size > 0))
+                           {
+                              fsa->total_file_size = 0;
+                              file_size_to_retrieve_shown = 0;
+                           }
+                        }
 
 #ifdef LOCK_DEBUG
                         unlock_region(fsa_fd, db.lock_offset + LOCK_TFC, __FILE__, __LINE__);
@@ -707,8 +740,10 @@ main(int argc, char *argv[])
                                        "Database changed, exiting.");
                              (void)http_quit();
                              reset_values(files_retrieved, file_size_retrieved,
-                                          files_to_retrieve, file_size_to_retrieve,
+                                          files_to_retrieve,
+                                          file_size_to_retrieve,
                                           (struct job *)&db);
+                             exitflag = 0;
                              exit(TRANSFER_SUCCESS);
                           }
                   }
@@ -791,10 +826,15 @@ main(int argc, char *argv[])
                                        "Database changed, exiting.");
                              (void)http_quit();
                              (void)close(fd);
-                             (void)unlink(local_tmp_file);
+                             if (prev_download_exists != YES)
+                             {
+                                (void)unlink(local_tmp_file);
+                             }
                              reset_values(files_retrieved, file_size_retrieved,
-                                          files_to_retrieve, file_size_to_retrieve,
+                                          files_to_retrieve,
+                                          file_size_to_retrieve,
                                           (struct job *)&db);
+                             exitflag = 0;
                              exit(TRANSFER_SUCCESS);
                           }
 
@@ -841,7 +881,9 @@ main(int argc, char *argv[])
                                                  file_size_to_retrieve,
                                                  (struct job *)&db);
                                     http_quit();
-                                    if (bytes_done == 0)
+                                    (void)close(fd);
+                                    if ((bytes_done == 0) &&
+                                        (prev_download_exists != YES))
                                     {
                                        (void)unlink(local_tmp_file);
                                     }
@@ -862,12 +904,14 @@ main(int argc, char *argv[])
                                                  local_tmp_file,
                                                  strerror(errno));
                                        http_quit();
+                                       (void)close(fd);
                                        reset_values(files_retrieved,
                                                     file_size_retrieved,
                                                     files_to_retrieve,
                                                     file_size_to_retrieve,
                                                     (struct job *)&db);
-                                       if (bytes_done == 0)
+                                       if ((bytes_done == 0) &&
+                                           (prev_download_exists != YES))
                                        {
                                           (void)unlink(local_tmp_file);
                                        }
@@ -914,6 +958,7 @@ main(int argc, char *argv[])
                                                        fra->dir_alias,
                                                        (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
                                              http_quit();
+                                             (void)close(fd);
                                              exit(STILL_FILES_TO_SEND);
                                           }
                                        }
@@ -929,12 +974,17 @@ main(int argc, char *argv[])
                                                    "Database changed, exiting.");
                                          (void)http_quit();
                                          (void)close(fd);
-                                         (void)unlink(local_tmp_file);
                                          reset_values(files_retrieved,
                                                       file_size_retrieved,
                                                       files_to_retrieve,
                                                       file_size_to_retrieve,
                                                       (struct job *)&db);
+                                         if ((bytes_done == 0) &&
+                                             (prev_download_exists != YES))
+                                         {
+                                            (void)unlink(local_tmp_file);
+                                         }
+                                         exitflag = 0;
                                          exit(TRANSFER_SUCCESS);
                                       }
                               } while (status != 0);
@@ -1067,6 +1117,7 @@ main(int argc, char *argv[])
                                                       files_to_retrieve,
                                                       file_size_to_retrieve,
                                                       (struct job *)&db);
+                                         exitflag = 0;
                                          exit(TRANSFER_SUCCESS);
                                       }
                               }
@@ -1095,8 +1146,10 @@ main(int argc, char *argv[])
                                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                            "Failed to read from remote file %s in %s",
                                            rl[i].file_name, fra->dir_alias);
-                                 reset_values(files_retrieved, file_size_retrieved,
-                                              files_to_retrieve, file_size_to_retrieve,
+                                 reset_values(files_retrieved,
+                                              file_size_retrieved,
+                                              files_to_retrieve,
+                                              file_size_to_retrieve,
                                               (struct job *)&db);
                                  http_quit();
                                  if (bytes_done == 0)
@@ -1118,7 +1171,8 @@ main(int argc, char *argv[])
                                               "Failed to write() to file %s : %s",
                                               local_tmp_file, strerror(errno));
                                     http_quit();
-                                    reset_values(files_retrieved, file_size_retrieved,
+                                    reset_values(files_retrieved,
+                                                 file_size_retrieved,
                                                  files_to_retrieve,
                                                  file_size_to_retrieve,
                                                  (struct job *)&db);
@@ -1153,6 +1207,7 @@ main(int argc, char *argv[])
                                                    files_to_retrieve,
                                                    file_size_to_retrieve,
                                                    (struct job *)&db);
+                                      exitflag = 0;
                                       exit(TRANSFER_SUCCESS);
                                    }
                            } while (status != HTTP_LAST_CHUNK);
@@ -1268,11 +1323,12 @@ main(int argc, char *argv[])
                            {
                               trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
 #if SIZEOF_OFF_T == 4
-                                        "content_length (%ld) != rl[i].size (%ld)",
+                                        "content_length+offset (%ld + %ld) != rl[i].size (%ld)",
 #else
-                                        "content_length (%lld) != rl[i].size (%lld)",
+                                        "content_length+offset (%lld + %lld) != rl[i].size (%lld)",
 #endif
-                                        (pri_off_t)(content_length + offset),
+                                        (pri_off_t)content_length,
+                                        (pri_off_t)offset,
                                         (pri_off_t)rl[i].size);
                               rl[i].size = content_length + offset;
                            }
@@ -1316,6 +1372,15 @@ main(int argc, char *argv[])
                                    file_size_to_retrieve_shown = 0;
                                 }
 #endif
+                        }
+                        else
+                        {
+                           if ((fsa->total_file_counter == 0) &&
+                               (fsa->total_file_size > 0))
+                           {
+                              fsa->total_file_size = 0;
+                              file_size_to_retrieve_shown = 0;
+                           }
                         }
 
                         /* File counter done. */
@@ -1614,7 +1679,7 @@ main(int argc, char *argv[])
                      }
                   }
                   files_retrieved++;
-                  file_size_retrieved += bytes_done + offset;
+                  file_size_retrieved += bytes_done;
                } /* if (rl[i].retrieved == NO) */
 
                if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
@@ -1628,6 +1693,7 @@ main(int argc, char *argv[])
                   reset_values(files_retrieved, file_size_retrieved,
                                files_to_retrieve, file_size_to_retrieve,
                                (struct job *)&db);
+                  exitflag = 0;
                   exit(TRANSFER_SUCCESS);
                }
             } /* for (i = 0; i < no_of_listed_files; i++) */
@@ -1818,6 +1884,7 @@ main(int argc, char *argv[])
                     reset_values(files_retrieved, file_size_retrieved,
                                  files_to_retrieve, file_size_to_retrieve,
                                  (struct job *)&db);
+                    exitflag = 0;
                     exit(TRANSFER_SUCCESS);
                  }
                  if (fra->error_counter > 0)
@@ -1901,6 +1968,14 @@ gf_http_exit(void)
 
          for (i = 0; i < no_of_listed_files; i++)
          {
+            if (*current_no_of_listed_files != no_of_listed_files)
+            {
+               no_of_listed_files = *current_no_of_listed_files;
+               if (i >= *current_no_of_listed_files)
+               {
+                  break;
+               }
+            }
             if (rl[i].assigned == ((unsigned char)db.job_no + 1))
             {
                rl[i].assigned = 0;

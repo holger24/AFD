@@ -1,6 +1,6 @@
 /*
  *  gf_sql.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ DESCR__E_M1
 #include "fddefs.h"
 #include "version.h"
 
-int                        *current_no_of_listed_files,
+int                        *current_no_of_listed_files = NULL,
                            event_log_fd = STDERR_FILENO,
                            exitflag = IS_FAULTY_VAR,
                            files_to_retrieve_shown = 0,

@@ -1,6 +1,6 @@
 /*
  *  gf_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -73,7 +73,7 @@ DESCR__E_M1
 
 /* Global variables. */
 unsigned int               special_flag = 0;
-int                        *current_no_of_listed_files,
+int                        *current_no_of_listed_files = NULL,
                            event_log_fd = STDERR_FILENO,
                            exitflag = IS_FAULTY_VAR,
                            files_to_retrieve_shown = 0,
@@ -954,6 +954,7 @@ main(int argc, char *argv[])
                reset_values(files_retrieved, file_size_retrieved,
                             files_to_retrieve, file_size_to_retrieve,
                             (struct job *)&db);
+               exitflag = 0;
                exit(TRANSFER_SUCCESS);
             }
 
@@ -998,6 +999,22 @@ main(int argc, char *argv[])
             /* Retrieve all files. */
             for (i = 0; i < no_of_listed_files; i++)
             {
+               if (*current_no_of_listed_files != no_of_listed_files)
+               {
+                  no_of_listed_files = *current_no_of_listed_files;
+                  if (i >= *current_no_of_listed_files)
+                  {
+                     trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "no_of_listed_files has been reduced (%d -> %d)!",
+                               no_of_listed_files, *current_no_of_listed_files);
+                     (void)ftp_quit();
+                     reset_values(files_retrieved, file_size_retrieved,
+                                  files_to_retrieve, file_size_to_retrieve,
+                                  (struct job *)&db);
+                     exitflag = 0;
+                     exit(TRANSFER_SUCCESS);
+                  }
+               }
                if ((rl[i].retrieved == NO) &&
                    (rl[i].assigned == ((unsigned char)db.job_no + 1)))
                {
@@ -1178,6 +1195,7 @@ main(int argc, char *argv[])
                                           files_to_retrieve,
                                           file_size_to_retrieve,
                                           (struct job *)&db);
+                             exitflag = 0;
                              exit(TRANSFER_SUCCESS);
                           }
                      files_retrieved++;
@@ -1285,6 +1303,7 @@ main(int argc, char *argv[])
                                           files_to_retrieve,
                                           file_size_to_retrieve,
                                           (struct job *)&db);
+                             exitflag = 0;
                              exit(TRANSFER_SUCCESS);
                           }
 
@@ -1402,6 +1421,7 @@ main(int argc, char *argv[])
                                              files_to_retrieve,
                                              file_size_to_retrieve,
                                              (struct job *)&db);
+                                exitflag = 0;
                                 exit(TRANSFER_SUCCESS);
                              }
                      } while (status != 0);
@@ -1750,6 +1770,7 @@ main(int argc, char *argv[])
                         reset_values(files_retrieved, file_size_retrieved,
                                      files_to_retrieve, file_size_to_retrieve,
                                      (struct job *)&db);
+                        exitflag = 0;
                         exit(TRANSFER_SUCCESS);
                      }
                   } /* status != 550 */
@@ -1938,6 +1959,7 @@ main(int argc, char *argv[])
                     reset_values(files_retrieved, file_size_retrieved,
                                  files_to_retrieve, file_size_to_retrieve,
                                  (struct job *)&db);
+                    exitflag = 0;
                     exit(TRANSFER_SUCCESS);
                  }
                  if (fra->error_counter > 0)
@@ -2198,6 +2220,14 @@ gf_ftp_exit(void)
 
          for (i = 0; i < no_of_listed_files; i++)
          {
+            no_of_listed_files = *current_no_of_listed_files;
+            if (*current_no_of_listed_files != no_of_listed_files)
+            {
+               if (i >= *current_no_of_listed_files)
+               {
+                  break;
+               }
+            }
             if (rl[i].assigned == ((unsigned char)db.job_no + 1))
             {
                rl[i].assigned = 0;

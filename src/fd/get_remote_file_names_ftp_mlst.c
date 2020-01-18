@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_ftp_mlst.c - Part of AFD, an automatic file
  *                                     distribution program.
- *  Copyright (c) 2013 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -183,15 +183,12 @@ try_attach_again:
       {
          if (*current_no_of_listed_files != no_of_listed_files)
          {
+            no_of_listed_files = *current_no_of_listed_files;
             if (i >= *current_no_of_listed_files)
             {
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "no_of_listed_files has been reduced (%d -> %d)!!! Bailing out!",
-                          no_of_listed_files, *current_no_of_listed_files);
-
-               /* Just in case we do not fall over this in some other */
-               /* code path. Let's hope this does not break anything. */
-               no_of_listed_files = *current_no_of_listed_files;
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "no_of_listed_files has been reduced (%d -> %d)!",
+                         no_of_listed_files, *current_no_of_listed_files);
                break;
             }
          }
