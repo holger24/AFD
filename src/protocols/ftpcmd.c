@@ -1,6 +1,6 @@
 /*
  *  ftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -937,27 +937,6 @@ ftp_ssl_auth(int strict)
             }
             else
             {
-               const char       *ssl_version;
-               int              length;
-               const SSL_CIPHER *ssl_cipher;
-
-               ssl_version = SSL_get_cipher_version(ssl_con);
-               length = strlen(msg_str);
-               if ((ssl_cipher = SSL_get_current_cipher(ssl_con)) != NULL)
-               {
-                  int ssl_bits;
-
-                  SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
-                  (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
-                                 "  <%s, cipher %s, %d bits>",
-                                 ssl_version, SSL_CIPHER_get_name(ssl_cipher),
-                                 ssl_bits);
-               }
-               else
-               {
-                  (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
-                                 "  <%s, cipher ?, ? bits>", ssl_version);
-               }
                reply = SUCCESS;
             }
          }
@@ -4181,20 +4160,8 @@ encrypt_data_connection(int fd)
    }
    else
    {
-      const char       *ssl_version;
-      int              length,
-                       ssl_bits;
-      const SSL_CIPHER *ssl_cipher;
-      X509             *x509_ssl_con,
-                       *x509_ssl_data;
-
-      ssl_version = SSL_get_cipher_version(ssl_data);
-      ssl_cipher = SSL_get_current_cipher(ssl_data);
-      SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
-      length = strlen(msg_str);
-      (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
-                     "  <%s, cipher %s, %d bits>",
-                     ssl_version, SSL_CIPHER_get_name(ssl_cipher), ssl_bits);
+      X509 *x509_ssl_con,
+           *x509_ssl_data;
 
       /* Get server certifcates for ctrl and data connection. */
       x509_ssl_con = SSL_get_peer_certificate(ssl_con);

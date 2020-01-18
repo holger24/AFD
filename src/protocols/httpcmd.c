@@ -1,6 +1,6 @@
 /*
  *  httpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -856,6 +856,7 @@ http_connect(char *hostname,
          }
          else
          {
+# ifdef WITH_TRACE
             const char       *ssl_version;
             int              length;
             const SSL_CIPHER *ssl_cipher;
@@ -877,6 +878,7 @@ http_connect(char *hostname,
                (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
                               "  <%s, cipher ?, ? bits>", ssl_version);
             }
+# endif
             reply = SUCCESS;
          }
 # ifdef WITH_SSL_READ_AHEAD
