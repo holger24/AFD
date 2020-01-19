@@ -1,6 +1,6 @@
 /*
  *  sf_smtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1732,8 +1732,17 @@ main(int argc, char *argv[])
                   if (((db.special_flag & SHOW_ALL_GROUP_MEMBERS) == 0) &&
                       ((db.special_flag & HIDE_ALL_GROUP_MEMBERS) == 0))
                   {
-                     length = snprintf(buffer, buffer_size,
-                                       "To: %s\r\n", &p_db->user[1]);
+                     if (db.no_listed == 1)
+                     {
+                        length = snprintf(buffer, buffer_size,
+                                          "To: %s\r\n", db.group_list[0]);
+                     }
+                     else
+                     {
+                        /* This is tricky: To: group name */
+                        length = snprintf(buffer, buffer_size,
+                                          "To: %s\r\n", &p_db->user[1]);
+                     }
                      if (length >= buffer_size)
                      {
                         trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
