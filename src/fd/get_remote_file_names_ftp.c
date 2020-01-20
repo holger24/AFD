@@ -190,12 +190,12 @@ try_attach_again:
       {
          if (*current_no_of_listed_files != no_of_listed_files)
          {
-            no_of_listed_files = *current_no_of_listed_files;
             if (i >= *current_no_of_listed_files)
             {
                trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
                          "no_of_listed_files has been reduced (%d -> %d)!",
                          no_of_listed_files, *current_no_of_listed_files);
+               no_of_listed_files = *current_no_of_listed_files;
                break;
             }
          }

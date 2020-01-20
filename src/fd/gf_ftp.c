@@ -1001,7 +1001,6 @@ main(int argc, char *argv[])
             {
                if (*current_no_of_listed_files != no_of_listed_files)
                {
-                  no_of_listed_files = *current_no_of_listed_files;
                   if (i >= *current_no_of_listed_files)
                   {
                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -2224,11 +2223,11 @@ gf_ftp_exit(void)
 
          for (i = 0; i < no_of_listed_files; i++)
          {
-            no_of_listed_files = *current_no_of_listed_files;
             if (*current_no_of_listed_files != no_of_listed_files)
             {
                if (i >= *current_no_of_listed_files)
                {
+                  no_of_listed_files = *current_no_of_listed_files;
                   break;
                }
             }
