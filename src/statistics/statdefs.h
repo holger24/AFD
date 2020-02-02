@@ -20,12 +20,13 @@
 #ifndef __statdefs_h
 #define __statdefs_h
 
-#define SHOW_SMALL_TOTAL   -1
-#define SHOW_BIG_TOTAL     -2
-#define SHOW_SPACE         -3
-#define NORMAL_OUTPUT      0
-#define NUMERIC_TOTAL_ONLY 1
-#define CSV_FORMAT         2
+#define SHOW_SMALL_TOTAL      -1
+#define SHOW_BIG_TOTAL        -2
+#define SHOW_SPACE            -3
+#define NORMAL_OUTPUT         0
+#define NUMERIC_TOTAL_ONLY    1
+#define CSV_FORMAT            2
+#define ONLY_SHOW_REMOTE_DIRS 3
 
 #define SPACE_LINE  "                                                                                                                                                                                                                                                       "
 #define DOUBLE_LINE "======================================================================================================================================================================================================================================================="
@@ -130,7 +131,7 @@ struct afd_year_istat
 extern void eval_input_as(int, char **, char *, char *, char *),
             eval_input_ss(int, char **, char *, char *, int *, int *, int *,
                           int *, int *, int *, int *, int *, int *, int *,
-                          int *, int *, int),
+                          int *, int *, int, int *),
             free_get_dir_name(void),
             get_dir_name(char *, char *),
             get_max_name_length(void),

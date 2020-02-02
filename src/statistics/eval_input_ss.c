@@ -1,6 +1,6 @@
 /*
  *  eval_input_ss.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -40,7 +40,8 @@ DESCR__S_M3
  **                      int  *arg_counter,
  **                      int  *show_time_stamp,
  **                      int  *display_format,
- **                      int  input)
+ **                      int  input,
+ **                      int  *options)
  **
  ** DESCRIPTION
  **   This module checks whether the syntax is correct. So far it
@@ -62,6 +63,7 @@ DESCR__S_M3
  **           -C                  Output in CSV format.
  **           -N                  Show directory name not alias.
  **           -n                  Show alias and directory name.
+ **           -R                  Only show remote dirs.
  **           -T                  Numeric total only.
  **
  ** RETURN VALUES
@@ -83,6 +85,7 @@ DESCR__S_M3
  **   30.04.2018 H.Kiehl Added -C, -N and -o option.
  **   05.11.2018 H.Kiehl Added -n option.
  **   04.07.2019 H.Kiehl Improve detection of alias name or number.
+ **   02.02.2020 H.Kiehl Added -rd option.
  **
  */
 DESCR__E_M3
@@ -121,7 +124,8 @@ eval_input_ss(int  argc,
               int  *show_time_stamp,
               int  *display_format,
               int  *show_alias,
-              int  input)
+              int  input,
+              int  *options)
 {
    int correct = YES;       /* Was input/syntax correct?      */
 
@@ -431,6 +435,11 @@ eval_input_ss(int  argc,
                }
                break;
 
+            case 'R' : /* Only show remote dirs. */
+
+               *options |= ONLY_SHOW_REMOTE_DIRS;
+               break;
+
             default : /* Unknown parameter */
 
                (void)fprintf(stderr,
@@ -503,6 +512,7 @@ usage(int input)
    {
       (void)fprintf(stderr, "           -N            Show directory name not alias.\n");
       (void)fprintf(stderr, "           -n            Show alias and directory name.\n");
+      (void)fprintf(stderr, "           -R            Only show remote dirs.\n");
    }
    (void)fprintf(stderr, "           -T            Show numeric total only.\n");
    (void)fprintf(stderr, "           -y [<x>]      Show information of all years [or year minus x].\n");

@@ -1,6 +1,6 @@
 /*
  *  show_stat.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -133,6 +133,7 @@ main(int argc, char *argv[])
 {
    register int i;
    int          current_year,
+                options = 0,
                 show_min_range = 0,
                 show_min = -1,
                 show_min_summary = -1,
@@ -167,7 +168,7 @@ main(int argc, char *argv[])
                  &show_day_summary, &show_hour, &show_hour_summary,
                  &show_min_range, &show_min, &show_min_summary, &show_year,
                  &host_counter, &show_time_stamp, &display_format,
-                 &show_alias, NO);
+                 &show_alias, NO, &options);
 
    /* Initialize variables */
    prev_name[0] = '\0';
