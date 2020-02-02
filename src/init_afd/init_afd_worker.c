@@ -1,6 +1,6 @@
 /*
  *  init_afd_worker.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2017, 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2017 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -555,15 +555,16 @@ main(int argc, char *argv[])
                         {
                            sign = WARN_SIGN;
                         }
+                        ia_trans_log(sign, __FILE__, __LINE__, i,
+                                     _("Stopped input queue, since there are to many errors."));
                         if ((fsa[i].host_status & PENDING_ERRORS) == 0)
                         {
                            fsa[i].host_status |= PENDING_ERRORS;
                            event_log(0L, EC_HOST, ET_EXT, EA_ERROR_START, "%s",
                                      fsa[i].host_alias);
-                           error_action(fsa[i].host_alias, "start", HOST_ERROR_ACTION);
+                           error_action(fsa[i].host_alias, "start",
+                                        HOST_ERROR_ACTION, transfer_log_fd);
                         }
-                        ia_trans_log(sign, __FILE__, __LINE__, i,
-                                     _("Stopped input queue, since there are to many errors."));
                         event_log(0L, EC_HOST, ET_AUTO, EA_STOP_QUEUE,
                                   "%s%cErrors %d >= max errors %d",
                                   fsa[i].host_alias, SEPARATOR_CHAR,
@@ -581,6 +582,8 @@ main(int argc, char *argv[])
                         {
                            sign = INFO_SIGN;
                         }
+                        ia_trans_log(sign, __FILE__, __LINE__, i,
+                                     _("Started input queue that has been stopped due to too many errors."));
                         if (fsa[i].last_connection > fsa[i].first_error_time)
                         {
                            if (now > fsa[i].end_event_handle)
@@ -601,10 +604,9 @@ main(int argc, char *argv[])
                            }
                            event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",
                                      fsa[i].host_alias);
-                           error_action(fsa[i].host_alias, "stop", HOST_ERROR_ACTION);
+                           error_action(fsa[i].host_alias, "stop",
+                                        HOST_ERROR_ACTION, transfer_log_fd);
                         }
-                        ia_trans_log(sign, __FILE__, __LINE__, i,
-                                     _("Started input queue that has been stopped due to too many errors."));
                         event_log(0L, EC_HOST, ET_AUTO, EA_START_QUEUE, "%s",
                                   fsa[i].host_alias);
                      }
@@ -680,7 +682,7 @@ main(int argc, char *argv[])
                         ia_trans_log(sign, __FILE__, __LINE__, i,
                                      _("Warn time reached."));
                         error_action(fsa[i].host_alias, "start",
-                                     HOST_WARN_ACTION);
+                                     HOST_WARN_ACTION, transfer_log_fd);
                         event_log(0L, EC_HOST, ET_AUTO, EA_WARN_TIME_SET, "%s",
                                   fsa[i].host_alias);
                      }
@@ -701,7 +703,8 @@ main(int argc, char *argv[])
                         fsa[i].host_status &= ~HOST_WARN_TIME_REACHED;
                         ia_trans_log(DEBUG_SIGN, __FILE__, __LINE__, i,
                                      _("Warn time stopped."));
-                        error_action(fsa[i].host_alias, "stop", HOST_WARN_ACTION);
+                        error_action(fsa[i].host_alias, "stop",
+                                     HOST_WARN_ACTION, transfer_log_fd);
                         event_log(0L, EC_HOST, ET_AUTO, EA_WARN_TIME_UNSET, "%s",
                                   fsa[i].host_alias);
                      }

@@ -1502,7 +1502,7 @@ main(int argc, char *argv[])
                      if (fsa->host_status & HOST_ACTION_SUCCESS)
                      {
                         error_action(fsa->host_alias, "start",
-                                     HOST_SUCCESS_ACTION);
+                                     HOST_SUCCESS_ACTION, transfer_log_fd);
                      }
 
                      /* Check if remote file is to be deleted. */
@@ -1924,7 +1924,8 @@ main(int argc, char *argv[])
                     {
                        char sign[LOG_SIGN_LENGTH];
 
-                       error_action(fsa->host_alias, "stop", HOST_ERROR_ACTION);
+                       error_action(fsa->host_alias, "stop", HOST_ERROR_ACTION,
+                                    transfer_log_fd);
                        event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",
                                  fsa->host_alias);
                        if ((fsa->host_status & HOST_ERROR_OFFLINE_STATIC) ||
@@ -1975,13 +1976,59 @@ main(int argc, char *argv[])
                     fra->error_counter = 0;
                     if (fra->dir_flag & DIR_ERROR_SET)
                     {
+                       int  receive_log_fd = -1;
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                       int  receive_log_readfd;
+#endif
+                       char receive_log_fifo[MAX_PATH_LENGTH];
+
+                       (void)strcpy(receive_log_fifo, p_work_dir);
+                       (void)strcat(receive_log_fifo, FIFO_DIR);
+                       (void)strcat(receive_log_fifo, RECEIVE_LOG_FIFO);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                       if (open_fifo_rw(receive_log_fifo, &receive_log_readfd,
+                                        &receive_log_fd) == -1)
+#else
+                       if ((receive_log_fd = open(receive_log_fifo, O_RDWR)) == -1)
+#endif
+                       {
+                          if (errno == ENOENT)
+                          {
+                             if ((make_fifo(receive_log_fifo) == SUCCESS) &&
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                                 (open_fifo_rw(receive_log_fifo,
+                                               &receive_log_readfd,
+                                               &receive_log_fd) == -1))
+#else
+                                 ((receive_log_fd = open(receive_log_fifo,
+                                                         O_RDWR)) == -1))
+#endif
+                             {
+                                system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                           "Could not open fifo <%s> : %s",
+                                           RECEIVE_LOG_FIFO, strerror(errno));
+                             }
+                          }
+                          else
+                          {
+                             system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                        "Could not open fifo %s : %s",
+                                        RECEIVE_LOG_FIFO, strerror(errno));
+                          }
+                       }
+
                        fra->dir_flag &= ~DIR_ERROR_SET;
                        SET_DIR_STATUS(fra->dir_flag, time(NULL),
                                       fra->start_event_handle,
                                       fra->end_event_handle, fra->dir_status);
-                       error_action(fra->dir_alias, "stop", DIR_ERROR_ACTION);
+                       error_action(fra->dir_alias, "stop", DIR_ERROR_ACTION,
+                                    receive_log_fd);
                        event_log(0L, EC_DIR, ET_EXT, EA_ERROR_END, "%s",
                                  fra->dir_alias);
+                       (void)close(receive_log_fd);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                       (void)close(receive_log_readfd);
+#endif
                     }
 #ifdef LOCK_DEBUG
                     unlock_region(fra_fd, db.fra_lock_offset + LOCK_EC, __FILE__, __LINE__);
@@ -2064,11 +2111,55 @@ check_reset_errors(void)
          fra->error_counter = 0;
          if (fra->dir_flag & DIR_ERROR_SET)
          {
+            int  receive_log_fd = -1;
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+            int  receive_log_readfd;
+#endif
+            char receive_log_fifo[MAX_PATH_LENGTH];
+
+            (void)strcpy(receive_log_fifo, p_work_dir);
+            (void)strcat(receive_log_fifo, FIFO_DIR);
+            (void)strcat(receive_log_fifo, RECEIVE_LOG_FIFO);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+            if (open_fifo_rw(receive_log_fifo, &receive_log_readfd,
+                             &receive_log_fd) == -1)
+#else
+            if ((receive_log_fd = open(receive_log_fifo, O_RDWR)) == -1)
+#endif
+            {
+               if (errno == ENOENT)
+               {
+                  if ((make_fifo(receive_log_fifo) == SUCCESS) &&
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                      (open_fifo_rw(receive_log_fifo, &receive_log_readfd,
+                                    &receive_log_fd) == -1))
+#else
+                      ((receive_log_fd = open(receive_log_fifo, O_RDWR)) == -1))
+#endif
+                  {
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                "Could not open fifo <%s> : %s",
+                                RECEIVE_LOG_FIFO, strerror(errno));
+                  }
+               }
+               else
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "Could not open fifo %s : %s",
+                             RECEIVE_LOG_FIFO, strerror(errno));
+               }
+            }
+
             fra->dir_flag &= ~DIR_ERROR_SET;
             SET_DIR_STATUS(fra->dir_flag, time(NULL), fra->start_event_handle,
                            fra->end_event_handle, fra->dir_status);
-            error_action(fra->dir_alias, "stop", DIR_ERROR_ACTION);
+            error_action(fra->dir_alias, "stop", DIR_ERROR_ACTION,
+                         receive_log_fd);
             event_log(0L, EC_DIR, ET_EXT, EA_ERROR_END, "%s", fra->dir_alias);
+            (void)close(receive_log_fd);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+            (void)close(receive_log_readfd);
+#endif
          }
 #ifdef LOCK_DEBUG
          unlock_region(fra_fd, db.fra_lock_offset + LOCK_EC, __FILE__, __LINE__);
@@ -2187,7 +2278,8 @@ check_reset_errors(void)
       {
          char sign[LOG_SIGN_LENGTH];
 
-         error_action(fsa->host_alias, "stop", HOST_ERROR_ACTION);
+         error_action(fsa->host_alias, "stop", HOST_ERROR_ACTION,
+                      transfer_log_fd);
          event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",
                    fsa->host_alias);
          if ((fsa->host_status & HOST_ERROR_OFFLINE_STATIC) ||

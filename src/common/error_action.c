@@ -1,6 +1,6 @@
 /*
  *  error_action.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,12 +42,14 @@ DESCR__S_M3
  **   04.05.2009 H.Kiehl Added success actions.
  **   24.06.2013 H.Kiehl Added info actions.
  **   22.03.2017 H.Kiehl Handle the case when alias_name is empty.
+ **   31.01.2020 H.Kiehl Added optional log_fd parameter.
  **
  */
 DESCR__E_M3
 
 #include <stdio.h>
 #include <string.h>                   /* strerror()                      */
+#include <stdlib.h>                   /* malloc(), free()                */
 #include <sys/types.h>
 #include <sys/wait.h>
 #ifdef HAVE_FCNTL_H
@@ -63,7 +65,7 @@ extern char *p_work_dir;
 
 /*########################### error_action() ############################*/
 void
-error_action(char *alias_name, char *action, int type)
+error_action(char *alias_name, char *action, int type, int log_fd)
 {
    if (alias_name[0] == '\0')
    {
@@ -72,7 +74,8 @@ error_action(char *alias_name, char *action, int type)
    }
    else
    {
-      int  default_action,
+      int  alias_name_length,
+           default_action,
            event_action,
            event_class,
            status;
@@ -87,6 +90,7 @@ error_action(char *alias_name, char *action, int type)
                                             ACTION_TARGET_DIR,
                                             ACTION_ERROR_DIR);
          event_class = EC_HOST;
+         alias_name_length = MAX_HOSTNAME_LENGTH;
          if ((action[0] == 's') && (action[1] == 't') && (action[2] == 'a') &&
              (action[3] == 'r') && (action[4] == 't') && (action[5] == '\0'))
          {
@@ -111,6 +115,7 @@ error_action(char *alias_name, char *action, int type)
                                                  ACTION_DIR, ACTION_SOURCE_DIR,
                                                  ACTION_ERROR_DIR);
               event_class = EC_DIR;
+              alias_name_length = MAX_DIR_ALIAS_LENGTH;
               if ((action[0] == 's') && (action[1] == 't') &&
                   (action[2] == 'a') && (action[3] == 'r') &&
                   (action[4] == 't') && (action[5] == '\0'))
@@ -136,6 +141,7 @@ error_action(char *alias_name, char *action, int type)
                                                  ACTION_DIR, ACTION_TARGET_DIR,
                                                  ACTION_WARN_DIR);
               event_class = EC_HOST;
+              alias_name_length = MAX_HOSTNAME_LENGTH;
               if ((action[0] == 's') && (action[1] == 't') &&
                   (action[2] == 'a') && (action[3] == 'r') &&
                   (action[4] == 't') && (action[5] == '\0'))
@@ -161,6 +167,7 @@ error_action(char *alias_name, char *action, int type)
                                                  ACTION_DIR, ACTION_SOURCE_DIR,
                                                  ACTION_INFO_DIR);
               event_class = EC_DIR;
+              alias_name_length = MAX_DIR_ALIAS_LENGTH;
               if ((action[0] == 's') && (action[1] == 't') &&
                   (action[2] == 'a') && (action[3] == 'r') &&
                   (action[4] == 't') && (action[5] == '\0'))
@@ -186,6 +193,7 @@ error_action(char *alias_name, char *action, int type)
                                                  ACTION_DIR, ACTION_SOURCE_DIR,
                                                  ACTION_WARN_DIR);
               event_class = EC_DIR;
+              alias_name_length = MAX_DIR_ALIAS_LENGTH;
               if ((action[0] == 's') && (action[1] == 't') &&
                   (action[2] == 'a') && (action[3] == 'r') &&
                   (action[4] == 't') && (action[5] == '\0'))
@@ -211,6 +219,7 @@ error_action(char *alias_name, char *action, int type)
                                                  ACTION_DIR, ACTION_TARGET_DIR,
                                                  ACTION_SUCCESS_DIR);
               event_class = EC_HOST;
+              alias_name_length = MAX_HOSTNAME_LENGTH;
               if ((action[0] == 's') && (action[1] == 't') &&
                   (action[2] == 'a') && (action[3] == 'r') &&
                   (action[4] == 't') && (action[5] == '\0'))
@@ -236,6 +245,7 @@ error_action(char *alias_name, char *action, int type)
                                                  ACTION_DIR, ACTION_SOURCE_DIR,
                                                  ACTION_SUCCESS_DIR);
               event_class = EC_DIR;
+              alias_name_length = MAX_DIR_ALIAS_LENGTH;
               if ((action[0] == 's') && (action[1] == 't') &&
                   (action[2] == 'a') && (action[3] == 'r') &&
                   (action[4] == 't') && (action[5] == '\0'))
@@ -278,6 +288,30 @@ error_action(char *alias_name, char *action, int type)
          pid_t pid;
          char  reason_str[38 + MAX_INT_LENGTH + 1];
 
+         if (log_fd > -1)
+         {
+            int  i = 0;
+            char *tr_alias_name;
+
+            if ((tr_alias_name = malloc(alias_name_length + 1)) == NULL)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Failed to malloc() %d bytes : %s",
+                          alias_name_length + 1, strerror(errno));
+               return;
+            }
+            while ((alias_name[i] != '\0') && (i < alias_name_length))
+            {
+               tr_alias_name[i] = alias_name[i];
+               i++;
+            }
+            tr_alias_name[i] = '\0';
+            (void)rec(log_fd, DEBUG_SIGN,
+                      "%-*s[X]: Calling action: %s %s\n",
+                      alias_name_length, tr_alias_name, fullname, action);
+            free(tr_alias_name);
+         }
+
          if ((pid = fork()) < 0)
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
@@ -318,11 +352,6 @@ error_action(char *alias_name, char *action, int type)
                                action);
                     _exit(INCORRECT);
                  }
-                 else
-                 {
-                    system_log(DEBUG_SIGN, NULL, 0,
-                               _("Error action: %s %s"), fullname, action);
-                 }
                  _exit(SUCCESS);
               }
 
@@ -358,6 +387,32 @@ error_action(char *alias_name, char *action, int type)
          {
             event_log(0L, event_class, ET_AUTO, event_action,
                       "%s%c%s", alias_name, SEPARATOR_CHAR, reason_str);
+         }
+      }
+      else
+      {
+         if (log_fd > -1)
+         {
+            int  i = 0;
+            char *tr_alias_name;
+
+            if ((tr_alias_name = malloc(alias_name_length + 1)) == NULL)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Failed to malloc() %d bytes : %s",
+                          alias_name_length + 1, strerror(errno));
+               return;
+            }
+            while ((alias_name[i] != '\0') && (i < alias_name_length))
+            {
+               tr_alias_name[i] = alias_name[i];
+               i++;
+            }
+            tr_alias_name[i] = '\0';
+            (void)rec(log_fd, DEBUG_SIGN,
+                      "%-*s[X]: No action script to %s.\n",
+                      alias_name_length, tr_alias_name, action);
+            free(tr_alias_name);
          }
       }
    }

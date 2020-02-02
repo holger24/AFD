@@ -1,6 +1,6 @@
 /*
  *  dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1465,7 +1465,8 @@ main(int argc, char *argv[])
                            "Warn time (%ld) for directory `%s' reached. @%x",
                            fra[de[i].fra_pos].warn_time, de[i].dir,
                            de[i].dir_id);
-               error_action(de[i].alias, "start", DIR_WARN_ACTION);
+               error_action(de[i].alias, "start", DIR_WARN_ACTION,
+                           receive_log_fd);
                event_log(0L, EC_DIR, ET_AUTO, EA_WARN_TIME_SET, "%s",
                          fra[de[i].fra_pos].dir_alias);
             }
@@ -1484,7 +1485,8 @@ main(int argc, char *argv[])
                receive_log(INFO_SIGN, NULL, 0, start_time,
                            "Info time (%ld) for directory `%s' reached.",
                            fra[de[i].fra_pos].info_time, de[i].dir);
-               error_action(de[i].alias, "start", DIR_INFO_ACTION);
+               error_action(de[i].alias, "start", DIR_INFO_ACTION,
+                            receive_log_fd);
                event_log(0L, EC_DIR, ET_AUTO, EA_INFO_TIME_SET, "%s",
                          fra[de[i].fra_pos].dir_alias);
             }
@@ -2025,7 +2027,7 @@ do_one_dir(void *arg)
                   "Info time (%ld) for directory `%s' reached. @%x",
                   fra[de[data->i].fra_pos].info_time, de[data->i].dir,
                   de[data->i].dir_id);
-      error_action(de[i].alias, "start", DIR_INFO_ACTION);
+      error_action(de[i].alias, "start", DIR_INFO_ACTION, receive_log_fd);
    }
    if (((*(unsigned char *)((char *)fra - AFD_FEATURE_FLAG_OFFSET_END) & DISABLE_DIR_WARN_TIME) == 0) &&
        ((fra[de[data->i].fra_pos].dir_flag & WARN_TIME_REACHED) == 0) &&
@@ -2042,7 +2044,7 @@ do_one_dir(void *arg)
                   "Warn time (%ld) for directory `%s' reached. @%x",
                   fra[de[data->i].fra_pos].warn_time, de[data->i].dir,
                   de[data->i].dir_id);
-      error_action(de[i].alias, "start", DIR_WARN_ACTION);
+      error_action(de[i].alias, "start", DIR_WARN_ACTION, receive_log_fd);
    }
 
    return(NULL);

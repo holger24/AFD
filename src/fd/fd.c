@@ -1,6 +1,6 @@
 /*
  *  fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -4242,7 +4242,8 @@ zombie_check(struct connection *p_con,
                               fsa[p_con->fsa_pos].host_status &= ~EVENT_STATUS_STATIC_FLAGS;
                            }
                            error_action(fsa[p_con->fsa_pos].host_alias, "stop",
-                                        HOST_ERROR_ACTION);
+                                        HOST_ERROR_ACTION,
+                                        transfer_log_fd);
                            event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",
                                      fsa[p_con->fsa_pos].host_alias);
                         }

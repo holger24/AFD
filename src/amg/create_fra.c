@@ -1,6 +1,6 @@
 /*
  *  create_fra.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -651,7 +651,7 @@ create_fra(int no_of_dirs)
                               fra[i].start_event_handle,
                               fra[i].end_event_handle,
                               fra[i].dir_status);
-               error_action(fra[i].dir_alias, "stop", DIR_INFO_ACTION);
+               error_action(fra[i].dir_alias, "stop", DIR_INFO_ACTION, -1);
                event_log(0L, EC_DIR, ET_AUTO, EA_INFO_TIME_UNSET, "%s",
                          fra[i].dir_alias);
             }
@@ -665,7 +665,7 @@ create_fra(int no_of_dirs)
                               fra[i].start_event_handle,
                               fra[i].end_event_handle,
                               fra[i].dir_status);
-               error_action(fra[i].dir_alias, "stop", DIR_WARN_ACTION);
+               error_action(fra[i].dir_alias, "stop", DIR_WARN_ACTION, -1);
                event_log(0L, EC_DIR, ET_AUTO, EA_WARN_TIME_UNSET, "%s",
                          fra[i].dir_alias);
             }

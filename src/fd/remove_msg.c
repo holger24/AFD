@@ -1,6 +1,6 @@
 /*
  *  remove_msg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -45,13 +45,19 @@ DESCR__S_M3
 DESCR__E_M3
 
 #include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <time.h>
+#include <errno.h>
 #include "fddefs.h"
 
 /* External global variables. */
 extern int                        fra_fd,
                                   no_of_dirs,
                                   *no_msg_queued;
+extern char                       *p_work_dir;
 extern struct queue_buf           *qb;
 extern struct fileretrieve_status *fra;
 
@@ -84,6 +90,46 @@ remove_msg(int qb_pos, int remove_only)
             fra[qb[qb_pos].pos].error_counter = 0;
             if (fra[qb[qb_pos].pos].dir_flag & DIR_ERROR_SET)
             {
+               int  receive_log_fd = -1;
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+               int  receive_log_readfd;
+#endif
+               char receive_log_fifo[MAX_PATH_LENGTH];
+
+               (void)strcpy(receive_log_fifo, p_work_dir);
+               (void)strcat(receive_log_fifo, FIFO_DIR);
+               (void)strcat(receive_log_fifo, RECEIVE_LOG_FIFO);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+               if (open_fifo_rw(receive_log_fifo, &receive_log_readfd,
+                                &receive_log_fd) == -1)
+#else
+               if ((receive_log_fd = open(receive_log_fifo, O_RDWR)) == -1)
+#endif
+               {
+                  if (errno == ENOENT)
+                  {
+                     if ((make_fifo(receive_log_fifo) == SUCCESS) &&
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                         (open_fifo_rw(receive_log_fifo, &receive_log_readfd,
+                                       &receive_log_fd) == -1))
+#else
+                         ((receive_log_fd = open(receive_log_fifo,
+                                                 O_RDWR)) == -1))
+#endif
+                     {
+                        system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                   "Could not open fifo <%s> : %s",
+                                   RECEIVE_LOG_FIFO, strerror(errno));
+                     }
+                  }
+                  else
+                  {
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                "Could not open fifo %s : %s",
+                                RECEIVE_LOG_FIFO, strerror(errno));
+                  }
+               }
+
                fra[qb[qb_pos].pos].dir_flag &= ~DIR_ERROR_SET;
                SET_DIR_STATUS(fra[qb[qb_pos].pos].dir_flag,
                               time(NULL),
@@ -91,9 +137,13 @@ remove_msg(int qb_pos, int remove_only)
                               fra[qb[qb_pos].pos].end_event_handle,
                               fra[qb[qb_pos].pos].dir_status);
                error_action(fra[qb[qb_pos].pos].dir_alias, "start",
-                            DIR_ERROR_ACTION);
+                            DIR_ERROR_ACTION, receive_log_fd);
                event_log(0L, EC_DIR, ET_EXT, EA_ERROR_START, "%s",
                          fra[qb[qb_pos].pos].dir_alias);
+               (void)close(receive_log_fd);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+               (void)close(receive_log_readfd);
+#endif
             }
             unlock_region(fra_fd,
 #ifdef LOCK_DEBUG

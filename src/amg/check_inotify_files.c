@@ -1,6 +1,6 @@
 /*
  *  check_inotify_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -69,7 +69,8 @@ DESCR__E_M1
 extern int                        afd_file_dir_length,
                                   alfc, /* Additional locked file counter*/
                                   *amg_counter,
-                                  fra_fd;
+                                  fra_fd,
+                                  receive_log_fd;
 #ifdef HAVE_HW_CRC32
 extern int                        have_hw_crc32;
 #endif
@@ -563,7 +564,9 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                                                 fra[p_de->fra_pos].start_event_handle,
                                                 fra[p_de->fra_pos].end_event_handle,
                                                 fra[p_de->fra_pos].dir_status);
-                                 error_action(p_de->alias, "start", DIR_ERROR_ACTION);
+                                 error_action(p_de->alias, "start",
+                                              DIR_ERROR_ACTION,
+                                              receive_log_fd);
                                  event_log(0L, EC_DIR, ET_EXT, EA_ERROR_START,
                                            "%s", p_de->alias);
                               }
@@ -940,7 +943,7 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                         fra[p_de->fra_pos].start_event_handle,
                         fra[p_de->fra_pos].end_event_handle,
                         fra[p_de->fra_pos].dir_status);
-         error_action(p_de->alias, "stop", DIR_INFO_ACTION);
+         error_action(p_de->alias, "stop", DIR_INFO_ACTION, receive_log_fd);
          event_log(0L, EC_DIR, ET_AUTO, EA_INFO_TIME_UNSET, "%s",
                    fra[p_de->fra_pos].dir_alias);
       }
@@ -952,7 +955,7 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                         fra[p_de->fra_pos].start_event_handle,
                         fra[p_de->fra_pos].end_event_handle,
                         fra[p_de->fra_pos].dir_status);
-         error_action(p_de->alias, "stop", DIR_WARN_ACTION);
+         error_action(p_de->alias, "stop", DIR_WARN_ACTION, receive_log_fd);
          event_log(0L, EC_DIR, ET_AUTO, EA_WARN_TIME_UNSET, "%s",
                    fra[p_de->fra_pos].dir_alias);
       }
@@ -1002,7 +1005,7 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
                         fra[p_de->fra_pos].start_event_handle,
                         fra[p_de->fra_pos].end_event_handle,
                         fra[p_de->fra_pos].dir_status);
-         error_action(p_de->alias, "stop", DIR_ERROR_ACTION);
+         error_action(p_de->alias, "stop", DIR_ERROR_ACTION, receive_log_fd);
          event_log(0L, EC_DIR, ET_EXT, EA_ERROR_END, "%s", p_de->alias);
       }
       unlock_region(fra_fd,

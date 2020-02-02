@@ -3078,7 +3078,8 @@ try_again_unlink:
                {
                   char sign[LOG_SIGN_LENGTH];
 
-                  error_action(fsa->host_alias, "stop", HOST_ERROR_ACTION);
+                  error_action(fsa->host_alias, "stop", HOST_ERROR_ACTION,
+                               transfer_log_fd);
                   event_log(0L, EC_HOST, ET_EXT, EA_ERROR_END, "%s",
                             fsa->host_alias);
                   if ((fsa->host_status & HOST_ERROR_OFFLINE_STATIC) ||
@@ -3105,7 +3106,8 @@ try_again_unlink:
 #endif
             if (fsa->host_status & HOST_ACTION_SUCCESS)
             {
-               error_action(fsa->host_alias, "start", HOST_SUCCESS_ACTION);
+               error_action(fsa->host_alias, "start", HOST_SUCCESS_ACTION,
+                            transfer_log_fd);
             }
          }
 

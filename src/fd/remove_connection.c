@@ -1,6 +1,6 @@
 /*
  *  remove_connection.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,11 @@ DESCR__S_M3
 DESCR__E_M3
 
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include "fddefs.h"
 
 /* #define WITH_MULTI_FSA_CHECKS */
@@ -56,6 +61,7 @@ extern int                        fsa_fd,
                                   no_of_hosts,
                                   no_of_trl_groups,
                                   transfer_log_fd;
+extern char                       *p_work_dir;
 extern struct filetransfer_status *fsa;
 extern struct fileretrieve_status *fra;
 extern struct afd_status          *p_afd_status;
@@ -96,6 +102,45 @@ remove_connection(struct connection *p_con, int faulty, time_t now)
          fsa[p_con->fsa_pos].last_retry_time = now;
          if (p_con->fra_pos != -1)
          {
+            int  receive_log_fd = -1;
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+            int  receive_log_readfd;
+#endif
+            char receive_log_fifo[MAX_PATH_LENGTH];
+
+            (void)strcpy(receive_log_fifo, p_work_dir);
+            (void)strcat(receive_log_fifo, FIFO_DIR);
+            (void)strcat(receive_log_fifo, RECEIVE_LOG_FIFO);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+            if (open_fifo_rw(receive_log_fifo, &receive_log_readfd,
+                             &receive_log_fd) == -1)
+#else
+            if ((receive_log_fd = open(receive_log_fifo, O_RDWR)) == -1)
+#endif
+            {
+               if (errno == ENOENT)
+               {
+                  if ((make_fifo(receive_log_fifo) == SUCCESS) &&
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                      (open_fifo_rw(receive_log_fifo, &receive_log_readfd,
+                                    &receive_log_fd) == -1))
+#else
+                      ((receive_log_fd = open(receive_log_fifo, O_RDWR)) == -1))
+#endif
+                  {
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                "Could not open fifo <%s> : %s",
+                                RECEIVE_LOG_FIFO, strerror(errno));
+                  }
+               }
+               else
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "Could not open fifo %s : %s",
+                             RECEIVE_LOG_FIFO, strerror(errno));
+               }
+            }
+
             lock_region_w(fra_fd,
 #ifdef LOCK_DEBUG
                           (char *)&fra[p_con->fra_pos].error_counter - (char *)fra, __FILE__, __LINE__);
@@ -120,9 +165,13 @@ remove_connection(struct connection *p_con, int faulty, time_t now)
                           (char *)&fra[p_con->fra_pos].error_counter - (char *)fra);
 #endif
             error_action(fra[p_con->fra_pos].dir_alias, "stop",
-                         DIR_ERROR_ACTION);
+                         DIR_ERROR_ACTION, receive_log_fd);
             event_log(now, EC_DIR, ET_EXT, EA_ERROR_END, "%s",
                       fra[p_con->fra_pos].dir_alias);
+            (void)close(receive_log_fd);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+            (void)close(receive_log_readfd);
+#endif
          }
 
 #ifdef LOCK_DEBUG
