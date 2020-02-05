@@ -65,8 +65,7 @@ init_ls_data(void)
 
    for (i = 0; i < no_of_retrieves; i++)
    {
-      if (attach_ls_data(&fra[retrieve_list[i]], 
-                         DISTRIBUTED_HELPER_JOB | OLD_ERROR_JOB, NO) == SUCCESS)
+      if (attach_ls_data(&fra[retrieve_list[i]], 0, NO) == SUCCESS)
       {
          for (j = 0; j < no_of_listed_files; j++)
          {
