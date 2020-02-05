@@ -27,10 +27,11 @@ DESCR__S_M3
  **   reset_ls_data - resets all ls data values
  **
  ** SYNOPSIS
- **   int  attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag,
- **                       int create)
+ **   int  attach_ls_data(struct fileretrieve_status *fra,
+ **                       unsigned int               special_flag,
+ **                       int                        create)
  **   void detach_ls_data(int remove)
- **   int  reset_ls_data(int fra_pos)
+ **   int  reset_ls_data(void)
  **
  ** DESCRIPTION
  **
@@ -75,22 +76,23 @@ DESCR__E_M3
 
 
 /* Local global variables. */
-static char                       *list_file = NULL;
-static size_t                     list_file_length = 0;
+static char                 *list_file = NULL;
+static size_t               list_file_length = 0;
 
 /* External global variables. */
-extern int                        *current_no_of_listed_files,
-                                  no_of_listed_files,
-                                  rl_fd;
-extern char                       *p_work_dir;
-extern off_t                      rl_size;
-extern struct retrieve_list       *rl;
-extern struct fileretrieve_status *fra;
+extern int                  *current_no_of_listed_files,
+                            no_of_listed_files,
+                            rl_fd;
+extern char                 *p_work_dir;
+extern off_t                rl_size;
+extern struct retrieve_list *rl;
 
 
 /*########################## attach_ls_data() ###########################*/
 int
-attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
+attach_ls_data(struct fileretrieve_status *fra,
+               unsigned int               special_flag,
+               int                        create)
 {
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
    if ((fra->stupid_mode == YES) || (fra->remove == YES))
@@ -125,8 +127,8 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
          if (rl != NULL)
          {
             system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                       "Hmmm. Seems as if retrieve list pointer has still an assignment (fsa_pos=%d fra_pos=%d).",
-                       fsa_pos, fra_pos);
+                       "Hmmm. Seems as if retrieve list pointer has still an assignment (fsa_pos=%d dir_alias=%s).",
+                       fra->fsa_pos, fra->dir_alias);
          }
          if (list_file == NULL)
          {
@@ -158,14 +160,22 @@ attach_ls_data(int fra_pos, int fsa_pos, unsigned int special_flag, int create)
             if ((create == YES) || (errno != ENOENT))
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          "Failed to open() `%s' : %s", list_file, strerror(errno));
+                          "Failed to open() `%s' : %s",
+                          list_file, strerror(errno));
+            }
+            else
+            {
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                          "Failed to open() `%s' : %s",
+                          list_file, strerror(errno));
             }
             return(INCORRECT);
          }
          if (fstat(rl_fd, &stat_buf) == -1)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "Failed to fstat() `%s' : %s", list_file, strerror(errno));
+                       "Failed to fstat() `%s' : %s",
+                       list_file, strerror(errno));
             return(INCORRECT);
          }
          if (stat_buf.st_size == 0)
@@ -827,7 +837,7 @@ detach_ls_data(int remove)
 
 /*########################### reset_ls_data() ###########################*/
 int
-reset_ls_data(int fra_pos)
+reset_ls_data(void)
 {
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
    if ((fra->stupid_mode == YES) || (fra->remove == YES))

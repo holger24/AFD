@@ -104,7 +104,7 @@ get_remote_file_names_sftp(off_t *file_size_to_retrieve,
    if (rl_fd == -1)
    {
 try_attach_again:
-      if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag, YES) == INCORRECT)
+      if (attach_ls_data(fra, db.special_flag, YES) == INCORRECT)
       {
          sftp_quit();
          exit(INCORRECT);
@@ -152,7 +152,7 @@ try_attach_again:
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
       if (rl_fd == -1)
       {
-         if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag, YES) == INCORRECT)
+         if (attach_ls_data(fra, db.special_flag, YES) == INCORRECT)
          {
             sftp_quit();
             exit(INCORRECT);
@@ -334,7 +334,7 @@ do_scan(int   *files_to_retrieve,
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
    if ((fra->stupid_mode == YES) || (fra->remove == YES))
    {
-      if (reset_ls_data(db.fra_pos) == INCORRECT)
+      if (reset_ls_data() == INCORRECT)
       {
          sftp_quit();
          exit(INCORRECT);
@@ -344,8 +344,7 @@ do_scan(int   *files_to_retrieve,
    {
       if (rl_fd == -1)
       {
-         if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag,
-                            YES) == INCORRECT)
+         if (attach_ls_data(fra, db.special_flag, YES) == INCORRECT)
          {
             sftp_quit();
             exit(INCORRECT);
@@ -355,8 +354,7 @@ do_scan(int   *files_to_retrieve,
 #else
    if (rl_fd == -1)
    {
-      if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag,
-                         YES) == INCORRECT)
+      if (attach_ls_data(fra, db.special_flag, YES) == INCORRECT)
       {
          sftp_quit();
          exit(INCORRECT);
@@ -376,7 +374,7 @@ do_scan(int   *files_to_retrieve,
       if (lock_region(rl_fd, LOCK_RETR_PROC) == LOCK_IS_NOT_SET)
 # endif
       {
-         if (reset_ls_data(db.fra_pos) == INCORRECT)
+         if (reset_ls_data() == INCORRECT)
          {
             sftp_quit();
             exit(INCORRECT);

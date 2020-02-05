@@ -293,7 +293,7 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
    if (rl_fd == -1)
    {
 try_attach_again:
-      if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag, YES) == INCORRECT)
+      if (attach_ls_data(fra, db.special_flag, YES) == INCORRECT)
       {
          http_quit();
          exit(INCORRECT);
@@ -341,7 +341,7 @@ try_attach_again:
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
       if (rl_fd == -1)
       {
-         if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag, YES) == INCORRECT)
+         if (attach_ls_data(fra, db.special_flag, YES) == INCORRECT)
          {
             http_quit();
             exit(INCORRECT);
@@ -550,7 +550,7 @@ try_attach_again:
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
       if ((fra->stupid_mode == YES) || (fra->remove == YES))
       {
-         if (reset_ls_data(db.fra_pos) == INCORRECT)
+         if (reset_ls_data() == INCORRECT)
          {
             http_quit();
             exit(INCORRECT);
@@ -560,8 +560,7 @@ try_attach_again:
       {
          if (rl_fd == -1)
          {
-            if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag,
-                               YES) == INCORRECT)
+            if (attach_ls_data(fra, db.special_flag, YES) == INCORRECT)
             {
                http_quit();
                exit(INCORRECT);
@@ -571,8 +570,7 @@ try_attach_again:
 #else
       if (rl_fd == -1)
       {
-         if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag,
-                            YES) == INCORRECT)
+         if (attach_ls_data(fra, db.special_flag, YES) == INCORRECT)
          {
             http_quit();
             exit(INCORRECT);
@@ -592,7 +590,7 @@ try_attach_again:
          if (lock_region(rl_fd, LOCK_RETR_PROC) == LOCK_IS_NOT_SET)
 # endif
          {
-            if (reset_ls_data(db.fra_pos) == INCORRECT)
+            if (reset_ls_data() == INCORRECT)
             {
                http_quit();
                exit(INCORRECT);
@@ -644,7 +642,7 @@ try_attach_again:
             if (!((timeout_flag == ON) || (timeout_flag == CON_RESET) ||
                   (timeout_flag == CON_REFUSED)))
             {
-               if (reset_ls_data(db.fra_pos) != SUCCESS)
+               if (reset_ls_data() != SUCCESS)
                {
                   http_quit();
                   exit(INCORRECT);

@@ -1,6 +1,6 @@
 /*
  *  init_ls_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2019, 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -65,7 +65,7 @@ init_ls_data(void)
 
    for (i = 0; i < no_of_retrieves; i++)
    {
-      if (attach_ls_data(retrieve_list[i], fra[retrieve_list[i]].fsa_pos,
+      if (attach_ls_data(&fra[retrieve_list[i]], 
                          DISTRIBUTED_HELPER_JOB | OLD_ERROR_JOB, NO) == SUCCESS)
       {
          for (j = 0; j < no_of_listed_files; j++)

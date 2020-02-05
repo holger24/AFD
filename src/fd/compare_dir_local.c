@@ -1,6 +1,6 @@
 /*
  *  compare_dir_local.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2010 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2010 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -152,7 +152,7 @@ compare_dir_local(void)
 
    if (rl_fd == -1)
    {
-      if (attach_ls_data(db.fra_pos, db.fsa_pos, db.special_flag, YES) == INCORRECT)
+      if (attach_ls_data(fra, db.special_flag, YES) == INCORRECT)
       {
          exit(INCORRECT);
       }

@@ -820,7 +820,7 @@ struct trl_cache
 /* Function prototypes. */
 extern int   append_compare(char *, char *),
              archive_file(char *, char *, struct job *),
-             attach_ls_data(int, int, unsigned int, int),
+             attach_ls_data(struct fileretrieve_status *, unsigned int, int),
              check_burst_gf(unsigned int *),
              check_burst_sf(char *, int *, int,
 #ifdef _WITH_INTERRUPT_JOB
@@ -861,7 +861,7 @@ extern int   append_compare(char *, char *),
              read_file_mask(char *, int *, struct file_mask **),
              recount_jobs_queued(int),
              recreate_msg(unsigned int),
-             reset_ls_data(int),
+             reset_ls_data(void),
              send_mail(char *, char *, char *, char *, char *);
 extern void  calc_trl_per_process(int),
              check_fsa_entries(int),
