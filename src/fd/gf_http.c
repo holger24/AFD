@@ -371,6 +371,21 @@ main(int argc, char *argv[])
    {
       if (in_burst_loop == YES)
       {
+         if (db.fsa_pos == INCORRECT)
+         {
+            /*
+             * Looks as if this directory/host is no longer in
+             * our database.
+             */
+            trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                      "Database changed, exiting.");
+            (void)http_quit();
+            reset_values(files_retrieved, file_size_retrieved,
+                         files_to_retrieve, file_size_to_retrieve,
+                         (struct job *)&db);
+            exitflag = 0;
+            exit(TRANSFER_SUCCESS);
+         }
          fsa->job_status[(int)db.job_no].job_id = db.id.dir;
          if (fsa->debug > NORMAL_MODE)
          {
@@ -467,6 +482,21 @@ main(int argc, char *argv[])
                files_to_retrieve_shown += files_to_retrieve;
                file_size_to_retrieve_shown += file_size_to_retrieve;
             }
+            else if (db.fsa_pos == INCORRECT)
+                 {
+                    /*
+                     * Looks as if this directory/host is no longer in
+                     * our database.
+                     */
+                    trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                              "Database changed, exiting.");
+                    (void)http_quit();
+                    reset_values(files_retrieved, file_size_retrieved,
+                                 files_to_retrieve, file_size_to_retrieve,
+                                 (struct job *)&db);
+                    exitflag = 0;
+                    exit(TRANSFER_SUCCESS);
+                 }
 
             (void)gsf_check_fra((struct job *)&db);
             if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
@@ -1728,22 +1758,22 @@ main(int argc, char *argv[])
                   }
                   files_retrieved++;
                   file_size_retrieved += bytes_done;
-               } /* if (rl[i].retrieved == NO) */
 
-               if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
-               {
-                  /* We must stop here if fra_pos or fsa_pos is */
-                  /* INCORRECT since we try to access these     */
-                  /* structures (FRA/FSA)!                      */
-                  trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "Database changed, exiting.");
-                  (void)http_quit();
-                  reset_values(files_retrieved, file_size_retrieved,
-                               files_to_retrieve, file_size_to_retrieve,
-                               (struct job *)&db);
-                  exitflag = 0;
-                  exit(TRANSFER_SUCCESS);
-               }
+                  if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
+                  {
+                     /* We must stop here if fra_pos or fsa_pos is */
+                     /* INCORRECT since we try to access these     */
+                     /* structures (FRA/FSA)!                      */
+                     trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Database changed, exiting.");
+                     (void)http_quit();
+                     reset_values(files_retrieved, file_size_retrieved,
+                                  files_to_retrieve, file_size_to_retrieve,
+                                  (struct job *)&db);
+                     exitflag = 0;
+                     exit(TRANSFER_SUCCESS);
+                  }
+               } /* if (rl[i].retrieved == NO) */
             } /* for (i = 0; i < no_of_listed_files; i++) */
 
             diff_no_of_files_done = fsa->job_status[(int)db.job_no].no_of_files_done -

@@ -335,6 +335,22 @@ main(int argc, char *argv[])
       new_dir_mtime = 0;
       if (in_burst_loop == YES)
       {
+         if (db.fsa_pos == INCORRECT)
+         {
+            /*
+             * Looks as if this host is no longer in our
+             * database. Lets exit.
+             */
+            trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                      "Database changed, exiting.");
+            (void)sftp_quit();
+            reset_values(files_retrieved, file_size_retrieved,
+                         files_to_retrieve,
+                         file_size_to_retrieve,
+                         (struct job *)&db);
+            exitflag = 0;
+            exit(TRANSFER_SUCCESS);
+         }
          fsa->job_status[(int)db.job_no].job_id = db.id.dir;
          if (fsa->debug > NORMAL_MODE)
          {
@@ -552,6 +568,22 @@ main(int argc, char *argv[])
                files_to_retrieve_shown += files_to_retrieve;
                file_size_to_retrieve_shown += file_size_to_retrieve;
             }
+            else if (db.fsa_pos == INCORRECT)
+                 {
+                    /*
+                     * Looks as if this host is no longer in our
+                     * database. Lets exit.
+                     */
+                    trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                              "Database changed, exiting.");
+                    (void)sftp_quit();
+                    reset_values(files_retrieved, file_size_retrieved,
+                                 files_to_retrieve,
+                                 file_size_to_retrieve,
+                                 (struct job *)&db);
+                    exitflag = 0;
+                    exit(TRANSFER_SUCCESS);
+                 }
 
             (void)gsf_check_fra((struct job *)&db);
             if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
@@ -773,6 +805,22 @@ main(int argc, char *argv[])
 
                            check_reset_errors();
                         }
+                        else if (db.fsa_pos == INCORRECT)
+                             {
+                                /*
+                                 * Looks as if this host is no longer in our
+                                 * database. Lets exit.
+                                 */
+                                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                          "Database changed, exiting.");
+                                (void)sftp_quit();
+                                reset_values(files_retrieved, file_size_retrieved,
+                                             files_to_retrieve,
+                                             file_size_to_retrieve,
+                                             (struct job *)&db);
+                                exitflag = 0;
+                                exit(TRANSFER_SUCCESS);
+                             }
                      }
                      else
                      {
