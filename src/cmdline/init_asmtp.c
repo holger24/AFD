@@ -1,6 +1,6 @@
 /*
  *  init_asmtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2000 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -423,6 +423,10 @@ init_asmtp(int argc, char *argv[], struct data *p_db)
             }
             break;
 
+         case 'T' : /* Only test if recipient exist. */
+            p_db->special_flag |= ONLY_TEST;
+            break;
+
          case 'u' : /* User name. */
             if ((argc == 1) || (*(argv + 1)[0] == '-'))
             {
@@ -541,6 +545,7 @@ usage(void)
    (void)fprintf(stderr, _("  -r                         - Remove transmitted file.\n"));
    (void)fprintf(stderr, _("  -s <subject>               - Subject of this mail.\n"));
    (void)fprintf(stderr, _("  -t <timout>                - SMTP timeout in seconds. Default %lds.\n"), DEFAULT_TRANSFER_TIMEOUT);
+   (void)fprintf(stderr, _("  -T                         - Only test if recipient exist.\n"));
    (void)fprintf(stderr, _("  -u <user>                  - The user who should get the mail.\n"));
    (void)fprintf(stderr, _("  -v                         - Verbose. Shows all SMTP commands and\n"));
    (void)fprintf(stderr, _("                               the reply from the SMTP server.\n"));
@@ -558,12 +563,12 @@ usage(void)
    (void)fprintf(stderr, _("      %2d - Failed to close remote file.\n"), CLOSE_REMOTE_ERROR);
    (void)fprintf(stderr, _("      %2d - Failed to rename remote file.\n"), MOVE_REMOTE_ERROR);
    (void)fprintf(stderr, _("      %2d - Remote directory could not be set.\n"), CHDIR_ERROR);
+   (void)fprintf(stderr, _("      %2d - System error stat().\n"), STAT_ERROR);
    (void)fprintf(stderr, "      %2d - %s.\n", TIMEOUT_ERROR, TIMEOUT_ERROR_STR);
    (void)fprintf(stderr, "      %2d - %s.\n", CONNECTION_RESET_ERROR, CONNECTION_RESET_ERROR_STR);
    (void)fprintf(stderr, "      %2d - %s.\n", CONNECTION_REFUSED_ERROR, CONNECTION_REFUSED_ERROR_STR);
    (void)fprintf(stderr, _("      %2d - Could not open source file.\n"), OPEN_LOCAL_ERROR);
    (void)fprintf(stderr, _("      %2d - Failed to read source file.\n"), READ_LOCAL_ERROR);
-   (void)fprintf(stderr, _("      %2d - System error stat().\n"), STAT_ERROR);
    (void)fprintf(stderr, _("      %2d - System error malloc().\n"), ALLOC_ERROR);
    (void)fprintf(stderr, _("      %2d - Failed to read file name file.\n"), FILE_NAME_FILE_ERROR);
    (void)fprintf(stderr, _("      %2d - Failed to send remote mail address.\n"), REMOTE_USER_ERROR);

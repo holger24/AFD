@@ -1,6 +1,6 @@
 /*
  *  cmdline.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -267,6 +267,7 @@ struct data
                                          /*            FILE_NAME_IS_HEADER */
                                          /*            WITH_SEQUENCE_NUMBER*/
                                          /*            WMO_CHECK_ACKNOWLEDGE*/
+                                         /*            ONLY_TEST           */
           signed char  file_size_offset; /* When doing an ls on the remote */
                                          /* site, this is the position     */
                                          /* where to find the size of the  */

@@ -1,6 +1,6 @@
 /*
  *  asmtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ DESCR__S_M1
  **       -r                      - Remove transmitted file.
  **       -s <subject>            - Subject of this mail.
  **       -t <timout>             - SMTP timeout in seconds.
+ **       -T                      - Only test if the recipient exists.
  **       -u <user>               - The user who should get the mail.
  **       -v                      - Verbose. Shows all SMTP commands
  **                                 and the reply from the remote server.
@@ -63,6 +64,7 @@ DESCR__S_M1
  **   04.08.2002 H.Kiehl Added To:, From: and Reply-To headers.
  **   23.04.2014 H.Kiehl Added possibility to send mails without files.
  **   13.10.2014 H.Kiehl Added support for SMARTTLS.
+ **   09.02.2020 H.Kiehl Added -T to test if the recipient exists.
  **
  */
 DESCR__E_M1
@@ -405,6 +407,11 @@ main(int argc, char *argv[])
                       _("Remote address %s accepted by SMTP-server."),
                       remote_user);
          }
+         if (db.special_flag & ONLY_TEST)
+         {
+            (void)smtp_quit();
+            exit(SUCCESS);
+         }
       }
 
       /* Enter data mode. */
@@ -612,6 +619,11 @@ main(int argc, char *argv[])
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          _("Remote address %s accepted by SMTP-server."),
                          remote_user);
+            }
+            if (db.special_flag & ONLY_TEST)
+            {
+               (void)smtp_quit();
+               exit(SUCCESS);
             }
          }
 

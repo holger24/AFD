@@ -734,10 +734,12 @@ user interaction, so it can be used from any shell scripts or programs such as
                                   Bytes.
      -c &lt;config file&gt;           - Configuration file holding user name,
                                   domain and SMTP server in URL format.
+     -C &lt;charset&gt;               - Character set to be used.
      -e                         - Encode files in BASE64.
      -f &lt;filename&gt;              - File containing a list of filenames
                                   that are to be send.
      -h &lt;hostname | IP number&gt;  - Recipient hostname of this mail.
+     -i &lt;From-address&gt;          - Address of who send the mail.
      -m &lt;mailserver-address&gt;    - Mailserver that will send this mail.
                                   Default is localhost.
      -n                         - File name is subject.
@@ -747,10 +749,12 @@ user interaction, so it can be used from any shell scripts or programs such as
      -r                         - Remove transmitted file.
      -s &lt;subject&gt;               - Subject of this mail.
      -t &lt;timout&gt;                - SMTP timeout in seconds. Default 120s.
+     -T                         - Only test if recipient exist.
      -u &lt;user&gt;                  - The user who should get the mail.
      -v                         - Verbose. Shows all SMTP commands and
                                   the reply from the SMTP server.
      -y                         - File name is user.
+     -Y                         - Use strict SSL/TLS verification.
      -?                         - Display this help and exit.
      The following values are returned on exit:
           0 - File transmitted successfully.
@@ -763,14 +767,18 @@ user interaction, so it can be used from any shell scripts or programs such as
          12 - Failed to close remote file.
          13 - Failed to rename remote file.
          14 - Remote directory could not be set.
+         17 - System error stat().
          20 - Operation received timeout.
          28 - Connection reset by peer.
          29 - Connection refused.
          30 - Could not open source file.
          31 - Failed to read source file.
+         34 - System error malloc().
          17 - System error stat().
          34 - System error malloc().
          40 - Failed to read file name file.
+         50 - Failed to send remote mail address.
+         51 - Failed to send SMTP DATA command.
          60 - Syntax wrong.
 </pre>
 <h3 align=center><a name="awmo"><u>Automatic WMO (awmo)</u></a></h3>
@@ -822,9 +830,9 @@ user interaction, so it can be used from any shell scripts or programs such as
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 2001 - 2017 by H.Kiehl<br>
+   Copyright &copy; 2001 - 2020 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 20.04.2017
+   Last updated: 09.02.2020
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

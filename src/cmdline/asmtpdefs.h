@@ -1,6 +1,6 @@
 /*
  *  asmtpdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2005 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@
 # include "fddefs.h"
 #endif
 #include "cmdline.h"
+
+#define ONLY_TEST            128
 
 #define DEFAULT_AFD_USER     "anonymous"
 #define DEFAULT_AFD_PASSWORD "afd@someplace"
