@@ -146,6 +146,17 @@ struct fileretrieve_status *fra;
 struct job                 db;
 const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 
+/* Static local variables. */
+static int                 current_toggle,
+                           rename_pending = -1;
+#ifdef _OUTPUT_LOG
+static clock_t             end_time = 0,
+                           start_time = 0;
+#endif
+static char                local_file[MAX_PATH_LENGTH],
+                           local_tmp_file[MAX_PATH_LENGTH],
+                           *p_local_file;
+
 /* Local function prototypes. */
 static void                gf_http_exit(void),
                            sig_bus(int),
@@ -161,7 +172,6 @@ main(int argc, char *argv[])
    int              adjust_rl_size,
                     blocksize,
                     chunksize,
-                    current_toggle,
                     exit_status = TRANSFER_SUCCESS,
                     fd,
                     files_retrieved = 0,
@@ -188,17 +198,12 @@ main(int argc, char *argv[])
                     start_transfer_time_file = 0;
    char             *buffer,
                     *chunkbuffer = NULL,
-                    local_file[MAX_PATH_LENGTH],
-                    local_tmp_file[MAX_PATH_LENGTH],
-                    *p_local_file,
                     *p_local_tmp_file;
    struct stat      stat_buf;
 #ifdef SA_FULLDUMP
    struct sigaction sact;
 #endif
 #ifdef _OUTPUT_LOG
-   clock_t          end_time = 0,
-                    start_time = 0;
    struct tms       tmsdummy;
 #endif
 
@@ -1266,6 +1271,7 @@ main(int argc, char *argv[])
                                         "Closed local file %s.", local_tmp_file);
                         }
                      }
+                     rename_pending = i;
 
                      /* Check if remote file is to be deleted. */
                      if (fra->remove == YES)
@@ -1682,12 +1688,14 @@ main(int argc, char *argv[])
                      }
                      if (rename(local_tmp_file, local_file) == -1)
                      {
+                        rename_pending = -1;
                         trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
                                   "Failed to rename() %s to %s : %s",
                                   local_tmp_file, local_file, strerror(errno));
                      }
                      else
                      {
+                        rename_pending = -1;
                         if ((db.fsa_pos != INCORRECT) &&
                             (fsa->debug > NORMAL_MODE))
                         {
@@ -2090,6 +2098,93 @@ main(int argc, char *argv[])
 static void
 gf_http_exit(void)
 {
+   if (rename_pending != -1)
+   {
+      if ((rl_fd != -1) && (rl != NULL) &&
+          (rename_pending < no_of_listed_files))
+      {
+         if (rl[rename_pending].file_name[0] == '.')
+         {
+            (void)strcpy(p_local_file, &rl[rename_pending].file_name[1]);
+         }
+         else
+         {
+            (void)strcpy(p_local_file, rl[rename_pending].file_name);
+         }
+         if (rename(local_tmp_file, local_file) == -1)
+         {
+            trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                      "Failed to rename() %s to %s : %s",
+                      local_tmp_file, local_file, strerror(errno));
+         }
+         else
+         {
+            rl[rename_pending].retrieved = YES;
+            rl[rename_pending].assigned = 0;
+#ifdef _OUTPUT_LOG
+            if (db.output_log == YES)
+            {                        
+               if (ol_fd == -2)
+               {
+# ifdef WITHOUT_FIFO_RW_SUPPORT
+                  output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
+# else                                                          
+                  output_log_fd(&ol_fd, &db.output_log);
+# endif
+               }
+               if ((ol_fd > -1) && (ol_data == NULL))
+               {
+                  output_log_ptrs(&ol_retries,
+                                  &ol_job_number,
+                                  &ol_data,              /* Pointer to buffer.       */
+                                  &ol_file_name,
+                                  &ol_file_name_length,
+                                  &ol_archive_name_length,
+                                  &ol_file_size,
+                                  &ol_unl,
+                                  &ol_size,
+                                  &ol_transfer_time,
+                                  &ol_output_type,
+                                  db.host_alias,
+                                  (current_toggle - 1),
+# ifdef WITH_SSL
+                                  (db.auth == NO) ? HTTP : HTTPS,
+# else
+                                  HTTP,
+# endif
+                                  &db.output_log);
+               }
+               (void)strcpy(ol_file_name, rl[rename_pending].file_name);
+               *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+               ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+               ol_file_name[*ol_file_name_length + 1] = '\0';
+               (*ol_file_name_length)++;
+               *ol_file_size = rl[rename_pending].size;
+               *ol_job_number = db.id.dir;
+               *ol_retries = db.retries;
+               *ol_unl = 0;
+               *ol_transfer_time = end_time - start_time;
+               *ol_archive_name_length = 0;
+               *ol_output_type = OT_NORMAL_RECEIVED + '0';
+               ol_real_size = *ol_file_name_length + ol_size;
+               if (write(ol_fd, ol_data, ol_real_size) != ol_real_size)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "write() error : %s", strerror(errno));
+               }
+            }
+#endif /* _OUTPUT_LOG */
+         }
+      }
+      else
+      {
+         *p_local_file = '\0';
+         system_log(WARN_SIGN, __FILE__, __LINE__, 
+                    "There are pending renames in %s", local_file);
+      }
+      rename_pending = -1;
+   }
+
    if ((fra != NULL) && (db.fra_pos >= 0))
    {
       if ((rl_fd != -1) && (rl != NULL))
