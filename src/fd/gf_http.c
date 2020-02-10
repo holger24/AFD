@@ -574,7 +574,8 @@ main(int argc, char *argv[])
                if ((rl[i].retrieved == NO) &&
                    (rl[i].assigned == ((unsigned char)db.job_no + 1)))
                {
-                  int   prev_download_exists = NO;
+                  int   delete_failed = NO,
+                        prev_download_exists = NO;
                   off_t offset;
 
                   if (rl[i].file_name[0] != '.')
@@ -1278,6 +1279,7 @@ main(int argc, char *argv[])
                                         "Failed to delete remote file %s in %s (%d).",
                                         rl[i].file_name, fra->dir_alias,
                                         status);
+                              delete_failed = NEITHER;
                            }
                            else
                            {
@@ -1289,13 +1291,7 @@ main(int argc, char *argv[])
                                         "Failed to delete remote file %s in %s (%d).",
                                         rl[i].file_name, fra->dir_alias,
                                         status);
-                              (void)http_quit();
-                              reset_values(files_retrieved,
-                                           file_size_retrieved,
-                                           files_to_retrieve,
-                                           file_size_to_retrieve,
-                                           (struct job *)&db);
-                              exit(eval_timeout(DELETE_REMOTE_ERROR));
+                              delete_failed = YES;
                            }
                         }
                         else
@@ -1772,6 +1768,14 @@ main(int argc, char *argv[])
                                   (struct job *)&db);
                      exitflag = 0;
                      exit(TRANSFER_SUCCESS);
+                  }
+                  if (delete_failed == YES)
+                  {
+                     (void)http_quit();
+                     reset_values(files_retrieved, file_size_retrieved,
+                                  files_to_retrieve, file_size_to_retrieve,
+                                  (struct job *)&db);
+                     exit(eval_timeout(DELETE_REMOTE_ERROR));
                   }
                } /* if (rl[i].retrieved == NO) */
             } /* for (i = 0; i < no_of_listed_files; i++) */

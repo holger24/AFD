@@ -836,7 +836,8 @@ main(int argc, char *argv[])
                   }
                   else /* status == SUCCESS */
                   {
-                     int current_max_pending_reads;
+                     int current_max_pending_reads,
+                     delete_failed = NO;
 
                      if (fsa->debug > NORMAL_MODE)
                      {
@@ -1331,7 +1332,9 @@ main(int argc, char *argv[])
                            {
                               trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                         "Failed to delete remote file `%s' in %s (%d).",
-                                        rl[i].file_name, fra->dir_alias, status);
+                                        rl[i].file_name, fra->dir_alias,
+                                        status);
+                              delete_failed = NEITHER;
                            }
                            else
                            {
@@ -1341,12 +1344,9 @@ main(int argc, char *argv[])
                               /* loop fetching the same files!   */
                               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                         "Failed to delete remote file `%s' in %s (%d).",
-                                        rl[i].file_name, fra->dir_alias, status);
-                              (void)sftp_quit();
-                              reset_values(files_retrieved, file_size_retrieved,
-                                           files_to_retrieve, file_size_to_retrieve,
-                                           (struct job *)&db);
-                              exit(eval_timeout(DELETE_REMOTE_ERROR));
+                                        rl[i].file_name, fra->dir_alias,
+                                        status);
+                              delete_failed = YES;
                            }
                         }
                         else
@@ -1585,6 +1585,14 @@ main(int argc, char *argv[])
                                      (struct job *)&db);
                         exitflag = 0;
                         exit(TRANSFER_SUCCESS);
+                     }
+                     if (delete_failed == YES)
+                     {
+                        (void)sftp_quit();
+                        reset_values(files_retrieved, file_size_retrieved,
+                                     files_to_retrieve, file_size_to_retrieve,
+                                     (struct job *)&db);
+                        exit(eval_timeout(DELETE_REMOTE_ERROR));
                      }
                   }
                } /* if (rl[i].retrieved == NO) */
