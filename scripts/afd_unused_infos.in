@@ -8,7 +8,23 @@
 # Author        : H.Kiehl
 # Date          : 20.09.2007
 # Modifications : 25.12.2019 H.Kiehl Added extra info directory.
+#                 12.02.2020 H.Kiehl Make this script work for afd_mon
+#                                    as well.
 #
+
+BASE_NAME=`basename $0`
+case $BASE_NAME in
+   afd_*)
+      VIEWER=fsa_view
+      ;;
+   mon_*)
+      VIEWER=msa_view
+      ;;
+   *)
+      echo "Unknown progname $0"
+      exit 1
+      ;;
+esac
 
 todo=0
 MOVE_PATH=""
@@ -43,7 +59,7 @@ done
 
 for i in `ls $AFD_WORK_DIR/etc/info/*`
 do
-   $AFD_BIN_DIR/fsa_view ${i#$AFD_WORK_DIR/etc/info/} 2>&1 >/dev/null
+   $AFD_BIN_DIR/$VIEWER ${i#$AFD_WORK_DIR/etc/info/} 2>&1 >/dev/null
    if [ $? -ne 0 ]
    then
       case $todo in
@@ -63,7 +79,7 @@ do
 done
 for i in `ls $AFD_WORK_DIR/etc/INFO-*`
 do
-   $AFD_BIN_DIR/fsa_view ${i#$AFD_WORK_DIR/etc/INFO-} 2>&1 >/dev/null
+   $AFD_BIN_DIR/$VIEWER ${i#$AFD_WORK_DIR/etc/INFO-} 2>&1 >/dev/null
    if [ $? -ne 0 ]
    then
       case $todo in

@@ -19,3 +19,10 @@ CLEANFILES           = afd afdalarm afdmon afd_auto_config afd_unused_infos\
                        rmon_ctrl_ssh
 bin_SCRIPTS          = afdalarm afd_auto_config rafdd_cmd rafdd_cmd_ssh\
                        afd_unused_infos mirror_fra_cfg $(AFD_MON_FILES)
+
+install-exec-local:
+	cd $(DESTDIR)$(bindir) && rm -f mon_unused_infos
+	cd $(DESTDIR)$(bindir) && ln -s afd_unused_infos mon_unused_infos
+
+uninstall-local:
+	cd $(DESTDIR)$(bindir) && rm -f mon_unused_infos
