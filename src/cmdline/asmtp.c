@@ -875,13 +875,36 @@ main(int argc, char *argv[])
             }
             no_of_bytes += length;
          } /* if (db.special_flag & ATTACH_FILE) */
-         else
-         {
-            if (smtp_buffer != NULL)
-            {
-               smtp_buffer[0] = 0;
-            }
-         }
+         else if (db.charset != NULL)
+              {
+                 size_t length;
+
+                 length = snprintf(buffer, buffer_size,
+                                   "MIME-Version: 1.0 (produced by AFD %s)\r\nContent-Type: TEXT/plain; charset=%s\r\nContent-Transfer-Encoding: 8BIT\r\n",
+                                   PACKAGE_VERSION, db.charset);
+                 if (length >= buffer_size)
+                 {
+                    trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                              "Buffer length for mail header to small!");
+                    (void)smtp_quit();
+                    exit(ALLOC_ERROR);
+                 }
+                 if (smtp_write(buffer, NULL, length) < 0)
+                 {
+                    trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                              _("Failed to write MIME header with charset to SMTP-server."));
+                    (void)smtp_quit();
+                    exit(eval_timeout(WRITE_REMOTE_ERROR));
+                 }
+                 no_of_bytes += length;
+              }
+              else
+              {
+                 if (smtp_buffer != NULL)
+                 {
+                    smtp_buffer[0] = 0;
+                 }
+              }
          if (smtp_write("\r\n", NULL, 2) < 0)
          {
             WHAT_DONE("mailed", file_size_done, no_of_files_done);
