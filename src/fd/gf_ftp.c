@@ -1140,6 +1140,13 @@ main(int argc, char *argv[])
                                            NULL, NULL, rl[i].size);
                      }
 
+                     /* Delete partly downloaded file. */
+                     if (prev_download_exists == YES)
+                     {
+                        (void)unlink(local_tmp_file);
+                        prev_download_exists = NO;
+                     }
+
                      /*
                       * Mark this file as retrieved or else we will always
                       * fall over this file.

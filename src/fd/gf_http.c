@@ -671,6 +671,13 @@ main(int argc, char *argv[])
                                "Failed to open remote file %s in %s (%d).",
                                rl[i].file_name, fra->dir_alias, status);
 
+                     /* Delete partly downloaded file. */
+                     if (prev_download_exists == YES)
+                     {
+                        (void)unlink(local_tmp_file);
+                        prev_download_exists = NO;
+                     }
+
                      /*
                       * Mark this file as retrieved or else we will always
                       * fall over this file.

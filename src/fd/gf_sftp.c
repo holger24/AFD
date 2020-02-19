@@ -721,6 +721,14 @@ main(int argc, char *argv[])
                         trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                   "Failed to open remote file `%s' in %s (%d).",
                                   rl[i].file_name, fra->dir_alias, status);
+
+                        /* Delete partly downloaded file. */
+                        if (prev_download_exists == YES)
+                        {
+                           (void)unlink(local_tmp_file);
+                           prev_download_exists = NO;
+                        }
+
                         rl[i].assigned = 0;
                         rl[i].in_list = NO;
                         files_retrieved++;
