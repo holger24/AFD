@@ -26,7 +26,7 @@ DESCR__S_M1
  **   afdcmd - send commands to the AFD
  **
  ** SYNOPSIS
- **   afdcmd [-w <working directory>] [-p <role>] [-u[ <fake user>]] option hostalias|diralias|position
+ **   afdcmd [-w <working directory>] [-p <role>] [-u[ <fake user>]] option hostalias|diralias|position [... hostalias|diralias|position n]
  **                   -q      start queue
  **                   -Q      stop queue
  **                   -t      start transfer
@@ -2649,7 +2649,7 @@ static void
 usage(char *progname)
 {                    
    (void)fprintf(stderr,
-                 _("SYNTAX  : %s[ -w working directory][ -p <role>][ -u[ <fake user>]] options hostalias|diralias|position\n"),
+                 _("SYNTAX  : %s[ -w working directory][ -p <role>][ -u[ <fake user>]] options hostalias|diralias|position [... hostalias|diralias|position n]\n"),
                  progname);
    (void)fprintf(stderr,
                  _("    FSA options:\n"));
