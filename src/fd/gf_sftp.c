@@ -180,7 +180,8 @@ main(int argc, char *argv[])
    int              cb2_ret = NO;
    unsigned int     values_changed = 0;
 #endif
-   char             *created_path = NULL;
+   char             *created_path = NULL,
+                    *p_current_real_hostname;
    off_t            file_size_retrieved = 0,
                     file_size_to_retrieve;
    time_t           connected,
@@ -526,6 +527,35 @@ main(int argc, char *argv[])
       loop_counter = 0;
       do
       {
+         /* Check if real_hostname has changed. */
+         if (db.toggle_host == YES)
+         {
+            if (fsa->host_toggle == HOST_ONE)
+            {
+               p_current_real_hostname = fsa->real_hostname[HOST_TWO - 1];
+            }
+            else
+            {
+               p_current_real_hostname = fsa->real_hostname[HOST_ONE - 1];
+            }
+         }
+         else
+         {
+            p_current_real_hostname = fsa->real_hostname[(int)(fsa->host_toggle - 1)];
+         }
+         if (strcmp(db.hostname, p_current_real_hostname) != 0)
+         {
+            trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                      "hostname changed (%s -> %s), exiting.",
+                      db.hostname, p_current_real_hostname);
+            (void)sftp_quit();
+            reset_values(files_retrieved, file_size_retrieved,
+                         files_to_retrieve, file_size_to_retrieve,
+                         (struct job *)&db);
+            exitflag = 0;
+            exit(TRANSFER_SUCCESS);
+         }
+
          if ((files_to_retrieve = get_remote_file_names_sftp(&file_size_to_retrieve,
                                                              &more_files_in_list)) > 0)
          {
@@ -647,6 +677,35 @@ main(int argc, char *argv[])
             /* Retrieve all files. */
             for (i = 0; i < no_of_listed_files; i++)
             {
+               /* Check if real_hostname has changed. */
+               if (db.toggle_host == YES)
+               {
+                  if (fsa->host_toggle == HOST_ONE)
+                  {
+                     p_current_real_hostname = fsa->real_hostname[HOST_TWO - 1];
+                  }
+                  else
+                  {
+                     p_current_real_hostname = fsa->real_hostname[HOST_ONE - 1];
+                  }
+               }
+               else
+               {
+                  p_current_real_hostname = fsa->real_hostname[(int)(fsa->host_toggle - 1)];
+               }
+               if (strcmp(db.hostname, p_current_real_hostname) != 0)
+               {
+                  trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "hostname changed (%s -> %s), exiting.",
+                            db.hostname, p_current_real_hostname);
+                  (void)sftp_quit();
+                  reset_values(files_retrieved, file_size_retrieved,
+                               files_to_retrieve, file_size_to_retrieve,
+                               (struct job *)&db);
+                  exitflag = 0;
+                  exit(TRANSFER_SUCCESS);
+               }
+
                if (*current_no_of_listed_files != no_of_listed_files)
                {
                   if (i >= *current_no_of_listed_files)

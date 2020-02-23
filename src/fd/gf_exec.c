@@ -136,6 +136,7 @@ main(int argc, char *argv[])
                     local_file[MAX_PATH_LENGTH],
                     local_tmp_file[MAX_PATH_LENGTH],
                     *p_command,
+                    *p_current_real_hostname,
                     *p_local_file,
                     *p_local_tmp_file,
                     *return_str = NULL,
@@ -187,6 +188,24 @@ main(int argc, char *argv[])
       system_log(FATAL_SIGN, __FILE__, __LINE__,
                  "signal() error : %s", strerror(errno));
       exit(INCORRECT);
+   }
+
+   /* Now determine the real hostname. */
+   if (db.toggle_host == YES)
+   {
+      if (fsa->host_toggle == HOST_ONE)
+      {
+         (void)strcpy(db.hostname, fsa->real_hostname[HOST_TWO - 1]);
+      }
+      else
+      {
+         (void)strcpy(db.hostname, fsa->real_hostname[HOST_ONE - 1]);
+      }
+   }
+   else
+   {
+      (void)strcpy(db.hostname,
+                   fsa->real_hostname[(int)(fsa->host_toggle - 1)]);
    }
 
    fsa->job_status[(int)db.job_no].connect_status = EXEC_RETRIEVE_ACTIVE;
@@ -242,6 +261,34 @@ main(int argc, char *argv[])
    more_files_in_list = NO;
    do
    {
+      /* Check if real_hostname has changed. */
+      if (db.toggle_host == YES)
+      {
+         if (fsa->host_toggle == HOST_ONE)
+         {
+            p_current_real_hostname = fsa->real_hostname[HOST_TWO - 1];
+         }
+         else
+         {
+            p_current_real_hostname = fsa->real_hostname[HOST_ONE - 1];
+         }
+      }
+      else
+      {
+         p_current_real_hostname = fsa->real_hostname[(int)(fsa->host_toggle - 1)];
+      }
+      if (strcmp(db.hostname, p_current_real_hostname) != 0)
+      {
+         trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                   "hostname changed (%s -> %s), exiting.",
+                   db.hostname, p_current_real_hostname);
+         reset_values(files_retrieved, file_size_retrieved,
+                      files_to_retrieve, file_size_to_retrieve,
+                      (struct job *)&db);
+         exitflag = 0;
+         exit(TRANSFER_SUCCESS);
+      }
+
       if (db.fsa_pos != INCORRECT)
       {
          fsa->job_status[(int)db.job_no].no_of_files += files_to_retrieve;
@@ -261,6 +308,7 @@ main(int argc, char *argv[])
          reset_values(files_retrieved, file_size_retrieved,
                       files_to_retrieve, file_size_to_retrieve,
                       (struct job *)&db);
+         exitflag = 0;
          exit(TRANSFER_SUCCESS);
       }
 
