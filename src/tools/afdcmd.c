@@ -1142,7 +1142,8 @@ main(int argc, char *argv[])
           (options & DISABLE_HOST_OPTION) || (options & ENABLE_HOST_OPTION) ||
           (options & TOGGLE_HOST_OPTION) || (options & SWITCH_OPTION) ||
           (options & ENABLE_DELETE_DATA) || (options & DISABLE_DELETE_DATA) ||
-          (options2 & SIMULATE_SEND_MODE_OPTION))
+          (options2 & SIMULATE_SEND_MODE_OPTION) ||
+          (options2 & CHANGE_REAL_HOSTNAME))
       {
          (void)sprintf(host_config_file, "%s%s%s",
                        p_work_dir, ETC_DIR, DEFAULT_HOST_CONFIG_FILE);
@@ -1838,13 +1839,20 @@ main(int argc, char *argv[])
                   }
                   else
                   {
-                     (void)strcpy(fsa[position].real_hostname[real_hostname_pos],
+                     if (strcmp(fsa[position].real_hostname[real_hostname_pos],
+                                real_hostname) != 0)
+                     {
+                        (void)strcpy(fsa[position].real_hostname[real_hostname_pos],
+                                     real_hostname);
+                        (void)strcpy(hl[position].real_hostname[real_hostname_pos],
+                                     real_hostname);
+                        event_log(0L, EC_HOST, ET_MAN, EA_CHANGE_REAL_HOSTNAME,
+                                  "%s%c%s%c%d %s",
+                                  fsa[position].host_alias, SEPARATOR_CHAR,
+                                  user, SEPARATOR_CHAR, real_hostname_pos,
                                   real_hostname);
-                     event_log(0L, EC_HOST, ET_MAN, EA_CHANGE_REAL_HOSTNAME,
-                               "%s%c%s%c%d %s",
-                               fsa[position].host_alias, SEPARATOR_CHAR, user,
-                               SEPARATOR_CHAR, real_hostname_pos,
-                               real_hostname);
+                        change_host_config = YES;
+                     }
                   }
                }
 
@@ -2054,7 +2062,8 @@ main(int argc, char *argv[])
            (options & DISABLE_HOST_OPTION) || (options & ENABLE_HOST_OPTION) ||
            (options & TOGGLE_HOST_OPTION) || (options & SWITCH_OPTION) ||
            (options & ENABLE_DELETE_DATA) || (options & DISABLE_DELETE_DATA) ||
-           (options2 & SIMULATE_SEND_MODE_OPTION)) &&
+           (options2 & SIMULATE_SEND_MODE_OPTION) ||
+           (options2 & CHANGE_REAL_HOSTNAME)) &&
           (ehc == NO) && (change_host_config == YES))
       {
          (void)write_host_config(no_of_hosts, host_config_file, hl);
