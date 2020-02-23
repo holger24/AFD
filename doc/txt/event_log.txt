@@ -28,55 +28,56 @@
           |manual|AFD shutdown             |<user>
           |manual|AFD startup              |<user>
           |manual|Modify errors offline    |<user>|from->to
-----------+------+-------------------+-----+------+----------------------------
- directory|extern|error start        |<dir alias> |<error id>
-          |extern|error end          |<dir alias>
-          |manual|Acknowledge        |<dir alias> |<user>[|<reason>]
-          |manual|Acknowledge unset  |<dir alias> |<user>[|<reason>]
-          |manual|enable directory   |<dir alias> |<user>[|<reason>]
-          |manual|disable directory  |<dir alias> |<user>[|<reason>]
-          |manual|start directory    |<dir alias> |<user>[|<reason>]
-          |manual|stop directory     |<dir alias> |<user>[|<reason>]
-          |manual|rescan directory   |<dir alias> |<user>
-          |auto  |Error action start |<dir alias> |<ret code>
-          |auto  |Error action stop  |<dir alias> |<ret code>
-          |auto  |Warn time set      |<dir alias>
-          |auto  |Warn time unset    |<dir alias>
-----------+------+-------------------+------------+----------------------------
-production|extern|production error   |<dir alias> |<error id>
-          |extern|production error   |<host alias>|<error id>
-----------+------+-------------------+------------+----------------------------
-   host   |extern|Error start        |<host alias>|<protocol><error id>
-          |extern|Error end          |<host alias>[|<protocol>]
-          |auto  |Error action start |<host alias>|<ret code>
-          |auto  |Error action stop  |<host alias>|<ret code>
-          |manual|Offline            |<host alias>|<user>[|<reason>]
-          |auto  |Offline            |<host alias>
-          |manual|Acknowledge        |<host alias>|<user>[|<reason>]
-          |manual|Acknowledge unset  |<host alias>|<user>[|<reason>]
-          |manual|Enable host        |<host alias>|<user>[|<reason>]
-          |manual|Disable host       |<host alias>|<user>[|<reason>]
-          |manual|Start transfer     |<host alias>|<user>[|<reason>]
-          |manual|Stop transfer      |<host alias>|<user>[|<reason>]
-          |manual|Start queue        |<host alias>|<user>[|<reason>]
-          |manual|Stop queue         |<host alias>|<user>[|<reason>]
-          |auto  |Start queue        |<host alias>
-          |auto  |Stop queue         |<host alias>|<auto reason>
-          |extern|Start error queue  |<host alias>|<job id>|<error id>
-          |extern|Stop error queue   |<host alias>|<job_id>
-          |manual|Switch             |<host alias>|<user>|from->to[|<reason>]
-          |auto  |Switch             |<host alias>
-          |auto  |Warn time set      |<host alias>
-          |auto  |Warn time unset    |<host alias>
-          |manual|Enable delete data |<host alias>|<user>
-          |manual|Disable delete data|<host alias>|<user>
-          |manual|Retry transfer     |<host alias>|<user>
-          |manual|Enable debug       |<host alias>|<user>
-          |manual|Enable trace       |<host alias>|<user>
-          |manual|Enable full trace  |<host alias>|<user>
-          |manual|Enable simulation  |<host alias>|<user>
-          |manual|Disable debug      |<host alias>|<user>
-          |manual|Disable trace      |<host alias>|<user>
-          |manual|Disable full trace |<host alias>|<user>
-          |manual|Disable simulation |<host alias>|<user>
-          |manual|Changed information|<host alias>|<user>
+----------+------+--------------------+----+------++---------------------------
+ directory|extern|error start         |<dir alias> |<error id>
+          |extern|error end           |<dir alias>
+          |manual|Acknowledge         |<dir alias> |<user>[|<reason>]
+          |manual|Acknowledge unset   |<dir alias> |<user>[|<reason>]
+          |manual|enable directory    |<dir alias> |<user>[|<reason>]
+          |manual|disable directory   |<dir alias> |<user>[|<reason>]
+          |manual|start directory     |<dir alias> |<user>[|<reason>]
+          |manual|stop directory      |<dir alias> |<user>[|<reason>]
+          |manual|rescan directory    |<dir alias> |<user>
+          |auto  |Error action start  |<dir alias> |<ret code>
+          |auto  |Error action stop   |<dir alias> |<ret code>
+          |auto  |Warn time set       |<dir alias>
+          |auto  |Warn time unset     |<dir alias>
+----------+------+--------------------+------------+---------------------------
+production|extern|production error    |<dir alias> |<error id>
+          |extern|production error    |<host alias>|<error id>
+----------+------+--------------------+------------+---------------------------
+   host   |extern|Error start         |<host alias>|<protocol><error id>
+          |extern|Error end           |<host alias>[|<protocol>]
+          |auto  |Error action start  |<host alias>|<ret code>
+          |auto  |Error action stop   |<host alias>|<ret code>
+          |manual|Offline             |<host alias>|<user>[|<reason>]
+          |auto  |Offline             |<host alias>
+          |manual|Acknowledge         |<host alias>|<user>[|<reason>]
+          |manual|Acknowledge unset   |<host alias>|<user>[|<reason>]
+          |manual|Enable host         |<host alias>|<user>[|<reason>]
+          |manual|Disable host        |<host alias>|<user>[|<reason>]
+          |manual|Start transfer      |<host alias>|<user>[|<reason>]
+          |manual|Stop transfer       |<host alias>|<user>[|<reason>]
+          |manual|Start queue         |<host alias>|<user>[|<reason>]
+          |manual|Stop queue          |<host alias>|<user>[|<reason>]
+          |auto  |Start queue         |<host alias>
+          |auto  |Stop queue          |<host alias>|<auto reason>
+          |extern|Start error queue   |<host alias>|<job id>|<error id>
+          |extern|Stop error queue    |<host alias>|<job_id>
+          |manual|Switch              |<host alias>|<user>|from->to[|<reason>]
+          |auto  |Switch              |<host alias>
+          |manual|Change real hostname|<host alias>|<user>|<pos> <name>
+          |auto  |Warn time set       |<host alias>
+          |auto  |Warn time unset     |<host alias>
+          |manual|Enable delete data  |<host alias>|<user>
+          |manual|Disable delete data |<host alias>|<user>
+          |manual|Retry transfer      |<host alias>|<user>
+          |manual|Enable debug        |<host alias>|<user>
+          |manual|Enable trace        |<host alias>|<user>
+          |manual|Enable full trace   |<host alias>|<user>
+          |manual|Enable simulation   |<host alias>|<user>
+          |manual|Disable debug       |<host alias>|<user>
+          |manual|Disable trace       |<host alias>|<user>
+          |manual|Disable full trace  |<host alias>|<user>
+          |manual|Disable simulation  |<host alias>|<user>
+          |manual|Changed information |<host alias>|<user>

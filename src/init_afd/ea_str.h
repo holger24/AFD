@@ -91,7 +91,8 @@ static const char *eastr[] = /* Event action string. */
                      "Disable simulate send",           /* 66 */
                      "Enable simulate host",            /* 67 */
                      "Disable simulate host",           /* 68 */
-                     "Modify errors offline"            /* 69 */
+                     "Modify errors offline",           /* 69 */
+                     "Change real hostname"             /* 70 */
                   };
 
 /* NOTE: If the maximum length changes, don't forget to change */

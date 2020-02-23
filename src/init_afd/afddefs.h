@@ -2155,7 +2155,8 @@ typedef unsigned long       u_long_64;
 #define EA_ENABLE_SIMULATE_SEND_HOST    67
 #define EA_DISABLE_SIMULATE_SEND_HOST   68
 #define EA_MODIFY_ERRORS_OFFLINE        69
-#define EA_MAX_EVENT_ACTION             69
+#define EA_CHANGE_REAL_HOSTNAME         70
+#define EA_MAX_EVENT_ACTION             70
 
 /* See ea_str.h for longest event string. */
 #define MAX_EVENT_ACTION_LENGTH     (sizeof("Disable create target dir") - 1)

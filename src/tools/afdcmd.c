@@ -1,6 +1,6 @@
 /*
  *  afdcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -27,41 +27,42 @@ DESCR__S_M1
  **
  ** SYNOPSIS
  **   afdcmd [-w <working directory>] [-p <role>] [-u[ <fake user>]] option hostalias|diralias|position [... hostalias|diralias|position n]
- **                   -q      start queue
- **                   -Q      stop queue
- **                   -t      start transfer
- **                   -T      stop transfer
- **                   -b      enable directory
- **                   -B      disable directory
- **                   -j      start directory
- **                   -J      stop directory
- **                   -e      enable host
- **                   -E      disable host
- **                   -g      enable delete data for host
- **                   -G      disable delete data for host
- **                   -s      switch host
- **                   -r      retry
- **                   -R      rescan directory
- **                   -d      enable/disable debug
- **                   -c      enable/disable trace
- **                   -C      enable/disable full trace
- **                   -I      enable/disable simulate send mode
- **                   -f      start FD
- **                   -F      stop FD
- **                   -a      start AMG
- **                   -A      stop AMG
- **                   -U      toggle start/stop directory
- **                   -W      toggle enable/disable directory
- **                   -X      toggle enable/disable host
- **                   -Y      start/stop AMG
- **                   -Z      start/stop FD
- **                   -k      force file dir check
- **                   -i      reread local interface file
- **                   -o      show exec statistics
- **                   -P      force archive check
- **                   -S      enable scanning of directories [afdbench]
- **                   -v      Just print the version number.
- **     [aAbBcCdeEfFgGiIjJkopPqQrRsStTuUWXYZ]
+ **                -q              start queue
+ **                -Q              stop queue
+ **                -t              start transfer
+ **                -T              stop transfer
+ **                -b              enable directory
+ **                -B              disable directory
+ **                -j              start directory
+ **                -J              stop directory
+ **                -e              enable host
+ **                -E              disable host
+ **                -g              enable delete data for host
+ **                -G              disable delete data for host
+ **                -h <pos> <name> change real hostname to <name>
+ **                -s              switch host
+ **                -r              retry
+ **                -R              rescan directory
+ **                -d              enable/disable debug
+ **                -c              enable/disable trace
+ **                -C              enable/disable full trace
+ **                -I              enable/disable simulate send mode
+ **                -f              start FD
+ **                -F              stop FD
+ **                -a              start AMG
+ **                -A              stop AMG
+ **                -U              toggle start/stop directory
+ **                -W              toggle enable/disable directory
+ **                -X              toggle enable/disable host
+ **                -Y              start/stop AMG
+ **                -Z              start/stop FD
+ **                -k              force file dir check
+ **                -i              reread local interface file
+ **                -o              show exec statistics
+ **                -P              force archive check
+ **                -S              enable scanning of directories [afdbench]
+ **                -v              Just print the version number.
+ **     [aAbBcCdeEfFgGhiIjJkopPqQrRsStTuUWXYZ]
  **
  ** DESCRIPTION
  **
@@ -85,6 +86,7 @@ DESCR__S_M1
  **   15.09.2014 H.Kiehl Added -I option to simulate sending files.
  **   31.03.2017 H.Kiehl Do not allow to set things on group identifier.
  **   19.07.2019 H.Kiehl Write simulate mode to HOST_CONFIG.
+ **   23.02.2020 H.Kiehl Added -h to change the real_hostname.
  **
  */
 DESCR__E_M1
@@ -115,7 +117,8 @@ int                        event_log_fd = STDERR_FILENO,
                            no_of_dirs = 0,
                            no_of_host_names,
                            no_of_hosts = 0,
-                           no_of_job_ids = 0;
+                           no_of_job_ids = 0,
+                           real_hostname_pos;
 unsigned int               options = 0,
                            options2 = 0;
 #ifdef HAVE_MMAP
@@ -124,7 +127,8 @@ off_t                      fra_size,
                            jid_size;
 #endif
 char                       **hosts = NULL,
-                           *p_work_dir;
+                           *p_work_dir,
+                           real_hostname[MAX_REAL_HOSTNAME_LENGTH + 1];
 struct filetransfer_status *fsa;
 struct fileretrieve_status *fra;
 struct job_id_data         *jid;
@@ -170,6 +174,7 @@ static void                eval_input(int, char **),
 # define ENABLE_DIRECTORY_SCAN_OPTION      2147483648U
 #endif
 #define SIMULATE_SEND_MODE_OPTION          1
+#define CHANGE_REAL_HOSTNAME               2
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ afdcmd() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
@@ -1102,7 +1107,8 @@ main(int argc, char *argv[])
        (options & RETRY_OPTION) || (options & DEBUG_OPTION) ||
        (options & TRACE_OPTION) || (options & FULL_TRACE_OPTION) ||
        (options & ENABLE_DELETE_DATA) || (options & DISABLE_DELETE_DATA) ||
-       (options2 & SIMULATE_SEND_MODE_OPTION))
+       (options2 & SIMULATE_SEND_MODE_OPTION) ||
+       (options2 & CHANGE_REAL_HOSTNAME))
    {
       if ((i = fsa_attach(AFD_CMD)) != SUCCESS)
       {
@@ -1163,6 +1169,10 @@ main(int argc, char *argv[])
                                _("Unable to retrieve data from HOST_CONFIG, therefore no values changed in it!"));
                  }
          }
+      }
+      else
+      {
+         ehc = NO;
       }
 
       for (i = 0; i < no_of_host_names; i++)
@@ -1812,6 +1822,32 @@ main(int argc, char *argv[])
                   }
                }
 
+               /*
+                * Change real hostname.
+                */
+               if ((options2 & CHANGE_REAL_HOSTNAME) &&
+                   (real_hostname_pos != -1) && (real_hostname[0] != '\0'))
+               {
+                  if ((real_hostname_pos != 0) &&
+                      (fsa[position].host_toggle_str[0] == '\0'))
+                  {
+                     (void)fprintf(stdout,
+                                   _("WARNING : Host %s has just one real hostname!\n"),
+                                   fsa[position].host_dsp_name);
+                     errors++;
+                  }
+                  else
+                  {
+                     (void)strcpy(fsa[position].real_hostname[real_hostname_pos],
+                                  real_hostname);
+                     event_log(0L, EC_HOST, ET_MAN, EA_CHANGE_REAL_HOSTNAME,
+                               "%s%c%s%c%d %s",
+                               fsa[position].host_alias, SEPARATOR_CHAR, user,
+                               SEPARATOR_CHAR, real_hostname_pos,
+                               real_hostname);
+                  }
+               }
+
                if (options & SWITCH_OPTION)
                {
                   if ((fsa[position].toggle_pos > 0) &&
@@ -1844,7 +1880,7 @@ main(int argc, char *argv[])
                   else
                   {
                      (void)fprintf(stderr,
-                                   _("WARNING : Host %s cannot be switched!"),
+                                   _("WARNING : Host %s cannot be switched!\n"),
                                    fsa[position].host_dsp_name);
                   }
                }
@@ -2385,45 +2421,48 @@ eval_input(int argc, char *argv[])
    char progname[128];
 
    (void)strcpy(progname, argv[0]);
+   real_hostname[0] = '\0';
+   real_hostname_pos = -1;
 
-   /**********************************************************/
-   /* The following while loop checks for the parameters:    */
-   /*                                                        */
-   /*         -q : start queue                               */
-   /*         -Q : stop queue                                */
-   /*         -t : start transfer                            */
-   /*         -T : stop transfer                             */
-   /*         -b : enable directory                          */
-   /*         -B : disable directory                         */
-   /*         -j : start directory                           */
-   /*         -J : stop directory                            */
-   /*         -e : enable host                               */
-   /*         -E : disable host                              */
-   /*         -g : enable delete data for host               */
-   /*         -G : disable delete data for host              */
-   /*         -s : switch host                               */
-   /*         -r : retry                                     */
-   /*         -R : rescan directory                          */
-   /*         -d : enable/disable debug                      */
-   /*         -c : enable/disable trace                      */
-   /*         -C : enable/disable fulle trace                */
-   /*         -I : enable/disable simulate send mode         */
-   /*         -f : start FD                                  */
-   /*         -F : stop FD                                   */
-   /*         -a : start AMG                                 */
-   /*         -A : stop AMG                                  */
-   /*         -U : toggle start/stop directory               */
-   /*         -W : toggle enable/disable directory           */
-   /*         -X : toggle enable/disable host                */
-   /*         -Y : start/stop AMG                            */
-   /*         -Z : start/stop FD                             */
-   /*         -k : force file dir check                      */
-   /*         -i : reread local interface file               */
-   /*         -o : show exec statistics                      */
-   /*         -P : force archive check                       */
-   /*         -S : enable scanning of directories [afdbench] */
-   /*                                                        */
-   /**********************************************************/
+   /*****************************************************************/
+   /* The following while loop checks for the parameters:           */
+   /*                                                               */
+   /*   -q              : start queue                               */
+   /*   -Q              : stop queue                                */
+   /*   -t              : start transfer                            */
+   /*   -T              : stop transfer                             */
+   /*   -b              : enable directory                          */
+   /*   -B              : disable directory                         */
+   /*   -j              : start directory                           */
+   /*   -J              : stop directory                            */
+   /*   -e              : enable host                               */
+   /*   -E              : disable host                              */
+   /*   -g              : enable delete data for host               */
+   /*   -G              : disable delete data for host              */
+   /*   -h <pos> <name> : change real_hostname to <name>            */
+   /*   -s              : switch host                               */
+   /*   -r              : retry                                     */
+   /*   -R              : rescan directory                          */
+   /*   -d              : enable/disable debug                      */
+   /*   -c              : enable/disable trace                      */
+   /*   -C              : enable/disable fulle trace                */
+   /*   -I              : enable/disable simulate send mode         */
+   /*   -f              : start FD                                  */
+   /*   -F              : stop FD                                   */
+   /*   -a              : start AMG                                 */
+   /*   -A              : stop AMG                                  */
+   /*   -U              : toggle start/stop directory               */
+   /*   -W              : toggle enable/disable directory           */
+   /*   -X              : toggle enable/disable host                */
+   /*   -Y              : start/stop AMG                            */
+   /*   -Z              : start/stop FD                             */
+   /*   -k              : force file dir check                      */
+   /*   -i              : reread local interface file               */
+   /*   -o              : show exec statistics                      */
+   /*   -P              : force archive check                       */
+   /*   -S              : enable scanning of directories [afdbench] */
+   /*                                                               */
+   /*****************************************************************/
    while ((--argc > 0) && ((*++argv)[0] == '-'))
    {
       if (*(argv[0] + 2) == '\0')
@@ -2478,6 +2517,54 @@ eval_input(int argc, char *argv[])
             case 'G': /* Disable delete data. */
                options ^= DISABLE_DELETE_DATA;
                need_hostname = YES;
+               break;
+
+            case 'h': /* Modify real_hostname. */
+               if ((argc > 2) && (argv[1][0] != '-') && (argv[2][0] != '-'))
+               {
+                  if ((argv[1][1] != '\0') && (argv[1][0] != '0') &&
+                      (argv[1][0] != '1'))
+                  {
+                     (void)fprintf(stderr,
+                                   _("ERROR  : Position can only be 0 and 1. (%s %d)\n"),
+                                   __FILE__, __LINE__);
+                     correct = NO;
+                  }
+                  else
+                  {
+                     if (argv[1][0] == '0')
+                     {
+                        real_hostname_pos = 0;
+                     }
+                     else
+                     {
+                        real_hostname_pos = 1;
+                     }
+                     if (strlen(argv[2]) > MAX_REAL_HOSTNAME_LENGTH)
+                     {
+                        (void)fprintf(stderr,
+                                      _("ERROR  : real hostname to long, may only be %d characters long. (%s %d)\n"),
+                                      MAX_REAL_HOSTNAME_LENGTH,
+                                      __FILE__, __LINE__);
+                        correct = NO;
+                     }
+                     else
+                     {
+                        (void)strcpy(real_hostname, argv[2]);
+                        options2 ^= CHANGE_REAL_HOSTNAME;
+                        need_hostname = YES;
+                     }
+                  }
+                  argc -= 2;
+                  argv += 2;
+               }
+               else
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR  : No position and/or real hostname provided for option -h. (%s %d)\n"),
+                                __FILE__, __LINE__);
+                  correct = NO;
+               }
                break;
 
             case 'e': /* Enable host. */
@@ -2654,78 +2741,80 @@ usage(char *progname)
    (void)fprintf(stderr,
                  _("    FSA options:\n"));
    (void)fprintf(stderr,
-                 _("               -q      start queue\n"));
+                 _("               -q              start queue\n"));
    (void)fprintf(stderr,
-                 _("               -Q      stop queue\n"));
+                 _("               -Q              stop queue\n"));
    (void)fprintf(stderr,
-                 _("               -t      start transfer\n"));
+                 _("               -t              start transfer\n"));
    (void)fprintf(stderr,
-                 _("               -T      stop transfer\n"));
+                 _("               -T              stop transfer\n"));
    (void)fprintf(stderr,
-                 _("               -g      enable delete data for host\n"));
+                 _("               -g              enable delete data for host\n"));
    (void)fprintf(stderr,
-                 _("               -G      disable delete data for host\n"));
+                 _("               -G              disable delete data for host\n"));
    (void)fprintf(stderr,
-                 _("               -e      enable host\n"));
+                 _("               -h <pos> <name> change real hostname to <name>\n"));
    (void)fprintf(stderr,
-                 _("               -E      disable host\n"));
+                 _("               -e              enable host\n"));
    (void)fprintf(stderr,
-                 _("               -s      switch host\n"));
+                 _("               -E              disable host\n"));
    (void)fprintf(stderr,
-                 _("               -r      retry\n"));
+                 _("               -s              switch host\n"));
    (void)fprintf(stderr,
-                 _("               -d      enable/disable debug\n"));
+                 _("               -r              retry\n"));
    (void)fprintf(stderr,
-                 _("               -c      enable/disable trace\n"));
+                 _("               -d              enable/disable debug\n"));
    (void)fprintf(stderr,
-                 _("               -C      enable/disable full trace\n"));
+                 _("               -c              enable/disable trace\n"));
    (void)fprintf(stderr,
-                 _("               -I      enable/disable simulate send mode\n"));
+                 _("               -C              enable/disable full trace\n"));
    (void)fprintf(stderr,
-                 _("               -X      toggle enable/disable host\n"));
+                 _("               -I              enable/disable simulate send mode\n"));
+   (void)fprintf(stderr,
+                 _("               -X              toggle enable/disable host\n"));
    (void)fprintf(stderr,
                  _("    FRA options:\n"));
    (void)fprintf(stderr,
-                 _("               -b      enable directory\n"));
+                 _("               -b              enable directory\n"));
    (void)fprintf(stderr,
-                 _("               -B      disable directory\n"));
+                 _("               -B              disable directory\n"));
    (void)fprintf(stderr,
-                 _("               -j      start directory\n"));
+                 _("               -j              start directory\n"));
    (void)fprintf(stderr,
-                 _("               -J      stop directory\n"));
+                 _("               -J              stop directory\n"));
    (void)fprintf(stderr,
-                 _("               -R      rescan directory\n"));
+                 _("               -R              rescan directory\n"));
    (void)fprintf(stderr,
-                 _("               -U      toggle start/stop directory\n"));
+                 _("               -U              toggle start/stop directory\n"));
    (void)fprintf(stderr,
-                 _("               -W      toggle enable/disable directory\n"));
+                 _("               -W              toggle enable/disable directory\n"));
    (void)fprintf(stderr,
                  _("General options:\n"));
    (void)fprintf(stderr,
-                 _("               -f      start FD\n"));
+                 _("               -f              start FD\n"));
    (void)fprintf(stderr,
-                 _("               -F      stop FD\n"));
+                 _("               -F              stop FD\n"));
    (void)fprintf(stderr,
-                 _("               -a      start AMG\n"));
+                 _("               -a              start AMG\n"));
    (void)fprintf(stderr,
-                 _("               -A      stop AMG\n"));
+                 _("               -A              stop AMG\n"));
    (void)fprintf(stderr,
-                 _("               -Y      start/stop AMG\n"));
+                 _("               -Y              start/stop AMG\n"));
    (void)fprintf(stderr,
-                 _("               -Z      start/stop FD\n"));
+                 _("               -Z              start/stop FD\n"));
 #ifdef AFDBENCH_CONFIG
    (void)fprintf(stderr,
-                 _("               -S      enable scanning of directories\n"));
+                 _("               -S              enable scanning of directories\n"));
 #endif
    (void)fprintf(stderr,
-                 _("               -k      force file dir check\n"));
+                 _("               -k              force file dir check\n"));
    (void)fprintf(stderr,
-                 _("               -i      reread local interface file\n"));
+                 _("               -i              reread local interface file\n"));
    (void)fprintf(stderr,
-                 _("               -o      show exec statistics\n"));
+                 _("               -o              show exec statistics\n"));
    (void)fprintf(stderr,
-                 _("               -P      force archive check\n"));
+                 _("               -P              force archive check\n"));
    (void)fprintf(stderr,
-                 _("               -v      just print Version\n"));
+                 _("               -v              just print Version\n"));
    return;
 }
