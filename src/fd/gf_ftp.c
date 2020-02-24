@@ -1200,7 +1200,8 @@ main(int argc, char *argv[])
                      }
 
                      /* Delete partly downloaded file. */
-                     if (prev_download_exists == YES)
+                     if ((prev_download_exists == YES) ||
+                         (fsa->file_size_offset == -1))
                      {
                         (void)unlink(local_tmp_file);
                         prev_download_exists = NO;
