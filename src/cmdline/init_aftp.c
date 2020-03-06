@@ -1,6 +1,6 @@
 /*
  *  init_aftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -54,6 +54,7 @@ DESCR__S_M3
  **   07.02.2005 H.Kiehl    Added DOT_VMS and DOS mode.
  **   12.08.2006 H.Kiehl    Added option -X.
  **   05.03.2008 H.Kiehl    Added option -o.
+ **   06.03.2020 H.Kiehl    Added option -I.
  **
  */
 DESCR__E_M3
@@ -131,8 +132,9 @@ init_aftp(int argc, char *argv[], struct data *p_db)
    p_db->verbose           = NO;
    p_db->append            = NO;
 #ifdef WITH_SSL
+   p_db->implicit_ftps     = NO;
    p_db->auth              = NO;
-   p_db->auth              = NO;
+   p_db->strict            = NO;
 #endif
    p_db->create_target_dir = NO;
    p_db->dir_mode_str[0]   = '\0';
@@ -300,6 +302,12 @@ init_aftp(int argc, char *argv[], struct data *p_db)
                argc--;
             }
             break;
+
+#ifdef WITH_SSL
+         case 'I' : /* Implicit FTPS. */
+            p_db->implicit_ftps = YES;
+            break;
+#endif
 
          case 'l' : /* Lock type. */
             if ((argc == 1) || (*(argv + 1)[0] == '-'))
@@ -609,7 +617,7 @@ init_aftp(int argc, char *argv[], struct data *p_db)
             break;
 
 #ifdef WITH_SSL
-         case 'Y' : /* Remove file that was transmitted. */
+         case 'Y' : /* TLS/SSL strict authentification. */
             p_db->strict = YES;
             break;
 
@@ -793,6 +801,9 @@ usage(void)
                                        that are to be send.\n"));
    (void)fprintf(stderr, _("  -h <host name | IP number>         - Hostname or IP number to which to\n\
                                        send the file(s).\n"));
+#ifdef WITH_SSL
+   (void)fprintf(stderr, _("  -I                                 - Enable implicit FTPS. Works only with -z or -Z.\n"));
+#endif
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
    (void)fprintf(stderr, _("  -k                                 - Keep FTP control connection with STAT\n\
                                        calls alive/fresh.\n"));

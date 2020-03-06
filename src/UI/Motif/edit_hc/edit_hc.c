@@ -1,6 +1,6 @@
 /*
  *  edit_hc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -87,6 +87,7 @@ DESCR__S_M1
  **   19.04.2009 H.Kiehl Added compression for protocol options.
  **   24.11.2012 H.Kiehl Added support for selecting CRC type.
  **   13.01.2014 H.Kiehl Added support for makeing dupcheck timeout fixed.
+ **   06.03.2020 H.Kiehl Added implicit FTPS option.
  **
  */
 DESCR__E_M1
@@ -217,6 +218,7 @@ Widget                     active_mode_w,
                            sort_file_names_w,
                            source_icon_w,
                            ssl_ccc_w,
+                           ssl_implicit_ftps_w,
                            start_drag_w,
                            statusbox_w,
 #ifdef WITH_SSL
@@ -2088,6 +2090,18 @@ main(int argc, char *argv[])
                            NULL);
    XtAddCallback(ssl_ccc_w, XmNvalueChangedCallback,
                  (XtCallbackProc)toggle_button2, (XtPointer)FTPS_CCC_CHANGED);
+   ssl_implicit_ftps_w = XtVaCreateManagedWidget("Implicit",
+                           xmToggleButtonGadgetClass, box_w,
+                           XmNfontList,               fontlist,
+                           XmNset,                    False,
+                           XmNtopAttachment,          XmATTACH_FORM,
+                           XmNtopOffset,              SIDE_OFFSET,
+                           XmNleftAttachment,         XmATTACH_WIDGET,
+                           XmNleftWidget,             ssl_ccc_w,
+                           XmNbottomAttachment,       XmATTACH_FORM,
+                           NULL);
+   XtAddCallback(ssl_implicit_ftps_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)toggle_button2, (XtPointer)FTPS_IMPLICIT_CHANGED);
    XtManageChild(box_w);
 
    argcount = 0;

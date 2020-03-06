@@ -1,6 +1,6 @@
 /*
  *  fsa_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -376,6 +376,10 @@ main(int argc, char *argv[])
          if (fsa[j].protocol_options & FTP_DISABLE_MLST)
          {
             (void)fprintf(stdout, "disable_mlst ");
+         }
+         if (fsa[j].protocol_options & IMPLICIT_FTPS)
+         {
+            (void)fprintf(stdout, "implicit_ftps ");
          }
          if (fsa[j].protocol_options & KEEP_CONNECTED_DISCONNECT)
          {

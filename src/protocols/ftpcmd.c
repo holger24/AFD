@@ -33,7 +33,7 @@ DESCR__S_M3
  **              char *created_path)
  **   int ftp_chmod(char *filename, char *mode)
  **   int ftp_close_data(void)
- **   int ftp_connect(char *hostname, int port)
+ **   int ftp_connect(char *hostname, int port, int ssl, int strict)
  **   int ftp_auth_data(void)
  **   int ftp_ssl_auth(int strict)
  **   int ftp_ssl_init(char type)
@@ -212,6 +212,7 @@ DESCR__S_M3
  **   03.11.2018 H.Kiehl Implemented ServerNameIndication for TLS.
  **   27.06.2019 H.Kiehl Extended list command to show hidden files.
  **   05.11.2019 H.Kiehl Add support for STAT list command.
+ **   06.03.2020 H.Kiehl Implement implicit FTPS.
  */
 DESCR__E_M3
 
@@ -329,7 +330,11 @@ static void                    sig_handler(int);
 
 /*########################## ftp_connect() ##############################*/
 int
+#ifdef WITH_SSL
+ftp_connect(char *hostname, int port, int ssl, int strict)
+#else
 ftp_connect(char *hostname, int port)
+#endif
 {
    if (simulation_mode == YES)
    {
@@ -765,6 +770,146 @@ ftp_connect(char *hostname, int port)
                    _("setsockopt() IP_TOS error : %s"), strerror(errno));
       }
 #endif
+
+#ifdef WITH_SSL
+      if (ssl == YES)
+      {
+         char *p_env,
+              *p_env1;
+
+         if (ssl_ctx != NULL)
+         {
+            SSL_CTX_free(ssl_ctx);
+         }
+         SSLeay_add_ssl_algorithms();
+         if ((ssl_ctx = (SSL_CTX *)SSL_CTX_new(SSLv23_client_method())) == NULL)
+         {
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_connect", NULL,
+                      _("SSL_CTX_new() unable to create a new SSL context structure."));
+            (void)close(control_fd);
+            return(INCORRECT);
+         }
+# ifdef NO_SSLv2
+         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2);
+# else
+#  ifdef NO_SSLv3
+         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv3);
+#  else
+#   ifdef NO_SSLv23
+         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+#   else
+#    ifdef NO_SSLv23TLS1_0
+         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1);
+#    else
+#     ifdef NO_SSLv23TLS1_0TLS1_1
+         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
+#     else
+         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL);
+#     endif
+#    endif
+#   endif
+#  endif
+# endif
+         SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
+         if ((p_env = getenv("SSL_CIPHER")) != NULL)
+         {
+            SSL_CTX_set_cipher_list(ssl_ctx, p_env);
+         }
+         else
+         {
+            SSL_CTX_set_cipher_list(ssl_ctx, NULL);
+         }
+         if (((p_env = getenv(X509_get_default_cert_file_env())) != NULL) &&
+             ((p_env1 = getenv(X509_get_default_cert_dir_env())) != NULL))
+         {
+            SSL_CTX_load_verify_locations(ssl_ctx, p_env, p_env1);
+         }
+# ifdef WHEN_WE_KNOW
+         if (((p_env = getenv("SSL_CRL_FILE")) != NULL) && 
+             ((p_env1 = getenv("SSL_CRL_DIR")) != NULL))
+         {
+         }
+         else
+         {
+         }
+# endif
+         SSL_CTX_set_verify(ssl_ctx,
+                            (strict == YES) ? SSL_VERIFY_PEER : SSL_VERIFY_NONE,
+                            NULL);
+
+         ssl_con = (SSL *)SSL_new(ssl_ctx);
+         SSL_set_connect_state(ssl_con);
+         SSL_set_fd(ssl_con, control_fd);
+         if (!SSL_set_tlsext_host_name(ssl_con, hostname))
+         {
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_connect", NULL,
+                      _("SSL_set_tlsext_host_name() failed to enable ServerNameIndication for %s"),
+                      hostname);
+            (void)close(control_fd);
+            return(INCORRECT);
+         }
+
+         if (signal(SIGALRM, sig_handler) == SIG_ERR)
+         {
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_connect", NULL,
+                      _("Failed to set signal handler : %s"), strerror(errno));
+            (void)close(control_fd);
+            return(INCORRECT);
+         }
+         if (sigsetjmp(env_alrm, 1) != 0)
+         {
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_connect", NULL,
+                      _("accept() timeout (%lds)"), transfer_timeout);
+            timeout_flag = ON;
+            (void)close(control_fd);
+            return(INCORRECT);
+         }
+         (void)alarm(transfer_timeout);
+         reply = SSL_connect(ssl_con);
+         (void)alarm(0);
+         if (reply <= 0)
+         {
+            char *ptr;
+
+            ptr = ssl_error_msg("SSL_connect", ssl_con, NULL, reply, msg_str);
+            reply = SSL_get_verify_result(ssl_con);
+            if (reply == X509_V_ERR_CRL_SIGNATURE_FAILURE)
+            {
+               (void)my_strncpy(ptr,
+                                _(" | Verify result: The signature of the certificate is invalid!"),
+                                MAX_RET_MSG_LENGTH - (ptr - msg_str));
+            }
+            else if (reply == X509_V_ERR_ERROR_IN_CRL_NEXT_UPDATE_FIELD)
+                 {
+                    (void)my_strncpy(ptr,
+                                     _(" | Verify result: The CRL nextUpdate field contains an invalid time."),
+                                     MAX_RET_MSG_LENGTH - (ptr - msg_str));
+                 }
+            else if (reply == X509_V_ERR_CRL_HAS_EXPIRED)
+                 {
+                    (void)my_strncpy(ptr,
+                                     _(" | Verify result: The CRL has expired."),
+                                     MAX_RET_MSG_LENGTH - (ptr - msg_str));
+                 }
+            else if (reply == X509_V_ERR_CERT_REVOKED)
+                 {
+                    (void)my_strncpy(ptr,
+                                     _(" | Verify result: Certificate revoked."),
+                                     MAX_RET_MSG_LENGTH - (ptr - msg_str));
+                 }
+            else if (reply > X509_V_OK)
+                 {
+                    (void)snprintf(ptr, MAX_RET_MSG_LENGTH - (ptr - msg_str),
+                                   _(" | Verify result: %d"), reply);
+                 }
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                      "SSL/TSL connection to server `%s' at port %d failed.",
+                      hostname, port);
+            (void)close(control_fd);
+            return(INCORRECT);
+         }
+      }
+#endif /* WITH_SSL */
 
       if ((reply = get_reply(ERROR_SIGN, 0, __LINE__)) < 0)
       {

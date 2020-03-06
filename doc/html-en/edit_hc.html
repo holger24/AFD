@@ -310,6 +310,15 @@ only possible to have one of this dialog open at the same time.
               this output the date and size of each file.</td>
        </tr>
        <tr>
+          <td><a name="use_stat_list">STAT</a></td>
+          <td>The above LIST command has the disadvantage that it needs
+              a separate socket connection to send the data. Via the
+              the STAT command this is not required and the data is
+              send via existing control connection. Not all FTP
+              servers have this working correctly. So if you do
+              know the server does support it, enable this.</td>
+       </tr>
+       <tr>
           <td><a name="disable_mlst">Disable MLST</a></td>
           <td>Since AFD will try to automatically pick MLST when
               the FTP server provides it, some of the implementations
@@ -324,6 +333,11 @@ only possible to have one of this dialog open at the same time.
               When this option is set AFD will drop encryption
               by sending the CCC comand, after having logged in
               successfully.</td>
+       </tr>
+       <tr>
+          <td><a name="implicit_ftps">Implicit</a></td>
+          <td>This sets implicit FTPS. If not set explicit FTPS
+              is used which is also the default.</td>
        </tr>
        <tr>
           <td><a name="set_idle_time">Set idle time</a></td>
@@ -457,9 +471,9 @@ only possible to have one of this dialog open at the same time.
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 1997 - 2019 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2020 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 12.08.2019
+   Last updated: 06.03.2020
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

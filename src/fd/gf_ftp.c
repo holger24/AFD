@@ -48,6 +48,7 @@ DESCR__S_M1
  **   13.06.2004 H.Kiehl Added transfer rate limit.
  **   27.06.2006 H.Kiehl When downloading a file with leading dot
  **                      remove the dot when finish downloading.
+ **   06.04.2020 H.Kiehl Implement implicit FTPS.
  **
  */
 DESCR__E_M1
@@ -185,6 +186,9 @@ main(int argc, char *argv[])
                     in_burst_loop = NO,
                     disconnect = NO;
    unsigned int     values_changed = 0;
+#endif
+#ifdef WITH_SSL
+   int              implicit_ssl_connect;
 #endif
    char             *created_path = NULL,
                     *p_current_real_hostname,
@@ -329,7 +333,22 @@ main(int argc, char *argv[])
 #ifdef WITH_IP_DB
    set_store_ip((fsa->host_status & STORE_IP) ? YES : NO);
 #endif
+#ifdef WITH_SSL
+   if (((db.auth == YES) || (db.auth == BOTH)) &&
+       (fsa->protocol_options & IMPLICIT_FTPS))
+   {
+      status = ftp_connect(db.hostname, db.port, YES,
+                           (fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO);
+      implicit_ssl_connect = YES;
+   }
+   else
+   {
+      status = ftp_connect(db.hostname, db.port, NO, NO);
+      implicit_ssl_connect = NO;
+   }
+#else
    status = ftp_connect(db.hostname, db.port);
+#endif
 #ifdef WITH_IP_DB
    if (get_and_reset_store_ip() == DONE)
    {
@@ -407,7 +426,8 @@ main(int argc, char *argv[])
       if ((in_burst_loop == NO) || (values_changed & AUTH_CHANGED))
       {
 # endif
-         if ((db.auth == YES) || (db.auth == BOTH))
+         if (((db.auth == YES) || (db.auth == BOTH)) &&
+             (implicit_ssl_connect == NO))
          {
             if (ftp_ssl_auth((fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO) == INCORRECT)
             {
@@ -473,8 +493,23 @@ main(int argc, char *argv[])
 
                   /* Connect to remote FTP-server. */
                   msg_str[0] = '\0';
-                  if (((status = ftp_connect(db.hostname, db.port)) != SUCCESS) &&
-                      (status != 230))
+#ifdef WITH_SSL
+                  if (((db.auth == YES) || (db.auth == BOTH)) &&
+                      (fsa->protocol_options & IMPLICIT_FTPS))
+                  {
+                     status = ftp_connect(db.hostname, db.port, YES,
+                                          (fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO);
+                     implicit_ssl_connect = YES;
+                  }
+                  else
+                  {
+                     status = ftp_connect(db.hostname, db.port, NO, NO);
+                     implicit_ssl_connect = NO;
+                  }
+#else
+                  status = ftp_connect(db.hostname, db.port);
+#endif
+                  if ((status != SUCCESS) && (status != 230))
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                "FTP connection to `%s' at port %d failed (%d).",

@@ -1,7 +1,7 @@
 /*
  *  edit_hc_callbacks.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -155,6 +155,7 @@ extern Widget                     active_mode_w,
                                   sort_file_names_w,
                                   source_icon_w,
                                   ssl_ccc_w,
+                                  ssl_implicit_ftps_w,
                                   start_drag_w,
                                   statusbox_w,
 #ifdef WITH_SSL
@@ -1433,6 +1434,7 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(use_stat_list_w, False);
          XtSetSensitive(disable_mlst_w, False);
          XtSetSensitive(ssl_ccc_w, False);
+         XtSetSensitive(ssl_implicit_ftps_w, False);
          XtSetSensitive(ftp_idle_time_w, False);
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
          XtSetSensitive(ftp_keepalive_w, False);
@@ -1928,6 +1930,15 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
             {
                XtVaSetValues(ssl_ccc_w, XmNset, False, NULL);
             }
+            XtSetSensitive(ssl_implicit_ftps_w, True);
+            if (fsa[cur_pos].protocol_options & IMPLICIT_FTPS)
+            {
+               XtVaSetValues(ssl_implicit_ftps_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(ssl_implicit_ftps_w, XmNset, False, NULL);
+            }
             XtSetSensitive(ftp_idle_time_w, True);
             if (fsa[cur_pos].protocol_options & SET_IDLE_TIME)
             {
@@ -1996,6 +2007,7 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
             XtSetSensitive(use_stat_list_w, False);
             XtSetSensitive(disable_mlst_w, False);
             XtSetSensitive(ssl_ccc_w, False);
+            XtSetSensitive(ssl_implicit_ftps_w, False);
             XtSetSensitive(ftp_idle_time_w, False);
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
             XtSetSensitive(ftp_keepalive_w, False);
@@ -3371,6 +3383,11 @@ submite_button(Widget w, XtPointer client_data, XtPointer call_data)
          if (ce[i].value_changed2 & FTPS_CCC_CHANGED)
          {
             fsa[i].protocol_options ^= FTP_CCC_OPTION;
+            changes++;
+         }
+         if (ce[i].value_changed2 & FTPS_IMPLICIT_CHANGED)
+         {
+            fsa[i].protocol_options ^= IMPLICIT_FTPS;
             changes++;
          }
          if (ce[i].value_changed2 & DISCONNECT_CHANGED)

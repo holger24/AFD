@@ -1,6 +1,6 @@
 /*
  *  eval_host_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1600,7 +1600,8 @@ eval_host_config(int              *hosts_found,
        * have different values. So we must do this check here.
        */
       if (((*hl)[host_counter].protocol_options != 0) &&
-          (((*hl)[host_counter].protocol_options > (USE_STAT_LIST |
+          (((*hl)[host_counter].protocol_options > (IMPLICIT_FTPS |
+                                                    USE_STAT_LIST |
                                                     DISABLE_STRICT_HOST_KEY|
                                                     KEEP_CONNECTED_DISCONNECT |
                                                     FTP_DISABLE_MLST |
@@ -1638,7 +1639,8 @@ eval_host_config(int              *hosts_found,
                        _("Unknown protocol option <%d> for host %s, largest value is %d and smallest %d. Setting to 0."),
                        (*hl)[host_counter].protocol_options,
                        (*hl)[host_counter].host_alias,
-                       (USE_STAT_LIST |
+                       (IMPLICIT_FTPS |
+                        USE_STAT_LIST |
                         DISABLE_STRICT_HOST_KEY |
                         KEEP_CONNECTED_DISCONNECT |
                         FTP_DISABLE_MLST |

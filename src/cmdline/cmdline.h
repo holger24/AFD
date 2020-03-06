@@ -214,6 +214,7 @@ struct data
                                          /* passive. Default active.       */
           char         acknowledge;      /* Acknowledge each message.[awmo]*/
 #ifdef WITH_SSL
+          char         implicit_ftps;
           char         auth;             /* TLS/SSL authentification.      */
                                          /*  NO   - NO authentification.   */
                                          /*  YES  - Only control           */

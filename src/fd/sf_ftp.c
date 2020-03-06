@@ -76,6 +76,7 @@ DESCR__S_M1
  **   01.02.2004 H.Kiehl Added TLS/SSL support.
  **   30.03.2012 H.Kiehl Inform when we created a directory.
  **   06.07.2019 H.Kiehl Added trans_srename support.
+ **   06.04.2020 H.Kiehl Implement implicit FTPS.
  **
  */
 DESCR__E_M1
@@ -241,6 +242,9 @@ main(int argc, char *argv[])
                     disconnect = NO,
                     reconnected = NO;
    unsigned int     values_changed = 0;
+#endif
+#ifdef WITH_SSL
+   int              implicit_ssl_connect;
 #endif
 #ifdef _OUTPUT_LOG
    clock_t          end_time = 0,
@@ -421,7 +425,22 @@ main(int argc, char *argv[])
 #ifdef WITH_IP_DB
    set_store_ip((fsa->host_status & STORE_IP) ? YES : NO);
 #endif
+#ifdef WITH_SSL
+   if (((db.auth == YES) || (db.auth == BOTH)) &&
+       (fsa->protocol_options & IMPLICIT_FTPS))
+   {
+      status = ftp_connect(db.hostname, db.port, YES,
+                           (fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO);
+      implicit_ssl_connect = YES;
+   }
+   else
+   {
+      status = ftp_connect(db.hostname, db.port, NO, NO);
+      implicit_ssl_connect = NO;
+   }
+#else
    status = ftp_connect(db.hostname, db.port);
+#endif
 #ifdef WITH_IP_DB
    if (get_and_reset_store_ip() == DONE)
    {
@@ -508,7 +527,8 @@ main(int argc, char *argv[])
       if ((burst_2_counter == 0) || (values_changed & AUTH_CHANGED))
       {
 # endif
-         if ((db.auth == YES) || (db.auth == BOTH))
+         if (((db.auth == YES) || (db.auth == BOTH)) &&
+             (implicit_ssl_connect == NO))
          {
             if (ftp_ssl_auth((fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO) == INCORRECT)
             {
@@ -574,8 +594,23 @@ main(int argc, char *argv[])
 
                   /* Connect to remote FTP-server. */
                   msg_str[0] = '\0';
-                  if (((status = ftp_connect(db.hostname, db.port)) != SUCCESS) &&
-                      (status != 230))
+#ifdef WITH_SSL
+                  if (((db.auth == YES) || (db.auth == BOTH)) &&
+                      (fsa->protocol_options & IMPLICIT_FTPS))
+                  {
+                     status = ftp_connect(db.hostname, db.port, YES,
+                                          (fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO);
+                     implicit_ssl_connect = YES;
+                  }
+                  else
+                  {
+                     status = ftp_connect(db.hostname, db.port, NO, NO);
+                     implicit_ssl_connect = NO;
+                  }
+#else
+                  status = ftp_connect(db.hostname, db.port);
+#endif
+                  if ((status != SUCCESS) && (status != 230))
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                "FTP connection to `%s' at port %d failed (%d).",

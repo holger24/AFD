@@ -1,6 +1,6 @@
 /*
  *  aftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,8 @@ DESCR__S_M1
  **                                       stored.
  **     -f <filename file>              - List of filenames to send.
  **     -h <hostname|IP number>         - Recipient hostname or IP number.
+ **     -I                              - Use implicit FTPS. Works only with
+ **                                       -z or -Z.
  **     -k                              - Keep control connection alive.
  **     -l <DOT | DOT_VMS | OFF | xyz.> - How to lock the file on the remote
  **                                       site.
@@ -92,6 +94,7 @@ DESCR__S_M1
  **   05.03.2008 H.Kiehl Added chmod support.
  **   16.03.2009 H.Kiehl Added gettext supoort.
  **   30.03.2012 H.Kiehl Inform when we created a directory.
+ **   06.03.2020 H.Kiehl Implement implicit FTPS.
  **
  */
 DESCR__E_M1
@@ -217,8 +220,19 @@ main(int argc, char *argv[])
    sigpipe_flag = timeout_flag = OFF;
 
    /* Connect to remote FTP-server. */
-   if (((status = ftp_connect(db.hostname, db.port)) != SUCCESS) &&
-       (status != 230))
+#ifdef WITH_SSL
+   if (((db.auth == YES) || (db.auth == BOTH)) && (db.implicit_ftps == YES))
+   {
+      status = ftp_connect(db.hostname, db.port, YES, db.strict);
+   }
+   else
+   {
+      status = ftp_connect(db.hostname, db.port, NO, NO);
+   }
+#else
+   status = ftp_connect(db.hostname, db.port);
+#endif
+   if ((status != SUCCESS) && (status != 230))
    {
       trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                 _("FTP %s connection to %s at port %d failed (%d)."),
@@ -257,7 +271,7 @@ main(int argc, char *argv[])
    }
 
 #ifdef WITH_SSL
-   if ((db.auth == YES) || (db.auth == BOTH))
+   if (((db.auth == YES) || (db.auth == BOTH))  && (db.implicit_ftps != YES))
    {
       if (ftp_ssl_auth(db.strict) == INCORRECT)
       {

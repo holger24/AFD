@@ -1,7 +1,7 @@
 /*
  *  write_host_config.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -282,6 +282,9 @@ DESCR__E_M3
 #                          23(4194304) - TLS uses strict verification of host.\n\
 #                          24(8388608) - Disables FTP MLST for directory listing.\n\
 #                          25(16777216)- Disconnect after given keep connected time.\n\
+#                          26(33554432)- Disable SSH stricht host key checking.\n\
+#                          27(67108864)- Enable FTP STAT listing.\n\
+#                          28(134217728)- Set implicit FTPS.\n\
 #                          DEFAULT: 0\n\
 # Transfer rate limit    - The maximum number of kilobytes that may be\n\
 #                          transfered per second.\n\

@@ -376,6 +376,26 @@ host. See below for a description of each entry.
               is set and this flag, then it will always disconnect after
               the time specified in keep connected.</td>
        </tr>
+       <tr>
+          <td align=center>26</td>
+          <td align=center>33554432</td>
+          <td>If <a href="edit_hc.html#strict_host_key">Strict Host Key</a>
+              is set SSH connections will not check the remote host key.</td>
+       </tr>
+       <tr>
+          <td align=center>27</td>
+          <td align=center>67108864</td>
+          <td>If <a href="edit_hc.html#use_stat_list">STAT</a>
+              is set a STAT command is send instead of LIST. The
+              STAT command does not require a separate connection
+              to send the data.</td>
+       </tr>
+       <tr>
+          <td align=center>28</td>
+          <td align=center>134217728</td>
+          <td>If <a href="edit_hc.html#implicit_ftps">Implicit</a>
+              is set implisit FTPS is used to connect.</td>
+       </tr>
        </table>
        The default is zero.</td>
 </tr>
@@ -445,9 +465,9 @@ host. See below for a description of each entry.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1997 - 2019 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2020 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 19.07.2019
+   Last updated: 06.03.2020
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
