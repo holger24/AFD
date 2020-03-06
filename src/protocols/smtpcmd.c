@@ -1,6 +1,6 @@
 /*
  *  smtpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -333,6 +333,7 @@ smtp_connect(char *hostname, int port, int sockbuf_size)
             trans_log(ERROR_SIGN, __FILE__, __LINE__, "smtp_connect", NULL,
                       _("Failed to connect() to %s"), hostname);
          }
+         (void)close(smtp_fd);
          freeaddrinfo(result);
          return(INCORRECT);
       }
@@ -464,7 +465,8 @@ smtp_connect(char *hostname, int port, int sockbuf_size)
       }
 #endif
 #ifdef WITH_TRACE
-      length = snprintf(msg_str, MAX_RET_MSG_LENGTH, _("Connected to %s"), hostname);
+      length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                        _("Connected to %s at port %d"), hostname, port);
       if (length > MAX_RET_MSG_LENGTH)
       {
          length = MAX_RET_MSG_LENGTH;

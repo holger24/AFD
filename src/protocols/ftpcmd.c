@@ -505,6 +505,7 @@ ftp_connect(char *hostname, int port)
             trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_connect", NULL,
                       _("Failed to connect() to %s"), hostname);
          }
+         (void)close(control_fd);
          freeaddrinfo(result);
          return(INCORRECT);
       }
@@ -738,7 +739,7 @@ ftp_connect(char *hostname, int port)
 #endif
 #ifdef WITH_TRACE
       length = snprintf(msg_str, MAX_RET_MSG_LENGTH,
-                        _("Connected to %s"), hostname);
+                        _("Connected to %s at port %d"), hostname, port);
       if (length > MAX_RET_MSG_LENGTH)
       {
          length = MAX_RET_MSG_LENGTH;
