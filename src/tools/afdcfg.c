@@ -618,13 +618,13 @@ main(int argc, char *argv[])
          {
             *ptr_fra ^= DISABLE_DIR_WARN_TIME;
             system_log(CONFIG_SIGN, __FILE__, __LINE__,
-                       _("Directory warn time enabled by %s"), user);
+                       _("Directory info+warn time enabled by %s"), user);
             event_log(0L, EC_GLOB, ET_MAN, EA_ENABLE_DIR_WARN_TIME,
                       "%s", user);
          }
          else
          {
-            (void)fprintf(stdout, _("Directory warn time already enabled.\n"));
+            (void)fprintf(stdout, _("Directory info+warn time already enabled.\n"));
          }
          break;
 
@@ -637,21 +637,21 @@ main(int argc, char *argv[])
             now = time(NULL);
             for (i = 0; i < no_of_dirs; i++)
             {
-               if (fra[i].warn_time > 0)
+               if ((fra[i].warn_time > 0) || (fra[i].info_time > 0))
                {
                   fra[i].last_retrieval = now;
                }
             }
             *ptr_fra ^= DISABLE_DIR_WARN_TIME;
             system_log(CONFIG_SIGN, __FILE__, __LINE__,
-                       _("Directory warn time enabled and directory times updated by %s"),
+                       _("Directory info+warn time enabled and directory times updated by %s"),
                        user);
             event_log(0L, EC_GLOB, ET_MAN, EA_ENABLE_DIR_WARN_TIME,
                       "%s", user);
          }
          else
          {
-            (void)fprintf(stdout, _("Directory warn time already enabled.\n"));
+            (void)fprintf(stdout, _("Directory info+warn time already enabled.\n"));
          }
          break;
 
@@ -659,7 +659,7 @@ main(int argc, char *argv[])
          if (*ptr_fra & DISABLE_DIR_WARN_TIME)
          {
             (void)fprintf(stdout,
-                          _("Directory warn time is already disabled.\n"));
+                          _("Directory info+warn time is already disabled.\n"));
          }
          else
          {
@@ -681,7 +681,7 @@ main(int argc, char *argv[])
                }
             }
             system_log(CONFIG_SIGN, __FILE__, __LINE__,
-                       _("Directory warn time is disabled by %s"), user);
+                       _("Directory info+warn time is disabled by %s"), user);
             event_log(0L, EC_GLOB, ET_MAN, EA_DISABLE_DIR_WARN_TIME,
                       "%s", user);
          }
@@ -692,20 +692,20 @@ main(int argc, char *argv[])
          {
             *ptr_fsa ^= DISABLE_HOST_WARN_TIME;
             system_log(CONFIG_SIGN, __FILE__, __LINE__,
-                       _("Host warn time enabled by %s"), user);
+                       _("Host info+warn time enabled by %s"), user);
             event_log(0L, EC_GLOB, ET_MAN, EA_ENABLE_HOST_WARN_TIME,
                       "%s", user);
          }
          else
          {
-            (void)fprintf(stdout, _("Host warn time already enabled.\n"));
+            (void)fprintf(stdout, _("Host info+warn time already enabled.\n"));
          }
          break;
 
       case DISABLE_HOST_WARN_TIME_SEL :
          if (*ptr_fsa & DISABLE_HOST_WARN_TIME)
          {
-            (void)fprintf(stdout, _("Host warn time is already disabled.\n"));
+            (void)fprintf(stdout, _("Host info+warn time is already disabled.\n"));
          }
          else
          {
@@ -730,7 +730,7 @@ main(int argc, char *argv[])
                }
             }
             system_log(CONFIG_SIGN, __FILE__, __LINE__,
-                       _("Host warn time is disabled by %s"), user);
+                       _("Host info+warn time is disabled by %s"), user);
             event_log(0L, EC_GLOB, ET_MAN, EA_DISABLE_HOST_WARN_TIME,
                       "%s", user);
          }
