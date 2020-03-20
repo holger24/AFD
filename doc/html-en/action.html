@@ -19,12 +19,21 @@ follows:
    <th>Description</th>
 </tr>
 <tr>
+   <td>$AFD_WORK_DIR/etc/action/source/info</td>
+   <td>When <a href="dir_config.html#info_time">info time</a> for the given
+       directory alias has been reached, the script/program with the
+       directory alias as filename will be executed with the parameter
+       'start'. When the warn situation is no longer valid the script/program
+       is called again with the parameter 'stop'.</td>
+</tr>
+<tr>
    <td>$AFD_WORK_DIR/etc/action/source/warn</td>
    <td>When <a href="dir_config.html#warn_time">warn time</a> for the given
        directory alias has been reached, the script/program with the
        directory alias as filename will be executed with the parameter
        'start'. When the warn situation is no longer valid the script/program
-       is called again with the parameter 'stop'.</td>
+       is called again with the parameter 'stop'. In addition there will
+       be warnings in the log.</td>
 </tr>
 <tr>
    <td>$AFD_WORK_DIR/etc/action/source/error</td>
@@ -40,13 +49,23 @@ follows:
        this target.</td>
 </tr>
 <tr>
+   <td>$AFD_WORK_DIR/etc/action/target/info</td>
+   <td>When <a href="host_config.html#warn_time">warn time</a> seconds
+       have elapsed with no data being send to this host, the script/program
+       in $AFD_WORK_DIR/etc/action/target/info/ with the host alias as
+       filename will be executed with the parameter 'start'. As soon as
+       data has been send successful the script/program is called again
+       with the parameter 'stop'.</td>
+</tr>
+<tr>
    <td>$AFD_WORK_DIR/etc/action/target/warn</td>
    <td>When <a href="host_config.html#warn_time">warn time</a> seconds
        have elapsed with no data being send to this host, the script/program
        in $AFD_WORK_DIR/etc/action/target/warn/ with the host alias as
        filename will be executed with the parameter 'start'. As soon as
        data has been send successful the script/program is called again
-       with the parameter 'stop'.</td>
+       with the parameter 'stop'. In addition there will be warnings in
+       the log.</td>
 </tr>
 <tr>
    <td>$AFD_WORK_DIR/etc/action/target/error</td>
