@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2018 Holger Kiehl
+## Copyright (C) 2001 - 2020 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ AM_CPPFLAGS             = -I.. -I../amg -I../log -I../statistics
 bin_PROGRAMS            = init_afd init_afd_worker afd
 init_afd_SOURCES        = init_afd.c\
                           check_afd_heartbeat.c\
+				  check_disabled_dirs.c\
                           check_permissions.c\
                           init_fifos_afd.c
 init_afd_LDADD          = ../common/libafd.a @EXTRA_SOCKET_LIBS@

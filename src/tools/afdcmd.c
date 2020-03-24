@@ -731,7 +731,7 @@ main(int argc, char *argv[])
                      wbuf[0] = DELETE_RETRIEVES_FROM_DIR;
                      (void)strcpy(&wbuf[1], fra[position].dir_alias);
                      length = 1 + strlen(fra[position].dir_alias) + 1;
-                     if (write(fd, wbuf, (length + 1)) != (length + 1))
+                     if (write(fd, wbuf, length) != length)
                      {
                         (void)fprintf(stderr,
                                       _("Failed to write() to %s : %s (%s %d)\n"),
@@ -825,7 +825,7 @@ main(int argc, char *argv[])
                      wbuf[0] = DELETE_RETRIEVES_FROM_DIR;
                      (void)strcpy(&wbuf[1], fra[position].dir_alias);
                      length = 1 + strlen(fra[position].dir_alias) + 1;
-                     if (write(fd, wbuf, (length + 1)) != (length + 1))
+                     if (write(fd, wbuf, length) != length)
                      {
                         (void)fprintf(stderr,
                                       _("Failed to write() to %s : %s (%s %d)\n"),
@@ -935,7 +935,7 @@ main(int argc, char *argv[])
                      wbuf[0] = DELETE_RETRIEVES_FROM_DIR;
                      (void)strcpy(&wbuf[1], fra[position].dir_alias);
                      length = 1 + strlen(fra[position].dir_alias) + 1;
-                     if (write(fd, wbuf, (length + 1)) != (length + 1))
+                     if (write(fd, wbuf, length) != length)
                      {
                         (void)fprintf(stderr,
                                       _("Failed to write() to %s : %s (%s %d)\n"),
@@ -977,7 +977,7 @@ main(int argc, char *argv[])
                           MAX_DIR_ALIAS_LENGTH, fra[position].dir_alias, user);
                event_log(0L, EC_DIR, ET_MAN, EA_START_DIRECTORY, "%s%c%s",
                          fra[position].dir_alias, SEPARATOR_CHAR, user);
-               fra[position].dir_flag ^= DIR_STOPPED;
+               fra[position].dir_flag &= ~DIR_STOPPED;
                SET_DIR_STATUS(fra[position].dir_flag,
                               current_time,
                               fra[position].start_event_handle,
@@ -992,7 +992,7 @@ main(int argc, char *argv[])
                           user);
                event_log(0L, EC_DIR, ET_MAN, EA_STOP_DIRECTORY, "%s%c%s",
                          fra[position].dir_alias, SEPARATOR_CHAR, user);
-               fra[position].dir_flag ^= DIR_STOPPED;
+               fra[position].dir_flag |= DIR_STOPPED;
                SET_DIR_STATUS(fra[position].dir_flag,
                               current_time,
                               fra[position].start_event_handle,
@@ -1029,7 +1029,7 @@ main(int argc, char *argv[])
                      wbuf[0] = DELETE_RETRIEVES_FROM_DIR;
                      (void)strcpy(&wbuf[1], fra[position].dir_alias);
                      length = 1 + strlen(fra[position].dir_alias) + 1;
-                     if (write(fd, wbuf, (length + 1)) != (length + 1))
+                     if (write(fd, wbuf, length) != length)
                      {
                         (void)fprintf(stderr,
                                       _("Failed to write() to %s : %s (%s %d)\n"),

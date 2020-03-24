@@ -1,6 +1,6 @@
 /*
  *  init_afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -120,6 +120,7 @@ int                        sys_log_fd = STDERR_FILENO,
                            probe_only = 1,
                            no_of_dirs = 0,
                            no_of_hosts = 0,
+                           no_of_disabled_dirs = 0,
                            amg_flag = NO,
                            fra_fd = -1,
                            fra_id,
@@ -132,7 +133,8 @@ off_t                      fra_size,
 char                       *pid_list,
                            *p_work_dir,
                            afd_status_file[MAX_PATH_LENGTH],
-                           afd_active_file[MAX_PATH_LENGTH];
+                           afd_active_file[MAX_PATH_LENGTH],
+                           **disabled_dirs = NULL;
 struct afd_status          *p_afd_status;
 struct filetransfer_status *fsa;
 struct fileretrieve_status *fra;
@@ -173,7 +175,8 @@ main(int argc, char *argv[])
    off_t          afd_active_size;
    time_t         
                   month_check_time,
-                  now;
+                  now,
+                  disabled_dir_check_time;
    fd_set         rset;
    signed char    stop_typ = STARTUP_ID,
                   char_value;
@@ -662,6 +665,7 @@ main(int argc, char *argv[])
       current_month = bd_time->tm_mon;
    }
    month_check_time = ((now / 86400) * 86400) + 86400;
+   disabled_dir_check_time = 0;
 
    /* Initialise communication flag FD <-> AMG. */
 #ifdef AFDBENCH_CONFIG
@@ -992,6 +996,136 @@ main(int argc, char *argv[])
             }
          }
          month_check_time = ((now / 86400) * 86400) + 86400;
+      }
+
+      if (now > disabled_dir_check_time)
+      {
+         if ((check_disabled_dirs() == YES) && (stop_typ != STARTUP_ID))
+         {
+            if (fra_attach() == SUCCESS)
+            {
+               int    gotcha,
+                      i, j;
+               time_t current_time = time(NULL);
+
+               /* First lets unset any dirs that have been removed. */
+               for (i = 0; i < no_of_dirs; i++)
+               {
+                  if (fra[i].dir_flag & DIR_DISABLED_STATIC)
+                  {
+                     gotcha = NO;
+                     for (j = 0; j < no_of_disabled_dirs; j++)
+                     {
+                        if (strcmp(fra[i].dir_alias, disabled_dirs[j]) == 0)
+                        {
+                           /* It is still set. */
+                           gotcha = YES;
+                           break;
+                        }
+                     }
+                     if (gotcha == NO)
+                     {
+                        if (fra[i].dir_flag & DIR_DISABLED)
+                        {
+                           event_log(0L, EC_DIR, ET_AUTO, EA_ENABLE_DIRECTORY,
+                                     "%s%cfrom config file %s",
+                                     fra[i].dir_alias, SEPARATOR_CHAR,
+                                     DISABLED_DIR_FILE);
+                           fra[i].dir_flag &= ~DIR_DISABLED;
+                           SET_DIR_STATUS(fra[i].dir_flag, current_time,
+                                          fra[i].start_event_handle,
+                                          fra[i].end_event_handle,
+                                          fra[i].dir_status);
+                        }
+                        fra[i].dir_flag &= ~DIR_DISABLED_STATIC;
+                     }
+                  }
+               }
+
+               /* Set all host in list. */
+               for (i = 0; i < no_of_disabled_dirs; i++)
+               {
+                  for (j = 0; j < no_of_dirs; j++)
+                  {
+                     if (strcmp(fra[j].dir_alias, disabled_dirs[i]) == 0)
+                     {
+                        if ((fra[j].dir_flag & DIR_DISABLED) == 0)
+                        {
+                           event_log(0L, EC_DIR, ET_AUTO, EA_DISABLE_DIRECTORY,
+                                     "%s%cfrom config file %s",
+                                     fra[j].dir_alias, SEPARATOR_CHAR,
+                                     DISABLED_DIR_FILE);
+                           fra[j].dir_flag |= DIR_DISABLED;
+                           fra[j].dir_flag |= DIR_DISABLED_STATIC;
+                           SET_DIR_STATUS(fra[j].dir_flag, current_time,
+                                          fra[j].start_event_handle,
+                                          fra[j].end_event_handle,
+                                          fra[j].dir_status);
+
+                           if (fra[j].host_alias[0] != '\0')
+                           {
+                              int  fd;
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                              int  readfd;
+#endif
+                              char fd_delete_fifo[MAX_PATH_LENGTH];
+
+                              (void)sprintf(fd_delete_fifo, "%s%s%s",
+                                            p_work_dir, FIFO_DIR,
+                                            FD_DELETE_FIFO);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                              if (open_fifo_rw(fd_delete_fifo, &readfd, &fd) == -1)
+#else
+                              if ((fd = open(fd_delete_fifo, O_RDWR)) == -1)
+#endif
+                              {
+                                 (void)fprintf(stderr,
+                                               _("Failed to open() %s : %s (%s %d)\n"),
+                                               FD_DELETE_FIFO, strerror(errno),
+                                               __FILE__, __LINE__);
+                              }
+                              else
+                              {
+                                 size_t length;
+                                 char   wbuf[MAX_DIR_ALIAS_LENGTH + 2];
+
+                                 wbuf[0] = DELETE_RETRIEVES_FROM_DIR;
+                                 (void)strcpy(&wbuf[1], fra[j].dir_alias);
+                                 length = 1 + strlen(fra[j].dir_alias) + 1;
+                                 if (write(fd, wbuf, length) != length)
+                                 {
+                                    (void)fprintf(stderr,
+                                                  _("Failed to write() to %s : %s (%s %d)\n"),
+                                                  FD_DELETE_FIFO,
+                                                  strerror(errno),
+                                                  __FILE__, __LINE__);
+                                 }
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+                                 if (close(readfd) == -1)
+                                 {
+                                    system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                               _("Failed to close() `%s' : %s"),
+                                               FD_DELETE_FIFO, strerror(errno));
+                                 }
+#endif
+                                 if (close(fd) == -1)
+                                 {
+                                    system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                               _("Failed to close() `%s' : %s"),
+                                               FD_DELETE_FIFO, strerror(errno));
+                                 }
+                              }
+                           }
+                        }
+                        fra[j].dir_flag |= DIR_DISABLED_STATIC;
+                        break;
+                     }
+                  }
+               }
+               (void)fra_detach();
+            }
+         }
+         disabled_dir_check_time = ((now / 5) * 5) + 5;
       }
 
       /* Initialise descriptor set and timeout. */
@@ -1519,6 +1653,78 @@ main(int argc, char *argv[])
                                   *(pid_t *)(pid_list + ((TRANSFER_RATE_LOG_NO + 1) * sizeof(pid_t))) = proc_table[TRANSFER_RATE_LOG_NO].pid;
                                   *proc_table[TRANSFER_RATE_LOG_NO].status = ON;
 #endif
+                                  if (fra_attach() == SUCCESS)
+                                  {
+                                     int    gotcha,
+                                            i, j;
+                                     time_t current_time = time(NULL);
+
+                                     /* First lets unset any dirs that have been removed. */
+                                     for (i = 0; i < no_of_dirs; i++)
+                                     {
+                                        if (fra[i].dir_flag & DIR_DISABLED_STATIC)
+                                        {
+                                           gotcha = NO;
+                                           for (j = 0; j < no_of_disabled_dirs; j++)
+                                           {
+                                              if (strcmp(fra[i].dir_alias,
+                                                         disabled_dirs[j]) == 0)
+                                              {
+                                                 /* It is still set. */
+                                                 gotcha = YES;
+                                                 break;
+                                              }
+                                           }
+                                           if (gotcha == NO)
+                                           {
+                                              if (fra[i].dir_flag & DIR_DISABLED)
+                                              {
+                                                 event_log(0L, EC_DIR, ET_AUTO, EA_ENABLE_DIRECTORY,
+                                                           "%s%cfrom config file %s",
+                                                           fra[i].dir_alias, SEPARATOR_CHAR,
+                                                           DISABLED_DIR_FILE);
+                                                 fra[i].dir_flag &= ~DIR_DISABLED;
+                                                 SET_DIR_STATUS(fra[i].dir_flag,
+                                                                current_time,
+                                                                fra[i].start_event_handle,
+                                                                fra[i].end_event_handle,
+                                                                fra[i].dir_status);
+                                              }
+                                              fra[i].dir_flag &= ~DIR_DISABLED_STATIC;
+                                           }
+                                        }
+                                     }
+
+                                     /* Set all host in list. */
+                                     for (i = 0; i < no_of_disabled_dirs; i++)
+                                     {
+                                        for (j = 0; j < no_of_dirs; j++)
+                                        {
+                                           if (strcmp(fra[j].dir_alias,
+                                                      disabled_dirs[i]) == 0)
+                                           {
+                                              if ((fra[j].dir_flag & DIR_DISABLED) == 0)
+                                              {
+                                                 event_log(0L, EC_DIR, ET_AUTO, EA_DISABLE_DIRECTORY,
+                                                           "%s%cfrom config file %s",
+                                                           fra[j].dir_alias,
+                                                           SEPARATOR_CHAR,
+                                                           DISABLED_DIR_FILE);
+                                                 fra[j].dir_flag |= DIR_DISABLED;
+                                                 fra[j].dir_flag |= DIR_DISABLED_STATIC;
+                                                 SET_DIR_STATUS(fra[j].dir_flag,
+                                                                current_time,
+                                                                fra[j].start_event_handle,
+                                                                fra[j].end_event_handle,
+                                                                fra[j].dir_status);
+                                              }
+                                              fra[j].dir_flag |= DIR_DISABLED_STATIC;
+                                              break;
+                                           }
+                                        }
+                                     }
+                                     (void)fra_detach();
+                                  }
 
                                   /* Attach to the FSA */
                                   if (fsa_attach(AFD) != SUCCESS)

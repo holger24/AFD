@@ -1173,6 +1173,7 @@ typedef unsigned long       u_long_64;
 #ifndef XOR_KEY
 # define XOR_KEY_FILENAME                "/.xor.key"
 #endif
+#define DISABLED_DIR_FILE                "DISABLED_DIRS"
 #define DEFAULT_FIFO_SIZE                4096
 #define DEFAULT_BUFFER_SIZE              1024
 #define DEFAULT_MAX_ERRORS               10
@@ -2002,6 +2003,7 @@ typedef unsigned long       u_long_64;
 #ifdef WITH_INOTIFY
 # define INOTIFY_DELETE            8388608
 #endif
+#define DIR_DISABLED_STATIC        16777216
 
 #ifdef WITH_INOTIFY
 /*
@@ -2899,7 +2901,8 @@ struct fileretrieve_status
                                             /*+------+------------------+*/
                                             /*|Bit(s)|     Meaning      |*/
                                             /*+------+------------------+*/
-                                            /*|25-32 | Not used.        |*/
+                                            /*|26-32 | Not used.        |*/
+                                            /*|   25 | DIR_DISABLED_STATIC|*/
                                             /*|   24 | INOTIFY_DELETE   |*/
                                             /*|   23 | DO_NOT_MOVE      |*/
                                             /*|   22 | DO_NOT_PARALLELIZ|*/
@@ -4026,6 +4029,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     check_lock(char *, char),
                     check_msa(void),
                     check_msg_name(char *),
+                    check_disabled_dirs(void),
                     check_time_str(char *, FILE *),
                     check_typesize_data(int *, FILE *, int),
                     coe_open(char *, int, ...),

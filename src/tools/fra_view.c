@@ -1,6 +1,6 @@
 /*
  *  fra_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -447,6 +447,10 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "DIR_DISABLED ");
             }
+            if (fra[i].dir_flag & DIR_DISABLED_STATIC)
+            {
+               (void)fprintf(stdout, "DIR_DISABLED_STATIC ");
+            }
             if (fra[i].dir_flag & ACCEPT_DOT_FILES)
             {
                (void)fprintf(stdout, "ACCEPT_DOT_FILES ");
@@ -461,27 +465,27 @@ main(int argc, char *argv[])
             }
             if (fra[i].dir_flag & WARN_TIME_REACHED)
             {
-               (void)fprintf(stdout, "WARN_TIME_REACHED");
+               (void)fprintf(stdout, "WARN_TIME_REACHED ");
             }
             if (fra[i].dir_flag & DIR_ERROR_ACKN)
             {
-               (void)fprintf(stdout, "DIR_ERROR_ACKN");
+               (void)fprintf(stdout, "DIR_ERROR_ACKN ");
             }
             if (fra[i].dir_flag & DIR_ERROR_OFFLINE)
             {
-               (void)fprintf(stdout, "DIR_ERROR_OFFLINE");
+               (void)fprintf(stdout, "DIR_ERROR_OFFLINE ");
             }
             if (fra[i].dir_flag & DIR_ERROR_ACKN_T)
             {
-               (void)fprintf(stdout, "DIR_ERROR_ACKN_T");
+               (void)fprintf(stdout, "DIR_ERROR_ACKN_T ");
             }
             if (fra[i].dir_flag & DIR_ERROR_OFFL_T)
             {
-               (void)fprintf(stdout, "DIR_ERROR_OFFL_T");
+               (void)fprintf(stdout, "DIR_ERROR_OFFL_T ");
             }
             if (fra[i].dir_flag & DIR_STOPPED)
             {
-               (void)fprintf(stdout, "DIR_STOPPED");
+               (void)fprintf(stdout, "DIR_STOPPED ");
             }
 #ifdef WITH_INOTIFY
             if (fra[i].dir_flag & INOTIFY_NEEDS_SCAN)
@@ -578,27 +582,27 @@ main(int argc, char *argv[])
             }
             if (fra[i].in_dc_flag & KEEP_CONNECTED_IDC)
             {
-               (void)fprintf(stdout, "KEEP_CONNECTED");
+               (void)fprintf(stdout, "KEEP_CONNECTED ");
             }
             if (fra[i].in_dc_flag & MAX_PROCESS_IDC)
             {
-               (void)fprintf(stdout, "MAX_PROCESS");
+               (void)fprintf(stdout, "MAX_PROCESS ");
             }
             if (fra[i].in_dc_flag & INFO_TIME_IDC)
             {
-               (void)fprintf(stdout, "INFO_TIME");
+               (void)fprintf(stdout, "INFO_TIME ");
             }
             if (fra[i].in_dc_flag & MAX_ERRORS_IDC)
             {
-               (void)fprintf(stdout, "MAX_ERRORS");
+               (void)fprintf(stdout, "MAX_ERRORS ");
             }
             if (fra[i].in_dc_flag & UNREADABLE_FILES_IDC)
             {
-               (void)fprintf(stdout, "UNREADABLE_FILES");
+               (void)fprintf(stdout, "UNREADABLE_FILES ");
             }
             if (fra[i].in_dc_flag & LOCAL_REMOTE_DIR_IDC)
             {
-               (void)fprintf(stdout, "LOCAL_REMOTE_DIR");
+               (void)fprintf(stdout, "LOCAL_REMOTE_DIR ");
             }
             (void)fprintf(stdout, "\n");
          }

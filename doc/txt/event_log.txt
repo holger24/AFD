@@ -35,6 +35,8 @@
           |manual|Acknowledge unset   |<dir alias> |<user>[|<reason>]
           |manual|enable directory    |<dir alias> |<user>[|<reason>]
           |manual|disable directory   |<dir alias> |<user>[|<reason>]
+          |auto  |enable directory    |<dir alias> |<reason>
+          |auto  |disable directory   |<dir alias> |<reason>
           |manual|start directory     |<dir alias> |<user>[|<reason>]
           |manual|stop directory      |<dir alias> |<user>[|<reason>]
           |manual|rescan directory    |<dir alias> |<user>
