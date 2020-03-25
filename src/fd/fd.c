@@ -5776,7 +5776,13 @@ static void
 sig_segv(int signo)
 {
    p_afd_status->fd = OFF;
-   system_log(FATAL_SIGN,  __FILE__, __LINE__, "Aaarrrggh! Received SIGSEGV.");
+   system_log(FATAL_SIGN,  __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
+              "Aaarrrggh! Received SIGSEGV. [pid=%d]",
+#else
+              "Aaarrrggh! Received SIGSEGV. [pid=%lld]",
+#endif
+              (pri_pid_t)getpid());
    fd_exit();
 
    /* Dump core so we know what happened. */
@@ -5789,7 +5795,13 @@ static void
 sig_bus(int signo)
 {
    p_afd_status->fd = OFF;
-   system_log(FATAL_SIGN,  __FILE__, __LINE__, "Uuurrrggh! Received SIGBUS.");
+   system_log(FATAL_SIGN,  __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
+              "Uuurrrggh! Received SIGBUS. [pid=%d]",
+#else
+              "Uuurrrggh! Received SIGBUS. [pid=%lld]",
+#endif
+              (pri_pid_t)getpid());
    fd_exit();
 
    /* Dump core so we know what happened. */
