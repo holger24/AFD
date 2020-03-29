@@ -1,6 +1,6 @@
 /*
  *  convert_msa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -309,9 +309,9 @@ struct mon_status_area_3
           time_t        top_fr_time;
           unsigned int  ec;
           time_t        last_data_time;
-          u_off_t       bytes_send[SUM_STORAGE_3];
-          u_off_t       bytes_received[SUM_STORAGE_3];
-          u_off_t       log_bytes_received[SUM_STORAGE_3];
+          double        bytes_send[SUM_STORAGE_3];         /* Changed */
+          double        bytes_received[SUM_STORAGE_3];     /* Changed */
+          double        log_bytes_received[SUM_STORAGE_3]; /* Changed */
           unsigned int  files_send[SUM_STORAGE_3];
           unsigned int  files_received[SUM_STORAGE_3];
           unsigned int  connections[SUM_STORAGE_3];
@@ -1211,13 +1211,13 @@ convert_msa(int           old_msa_fd,
               new_msa[i].last_data_time = old_msa[i].last_data_time;
               for (j = 0; j < SUM_STORAGE_1; j++)
               {
-                 new_msa[i].bytes_send[j] = old_msa[i].bytes_send[j];
-                 new_msa[i].bytes_received[j] = old_msa[i].bytes_received[j];
+                 new_msa[i].bytes_send[j] = (double)old_msa[i].bytes_send[j];
+                 new_msa[i].bytes_received[j] = (double)old_msa[i].bytes_received[j];
                  new_msa[i].files_send[j] = old_msa[i].files_send[j];
                  new_msa[i].files_received[j] = old_msa[i].files_received[j];
                  new_msa[i].connections[j] = old_msa[i].connections[j];
                  new_msa[i].total_errors[j] = old_msa[i].total_errors[j];
-                 new_msa[i].log_bytes_received[j] = old_msa[i].log_bytes_received[j];
+                 new_msa[i].log_bytes_received[j] = (double)old_msa[i].log_bytes_received[j];
               }
               new_msa[i].connect_status = old_msa[i].connect_status;
               new_msa[i].special_flag = old_msa[i].special_flag;
@@ -1399,13 +1399,13 @@ convert_msa(int           old_msa_fd,
               new_msa[i].last_data_time = old_msa[i].last_data_time;
               for (j = 0; j < SUM_STORAGE_2; j++)
               {
-                 new_msa[i].bytes_send[j] = old_msa[i].bytes_send[j];
-                 new_msa[i].bytes_received[j] = old_msa[i].bytes_received[j];
+                 new_msa[i].bytes_send[j] = (double)old_msa[i].bytes_send[j];
+                 new_msa[i].bytes_received[j] = (double)old_msa[i].bytes_received[j];
                  new_msa[i].files_send[j] = old_msa[i].files_send[j];
                  new_msa[i].files_received[j] = old_msa[i].files_received[j];
                  new_msa[i].connections[j] = old_msa[i].connections[j];
                  new_msa[i].total_errors[j] = old_msa[i].total_errors[j];
-                 new_msa[i].log_bytes_received[j] = old_msa[i].log_bytes_received[j];
+                 new_msa[i].log_bytes_received[j] = (double)old_msa[i].log_bytes_received[j];
               }
               new_msa[i].connect_status = old_msa[i].connect_status;
               new_msa[i].special_flag = old_msa[i].special_flag;

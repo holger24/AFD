@@ -1,6 +1,6 @@
 /*
  *  afd_mon.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -148,9 +148,15 @@ static void            afd_mon_exit(void),
                        eval_cmd_buffer(char *, int, int *),
                        get_sum_data(int),
                        mon_active(void),
+#ifdef NEW_MSA
+                       print_data(int, int, unsigned int, double,
+                                  unsigned int, double, unsigned int,
+                                  unsigned int, double),
+#else
                        print_data(int, int, unsigned int, u_off_t,
                                   unsigned int, u_off_t, unsigned int,
                                   unsigned int, u_off_t),
+#endif
                        sig_bus(int),
                        sig_exit(int),
                        sig_segv(int),
@@ -1073,12 +1079,21 @@ get_sum_data(int sum_type)
                 total_files_send = 0,
                 total_connections = 0,
                 total_total_errors = 0;
+#ifdef NEW_MSA
    u_off_t      diff_bytes_received,
                 diff_bytes_send,
                 diff_log_bytes_received,
                 total_bytes_received = 0,
                 total_bytes_send = 0,
                 total_log_bytes_received = 0;
+#else
+   u_off_t      diff_bytes_received,
+                diff_bytes_send,
+                diff_log_bytes_received,
+                total_bytes_received = 0,
+                total_bytes_send = 0,
+                total_log_bytes_received = 0;
+#endif
 
    for (i = 0; i < no_of_afds; i++)
    {
@@ -1129,10 +1144,14 @@ get_sum_data(int sum_type)
       else
       {
          mon_log(DEBUG_SIGN, __FILE__, __LINE__, 0L, NULL,
-#if SIZEOF_OFF_T == 4
-                 "bytes_send overflowed (%ld < %ld)! Correcting.",
+#ifdef NEW_MSA
+                 "bytes_send overflowed (%.0lf < %.0lf)! Correcting.",
 #else
+# if SIZEOF_OFF_T == 4
+                 "bytes_send overflowed (%ld < %ld)! Correcting.",
+# else
                  "bytes_send overflowed (%lld < %lld)! Correcting.",
+# endif
 #endif
                  msa[i].bytes_send[CURRENT_SUM], msa[i].bytes_send[sum_type]);
          diff_bytes_send = 0;
@@ -1208,6 +1227,17 @@ get_sum_data(int sum_type)
 
 /*----------------------------- print_data() ----------------------------*/
 static void
+#ifdef NEW_MSA
+print_data(int          mon_log_fd,
+           int          log_type,
+           unsigned int files_received,
+           double       bytes_received,
+           unsigned int files_send,
+           double       bytes_send,
+           unsigned int connections,
+           unsigned int total_errors,
+           double       log_bytes_received)
+#else
 print_data(int          mon_log_fd,
            int          log_type,
            unsigned int files_received,
@@ -1217,6 +1247,7 @@ print_data(int          mon_log_fd,
            unsigned int connections,
            unsigned int total_errors,
            u_off_t      log_bytes_received)
+#endif
 {
    int  length;
    char line[108 + (4 * MAX_INT_LENGTH) + (3 * MAX_LONG_LONG_LENGTH)];
@@ -1225,10 +1256,14 @@ print_data(int          mon_log_fd,
                     sum_stat_type[log_type], files_received);
    if (bytes_received < KILOBYTE)
    {
-#if SIZEOF_OFF_T == 4
-      length += sprintf(&line[length], "%lu bytes | Output: %u files ",
+#ifdef NEW_MSA
+      length += sprintf(&line[length], "%.0lf bytes | Output: %u files ",
 #else
+# if SIZEOF_OFF_T == 4
+      length += sprintf(&line[length], "%lu bytes | Output: %u files ",
+# else
       length += sprintf(&line[length], "%llu bytes | Output: %u files ",
+# endif
 #endif
                         bytes_received, files_send);
    }
@@ -1264,10 +1299,14 @@ print_data(int          mon_log_fd,
         }
    if (bytes_send < KILOBYTE)
    {
-#if SIZEOF_OFF_T == 4
-      length += sprintf(&line[length], "%lu bytes %u connections %u errors",
+#ifdef NEW_MSA
+      length += sprintf(&line[length], "%.0lf bytes %u connections %u errors",
 #else
+# if SIZEOF_OFF_T == 4
+      length += sprintf(&line[length], "%lu bytes %u connections %u errors",
+# else
       length += sprintf(&line[length], "%llu bytes %u connections %u errors",
+# endif
 #endif
                         bytes_send, connections, total_errors);
    }
@@ -1309,10 +1348,14 @@ print_data(int          mon_log_fd,
         }
    if (log_bytes_received < KILOBYTE)
    {
-#if SIZEOF_OFF_T == 4
-      length += sprintf(&line[length], " | Log data received: %lu bytes",
+#ifdef NEW_MSA
+      length += sprintf(&line[length], " | Log data received: %.0lf bytes",
 #else
+# if SIZEOF_OFF_T == 4
+      length += sprintf(&line[length], " | Log data received: %lu bytes",
+# else
       length += sprintf(&line[length], " | Log data received: %llu bytes",
+# endif
 #endif
                         log_bytes_received);
    }

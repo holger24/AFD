@@ -1,6 +1,6 @@
 /*
  *  evaluate_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -278,14 +278,18 @@ evaluate_message(int *bytes_done)
                                       {
                                          /* Store bytes send. */
                                          *ptr = '\0';
-#ifdef HAVE_STRTOULL
-# if SIZEOF_OFF_T == 4
-                                         msa[afd_no].bytes_send[CURRENT_SUM] = (u_off_t)strtoul(ptr_start, NULL, 10);
-# else
-                                         msa[afd_no].bytes_send[CURRENT_SUM] = (u_off_t)strtoull(ptr_start, NULL, 10);
-# endif
+#ifdef NEW_MSA
+                                         msa[afd_no].bytes_send[CURRENT_SUM] = strtod(ptr_start, NULL);
 #else
+# ifdef HAVE_STRTOULL
+#  if SIZEOF_OFF_T == 4
                                          msa[afd_no].bytes_send[CURRENT_SUM] = (u_off_t)strtoul(ptr_start, NULL, 10);
+#  else
+                                         msa[afd_no].bytes_send[CURRENT_SUM] = (u_off_t)strtoull(ptr_start, NULL, 10);
+#  endif
+# else
+                                         msa[afd_no].bytes_send[CURRENT_SUM] = (u_off_t)strtoul(ptr_start, NULL, 10);
+# endif
 #endif
                                          ptr++;
                                          ptr_start = ptr;
@@ -330,14 +334,18 @@ evaluate_message(int *bytes_done)
                                                   {
                                                      /* Store bytes received. */
                                                      *ptr = '\0';
-#ifdef HAVE_STRTOULL
-# if SIZEOF_OFF_T == 4
-                                                     msa[afd_no].bytes_received[CURRENT_SUM] = (u_off_t)strtoul(ptr_start, NULL, 10);
-# else
-                                                     msa[afd_no].bytes_received[CURRENT_SUM] = (u_off_t)strtoull(ptr_start, NULL, 10);
-# endif
+#ifdef NEW_MSA
+                                                     msa[afd_no].bytes_received[CURRENT_SUM] = strtod(ptr_start, NULL);
 #else
+# ifdef HAVE_STRTOULL
+#  if SIZEOF_OFF_T == 4
                                                      msa[afd_no].bytes_received[CURRENT_SUM] = (u_off_t)strtoul(ptr_start, NULL, 10);
+#  else
+                                                     msa[afd_no].bytes_received[CURRENT_SUM] = (u_off_t)strtoull(ptr_start, NULL, 10);
+#  endif
+# else
+                                                     msa[afd_no].bytes_received[CURRENT_SUM] = (u_off_t)strtoul(ptr_start, NULL, 10);
+# endif
 #endif
                                                   }
                                                   else

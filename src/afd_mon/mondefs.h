@@ -1,6 +1,6 @@
 /*
  *  mondefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -20,6 +20,8 @@
 
 #ifndef __mondefs_h
 #define __mondefs_h
+
+/* #define NEW_MSA 1 */
 
 #define MON_WD_ENV_NAME          "MON_WORK_DIR"  /* Environment variable */
                                                  /* for working          */
@@ -690,12 +692,21 @@ struct mon_status_area
           time_t        last_data_time;          /* Last time data was   */
                                                  /* received from        */
                                                  /* remote AFD.          */
+#ifdef NEW_MSA
+          double        bytes_send[SUM_STORAGE]; /* The number of bytes  */
+                                                 /* send.                */
+          double        bytes_received[SUM_STORAGE]; /* The number of    */
+                                                 /* bytes received.      */
+          double        log_bytes_received[SUM_STORAGE]; /* The number of*/
+                                                 /* log bytes received.  */
+#else
           u_off_t       bytes_send[SUM_STORAGE]; /* The number of bytes  */
                                                  /* send.                */
           u_off_t       bytes_received[SUM_STORAGE]; /* The number of    */
                                                  /* bytes received.      */
           u_off_t       log_bytes_received[SUM_STORAGE]; /* The number of*/
                                                  /* log bytes received.  */
+#endif
           unsigned int  files_send[SUM_STORAGE]; /* The number of files  */
                                                  /* send.                */
           unsigned int  files_received[SUM_STORAGE]; /* The number of    */

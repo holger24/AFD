@@ -1,6 +1,6 @@
 /*
  *  msa_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1999 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -544,23 +544,35 @@ main(int argc, char *argv[])
       {
          (void)fprintf(stdout, "                   : --- %s sum values ---\n", sum_stat_type[i]);
          (void)fprintf(stdout, "files_received     : %u\n", msa[j].files_received[i]);
-#if SIZEOF_OFF_T == 4
-         (void)fprintf(stdout, "bytes_received     : %lu\n", msa[j].bytes_received[i]);
+#ifdef NEW_MSA
+         (void)fprintf(stdout, "bytes_received     : %.0lf\n", msa[j].bytes_received[i]);
 #else
+# if SIZEOF_OFF_T == 4
+         (void)fprintf(stdout, "bytes_received     : %lu\n", msa[j].bytes_received[i]);
+# else
          (void)fprintf(stdout, "bytes_received     : %llu\n", msa[j].bytes_received[i]);
+# endif
 #endif
          (void)fprintf(stdout, "files_send         : %u\n", msa[j].files_send[i]);
-#if SIZEOF_OFF_T == 4
-         (void)fprintf(stdout, "bytes_send         : %lu\n", msa[j].bytes_send[i]);
+#ifdef NEW_MSA
+         (void)fprintf(stdout, "bytes_send         : %.0lf\n", msa[j].bytes_send[i]);
 #else
+# if SIZEOF_OFF_T == 4
+         (void)fprintf(stdout, "bytes_send         : %lu\n", msa[j].bytes_send[i]);
+# else
          (void)fprintf(stdout, "bytes_send         : %llu\n", msa[j].bytes_send[i]);
+# endif
 #endif
          (void)fprintf(stdout, "connections        : %u\n", msa[j].connections[i]);
          (void)fprintf(stdout, "total_errors       : %u\n", msa[j].total_errors[i]);
-#if SIZEOF_OFF_T == 4
-         (void)fprintf(stdout, "log_bytes_received : %lu\n", msa[j].log_bytes_received[i]);
+#ifdef NEW_MSA
+         (void)fprintf(stdout, "log_bytes_received : %.0lf\n", msa[j].log_bytes_received[i]);
 #else
+# if SIZEOF_OFF_T == 4
+         (void)fprintf(stdout, "log_bytes_received : %lu\n", msa[j].log_bytes_received[i]);
+# else
          (void)fprintf(stdout, "log_bytes_received : %llu\n", msa[j].log_bytes_received[i]);
+# endif
 #endif
       }
       (void)fprintf(stdout, "                   : ---------------------\n");
