@@ -791,6 +791,7 @@ main(int argc, char *argv[])
 
                         rl[i].assigned = 0;
                         rl[i].in_list = NO;
+                        rl[i].retrieved = YES;
                         files_retrieved++;
                         if (rl[i].size > 0)
                         {
