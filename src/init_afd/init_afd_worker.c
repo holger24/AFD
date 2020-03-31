@@ -209,7 +209,7 @@ main(int argc, char *argv[])
       exit(INCORRECT);
    }
 
-   if ((i = fsa_attach(AFD)) != SUCCESS)
+   if ((i = fsa_attach(AFD_WORKER)) != SUCCESS)
    {
       if (i != INCORRECT_VERSION)
       {
