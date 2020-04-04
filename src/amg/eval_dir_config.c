@@ -1,6 +1,6 @@
 /*
  *  eval_dir_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1153,22 +1153,48 @@ eval_dir_config(off_t        db_size,
                /* Before we go on, we have to search for the beginning of */
                /* the next file group entry so we can mark the end for   */
                /* this file entry.                                       */
-               if ((end_file_ptr = posi_identifier(ptr, FILE_IDENTIFIER,
-                                                   FILE_IDENTIFIER_LENGTH)) != NULL)
+               if (*ptr == '\n')
                {
-                  /* First save char we encounter here. */
-                  tmp_file_char = *end_file_ptr;
-   
-                  /* Now mark end of this file group entry. */
-                  *end_file_ptr = '\0';
+                  ptr++;
+               }
+               do
+               {
+                  if ((end_file_ptr = posi_identifier(ptr, FILE_IDENTIFIER,
+                                                      FILE_IDENTIFIER_LENGTH)) != NULL)
+                  {
+                     /* Ensure that this next FILE_IDENTIFIER is NOT */
+                     /* on the next line.                            */
+                     i = j = 0;
+                     while ((ptr + i) < end_file_ptr)
+                     {
+                        if (*(ptr + i) == '\n')
+                        {
+                           j++;
+                        }
+                        i++;
+                     }
+                     if (j == 1)
+                     {
+                        ptr += i;
+                        other_file_flag = NEITHER;
+                     }
+                     else
+                     {
+                        /* First save char we encounter here. */
+                        tmp_file_char = *end_file_ptr;
 
-                  /* Set flag that we found another entry. */
-                  other_file_flag = YES;
-               }
-               else
-               {
-                  other_file_flag = NO;
-               }
+                        /* Now mark end of this file group entry. */
+                        *end_file_ptr = '\0';
+
+                        /* Set flag that we found another entry. */
+                        other_file_flag = YES;
+                     }
+                  }
+                  else
+                  {
+                     other_file_flag = NO;
+                  }
+               } while (other_file_flag == NEITHER);
 
                /* Store file names. */
                ptr++;
@@ -1217,7 +1243,10 @@ eval_dir_config(off_t        db_size,
                      exit(INCORRECT);
                   }
                   dir->file[dir->fgc].fbl = alfbl + FILE_MASK_STEP_SIZE;
-                  (void)memcpy(dir->file[dir->fgc].files, alfiles, alfbl);
+                  if (alfbl > 0)
+                  {
+                     (void)memcpy(dir->file[dir->fgc].files, alfiles, alfbl);
+                  }
                   dir->file[dir->fgc].fc = alfc;
 
                   /* Read each filename line by line,  */
@@ -1282,7 +1311,7 @@ eval_dir_config(off_t        db_size,
                         }
                         ptr = search_ptr;
                      }
-                  } while (*ptr != '\n');
+                  } while ((*ptr != '\n') && (*ptr != '\0'));
                   dir->file[dir->fgc].fbl = total_length;
                   if (dir->file[dir->fgc].fbl == 0)
                   {
