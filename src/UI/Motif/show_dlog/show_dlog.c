@@ -1,6 +1,6 @@
 /*
  *  show_dlog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -911,9 +911,6 @@ main(int argc, char *argv[])
    XtAddCallback(listbox_w, XmNextendedSelectionCallback,
                  (XtCallbackProc)item_selection, (XtPointer)0);
    XtManageChild(mainform_w);
-
-   /* Free font list. */
-   XmFontListFree(fontlist);
 
    /* Disallow user to change window width. */
    XtVaSetValues(appshell,

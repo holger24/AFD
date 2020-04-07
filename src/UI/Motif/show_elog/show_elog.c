@@ -937,9 +937,6 @@ main(int argc, char *argv[])
    XtManageChild(outputbox_w);
    XtManageChild(mainform_w);
 
-   /* Free font list. */
-   XmFontListFree(fontlist);
-
    /* Disallow user to change window width. */
    XtVaSetValues(appshell,
                  XmNminWidth, char_width * (MAX_OUTPUT_LINE_LENGTH + 6),
