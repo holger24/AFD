@@ -253,12 +253,12 @@ static char                   *posi_identifier(char *, char *, size_t);
            else if (*ptr == '#')                            \
                 {                                           \
                    tmp_ptr = ptr;                           \
-                    while ((*tmp_ptr != '\n') && (*tmp_ptr != '\0')) \
-                    {                                       \
-                       tmp_ptr++;                           \
-                    }                                       \
-                    ptr = tmp_ptr;                          \
-                    continue;                               \
+                   while ((*tmp_ptr != '\n') && (*tmp_ptr != '\0')) \
+                   {                                        \
+                      tmp_ptr++;                            \
+                   }                                        \
+                   ptr = tmp_ptr;                           \
+                   continue;                                \
                 }                                           \
         }
 
@@ -1197,7 +1197,6 @@ eval_dir_config(off_t        db_size,
                } while (other_file_flag == NEITHER);
 
                /* Store file names. */
-               ptr++;
                if (*ptr == '\n') /* Are any files specified? */
                {
                   /* We assume that all files in this */
