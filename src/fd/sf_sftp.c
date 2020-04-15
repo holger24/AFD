@@ -89,8 +89,7 @@ DESCR__E_M1
 #endif
 
 /* Global variables. */
-int                        amg_flag = NO,
-                           counter_fd = -1,
+int                        counter_fd = -1,
                            event_log_fd = STDERR_FILENO,
                            exitflag = IS_FAULTY_VAR,
                            files_to_delete,

@@ -76,8 +76,7 @@ typedef struct
 } SingleCall;
 
 /* Global variables. */
-int                        amg_flag = NO,
-                           counter_fd = -1,    /* NOT USED */
+int                        counter_fd = -1,    /* NOT USED */
                            event_log_fd = STDERR_FILENO,
                            exitflag = IS_FAULTY_VAR,
                            files_to_delete,    /* NOT USED */

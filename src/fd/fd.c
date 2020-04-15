@@ -114,8 +114,7 @@ DESCR__E_M1
 /* #define DEBUG_BURST 0xb5cf91b2 */
 
 /* Global variables. */
-int                        amg_flag = NO,
-                           default_age_limit = DEFAULT_AGE_LIMIT,
+int                        default_age_limit = DEFAULT_AGE_LIMIT,
                            delete_jobs_fd,
                            event_log_fd = STDERR_FILENO,
                            fd_cmd_fd,

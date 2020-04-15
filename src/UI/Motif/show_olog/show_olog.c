@@ -122,7 +122,6 @@ Widget                     appshell,
 Window                     main_window;
 XmFontList                 fontlist;
 int                        acd_counter = 0,
-                           amg_flag = NO,
                            char_width,
                            continues_toggle_set,
                            file_name_length,

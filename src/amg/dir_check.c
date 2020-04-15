@@ -182,7 +182,6 @@ int                        afd_file_dir_length,
                                             /* counter file.             */
                            fin_fd,
                            no_of_rule_headers = 0,
-                           amg_flag = YES,
 #ifdef _PRODUCTION_LOG
                            production_log_fd = STDERR_FILENO,
 #endif

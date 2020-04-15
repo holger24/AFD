@@ -110,8 +110,7 @@ Widget                     appshell,
                            summarybox_w;
 Window                     main_window;
 XmFontList                 fontlist;
-int                        amg_flag = NO,
-                           char_width,
+int                        char_width,
                            continues_toggle_set,
                            file_name_length,
                            fra_fd = -1,

@@ -162,8 +162,7 @@ Pixmap                     button_pixmap,
                            label_pixmap,
                            line_pixmap;
 float                      max_bar_length;
-int                        amg_flag = NO,
-                           bar_thickness_2,
+int                        bar_thickness_2,
                            bar_thickness_3,
                            button_width,
                            depth,

@@ -68,8 +68,7 @@ DESCR__E_M1
 #include "permission.h"
 
 /* Global variables. */
-int                        amg_flag = NO,
-                           event_log_fd = STDERR_FILENO,
+int                        event_log_fd = STDERR_FILENO,
                            fsa_fd = -1,
                            fsa_id,
                            hostname_display_length,

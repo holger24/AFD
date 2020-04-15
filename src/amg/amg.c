@@ -145,8 +145,7 @@ int                        alfbl,    /* Additional locked file buffer length */
                            jid_fd = -1,
                            remove_unused_hosts = NO,
                            sys_log_fd = STDERR_FILENO,
-                           stop_flag = 0,
-                           amg_flag = YES;
+                           stop_flag = 0;
 unsigned int               default_error_offline_flag = DEFAULT_FSA_HOST_STATUS,
 #ifdef WITH_INOTIFY
                            default_inotify_flag = DEFAULT_INOTIFY_FLAG,
