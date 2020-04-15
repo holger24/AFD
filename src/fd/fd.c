@@ -114,7 +114,8 @@ DESCR__E_M1
 /* #define DEBUG_BURST 0xb5cf91b2 */
 
 /* Global variables. */
-int                        default_age_limit = DEFAULT_AGE_LIMIT,
+int                        crash = NO,
+                           default_age_limit = DEFAULT_AGE_LIMIT,
                            delete_jobs_fd,
                            event_log_fd = STDERR_FILENO,
                            fd_cmd_fd,
@@ -5692,14 +5693,17 @@ fd_exit(void)
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "msync() error : %s", strerror(errno));
       }
-      if (munmap(ptr, stat_buf.st_size) == -1)
+      if (crash == NO)
       {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "munmap() error : %s", strerror(errno));
-      }
-      else
-      {
-         qb = NULL;
+         if (munmap(ptr, stat_buf.st_size) == -1)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "munmap() error : %s", strerror(errno));
+         }
+         else
+         {
+            qb = NULL;
+         }
       }
    }
    if (close(qb_fd) == -1)
@@ -5723,14 +5727,17 @@ fd_exit(void)
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "msync() error : %s", strerror(errno));
       }
-      if (munmap(ptr, stat_buf.st_size) == -1)
+      if (crash == NO)
       {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "munmap() error : %s", strerror(errno));
-      }
-      else
-      {
-         mdb = NULL;
+         if (munmap(ptr, stat_buf.st_size) == -1)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "munmap() error : %s", strerror(errno));
+         }
+         else
+         {
+            mdb = NULL;
+         }
       }
    }
    if (close(mdb_fd) == -1)
@@ -5740,8 +5747,11 @@ fd_exit(void)
    }
 
    /* Free all memory that we allocated. */
-   free(connection);
-   connection = NULL;
+   if (crash == NO)
+   {
+      free(connection);
+      connection = NULL;
+   }
 
    /* Set number of transfers to zero. */
    p_afd_status->no_of_transfers = 0;
@@ -5759,8 +5769,11 @@ fd_exit(void)
          fsa[i].job_status[j].file_name_in_use[1] = 0;
       }
    }
-   (void)fsa_detach(YES);
-   (void)fra_detach();
+   if (crash == NO)
+   {
+      (void)fsa_detach(YES);
+      (void)fra_detach();
+   }
 
    system_log(INFO_SIGN, NULL, 0, "Stopped %s.", FD);
 
@@ -5775,11 +5788,12 @@ static void
 sig_segv(int signo)
 {
    p_afd_status->fd = OFF;
+   crash = YES;
    system_log(FATAL_SIGN,  __FILE__, __LINE__,
 #if SIZEOF_PID_T == 4
-              "Aaarrrggh! Received SIGSEGV. [pid=%d]",
+              "Aaarrrggh! Received SIGSEGV. Surely the maintainer does not know how to code properly! [pid=%d]",
 #else
-              "Aaarrrggh! Received SIGSEGV. [pid=%lld]",
+              "Aaarrrggh! Received SIGSEGV. Surely the maintainer does not know how to code properly! [pid=%lld]",
 #endif
               (pri_pid_t)getpid());
    fd_exit();
@@ -5794,6 +5808,7 @@ static void
 sig_bus(int signo)
 {
    p_afd_status->fd = OFF;
+   crash = YES;
    system_log(FATAL_SIGN,  __FILE__, __LINE__,
 #if SIZEOF_PID_T == 4
               "Uuurrrggh! Received SIGBUS. [pid=%d]",
