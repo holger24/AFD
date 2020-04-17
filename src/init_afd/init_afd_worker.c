@@ -454,7 +454,8 @@ main(int argc, char *argv[])
                      }
                      total_file_counter += fsa[j].total_file_counter;
                      total_file_size += fsa[j].total_file_size;
-                     for (k = 0; k < fsa[j].allowed_transfers; k++)
+                     for (k = 0; ((k < fsa[j].allowed_transfers) &&
+                                  (k < MAX_NO_PARALLEL_JOBS)); k++)
                      {
                         bytes_send[k] += fsa[j].job_status[k].bytes_send;
                      }
