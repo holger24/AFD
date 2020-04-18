@@ -1,6 +1,6 @@
 /*
  *  init_text.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -170,10 +170,10 @@ read_text(void)
 
    if (stat_buf.st_size > 0)
    {
-      int   block_length,
-            length,
-            last = MISS;
-      off_t tmp_total_length = 0;
+      int    length,
+             last = MISS;
+      size_t block_length;
+      off_t  tmp_total_length = 0;
 
       /* Change cursor to indicate we are doing something. */
       attrs.cursor = cursor1;
