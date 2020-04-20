@@ -170,7 +170,7 @@ main(int argc, char *argv[])
                     buffer_offset,
                     exit_status = TRANSFER_SUCCESS,
                     files_retrieved = 0,
-                    files_to_retrieve,
+                    files_to_retrieve = 0,
                     in_burst_loop = NO,
                     more_files_in_list,
                     status;
@@ -183,7 +183,7 @@ main(int argc, char *argv[])
    char             *created_path = NULL,
                     *p_current_real_hostname;
    off_t            file_size_retrieved = 0,
-                    file_size_to_retrieve;
+                    file_size_to_retrieve = 0;
    time_t           connected,
 #ifdef _WITH_BURST_2
                     diff_time,

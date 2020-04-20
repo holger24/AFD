@@ -176,7 +176,7 @@ main(int argc, char *argv[])
    int              blocksize,
                     exit_status = TRANSFER_SUCCESS,
                     files_retrieved = 0,
-                    files_to_retrieve,
+                    files_to_retrieve = 0,
                     more_files_in_list,
                     status;
    unsigned int     ftp_options,
@@ -194,7 +194,7 @@ main(int argc, char *argv[])
                     *p_current_real_hostname,
                     str_mode[5];
    off_t            file_size_retrieved = 0,
-                    file_size_to_retrieve;
+                    file_size_to_retrieve = 0;
    time_t           connected,
 #ifdef _WITH_BURST_2
                     diff_time,
