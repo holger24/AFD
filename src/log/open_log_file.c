@@ -139,7 +139,7 @@ open_log_file(char *log_file_name)
     */
    if (iobuf == NULL)
    {
-      if ((iobuf = malloc(262144)) == NULL)
+      if ((iobuf = malloc(262144 + 8)) == NULL)
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "malloc() error : %s", strerror(errno));
