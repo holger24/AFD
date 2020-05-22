@@ -1,6 +1,6 @@
 /*
  *  get_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2016 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -959,13 +959,17 @@ get_all(int item)
          id.original_filename[i] = *(ptr + i);
          i++;
       }
-      id.original_filename[i] = '\0';
       if (i == MAX_FILENAME_LENGTH)
       {
+         id.original_filename[i - 1] = '\0';
          while ((*(ptr + i) != SEPARATOR_CHAR) && (*(ptr + i) != '\n'))
          {
             i++;
          }
+      }
+      else
+      {
+         id.original_filename[i] = '\0';
       }
       if (*(ptr + i) == SEPARATOR_CHAR)
       {
@@ -1004,13 +1008,17 @@ get_all(int item)
          id.new_filename[i] = *(ptr + i);
          i++;
       }
-      id.new_filename[i] = '\0';
       if (i == MAX_FILENAME_LENGTH)
       {
+         id.new_filename[i - 1] = '\0';
          while ((*(ptr + i) != SEPARATOR_CHAR) && (*(ptr + i) != '\n'))
          {
             i++;
          }
+      }
+      else
+      {
+         id.new_filename[i] = '\0';
       }
       if (*(ptr + i) == SEPARATOR_CHAR)
       {

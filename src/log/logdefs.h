@@ -1,6 +1,6 @@
 /*
  *  logdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -176,7 +176,7 @@
 # define PRODUCTION_BUFFER_FILE_ALL       "PRODUCTION_LOG.*"
 # define MAX_PRODUCTION_LOG_FILES_DEF     "MAX_PRODUCTION_LOG_FILES"
 #endif
-#define MAX_LOG_NAME_LENGTH               17 /* Max length of:           */
+#define MAX_LOG_NAME_LENGTH               18 /* Max length of:           */
                                              /* SYSTEM_LOG_NAME          */
                                              /* RECEIVE_LOG_NAME         */
                                              /* TRANSFER_LOG_NAME        */

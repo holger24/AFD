@@ -1,6 +1,6 @@
 /*
  *  print_alda_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -177,7 +177,7 @@ print_alda_data(void)
                p_char_selection = NULL;
             }
             j = 0;
-            while ((isdigit((int)(*(ptr + j)))) && (j < (1 + MAX_INT_LENGTH)))
+            while ((isdigit((int)(*(ptr + j)))) && (j < MAX_INT_LENGTH))
             {
                format_orientation[fo_pos + j] = *(ptr + j);
                str_number[j] = *(ptr + j);
@@ -194,7 +194,7 @@ print_alda_data(void)
             {
                max_length = 0;
             }
-            if (j == (1 + MAX_INT_LENGTH))
+            if (j == MAX_INT_LENGTH)
             {
                while (isdigit((int)(*ptr)))
                {
