@@ -58,6 +58,7 @@ DESCR__E_M3
 /* External global variables. */
 extern int                        fsa_fd,
                                   fra_fd,
+                                  no_of_dirs,
                                   no_of_hosts,
                                   no_of_trl_groups,
                                   transfer_log_fd;
@@ -100,7 +101,7 @@ remove_connection(struct connection *p_con, int faulty, time_t now)
          lock_offset = AFD_WORD_OFFSET +
                        (p_con->fsa_pos * sizeof(struct filetransfer_status));
          fsa[p_con->fsa_pos].last_retry_time = now;
-         if (p_con->fra_pos != -1)
+         if ((p_con->fra_pos != -1) && (p_con->fra_pos < no_of_dirs))
          {
             int  receive_log_fd = -1;
 #ifdef WITHOUT_FIFO_RW_SUPPORT
