@@ -1,6 +1,6 @@
 /*
  *  check_logs.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -191,6 +191,7 @@ check_logs(time_t now)
                (void)memcpy(&line_buffer[chars_buffered], line, length);
                chars_buffered += length;
             }
+            clearerr(ld[i].fp);
             if (chars_buffered > 0)
             {
                chars_buffered_log += snprintf(&log_buffer[chars_buffered_log],
@@ -216,9 +217,10 @@ check_logs(time_t now)
                chars_buffered_log += chars_buffered;
 #ifdef DEBUG_LOG_CMD
                system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "W-> %s %u %u %u",
+                          "W-> %s %u %u %u [%s]",
                           ld[i].log_data_cmd, ld[i].options,
-                          ld[i].packet_no, chars_buffered);
+                          ld[i].packet_no, chars_buffered,
+                          ld[i].log_name);
 #endif
                ld[i].packet_no++;
             }
@@ -316,7 +318,8 @@ check_logs(time_t now)
                      ld[i].current_log_no--;
                      (void)snprintf(p_log_dir,
                                     MAX_PATH_LENGTH - (p_log_dir - log_dir),
-                                    "%s%d", ld[i].log_name, ld[i].current_log_no);
+                                    "%s%d", ld[i].log_name,
+                                    ld[i].current_log_no);
                      if ((ld[i].fp = fopen(log_dir, "r")) != NULL)
                      {
                         if (fstat(fileno(ld[i].fp), &stat_buf) == -1)
@@ -379,6 +382,7 @@ check_logs(time_t now)
          }
       }
    }
+
    if (chars_buffered_log > 0)
    {
       if (log_write(log_buffer, chars_buffered_log) == INCORRECT)
@@ -509,7 +513,7 @@ get_log_inode(char  *log_dir,
                                          _("Hmm, unable to determine the log number for `%s'."),
                                          p_dir->d_name);
 
-                              /* Since we could NOT open the orginal  */
+                              /* Since we could NOT open the original */
                               /* log data file, we must reset offset. */
                               *offset = 0;
                            }
