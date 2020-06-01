@@ -20,7 +20,7 @@ the new value:
    <th>Restart</th>
 </tr>
 <tr>
-   <td valign=top><a name="afd_tcp_port">AFD_TCP_PORT</a></td>
+   <td valign=top><a name="afd_tcp_port">AFD_TCP_PORT &lt;port number&gt;</a></td>
    <td>The TCP port number at which the process afdd will listen and
        wait for remote requests. If that port is currently in use
        by another program it will add one and see if that works
@@ -34,7 +34,7 @@ the new value:
    <td valign=top>afdd</td>
 </tr>
 <tr>
-   <td valign=top><a name="afd_tcp_logs">AFD_TCP_LOGS</a></td>
+   <td valign=top><a name="afd_tcp_logs">AFD_TCP_LOGS &lt;allowed log flag&gt;</a></td>
    <td>The logs that may be requested from the given AFD_TCP_PORT. If
        this is defined, then it means for all hosts that connect to this
        port. With the TRUSTED_REMOTE_IP it can be restricted to specific
@@ -54,6 +54,24 @@ the new value:
        </pre>
        Just add the values in brackets to set the wanted logs.</td>
    <td valign=top>0</td>
+   <td valign=top>afdd</td>
+</tr>
+<tr>
+   <td valign=top><a name="trusted_remote_ip">TRUSTED_REMOTE_IP &lt;IP-number&gt; [&lt;allowed log flag&gt;]</a></td>
+   <td>Trusted IP-number that may connect to AFD_TCP_PORT. To
+       enter more then one IP-number you must have the
+       identifier TRUSTED_REMOTE_IP on a new line for each number.
+       Wildcards may also be used when specifying the IP-number.
+       Optionally you can set the AFD_TCP_LOGS flag behind the
+       IP number. If TRUSTED_REMOTE_IP is not set, all hosts may
+       connect.</td>
+   <td valign=top>None</td>
+   <td valign=top>afdd</td>
+</tr>
+<tr>
+   <td valign=top><a name="max_afdd_connections">MAX_AFDD_CONNECTIONS</a></td>
+   <td>The number of hosts that may connect to the afdd process.</td>
+   <td valign=top>5</td>
    <td valign=top>afdd</td>
 </tr>
 <tr>
@@ -147,24 +165,6 @@ the new value:
        does support.</td>
    <td valign=top>19</td>
    <td valign=top>amg, fd</td>
-</tr>
-<tr>
-   <td valign=top><a name="trusted_remote_ip">TRUSTED_REMOTE_IP</a></td>
-   <td>Trusted IP-number that may connect to AFD_TCP_PORT. To
-       enter more then one IP-number you must have the
-       identifier TRUSTED_REMOTE_IP on a new line for each number.
-       Wildcards may also be used when specifying the IP-number.
-       Optionally you can set the AFD_TCP_LOGS flag behind the
-       IP number. If TRUSTED_REMOTE_IP is not set, all hosts may
-       connect.</td>
-   <td valign=top>None</td>
-   <td valign=top>afdd</td>
-</tr>
-<tr>
-   <td valign=top><a name="max_afdd_connections">MAX_AFDD_CONNECTIONS</a></td>
-   <td>The number of hosts that may connect to the afdd process.</td>
-   <td valign=top>5</td>
-   <td valign=top>afdd</td>
 </tr>
 <tr>
    <td valign=top><a name="alda_daemon">ALDA_DAEMON</a></td>
@@ -856,9 +856,9 @@ restarted.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1999 - 2019 by H.Kiehl<br>
+   Copyright &copy; 1999 - 2020 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 03.07.2019
+   Last updated: 01.06.2020
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
