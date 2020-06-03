@@ -283,7 +283,7 @@ main(int argc, char *argv[])
    }
    if ((signal(SIGINT, sig_exit) == SIG_ERR) ||
        (signal(SIGQUIT, sig_exit) == SIG_ERR) ||
-       (signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
+       (signal(SIGTERM, sig_exit) == SIG_ERR) ||
        (signal(SIGSEGV, sig_segv) == SIG_ERR) ||
        (signal(SIGBUS, sig_bus) == SIG_ERR) ||
        (signal(SIGPIPE, SIG_IGN) == SIG_ERR) ||

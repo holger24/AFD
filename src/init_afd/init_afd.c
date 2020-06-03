@@ -633,7 +633,7 @@ main(int argc, char *argv[])
 
    /* Activate some signal handlers, so we know what happened. */
    if ((signal(SIGINT, sig_exit) == SIG_ERR) ||
-       (signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
+       (signal(SIGTERM, sig_exit) == SIG_ERR) ||
        (signal(SIGSEGV, sig_segv) == SIG_ERR) ||
        (signal(SIGBUS, sig_bus) == SIG_ERR) ||
        (signal(SIGHUP, SIG_IGN) == SIG_ERR))
