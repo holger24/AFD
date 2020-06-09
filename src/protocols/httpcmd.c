@@ -2451,25 +2451,25 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
 
             /* Content-Length: */
             if ((read_length > 15) && (msg_str[14] == ':') &&
-                ((msg_str[8] == 'L') || (msg_str[8] == 'l')) &&
-                ((msg_str[9] == 'E') || (msg_str[9] == 'e')) &&
-                ((msg_str[10] == 'N') || (msg_str[10] == 'n')) &&
-                ((msg_str[11] == 'G') || (msg_str[11] == 'g')) &&
-                ((msg_str[12] == 'T') || (msg_str[12] == 't')) &&
-                ((msg_str[13] == 'H') || (msg_str[13] == 'h')) &&
+                ((msg_str[8] == 'l') || (msg_str[8] == 'L')) &&
+                ((msg_str[9] == 'e') || (msg_str[9] == 'E')) &&
+                ((msg_str[10] == 'n') || (msg_str[10] == 'N')) &&
+                ((msg_str[11] == 'g') || (msg_str[11] == 'G')) &&
+                ((msg_str[12] == 't') || (msg_str[12] == 'T')) &&
+                ((msg_str[13] == 'h') || (msg_str[13] == 'H')) &&
                 ((msg_str[0] == 'C') || (msg_str[0] == 'c')) &&
-                ((msg_str[1] == 'O') || (msg_str[1] == 'o')) &&
-                ((msg_str[2] == 'N') || (msg_str[2] == 'n')) &&
-                ((msg_str[3] == 'T') || (msg_str[3] == 't')) &&
-                ((msg_str[4] == 'E') || (msg_str[4] == 'e')) &&
-                ((msg_str[5] == 'N') || (msg_str[5] == 'n')) &&
-                ((msg_str[6] == 'T') || (msg_str[6] == 't')) &&
+                ((msg_str[1] == 'o') || (msg_str[1] == 'O')) &&
+                ((msg_str[2] == 'n') || (msg_str[2] == 'N')) &&
+                ((msg_str[3] == 't') || (msg_str[3] == 'T')) &&
+                ((msg_str[4] == 'e') || (msg_str[4] == 'E')) &&
+                ((msg_str[5] == 'n') || (msg_str[5] == 'N')) &&
+                ((msg_str[6] == 't') || (msg_str[6] == 'T')) &&
                 (msg_str[7] == '-'))
             {
                int i = 15;
 
-               while (((msg_str[i] == ' ') || (msg_str[i] == '\t')) &&
-                      (i < read_length))
+               while ((i < read_length) &&
+                      ((msg_str[i] == ' ') || (msg_str[i] == '\t')))
                {
                   i++;
                }
@@ -2477,7 +2477,7 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
                {
                   int k = i;
 
-                  while ((isdigit((int)(msg_str[k]))) && (k < read_length))
+                  while ((k < read_length) && (isdigit((int)(msg_str[k]))))
                   {
                      k++;
                   }
@@ -2499,29 +2499,29 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
                  /* Connection: */
             else if ((read_length > 11) && (msg_str[10] == ':') &&
                      ((msg_str[0] == 'C') || (msg_str[0] == 'c')) &&
-                     ((msg_str[1] == 'O') || (msg_str[1] == 'o')) &&
-                     ((msg_str[2] == 'N') || (msg_str[2] == 'n')) &&
-                     ((msg_str[3] == 'N') || (msg_str[3] == 'n')) &&
-                     ((msg_str[4] == 'E') || (msg_str[4] == 'e')) &&
-                     ((msg_str[5] == 'C') || (msg_str[5] == 'c')) &&
-                     ((msg_str[6] == 'T') || (msg_str[6] == 't')) &&
-                     ((msg_str[7] == 'I') || (msg_str[7] == 'i')) &&
-                     ((msg_str[8] == 'O') || (msg_str[8] == 'o')) &&
-                     ((msg_str[9] == 'N') || (msg_str[9] == 'n')))
+                     ((msg_str[1] == 'o') || (msg_str[1] == 'O')) &&
+                     ((msg_str[2] == 'n') || (msg_str[2] == 'N')) &&
+                     ((msg_str[3] == 'n') || (msg_str[3] == 'N')) &&
+                     ((msg_str[4] == 'e') || (msg_str[4] == 'E')) &&
+                     ((msg_str[5] == 'c') || (msg_str[5] == 'C')) &&
+                     ((msg_str[6] == 't') || (msg_str[6] == 'T')) &&
+                     ((msg_str[7] == 'i') || (msg_str[7] == 'I')) &&
+                     ((msg_str[8] == 'o') || (msg_str[8] == 'O')) &&
+                     ((msg_str[9] == 'n') || (msg_str[9] == 'N')))
                  {
                     int i = 11;
 
-                    while (((msg_str[i] == ' ') || (msg_str[i] == '\t')) &&
-                           (i < read_length))
+                    while ((i < read_length) &&
+                           ((msg_str[i] == ' ') || (msg_str[i] == '\t')))
                     {
                        i++;
                     }
                     if (((i + 4) < read_length) &&
-                        ((msg_str[i] == 'C') || (msg_str[i] == 'c')) &&
-                        ((msg_str[i + 1] == 'L') || (msg_str[i + 1] == 'l')) &&
-                        ((msg_str[i + 2] == 'O') || (msg_str[i + 2] == 'o')) &&
-                        ((msg_str[i + 3] == 'S') || (msg_str[i + 3] == 's')) &&
-                        ((msg_str[i + 4] == 'E') || (msg_str[i + 4] == 'e')))
+                        ((msg_str[i] == 'c') || (msg_str[i] == 'C')) &&
+                        ((msg_str[i + 1] == 'l') || (msg_str[i + 1] == 'L')) &&
+                        ((msg_str[i + 2] == 'o') || (msg_str[i + 2] == 'O')) &&
+                        ((msg_str[i + 3] == 's') || (msg_str[i + 3] == 'S')) &&
+                        ((msg_str[i + 4] == 'e') || (msg_str[i + 4] == 'E')))
                     {
                        hmr.close = YES;
                     }
@@ -2547,8 +2547,8 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
                  {
                     int i = 17;
 
-                    while (((msg_str[i] == ' ') || (msg_str[i] == '\t')) &&
-                           (i < read_length))
+                    while ((i < read_length) &&
+                           ((msg_str[i] == ' ') || (msg_str[i] == '\t')))
                     {
                        i++;
                     }
@@ -2597,8 +2597,8 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
                  {
                     int i = 18;
 
-                    while (((msg_str[i] == ' ') || (msg_str[i] == '\t')) &&
-                           (i < read_length))
+                    while ((i < read_length) &&
+                           ((msg_str[i] == ' ') || (msg_str[i] == '\t')))
                     {
                        i++;
                     }
@@ -2622,22 +2622,22 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
                      (read_length > 14) && (msg_str[13] == ':') &&
                      (msg_str[4] == '-') &&
                      ((msg_str[0] == 'L') || (msg_str[0] == 'l')) &&
-                     ((msg_str[1] == 'A') || (msg_str[1] == 'a')) &&
-                     ((msg_str[2] == 'S') || (msg_str[2] == 's')) &&
-                     ((msg_str[3] == 'T') || (msg_str[3] == 't')) &&
+                     ((msg_str[1] == 'a') || (msg_str[1] == 'A')) &&
+                     ((msg_str[2] == 's') || (msg_str[2] == 'S')) &&
+                     ((msg_str[3] == 't') || (msg_str[3] == 'T')) &&
                      ((msg_str[5] == 'M') || (msg_str[5] == 'm')) &&
-                     ((msg_str[6] == 'O') || (msg_str[6] == 'o')) &&
-                     ((msg_str[7] == 'D') || (msg_str[7] == 'd')) &&
-                     ((msg_str[8] == 'I') || (msg_str[8] == 'i')) &&
-                     ((msg_str[9] == 'F') || (msg_str[9] == 'f')) &&
-                     ((msg_str[10] == 'I') || (msg_str[10] == 'i')) &&
-                     ((msg_str[11] == 'E') || (msg_str[11] == 'e')) &&
-                     ((msg_str[12] == 'D') || (msg_str[12] == 'd')))
+                     ((msg_str[6] == 'o') || (msg_str[6] == 'O')) &&
+                     ((msg_str[7] == 'd') || (msg_str[7] == 'D')) &&
+                     ((msg_str[8] == 'i') || (msg_str[8] == 'I')) &&
+                     ((msg_str[9] == 'f') || (msg_str[9] == 'F')) &&
+                     ((msg_str[10] == 'i') || (msg_str[10] == 'I')) &&
+                     ((msg_str[11] == 'e') || (msg_str[11] == 'E')) &&
+                     ((msg_str[12] == 'd') || (msg_str[12] == 'D')))
                  {
                     int i = 14;
 
-                    while (((msg_str[i] == ' ') || (msg_str[i] == '\t')) &&
-                           (i < read_length))
+                    while ((i < read_length) &&
+                           ((msg_str[i] == ' ') || (msg_str[i] == '\t')))
                     {
                        i++;
                     }
@@ -2649,15 +2649,15 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
                  /* Allow: */
             else if ((read_length > 6) && (msg_str[5] == ':') &&
                      ((msg_str[0] == 'A') || (msg_str[0] == 'a')) &&
-                     ((msg_str[1] == 'L') || (msg_str[1] == 'l')) &&
-                     ((msg_str[2] == 'L') || (msg_str[2] == 'l')) &&
-                     ((msg_str[3] == 'O') || (msg_str[3] == 'o')) &&
-                     ((msg_str[4] == 'W') || (msg_str[4] == 'w')))
+                     ((msg_str[1] == 'l') || (msg_str[1] == 'L')) &&
+                     ((msg_str[2] == 'l') || (msg_str[2] == 'L')) &&
+                     ((msg_str[3] == 'o') || (msg_str[3] == 'O')) &&
+                     ((msg_str[4] == 'w') || (msg_str[4] == 'W')))
                  {
                     int i = 6;
 
-                    while (((msg_str[i] == ' ') || (msg_str[i] == '\t')) &&
-                           (i < read_length))
+                    while ((i < read_length) &&
+                           ((msg_str[i] == ' ') || (msg_str[i] == '\t')))
                     {
                        i++;
                     }
@@ -3081,7 +3081,7 @@ read_last_chunk(void)
 static void
 store_http_options(int i, int read_length)
 {
-   while (msg_str[i] != '\0')
+   while ((i < read_length) && (msg_str[i] != '\0'))
    {
       /* HEAD */
       if (((i + 4) < read_length) &&
@@ -3165,8 +3165,8 @@ store_http_options(int i, int read_length)
            }
            else /* Ignore any other options. */
            {
-              while ((msg_str[i] != ',') && (msg_str[i] != '\0') &&
-                     (i < read_length))
+              while ((i < read_length) &&
+                     (msg_str[i] != ',') && (msg_str[i] != '\0'))
               {
                  i++;
               }
@@ -3175,8 +3175,8 @@ store_http_options(int i, int read_length)
       if (msg_str[i] == ',')
       {
          i++;
-         while (((msg_str[i] == ' ') || (msg_str[i] == '\t')) &&
-                (i < read_length))
+         while ((i < read_length) &&
+                ((msg_str[i] == ' ') || (msg_str[i] == '\t')))
          {
             i++;
          }

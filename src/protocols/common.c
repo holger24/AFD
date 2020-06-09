@@ -31,8 +31,6 @@ DESCR__S_M3
  **   ssize_t ssl_write(SSL *ssl, const char *buf, size_t count)
  **   char    *ssl_error_msg(char *function, SSL *ssl, int *ssl_ret,
  **                          int reply, char *msg_str)
- **   int     connect_with_timeout(int sockfd, const struct sockaddr *addr,
- **                                socklen_t addrlen)
  **
  ** DESCRIPTION
  **
