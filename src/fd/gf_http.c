@@ -744,6 +744,10 @@ main(int argc, char *argv[])
                       */
                      rl[i].retrieved = YES;
                      rl[i].assigned = 0;
+                     if (status == 404)
+                     {
+                        rl[i].in_list = NO;
+                     }
 
                      if (gsf_check_fsa((struct job *)&db) != NEITHER)
                      {
