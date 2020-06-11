@@ -2658,8 +2658,11 @@ afd_exit(void)
 
    if (probe_only != 1)
    {
-      int   i;
-      pid_t syslog = 0;
+      int   kill_counter = 0,
+            kill_pos_list[NO_OF_PROCESS + 1],
+            i;
+      pid_t kill_list[NO_OF_PROCESS + 1],
+            syslog = 0;
 
       system_log(INFO_SIGN, NULL, 0,
                  _("Stopped %s. (%s)"), AFD, PACKAGE_VERSION);
@@ -2744,9 +2747,13 @@ afd_exit(void)
                   if (errno != ESRCH)
                   {
                      system_log(WARN_SIGN, __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
                                 _("Failed to kill() %d %s : %s"),
-                                *(pid_t *)ptr, proc_table[i - 1].proc_name,
-                                strerror(errno));
+#else
+                                _("Failed to kill() %lld %s : %s"),
+#endif
+                                (pri_pid_t)*(pid_t *)ptr,
+                                proc_table[i - 1].proc_name, strerror(errno));
                   }
                }
                else
@@ -2754,6 +2761,9 @@ afd_exit(void)
                   if (((i - 1) != DC_NO) && (proc_table[i - 1].status != NULL) &&
                       (((i - 1) != AFDD_NO) || (*proc_table[i - 1].status != NEITHER)))
                   {
+                     kill_list[kill_counter] = *(pid_t *)ptr;
+                     kill_pos_list[kill_counter] = i;
+                     kill_counter++;
                      *proc_table[i - 1].status = STOPPED;
                   }
                }
@@ -2770,6 +2780,79 @@ afd_exit(void)
          ptr += sizeof(pid_t);
       }
       *proc_table[SLOG_NO].status = STOPPED;
+
+      /*
+       * On newer Linux system after an rpm update of AFD
+       * all process not stopped via fifo are unkillable via
+       * SIGINT. Currently I do not know why this is so.
+       * To ensure all process are gone, kill them again
+       * with SIGKILL.
+       * NOTE: Remove this dirty hack once the cause is known.
+       */
+      if (kill_counter > 0)
+      {
+         int   j;
+         pid_t pid;
+
+         /* Give them some time to terminate themself. */
+         (void)my_usleep(100000);
+
+         /* Catch zombies. */
+         for (i = 0; i < kill_counter; i++)
+         {
+            if (kill_pos_list[i] != -1)
+            {
+               for (j = 0; j < 3; j++)
+               {
+                  if ((pid = waitpid(kill_list[i], NULL, WNOHANG)) > 0)
+                  {
+                     if (pid == kill_list[i])
+                     {
+                        kill_pos_list[i] = -1;
+                        break;
+                     }
+                     else
+                     {
+                        int k;
+
+                        for (k = 0; k < kill_counter; k++)
+                        {
+                           if (pid == kill_list[k])
+                           {
+                              kill_pos_list[k] = -1;
+                              k = kill_counter;
+                           }
+                        }
+                        my_usleep(100000);
+                     }
+                  }
+                  else
+                  {
+                     my_usleep(100000);
+                  }
+               }
+            }
+         }
+
+         for (i = 0; i < kill_counter; i++)
+         {
+            /* Check if it was caught by waitpid(). */
+            if (kill_pos_list[i] != -1)
+            {
+               if (kill(kill_list[i], SIGKILL) != -1)
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
+                             _("Killed %d %s the hard way!"),
+#else
+                             _("Killed %lld %s the hard way!"),
+#endif
+                             (pri_pid_t)kill_list[i],
+                             proc_table[kill_pos_list[i] - 1].proc_name);
+               }
+            }
+         }
+      }
 
       if (p_afd_status->hostname[0] != '\0')
       {
@@ -2844,6 +2927,10 @@ afd_exit(void)
                   (counter < 1000));
          (void)my_usleep(10000L);
          (void)kill(syslog, SIGINT);
+
+         /* The dirty hack above is also needed for system log. */
+         (void)my_usleep(100000L);
+         (void)kill(syslog, SIGKILL);
       }
    }
 
