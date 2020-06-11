@@ -1277,6 +1277,7 @@ main(int argc, char *argv[])
                                      "Total file counter less then zero. Correcting to %d.",
                                      tmp_val);
                            fsa->total_file_counter = tmp_val;
+                           file_size_to_retrieve_shown = tmp_val;
                         }
 #endif
 
