@@ -2909,28 +2909,51 @@ afd_exit(void)
       /* As the last process kill the system log process. */
       if (syslog > 0)
       {
-         int            counter = 0;
+         int            gotcha = NO;
          fd_set         rset;
          struct timeval timeout;
 
          /* Give system log some time to tell whether AMG, FD, etc */
          /* have been stopped.                                     */
          FD_ZERO(&rset);
+         i = 0;
          do
          {
             (void)my_usleep(5000L);
             FD_SET(sys_log_fd, &rset);
             timeout.tv_usec = 10000L;
             timeout.tv_sec = 0L;
-            counter++;
+            i++;
          } while ((select(sys_log_fd + 1, &rset, NULL, NULL, &timeout) > 0) &&
-                  (counter < 1000));
+                  (i < 1000));
          (void)my_usleep(10000L);
          (void)kill(syslog, SIGINT);
 
          /* The dirty hack above is also needed for system log. */
          (void)my_usleep(100000L);
-         (void)kill(syslog, SIGKILL);
+         for (i = 0; i < 3; i++)
+         {
+            if (waitpid(syslog, NULL, WNOHANG) == syslog)
+            {
+               gotcha = YES;
+               break;
+            }
+            else
+            {
+               (void)my_usleep(100000L);
+            }
+         }
+         if (gotcha == NO)
+         {
+            (void)kill(syslog, SIGKILL);
+            (void)fprintf(stderr,
+#if SIZEOF_PID_T == 4
+                          "Killed process %s (%d) the hard way.\n",
+#else
+                          "Killed process %s (%lld) the hard way.\n",
+#endif
+                          SLOG, (pri_pid_t)syslog);
+         }
       }
    }
 
