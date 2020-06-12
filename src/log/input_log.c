@@ -1,6 +1,6 @@
 /*
  *  input_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -311,8 +311,8 @@ main(int argc, char *argv[])
                  _("Could not register exit function : %s"), strerror(errno));
    }
 
-   /* Ignore any SIGTERM + SIGHUP signal. */
-   if ((signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
+   /* Initialise signal handlers. */
+   if ((signal(SIGTERM, sig_exit) == SIG_ERR) ||
        (signal(SIGHUP, SIG_IGN) == SIG_ERR) ||
        (signal(SIGINT, sig_exit) == SIG_ERR) ||
        (signal(SIGQUIT, sig_exit) == SIG_ERR))

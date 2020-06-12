@@ -1,6 +1,6 @@
 /*
  *  system_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -141,7 +141,6 @@ main(int argc, char *argv[])
    /* Initialise signal handlers. */
    if ((signal(SIGSEGV, sig_segv) == SIG_ERR) ||
        (signal(SIGBUS, sig_bus) == SIG_ERR) ||
-       (signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
        (signal(SIGHUP, SIG_IGN) == SIG_ERR))
    {
       (void)rec(sys_log_fd, FATAL_SIGN, "signal() error : %s (%s %d)\n",

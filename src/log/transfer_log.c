@@ -1,6 +1,6 @@
 /*
  *  transfer_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -261,9 +261,8 @@ main(int argc, char *argv[])
    transfer_file = open_log_file(current_log_file);
 #endif
 
-   /* Ignore any SIGTERM + SIGHUP signal. */
-   if ((signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
-       (signal(SIGHUP, SIG_IGN) == SIG_ERR))
+   /* Initialise signal handler. */
+   if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
    {
       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                  "signal() error : %s", strerror(errno));

@@ -1,6 +1,6 @@
 /*
  *  confirmation_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2015 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -366,8 +366,8 @@ main(int argc, char *argv[])
                  _("Could not register exit function : %s"), strerror(errno));
    }
 
-   /* Ignore any SIGTERM + SIGHUP signal. */
-   if ((signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
+   /* Initialise signal handlers. */
+   if ((signal(SIGTERM, sig_exit) == SIG_ERR) ||
        (signal(SIGHUP, SIG_IGN) == SIG_ERR) ||
        (signal(SIGINT, sig_exit) == SIG_ERR) ||
        (signal(SIGQUIT, sig_exit) == SIG_ERR))

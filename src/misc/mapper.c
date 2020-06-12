@@ -177,7 +177,7 @@ main(int argc, char *argv[])
 
    if ((signal(SIGINT, saver) == SIG_ERR) ||
        (signal(SIGQUIT, saver) == SIG_ERR) ||
-       (signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
+       (signal(SIGTERM, saver) == SIG_ERR) ||
        (signal(SIGABRT, saver) == SIG_ERR) ||
        (signal(SIGSEGV, saver) == SIG_ERR))
    {

@@ -409,7 +409,6 @@ main(int argc, char *argv[])
 
    if ((signal(SIGSEGV, sig_handler) == SIG_ERR) ||
        (signal(SIGBUS, sig_handler) == SIG_ERR) ||
-       (signal(SIGTERM, SIG_IGN) == SIG_ERR) ||
        (signal(SIGHUP, SIG_IGN) == SIG_ERR))
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
