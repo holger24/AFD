@@ -823,7 +823,15 @@ afdd_exit(void)
 {
    if (in_child == NO)
    {
-      int i;
+      int   kill_counter = 0,
+            i;
+      pid_t *kill_list;
+
+      if ((kill_list = malloc(max_afdd_connections * sizeof(pid_t))) == NULL)
+      {
+         (void)system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "malloc() error : %s", strerror(errno));
+      }
 
       /* Kill all child process. */
       for (i = 0; i < max_afdd_connections; i++)
@@ -841,6 +849,76 @@ afdd_exit(void)
                              _("Failed to kill() %lld : %s"),
 #endif
                              (pri_pid_t)pid[i], strerror(errno));
+               }
+            }
+            else
+            {
+               if (kill_list != NULL)
+               {
+                  kill_list[kill_counter] = pid[i];
+                  kill_counter++;
+               }
+            }
+         }
+      }
+
+      if ((kill_counter > 0) && (kill_list != NULL))
+      {
+         int   j;
+         pid_t returned_pid;
+
+         /* Give them some time to terminate themself. */
+         (void)my_usleep(100000);
+
+         /* Catch zombies. */
+         for (i = 0; i < kill_counter; i++)
+         {
+            if (kill_list[i] != 0)
+            {
+               for (j = 0; j < 3; j++)
+               {
+                  if ((returned_pid = waitpid(kill_list[i], NULL, WNOHANG)) > 0)
+                  {
+                     if (returned_pid == kill_list[i])
+                     {
+                        kill_list[i] = 0;
+                        break;
+                     }
+                     else
+                     {
+                        int k;
+
+                        for (k = 0; k < kill_counter; k++)
+                        {
+                           if (returned_pid == kill_list[k])
+                           {
+                              kill_list[i] = 0;
+                              k = kill_counter;
+                           }
+                        }
+                        my_usleep(100000);
+                     }
+                  }
+                  else
+                  {
+                     my_usleep(100000);
+                  }
+               }
+            }
+         }
+         for (i = 0; i < kill_counter; i++)
+         {
+            if (kill_list[i] != 0)
+            {
+               if (kill(kill_list[i], SIGKILL) != -1)
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
+                             _("Killed %s (%d) the hard way!"),
+#else
+                             _("Killed %s (%lld) the hard way!"),
+#endif
+                             AFDD, (pri_pid_t)kill_list[i]);
                }
             }
          }

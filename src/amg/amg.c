@@ -984,6 +984,20 @@ main(int argc, char *argv[])
                      my_usleep(100000L);
                   }
                }
+               if (dc_pid != NOT_RUNNING)
+               {
+                  if (kill(dc_pid, SIGKILL) != -1)
+                  {
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
+                                _("Killed %s (%d) the hard way!"),
+#else
+                                _("Killed %s (%lld) the hard way!"),
+#endif
+                                DIR_CHECK, (pri_pid_t)dc_pid);
+                     dc_pid = NOT_RUNNING;
+                  }
+               }
             }
             if (using_groups == YES)
             {

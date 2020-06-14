@@ -2843,12 +2843,12 @@ afd_exit(void)
                {
                   system_log(DEBUG_SIGN, __FILE__, __LINE__,
 #if SIZEOF_PID_T == 4
-                             _("Killed %d %s the hard way!"),
+                             _("Killed %s (%d) the hard way!"),
 #else
-                             _("Killed %lld %s the hard way!"),
+                             _("Killed %s (%lld) the hard way!"),
 #endif
-                             (pri_pid_t)kill_list[i],
-                             proc_table[kill_pos_list[i] - 1].proc_name);
+                             proc_table[kill_pos_list[i] - 1].proc_name,
+                             (pri_pid_t)kill_list[i]);
                }
             }
          }
