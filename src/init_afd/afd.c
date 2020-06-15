@@ -1423,6 +1423,14 @@ usage(char *progname)
    (void)fprintf(stderr, _("    --help                    prints out this syntax\n"));
    (void)fprintf(stderr, _("    -v                        just print version number\n"));
    (void)fprintf(stderr, _("    --version                 show current version\n"));
+   (void)fprintf(stderr, _("\n   Possible return values:\n"));
+   (void)fprintf(stderr, _("    %d                       No DIR_CONFIG.\n"), NO_DIR_CONFIG);
+   (void)fprintf(stderr, _("    %d                        Success.\n"), SUCCESS);
+   (void)fprintf(stderr, _("    %d                        AFD is active.\n"), AFD_IS_ACTIVE);
+   (void)fprintf(stderr, _("    %d                        AFD is disabled by sysadm.\n"), AFD_DISABLED_BY_SYSADM);
+   (void)fprintf(stderr, _("    %d                        AFD not responding.\n"), AFD_NOT_RESPONDING);
+   (void)fprintf(stderr, _("    %d                       AFD not active.\n"), AFD_IS_NOT_ACTIVE);
+   (void)fprintf(stderr, _("    %d                       Not on correct host.\n"), NOT_ON_CORRECT_HOST);
 
    return;
 }
