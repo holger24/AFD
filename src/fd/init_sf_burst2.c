@@ -1,6 +1,6 @@
 /*
  *  init_sf_burst2.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -235,6 +235,11 @@ init_sf_burst2(struct job   *p_new_db,
          free(db.reply_to);
       }
       db.reply_to = p_new_db->reply_to;
+      if (db.group_mail_domain != NULL)
+      {
+         free(db.group_mail_domain);
+      }
+      db.group_mail_domain = p_new_db->group_mail_domain;
 #ifdef _WITH_DE_MAIL_SUPPORT
       db.de_mail_options = p_new_db->de_mail_options;
       if (db.de_mail_sender != NULL)

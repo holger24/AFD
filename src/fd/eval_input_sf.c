@@ -41,6 +41,7 @@ DESCR__S_M3
  **          -D <DE-mail sender>       The sender DE-mail address.
  **          -e <seconds>              Disconnect after given time.
  **          -f <SMTP from>            Default from identifier to send.
+ **          -g <group mail domain>    Group mail domain.
  **          -h <HTTP proxy>[:<port>]  Proxy where to send the HTTP requests.
  **          -m <mode>                 Create target dir mode.
  **          -o <retries>              Old/Error message and number of retries.
@@ -73,6 +74,7 @@ DESCR__S_M3
  **   01.07.2015 H.Kiehl Added -e for disconnect time.
  **   16.07.2017 H.Kiehl Added -m for create target dir mode.
  **   24.08.2017 H.Kiehl Added -C to specify the default charset.
+ **   22.06.2020 H.Kiehl Added -g to set group mail domain.
  **
  */
 DESCR__E_M3
@@ -398,6 +400,39 @@ eval_input_sf(int argc, char *argv[], struct job *p_db)
                                        ret = SYNTAX_ERROR;
                                     }
                                     break;
+                                 case 'g' : /* Group mail domain. */
+                                    if (((i + 1) < argc) &&
+                                        (argv[i + 1][0] != '-'))
+                                    {
+                                       size_t length;
+
+                                       i++;
+                                       length = strlen(argv[i]) + 1;
+                                       if ((p_db->group_mail_domain = malloc(length)) == NULL)
+                                       {
+                                          (void)fprintf(stderr,
+# if SIZEOF_SIZE_T == 4
+                                                        "ERROR   : Failed to malloc() %d bytes : %s",
+# else
+                                                        "ERROR   : Failed to malloc() %lld bytes : %s",
+# endif
+                                                        (pri_size_t)length,
+                                                        strerror(errno));
+                                          ret = ALLOC_ERROR;
+                                       }
+                                       else
+                                       {
+                                          (void)strcpy(p_db->group_mail_domain, argv[i]);
+                                       }
+                                    }
+                                    else
+                                    {
+                                       (void)fprintf(stderr,
+                                                     "ERROR   : No mail group domain specified for -g option.\n");
+                                       usage(argv[0]);
+                                       ret = SYNTAX_ERROR;
+                                    }
+                                    break;
                                  case 'h' : /* Default HTTP proxy. */
                                     if (((i + 1) < argc) &&
                                         (argv[i + 1][0] != '-'))
@@ -711,6 +746,7 @@ usage(char *name)
 #endif
    (void)fprintf(stderr, "  -e <seconds>              - Disconnect after the given amount of time.\n");
    (void)fprintf(stderr, "  -f <SMTP from>            - Default from identifier to send.\n");
+   (void)fprintf(stderr, "  -g <group mail domain>    - Group mail domain.\n");
    (void)fprintf(stderr, "  -h <HTTP proxy>[:<port>]  - Proxy where to send the HTTP request.\n");
    (void)fprintf(stderr, "  -m <mode>                 - Mode of the created target dir.\n");
    (void)fprintf(stderr, "  -o <retries>              - Old/error message and number of retries.\n");

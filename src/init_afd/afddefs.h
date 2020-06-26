@@ -1152,6 +1152,8 @@ typedef unsigned long       u_long_64;
 #define SHOW_ALL_GROUP_MEMBERS_ID_LENGTH (sizeof(SHOW_ALL_GROUP_MEMBERS_ID) - 1)
 #define HIDE_ALL_GROUP_MEMBERS_ID        "hide all group members"
 #define HIDE_ALL_GROUP_MEMBERS_ID_LENGTH (sizeof(HIDE_ALL_GROUP_MEMBERS_ID) - 1)
+#define SHOW_NO_TO_LINE_ID               "show no to line"
+#define SHOW_NO_TO_LINE_ID_LENGTH        (sizeof(SHOW_NO_TO_LINE_ID) - 1)
 #define MATCH_REMOTE_SIZE_ID             "match size"
 #define MATCH_REMOTE_SIZE_ID_LENGTH      (sizeof(MATCH_REMOTE_SIZE_ID) - 1)
 #define SILENT_NOT_LOCKED_FILE_ID        "silent not locked"
@@ -1257,6 +1259,7 @@ typedef unsigned long       u_long_64;
 #define DEFAULT_SMTP_FROM_DEF            "DEFAULT_SMTP_FROM"
 #define DEFAULT_SMTP_REPLY_TO_DEF        "DEFAULT_SMTP_REPLY_TO"
 #define DEFAULT_CHARSET_DEF              "DEFAULT_CHARSET"
+#define DEFAULT_GROUP_MAIL_DOMAIN_DEF    "DEFAULT_GROUP_MAIL_DOMAIN"
 #ifdef _WITH_DE_MAIL_SUPPORT
 # define DEFAULT_DE_MAIL_SENDER_DEF      "DEFAULT_DE_MAIL_SENDER"
 # define DEFAULT_DE_MAIL_CONF_TIMEUP_DEF "DEFAULT_DE_MAIL_CONF_TIMEUP"

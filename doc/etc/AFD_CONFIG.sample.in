@@ -402,6 +402,13 @@ MAX_CONNECTIONS                  80
 #DEFAULT_CHARSET                  utf-8
 
 ##########################################################################
+# When sending the same mail to multiple users and mail group            #
+# functionality of AFD, by default it just sends the group name without  #
+# domain. With this option you can set a domain for all groups.          #
+##########################################################################
+#DEFAULT_GROUP_MAIL_DOMAIN        ducktown.de
+
+##########################################################################
 # The maximum number of files that are copied before they are send to    #
 # the FD.                                                                #
 # Default: 100                                                           #

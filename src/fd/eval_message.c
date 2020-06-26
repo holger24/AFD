@@ -1,6 +1,6 @@
 /*
  *  eval_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -93,6 +93,7 @@ DESCR__S_M3
  **   14.05.2017 H.Kiehl When storing mail address allow user to place
  **                      the current host name with the %H and %h option.
  **   06.07.2019 H.Kiehl Added support for trans_srename.
+ **   22.06.2020 H.Kiehl Added option 'show no to line'.
  **
  */
 DESCR__E_M3
@@ -175,11 +176,12 @@ static char *store_mail_address(char *, char **, char *, unsigned int);
 #define SHOW_ALL_GROUP_MEMBERS_FLAG 32
 #define CHECK_REMOTE_SIZE_FLAG      64
 #define HIDE_ALL_GROUP_MEMBERS_FLAG 128
+#define SHOW_NO_TO_LINE_FLAG        256
 #ifdef _WITH_DE_MAIL_SUPPORT
-# define CONF_OF_RETRIEVE_FLAG      256
+# define CONF_OF_RETRIEVE_FLAG      512
 #endif
-#define SILENT_DEF_NO_LOCK_FLAG     512
-#define TRANS_SRENAME_FLAG          1024
+#define SILENT_DEF_NO_LOCK_FLAG     1024
+#define TRANS_SRENAME_FLAG          2048
 
 
 #define MAX_HUNK                    4096
@@ -1017,6 +1019,21 @@ eval_message(char *message_name, struct job *p_db)
                  {
                     used2 |= HIDE_ALL_GROUP_MEMBERS_FLAG;
                     p_db->special_flag |= HIDE_ALL_GROUP_MEMBERS;
+                    while ((*ptr != '\n') && (*ptr != '\0'))
+                    {
+                       ptr++;
+                    }
+                    while (*ptr == '\n')
+                    {
+                       ptr++;
+                    }
+                 }
+            else if (((used2 & SHOW_NO_TO_LINE_FLAG) == 0) &&
+                     (CHECK_STRNCMP(ptr, SHOW_NO_TO_LINE_ID,
+                                    SHOW_NO_TO_LINE_ID_LENGTH) == 0))
+                 {
+                    used2 |= SHOW_NO_TO_LINE_FLAG;
+                    p_db->special_flag |= SMTP_GROUP_NO_TO_LINE;
                     while ((*ptr != '\n') && (*ptr != '\0'))
                     {
                        ptr++;

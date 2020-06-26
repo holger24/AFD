@@ -1,6 +1,6 @@
 /*
  *  init_sf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -146,6 +146,7 @@ init_sf(int argc, char *argv[], char *file_path, int protocol)
    db.special_ptr = NULL;
    db.subject = NULL;
    db.exec_cmd = NULL;
+   db.group_mail_domain = NULL;
 #ifdef _WITH_TRANS_EXEC
    db.trans_exec_cmd = NULL;
    db.trans_exec_timeout = DEFAULT_EXEC_TIMEOUT;

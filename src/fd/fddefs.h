@@ -288,6 +288,7 @@
 #define SMTP_SERVER_NAME_IN_AFD_CONFIG 8192
 #define SEQUENCE_LOCKING               16384
 #define LOGIN_EXEC_FTP                 32768
+#define SMTP_GROUP_NO_TO_LINE          32768
 #define TRANS_RENAME_PRIMARY_ONLY      65536
 #define TRANS_RENAME_SECONDARY_ONLY    131072
 #define SMTP_SERVER_NAME_IN_MESSAGE    262144
@@ -437,6 +438,7 @@ struct job
           char          smtp_server[MAX_REAL_HOSTNAME_LENGTH];
                                          /* SMTP server name.            */
           char          timezone[MAX_TIMEZONE_LENGTH + 1];
+          char          *group_mail_domain;
           int           no_of_restart_files;
           int           subject_rule_pos;
           int           trans_rule_pos;
@@ -601,8 +603,9 @@ struct job
                                          /*|   | attachment.            |*/
                                          /*|   | LOC : change UID & GID |*/
                                          /*| 6 | WMO : Sequence number. |*/
-                                         /*|   | FTP : No login.        |*/
+                                         /*|   | SMTP: Encode ANSI.     |*/
                                          /*| 7 | LOC : Change permission|*/
+                                         /*|   | SMTP: Attach all files.|*/
                                          /*| 8 | Error file under       |*/
                                          /*|   | process.               |*/
                                          /*| 9 | SMTP: Subject          |*/
@@ -613,7 +616,8 @@ struct job
                                          /*|13 | The SMTP server name   |*/
                                          /*|   | comes from AFD_CONFIG. |*/
                                          /*|14 | FTP: Sequence locking. |*/
-                                         /*|15 | FTP: Login exec.       |*/
+                                         /*|15 | FTP : Login exec.      |*/
+                                         /*|   | SMTP: Group no to line.|*/
                                          /*|16 | Apply trans_rename for |*/
                                          /*|   | primary only.          |*/
                                          /*|17 | Apply trans_rename for |*/

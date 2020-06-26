@@ -141,7 +141,7 @@ the new value:
 </tr>
 <tr>
    <td valign=top><a name="show_log_priority">SHOW_LOG_PRIORITY</a></td>
-   <td>Scheduling priority that the grapical dialogs showing log data:
+   <td>Scheduling priority that the graphical dialogs showing log data:
        <a href="show_log.html">show_log</a>, <a href="show_elog.html">
        show_elog</a>, <a href="show_ilog.html">show_ilog</a>,
        <a href="show_olog.html">show_olog</a> and <a href="show_dlog.html">
@@ -547,6 +547,15 @@ the new value:
    <td valign=top>fd</td>
 </tr>
 <tr>
+   <td valign=top><a name="default_group_mail_domain">DEFAULT_GROUP_MAIL_DOMAIN</a></td>
+   <td>When sending the same mail to multiple users and
+       <a href="dir_config.html#group_list">mail group</a> functionality
+       of AFD, by default it just sends the group name. To make it
+       a fully qualified address one can set here the domain.</td>
+   <td valign=top>Not set</td>
+   <td valign=top>fd</td>
+</tr>
+<tr>
    <td valign=top><a name="max_copied_files">MAX_COPIED_FILES</a></td>
    <td>The maximum number of files that are copied before they are
        send to the FD. This value is set so that the AFD starts sending
@@ -567,7 +576,7 @@ the new value:
 <tr>
    <td valign=top><a name="force_reread_interval">FORCE_REREAD_INTERVAL</a></td>
    <td>Here one can set the minimal interval in seconds at which all source
-       directories must be scaned. This can be useful on systems that do not
+       directories must be scanned. This can be useful on systems that do not
        update the directory modification time reliably (for example NFS when
        time of client and server is out of sync). Setting this will generate a
        higher system load, since directories will be scanned more often.</td>
@@ -640,7 +649,7 @@ the new value:
 </tr>
 <tr>
    <td valign=top><a name="sf_force_disconnect">SF_FORCE_DISCONNECT</a></td>
-   <td>See description above. This is the same the only differnce being
+   <td>See description above. This is the same the only difference being
        that this is for sending files.</td>
    <td valign=top>0 (Never disconnect)</td>
    <td valign=top>fd</td>
@@ -858,7 +867,7 @@ restarted.
    <td width="90%"><small><address>
    Copyright &copy; 1999 - 2020 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 01.06.2020
+   Last updated: 22.06.2020
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

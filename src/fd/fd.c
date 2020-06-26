@@ -199,6 +199,7 @@ char                       stop_flag = 0,
                            file_dir[MAX_PATH_LENGTH],
                            msg_dir[MAX_PATH_LENGTH],
                            *default_charset,
+                           *default_group_mail_domain,
                            default_http_proxy[MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH],
 #ifdef _WITH_DE_MAIL_SUPPORT
                            *default_de_mail_sender,
@@ -767,6 +768,12 @@ main(int argc, char *argv[])
    system_log(DEBUG_SIGN, NULL, 0,
               "FD configuration: Default SMTP server           %s",
               (default_smtp_server[0] == '\0') ? SMTP_HOST_NAME : default_smtp_server);
+   if (default_group_mail_domain != NULL)
+   {
+      system_log(DEBUG_SIGN, NULL, 0,
+                 "FD configuration: Default group mail domain     %s",
+                 default_group_mail_domain);
+   }
 #ifdef _WITH_DE_MAIL_SUPPORT
    if (default_de_mail_sender != NULL)
    {
@@ -3477,6 +3484,13 @@ make_process(struct connection *con, int qb_pos)
          argcount++;
          args[argcount] = default_smtp_server;
       }
+      if (default_group_mail_domain != NULL)
+      {
+         argcount++;
+         args[argcount] = "-g";
+         argcount++;
+         args[argcount] = default_group_mail_domain;
+      }
 #ifdef _WITH_DE_MAIL_SUPPORT
       if ((con->protocol == DE_MAIL) && (default_de_mail_sender != NULL))
       {
@@ -4863,6 +4877,23 @@ get_afd_config_value(void)
       {
          default_charset = NULL;
       }
+      if (get_definition(buffer, DEFAULT_GROUP_MAIL_DOMAIN_DEF,
+                         config_file, MAX_PATH_LENGTH) != NULL)
+      {
+         if ((default_group_mail_domain = malloc(strlen(config_file) + 1)) == NULL)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "malloc() error : %s", strerror(errno));
+         }
+         else
+         {
+            (void)strcpy(default_group_mail_domain, config_file);
+         }
+      }
+      else
+      {
+         default_group_mail_domain = NULL;
+      }
 #ifdef _WITH_DE_MAIL_SUPPORT
       if (get_definition(buffer, DEFAULT_DE_MAIL_SENDER_DEF,
                          config_file,
@@ -5088,6 +5119,7 @@ get_afd_config_value(void)
       default_charset = NULL;
       default_smtp_from = NULL;
       default_smtp_reply_to = NULL;
+      default_group_mail_domain = NULL;
       (void)snprintf(str_remote_file_check_interval, MAX_INT_LENGTH, "%d",
                      remote_file_check_interval);
       if (*(unsigned char *)((char *)fsa - AFD_FEATURE_FLAG_OFFSET_END) & ENABLE_CREATE_TARGET_DIR)

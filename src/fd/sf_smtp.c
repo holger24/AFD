@@ -28,14 +28,15 @@ DESCR__S_M1
  **   sf_smtp <work dir> <job no.> <FSA id> <FSA pos> <msg name> [options]
  **
  **   options
- **       --version        Version
- **       -a <age limit>   The age limit for the files being send.
- **       -A               Disable archiving of files.
- **       -C <charset>     Default charset.
- **       -o <retries>     Old/Error message and number of retries.
- **       -r               Resend from archive (job from show_olog).
- **       -s <SMTP server> Server where to send the mails.
- **       -t               Temp toggle.
+ **       --version              Version
+ **       -a <age limit>         The age limit for the files being send.
+ **       -A                     Disable archiving of files.
+ **       -C <charset>           Default charset.
+ **       -g <group mail domain> Default group mail domain.
+ **       -o <retries>           Old/Error message and number of retries.
+ **       -r                     Resend from archive (job from show_olog).
+ **       -s <SMTP server>       Server where to send the mails.
+ **       -t                     Temp toggle.
  **
  ** DESCRIPTION
  **   sf_smtp sends the given files to the defined recipient via SMTP
@@ -84,6 +85,7 @@ DESCR__S_M1
  **   22.01.2009 H.Kiehl When adding the filename to the subject, add all
  **                      filenames if we have more then one file.
  **   24.08.2017 H.Kiehl Added option to specify the default charset.
+ **   22.06.2020 H.Kiehl Added option to set default group mail domanin.
  **
  */
 DESCR__E_M1
@@ -1726,34 +1728,82 @@ main(int argc, char *argv[])
             }
             else
             {
-               if (p_db->user[0] == MAIL_GROUP_IDENTIFIER)
+               if (((db.special_flag & SHOW_ALL_GROUP_MEMBERS) == 0) &&
+                   ((db.special_flag & HIDE_ALL_GROUP_MEMBERS) == 0))
                {
-                  if (((db.special_flag & SHOW_ALL_GROUP_MEMBERS) == 0) &&
-                      ((db.special_flag & HIDE_ALL_GROUP_MEMBERS) == 0))
+                  char *p_group_name;
+
+                  if (p_db->user[0] == MAIL_GROUP_IDENTIFIER)
                   {
-                     if (db.no_listed == 1)
+                     p_group_name = &p_db->user[1];
+                  }
+                  else
+                  {
+                     p_group_name = p_db->hostname;
+                  }
+
+                  if (db.no_listed == 1)
+                  {
+                     length = snprintf(buffer, buffer_size,
+                                       "To: %s\r\n", db.group_list[0]);
+                  }
+                  else
+                  {
+                     if (db.special_flag & SMTP_GROUP_NO_TO_LINE)
                      {
-                        length = snprintf(buffer, buffer_size,
-                                          "To: %s\r\n", db.group_list[0]);
+                        length = 0;
                      }
                      else
                      {
                         /* This is tricky: To: group name */
-                        length = snprintf(buffer, buffer_size,
-                                          "To: %s\r\n", &p_db->user[1]);
+                        if (p_db->group_mail_domain == NULL)
+                        {
+                           length = snprintf(buffer, buffer_size,
+                                             "To: %s\r\n", p_group_name);
+                        }
+                        else
+                        {
+                           length = snprintf(buffer, buffer_size,
+                                             "To: %s@%s\r\n",
+                                             p_group_name,
+                                             p_db->group_mail_domain);
+                        }
                      }
-                     if (length >= buffer_size)
-                     {
-                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                  "Buffer length for mail header to small!");
-                        (void)smtp_quit();
-                        exit(ALLOC_ERROR);
-                     }
+                  }
+                  if (length >= buffer_size)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Buffer length for mail header to small!");
+                     (void)smtp_quit();
+                     exit(ALLOC_ERROR);
+                  }
+               }
+               else
+               {
+                  int k;
+
+                  if  (db.special_flag & HIDE_ALL_GROUP_MEMBERS)
+                  {
+                     length = snprintf(buffer, buffer_size,
+                                       "To: %s\r\nBcc: %s",
+                                       db.group_list[0], db.group_list[0]);
                   }
                   else
                   {
-                     int k;
-
+                     length = snprintf(buffer, buffer_size,
+                                    "To: %s", db.group_list[0]);
+                  }
+                  if (length >= buffer_size)
+                  {
+                     buffer_size += MAX_RECIPIENT_LENGTH;
+                     if ((buffer = realloc(buffer, buffer_size)) == NULL)
+                     {
+                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                  "Failed to realloc() %d bytes : %s",
+                                  buffer_size, strerror(errno));
+                        (void)smtp_quit();
+                        exit(ALLOC_ERROR);
+                     }
                      if  (db.special_flag & HIDE_ALL_GROUP_MEMBERS)
                      {
                         length = snprintf(buffer, buffer_size,
@@ -1767,6 +1817,17 @@ main(int argc, char *argv[])
                      }
                      if (length >= buffer_size)
                      {
+                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                  "Buffer length for mail header to small (%d)!",
+                                  buffer_size);
+                        (void)smtp_quit();
+                        exit(ALLOC_ERROR);
+                     }
+                  }
+                  for (k = 1; k < db.no_listed; k++)
+                  {
+                     if ((length + MAX_RECIPIENT_LENGTH) > buffer_size)
+                     {
                         buffer_size += MAX_RECIPIENT_LENGTH;
                         if ((buffer = realloc(buffer, buffer_size)) == NULL)
                         {
@@ -1776,90 +1837,46 @@ main(int argc, char *argv[])
                            (void)smtp_quit();
                            exit(ALLOC_ERROR);
                         }
-                        if  (db.special_flag & HIDE_ALL_GROUP_MEMBERS)
-                        {
-                           length = snprintf(buffer, buffer_size,
-                                             "To: %s\r\nBcc: %s",
-                                             db.group_list[0], db.group_list[0]);
-                        }
-                        else
-                        {
-                           length = snprintf(buffer, buffer_size,
-                                             "To: %s", db.group_list[0]);
-                        }
-                        if (length >= buffer_size)
-                        {
-                           trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                     "Buffer length for mail header to small (%d)!",
-                                     buffer_size);
-                           (void)smtp_quit();
-                           exit(ALLOC_ERROR);
-                        }
                      }
-                     for (k = 1; k < db.no_listed; k++)
+                     length += snprintf(buffer + length, buffer_size - length,
+                                        ", %s", db.group_list[k]);
+                     if (length >= buffer_size)
                      {
-                        if ((length + MAX_RECIPIENT_LENGTH) > buffer_size)
-                        {
-                           buffer_size += MAX_RECIPIENT_LENGTH;
-                           if ((buffer = realloc(buffer, buffer_size)) == NULL)
-                           {
-                              trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                        "Failed to realloc() %d bytes : %s",
-                                        buffer_size, strerror(errno));
-                              (void)smtp_quit();
-                              exit(ALLOC_ERROR);
-                           }
-                        }
-                        length += snprintf(buffer + length, buffer_size - length,
-                                           ", %s", db.group_list[k]);
-                        if (length >= buffer_size)
-                        {
-                           trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                     "Buffer length for mail header to small (%d)!",
-                                     buffer_size);
-                           (void)smtp_quit();
-                           exit(ALLOC_ERROR);
-                        }
+                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                  "Buffer length for mail header to small (%d)!",
+                                  buffer_size);
+                        (void)smtp_quit();
+                        exit(ALLOC_ERROR);
                      }
-                     if ((length + 2) > buffer_size)
-                     {
-                        buffer_size = length + 2;
-                        if ((buffer = realloc(buffer, buffer_size)) == NULL)
-                        {
-                           trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                     "Failed to realloc() %d bytes : %s",
-                                     buffer_size, strerror(errno));
-                           (void)smtp_quit();
-                           exit(ALLOC_ERROR);
-                        }
-                     }
-                     buffer[length] = '\r';
-                     buffer[length + 1] = '\n';
-                     length += 2;
                   }
-               }
-               else
-               {
-                  length = snprintf(buffer, buffer_size,
-                                    "To: %s\r\n", p_db->hostname);
-                  if (length >= buffer_size)
+                  if ((length + 2) > buffer_size)
                   {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                               "Buffer length for mail header to small (%d)!",
-                               buffer_size);
-                     (void)smtp_quit();
-                     exit(ALLOC_ERROR);
+                     buffer_size = length + 2;
+                     if ((buffer = realloc(buffer, buffer_size)) == NULL)
+                     {
+                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                  "Failed to realloc() %d bytes : %s",
+                                  buffer_size, strerror(errno));
+                        (void)smtp_quit();
+                        exit(ALLOC_ERROR);
+                     }
                   }
+                  buffer[length] = '\r';
+                  buffer[length + 1] = '\n';
+                  length += 2;
                }
             }
-            if (smtp_write(buffer, NULL, length) < 0)
+            if (length > 0)
             {
-               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                         "Failed to write To header to SMTP-server.");
-               (void)smtp_quit();
-               exit(eval_timeout(WRITE_REMOTE_ERROR));
+               if (smtp_write(buffer, NULL, length) < 0)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "Failed to write To header to SMTP-server.");
+                  (void)smtp_quit();
+                  exit(eval_timeout(WRITE_REMOTE_ERROR));
+               }
+               no_of_bytes += length;
             }
-            no_of_bytes += length;
 
             /* Send MIME information. */
             if (db.special_flag & ATTACH_FILE)
