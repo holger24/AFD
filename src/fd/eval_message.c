@@ -94,6 +94,7 @@ DESCR__S_M3
  **                      the current host name with the %H and %h option.
  **   06.07.2019 H.Kiehl Added support for trans_srename.
  **   22.06.2020 H.Kiehl Added option 'show no to line'.
+ **   29.06.2020 H.Kiehl Added option 'group-to'.
  **
  */
 DESCR__E_M3
@@ -182,6 +183,7 @@ static char *store_mail_address(char *, char **, char *, unsigned int);
 #endif
 #define SILENT_DEF_NO_LOCK_FLAG     1024
 #define TRANS_SRENAME_FLAG          2048
+#define GROUP_TO_FLAG               4096
 
 
 #define MAX_HUNK                    4096
@@ -678,7 +680,7 @@ eval_message(char *message_name, struct job *p_db)
                        ptr++;
                     }
                  }
-            else if (((used & TRANS_SRENAME_FLAG) == 0) &&
+            else if (((used2 & TRANS_SRENAME_FLAG) == 0) &&
                      (CHECK_STRNCMP(ptr, TRANS_SRENAME_ID,
                                     TRANS_SRENAME_ID_LENGTH) == 0))
                  {
@@ -1794,6 +1796,37 @@ eval_message(char *message_name, struct job *p_db)
                        }
                        ptr = store_mail_address(ptr, &p_db->reply_to,
                                                 REPLY_TO_ID, p_db->id.job);
+                    }
+                    else
+                    {
+                       while ((*ptr != '\n') && (*ptr != '\0'))
+                       {
+                          ptr++;
+                       }
+                    }
+                    while (*ptr == '\n')
+                    {
+                       ptr++;
+                    }
+                 }
+            else if (((used2 & GROUP_TO_FLAG) == 0) &&
+                     (CHECK_STRNCMP(ptr, GROUP_TO_ID, GROUP_TO_ID_LENGTH) == 0))
+                 {
+                    used2 |= GROUP_TO_FLAG;
+#ifdef _WITH_DE_MAIL_SUPPORT
+                    if ((p_db->protocol & SMTP_FLAG) ||
+                        (p_db->protocol & DE_MAIL_FLAG))
+#else
+                    if (p_db->protocol & SMTP_FLAG)
+#endif
+                    {
+                       ptr += GROUP_TO_ID_LENGTH;
+                       while ((*ptr == ' ') || (*ptr == '\t'))
+                       {
+                          ptr++;
+                       }
+                       ptr = store_mail_address(ptr, &p_db->group_to,
+                                                GROUP_TO_ID, p_db->id.job);
                     }
                     else
                     {

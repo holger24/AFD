@@ -235,6 +235,11 @@ init_sf_burst2(struct job   *p_new_db,
          free(db.reply_to);
       }
       db.reply_to = p_new_db->reply_to;
+      if (db.group_to != NULL)
+      {
+         free(db.group_to);
+      }
+      db.group_to = p_new_db->group_to;
       if (db.group_mail_domain != NULL)
       {
          free(db.group_mail_domain);

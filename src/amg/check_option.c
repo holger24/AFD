@@ -1,6 +1,6 @@
 /*
  *  check_option.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1523,6 +1523,22 @@ check_option(char *option, FILE *cmd_fp)
               return(INCORRECT);
            }
         }
+   else if ((CHECK_STRNCMP(option, GROUP_TO_ID, GROUP_TO_ID_LENGTH) == 0) &&
+            ((*(option + GROUP_TO_ID_LENGTH) == ' ') ||
+             (*(option + GROUP_TO_ID_LENGTH) == '\t')))
+        {
+           ptr += GROUP_TO_ID_LENGTH + 1;
+           while ((*ptr == ' ') || (*ptr == '\t'))
+           {
+              ptr++;
+           }
+           if (*ptr == '\0')
+           {
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                            "No mail address specified.");
+              return(INCORRECT);
+           }
+        }
    else if ((CHECK_STRNCMP(option, CHARSET_ID, CHARSET_ID_LENGTH) == 0) &&
             ((*(option + CHARSET_ID_LENGTH) == ' ') ||
              (*(option + CHARSET_ID_LENGTH) == '\t')))
@@ -1735,6 +1751,8 @@ check_option(char *option, FILE *cmd_fp)
              (*(option + SHOW_ALL_GROUP_MEMBERS_ID_LENGTH) == '\0')) ||
             ((CHECK_STRNCMP(option, HIDE_ALL_GROUP_MEMBERS_ID, HIDE_ALL_GROUP_MEMBERS_ID_LENGTH) == 0) &&
              (*(option + HIDE_ALL_GROUP_MEMBERS_ID_LENGTH) == '\0')) ||
+            ((CHECK_STRNCMP(option, SHOW_NO_TO_LINE_ID, SHOW_NO_TO_LINE_ID_LENGTH) == 0) &&
+             (*(option + SHOW_NO_TO_LINE_ID_LENGTH) == '\0')) ||
             ((CHECK_STRNCMP(option, MATCH_REMOTE_SIZE_ID, MATCH_REMOTE_SIZE_ID_LENGTH) == 0) &&
              (*(option + MATCH_REMOTE_SIZE_ID_LENGTH) == '\0')) ||
             ((CHECK_STRNCMP(option, SILENT_NOT_LOCKED_FILE_ID, SILENT_NOT_LOCKED_FILE_ID_LENGTH) == 0) &&

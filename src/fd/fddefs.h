@@ -539,6 +539,8 @@ struct job
           char          *subject;        /* Subject for mail.            */
           char          *reply_to;       /* The address where the        */
                                          /* recipient sends the reply.   */
+          char          *group_to;       /* The address for the To line  */
+                                         /* when using groups.           */
           char          *default_from;   /* If DEFAULT_SMTP_FROM is set  */
                                          /* in AFD_CONFIG its value will */
                                          /* be stored here.              */

@@ -1104,6 +1104,8 @@ typedef unsigned long       u_long_64;
 #define ATTACH_ALL_FILES_ID_LENGTH       (sizeof(ATTACH_ALL_FILES_ID) - 1)
 #define REPLY_TO_ID                      "reply-to"
 #define REPLY_TO_ID_LENGTH               (sizeof(REPLY_TO_ID) - 1)
+#define GROUP_TO_ID                      "group-to"
+#define GROUP_TO_ID_LENGTH               (sizeof(GROUP_TO_ID) - 1)
 #define FROM_ID                          "from"
 #define FROM_ID_LENGTH                   (sizeof(FROM_ID) - 1)
 #define CHARSET_ID                       "charset"

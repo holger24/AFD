@@ -678,6 +678,7 @@ check_burst_sf(char         *file_path,
                p_new_db->subject                  = NULL;
                p_new_db->from                     = NULL;
                p_new_db->reply_to                 = NULL;
+               p_new_db->group_to                 = NULL;
                p_new_db->group_mail_domain        = NULL;
 #ifdef _WITH_DE_MAIL_SUPPORT
                p_new_db->de_mail_options          = DEFAULT_CONFIRMATION;

@@ -132,6 +132,7 @@ init_sf(int argc, char *argv[], char *file_path, int protocol)
         }
 /* db.disconnect = 0; */
    db.reply_to = NULL;
+   db.group_to = NULL;
    db.default_from = NULL;
    db.from = NULL;
    db.default_charset = NULL;

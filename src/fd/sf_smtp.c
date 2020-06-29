@@ -86,6 +86,7 @@ DESCR__S_M1
  **                      filenames if we have more then one file.
  **   24.08.2017 H.Kiehl Added option to specify the default charset.
  **   22.06.2020 H.Kiehl Added option to set default group mail domanin.
+ **   29.06.2020 H.Kiehl Added option group-to.
  **
  */
 DESCR__E_M1
@@ -1755,18 +1756,26 @@ main(int argc, char *argv[])
                      }
                      else
                      {
-                        /* This is tricky: To: group name */
-                        if (p_db->group_mail_domain == NULL)
+                        if (db.group_to == NULL)
                         {
-                           length = snprintf(buffer, buffer_size,
-                                             "To: %s\r\n", p_group_name);
+                           /* This is tricky: To: group name */
+                           if (p_db->group_mail_domain == NULL)
+                           {
+                              length = snprintf(buffer, buffer_size,
+                                                "To: %s\r\n", p_group_name);
+                           }
+                           else
+                           {
+                              length = snprintf(buffer, buffer_size,
+                                                "To: %s@%s\r\n",
+                                                p_group_name,
+                                                p_db->group_mail_domain);
+                           }
                         }
                         else
                         {
                            length = snprintf(buffer, buffer_size,
-                                             "To: %s@%s\r\n",
-                                             p_group_name,
-                                             p_db->group_mail_domain);
+                                             "To: %s\r\n", db.group_to);
                         }
                      }
                   }
