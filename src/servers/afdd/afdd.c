@@ -923,6 +923,7 @@ afdd_exit(void)
             }
          }
       }
+      free(kill_list);
 
       system_log(INFO_SIGN, NULL, 0, _("Stopped %s."), AFDD);
    }
