@@ -2395,10 +2395,12 @@ check_dummy_line:
                                       dir->file[j].file_group_name);
 
                         /* Print the name of each file. */
+                        tmp_ptr = dir->file[j].files;
                         for (k = 0; k < dir->file[j].fc; k++)
                         {
                            (void)fprintf(p_debug_file, "\t%3d: %s\n", k + 1,
-                                         dir->file[j].files[k]);
+                                         tmp_ptr);
+                           NEXT(tmp_ptr);
                         }
 
                         /* Print all destinations. */
@@ -2417,14 +2419,18 @@ check_dummy_line:
                            }
 
                            /* Show all options. */
-                           (void)fprintf(p_debug_file, "\t\t\tOptions:\n");
-                           for (m = 0; m < dir->file[j].dest[k].oc; m++)
+                           if (dir->file[j].dest[k].oc > 0)
                            {
-                              (void)fprintf(p_debug_file, "\t\t\t%3d: %s\n", m + 1,
-                                            dir->file[j].dest[k].options[m]);
+                              (void)fprintf(p_debug_file, "\t\t\tOptions:\n");
+                              for (m = 0; m < dir->file[j].dest[k].oc; m++)
+                              {
+                                 (void)fprintf(p_debug_file, "\t\t\t%3d: %s\n", m + 1,
+                                               dir->file[j].dest[k].options[m]);
+                              }
                            }
                         }
                      }
+                     (void)fflush(p_debug_file);
 #endif
                   }
                   else
