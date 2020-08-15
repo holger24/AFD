@@ -3124,13 +3124,13 @@ copy_job(int file_no, int dest_no, struct dir_group *dir)
          /* Now move local options 'offset' bytes forward so we can */
          /* store the no. of local options before the actual data.  */
          memmove((p_start + offset), p_start, (ptr - p_start));
-         ptr++;
+         ptr += (offset - 1);
 
          /* Store position of data for local options. */
          p_ptr[job_no].ptr[LOCAL_OPTIONS_PTR_POS] = p_start + offset - p_offset;
 
          /* Store number of local options. */
-         (void)strcpy(p_start, buffer);
+         (void)memcpy(p_start, buffer, offset);
 
          /* Insert local options flag. */
          p_ptr[job_no].ptr[LOCAL_OPTIONS_FLAG_PTR_POS] = ptr - p_offset;
