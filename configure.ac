@@ -14,6 +14,12 @@ REQUIRES=""
 BUILD_REQUIRES=""
 BUILD_REQUIRES_REDHAT=""
 
+afd_full_version="$VERSION"
+AFD_VERSION=`echo $VERSION | cut -d '-' -f 1`
+AC_SUBST(AFD_VERSION)
+AFD_RELEASE=`echo $VERSION | cut -d '-' -f 2`
+AC_SUBST(AFD_RELEASE)
+
 AC_TRY_COMPILE(,[long long i;],
                AC_DEFINE(HAVE_LONG_LONG, 1, [Define if C compiler supports long long type.]))
 
@@ -502,6 +508,11 @@ AC_ARG_ENABLE(efence,
    [ac_cv_efence="$enableval"],
    [ac_cv_efence="no"])
 
+AC_ARG_ENABLE(systemd,
+   [  --enable-systemd                enable systemd support],
+   [ac_cv_systemd="$enableval"],
+   [ac_cv_systemd="no"])
+
 dnl **** Check if we should build with GUI and with which widget set.
 AC_ARG_WITH(gui,
    [  --with-gui=GUI          Where GUI is either motif (default), gtk or none],
@@ -543,6 +554,18 @@ AC_ARG_ENABLE(afd_mon,
    esac
    ac_cv_afd_mon="$enableval"],[afd_mon=false;ac_cv_afd_mon="no"])
 AM_CONDITIONAL(WITH_AFD_MON, $afd_mon)
+if test "$afd_mon" = "false"
+then
+   if test "$compile_afd_mon_only" = "true"
+   then
+      WITH_AFD_MON_SPEC=1
+   else
+      WITH_AFD_MON_SPEC=0
+   fi
+else
+   WITH_AFD_MON_SPEC=1
+fi
+AC_SUBST(WITH_AFD_MON_SPEC)
 
 dnl **** check if user wants to compile with debugging support
 AC_ARG_ENABLE(compiler_debug,
@@ -740,7 +763,7 @@ dnl **** This was taken from the heartbeat package.
 prefix_orig="$prefix"
 prefix=`eval echo "$prefix"`
 case $prefix in
-  NONE) prefix=/usr/local;;
+  NONE) prefix=/usr;;
 esac                       
 var() {
   case $1 in
@@ -802,10 +825,17 @@ in
              else
                 OS_FLAG=""
              fi
+             AM_CONDITIONAL(IS_LINUX, false)
              ;;
-   bsdi*)    OS_FLAG="" ;;
-   cygwin*)  OS_FLAG="-D_CYGWIN" ;;
-   freebsd*) OS_FLAG="-DFREEBSD" ;;
+   bsdi*)    OS_FLAG=""
+             AM_CONDITIONAL(IS_LINUX, false)
+             ;;
+   cygwin*)  OS_FLAG="-D_CYGWIN"
+             AM_CONDITIONAL(IS_LINUX, false)
+             ;;
+   freebsd*) OS_FLAG="-DFREEBSD"
+             AM_CONDITIONAL(IS_LINUX, false)
+             ;;
    hpux*)    if test "${compile_64_bit}" = "true"
              then
                 if test "x${GCC}" = "xyes"
@@ -821,6 +851,7 @@ in
              then
                 CFLAGS=`echo " $CFLAGS " | sed 's/ -g / /g'`
              fi
+             AM_CONDITIONAL(IS_LINUX, false)
              ;;
    irix*)    if test "x$afd_map_lib_dir" = "x"
              then
@@ -838,60 +869,80 @@ in
              else
                 dnl **** MAP libs are only available in 32 Bit
                 OS_FLAG="-32 -DMMAP_KILLER -DIRIX"
-             fi ;;
+             fi
+             AM_CONDITIONAL(IS_LINUX, false)
+             ;;
    linux*)   if test "${compile_64_bit}" = "true"
              then
                 OS_FLAG="-m64 -DLINUX"
              else
                 OS_FLAG="-DLINUX"
              fi
+             AM_CONDITIONAL(IS_LINUX, true)
 
              dnl **** Try determine distribution.
-             if test -f /etc/fedora-release
+             if test -f /etc/os-release
              then
-                DISTRO="fedora"
-                DISTRO_VERSION=`head -1 /etc/fedora-release | cut -d " " -f 3`
-             else
-                if test -f /etc/redhat-release
+                DISTRO=$(grep "^ID=" /etc/os-release | cut -d= -f2 | tr -d \")
+                if test "$DISTRO" = "centos"
                 then
                    DISTRO="redhat"
-                   DISTRO_VERSION=`head -1 /etc/redhat-release | cut -d " " -f 4 | cut -d "." -f 1`
                 else
-                   if test -f /etc/SuSE-release
+                   if test "$DISTRO" = "scientific"
                    then
-                      head -1 /etc/SuSE-release | grep -i enterprise > /dev/null
-                      if test $? -eq 0
+                      DISTRO="redhat"
+                   fi
+                fi
+                DISTRO_VERSION=$(grep "^VERSION_ID=" /etc/os-release | cut -d= -f2 | tr -dc '0-9.' | cut -d'.' -f1)
+             fi
+             if test "$DISTRO" = ""
+             then
+                if test -f /etc/fedora-release
+                then
+                   DISTRO="fedora"
+                   DISTRO_VERSION=`head -1 /etc/fedora-release | tr -dc '0-9.' | cut -d'.' -f1`
+                else
+                   if test -f /etc/redhat-release
+                   then
+                      DISTRO="redhat"
+                      DISTRO_VERSION=`head -1 /etc/redhat-release | tr -dc '0-9.' | cut -d'.' -f1`
+                   else
+                      if test -f /etc/SuSE-release
                       then
-                         DISTRO="sles"
-                         DISTRO_VERSION=`grep VERSION /etc/SuSE-release | cut -d " " -f 3`
-                      else
-                         head -1 /etc/SuSE-release | grep -i open > /dev/null
+                         head -1 /etc/SuSE-release | grep -i enterprise > /dev/null
                          if test $? -eq 0
                          then
-                            DISTRO="opensuse"
-                            DISTRO_VERSION=`grep VERSION /etc/SuSE-release | cut -d " " -f 3 | cut -d "." -f 1`
+                            DISTRO="sles"
+                            DISTRO_VERSION=`grep VERSION /etc/SuSE-release | cut -d " " -f 3`
                          else
-                            DISTRO="suse"
-                         fi
-                      fi
-                   else
-                      if test -f /etc/slackware-release
-                      then
-                         DISTRO="slackware"
-                      else
-                         if test -f /etc/debian_release || test -f /etc/os-release
-                         then
-                            DISTRO="debian"
-                         else
-                            if test -f /etc/gentoo-release
+                            head -1 /etc/SuSE-release | grep -i open > /dev/null
+                            if test $? -eq 0
                             then
-                               DISTRO="gentoo"
+                               DISTRO="opensuse"
+                               DISTRO_VERSION=`grep VERSION /etc/SuSE-release | cut -d " " -f 3 | cut -d "." -f 1`
                             else
-                               if test -f /etc/yellowdog-release
+                               DISTRO="suse"
+                            fi
+                         fi
+                      else
+                         if test -f /etc/slackware-release
+                         then
+                            DISTRO="slackware"
+                         else
+                            if test -f /etc/debian_release
+                            then
+                               DISTRO="debian"
+                            else
+                               if test -f /etc/gentoo-release
                                then
-                                  DISTRO="yellowdog"
+                                  DISTRO="gentoo"
                                else
-                                  DISTRO="unknown"
+                                  if test -f /etc/yellowdog-release
+                                  then
+                                     DISTRO="yellowdog"
+                                  else
+                                     DISTRO="unknown"
+                                  fi
                                fi
                             fi
                          fi
@@ -900,11 +951,21 @@ in
                 fi
              fi
              ;;
-   netbsd*)  OS_FLAG="" ;;
-   sco*)     OS_FLAG="-D_SCO" ;;
-   solaris*) OS_FLAG="-D_SUN" ;;
-   sunos*)   OS_FLAG="-D_SUN" ;;
-   *)        OS_FLAG="" ;;
+   netbsd*)  OS_FLAG=""
+             AM_CONDITIONAL(IS_LINUX, false)
+             ;;
+   sco*)     OS_FLAG="-D_SCO"
+             AM_CONDITIONAL(IS_LINUX, false)
+             ;;
+   solaris*) OS_FLAG="-D_SUN"
+             AM_CONDITIONAL(IS_LINUX, false)
+             ;;
+   sunos*)   OS_FLAG="-D_SUN"
+             AM_CONDITIONAL(IS_LINUX, false)
+             ;;
+   *)        OS_FLAG=""
+             AM_CONDITIONAL(IS_LINUX, false)
+             ;;
 esac
 
 if test "${host}" = "hppa1.1-stratus-sysv4"
@@ -1010,6 +1071,70 @@ if test "${compiler_profiling}" = "true"
 then
    CFLAGS="$CFLAGS -pg"
 fi
+
+dnl Check if we should do an automatic test if systemd exist
+if test "${ac_cv_systemd}" = "yes"
+then
+   if test -d /run/systemd/system
+   then
+      use_systemd="yes"
+   else
+      use_systemd="no"
+   fi
+else
+   use_systemd="no"
+fi
+AC_MSG_CHECKING([whether we build with systemd support])
+if test "${use_systemd}" = "yes"
+then
+   PKG_CHECK_MODULES([LIBSYSTEMD], [libsystemd],
+                     [AC_DEFINE([WITH_SYSTEMD], [], [Building with systemd support])
+                      AC_MSG_RESULT(Building with systemd support)],
+                     [AC_MSG_RESULT(Building without systemd support)
+                     use_systemd="no"])
+   if test "${use_systemd}" = "yes"
+   then
+      if test "$REQUIRES" = ""
+      then
+         REQUIRES="systemd"
+      else
+         REQUIRES="`echo $REQUIRES`, systemd"
+      fi
+      if test "$BUILD_REQUIRES" = ""
+      then
+         BUILD_REQUIRES="systemd-devel"
+      else
+         BUILD_REQUIRES="`echo $BUILD_REQUIRES`, systemd-devel"
+      fi
+      WITH_SYSTMD=1
+      AM_CONDITIONAL(WITH_SYSTEMD, true)
+   else
+      case "$DISTRO" in
+         debian)
+            echo "Unable to find systemd development package. Install libsystemd-dev package."
+            ;;
+         fedora)
+            echo "Unable to find systemd development package. Install systemd-devel package."
+            ;;
+         redhat)
+            echo "Unable to find systemd development package. Install systemd-devel package."
+            ;;
+         ubuntu)
+            echo "Unable to find systemd development package. Install libsystemd-dev package."
+            ;;
+         *)
+            echo "Unable to find systemd development package."
+            ;;
+      esac
+      exit 1
+   fi
+else
+   AM_CONDITIONAL(WITH_SYSTEMD, false)
+   AC_MSG_RESULT(no)
+   WITH_SYSTMD=0
+fi
+AC_SUBST(WITH_SYSTMD)
+
 
 dnl Test if we can compile in support for CPU CRC calculation
 if test "$ac_cv_allow_sse42" = "yes"
@@ -1305,15 +1430,15 @@ then
    then
       if test "$DISTRO" = "redhat" && test $DISTRO_VERSION -lt 7
       then
-         ac_cv_new_motif_name = "openmotif"
+         ac_cv_new_motif_name="openmotif"
       else
          if test "$DISTRO" = "fedora" && test $DISTRO_VERSION -lt 18
          then
-            ac_cv_new_motif_name = "openmotif"
+            ac_cv_new_motif_name="openmotif"
          else
             if test "$DISTRO" = "sles" && test $DISTRO_VERSION -lt 12
             then
-               ac_cv_new_motif_name = "openmotif"
+               ac_cv_new_motif_name="openmotif"
             fi
          fi
       fi
@@ -1437,10 +1562,6 @@ dnl We don't want it to complain about --datarootdir in afd.spec.in
 AC_DEFUN([AC_DATAROOTDIR_CHECKED])
 
 dnl The following are needed for generating the spec file.
-AFD_VERSION=`echo $VERSION | cut -d '-' -f 1`
-AC_SUBST(AFD_VERSION)
-AFD_RELEASE=`echo $VERSION | cut -d '-' -f 2`
-AC_SUBST(AFD_RELEASE)
 AC_SUBST(ac_configure_args)
 AC_SUBST(REQUIRES)
 AC_SUBST(BUILD_REQUIRES)
@@ -1669,7 +1790,7 @@ echo "    Source code location             : ${srcdir}"
 echo "    Install path bin + sbin          : ${prefix}/bin ${prefix}/sbin"
 echo "    Install path doc                 : ${docdir}"
 echo "    Install path man                 : ${mandir}"
-echo "    AFD Version                      : ${VERSION}"
+echo "    AFD Version                      : ${afd_full_version}"
 echo "    Compiler                         : ${CC}"
 echo "    Compiler flags                   : ${CFLAGS}"
 echo "    GUI                              : ${GUIS_STRING}"
@@ -1683,13 +1804,14 @@ then
 else
    echo "    With TLS/SSL support             : no"
 fi
+echo "    Use systemd                      : ${use_systemd}"
 echo "    Logs                             : ${ac_cv_input_log}${ac_cv_distribution_log}${ac_cv_output_log}${ac_cv_confirmation_log}${ac_cv_delete_log}${ac_cv_production_log}${ac_cv_maintainer_log}${ac_cv_alda_cache}${ac_cv_transfer_rate_log}"
 echo "    Error queue support              : ${ac_cv_error_queue}"
 echo "    With AFD monitor                 : ${ac_cv_afd_mon}"
 echo "    Multiple file system support     : ${ac_cv_multi_fs_support}"
 echo "    With duplicate check support     : ${ac_cv_dupcheck_support}"
 echo "    Protocols supported              : ${ac_cv_ftp_support}${ac_cv_sftp_support}${ac_cv_smtp_support}${ac_cv_http_support}${ac_cv_wmo_support}${ac_cv_loc_support}${ac_cv_fd_exec_support}${ac_cv_scp_support}${ac_cv_demail_support}${ac_cv_dfax_support}"
-echo "    With server support              : ${ac_cv_atpd_support}${ac_cv_wmod_support}"
+echo "    With server support              : afdd ${ac_cv_atpd_support}${ac_cv_wmod_support}"
 echo "    With largefile support           : ${ac_cv_largefile}"
 echo "    With inotify support             : ${ac_cv_allow_inotify}"
 echo "    With internal IP database        : ${ac_cv_ip_database}"
