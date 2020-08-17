@@ -26,7 +26,11 @@ DESCR__S_M1
  **   afd_mon - monitors remote AFD's
  **
  ** SYNOPSIS
- **   afd_mon [--version] [-w <working directory>]
+ **   afd_mon [--version] [-w <working directory>] [-nd] [-sn <name>]
+ **        --version      Prints current version and copyright
+ **        -w <work dir>  Working directory of the AFD.
+ **        -nd            Do not start as daemon process.
+ **        -sn <name>     Provide a service name.
  **
  ** DESCRIPTION
  **   The AFD (Automatic File Distributor) monitor, checks and controls
@@ -79,6 +83,7 @@ DESCR__S_M1
  **   08.06.2005 H.Kiehl Added afd_mon_status structure.
  **   14.02.2015 H.Kiehl In system log show total no_of_hosts, no_of_dirs
  **                      and no_of_jobs.
+ **   01.08.2020 H.Kiehl Added support for systemd.
  **
  */
 DESCR__E_M1
@@ -90,6 +95,9 @@ DESCR__E_M1
 #include <ctype.h>            /* isdigit()                               */
 #include <time.h>             /* time()                                  */
 #include <sys/types.h>
+#ifdef WITH_SYSTEMD
+# include <systemd/sd-daemon.h>  /* sd_notify()                          */
+#endif
 #include <sys/wait.h>         /* waitpid()                               */
 #include <sys/time.h>         /* struct timeval                          */
 #ifdef HAVE_MMAP
@@ -106,6 +114,16 @@ DESCR__E_M1
 #include "sumdefs.h"
 #include "version.h"
 
+#ifdef WITH_SYSTEMD
+#define UPDATE_HEARTBEAT()                   \
+        {                                    \
+           if (systemd_watchdog_enabled > 0) \
+           {                                 \
+              sd_notify(0, "WATCHDOG=1");    \
+           }                                 \
+        }
+#endif
+
 /* Global variables. */
 int                    got_shuttdown_message = NO,
                        in_child = NO,
@@ -121,6 +139,10 @@ int                    got_shuttdown_message = NO,
                        mon_log_readfd,
                        mon_resp_readfd,
                        probe_only_readfd,
+#endif
+                       started_as_daemon,
+#ifdef WITH_SYSTEMD
+                       systemd_watchdog_enabled = 0,
 #endif
                        sys_log_fd = STDERR_FILENO,
                        timeout_flag;
@@ -143,6 +165,9 @@ struct mon_status_area *msa;
 struct process_list    *pl = NULL;
 const char             *sys_log_name = MON_SYS_LOG_FIFO;
 
+/* Local global variables. */
+static char            *service_name;
+
 /* Local function prototypes. */
 static void            afd_mon_exit(void),
                        eval_cmd_buffer(char *, int, int *),
@@ -160,6 +185,7 @@ static void            afd_mon_exit(void),
                        sig_bus(int),
                        sig_exit(int),
                        sig_segv(int),
+                       usage(char *),
                        zombie_check(time_t);
 
 
@@ -202,12 +228,24 @@ main(int argc, char *argv[])
    fd_set         rset;
 
    CHECK_FOR_VERSION(argc, argv);
+   if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "-help", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "--help", NULL, 0) == SUCCESS))
+   {
+      usage(argv[0]);
+      exit(SUCCESS);
+   }
 
    if (get_mon_path(&argc, argv, work_dir) < 0)
    {
       exit(INCORRECT);
    }
    p_work_dir = work_dir;
+
+   if (get_argb(&argc, argv, "-sn", &service_name) != SUCCESS)
+   {
+      service_name = NULL;
+   }
 
    /* Check if this directory does exists, if not create it. */
    if (check_dir(work_dir, R_OK | W_OK | X_OK) < 0)
@@ -307,7 +345,49 @@ main(int argc, char *argv[])
    afd_mon_db_time = stat_buf.st_mtime;
    create_msa();
 
-   daemon_init(AFD_MON);
+   /* Check if -nd is provided. */
+   if ((argc == 2) && (argv[1][0] == '-') && (argv[1][1] == 'n') &&
+       (argv[1][2] == 'd'))
+   {
+      char   *buffer = NULL;
+      size_t length;
+
+      /* DO NOT START AS DAEMON!!! */;
+      started_as_daemon = NO;
+
+      if (service_name == NULL)
+      {
+         length = 35 + AFD_LENGTH;
+      }
+      else
+      {
+         length = 40 + AFD_LENGTH + strlen(service_name);
+      }
+      if ((buffer = malloc(length + 1)) != NULL)
+      {
+         (void)memset(buffer, '=', length);
+         buffer[length] = '\0';
+         now = time(NULL);
+         if (service_name == NULL)
+         {
+            (void)fprintf(stderr, _("%s\n%.24s : Started %s\n"),
+                          buffer, ctime(&now), AFD);
+         }
+         else
+         {
+            (void)fprintf(stderr, _("%s\n%.24s : Started %s for %s\n"),
+                          buffer, ctime(&now), AFD, service_name);
+         }
+         (void)memset(buffer, '-', length);
+         (void)fprintf(stderr, "%s\n", buffer);
+         free(buffer);
+      }
+   }
+   else
+   {
+      daemon_init(AFD_MON);
+      started_as_daemon = YES;
+   }
    own_pid = getpid();
 
    if ((stat(afd_mon_status_file, &stat_buf) == -1) ||
@@ -438,6 +518,23 @@ main(int argc, char *argv[])
    /* Log all pid's in MON_ACTIVE file. */
    mon_active();
 
+#ifdef WITH_SYSTEMD
+   if (started_as_daemon == NO)
+   {
+      if ((systemd_watchdog_enabled = sd_watchdog_enabled(0, NULL)) > 0)
+      {
+         system_log(INFO_SIGN, NULL, 0,
+                    "Enabling systemd watchdog.");
+      }
+      system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                 "Calling sd_notifyf(READY=1) ...");
+      sd_notifyf(0, "READY=1\n"
+                 "STATUS=All process up\n"
+                 "MAINPID=%lu",
+                 (unsigned long)getpid());
+   }
+#endif
+
    afd_mon_db_check_time = ((now / 10) * 10) + 10;
    new_hour_sum_time = ((now / 3600) * 3600) + 3600;
    new_day_sum_time = ((now / 86400) * 86400) + 86400;
@@ -450,6 +547,10 @@ main(int argc, char *argv[])
    FD_ZERO(&rset);
    for (;;)
    {
+#ifdef WITH_SYSTEMD
+      UPDATE_HEARTBEAT();
+#endif
+
       /* Initialise descriptor set and timeout. */
       FD_SET(mon_cmd_fd, &rset);
       now = time(NULL);
@@ -1408,7 +1509,18 @@ afd_mon_exit(void)
 {
    if (in_child == NO)
    {
-      char hostname[64];
+      size_t length;
+      char   *buffer,
+             hostname[64];
+
+#ifdef WITH_SYSTEMD
+      if (started_as_daemon != YES)
+      {
+         system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                    "Calling sd_notifyf(STOPPING=1) ...");
+         sd_notify(0, "STOPPING=1\n");
+      }
+#endif
 
       /* Kill any job still active! */
       stop_process(-1, got_shuttdown_message);
@@ -1522,8 +1634,61 @@ afd_mon_exit(void)
       }
 #endif
 
+      if (service_name == NULL)
+      {
+         length = 38 + AFD_LENGTH;
+      }
+      else
+      {
+         length = 44 + AFD_LENGTH + strlen(service_name);
+      }
+      if ((buffer = malloc(length + 1)) != NULL)
+      {
+         time_t current_time;
+
+         current_time = time(NULL);
+         (void)memset(buffer, '-', length);
+         buffer[length] = '\0';
+         if (service_name == NULL)
+         {
+            (void)fprintf(stderr,
+                          _("%.24s : %s terminated (%s %d)\n%s\n"),
+                          ctime(&current_time), AFD_MON, __FILE__,
+                          __LINE__, buffer);
+         }
+         else
+         {
+            (void)fprintf(stderr,
+                          _("%.24s : %s for %s terminated (%s %d)\n%s\n"),
+                          ctime(&current_time), AFD_MON, service_name,
+                          __FILE__, __LINE__, buffer);
+         }
+         (void)free(buffer);
+      }
+
       (void)close(sys_log_fd);
+
+#ifdef WITH_SYSTEMD
+      sd_notify(0, "STATUS=Terminated\n");
+#endif
    }
+
+   return;
+}
+
+
+/*+++++++++++++++++++++++++++++++ usage() ++++++++++++++++++++++++++++++*/
+static void
+usage(char *progname)
+{
+   (void)fprintf(stderr,
+                 _("SYNTAX  : %s[ -w working directory]\n"), progname);
+   (void)fprintf(stderr,
+                 _("                    -nd        Do not start as daemon process.\n"));
+   (void)fprintf(stderr,
+                 _("                    -sn <name> Provide a service name.\n"));
+   (void)fprintf(stderr,
+                 _("                    --version  Show version number.\n"));
 
    return;
 }
@@ -1557,5 +1722,18 @@ sig_bus(int signo)
 static void
 sig_exit(int signo)
 {
+   if (signo == SIGTERM)
+   {
+      system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Received SIGTERM!"));
+   }
+   else if (signo == SIGINT)
+        {
+           system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Received SIGINT!"));
+        }
+        else
+        {
+           system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Received %d!"), signo);
+        }
+
    exit(INCORRECT);
 }

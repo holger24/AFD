@@ -27,10 +27,13 @@ DESCR__S_M1
  **              alive
  **
  ** SYNOPSIS
- **   init_afd [--version] [-w <work dir>] [-nd]
+ **   init_afd [--version] [-w <work dir>] [-nd] [-sn <name>]
  **        --version      Prints current version and copyright
- **        -w <work dir>  Working directory of the AFD
- **        -nd            Do not start as daemon process
+ **        -w <work dir>  Working directory of the AFD.
+ **        -A             Start with no directory scanning.
+ **        -C             Start with all checks done by cmdline afd.
+ **        -nd            Do not start as daemon process.
+ **        -sn <name>     Provide a service name.
  **
  ** DESCRIPTION
  **   This program will start all programs used by the AFD in the
@@ -71,12 +74,16 @@ DESCR__S_M1
  **   13.05.2012 H.Kiehl Do not exit() if we fail to stat() the files
  **                      directory.
  **   17.03.2017 H.Kiehl Remove some work to a new process init_afd_worker.
+ **   26.11.2018 H.Kiehl Added option -C.
+ **   16.06.2020 H.Kiehl Add systemd support.
+ **   25.07.2020 H.Kiehl Add option -sn.
  **
  */
 DESCR__E_M1
 
 #include <stdio.h>               /* fprintf()                            */
-#include <string.h>              /* strcpy(), strcat(), strerror()       */
+#include <string.h>              /* strcpy(), strcat(), strerror(),      */
+                                 /* memset()                             */
 #include <stdlib.h>              /* getenv(), atexit(), exit(), abort()  */
 #include <time.h>                /* time(), ctime()                      */
 #include <sys/types.h>
@@ -88,10 +95,14 @@ DESCR__E_M1
 #ifdef HAVE_SETPRIORITY
 # include <sys/resource.h>       /* setpriority()                        */
 #endif
+#ifdef WITH_SYSTEMD
+# include <systemd/sd-daemon.h>  /* sd_notify()                          */
+#endif
 #include <sys/wait.h>            /* waitpid()                            */
 #include <signal.h>              /* signal()                             */
 #include <unistd.h>              /* select(), unlink(), lseek(), sleep() */
-                                 /* gethostname(),  STDERR_FILENO        */
+                                 /* gethostname(),  STDERR_FILENO,       */
+                                 /* readlink()                           */
 #include <fcntl.h>               /* O_RDWR, O_CREAT, O_WRONLY, etc       */
 #include <dirent.h>              /* opendir(), readdir(), closedir(),    */
                                  /* DIR, struct dirent                   */
@@ -101,15 +112,36 @@ DESCR__E_M1
 #define BLOCK_SIGNALS
 #define NO_OF_SAVED_CORE_FILES 10
 
+/* #define _DEBUG 1 */
+
+#ifdef WITH_SYSTEMD
+#define UPDATE_HEARTBEAT()                   \
+        {                                    \
+           (*heartbeat)++;                   \
+           if (systemd_watchdog_enabled > 0) \
+           {                                 \
+              sd_notify(0, "WATCHDOG=1");    \
+           }                                 \
+        }
+#else
+#define UPDATE_HEARTBEAT()                   \
+        {                                    \
+           (*heartbeat)++;                   \
+        }
+#endif
+
 /* Global definitions. */
-int                        sys_log_fd = STDERR_FILENO,
-                           event_log_fd = STDERR_FILENO,
+int                        afd_active_fd = -1,
                            afd_cmd_fd,
                            afd_resp_fd,
                            amg_cmd_fd,
+                           current_afd_status = OFF,
+                           event_log_fd = STDERR_FILENO,
                            fd_cmd_fd,
-                           afd_active_fd = -1,
-                           probe_only_fd,
+                           fra_fd = -1,
+                           fra_id,
+                           fsa_fd = -1,
+                           fsa_id,
 #ifdef WITHOUT_FIFO_RW_SUPPORT
                            afd_cmd_writefd,
                            afd_resp_readfd,
@@ -117,28 +149,35 @@ int                        sys_log_fd = STDERR_FILENO,
                            fd_cmd_readfd,
                            probe_only_readfd,
 #endif
-                           probe_only = 1,
                            no_of_dirs = 0,
-                           no_of_hosts = 0,
                            no_of_disabled_dirs = 0,
-                           fra_fd = -1,
-                           fra_id,
-                           fsa_fd = -1,
-                           fsa_id;
+                           no_of_hosts = 0,
+                           probe_only = 1,
+                           probe_only_fd,
+                           started_as_daemon,
+#ifdef WITH_SYSTEMD
+                           systemd_watchdog_enabled = 0,
+#endif
+                           sys_log_fd = STDERR_FILENO;
 #ifdef HAVE_MMAP
 off_t                      fra_size,
                            fsa_size;
 #endif
-char                       *pid_list,
-                           *p_work_dir,
+char                       afd_active_file[MAX_PATH_LENGTH],
+                           afd_cmd_fifo[MAX_PATH_LENGTH],
                            afd_status_file[MAX_PATH_LENGTH],
-                           afd_active_file[MAX_PATH_LENGTH],
-                           **disabled_dirs = NULL;
+                           **disabled_dirs = NULL,
+                           *pid_list,
+                           *p_work_dir;
 struct afd_status          *p_afd_status;
 struct filetransfer_status *fsa;
 struct fileretrieve_status *fra;
 struct proc_table          proc_table[NO_OF_PROCESS + 1];
 const char                 *sys_log_name = SYSTEM_LOG_FIFO;
+
+/* Local global definitions. */
+static char                *path_to_self = NULL,
+                           *service_name;
 
 /* Local function prototypes. */
 static pid_t               make_process(char *, char *, sigset_t *);
@@ -146,10 +185,15 @@ static void                afd_exit(void),
                            check_dirs(char *),
                            delete_old_afd_status_files(void),
                            get_afd_config_value(int *, unsigned int *, int *),
+                           get_path_to_self(void),
                            sig_exit(int),
                            sig_bus(int),
                            sig_segv(int),
+                           start_afd(int, time_t, unsigned int, int),
+                           stop_afd(void),
+                           stop_afd_worker(unsigned int *),
                            stuck_transfer_check(time_t),
+                           usage(char *),
                            zombie_check(void);
 
 
@@ -159,10 +203,10 @@ main(int argc, char *argv[])
 {
    int            afdd_port,
                   afd_status_fd,
+                  binary_changed,
                   current_month,
-#ifdef AFDBENCH_CONFIG
                   pause_dir_scan,
-#endif
+                  startup_with_check,
                   status,
                   i,
                   in_global_filesystem,
@@ -172,8 +216,7 @@ main(int argc, char *argv[])
                   *heartbeat;
    long           link_max;
    off_t          afd_active_size;
-   time_t         
-                  month_check_time,
+   time_t         month_check_time,
                   now,
                   disabled_dir_check_time;
    fd_set         rset;
@@ -188,13 +231,19 @@ main(int argc, char *argv[])
    struct stat    stat_buf;
 
    CHECK_FOR_VERSION(argc, argv);
+   if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "-help", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "--help", NULL, 0) == SUCCESS))
+   {
+      usage(argv[0]);
+      exit(SUCCESS);
+   }
 
    /* First get working directory for the AFD. */
    if (get_afd_path(&argc, argv, work_dir) < 0)
    {
       exit(INCORRECT);
    }
-#ifdef AFDBENCH_CONFIG
    if (get_arg(&argc, argv, "-A", NULL, 0) == SUCCESS)
    {
       pause_dir_scan = YES;
@@ -203,11 +252,18 @@ main(int argc, char *argv[])
    {
       pause_dir_scan = NO;
    }
-#endif
-#ifdef WITH_SETUID_PROGS
-   set_afd_euid(work_dir);
-#endif
-   (void)umask(0);
+   if (get_arg(&argc, argv, "-C", NULL, 0) == SUCCESS)
+   {
+      startup_with_check = YES;
+   }
+   else
+   {
+      startup_with_check = NO;
+   }
+   if (get_argb(&argc, argv, "-sn", &service_name) != SUCCESS)
+   {
+      service_name = NULL;
+   }
 
    /* Check if the working directory does exists and has */
    /* the correct permissions set. If not it is created. */
@@ -215,11 +271,39 @@ main(int argc, char *argv[])
    {
       exit(INCORRECT);
    }
+   else
+   {
+      int old_value_list[MAX_CHANGEABLE_VARS];
+
+      /*
+       * Before we start AFD lets check if the current binary matches
+       * the current saved database data. If not lets initialize
+       * everything.
+       */
+      if ((binary_changed = check_typesize_data(old_value_list, NULL, YES)) > 0)
+      {
+         (void)fprintf(stderr,
+                       "Initialize database due to %d change(s). (%s %d)\n",
+                       binary_changed, __FILE__, __LINE__);
+         initialize_db(0, old_value_list, NO);
+      }
+   }
+
+#ifdef WITH_SETUID_PROGS
+   set_afd_euid(work_dir);
+#endif
+   (void)umask(0);
 
    /* Initialise variables. */
    p_work_dir = work_dir;
    (void)strcpy(afd_status_file, work_dir);
    (void)strcat(afd_status_file, FIFO_DIR);
+   if (check_dir(afd_status_file, R_OK | X_OK) < 0)
+   {
+      exit(INCORRECT);
+   }
+   (void)strcpy(afd_cmd_fifo, afd_active_file);
+   (void)strcat(afd_cmd_fifo, AFD_CMD_FIFO);
    i = strlen(afd_status_file);
    (void)strcpy(afd_active_file, afd_status_file);
    (void)strcpy(afd_active_file + i, AFD_ACTIVE_FILE);
@@ -228,6 +312,31 @@ main(int argc, char *argv[])
 
    (void)strcpy(afd_file_dir, work_dir);
    (void)strcat(afd_file_dir, AFD_FILE_DIR);
+
+   if (startup_with_check == YES)
+   {
+      char auto_block_file[MAX_PATH_LENGTH];
+
+      (void)strcpy(auto_block_file, work_dir);
+      (void)strcat(auto_block_file, ETC_DIR);
+      (void)strcat(auto_block_file, BLOCK_FILE);
+
+      /* Check if starting of AFD is currently disabled.  */
+      if (eaccess(auto_block_file, F_OK) == 0)
+      {
+         (void)fprintf(stderr,
+                       _("AFD is currently disabled by system manager.\n"));
+         exit(AFD_DISABLED_BY_SYSADM);
+      }
+
+      if (check_afd_database() == -1)
+      {
+         (void)fprintf(stderr,
+                       _("ERROR   : Cannot read database file (DIR_CONFIG) : %s\nUnable to start AFD.\n"),
+                       strerror(errno));
+         exit(INCORRECT);
+      }
+   }
 
    /* Make sure that no other AFD is running in this directory. */
    if (check_afd_heartbeat(DEFAULT_HEARTBEAT_TIMEOUT, YES) == 1)
@@ -285,15 +394,52 @@ main(int argc, char *argv[])
    /* Open and create all fifos. */
    init_fifos_afd();
 
+   /* Check if -nd is provided. */
    if ((argc == 2) && (argv[1][0] == '-') && (argv[1][1] == 'n') &&
        (argv[1][2] == 'd'))
    {
+      char   *buffer = NULL;
+      size_t length;
+
       /* DO NOT START AS DAEMON!!! */;
+      started_as_daemon = NO;
+
+      if (service_name == NULL)
+      {
+         length = 35 + AFD_LENGTH;
+      }
+      else
+      {
+         length = 40 + AFD_LENGTH + strlen(service_name);
+      }
+      if ((buffer = malloc(length + 1)) != NULL)
+      {
+         (void)memset(buffer, '=', length);
+         buffer[length] = '\0';
+         now = time(NULL);
+         if (service_name == NULL)
+         {
+            (void)fprintf(stderr, _("%s\n%.24s : Started %s\n"),
+                          buffer, ctime(&now), AFD);
+         }
+         else
+         {
+            (void)fprintf(stderr, _("%s\n%.24s : Started %s for %s\n"),
+                          buffer, ctime(&now), AFD, service_name);
+         }
+         (void)memset(buffer, '-', length);
+         (void)fprintf(stderr, "%s\n", buffer);
+         free(buffer);
+      }
    }
    else
    {
       daemon_init(AFD);
+      started_as_daemon = YES;
    }
+
+   /* Get path of started binary. */
+   get_path_to_self();
 
    /* Now check if all directories needed are created. */
    check_dirs(work_dir);
@@ -310,7 +456,8 @@ main(int argc, char *argv[])
       }
       else
       {
-         (void)fprintf(stderr, _("INFO: No old afd status file %s found. (%s %d)\n"),
+         (void)fprintf(stderr,
+                       _("INFO   : No old afd status file %s found. (%s %d)\n"),
                        afd_status_file, __FILE__, __LINE__);
       }
       if ((afd_status_fd = coe_open(afd_status_file, O_RDWR | O_CREAT | O_TRUNC,
@@ -463,7 +610,6 @@ main(int argc, char *argv[])
 #endif
       p_afd_status->afd_worker        = 0;
       p_afd_status->no_of_transfers   = 0;
-      p_afd_status->start_time        = 0L;
    }
    (void)strcpy(p_afd_status->work_dir, work_dir);
    p_afd_status->user_id = geteuid();
@@ -527,6 +673,7 @@ main(int argc, char *argv[])
             break;
 
          case DC_NO : /* dir_check */
+            (void)strcpy(proc_table[i].proc_name, DIR_CHECK);
             *(pid_t *)(pid_list + ((i + 1) * sizeof(pid_t))) = 0;
             break;
 
@@ -630,6 +777,30 @@ main(int argc, char *argv[])
                     strerror(errno), __FILE__, __LINE__);
       exit(INCORRECT);
    }
+   else
+   {
+      char *buffer = NULL,
+           cmd[MAX_PATH_LENGTH];
+
+      /* Create file with content of our set environment variables. */
+      (void)snprintf(cmd, MAX_PATH_LENGTH, "env > %s%s/%s",
+                     p_work_dir, FIFO_DIR, ENVIRONMENT_VARIABLES_SET);
+
+      if (exec_cmd(cmd, &buffer, -1, NULL, 0,
+#ifdef HAVE_SETPRIORITY
+                   NO_PRIORITY,
+#endif
+                   "", NULL, NULL, 0, 0L, YES, YES) == INCORRECT)
+      {
+         (void)fprintf(stderr, "Failed to execute `%s' (%s %d)\n",
+                       cmd, __FILE__, __LINE__);
+         if (buffer != NULL)
+         {
+            (void)fprintf(stderr, "%s\n", buffer);
+         }
+      }
+      free(buffer);
+   }
 
    /* Activate some signal handlers, so we know what happened. */
    if ((signal(SIGINT, sig_exit) == SIG_ERR) ||
@@ -655,8 +826,8 @@ main(int argc, char *argv[])
 
    if ((bd_time = localtime(&now)) == NULL)
    {
-      system_log(WARN_SIGN, __FILE__, __LINE__,
-                 "localtime() error : %s", strerror(errno));
+      (void)fprintf(stderr, "localtime() error : %s (%s %d)\n",
+                    strerror(errno), __FILE__, __LINE__);
       current_month = 0;
    }
    else
@@ -667,7 +838,6 @@ main(int argc, char *argv[])
    disabled_dir_check_time = 0;
 
    /* Initialise communication flag FD <-> AMG. */
-#ifdef AFDBENCH_CONFIG
    if (pause_dir_scan == YES)
    {
       p_afd_status->amg_jobs = PAUSE_DISTRIBUTION;
@@ -676,174 +846,46 @@ main(int argc, char *argv[])
    {
       p_afd_status->amg_jobs = 0;
    }
-#else
-   p_afd_status->amg_jobs = 0;
-#endif
-
-   /* Start all log process. */
-   proc_table[SLOG_NO].pid = make_process(SLOG, work_dir, NULL);
-   *(pid_t *)(pid_list + ((SLOG_NO + 1) * sizeof(pid_t))) = proc_table[SLOG_NO].pid;
-   *proc_table[SLOG_NO].status = ON;
-   proc_table[ELOG_NO].pid = make_process(ELOG, work_dir, NULL);
-   *(pid_t *)(pid_list + ((ELOG_NO + 1) * sizeof(pid_t))) = proc_table[ELOG_NO].pid;
-   *proc_table[ELOG_NO].status = ON;
-   proc_table[RLOG_NO].pid = make_process(RLOG, work_dir, NULL);
-   *(pid_t *)(pid_list + ((RLOG_NO + 1) * sizeof(pid_t))) = proc_table[RLOG_NO].pid;
-   *proc_table[RLOG_NO].status = ON;
-   proc_table[TLOG_NO].pid = make_process(TLOG, work_dir, NULL);
-   *(pid_t *)(pid_list + ((TLOG_NO + 1) * sizeof(pid_t))) = proc_table[TLOG_NO].pid;
-   *proc_table[TLOG_NO].status = ON;
-   proc_table[TDBLOG_NO].pid = make_process(TDBLOG, work_dir, NULL);
-   *(pid_t *)(pid_list + ((TDBLOG_NO + 1) * sizeof(pid_t))) = proc_table[TDBLOG_NO].pid;
-   *proc_table[TDBLOG_NO].status = ON;
-
-   /* Start process cleaning archive directory. */
-   proc_table[AW_NO].pid = make_process(ARCHIVE_WATCH, work_dir, NULL);
-   *(pid_t *)(pid_list + ((AW_NO + 1) * sizeof(pid_t))) = proc_table[AW_NO].pid;
-   *proc_table[AW_NO].status = ON;
-
-   /* Start process doing the I/O logging. */
-#ifdef _INPUT_LOG
-   proc_table[INPUT_LOG_NO].pid = make_process(INPUT_LOG_PROCESS, work_dir, NULL);
-   *(pid_t *)(pid_list + ((INPUT_LOG_NO + 1) * sizeof(pid_t))) = proc_table[INPUT_LOG_NO].pid;
-   *proc_table[INPUT_LOG_NO].status = ON;
-#endif
-#ifdef _OUTPUT_LOG
-   proc_table[OUTPUT_LOG_NO].pid = make_process(OUTPUT_LOG_PROCESS, work_dir, NULL);
-   *(pid_t *)(pid_list + ((OUTPUT_LOG_NO + 1) * sizeof(pid_t))) = proc_table[OUTPUT_LOG_NO].pid;
-   *proc_table[OUTPUT_LOG_NO].status = ON;
-#endif
-#ifdef _CONFIRMATION_LOG
-   proc_table[CONFIRMATION_LOG_NO].pid = make_process(CONFIRMATION_LOG_PROCESS, work_dir, NULL);
-   *(pid_t *)(pid_list + ((CONFIRMATION_LOG_NO + 1) * sizeof(pid_t))) = proc_table[CONFIRMATION_LOG_NO].pid;
-   *proc_table[CONFIRMATION_LOG_NO].status = ON;
-#endif
-#ifdef _DELETE_LOG
-   proc_table[DELETE_LOG_NO].pid = make_process(DELETE_LOG_PROCESS, work_dir, NULL);
-   *(pid_t *)(pid_list + ((DELETE_LOG_NO + 1) * sizeof(pid_t))) = proc_table[DELETE_LOG_NO].pid;
-   *proc_table[DELETE_LOG_NO].status = ON;
-#endif
-#ifdef _PRODUCTION_LOG
-   proc_table[PRODUCTION_LOG_NO].pid = make_process(PRODUCTION_LOG_PROCESS, work_dir, NULL);
-   *(pid_t *)(pid_list + ((PRODUCTION_LOG_NO + 1) * sizeof(pid_t))) = proc_table[PRODUCTION_LOG_NO].pid;
-   *proc_table[PRODUCTION_LOG_NO].status = ON;
-#endif
-#ifdef _DISTRIBUTION_LOG
-   proc_table[DISTRIBUTION_LOG_NO].pid = make_process(DISTRIBUTION_LOG_PROCESS, work_dir, NULL);
-   *(pid_t *)(pid_list + ((DISTRIBUTION_LOG_NO + 1) * sizeof(pid_t))) = proc_table[DISTRIBUTION_LOG_NO].pid;
-   *proc_table[DISTRIBUTION_LOG_NO].status = ON;
-#endif
-#ifdef _MAINTAINER_LOG
-   proc_table[MAINTAINER_LOG_NO].pid = make_process(MLOG, work_dir, NULL);
-   *(pid_t *)(pid_list + ((MAINTAINER_LOG_NO + 1) * sizeof(pid_t))) = proc_table[MAINTAINER_LOG_NO].pid;
-   *proc_table[MAINTAINER_LOG_NO].status = ON;
-#else
-   proc_table[MAINTAINER_LOG_NO].pid = -1;
-   *proc_table[MAINTAINER_LOG_NO].status = NEITHER;
-#endif
-
-   /* Tell user at what time the AFD was started. */
    *(pid_t *)(pid_list) = getpid();
-   system_log(CONFIG_SIGN, NULL, 0,
-              "=================> STARTUP <=================");
-   if (p_afd_status->hostname[0] != '\0')
-   {
-      char dstr[26];
 
-      strftime(dstr, 26, "%a %h %d %H:%M:%S %Y", localtime(&now));
-      system_log(CONFIG_SIGN, NULL, 0, _("Starting on <%s> %s"),
-                 p_afd_status->hostname, dstr);
+   start_afd(binary_changed, now, default_age_limit, afdd_port);
+
+#ifdef HAVE_FDATASYNC
+   if (fdatasync(afd_status_fd) == -1)
+#else
+   if (fsync(afd_status_fd) == -1)
+#endif
+   {
+      system_log(WARN_SIGN, __FILE__, __LINE__,
+                 _("Failed to sync `%s' file : %s"),
+                 afd_status_file, strerror(errno));
    }
-   system_log(INFO_SIGN, NULL, 0, _("Starting %s (%s)"), AFD, PACKAGE_VERSION);
-   system_log(DEBUG_SIGN, NULL, 0,
-              _("AFD configuration: Default age limit         %d (sec)"),
-              default_age_limit);
-
-   /* Start the process AMG. */
-   proc_table[AMG_NO].pid = make_process(AMG, work_dir, NULL);
-   *(pid_t *)(pid_list + ((AMG_NO + 1) * sizeof(pid_t))) = proc_table[AMG_NO].pid;
-   *proc_table[AMG_NO].status = ON;
-
-   /* Start TCP info daemon of AFD. */
-   if (afdd_port > 0)
+#ifndef MMAP_KILLER
+# ifdef HAVE_FDATASYNC
+   if (in_global_filesystem != YES)
    {
-      proc_table[AFDD_NO].pid = make_process(AFDD, work_dir, NULL);
-      *(pid_t *)(pid_list + ((AFDD_NO + 1) * sizeof(pid_t))) = proc_table[AFDD_NO].pid;
-      *proc_table[AFDD_NO].status = ON;
-   }
-   else
-   {
-      proc_table[AFDD_NO].pid = -1;
-      *proc_table[AFDD_NO].status = NEITHER;
-   }
-
-#ifdef _WITH_ATPD_SUPPORT
-   /* Start AFD Transfer Protocol daemon. */
-   proc_table[ATPD_NO].pid = make_process(ATPD, work_dir, NULL);
-   *(pid_t *)(pid_list + ((ATPD_NO + 1) * sizeof(pid_t))) = proc_table[ATPD_NO].pid;
-   *proc_table[ATPD_NO].status = ON;
-#endif
-
-#ifdef _WITH_WMOD_SUPPORT
-   /* Start WMO Protocol daemon. */
-   proc_table[WMOD_NO].pid = make_process(WMOD, work_dir, NULL);
-   *(pid_t *)(pid_list + ((WMOD_NO + 1) * sizeof(pid_t))) = proc_table[WMOD_NO].pid;
-   *proc_table[WMOD_NO].status = ON;
-#endif
-
-#ifdef _WITH_DE_MAIL_SUPPORT
-   /* Start De Mail Confirmation daemon. */
-   proc_table[DEMCD_NO].pid = make_process(DEMCD, work_dir, NULL);
-   *(pid_t *)(pid_list + ((DEMCD_NO + 1) * sizeof(pid_t))) = proc_table[DEMCD_NO].pid;
-   *proc_table[DEMCD_NO].status = ON;
-#endif
-
-#if ALDAD_OFFSET != 0
-   /* Start ALDA daemon of AFD. */
-   proc_table[ALDAD_NO].pid = make_process(ALDAD, work_dir, NULL);
-   *(pid_t *)(pid_list + ((ALDAD_NO + 1) * sizeof(pid_t))) = proc_table[ALDAD_NO].pid;
-   *proc_table[ALDAD_NO].status = ON;
-#endif
-
-   /*
-    * Before starting the FD lets initialise all critical values
-    * for this process.
-    */
-   p_afd_status->no_of_transfers = 0;
-   if ((i = fsa_attach(AFD)) != SUCCESS)
-   {
-      if (i != INCORRECT_VERSION)
+# endif
+      if (started_as_daemon == YES)
       {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("Failed to attach to FSA."));
-      }
-      else
-      {
-         system_log(INFO_SIGN, __FILE__, __LINE__,
-                    _("You can ignore the last warning about incorrect version."));
-      }
-   }
-   else
-   {
-      int j;
-
-      for (i = 0; i < no_of_hosts; i++)
-      {
-#ifdef WITH_IP_DB
-         fsa[i].host_status |= STORE_IP;
-#endif
-         fsa[i].active_transfers = 0;
-         for (j = 0; j < MAX_NO_PARALLEL_JOBS; j++)
+         /*
+          * In Irix 5.x there is a process fsr that always tries to
+          * optimise the file system. This process however does not care
+          * about memory mapped files! So, lets hope that when we leave
+          * the memory mapped file open, it will leave this file
+          * untouched.
+          */
+         if (close(afd_status_fd) == -1)
          {
-            fsa[i].job_status[j].no_of_files = 0;
-            fsa[i].job_status[j].proc_id = -1;
-            fsa[i].job_status[j].job_id = NO_ID;
-            fsa[i].job_status[j].connect_status = DISCONNECT;
-            fsa[i].job_status[j].file_name_in_use[0] = '\0';
+            (void)fprintf(stderr, _("Failed to close() `%s' : %s (%s %d)\n"),
+                          afd_status_file, strerror(errno),
+                          __FILE__, __LINE__);
          }
+         afd_status_fd = -1;
       }
-      (void)fsa_detach(YES);
+# ifdef HAVE_FDATASYNC
    }
+# endif
+#endif
 
 #ifdef _LINK_MAX_TEST
    link_max = LINKY_MAX;
@@ -861,46 +903,6 @@ main(int argc, char *argv[])
 # endif
 #endif
 
-#ifdef HAVE_FDATASYNC
-   if (fdatasync(afd_status_fd) == -1)
-#else
-   if (fsync(afd_status_fd) == -1)
-#endif
-   {
-      system_log(WARN_SIGN, __FILE__, __LINE__,
-                 _("Failed to sync `%s' file : %s"),
-                 afd_status_file, strerror(errno));
-   }
-#ifndef MMAP_KILLER
-   /*
-    * In Irix 5.x there is a process fsr that always tries to
-    * optimise the file system. This process however does not care
-    * about memory mapped files! So, lets hope that when we leave
-    * the memory mapped file open, it will leave this file
-    * untouched.
-    */
-   if (close(afd_status_fd) == -1)
-   {
-      (void)fprintf(stderr, _("Failed to close() `%s' : %s (%s %d)\n"),
-                    afd_status_file, strerror(errno), __FILE__, __LINE__);
-   }
-#endif
-
-#ifdef HAVE_FDATASYNC
-   if (fdatasync(afd_active_fd) == -1)
-#else
-   if (fsync(afd_active_fd) == -1)
-#endif
-   {
-      system_log(WARN_SIGN, __FILE__, __LINE__,
-                 _("Failed to sync AFD_ACTIVE file : %s"), strerror(errno));
-   }
-
-   /* Start init_afd_worker to help this process. */
-   proc_table[AFD_WORKER_NO].pid = make_process(AFD_WORKER, work_dir, NULL);
-   *(pid_t *)(pid_list + ((AFD_WORKER_NO + 1) * sizeof(pid_t))) = proc_table[AFD_WORKER_NO].pid;
-   *proc_table[AFD_WORKER_NO].status = ON;
-
    /*
     * Watch if any of the two process (AMG, FD) dies.
     * While doing this wait and see if any commands or replies
@@ -909,7 +911,7 @@ main(int argc, char *argv[])
    FD_ZERO(&rset);
    for (;;)
    {
-      (*heartbeat)++;
+      UPDATE_HEARTBEAT();
 #ifdef HAVE_MMAP
       if (msync(pid_list, afd_active_size, MS_ASYNC) == -1)
 #else
@@ -924,7 +926,15 @@ main(int argc, char *argv[])
       {
          system_log(INFO_SIGN, NULL, 0,
                     _("Shutdown bit is set, shutting down."));
-         exit(SUCCESS);
+         if (started_as_daemon == NO)
+         {
+            stop_afd();
+            *shared_shutdown = 0;
+         }
+         else
+         {
+            exit(SUCCESS);
+         }
       }
 
       /*
@@ -1138,7 +1148,7 @@ main(int argc, char *argv[])
       /* Did we get a timeout? */
       if (status == 0)
       {
-         (*heartbeat)++;
+         UPDATE_HEARTBEAT();
 #ifdef HAVE_MMAP
          if (msync(pid_list, afd_active_size, MS_ASYNC) == -1)
 #else
@@ -1151,11 +1161,14 @@ main(int argc, char *argv[])
 #ifdef HAVE_FDATASYNC
          if (in_global_filesystem)
          {
-            if (fdatasync(afd_status_fd) == -1)
+            if (afd_status_fd != -1)
             {
-               system_log(WARN_SIGN, __FILE__, __LINE__,
-                          _("Failed to fdatasync() `%s' file : %s"),
-                          afd_status_file, strerror(errno));
+               if (fdatasync(afd_status_fd) == -1)
+               {
+                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                             _("Failed to fdatasync() `%s' file : %s"),
+                             afd_status_file, strerror(errno));
+               }
             }
             if (fdatasync(afd_active_fd) == -1)
             {
@@ -1256,107 +1269,31 @@ main(int argc, char *argv[])
                  /* Now evaluate all data read from fifo, byte after byte */
                  while (count < n)
                  {
-                    (*heartbeat)++;
+                    UPDATE_HEARTBEAT();
                     switch (buffer[count])
                     {
+                       case SHUTDOWN_ALL : /* Shutdown AFD + init_afd */
                        case SHUTDOWN  : /* Shutdown AFD */
 
                           /* Tell 'afd' that we received shutdown message */
-                          (*heartbeat)++;
+                          UPDATE_HEARTBEAT();
                           if (send_cmd(ACKN, afd_resp_fd) < 0)
                           {
                              system_log(ERROR_SIGN, __FILE__, __LINE__,
                                         _("Failed to send ACKN : %s"),
                                         strerror(errno));
                           }
-
-                          if (proc_table[AFD_WORKER_NO].pid > 0)
+#ifdef WITH_SYSTEMD
+                          if ((started_as_daemon == NO) &&
+                              (buffer[count] == SHUTDOWN_ALL))
                           {
-                             int  fd;
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-                             int  writefd;
-#endif
-                             char afd_worker_cmd[MAX_PATH_LENGTH];
-
-                             (void)snprintf(afd_worker_cmd, MAX_PATH_LENGTH,
-                                            "%s%s%s", p_work_dir, FIFO_DIR, AFD_WORKER_CMD_FIFO);
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-                             if (open_fifo_rw(afd_worker_cmd, &fd, &write_fd) == -1)
-#else
-                             if ((fd = coe_open(afd_worker_cmd, O_RDWR)) == -1)
-#endif
-                             {
-                                system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                           "Failed to open %s to send %s SHUTDOWN command : %s",
-                                           afd_worker_cmd, AFD_WORKER, strerror(errno));
-                             }
-                             else
-                             {
-                                int   j;
-                                pid_t pid;
-
-                                p_afd_status->afd_worker = SHUTDOWN;
-                                if (send_cmd(SHUTDOWN, fd) < 0)
-                                {
-                                   system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                              _("Failed to send SHUTDOWN to %s : %s"),
-                                              AFD_WORKER, strerror(errno));
-                                }
-                                for (j = 0; j < MAX_SHUTDOWN_TIME; j++)
-                                {
-                                   if ((pid = waitpid(proc_table[AFD_WORKER_NO].pid, NULL, WNOHANG)) > 0)
-                                   {
-                                      if (pid == proc_table[AFD_WORKER_NO].pid)
-                                      {
-                                         proc_table[AFD_WORKER_NO].pid = 0;
-                                         p_afd_status->afd_worker = STOPPED;
-                                      }
-                                      else
-                                      {
-                                         int gotcha = NO,
-                                             k;
-
-                                         for (k = 0; k < NO_OF_PROCESS; k++)
-                                         {
-                                            (*heartbeat)++;
-                                            if (proc_table[k].pid == pid)
-                                            {
-                                               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-#if SIZEOF_PID_T == 4
-                                                          _("Premature end of process %s (PID=%d), while waiting for %s."),
-#else
-                                                          _("Premature end of process %s (PID=%lld), while waiting for %s."),
-#endif
-                                                          proc_table[k].proc_name,
-                                                          (pri_pid_t)proc_table[k].pid),
-                                               proc_table[k].pid = 0;
-                                               gotcha = YES;
-                                               break;
-                                            }
-                                         }
-                                         if (gotcha == NO)
-                                         {
-                                            system_log(DEBUG_SIGN, __FILE__, __LINE__,
-#if SIZEOF_PID_T == 4
-                                                       _("Caught some unknown zombie with PID %d while waiting for FD."),
-#else
-                                                       _("Caught some unknown zombie with PID ll%d while waiting for FD."),
-#endif
-                                                       (pri_pid_t)pid);
-                                         }
-                                      }
-                                   }
-                                   else
-                                   {
-                                      my_usleep(100000L);
-                                   }
-                                   if (proc_table[AFD_WORKER_NO].pid == 0)
-                                   {
-                                      break;
-                                   }
-                                }
-                             }
+                             system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                        "Calling sd_notifyf(STOPPING=1) ...");
+                             sd_notify(0, "STOPPING=1\n");
                           }
+#endif
+
+                          stop_afd_worker(heartbeat);
 
                           if (proc_table[AMG_NO].pid > 0)
                           {
@@ -1386,7 +1323,7 @@ main(int argc, char *argv[])
                              }
                              for (j = 0; j < MAX_SHUTDOWN_TIME;  j++)
                              {
-                                (*heartbeat)++;
+                                UPDATE_HEARTBEAT();
                                 if ((pid = waitpid(0, NULL, WNOHANG)) > 0)
                                 {
                                    if (pid == proc_table[FD_NO].pid)
@@ -1462,7 +1399,7 @@ main(int argc, char *argv[])
                                   }
                                   for (j = 0; j < MAX_SHUTDOWN_TIME; j++)
                                   {
-                                     (*heartbeat)++;
+                                     UPDATE_HEARTBEAT();
                                      if ((pid = waitpid(proc_table[FD_NO].pid, NULL, WNOHANG)) > 0)
                                      {
                                         if (pid == proc_table[FD_NO].pid)
@@ -1515,15 +1452,54 @@ main(int argc, char *argv[])
                                   }
                                }
 
-                          current_time = time(NULL);
-                          (void)memset(buffer, '-', 35 + AFD_LENGTH);
-                          buffer[35 + AFD_LENGTH] = '\0';
-                          (void)fprintf(stderr, _("%.24s : Stopped %s\n%s\n"),
-                                        ctime(&current_time), AFD, buffer);
+                          if ((buffer[count] == SHUTDOWN_ALL) ||
+                              (started_as_daemon == YES))
+                          {
+                             /* Shutdown of other process is handled by */
+                             /* the exit handler.                       */
+                             exit(SUCCESS);
+                          }
+                          else
+                          {
+                             stop_afd();
 
-                          /* Shutdown of other process is handled by */
-                          /* the exit handler.                       */
-                          exit(SUCCESS);
+                             current_time = time(NULL);
+                             (void)memset(buffer, '-', 35 + 3);
+                             buffer[35 + 3] = '\0';
+                             (void)fprintf(stderr,
+                                           _("%.24s : Stopped AFD (%s %d)\n%s\n"),
+                                           ctime(&current_time),
+                                           __FILE__, __LINE__, buffer);
+                             break;
+                          }
+
+                       case START_AFD : /* Start AFD */
+                       case START_AFD_NO_DIR_SCAN :
+
+                          /* Tell 'afd' that we received shutdown message */
+                          UPDATE_HEARTBEAT();
+                          if (send_cmd(ACKN, afd_resp_fd) < 0)
+                          {
+                             system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                        _("Failed to send ACKN : %s"),
+                                        strerror(errno));
+                          }
+                          get_afd_config_value(&afdd_port, &default_age_limit,
+                                               &in_global_filesystem);
+
+                          /* Initialise communication flag FD <-> AMG. */
+                          if (buffer[count] == START_AFD_NO_DIR_SCAN)
+                          {
+                             p_afd_status->amg_jobs = PAUSE_DISTRIBUTION;
+                          }
+                          else
+                          {
+                             p_afd_status->amg_jobs = 0;
+                          }
+
+                          stop_typ = STARTUP_ID;
+                          start_afd(NO, now, default_age_limit, afdd_port);
+                          break;
 
                        case STOP      : /* Stop all process of the AFD */
 
@@ -1620,7 +1596,7 @@ main(int argc, char *argv[])
 
                           /* Tell afd startup procedure that it may */
                           /* start afd_ctrl.                        */
-                          (*heartbeat)++;
+                          UPDATE_HEARTBEAT();
                           if (send_cmd(ACKN, probe_only_fd) < 0)
                           {
                              system_log(WARN_SIGN, __FILE__, __LINE__,
@@ -1748,12 +1724,28 @@ main(int argc, char *argv[])
                                              _("Unknown stop_typ (%d)"),
                                              stop_typ);
                                }
+#ifdef WITH_SYSTEMD
+                          if (started_as_daemon == NO)
+                          {
+                             if ((systemd_watchdog_enabled = sd_watchdog_enabled(0, NULL)) > 0)
+                             {
+                                system_log(INFO_SIGN, NULL, 0,
+                                           "Enabling systemd watchdog.");
+                             }
+                             system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                        "Calling sd_notifyf(READY=1) ...");
+                             sd_notifyf(0, "READY=1\n"
+                                        "STATUS=All process up\n"
+                                        "MAINPID=%lu",
+                                        (unsigned long)getpid());
+                          }
+#endif
                           break;
 
                        case IS_ALIVE  : /* Somebody wants to know whether an AFD */
                                         /* is running in this directory. Quickly */
                                         /* lets answer or we will be killed!     */
-                          (*heartbeat)++;
+                          UPDATE_HEARTBEAT()
                           if (send_cmd(ACKN, probe_only_fd) < 0)
                           {
                              system_log(WARN_SIGN, __FILE__, __LINE__,
@@ -1798,11 +1790,22 @@ get_afd_config_value(int          *afdd_port,
                      unsigned int *default_age_limit,
                      int          *in_global_filesystem)
 {
-   char *buffer,
-        config_file[MAX_PATH_LENGTH];
+   char          *buffer,
+                 config_file[MAX_PATH_LENGTH];
+   struct stat   stat_buf;
+   static time_t afd_config_mtime = 0;
 
    (void)snprintf(config_file, MAX_PATH_LENGTH, "%s%s%s",
                   p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
+   if ((stat(config_file, &stat_buf) == -1) ||
+       (stat_buf.st_mtime == afd_config_mtime))
+   {
+      return;
+   }
+   else
+   {
+      afd_config_mtime = stat_buf.st_mtime;
+   }
    if ((eaccess(config_file, F_OK) == 0) &&
        (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {
@@ -2255,6 +2258,106 @@ check_dirs(char *work_dir)
 }
 
 
+/*++++++++++++++++++++++++++ stop_afd_worker() ++++++++++++++++++++++++++*/
+static void
+stop_afd_worker(unsigned int *heartbeat)
+{
+   if (proc_table[AFD_WORKER_NO].pid > 0)
+   {
+      int  fd;
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+      int  writefd;
+#endif
+      char afd_worker_cmd[MAX_PATH_LENGTH];
+
+      (void)snprintf(afd_worker_cmd, MAX_PATH_LENGTH,
+                     "%s%s%s", p_work_dir, FIFO_DIR, AFD_WORKER_CMD_FIFO);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+      if (open_fifo_rw(afd_worker_cmd, &fd, &write_fd) == -1)
+#else
+      if ((fd = coe_open(afd_worker_cmd, O_RDWR)) == -1)
+#endif
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to open %s to send %s SHUTDOWN command : %s",
+                    afd_worker_cmd, AFD_WORKER, strerror(errno));
+      }
+      else
+      {
+         int   j;
+         pid_t pid;
+
+         p_afd_status->afd_worker = SHUTDOWN;
+         if (send_cmd(SHUTDOWN, fd) < 0)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       _("Failed to send SHUTDOWN to %s : %s"),
+                       AFD_WORKER, strerror(errno));
+         }
+         for (j = 0; j < MAX_SHUTDOWN_TIME; j++)
+         {
+            if ((pid = waitpid(proc_table[AFD_WORKER_NO].pid, NULL, WNOHANG)) > 0)
+            {
+               if (pid == proc_table[AFD_WORKER_NO].pid)
+               {
+                  proc_table[AFD_WORKER_NO].pid = 0;
+                  p_afd_status->afd_worker = STOPPED;
+               }
+               else
+               {
+                  int gotcha = NO,
+                      k;
+
+                  for (k = 0; k < NO_OF_PROCESS; k++)
+                  {
+                     UPDATE_HEARTBEAT();
+                     if (proc_table[k].pid == pid)
+                     {
+                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
+                                   _("Premature end of process %s (PID=%d), while waiting for %s."),
+#else
+                                   _("Premature end of process %s (PID=%lld), while waiting for %s."),
+#endif
+                                   proc_table[k].proc_name,
+                                   (pri_pid_t)proc_table[k].pid),
+                        proc_table[k].pid = 0;
+                        gotcha = YES;
+                        break;
+                     }
+                  }
+                  if (gotcha == NO)
+                  {
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
+                                _("Caught some unknown zombie with PID %d while waiting for FD."),
+#else
+                                _("Caught some unknown zombie with PID ll%d while waiting for FD."),
+#endif
+                                (pri_pid_t)pid);
+                  }
+               }
+            }
+            else
+            {
+               my_usleep(100000L);
+            }
+            if (proc_table[AFD_WORKER_NO].pid == 0)
+            {
+               break;
+            }
+         }
+         (void)close(fd);
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+         (void)close(write_fd);
+#endif
+      }
+   }
+
+   return;
+}
+
+
 /*+++++++++++++++++++ delete_old_afd_status_files() ++++++++++++++++++++*/
 static void
 delete_old_afd_status_files(void)
@@ -2352,12 +2455,65 @@ make_process(char *progname, char *directory, sigset_t *oldmask)
                           strerror(errno));
             }
          }
-         if (execlp(progname, progname, WORK_DIR_ID, directory, (char *)0) < 0)
+         if ((strcmp(progname, AMG) == 0) || (strcmp(progname, FD) == 0))
          {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       _("Failed to start process %s : %s"),
-                       progname, strerror(errno));
-            _exit(INCORRECT);
+            char env_file[MAX_PATH_LENGTH];
+
+            (void)snprintf(env_file, MAX_PATH_LENGTH, "%s%s/%s",
+                           directory, ETC_DIR, AFD_ENVIRONMENT_FILE);
+            if (eaccess(env_file, R_OK) == 0)
+            {
+               char full_progname[MAX_PATH_LENGTH],
+                    *p_progname;
+
+               if (path_to_self == NULL)
+               {
+                  p_progname = progname;
+               }
+               else
+               {
+                  (void)snprintf(full_progname, MAX_PATH_LENGTH,
+                                 "%s/%s", path_to_self, progname);
+                  if (eaccess(full_progname, X_OK) == 0)
+                  {
+                     p_progname = full_progname;
+                  }
+                  else
+                  {
+                     p_progname = progname;
+                  }
+               }
+               if (execlp(AFD_ENVIRONMENT_WRAPPER, AFD_ENVIRONMENT_WRAPPER,
+                          p_progname, WORK_DIR_ID, directory, (char *)0) < 0)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             _("Failed to start process %s : %s"),
+                             p_progname, strerror(errno));
+                  _exit(INCORRECT);
+               }
+            }
+            else
+            {
+               if (execlp(progname, progname, WORK_DIR_ID, directory,
+                          (char *)0) < 0)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             _("Failed to start process %s : %s"),
+                             progname, strerror(errno));
+                  _exit(INCORRECT);
+               }
+            }
+         }
+         else
+         {
+            if (execlp(progname, progname, WORK_DIR_ID, directory,
+                       (char *)0) < 0)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          _("Failed to start process %s : %s"),
+                          progname, strerror(errno));
+               _exit(INCORRECT);
+            }
          }
          exit(SUCCESS);
 
@@ -2457,6 +2613,7 @@ zombie_check(void)
 #endif
                      proc_table[i].pid = 0;
                      *proc_table[i].status = OFF;
+fprintf(stderr, "%d -> OFF (%s %d)\n", i, __FILE__, __LINE__);
                      system_log(ERROR_SIGN, __FILE__, __LINE__,
                                 _("<INIT> Process %s has died!"),
                                 proc_table[i].proc_name);
@@ -2523,6 +2680,7 @@ zombie_check(void)
                  /* abnormal termination */
                  proc_table[i].pid = 0;
                  *proc_table[i].status = OFF;
+fprintf(stderr, "%d -> OFF (%s %d)\n", i, __FILE__, __LINE__);
                  system_log(ERROR_SIGN, __FILE__, __LINE__,
                             _("<INIT> Abnormal termination of %s, caused by signal %d!"),
                             proc_table[i].proc_name, WTERMSIG(status));
@@ -2648,15 +2806,217 @@ stuck_transfer_check(time_t current_time)
 }
 
 
-/*++++++++++++++++++++++++++++++ afd_exit() +++++++++++++++++++++++++++++*/
+/*+++++++++++++++++++++++++++++ start_afd() +++++++++++++++++++++++++++++*/
 static void
-afd_exit(void)
+start_afd(int          binary_changed,
+          time_t       now,
+          unsigned int default_age_limit,
+          int          afdd_port)
+{
+   int i;
+
+   /* Initialize start_time so AMG signals us that we must start FD. */
+   p_afd_status->start_time = 0L;
+
+   /* Start all log process. */
+   proc_table[SLOG_NO].pid = make_process(SLOG, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((SLOG_NO + 1) * sizeof(pid_t))) = proc_table[SLOG_NO].pid;
+   *proc_table[SLOG_NO].status = ON;
+   proc_table[ELOG_NO].pid = make_process(ELOG, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((ELOG_NO + 1) * sizeof(pid_t))) = proc_table[ELOG_NO].pid;
+   *proc_table[ELOG_NO].status = ON;
+   proc_table[RLOG_NO].pid = make_process(RLOG, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((RLOG_NO + 1) * sizeof(pid_t))) = proc_table[RLOG_NO].pid;
+   *proc_table[RLOG_NO].status = ON;
+   proc_table[TLOG_NO].pid = make_process(TLOG, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((TLOG_NO + 1) * sizeof(pid_t))) = proc_table[TLOG_NO].pid;
+   *proc_table[TLOG_NO].status = ON;
+   proc_table[TDBLOG_NO].pid = make_process(TDBLOG, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((TDBLOG_NO + 1) * sizeof(pid_t))) = proc_table[TDBLOG_NO].pid;
+   *proc_table[TDBLOG_NO].status = ON;
+
+   /* Start process cleaning archive directory. */
+   proc_table[AW_NO].pid = make_process(ARCHIVE_WATCH, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((AW_NO + 1) * sizeof(pid_t))) = proc_table[AW_NO].pid;
+   *proc_table[AW_NO].status = ON;
+
+   /* Start process doing the I/O logging. */
+#ifdef _INPUT_LOG
+   proc_table[INPUT_LOG_NO].pid = make_process(INPUT_LOG_PROCESS, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((INPUT_LOG_NO + 1) * sizeof(pid_t))) = proc_table[INPUT_LOG_NO].pid;
+   *proc_table[INPUT_LOG_NO].status = ON;
+#endif
+#ifdef _OUTPUT_LOG
+   proc_table[OUTPUT_LOG_NO].pid = make_process(OUTPUT_LOG_PROCESS, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((OUTPUT_LOG_NO + 1) * sizeof(pid_t))) = proc_table[OUTPUT_LOG_NO].pid;
+   *proc_table[OUTPUT_LOG_NO].status = ON;
+#endif
+#ifdef _CONFIRMATION_LOG
+   proc_table[CONFIRMATION_LOG_NO].pid = make_process(CONFIRMATION_LOG_PROCESS, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((CONFIRMATION_LOG_NO + 1) * sizeof(pid_t))) = proc_table[CONFIRMATION_LOG_NO].pid;
+   *proc_table[CONFIRMATION_LOG_NO].status = ON;
+#endif
+#ifdef _DELETE_LOG
+   proc_table[DELETE_LOG_NO].pid = make_process(DELETE_LOG_PROCESS, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((DELETE_LOG_NO + 1) * sizeof(pid_t))) = proc_table[DELETE_LOG_NO].pid;
+   *proc_table[DELETE_LOG_NO].status = ON;
+#endif
+#ifdef _PRODUCTION_LOG
+   proc_table[PRODUCTION_LOG_NO].pid = make_process(PRODUCTION_LOG_PROCESS, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((PRODUCTION_LOG_NO + 1) * sizeof(pid_t))) = proc_table[PRODUCTION_LOG_NO].pid;
+   *proc_table[PRODUCTION_LOG_NO].status = ON;
+#endif
+#ifdef _DISTRIBUTION_LOG
+   proc_table[DISTRIBUTION_LOG_NO].pid = make_process(DISTRIBUTION_LOG_PROCESS, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((DISTRIBUTION_LOG_NO + 1) * sizeof(pid_t))) = proc_table[DISTRIBUTION_LOG_NO].pid;
+   *proc_table[DISTRIBUTION_LOG_NO].status = ON;
+#endif
+#ifdef _MAINTAINER_LOG
+   proc_table[MAINTAINER_LOG_NO].pid = make_process(MLOG, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((MAINTAINER_LOG_NO + 1) * sizeof(pid_t))) = proc_table[MAINTAINER_LOG_NO].pid;
+   *proc_table[MAINTAINER_LOG_NO].status = ON;
+#else
+   proc_table[MAINTAINER_LOG_NO].pid = -1;
+   *proc_table[MAINTAINER_LOG_NO].status = NEITHER;
+#endif
+
+   /* Tell user at what time the AFD was started. */
+   system_log(CONFIG_SIGN, NULL, 0,
+              "=================> STARTUP <=================");
+   if (binary_changed > 0)
+   {
+      system_log(WARN_SIGN, __FILE__, __LINE__,
+                 "Initialize database due to %d change(s).", binary_changed);
+   }
+   if (p_afd_status->hostname[0] != '\0')
+   {
+      char dstr[26];
+
+      strftime(dstr, 26, "%a %h %d %H:%M:%S %Y", localtime(&now));
+      system_log(CONFIG_SIGN, NULL, 0, _("Starting on <%s> %s"),
+                 p_afd_status->hostname, dstr);
+   }
+   system_log(INFO_SIGN, NULL, 0, _("Starting %s (%s)"), AFD, PACKAGE_VERSION);
+   system_log(DEBUG_SIGN, NULL, 0,
+              _("AFD configuration: Default age limit         %d (sec)"),
+              default_age_limit);
+
+   /* Start the process AMG. */
+   proc_table[AMG_NO].pid = make_process(AMG, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((AMG_NO + 1) * sizeof(pid_t))) = proc_table[AMG_NO].pid;
+   *proc_table[AMG_NO].status = ON;
+
+   /* Start TCP info daemon of AFD. */
+   if (afdd_port > 0)
+   {
+      proc_table[AFDD_NO].pid = make_process(AFDD, p_work_dir, NULL);
+      *(pid_t *)(pid_list + ((AFDD_NO + 1) * sizeof(pid_t))) = proc_table[AFDD_NO].pid;
+      *proc_table[AFDD_NO].status = ON;
+   }
+   else
+   {
+      proc_table[AFDD_NO].pid = -1;
+      *proc_table[AFDD_NO].status = NEITHER;
+   }
+
+#ifdef _WITH_ATPD_SUPPORT
+   /* Start AFD Transfer Protocol daemon. */
+   proc_table[ATPD_NO].pid = make_process(ATPD, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((ATPD_NO + 1) * sizeof(pid_t))) = proc_table[ATPD_NO].pid;
+   *proc_table[ATPD_NO].status = ON;
+#endif
+
+#ifdef _WITH_WMOD_SUPPORT
+   /* Start WMO Protocol daemon. */
+   proc_table[WMOD_NO].pid = make_process(WMOD, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((WMOD_NO + 1) * sizeof(pid_t))) = proc_table[WMOD_NO].pid;
+   *proc_table[WMOD_NO].status = ON;
+#endif
+
+#ifdef _WITH_DE_MAIL_SUPPORT
+   /* Start De Mail Confirmation daemon. */
+   proc_table[DEMCD_NO].pid = make_process(DEMCD, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((DEMCD_NO + 1) * sizeof(pid_t))) = proc_table[DEMCD_NO].pid;
+   *proc_table[DEMCD_NO].status = ON;
+#endif
+
+#if ALDAD_OFFSET != 0
+   /* Start ALDA daemon of AFD. */
+   proc_table[ALDAD_NO].pid = make_process(ALDAD, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((ALDAD_NO + 1) * sizeof(pid_t))) = proc_table[ALDAD_NO].pid;
+   *proc_table[ALDAD_NO].status = ON;
+#endif
+
+   /*
+    * Before starting the FD lets initialise all critical values
+    * for this process.
+    */
+   p_afd_status->no_of_transfers = 0;
+   if ((i = fsa_attach(AFD)) != SUCCESS)
+   {
+      if (i != INCORRECT_VERSION)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    _("Failed to attach to FSA."));
+      }
+      else
+      {
+         system_log(INFO_SIGN, __FILE__, __LINE__,
+                    _("You can ignore the last warning about incorrect version."));
+      }
+   }
+   else
+   {
+      int j;
+
+      for (i = 0; i < no_of_hosts; i++)
+      {
+#ifdef WITH_IP_DB
+         fsa[i].host_status |= STORE_IP;
+#endif
+         fsa[i].active_transfers = 0;
+         for (j = 0; j < MAX_NO_PARALLEL_JOBS; j++)
+         {
+            fsa[i].job_status[j].no_of_files = 0;
+            fsa[i].job_status[j].proc_id = -1;
+            fsa[i].job_status[j].job_id = NO_ID;
+            fsa[i].job_status[j].connect_status = DISCONNECT;
+            fsa[i].job_status[j].file_name_in_use[0] = '\0';
+         }
+      }
+      (void)fsa_detach(YES);
+   }
+
+   /* Start init_afd_worker to help this process. */
+   proc_table[AFD_WORKER_NO].pid = make_process(AFD_WORKER, p_work_dir, NULL);
+   *(pid_t *)(pid_list + ((AFD_WORKER_NO + 1) * sizeof(pid_t))) = proc_table[AFD_WORKER_NO].pid;
+   *proc_table[AFD_WORKER_NO].status = ON;
+
+#ifdef HAVE_FDATASYNC
+   if (fdatasync(afd_active_fd) == -1)
+#else
+   if (fsync(afd_active_fd) == -1)
+#endif
+   {
+      system_log(WARN_SIGN, __FILE__, __LINE__,
+                 _("Failed to sync AFD_ACTIVE file : %s"), strerror(errno));
+   }
+
+   current_afd_status = ON;
+
+   return;
+}
+
+
+/*++++++++++++++++++++++++++++++ stop_afd() +++++++++++++++++++++++++++++*/
+static void
+stop_afd(void)
 {
    char        *buffer,
                *ptr;
    struct stat stat_buf;
 
-   if (probe_only != 1)
+   if ((current_afd_status == ON) && (probe_only != 1))
    {
       int   kill_counter = 0,
             kill_pos_list[NO_OF_PROCESS + 1],
@@ -2667,6 +3027,7 @@ afd_exit(void)
       system_log(INFO_SIGN, NULL, 0,
                  _("Stopped %s. (%s)"), AFD, PACKAGE_VERSION);
 
+      (void)fsa_detach(YES);
       if (afd_active_fd == -1)
       {
          int read_fd;
@@ -2736,11 +3097,11 @@ afd_exit(void)
          }
          else
          {
-            if (*(pid_t *)ptr > 0)
+            if ((*(pid_t *)ptr > 0) && ((i - 1) != DC_NO))
             {
 #ifdef _DEBUG
-               system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Killing %d - %s"),
-                          *(pid_t *)ptr, proc_table[i - 1].proc_name);
+               system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Killing %d - %s (%d)"),
+                          *(pid_t *)ptr, proc_table[i - 1].proc_name, i - 1);
 #endif
                if (kill(*(pid_t *)ptr, SIGINT) == -1)
                {
@@ -2762,6 +3123,7 @@ afd_exit(void)
                       (((i - 1) != AFDD_NO) || (*proc_table[i - 1].status != NEITHER)))
                   {
                      kill_list[kill_counter] = *(pid_t *)ptr;
+                     *(pid_t *)ptr = -1;
                      kill_pos_list[kill_counter] = i;
                      kill_counter++;
                      *proc_table[i - 1].status = STOPPED;
@@ -2781,14 +3143,6 @@ afd_exit(void)
       }
       *proc_table[SLOG_NO].status = STOPPED;
 
-      /*
-       * On newer Linux system after an rpm update of AFD
-       * all process not stopped via fifo are unkillable via
-       * SIGINT. Currently I do not know why this is so.
-       * To ensure all process are gone, kill them again
-       * with SIGKILL.
-       * NOTE: Remove this dirty hack once the cause is known.
-       */
       if (kill_counter > 0)
       {
          int   j;
@@ -2888,23 +3242,10 @@ afd_exit(void)
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     _("msync() error : %s"), strerror(errno));
       }
-      if (munmap((void *)p_afd_status, sizeof(struct afd_status)) == -1)
-      {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("munmap() error : %s"), strerror(errno));
-      }
-      p_afd_status = NULL;
 #endif
 
       system_log(CONFIG_SIGN, NULL, 0,
                  "=================> SHUTDOWN <=================");
-
-      if (unlink(afd_active_file) == -1)
-      {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    _("Failed to unlink() `%s' : %s"),
-                    afd_active_file, strerror(errno));
-      }
 
       /* As the last process kill the system log process. */
       if (syslog > 0)
@@ -2948,14 +3289,157 @@ afd_exit(void)
             (void)kill(syslog, SIGKILL);
             (void)fprintf(stderr,
 #if SIZEOF_PID_T == 4
-                          "Killed process %s (%d) the hard way.\n",
+                          "Killed process %s (%d) the hard way. (%s %d)\n",
 #else
-                          "Killed process %s (%lld) the hard way.\n",
+                          "Killed process %s (%lld) the hard way. (%s %d)\n",
 #endif
-                          SLOG, (pri_pid_t)syslog);
+                          SLOG, (pri_pid_t)syslog, __FILE__, __LINE__);
+         }
+      }
+      current_afd_status = OFF;
+#ifdef WITH_SYSTEMD
+      sd_notify(0, "STATUS=Stopped on user request\n");
+#endif
+   }
+
+   return;
+}
+
+
+/*++++++++++++++++++++++++++++++ afd_exit() +++++++++++++++++++++++++++++*/
+static void
+afd_exit(void)
+{
+   size_t length;
+   char   *buffer;
+
+   if (probe_only != 1)
+   {
+      stop_afd();
+#ifdef HAVE_MMAP
+      if (munmap((void *)p_afd_status, sizeof(struct afd_status)) == -1)
+      {
+         (void)fprintf(stderr,
+                       _("munmap() error : %s (%s %d)\n"),
+                       strerror(errno), __FILE__, __LINE__);
+      }
+      p_afd_status = NULL;
+#endif
+
+      if (unlink(afd_active_file) == -1)
+      {
+         (void)fprintf(stderr,
+                       _("Failed to unlink() `%s' : %s (%s %d)\n"),
+                       afd_active_file, strerror(errno), __FILE__, __LINE__);
+      }
+#ifdef WITH_SYSTEMD
+      sd_notify(0, "STATUS=Terminated\n");
+#endif
+   }
+
+   if (service_name == NULL)
+   {
+      length = 38 + AFD_LENGTH;
+   }
+   else
+   {
+      length = 44 + AFD_LENGTH + strlen(service_name);
+   }
+   if ((buffer = malloc(length + 1)) != NULL)
+   {
+      time_t current_time;
+
+      current_time = time(NULL);
+      (void)memset(buffer, '-', length);
+      buffer[length] = '\0';
+      if (service_name == NULL)
+      {
+         (void)fprintf(stderr,
+                       _("%.24s : %s terminated (%s %d)\n%s\n"),
+                       ctime(&current_time), AFD, __FILE__, __LINE__, buffer);
+      }
+      else
+      {
+         (void)fprintf(stderr,
+                       _("%.24s : %s for %s terminated (%s %d)\n%s\n"),
+                       ctime(&current_time), AFD, service_name,
+                       __FILE__, __LINE__, buffer);
+      }
+      (void)free(buffer);
+   }
+
+   return;
+}
+
+
+/*+++++++++++++++++++++++++ get_path_to_self() +++++++++++++++++++++++++*/
+static void
+get_path_to_self(void)
+{
+#ifdef LINUX
+   char *self = "/proc/self/exe";
+#else
+# ifdef FREEBSD
+   char *self = "/proc/curproc/file";
+# else
+#  ifdef _SUN
+   char *self = "/proc/self/path/a.out";
+#  else
+   char *self = NULL;
+#  endif
+# endif
+#endif
+   if (self != NULL)
+   {
+      ssize_t length;
+      char    buffer[MAX_PATH_LENGTH];
+
+      (void)memset(buffer, '\0', MAX_PATH_LENGTH);
+      if (((length = readlink(self, buffer, MAX_PATH_LENGTH)) > 0) &&
+          (length < MAX_PATH_LENGTH))
+      {
+         char *ptr = buffer + length - 1;
+
+         while (ptr != buffer)
+         {
+            ptr--;
+            if (*ptr == '/')
+            {
+               *ptr = '\0';
+               break;
+            }
+         }
+         length = ptr - buffer;
+         if (length > 0)
+         {
+            if ((path_to_self = malloc(length + 1)) != NULL)
+            {
+               (void)strcpy(path_to_self, buffer);
+            }
          }
       }
    }
+
+   return;
+}
+
+
+/*+++++++++++++++++++++++++++++++ usage() ++++++++++++++++++++++++++++++*/
+static void
+usage(char *progname)
+{
+   (void)fprintf(stderr,
+                 _("SYNTAX  : %s[ -w working directory]\n"), progname);
+   (void)fprintf(stderr,
+                 _("                    -A         Start with no directory scanning.\n"));
+   (void)fprintf(stderr,
+                 _("                    -C         Start with all checks done by cmdline afd.\n"));
+   (void)fprintf(stderr,
+                 _("                    -nd        Do not start as daemon process.\n"));
+   (void)fprintf(stderr,
+                 _("                    -sn <name> Provide a service name.\n"));
+   (void)fprintf(stderr,
+                 _("                    --version  Show version number.\n"));
 
    return;
 }
@@ -2984,14 +3468,18 @@ sig_bus(int signo)
 static void
 sig_exit(int signo)
 {
-   if (signo == SIGINT)
+   if (signo == SIGTERM)
    {
-      system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Received SIGINT!"));
+      system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Received SIGTERM!"));
    }
-   else
-   {
-      system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Received %d!"), signo);
-   }
+   else if (signo == SIGINT)
+        {
+           system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Received SIGINT!"));
+        }
+        else
+        {
+           system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Received %d!"), signo);
+        }
 
    exit(INCORRECT);
 }

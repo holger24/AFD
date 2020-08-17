@@ -171,8 +171,7 @@ DESCR__E_M3
                                    /* strncmp(), strerror()              */
 #include <ctype.h>                 /* toupper(), tolower()               */
 #include <unistd.h>                /* unlink()                           */
-#include <stdlib.h>                /* system(), malloc(), realloc(),     */
-                                   /* free()                             */
+#include <stdlib.h>                /* malloc(), realloc(), free()        */
 #include <time.h>                  /* time(), gmtime()                   */
 #include <sys/types.h>
 #include <sys/stat.h>              /* stat(), S_ISREG()                  */

@@ -472,7 +472,19 @@ main(int argc, char *argv[])
    }
    else if (start_up == MON_CTRL_ONLY)
         {
+           int ret;
+
            (void)strcpy(exec_cmd, MON_CTRL);
+           if (profile[0] == '\0')
+           {
+              ret = execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
+                           (char *) 0);
+           }
+           else
+           {
+              ret = execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
+                           "-p", profile, (char *) 0);
+           }
            if (execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
                       (char *) 0) == -1)
            {
@@ -628,12 +640,23 @@ main(int argc, char *argv[])
    /* Is another AFD_MON active in this directory? */
    if (check_mon(10L) == 1)
    {
+      int ret;
+
       /* Unlock, so other users don't get blocked. */
       (void)close(fd);
 
       /* Another AFD_MON is active. Only start mon_ctrl. */
       (void)strcpy(exec_cmd, MON_CTRL);
-      if (execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir, (char *) 0) == -1)
+      if (profile[0] == '\0')
+      {
+         ret = execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir, (char *) 0);
+      }
+      else
+      {
+         ret = execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
+                      "-p", profile, (char *) 0);
+      }
+      if (ret == -1)
       {
          (void)fprintf(stderr,
                        "ERROR   : Failed to execute %s : %s (%s %d)\n",
@@ -727,6 +750,8 @@ main(int argc, char *argv[])
               {
                  if (buffer[0] == ACKN)
                  {
+                    int ret;
+
                     /* Unlock, so other users don't get blocked. */
                     (void)close(fd);
 
@@ -736,8 +761,17 @@ main(int argc, char *argv[])
 #endif
 
                     (void)strcpy(exec_cmd, MON_CTRL);
-                    if (execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
-                               (char *) 0) == -1)
+                    if (profile[0] == '\0')
+                    {
+                       ret = execlp(exec_cmd, exec_cmd, WORK_DIR_ID,
+                                    work_dir, (char *) 0);
+                    }
+                    else
+                    {
+                       ret = execlp(exec_cmd, exec_cmd, WORK_DIR_ID,
+                                    work_dir, "-p", profile, (char *) 0);
+                    }
+                    if (ret == -1)
                     {
                        (void)fprintf(stderr,
                                      "ERROR   : Failed to execute %s : %s (%s %d)\n",

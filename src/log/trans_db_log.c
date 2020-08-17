@@ -66,7 +66,8 @@ char         *fifo_buffer,
              *p_work_dir,
              *p_log_his = NULL,
              *p_log_fifo,
-             *prev_msg_str;
+             *prev_msg_str,
+             *progname;
 const char   *sys_log_name = SYSTEM_LOG_FIFO;
 
 /* Local function prototypes. */
@@ -100,6 +101,7 @@ main(int argc, char *argv[])
    {
       exit(INCORRECT);
    }
+   progname = get_progname(argv[0]);
    if ((work_dir = malloc((strlen(log_file) + 1))) == NULL)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,

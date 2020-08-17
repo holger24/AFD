@@ -61,6 +61,7 @@ long         fifo_size;
 char         *fifo_buffer,
              *msg_str,
              *p_log_fifo,
+             *progname,
              *p_work_dir;
 const char   *sys_log_name = SYSTEM_LOG_FIFO;
 
@@ -91,6 +92,7 @@ main(int argc, char *argv[])
    {
       exit(INCORRECT);
    }
+   progname = get_progname(argv[0]);
    if ((work_dir = malloc((strlen(log_file) + 1))) == NULL)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,

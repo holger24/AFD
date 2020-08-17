@@ -56,19 +56,22 @@ DESCR__E_M1
 #include "version.h"
 
 
-/* External global variables. */
+/* Global variables. */
+FILE              *receive_file = NULL;
 int               sys_log_fd = STDERR_FILENO;
 char              *iobuf = NULL,
                   *p_work_dir;
 struct afd_status *p_afd_status;
 const char        *sys_log_name = SYSTEM_LOG_FIFO;
 
+/* Local function prototypes. */
+static void       sig_exit(int);
+
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
 int
 main(int argc, char *argv[])
 {
-   FILE           *receive_file;
    int            bytes_buffered = 0,
                   log_number = 0,
                   n,
@@ -260,7 +263,9 @@ main(int argc, char *argv[])
 #endif
 
    /* Initialise signal handler. */
-   if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
+   if ((signal(SIGINT, sig_exit) == SIG_ERR) ||
+       (signal(SIGTERM, sig_exit) == SIG_ERR) ||
+       (signal(SIGHUP, SIG_IGN) == SIG_ERR))
    {
       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                  "signal() error : %s", strerror(errno));
@@ -515,5 +520,30 @@ main(int argc, char *argv[])
    } /* for (;;) */
 
    /* Should never come to this point. */
+   exit(SUCCESS);
+}
+
+
+/*++++++++++++++++++++++++++++++ sig_exit() +++++++++++++++++++++++++++++*/
+static void
+sig_exit(int signo)
+{
+   if (receive_file != NULL)
+   {
+      (void)fflush(receive_file);
+      if (fclose(receive_file) == EOF)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "fclose() error : %s", strerror(errno));
+      }
+   }
+   (void)fprintf(stderr,
+#if SIZEOF_PID_T == 4
+                 "%s terminated by signal %d (%d)\n",
+#else
+                 "%s terminated by signal %d (%lld)\n",
+#endif
+                 RLOG, signo, (pri_pid_t)getpid());
+
    exit(SUCCESS);
 }

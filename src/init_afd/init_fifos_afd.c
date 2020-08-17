@@ -1,6 +1,6 @@
 /*
  *  init_fifos_afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -81,6 +81,7 @@ init_fifos_afd(void)
                maintainer_log_fifo[MAX_PATH_LENGTH],
 #endif
                probe_only_fifo[MAX_PATH_LENGTH],
+               system_log_fifo[MAX_PATH_LENGTH],
                trans_db_log_fifo[MAX_PATH_LENGTH],
                transfer_log_fifo[MAX_PATH_LENGTH];
    struct stat stat_buf;
@@ -92,6 +93,8 @@ init_fifos_afd(void)
    (void)strcat(event_log_fifo, EVENT_LOG_FIFO);
    (void)strcpy(trans_db_log_fifo, transfer_log_fifo);
    (void)strcat(trans_db_log_fifo, TRANS_DEBUG_LOG_FIFO);
+   (void)strcpy(system_log_fifo, transfer_log_fifo);
+   (void)strcat(system_log_fifo, SYSTEM_LOG_FIFO);
 #ifdef _MAINTAINER_LOG
    (void)strcpy(maintainer_log_fifo, transfer_log_fifo);
    (void)strcat(maintainer_log_fifo, MAINTAINER_LOG_FIFO);
@@ -121,6 +124,12 @@ init_fifos_afd(void)
    (void)unlink(ip_fin_fifo);
 
    /* OK. Now lets make all fifos. */
+   if (make_fifo(system_log_fifo) < 0)
+   {
+      (void)fprintf(stderr, _("Could not create fifo `%s'. (%s %d)\n"),
+                    system_log_fifo, __FILE__, __LINE__);
+      exit(INCORRECT);
+   }
    if (make_fifo(transfer_log_fifo) < 0)
    {
       (void)fprintf(stderr, _("Could not create fifo `%s'. (%s %d)\n"),

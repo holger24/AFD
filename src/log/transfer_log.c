@@ -39,6 +39,7 @@ DESCR__S_M1
  **   12.01.1997 H.Kiehl Stop creating endless number of log files.
  **   09.11.1997 H.Hiehl Create new log file at midnight.
  **   22.09.2001 H.Kiehl Catch fifo buffer overflows.
+ **   16.07.2020 H.Kiehl Also cath signals SIGINT and SIGTERM.
  **
  */
 DESCR__E_M1
@@ -50,7 +51,7 @@ DESCR__E_M1
 #include <sys/types.h>       /* fdset                                    */
 #include <sys/stat.h>
 #include <sys/time.h>        /* struct timeval, time()                   */
-#include <unistd.h>          /* fpathconf(), sysconf()                   */
+#include <unistd.h>          /* fpathconf(), sysconf(), getpid()         */
 #include <fcntl.h>           /* O_RDWR, open()                           */
 #include <signal.h>          /* signal()                                 */
 #include <errno.h>
@@ -58,19 +59,22 @@ DESCR__E_M1
 #include "version.h"
 
 
-/* External global variables. */
+/* Global variables. */
+FILE              *transfer_file = NULL;
 int               sys_log_fd = STDERR_FILENO;
 char              *iobuf = NULL,
                   *p_work_dir = NULL;
 struct afd_status *p_afd_status;
 const char        *sys_log_name = SYSTEM_LOG_FIFO;
 
+/* Local function prototypes. */
+static void       sig_exit(int);
+
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
 int
 main(int argc, char *argv[])
 {
-   FILE           *transfer_file;
    int            bytes_buffered = 0,
                   count,
                   dup_msg = 0,
@@ -262,7 +266,9 @@ main(int argc, char *argv[])
 #endif
 
    /* Initialise signal handler. */
-   if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
+   if ((signal(SIGINT, sig_exit) == SIG_ERR) ||
+       (signal(SIGTERM, sig_exit) == SIG_ERR) ||
+       (signal(SIGHUP, SIG_IGN) == SIG_ERR))
    {
       system_log(DEBUG_SIGN, __FILE__, __LINE__,
                  "signal() error : %s", strerror(errno));
@@ -518,5 +524,30 @@ main(int argc, char *argv[])
    } /* for (;;) */
 
    /* Should never come to this point. */
+   exit(SUCCESS);
+}
+
+
+/*++++++++++++++++++++++++++++++ sig_exit() +++++++++++++++++++++++++++++*/
+static void
+sig_exit(int signo)
+{
+   if (transfer_file != NULL)
+   {
+      (void)fflush(transfer_file);
+      if (fclose(transfer_file) == EOF)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "fclose() error : %s", strerror(errno));
+      }
+   }
+   (void)fprintf(stderr,
+#if SIZEOF_PID_T == 4
+                 "%s terminated by signal %d (%d)\n",
+#else
+                 "%s terminated by signal %d (%lld)\n",
+#endif
+                 TLOG, signo, (pri_pid_t)getpid());
+
    exit(SUCCESS);
 }

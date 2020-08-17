@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2019 Holger Kiehl
+## Copyright (C) 2001 - 2020 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -26,6 +26,13 @@ else
    EXTRA_AFD_MON = msa_attach.c msa_detach.c attach_afd_mon_status.c\
                    detach_afd_mon_status.c handle_adl.c handle_ahl.c\
 		   handle_atd.c
+endif
+if IS_LINUX
+   LINUX_SPECIAL       = get_proc_name_from_pid.c
+   EXTRA_LINUX_SPECIAL =
+else
+   LINUX_SPECIAL       =
+   EXTRA_LINUX_SPECIAL = get_proc_name_from_pid.c
 endif
 if WITHOUT_MMAP
    AFD_MAPPER = mmap_emu.c msync_emu.c munmap_emu.c
@@ -114,9 +121,10 @@ endif
 EXTRA_DIST = $(EXTRA_MAPPER) $(EXTRA_AFD_MON) $(EXTRA_EACCESS)\
              $(EXTRA_DUPCHECK) $(EXTRA_SET_AFD_EUID) $(EXTRA_PRODUCTION_LOG)\
              $(EXTRA_DELETE_LOG_PTRS) $(EXTRA_OPEN_FIFO_RW)\
-	     $(EXTRA_OUTPUT_PTRS) $(EXTRA_HANDLE_ERROR_QUEUE)\
-	     $(EXTRA_HANDLE_IP) $(EXTRA_MAINTAINER_LOG)\
-	     $(EXTRA_HANDLE_EXTRA_WORK_DIRS) pmatch_old.c
+             $(EXTRA_OUTPUT_PTRS) $(EXTRA_HANDLE_ERROR_QUEUE)\
+             $(EXTRA_HANDLE_IP) $(EXTRA_MAINTAINER_LOG)\
+             $(EXTRA_HANDLE_EXTRA_WORK_DIRS) $(EXTRA_LINUX_SPECIAL)\
+             pmatch_old.c
 
 MAINTAINERCLEANFILES = Makefile.in
 AM_CPPFLAGS          = -I.. -I../init_afd -I../amg -I../fd -I../misc\
@@ -181,6 +189,8 @@ libafd_a_SOURCES     = attach_afd_status.c\
                        get_mon_path.c\
                        get_permissions.c\
                        get_position.c\
+                       $(LINUX_SPECIAL)\
+                       get_progname.c\
                        get_pw.c\
                        get_rename_rules.c\
                        get_rule.c\

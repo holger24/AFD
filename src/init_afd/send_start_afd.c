@@ -1,7 +1,6 @@
 /*
  *  shutdown_afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
- *                            Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,26 +22,22 @@
 DESCR__S_M3
 /*
  ** NAME
- **   shutdown_afd - does a shutdown of the AFD
+ **   send_start_afd - sends the start command to init_afd via fifo
  **
  ** SYNOPSIS
- **   int shutdown_afd(char *user, long response_time, int afd_active_gone)
+ **   int send_start_afd(char *user, long response_time)
  **
  ** DESCRIPTION
  **
  ** RETURN VALUES
- **   Returns 0 if shutdown was succesfull. Otherwise a value greater
+ **   Returns YES if startup was succesfull. Otherwise a value greater
  **   then zero is returned.
  **
  ** AUTHOR
  **   H.Kiehl
  **
  ** HISTORY
- **   12.04.1996 H.Kiehl Created
- **   13.08.1997 H.Kiehl Made this a function.
- **   03.02.2009 H.Kiehl Add more parameters and return a value so we
- **                      can handle the case when someone deletes the
- **                      AFD_ACTIVE file.
+ **   01.07.2020 H.Kiehl Created
  **
  */
 DESCR__E_M3
@@ -59,17 +54,14 @@ DESCR__E_M3
 #include "version.h"
 
 /* External global variables */
+extern int  pause_dir_check;
 extern char afd_cmd_fifo[],
             *p_work_dir;
 
 
-/*########################### shutdown_afd() ############################*/
+/*########################## send_start_afd() ###########################*/
 int
-#ifdef WITH_SYSTEMD
-shutdown_afd(char *user, long response_time, int afd_active_gone, int stop_all)
-#else
-shutdown_afd(char *user, long response_time, int afd_active_gone)
-#endif
+send_start_afd(char *user, long response_time)
 {
    int            afd_cmd_fd,
 #ifdef WITHOUT_FIFO_RW_SUPPORT
@@ -123,17 +115,14 @@ shutdown_afd(char *user, long response_time, int afd_active_gone)
    }
 
    /* Tell user what we are doing. */
-   system_log(CONFIG_SIGN, NULL, 0, _("Starting AFD shutdown (%s) ..."), user);
+   system_log(CONFIG_SIGN, NULL, 0, _("Sending start AFD (%s) ..."), user);
 
-   /* Send SHUTDOWN command. */
-#ifdef WITH_SYSTEMD
-   if (send_cmd((stop_all == YES) ? SHUTDOWN_ALL : SHUTDOWN, afd_cmd_fd) < 0)
-#else
-   if (send_cmd(SHUTDOWN, afd_cmd_fd) < 0)
-#endif
+   /* Send START_AFD command. */
+   if (send_cmd((pause_dir_check & NO) ? START_AFD : START_AFD_NO_DIR_SCAN,
+                afd_cmd_fd) < 0)
    {
       (void)fprintf(stderr,
-                    _("ERROR   : Failed to send stop command to %s : %s (%s %d)\n"),
+                    _("ERROR   : Failed to send start command to %s : %s (%s %d)\n"),
                     AFD, strerror(errno), __FILE__, __LINE__);
       exit(INCORRECT);
    }
@@ -163,8 +152,7 @@ shutdown_afd(char *user, long response_time, int afd_active_gone)
       }
 
       /*
-       * Since the AFD does not answer and we have already send
-       * the shutdown command, it is necessary to remove this command
+       * Since the AFD does not answer let's remove the command
        * from the FIFO.
        */
 #ifdef WITHOUT_FIFO_RW_SUPPORT
@@ -199,36 +187,7 @@ shutdown_afd(char *user, long response_time, int afd_active_gone)
          (void)fprintf(stderr, _("WARN    : read() error : %s (%s %d)\n"),
                        strerror(errno), __FILE__, __LINE__);
       }
-
-      if (afd_active_gone == NO)
-      {
-         /*
-          * Telling the user we failed to do a shutdown is not of
-          * much use. It would now be better if we kill all jobs
-          * and shared memory areas of the AFD.
-          */
-         if (check_afd_heartbeat(response_time, YES) == 0)
-         {
-            (void)fprintf(stderr,
-                          _("Removed all AFD processes and resources.\n"));
-
-            /* No need to remove AFD_ACTIVE file since          */
-            /* check_afd_heartbeat() did it for us.             */
-            status = 0;
-         }
-         else
-         {
-            status = 1;
-         }
-      }
-      else
-      {
-         /*
-          * We return 2 here since AFD_ACTVE is gone, so lets assume
-          * that there is really no AFD active.
-          */
-         status = 2;
-      }
+      status = NO;
    }
    else if (FD_ISSET(afd_resp_fd, &rset))
         {
@@ -243,7 +202,7 @@ shutdown_afd(char *user, long response_time, int afd_active_gone)
               }
               else
               {
-                 status = 0;
+                 status = YES;
               }
            }
            else
@@ -260,7 +219,7 @@ shutdown_afd(char *user, long response_time, int afd_active_gone)
         else
         {
            (void)fprintf(stderr, _("Unknown condition. (%s %d)\n"),
-                         __FILE__, __LINE__);
+                    __FILE__, __LINE__);
            exit(INCORRECT);
         }
 

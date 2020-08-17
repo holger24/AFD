@@ -885,5 +885,23 @@ output_log_exit(void)
 static void
 sig_exit(int signo)
 {
-   exit(INCORRECT);
+   int ret;
+
+   (void)fprintf(stderr,
+#if SIZEOF_PID_T == 4
+                 "%s terminated by signal %d (%d)\n",
+#else
+                 "%s terminated by signal %d (%lld)\n",
+#endif
+                 OUTPUT_LOG_PROCESS, signo, (pri_pid_t)getpid());
+   if ((signo == SIGINT) || (signo == SIGTERM))
+   {
+      ret = SUCCESS;
+   }
+   else
+   {
+      ret = INCORRECT;
+   }
+
+   exit(ret);
 }

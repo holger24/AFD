@@ -5859,5 +5859,13 @@ sig_bus(int signo)
 static void
 sig_exit(int signo)
 {
+   (void)fprintf(stderr,
+#if SIZEOF_PID_T == 4
+                 "%s terminated by signal %d (%d)\n",
+#else
+                 "%s terminated by signal %d (%lld)\n",
+#endif
+                 FD, signo, (pri_pid_t)getpid());
+
    exit(INCORRECT);
 }

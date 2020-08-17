@@ -1,0 +1,151 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>AFD (setup.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center>Setup AFD</h1>
+<hr size=3 noshade>
+<p>
+Currently there are two different init systems. The SystemV initd
+system and systemd. There is support for both, but you need to
+decide this when you compile AFD. If you want to use systemd you
+must compile AFD with the configure option --enable-systemd.
+</p>
+<h1 align=center>Setup with SystemV initd</h1>
+<hr size=3 noshade>
+<p>
+In /etc/sysconfig/afd you can setup under which users AFD is to be
+started when system boots. If the user name is donald you need to
+set this as follows:
+</p>
+<pre>
+    AFD_USER_0=donald
+</pre>
+<p>
+The AFD_USER_0 is handled via the script /etc/init.d/afd.
+More users can be added by incrementing the number:
+</p>
+<pre>
+    AFD_USER_1=daisy
+</pre>
+<p>
+The AFD_HA_USER_0 variable can be used to start AFD users in a high
+availability environment via the /etc/init.d/afdha script.
+</p>
+<p>
+If you need to start more then one AFD under one user, it can be done
+by using the environment variable MULTI_AFD_DIRS. If the user donald
+wants to run three AFD's he needs three different AFD home directories,
+it can be done by setting this variable in his .profile file:
+</p>
+<pre>
+   MULTI_AFD_DIRS="/home/donald/tick /home/donald/trick /home/donald/track"
+</pre>
+<h1 align=center>Setup with systemd</h1>
+<hr size=3 noshade>
+<p>
+Setting up AFD users under systemd can be done via creating an environment
+file /etc/afd/&lt;user&gt;_environment.conf for each user. In it you need
+to set the working directory of AFD. For the user donald you would have
+to create the file /etc/afd/donald_environment.conf with the following
+content:
+</p>
+<pre>
+   AFD_WORK_DIR=/home/donald
+</pre>
+<p>
+To start/stop donalds AFD the system administrator needs to run the
+following command:
+</p>
+<pre>
+   systemctl start afd@donald.service
+   systemctl stop afd@donald.service
+</pre>
+<p>
+If donalds AFD is to be started automatically at boot, the system
+administrator needs to run the following command:
+</p>
+<pre>
+   systemctl enable afd@donald.service
+</pre>
+<p>
+And if it is no longer needed it can be removed by the system
+administrator with the command:
+</p>
+<pre>
+   systemctl disable afd@donald.service
+</pre>
+<p>
+Under systemd the AFD will not inherit the environment variables of
+the user. These need to be set in /etc/afd/&lt;user&gt;_environment.conf.
+Alternatively the user can set these variables via
+$AFD_WORK_DIR/etc/environment.conf file himself.
+</p>
+<p>
+If possible try and put the environment variables in /etc/afd/&lt;user&gt;_environment.conf.
+To only set the values in one file only, put in the users profile the
+following:
+</p>
+<pre>
+        if [ -f /etc/afd/${USER}_environment.conf ]
+        then
+           source /etc/afd/${USER}_environment.conf
+           export $(cut -d= -f1 /etc/afd/${USER}_environment.conf)
+        fi
+</pre>
+<p>
+If one needs to start more the one AFD under one user it can be done
+by copying /usr/lib/systemd/system/afd@.service to etc/systemd/system/afd.target.wants
+with a specific name. If the user donald wants to run three AFD's
+in his directories ~/tick, ~/trick and ~/track, it can be done as
+follows by the system administrator:
+</p>
+<pre>
+   cp /usr/lib/systemd/system/afd@.service /etc/systemd/system/afd.target.wants/afd@donald_tick.service
+   cp /usr/lib/systemd/system/afd@.service /etc/systemd/system/afd.target.wants/afd@donald_trick.service
+   cp /usr/lib/systemd/system/afd@.service /etc/systemd/system/afd.target.wants/afd@donald_track.service
+</pre>
+<p>
+These three files must then be modified by the system administrator by
+changing the line
+</p>
+<pre>
+   User=%i
+</pre>
+<p>
+as follows:
+</p>
+<pre>
+   User=donald
+</pre>
+<p>
+Next the three environment files donald_tick_environment.conf,
+donald_trick_environment.conf and donald_track_environment.conf
+need to be created in /etc/afd with the following contend:
+</p>
+<pre>
+   cat /etc/afd/donald_tick_environment.conf
+   AFD_WORK_DIR=/home/donald/tick
+
+   cat /etc/afd/donald_trick_environment.conf
+   AFD_WORK_DIR=/home/donald/trick
+
+   cat /etc/afd/donald_track_environment.conf
+   AFD_WORK_DIR=/home/donald/track
+</pre>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><small><address>
+   Copyright &copy; 2020 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 10.08.2020
+   </address></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,81 @@
+
+
+
+       PLEASE READ THIS BEFORE SWITCHING FROM INITD TO SYSTEMD
+
+
+
+Since systemd is completely different to System V initd, there
+are some changes in running AFD as a background daemon.
+
+   - When AFD is started via systemd not all process will now
+     terminate when you stop AFD (afd -s). There will always
+     be a process left called init_afd which is under control
+     of systemd. If you really need to stop all process you
+     can do so via 'afd -s --all'. But if you do this and you
+     start AFD again and the system is then shutdown, AFD will
+     not be terminated properly. Or if the AFD package of the
+     system is updated your private AFD instance will not be
+     notified and depending on the changes, not work correctly.
+     So it is best to leave the init_afd instance of systemd active.
+
+   - Environment variables from users are no longer inherited.
+     Variables that you need via one of the AFD exec option
+     you can set either by setting them in the environment
+     file of the AFD instance /etc/afd/*_environment.conf.
+     You may also set environment varibles in the file
+     $AFD_WORK_DIR/etc/environment.conf. If this exists AMG
+     and FD will include them into their environment.
+     It is also possible to pass these variables via the
+     exec option.
+
+     So that you do only edit the environment variables at one
+     place one can source the variables from the AFD instance
+     environment file in your .bash_profile as follows:
+
+        if [ -f /etc/afd/${USER}_environment.conf ]
+        then
+           source /etc/afd/${USER}_environment.conf
+           export $(cut -d= -f1 /etc/afd/${USER}_environment.conf)
+        fi
+
+     The AFD instance running under systemd will have the
+     following (incomplete) list of variables set:
+
+        SHELL, PWD, LOGNAME, HOME, LANG, USER, AFD_WORK_DIR, PATH,
+        OLDPWD
+
+     This is what was is set in Fedora 32 and might differ
+     from distribution or release number. You can simply check
+     this by looking at the content of the file
+     $AFD_WORK_DIR/etc/fifodir/environment_variables_set.txt
+
+   - Starting multiple AFD's with the help of the environment
+     variable MULTI_AFD_DIRS will not work. If you need to start
+     more then one AFD under the same user you can do it as
+     follows:
+
+     1) Copy the afd@.service file with an instance name foo
+        to /etc/systemd/system/afd.target.wants as follows:
+
+          cp /usr/lib/systemd/system/afd@.service /etc/systemd/system/afd.target.wants/afd@foo.service
+
+        Edit the file afd@foo.service and change the line
+        'User=%i' by resolving %i to the real username under
+        which the AFD instance should run.
+
+     2) Next create the environment file /etc/afd/foo_environment.conf
+        and set the variable AFD_WORK_DIR variable to point to the
+        directory where this AFD instance should run.
+
+     3) Via systemd you can now enable this instance:
+
+          systemctl enable afd@foo
+
+     If the content of afd@.service changes, you always need to repeat
+     the above procedure.
+
+   - There is no support to automatically convert the /etc/sysconfig/afd
+     and /etc/sysconfig/afdmon SystemV initd to the systemd
+     /etc/afd/${USER}_environment.conf files. So you need to do
+     this by hand.

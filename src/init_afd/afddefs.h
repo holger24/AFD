@@ -229,6 +229,8 @@ typedef unsigned long       u_long_64;
 #define AMG                        "amg"
 #define AMG_LENGTH                 (sizeof(AMG) - 1)
 #define FD                         "fd"
+#define AFD_ENVIRONMENT_WRAPPER    "afd_environment_wrapper"
+#define AFD_ENVIRONMENT_FILE       "environment.conf"
 #define SEND_FILE_FTP              "sf_ftp"
 #define SEND_FILE_FTP_LENGTH       (sizeof(SEND_FILE_FTP) - 1)
 #define SEND_FILE_FTP_TRACE        "sf_ftp_trace"
@@ -1865,6 +1867,7 @@ typedef unsigned long       u_long_64;
 #endif
 #define JIS_FILE                     "/jis_data"
 #define DB_UPDATE_REPLY_DEBUG_FILE   "/db_update_reply_debug"
+#define ENVIRONMENT_VARIABLES_SET    "environment_variables_set.txt"
 
 /* Definitions of fifo names. */
 #define SYSTEM_LOG_FIFO              "/system_log.fifo"
@@ -1966,6 +1969,9 @@ typedef unsigned long       u_long_64;
 #define CHECK_FSA_ENTRIES          32
 #define DATA_READY                 33
 #define BUSY_WORKING               34
+#define SHUTDOWN_ALL               35
+#define START_AFD                  36
+#define START_AFD_NO_DIR_SCAN      37
 
 #define DELETE_ALL_JOBS_FROM_HOST  1
 #define DELETE_MESSAGE             2
@@ -3096,9 +3102,7 @@ struct fileretrieve_status
 #define DIR_CHECK_ACTIVE            1
 #define REREADING_DIR_CONFIG        2
 #define FD_WAITING                  4
-#ifdef AFDBENCH_CONFIG
-# define PAUSE_DISTRIBUTION         8
-#endif
+#define PAUSE_DISTRIBUTION          8
 #define WRITTING_JID_STRUCT         64
 #define CHECK_FILE_DIR_ACTIVE       128
 
@@ -3969,12 +3973,13 @@ extern char         *convert_error_queue(int, char *, size_t *, char *,
 #endif
 extern char         *convert_ls_data(int, char *, off_t *, int, char *,
                                      unsigned char, unsigned char),
-                    *get_definition(char *, char *, char *, int),
-                    *get_error_str(int),
 #ifdef WITH_DUP_CHECK
                     *eval_dupcheck_options(char *, time_t *, unsigned int *,
                                            int *),
 #endif
+                    *get_definition(char *, char *, char *, int),
+                    *get_error_str(int),
+                    *get_progname(char *),
                     *lock_proc(int, int),
                     *llposi(char *, const size_t, char *, const size_t),
                     *lposi(char *, char *, const size_t),
@@ -4028,6 +4033,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     check_afd_heartbeat(long, int),
                     check_create_path(char *, mode_t, char **, int, int,
                                       char *),
+                    check_afd_database(void),
                     check_dir(char *, int),
                     check_fra(int),
                     check_fsa(int, char *),
@@ -4088,6 +4094,7 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
                     get_store_ip(void),
 #endif
                     get_arg(int *, char **, char *, char *, int),
+                    get_argb(int *, char **, char *, char **),
                     get_arg_array(int *, char **, char *, char ***, int *),
                     get_arg_int_array(int *, char **, char *, unsigned int **, int *),
                     get_current_jid_list(void),
@@ -4171,7 +4178,12 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
 #endif
                     search_insert_alias_name(char *, char *, int),
                     send_cmd(char, int),
+#ifdef WITH_SYSTEMD
+                    send_start_afd(char *, long),
+                    shutdown_afd(char *, long, int, int),
+#else
                     shutdown_afd(char *, long, int),
+#endif
                     startup_afd(void),
                     url_compare(char *, char *),
                     wmo2ascii(char *, char *, off_t *),
@@ -4219,7 +4231,6 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
                     detach_ahl(void),
                     detach_atd(void),
 #endif
-                    dealloc_jid(void),
                     bitset(unsigned char *, int),
                     change_alias_order(char **, int),
                     change_name(char *, char *, char *, char *,
@@ -4232,6 +4243,7 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
                     clr_fl(int, int),
                     count_files(char *, unsigned int *, off_t *),
                     daemon_init(char *),
+                    dealloc_jid(void),
                     delete_log_ptrs(struct delete_log *),
                     error_action(char *, char *, int, int),
                     event_log(time_t, unsigned int, unsigned int,
@@ -4257,6 +4269,9 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
                     get_log_number(int *, int, char *, int, char *),
                     get_max_log_values(int *, char *, int, off_t *, char *,
                                        off_t),
+#ifdef LINUX
+                    get_proc_name_from_pid(pid_t, char *),
+#endif
                     get_rename_rules(int),
 #ifdef _PRODUCTION_LOG
                     get_sum_cpu_usage(struct rusage *, struct timeval *),

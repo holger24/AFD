@@ -34,7 +34,7 @@ afd_mon_SOURCES        = afd_mon.c\
                          start_process.c\
                          stop_process.c\
 			 update_group_summary.c
-afd_mon_LDADD          = ../common/libafd.a
+afd_mon_LDADD          = ../common/libafd.a @LIBSYSTEMD_LIBS@
 afd_mon_status_SOURCES = afd_mon_status.c
 afd_mon_status_LDADD   = ../common/libafd.a
 mafd_SOURCES           = check_mon.c\

@@ -1,6 +1,6 @@
 /*
  *  check_afd_heartbeat.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,7 +33,9 @@ DESCR__S_M3
  **   going.
  **
  ** RETURN VALUES
- **   Returns 1 if another AFD is active, otherwise it returns 0.
+ **   Returns 1 if another AFD is active. 2 is returned when
+ **   we got a timeout. 3 is returned when init_afd is active
+ **   but all process are stopped. Otherwise it returns 0.
  **
  ** AUTHOR
  **   H.Kiehl
@@ -44,12 +46,18 @@ DESCR__S_M3
  **                      content.
  **   11.10.2011 H.Kiehl Return 2 to indicate that we did not get any
  **                      responce.
+ **   26.11.2018 H.Kiehl Try shorten the time when init_afd is dead by
+ **                      checking if process is active.
+ **   09.07.2020 H.Kiehl With systemd init_afd stays alive when
+ **                      AFD is shutdown. So add additional checks
+ **                      if other (system_log, archive_watch) are
+ **                      active.
  **
  */
 DESCR__E_M3
 
 #include <stdio.h>               /* NULL                                 */
-#include <string.h>              /* strerror()                           */
+#include <string.h>              /* strerror(), memcpy()                 */
 #include <stdlib.h>              /* malloc(), free()                     */
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -88,7 +96,89 @@ check_afd_heartbeat(long wait_time, int remove_process)
          unsigned int current_value,
                       heartbeat;
          long         elapsed_time = 0L;
+         pid_t        ia_pid;
+         ssize_t      n;
          off_t        offset;
+#ifdef WITH_SYSTEMD
+         char         *buffer,
+                      *pid_list;
+
+         if ((buffer = malloc(stat_buf.st_size)) == NULL)
+         {
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       _("malloc() error : %s"), strerror(errno));
+            (void)close(afd_active_fd);
+            return(0);
+         }
+
+         /* First read  pid's to check if these process are still alive. */
+         if ((n = read(afd_active_fd, buffer, stat_buf.st_size)) != stat_buf.st_size)
+         {
+            if (n != 0)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          _("read() error : %s"), strerror(errno));
+            }
+            (void)close(afd_active_fd);
+            free(buffer);
+            return(0);
+         }
+         (void)memcpy(&ia_pid, buffer, sizeof(pid_t));
+         pid_list = buffer;
+#else
+         /* First read init_afd pid to check if this process is still alive. */
+         if ((n = read(afd_active_fd, &ia_pid, sizeof(pid_t))) != sizeof(pid_t))
+         {
+            if (n != 0)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          _("read() error : %s"), strerror(errno));
+            }
+            (void)close(afd_active_fd);
+            return(0);
+         }
+#endif
+         if (ia_pid > 0)
+         {
+            if ((kill(ia_pid, 0) == -1) && (errno == ESRCH))
+            {
+               /* init_afd is no longer alive, so lets assume AFD is */
+               /* no longer active. We will still check for a        */
+               /* heartbeat, but let's wait only for a short time.   */
+               if (wait_time > 2)
+               {
+                  wait_time = 2;
+               }
+            }
+#ifdef LINUX
+            else /* We find a process alive with this pid. This does */
+                 /* not mean that this is really init_afd. So, let's */
+                 /* do another check if the process name really is   */
+                 /* init_afd.                                        */
+            {
+               char proc_name[96];
+
+               get_proc_name_from_pid(ia_pid, proc_name);
+               if (proc_name[0] != '\0')
+               {
+                  if (posi(proc_name, AFD) == NULL)
+                  {
+                     if (wait_time > 2)
+                     {
+                        wait_time = 2;
+                     }
+                  }
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+# if SIZEOF_PID_T == 4
+                             "Found %s for pid %ld [wait_time=%ld]",
+# else
+                             "Found %s for pid %lld [wait_time=%ld]",
+# endif
+                             proc_name, (pri_pid_t)ia_pid, wait_time);
+               }
+            }
+#endif
+         }
 
          /* NOTE: Since this is a memory mapped file, NFS needs a read() */
          /*       event so it does update the content of the file. So    */
@@ -99,6 +189,9 @@ check_afd_heartbeat(long wait_time, int remove_process)
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        _("lseek() error : %s"), strerror(errno));
             (void)close(afd_active_fd);
+#ifdef WITH_SYSTEMD
+            free(buffer);
+#endif
             return(0);
          }
          if (read(afd_active_fd, &current_value, sizeof(unsigned int)) != sizeof(unsigned int))
@@ -106,6 +199,9 @@ check_afd_heartbeat(long wait_time, int remove_process)
             system_log(ERROR_SIGN, __FILE__, __LINE__,
                        _("read() error : %s"), strerror(errno));
             (void)close(afd_active_fd);
+#ifdef WITH_SYSTEMD
+            free(buffer);
+#endif
             return(0);
          }
 
@@ -117,6 +213,9 @@ check_afd_heartbeat(long wait_time, int remove_process)
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           _("lseek() error : %s"), strerror(errno));
                (void)close(afd_active_fd);
+#ifdef WITH_SYSTEMD
+               free(buffer);
+#endif
                return(0);
             }
             if (read(afd_active_fd, &heartbeat, sizeof(unsigned int)) != sizeof(unsigned int))
@@ -124,6 +223,9 @@ check_afd_heartbeat(long wait_time, int remove_process)
                system_log(ERROR_SIGN, __FILE__, __LINE__,
                           _("read() error : %s"), strerror(errno));
                (void)close(afd_active_fd);
+#ifdef WITH_SYSTEMD
+               free(buffer);
+#endif
                return(0);
             }
             if (current_value != heartbeat)
@@ -148,12 +250,55 @@ check_afd_heartbeat(long wait_time, int remove_process)
                        _("Failed to close() `%s' : %s"),
                        afd_active_file, strerror(errno));
          }
+#ifdef WITH_SYSTEMD
+         if (afd_active == 1)
+         {
+            int   i;
+            char  name_list[2][96];
+            pid_t check_list[2];
+
+            check_list[0] = *(pid_t *)(pid_list + ((SLOG_NO + 1) * sizeof(pid_t)));
+            (void)strcpy(name_list[0], SLOG);
+            check_list[1] = *(pid_t *)(pid_list + ((AW_NO + 1) * sizeof(pid_t)));
+            (void)strcpy(name_list[0], ARCHIVE_WATCH);
+            for (i = 0; i < 2; i++)
+            {
+               if (check_list[i] > 0)
+               {
+                  if ((kill(check_list[i], 0) == -1) && (errno == ESRCH))
+                  {
+                     afd_active = 3;
+                     break;
+                  }
+# ifdef LINUX
+                  else /* We find a process alive with this pid. This does */
+                       /* not mean that this is really is our process. So, */
+                       /* let's do another check if the process name really*/
+                       /* is the one we are lokking for.                   */
+                  {
+                     char proc_name[96];
+
+                     get_proc_name_from_pid(check_list[i], proc_name);
+                     if (proc_name[0] != '\0')
+                     {
+                        if (posi(proc_name, name_list[i]) == NULL)
+                        {
+                           afd_active = 3;
+                           break;
+                        }
+                     }
+                  }
+# endif
+               }
+            }
+         }
+         free(buffer);
+#endif /* WITH_SYSTEMD */
       }
    }
 
    return(afd_active);
 }
-
 
 
 /*++++++++++++++++++++++++++++ kill_jobs() ++++++++++++++++++++++++++++++*/
@@ -236,6 +381,7 @@ kill_jobs(off_t st_size)
          if (*(pid_t *)ptr > 0)
          {
             (void)kill(*(pid_t *)ptr, SIGKILL);
+            *(pid_t *)ptr = 0;
          }
          ptr += sizeof(pid_t);
       }

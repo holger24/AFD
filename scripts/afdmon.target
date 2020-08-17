@@ -1,0 +1,5 @@
+[Unit]
+Description=Monitor for Automatic File Distributor (AFD)
+
+[Install]
+WantedBy=multi-user.target

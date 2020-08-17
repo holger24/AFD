@@ -66,6 +66,7 @@ char                  *fifo_buffer,
                       *p_log_fifo,
                       *p_log_his = NULL,
                       *prev_msg_str,
+                      *progname,
                       *p_work_dir;
 struct afd_mon_status *p_afd_mon_status;
 const char            *sys_log_name = MON_SYS_LOG_FIFO;
@@ -101,6 +102,7 @@ main(int argc, char *argv[])
    {
       exit(INCORRECT);
    }
+   progname = get_progname(argv[0]);
    if ((work_dir = malloc((strlen(log_file) + 1))) == NULL)
    {
       (void)fprintf(stderr,

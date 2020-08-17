@@ -13,12 +13,14 @@ BuildRequires: @BUILD_REQUIRES_REDHAT@
 %else
 BuildRequires: @BUILD_REQUIRES@
 %endif
-URL: http://www.dwd.de/AFD/
+URL: https://www.dwd.de/AFD/
 
 %define distro_style_rpms      @DISTRO_STYLE_RPMS@
 %define INITDIR                @INITDIR@
 %define BINARY_OWNER           @BINARY_OWNER@
 %define BINARY_GROUP           @BINARY_GROUP@
+%define with_systemd           @WITH_SYSTMD@
+%define with_afdmon            @WITH_AFD_MON_SPEC@
 %define cleaned_configure_args @cleaned_configure_args@
 
 %if %{distro_style_rpms}
@@ -28,7 +30,12 @@ URL: http://www.dwd.de/AFD/
    %define mandir     %{_mandir}
    %define docdir     %{_docdir}
    %define share      %{_datadir}
+%if %{with_systemd}
+   %define sysconfdir %{_sysconfdir}
+%else
    %define sysconfdir %{_sysconfdir}/sysconfig
+%endif
+   %define rundir     %{_rundir}
 %else
    %define prefix     @prefix@
    %define bindir     @bindir@
@@ -36,7 +43,12 @@ URL: http://www.dwd.de/AFD/
    %define mandir     @mandir@
    %define docdir     @docdir@
    %define share      @datadir@
+%if %{with_systemd}
+   %define sysconfdir /etc
+%else
    %define sysconfdir @SYSCONFIGDIR@
+%endif
+   %define rundir     /run
 %endif
 
 %description
@@ -50,7 +62,7 @@ ftp://user:password@host URL conventions).
 %setup -n %{name}-%{version}-@AFD_RELEASE@
 
 %build
-if [ -x /usr/bin/getconf ]; then
+if [ -x %{bindir}/getconf ]; then
   CPUS=`getconf _NPROCESSORS_ONLN`
 fi
 if test "x$CPUS" = "x" -o "x$CPUS" = "x0"; then
@@ -70,7 +82,15 @@ then
    mkdir -p $RPM_BUILD_ROOT
    mkdir -p $RPM_BUILD_ROOT/%{prefix} $RPM_BUILD_ROOT/%{prefix}/bin $RPM_BUILD_ROOT/%{prefix}/sbin $RPM_BUILD_ROOT/%{prefix}/etc
    mkdir -p $RPM_BUILD_ROOT/%{INITDIR}
+%if %{with_systemd}
+   mkdir -p $RPM_BUILD_ROOT/%{sysconfdir}/afd
+%if %{with_afdmon}
+   mkdir -p $RPM_BUILD_ROOT/%{sysconfdir}/afdmon
+%endif
+   mkdir -p $RPM_BUILD_ROOT/%{_unitdir}
+%else
    mkdir -p $RPM_BUILD_ROOT/%{sysconfdir}
+%endif
 else
    if [ ! -d $RPM_BUILD_ROOT/%{prefix} ]
    then
@@ -93,16 +113,46 @@ else
    then
       mkdir -p $RPM_BUILD_ROOT/%{INITDIR}
    fi
+%if %{with_systemd}
+   if [ ! -d $RPM_BUILD_ROOT/%{_unitdir} ]
+   then
+      mkdir -p $RPM_BUILD_ROOT/%{_unitdir}
+   fi
+   if [ ! -d $RPM_BUILD_ROOT/%{sysconfdir}/afd ]
+   then
+      mkdir -p $RPM_BUILD_ROOT/%{sysconfdir}/afd
+   fi
+%if %{with_afdmon}
+   if [ ! -d $RPM_BUILD_ROOT/%{sysconfdir}/afdmon ]
+   then
+      mkdir -p $RPM_BUILD_ROOT/%{sysconfdir}/afdmon
+   fi
+%endif
+%else
    if [ ! -d $RPM_BUILD_ROOT/%{sysconfdir} ]
    then
       mkdir -p $RPM_BUILD_ROOT/%{sysconfdir}
    fi
+%endif
 fi
 make DESTDIR=$RPM_BUILD_ROOT install
-install -p -m755 scripts/afd $RPM_BUILD_ROOT/%{INITDIR}
-install -p -m755 scripts/afdmon $RPM_BUILD_ROOT/%{INITDIR}
-install -p -m644 scripts/afd.sysconfig $RPM_BUILD_ROOT/%{sysconfdir}/afd
-install -p -m644 scripts/afdmon.sysconfig $RPM_BUILD_ROOT/%{sysconfdir}/afdmon
+%if %{with_systemd}
+   install -p -m644 scripts/afd.service $RPM_BUILD_ROOT/%{_unitdir}
+   install -p -m644 scripts/afd@.service $RPM_BUILD_ROOT/%{_unitdir}
+   install -p -m644 scripts/afd.target $RPM_BUILD_ROOT/%{_unitdir}
+   install -p -m644 scripts/afd_environment.conf $RPM_BUILD_ROOT/%{sysconfdir}/afd
+%if %{with_afdmon}
+   install -p -m644 scripts/afdmon.target $RPM_BUILD_ROOT/%{_unitdir}
+   install -p -m644 scripts/afdmon_environment.conf $RPM_BUILD_ROOT/%{sysconfdir}/afdmon
+%endif
+%else
+   install -p -m755 scripts/afd $RPM_BUILD_ROOT/%{INITDIR}
+   install -p -m644 scripts/afd.sysconfig $RPM_BUILD_ROOT/%{sysconfdir}/afd
+%if %{with_afdmon}
+   install -p -m755 scripts/afdmon $RPM_BUILD_ROOT/%{INITDIR}
+   install -p -m644 scripts/afdmon.sysconfig $RPM_BUILD_ROOT/%{sysconfdir}/afdmon
+%endif
+%endif
 
 
 %clean
@@ -116,19 +166,91 @@ rm -rf $RPM_BUILD_ROOT/%{name}-%{version}-@AFD_RELEASE@
 %post
 if [ "$1" = 1 ]
 then
+%if %{with_systemd}
+   systemctl enable afd.target --no-pager
+%if %{with_afdmon}
+   systemctl enable afdmon.target --no-pager
+%endif
+%else
    if [ -x sbin/chkconfig ]
    then
       sbin/chkconfig --add %{name}
+%if %{with_afdmon}
       sbin/chkconfig --add afdmon
+%endif
    fi
+%endif
 else
+%if %{with_systemd}
+   if [ -f /tmp/.afd.condrestart ]
+   then
+      AFD_INSTANCES="`grep ^afd@ /tmp/.afd.condrestart`"
+      for afd_instance in $AFD_INSTANCES
+      do
+         if [ ! -f /etc/systemd/system/afd.target.wants/$afd_instance ]
+         then
+            systemctl start $afd_instance
+            if [ $? -eq 0 ]
+            then
+               echo "Conditional start of $afd_instance"
+            else
+               echo "Failed to do conditional start of $afd_instance"
+            fi
+         fi
+      done
+      rm -f /tmp/.afd.condrestart
+   fi
+   systemctl start afd.target --no-pager
+%if %{with_afdmon}
+   if [ -f /tmp/.afdmon.condrestart ]
+   then
+      AFDMON_INSTANCES="`grep ^afdmon@ /tmp/.afdmon.condrestart`"
+      for afdmon_instance in $AFDMON_INSTANCES
+      do
+         if [ ! -f /etc/systemd/system/afdmon.target.wants/$afdmon_instance ]
+         then
+            systemctl start $afdmon_instance
+            if [ $? -eq 0 ]
+            then
+               echo "Conditional start of $afdmon_instance"
+            else
+               echo "Failed to do conditional start of $afdmon_instance"
+            fi
+         fi
+      done
+      rm -f /tmp/.afdmon.condrestart
+   fi
+   systemctl start afdmon.target --no-pager
+%endif
+%else
    /etc/init.d/afd condrestart > /dev/null 2>&1 || :
+%if %{with_afdmon}
    /etc/init.d/afdmon condrestart > /dev/null 2>&1 || :
+%endif
+%endif
 fi
 
 %pre
 if [ "$1" != 1 ]
 then
+%if %{with_systemd}
+   systemctl status afd.target --no-pager
+   if [ "$?" = 0 ]
+   then
+      rm -f /tmp/.afd.condrestart
+      cd %{rundir} && ls -d afd@*.service > /tmp/.afd.condrestart
+      systemctl stop afd.target --no-pager
+   fi
+%if %{with_afdmon}
+   systemctl status afdmon.target --no-pager
+   if [ "$?" = 0 ]
+   then
+      rm -f /tmp/.afdmon.condrestart
+      cd %{rundir} && ls -d afdmon@*.service > /tmp/.afdmon.condrestart
+      systemctl stop afdmon.target --no-pager
+   fi
+%endif
+%else
    if [ -r %{sysconfdir}/afd ]
    then
       AFD_USERS="`grep \^AFD_USER_ %{sysconfdir}/afd | cut -d '=' -f2` `grep \^AFD_HA_USER_ %{sysconfdir}/afd | cut -d '=' -f2`"
@@ -183,6 +305,7 @@ then
          fi
       done
    fi
+%if %{with_afdmon}
    if [ -r %{sysconfdir}/afdmon ]
    then
       AFDMON_USERS="`grep \^AFDMON_USER_ %{sysconfdir}/afdmon | cut -d '=' -f2` `grep \^AFDMON_HA_USER_ %{sysconfdir}/afdmon | cut -d '=' -f2`"
@@ -211,11 +334,19 @@ then
          fi
       done
    fi
+%endif
+%endif
 fi
 
 %preun
 if [ "$1" = 0 ]
 then
+%if %{with_systemd}
+   %systemd_preun afd.target
+%if %{with_afdmon}
+   %systemd_preun afdmon.target
+%endif
+%else
    %{INITDIR}/afd stop > /dev/null 2>&1 || :
    if [ -r %{sysconfdir}/afd ]
    then
@@ -249,6 +380,7 @@ then
    then
       sbin/chkconfig --del %{name}
    fi
+%if %{with_afdmon}
    %{INITDIR}/afdmon stop > /dev/null 2>&1 || :
    if [ -r %{sysconfdir}/afdmon ]
    then
@@ -267,24 +399,43 @@ then
    then
       sbin/chkconfig --del afdmon
    fi
+%endif
+%endif
 fi
 exit 0
 
 %files
 %defattr(-,root,root)
+%if %{with_systemd}
+%{_unitdir}/afd.service
+%{_unitdir}/afd@.service
+%{_unitdir}/afd.target
+%config(noreplace) %{sysconfdir}/afd/afd_environment.conf
+%if %{with_afdmon}
+%{_unitdir}/afdmon@.service
+%{_unitdir}/afdmon.target
+%config(noreplace) %{sysconfdir}/afdmon/afdmon_environment.conf
+%endif
+%else
 %config(noreplace) %{sysconfdir}/afd
+%{INITDIR}/afd
+%if %{with_afdmon}
 %config(noreplace) %{sysconfdir}/afdmon
+%{INITDIR}/afdmon
+%endif
+%endif
 %doc %{docdir}/*
 %doc %{mandir}/man1/*
 %doc %{mandir}/man5/*
 %{prefix}/bin/*
 %{prefix}/sbin/*
 %{prefix}/%{_lib}/*
-%{INITDIR}/afd
-%{INITDIR}/afdmon
 
 
 %changelog
+*Wed Jul 18 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+- Add systemd support.
+
 *Mon Feb 07 2011 Holger Kiehl <Holger.Kiehl@dwd.de>
 - Handle case when users write some data to stdout or stderr.
 

@@ -1,6 +1,6 @@
 /*
  *  check_status.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2007 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -232,7 +232,8 @@ check_status(Widget w)
          {
             int ret;
 
-            if (*(pid_t *)(pid_list + ((AMG_NO + 1) * sizeof(pid_t))) > 0)
+            if ((*(pid_t *)(pid_list + ((AMG_NO + 1) * sizeof(pid_t))) > 0) &&
+                (p_afd_status->amg != STOPPED))
             {
                if (((ret = kill(*(pid_t *)(pid_list + ((AMG_NO + 1) * sizeof(pid_t))), 0)) == -1) &&
                    (errno == ESRCH) && (p_afd_status->amg == ON))
@@ -253,7 +254,8 @@ check_status(Widget w)
                        flush = YES;
                     }
             }
-            if (*(pid_t *)(pid_list + ((FD_NO + 1)  * sizeof(pid_t))) > 0)
+            if ((*(pid_t *)(pid_list + ((FD_NO + 1)  * sizeof(pid_t))) > 0) &&
+                (p_afd_status->fd != STOPPED))
             {
                if (((ret = kill(*(pid_t *)(pid_list + ((FD_NO + 1)  * sizeof(pid_t))), 0)) == -1) &&
                    (errno == ESRCH) && (p_afd_status->fd == ON))
@@ -274,7 +276,8 @@ check_status(Widget w)
                        flush = YES;
                     }
             }
-            if (*(pid_t *)(pid_list + ((AW_NO + 1) * sizeof(pid_t))) > 0)
+            if ((*(pid_t *)(pid_list + ((AW_NO + 1) * sizeof(pid_t))) > 0) &&
+                (p_afd_status->archive_watch != STOPPED))
             {
                if (((ret = kill(*(pid_t *)(pid_list + ((AW_NO + 1) * sizeof(pid_t))), 0)) == -1) &&
                    (errno == ESRCH))
@@ -297,7 +300,8 @@ check_status(Widget w)
             }
             if (prev_afd_status.afdd != NEITHER)
             {
-               if (*(pid_t *)(pid_list + ((AFDD_NO + 1) * sizeof(pid_t))) > 0)
+               if ((*(pid_t *)(pid_list + ((AFDD_NO + 1) * sizeof(pid_t))) > 0) &&
+                   (p_afd_status->afdd != STOPPED))
                {
                   if (((ret = kill(*(pid_t *)(pid_list + ((AFDD_NO + 1) * sizeof(pid_t))), 0)) == -1) &&
                       (errno == ESRCH))

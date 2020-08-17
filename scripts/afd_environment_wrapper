@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if [ -r $AFD_WORK_DIR/etc/environment.conf ]
+then
+   . $AFD_WORK_DIR/etc/environment.conf
+fi
+$@

@@ -1,6 +1,6 @@
 /*
  *  startup_afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@ DESCR__S_M3
  **                      not match.
  **   23.11.2013 H.Kiehl Catch case when the init_afd terminates with
  **                      an error.
+ **   16.06.2020 H.Kiehl Add systemd support.
  **
  */
 DESCR__E_M3
@@ -59,10 +60,9 @@ DESCR__E_M3
 #include "version.h"
 
 /* External global variables. */
-#ifdef AFDBENCH_CONFIG
 extern int  pause_dir_check;
-#endif
-extern char *p_work_dir;
+extern char *p_work_dir,
+            *service_name;
 
 
 /*############################ startup_afd() ############################*/
@@ -135,39 +135,60 @@ startup_afd(void)
          return(NO);
 
       case  0 : /* Child process. */
-#ifdef AFDBENCH_CONFIG
          if (pause_dir_check == YES)
          {
-            if (execlp(AFD, AFD, WORK_DIR_ID, p_work_dir, "-A",
-                       (char *) 0) < 0)
+            if (service_name == NULL)
             {
-               (void)fprintf(stderr,
-                             _("ERROR   : Failed to execute %s : %s (%s %d)\n"),
-                             AFD, strerror(errno), __FILE__, __LINE__);
-               exit(1);
+               if (execlp(AFD, AFD, WORK_DIR_ID, p_work_dir, "-A",
+                          (char *) 0) < 0)
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : Failed to execute %s %s %s -A : %s (%s %d)\n"),
+                                AFD, WORK_DIR_ID, p_work_dir,
+                                strerror(errno), __FILE__, __LINE__);
+                  exit(1);
+               }
+            }
+            else
+            {
+               if (execlp(AFD, AFD, WORK_DIR_ID, p_work_dir, "-A", "-sn",
+                          service_name, (char *) 0) < 0)
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : Failed to execute %s %s %s -A -sn %s : %s (%s %d)\n"),
+                                AFD, WORK_DIR_ID, p_work_dir, service_name,
+                                strerror(errno), __FILE__, __LINE__);
+                  exit(1);
+               }
             }
          }
          else
          {
-            if (execlp(AFD, AFD, WORK_DIR_ID, p_work_dir,
-                       (char *) 0) < 0)
+            if (service_name == NULL)
             {
-               (void)fprintf(stderr,
-                             _("ERROR   : Failed to execute %s : %s (%s %d)\n"),
-                             AFD, strerror(errno), __FILE__, __LINE__);
-               exit(1);
+               if (execlp(AFD, AFD, WORK_DIR_ID, p_work_dir,
+                          (char *) 0) < 0)
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : Failed to execute %s %s %s : %s (%s %d)\n"),
+                                AFD, WORK_DIR_ID, p_work_dir,
+                                strerror(errno), __FILE__, __LINE__);
+                  exit(1);
+               }
+            }
+            else
+            {
+               if (execlp(AFD, AFD, WORK_DIR_ID, p_work_dir, "-sn",
+                          service_name, (char *) 0) < 0)
+               {
+                  (void)fprintf(stderr,
+                                _("ERROR   : Failed to execute %s %s %s -sn %s : %s (%s %d)\n"),
+                                AFD, WORK_DIR_ID, p_work_dir, service_name,
+                                strerror(errno), __FILE__, __LINE__);
+                  exit(1);
+               }
             }
          }
-#else
-         if (execlp(AFD, AFD, WORK_DIR_ID, p_work_dir,
-                    (char *) 0) < 0)
-         {
-            (void)fprintf(stderr,
-                          _("ERROR   : Failed to execute %s : %s (%s %d)\n"),
-                          AFD, strerror(errno), __FILE__, __LINE__);
-            exit(1);
-         }
-#endif
          exit(0);
 
       default : /* Parent process. */
@@ -179,7 +200,7 @@ startup_afd(void)
    FD_ZERO(&rset);
    start_time = time(NULL);
 
-   return_code = 1; /* The rturn code of daemon_init() can only be 0. */
+   return_code = 1; /* The return code of daemon_init() can only be 0. */
    while (gotcha == NO)
    {
       if ((return_code == 1) && (waitpid(child_pid, &proc_status, WNOHANG) > 0))

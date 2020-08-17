@@ -1,6 +1,6 @@
 /*
  *  get_arg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2011 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ DESCR__S_M3
  ** SYNOPSIS
  **   int get_arg(int *argc, char *argv[], char *arg,
  **               char *buffer, int buf_length)
+ **   int get_argb(int *argc, char *argv[], char *arg, char *buffer)
  **   int get_arg_array(int *argc, char *argv[], char *arg,
  **                     char ***buffer, int *no_of_elements)
  **   int get_arg_int_array(int *argc, char *argv[], char *arg,
@@ -58,6 +59,7 @@ DESCR__S_M3
  **   23.01.2000 H.Kiehl Created
  **   20.10.2005 H.Kiehl Added function get_arg_array().
  **   25.03.2011 H.Kiehl Added function get_arg_int_array().
+ **   25.07.2020 H.Kiehl Added function get_argb().
  **
  */
 DESCR__E_M3
@@ -91,6 +93,77 @@ get_arg(int *argc, char *argv[], char *arg, char *buffer, int buf_length)
                   return(INCORRECT);
                }
                (void)strcpy(buffer, argv[i + 1]);
+               if ((i + 2) < *argc)
+               {
+                  register int j;
+
+                  for (j = i; j < (*argc - 2); j++)
+                  {
+                     argv[j] = argv[j + 2];
+                  }
+                  argv[j] = NULL;
+               }
+               else
+               {
+                  argv[i] = NULL;
+               }
+               *argc -= 2;
+
+               return(SUCCESS);
+            }
+            else
+            {
+               /* Either there are not enough arguments or the next */
+               /* argument starts with a dash '-'.                  */
+               return(INCORRECT);
+            }
+         }
+         if ((i + 1) < *argc)
+         {
+            register int j;
+
+            for (j = i; j < *argc; j++)
+            {
+               argv[j] = argv[j + 1];
+            }
+            argv[j] = NULL;
+         }
+         else
+         {
+            argv[i] = NULL;
+         }
+         *argc -= 1;
+
+         return(SUCCESS);
+      }
+   }
+
+   /* Argument NOT found. */
+   return(INCORRECT);
+}
+
+
+/*############################ get_argb() ###############################*/
+int
+get_argb(int *argc, char *argv[], char *arg, char **buffer)
+{
+   register int i;
+
+   for (i = 1; i < *argc; i++)
+   {
+      if (CHECK_STRCMP(argv[i], arg) == 0)
+      {
+         if (buffer != NULL)
+         {
+            if (((i + 1) < *argc) && (argv[i + 1][0] != '-'))
+            {
+               if ((*buffer = malloc((strlen(argv[i + 1]) + 1))) == NULL)
+               {
+                  (void)fprintf(stderr, "malloc() error : %s (%s %d)\n",
+                                strerror(errno), __FILE__, __LINE__);
+                  return(INCORRECT);
+               }
+               (void)strcpy(*buffer, argv[i + 1]);
                if ((i + 2) < *argc)
                {
                   register int j;

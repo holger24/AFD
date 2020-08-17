@@ -1,6 +1,6 @@
 /*
  *  afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -28,6 +28,9 @@ DESCR__S_M1
  ** SYNOPSIS
  **   afd [options]
  **    -a                        only start AFD
+ **    --all                     in combination with -s or -S, stop all
+ **                              process
+ **    -A                        only start AFD, but do not scan directories
  **    -b                        Blocks starting of AFD
  **    -c[ <timeout in seconds>] only check if AFD is active
  **    -C[ <timeout in seconds>] check if AFD is active, if not start it
@@ -48,6 +51,7 @@ DESCR__S_M1
  **    -T                        check if data types match current binary
  **    -s                        shutdown AFD
  **    -S                        silent AFD shutdown
+ **    -sn <name>                Provide a service name.
  **    -u[ <user>]               different user
  **    -w <work dir>             AFD working directory
  **    -v                        Just print the version number.
@@ -110,10 +114,11 @@ DESCR__S_M1
  **   28.11.2012 H.Kiehl Let user choose the level of initialization.
  **   05.08.2013 H.Kiehl Check correct DIR_CONFIG in case when we specify
  **                      another one in AFD_CONFIG in function
- **                      check_database().
+ **                      check_afd_database().
  **   20.03.2014 H.Kiehl When AFD is on a global filesystem and we check
  **                      if AFD is active (-c), also check that we are on
  **                      the correct node.
+ **   16.06.2020 H.Kiehl Add support for systemd.
  **
  */
 DESCR__E_M1
@@ -152,19 +157,17 @@ DESCR__E_M1
 #define SET_SHUTDOWN_BIT         13
 
 /* External global variables. */
-#ifdef AFDBENCH_CONFIG
 int               pause_dir_check = NO;
-#endif
 int               sys_log_fd = STDERR_FILENO;
 char              *p_work_dir,
                   afd_active_file[MAX_PATH_LENGTH],
-                  afd_cmd_fifo[MAX_PATH_LENGTH];
+                  afd_cmd_fifo[MAX_PATH_LENGTH],
+                  *service_name;
 const char        *sys_log_name = SYSTEM_LOG_FIFO;
 struct afd_status *p_afd_status;
 
 /* Local functions. */
 static void       usage(char *);
-static int        check_database(void);
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
@@ -177,6 +180,7 @@ main(int argc, char *argv[])
                init_level = 0,
                startup_perm,
                start_up,
+               stop_all = NO,
                shutdown_perm,
                user_offset;
    long        default_heartbeat_timeout = DEFAULT_HEARTBEAT_TIMEOUT;
@@ -212,6 +216,10 @@ main(int argc, char *argv[])
    {
       (void)my_strncpy(user, profile, MAX_FULL_USER_ID_LENGTH);
       user_offset = strlen(profile);
+   }
+   if (get_argb(&argc, argv, "-sn", &service_name) == INCORRECT)
+   {
+      service_name = NULL;
    }
 #ifdef WITH_SETUID_PROGS
    set_afd_euid(work_dir);
@@ -309,10 +317,14 @@ main(int argc, char *argv[])
    {
       if ((argc == 2) ||
           ((argc == 3) && (argv[1][0] == '-') &&
-           ((((argv[1][1] == 'C') || (argv[1][1] == 'c') ||
-              (argv[1][1] == 'I') || (argv[1][1] == 'i')) &&
-             (argv[1][2] == '\0')) ||
-            ((argv[1][1] == 'i') && (isdigit((int)argv[1][2]))))))
+           (((((argv[1][1] == 'C') || (argv[1][1] == 'c') ||
+               (argv[1][1] == 'I') || (argv[1][1] == 'i')) &&
+              (argv[1][2] == '\0')) ||
+             ((argv[1][1] == 'i') && (isdigit((int)argv[1][2])))) ||
+            (((argv[1][1] == 'S') || (argv[1][1] == 's')) &&
+             (argv[2][0] == '-') && (argv[2][1] == '-') &&
+             (argv[2][2] == 'a') && (argv[2][3] == 'l') &&
+             (argv[2][4] == 'l') && (argv[2][5] == '\0')))))
       {
          if (my_strcmp(argv[1], "-a") == 0) /* Start AFD. */
          {
@@ -324,7 +336,6 @@ main(int argc, char *argv[])
             }
             start_up = AFD_ONLY;
          }
-#ifdef AFDBENCH_CONFIG
          else if (my_strcmp(argv[1], "-A") == 0) /* Start AFD but no dir scans. */
               {
                  if (startup_perm != YES)
@@ -336,7 +347,6 @@ main(int argc, char *argv[])
                  pause_dir_check = YES;
                  start_up = AFD_ONLY;
               }
-#endif
          else if (my_strcmp(argv[1], "-b") == 0) /* Block auto restart. */
               {
                  start_up = MAKE_BLOCK_FILE;
@@ -474,6 +484,11 @@ main(int argc, char *argv[])
                                   user);
                     exit(INCORRECT);
                  }
+                 if ((argc == 3) &&
+                     (my_strcmp(argv[2], "--all") == 0))
+                 {
+                    stop_all = YES;
+                 }
                  start_up = SHUTDOWN_ONLY;
               }
          else if (my_strcmp(argv[1], "-S") == 0) /* Silent AFD shutdown. */
@@ -484,6 +499,11 @@ main(int argc, char *argv[])
                                   _("You do not have the permission to shutdown the AFD. [%s]\n"),
                                   user);
                     exit(INCORRECT);
+                 }
+                 if ((argc == 3) &&
+                     (my_strcmp(argv[2], "--all") == 0))
+                 {
+                    stop_all = YES;
                  }
                  start_up = SILENT_SHUTDOWN_ONLY;
               }
@@ -652,7 +672,11 @@ main(int argc, char *argv[])
                           __FILE__, __LINE__);
             exit(INCORRECT);
          }
+#ifdef WITH_SYSTEMD
+         if ((n = shutdown_afd(user, 1L, YES, stop_all)) == 2)
+#else
          if ((n = shutdown_afd(user, 1L, YES)) == 2)
+#endif
          {
             if (start_up == SHUTDOWN_ONLY)
             {
@@ -726,7 +750,11 @@ main(int argc, char *argv[])
           * lets return 0 (success) when we exit. Assume that no
           * AFD was running.
           */
+#ifdef WITH_SYSTEMD
+         (void)shutdown_afd(user, 3L, NO, stop_all);
+#else
          (void)shutdown_afd(user, 3L, NO);
+#endif
          (void)unlink(afd_active_file);
          if (start_up == SHUTDOWN_ONLY)
          {
@@ -735,90 +763,108 @@ main(int argc, char *argv[])
          exit(0);
       }
 
-      (void)shutdown_afd(user, 10L, NO);
-
-      /*
-       * Wait for init_afd to terminate. But lets not wait forever.
-       */
-      for (;;)
-      {
-         if ((access(afd_active_file, F_OK) == -1) && (errno == ENOENT))
-         {
-            if (start_up == SHUTDOWN_ONLY)
-            {
-               (void)fprintf(stdout, "\nDone!\n");
-            }
-            exit(0);
-         }
-
-         if ((start_up == SHUTDOWN_ONLY) && ((loops % 10) == 0))
-         {
-            (void)fprintf(stdout, ".");
-            fflush(stdout);
-         }
-         my_usleep(100000L);
-
-         if (loops++ >= 1200)
-         {
-            (void)fprintf(stdout, _("\nTimeout reached, killing %s.\n"), AFD);
-            if (kill(ia_pid, SIGINT) == -1)
-            {
-               if (errno == ESRCH)
-               {
-                  (void)fprintf(stderr, _("init_afd already gone (%s %d)\n"),
-                                __FILE__, __LINE__);
-                  exit(0);
-               }
-               (void)fprintf(stderr,
-#if SIZEOF_PID_T == 4
-                             _("Failed to kill init_afd (%d) : %s (%s %d)\n"),
+#ifdef WITH_SYSTEMD
+      (void)shutdown_afd(user, 10L, NO, stop_all);
 #else
-                             _("Failed to kill init_afd (%lld) : %s (%s %d)\n"),
+      (void)shutdown_afd(user, 10L, NO);
 #endif
-                             (pri_pid_t)ia_pid, strerror(errno),
-                             __FILE__, __LINE__);
-            }
-            else
+
+#ifdef WITH_SYSTEMD
+      if (stop_all == YES)
+      {
+#endif
+         /*
+          * Wait for init_afd to terminate. But lets not wait forever.
+          */
+         for (;;)
+         {
+            if ((access(afd_active_file, F_OK) == -1) && (errno == ENOENT))
             {
                if (start_up == SHUTDOWN_ONLY)
                {
-                  (void)fprintf(stdout, _("\nDone!\n"));
+                  (void)fprintf(stdout, "\nDone!\n");
                }
+               exit(0);
             }
-            break;
-         }
-      }
 
-      /*
-       * Before we exit lets check if init_afd is really gone.
-       */
-      loops = 0;
-      for (;;)
-      {
-         if ((access(afd_active_file, F_OK) == -1) && (errno == ENOENT))
-         {
-            break;
-         }
-         my_usleep(100000L);
-
-         if (loops++ >= 400)
-         {
-            (void)fprintf(stdout,
-                          _("\nSecond timeout reached, killing init_afd the hard way.\n"));
-            if (kill(ia_pid, SIGKILL) == -1)
+            if ((start_up == SHUTDOWN_ONLY) && ((loops % 10) == 0))
             {
-               (void)fprintf(stderr,
-#if SIZEOF_PID_T == 4
-                             _("Failed to kill init_afd (%d) : %s (%s %d)\n"),
-#else
-                             _("Failed to kill init_afd (%lld) : %s (%s %d)\n"),
-#endif
-                             (pri_pid_t)ia_pid, strerror(errno),
-                             __FILE__, __LINE__);
+               (void)fprintf(stdout, ".");
+               fflush(stdout);
             }
-            break;
+            my_usleep(100000L);
+
+            if (loops++ >= 1200)
+            {
+               (void)fprintf(stdout, _("\nTimeout reached, killing %s.\n"), AFD);
+               if (kill(ia_pid, SIGINT) == -1)
+               {
+                  if (errno == ESRCH)
+                  {
+                     (void)fprintf(stderr, _("init_afd already gone (%s %d)\n"),
+                                   __FILE__, __LINE__);
+                     exit(0);
+                  }
+                  (void)fprintf(stderr,
+#if SIZEOF_PID_T == 4
+                                _("Failed to kill init_afd (%d) : %s (%s %d)\n"),
+#else
+                                _("Failed to kill init_afd (%lld) : %s (%s %d)\n"),
+#endif
+                                (pri_pid_t)ia_pid, strerror(errno),
+                                __FILE__, __LINE__);
+               }
+               else
+               {
+                  if (start_up == SHUTDOWN_ONLY)
+                  {
+                     (void)fprintf(stdout, _("\nDone!\n"));
+                  }
+               }
+               break;
+            }
+         }
+
+         /*
+          * Before we exit lets check if init_afd is really gone.
+          */
+         loops = 0;
+         for (;;)
+         {
+            if ((access(afd_active_file, F_OK) == -1) && (errno == ENOENT))
+            {
+               break;
+            }
+            my_usleep(100000L);
+
+            if (loops++ >= 400)
+            {
+               (void)fprintf(stdout,
+                             _("\nSecond timeout reached, killing init_afd the hard way.\n"));
+               if (kill(ia_pid, SIGKILL) == -1)
+               {
+                  (void)fprintf(stderr,
+#if SIZEOF_PID_T == 4
+                                _("Failed to kill init_afd (%d) : %s (%s %d)\n"),
+#else
+                                _("Failed to kill init_afd (%lld) : %s (%s %d)\n"),
+#endif
+                                (pri_pid_t)ia_pid, strerror(errno),
+                                __FILE__, __LINE__);
+               }
+               break;
+            }
+         }
+#ifdef WITH_SYSTEMD
+      }
+      else
+      {
+         if (start_up == SHUTDOWN_ONLY)
+         {
+            (void)fprintf(stdout, _("\nDone!\n"));
          }
       }
+#endif
 
       exit(0);
    }
@@ -848,6 +894,8 @@ main(int argc, char *argv[])
         }
    else if (start_up == AFD_ONLY)
         {
+           int ret;
+
            /* Check if starting of AFD is currently disabled.  */
            if (eaccess(auto_block_file, F_OK) == 0)
            {
@@ -856,7 +904,7 @@ main(int argc, char *argv[])
               exit(AFD_DISABLED_BY_SYSADM);
            }
 
-           if (check_database() == -1)
+           if (check_afd_database() == -1)
            {
               (void)fprintf(stderr,
                             _("ERROR   : Cannot read database file (DIR_CONFIG) : %s\n          Unable to start AFD.\n"),
@@ -864,10 +912,8 @@ main(int argc, char *argv[])
               exit(INCORRECT);
            }
 
-           if (check_afd_heartbeat(DEFAULT_HEARTBEAT_TIMEOUT, NO) == 1)
+           if ((ret = check_afd_heartbeat(DEFAULT_HEARTBEAT_TIMEOUT, NO)) == 1)
            {
-              int ret;
-
               if (attach_afd_status(NULL, 5) == SUCCESS)
               {
                  if (p_afd_status->hostname[0] != '\0')
@@ -916,6 +962,13 @@ main(int argc, char *argv[])
               }
               exit(ret);
            }
+#ifdef WITH_SYSTEMD
+           else if (ret == 3)
+                {
+                   ret = send_start_afd(user, 15);
+                   exit(ret);
+                }
+#endif
 
            if (startup_afd() != YES)
            {
@@ -943,8 +996,6 @@ main(int argc, char *argv[])
            if ((ret = check_afd_heartbeat(default_heartbeat_timeout,
                                           remove_process)) == 1)
            {
-              int exit_ret;
-
               if (attach_afd_status(NULL, 5) == SUCCESS)
               {
                  if (p_afd_status->hostname[0] != '\0')
@@ -958,7 +1009,7 @@ main(int argc, char *argv[])
                           (void)fprintf(stdout,
                                         _("AFD is active on %s in %s\n"),
                                         hostname, p_work_dir);
-                          exit_ret = AFD_IS_ACTIVE;
+                          ret = AFD_IS_ACTIVE;
                        }
                        else
                        {
@@ -966,7 +1017,7 @@ main(int argc, char *argv[])
                                         _("No AFD is active on %s in %s, but is active on %s\n"),
                                         hostname, p_work_dir,
                                         p_afd_status->hostname);
-                          exit_ret = NOT_ON_CORRECT_HOST;
+                          ret = NOT_ON_CORRECT_HOST;
                        }
                     }
                     else
@@ -974,14 +1025,14 @@ main(int argc, char *argv[])
                        (void)fprintf(stdout,
                                      _("AFD is active on %s in %s\n"),
                                      p_afd_status->hostname, p_work_dir);
-                       exit_ret = AFD_IS_ACTIVE;
+                       ret = AFD_IS_ACTIVE;
                     }
                  }
                  else
                  {
                     (void)fprintf(stdout,
                                   _("AFD is active in %s\n"), p_work_dir);
-                    exit_ret = AFD_IS_ACTIVE;
+                    ret = AFD_IS_ACTIVE;
                  }
                  (void)detach_afd_status();
               }
@@ -989,9 +1040,9 @@ main(int argc, char *argv[])
               {
                  (void)fprintf(stdout,
                                _("AFD is active in %s\n"), p_work_dir);
-                 exit_ret = AFD_IS_ACTIVE;
+                 ret = AFD_IS_ACTIVE;
               }
-              exit(exit_ret);
+              exit(ret);
            }
            else if (ret == 2)
                 {
@@ -1012,7 +1063,7 @@ main(int argc, char *argv[])
                  exit(AFD_DISABLED_BY_SYSADM);
               }
 
-              if (check_database() == -1)
+              if (check_afd_database() == -1)
               {
                  (void)fprintf(stderr,
                                _("Cannot read database file (DIR_CONFIG) : %s\nUnable to start AFD.\n"),
@@ -1020,7 +1071,19 @@ main(int argc, char *argv[])
                  exit(NO_DIR_CONFIG);
               }
 
-              if (startup_afd() != YES)
+#ifdef WITH_SYSTEMD
+              if (ret == 3)
+              {
+                 ret = send_start_afd(user, 15);
+              }
+              else
+              {
+#endif
+                 ret = startup_afd();
+#ifdef WITH_SYSTEMD
+              }
+#endif
+              if (ret != YES)
               {
                  exit(INCORRECT);
               }
@@ -1173,7 +1236,9 @@ main(int argc, char *argv[])
    }
    else /* Start both. */
    {
-      if (check_database() == -1)
+      int ret;
+
+      if (check_afd_database() == -1)
       {
          (void)fprintf(stderr,
                        _("Cannot read database file (DIR_CONFIG) : %s\nUnable to start AFD.\n"),
@@ -1181,10 +1246,8 @@ main(int argc, char *argv[])
          exit(INCORRECT);
       }
 
-      if (check_afd_heartbeat(DEFAULT_HEARTBEAT_TIMEOUT, NO) == 1)
+      if ((ret = check_afd_heartbeat(DEFAULT_HEARTBEAT_TIMEOUT, NO)) == 1)
       {
-         int ret;
-
          /* AFD is already up and running. */
          (void)strcpy(exec_cmd, AFD_CTRL);
          if (profile[0] == '\0')
@@ -1208,10 +1271,20 @@ main(int argc, char *argv[])
       }
       else
       {
-         if (startup_afd() == YES)
+#ifdef WITH_SYSTEMD
+         if (ret == 3)
          {
-            int ret;
-
+            ret = send_start_afd(user, 15);
+         }
+         else
+         {
+#endif
+            ret = startup_afd();
+#ifdef WITH_SYSTEMD
+         }
+#endif
+         if (ret == YES)
+         {
             (void)strcpy(exec_cmd, AFD_CTRL);
             if (profile[0] == '\0')
             {
@@ -1243,153 +1316,6 @@ main(int argc, char *argv[])
 }
 
 
-/*++++++++++++++++++++++++++++ check_database() +++++++++++++++++++++++++*/
-static int
-check_database(void)
-{
-   int  length,
-        ret;
-   char db_file[MAX_PATH_LENGTH];
-
-   length = snprintf(db_file, MAX_PATH_LENGTH, "%s%s", p_work_dir, ETC_DIR);
-   (void)strcpy(&db_file[length], AFD_CONFIG_FILE);
-   if (eaccess(db_file, R_OK) == -1)
-   {
-      (void)strcpy(&db_file[length], DEFAULT_DIR_CONFIG_FILE);
-      ret = eaccess(db_file, R_OK);
-   }
-   else
-   {
-      char *buffer,
-           config_file[MAX_PATH_LENGTH + 5];
-
-      ret = -1;
-      if (read_file_no_cr(db_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT)
-      {
-         char *ptr;
-
-         ptr = buffer;
-         while ((ptr = get_definition(ptr, DIR_CONFIG_NAME_DEF,
-                                      config_file, MAX_PATH_LENGTH)) != NULL)
-         {
-            if (config_file[0] != '/')
-            {
-               if (config_file[0] == '~')
-               {
-                  size_t config_length;
-                  char   *p_path,
-                         user[MAX_USER_NAME_LENGTH + 1];
-
-                  if (config_file[1] == '/')
-                  {
-                     p_path = &config_file[2];
-                     user[0] = '\0';
-                  }
-                  else
-                  {
-                     int j = 0;
-
-                     p_path = &config_file[1];
-                     while ((*(p_path + j) != '/') && (*(p_path + j) != '\0') &&
-                            (j < MAX_USER_NAME_LENGTH))
-                     {
-                        user[j] = *(p_path + j);
-                        j++;
-                     }
-                     user[j] = '\0';
-                  }
-                  (void)expand_path(user, p_path);
-                  config_length = strlen(p_path) + 1;
-                  (void)memmove(config_file, p_path, config_length);
-               }
-               else
-               {
-                  char tmp_config_file[MAX_PATH_LENGTH];
-
-                  (void)strcpy(tmp_config_file, config_file);
-                  (void)snprintf(config_file, MAX_PATH_LENGTH + 5, "%s%s/%s",
-                                 p_work_dir, ETC_DIR, tmp_config_file);
-               }
-            }
-
-            if ((ret = eaccess(config_file, R_OK)) == 0)
-            {
-               break;
-            }
-         }
-         free(buffer);
-      }
-
-      if (ret == -1)
-      {
-         (void)strcpy(&db_file[length], DEFAULT_DIR_CONFIG_FILE);
-         ret = eaccess(db_file, R_OK);
-      }
-   }
-
-#ifdef WITH_AUTO_CONFIG
-   if (ret == -1)
-   {
-      FILE        *fp;
-      struct stat stat_buf;
-
-      db_file[length] = '\0';
-      if (stat(db_file, &stat_buf) == -1)
-      {
-         if (errno == ENOENT)
-         {
-            if (mkdir(db_file, DIR_MODE) == -1)
-            {
-               (void)fprintf(stderr, _("Failed to mkdir() `%s' : %s\n"),
-                             db_file, strerror(errno));
-               return(-1);
-            }
-         }
-         else
-         {
-            return(-1);
-         }
-      }
-      (void)snprintf(db_file, MAX_PATH_LENGTH, "%s %s 2>&1",
-                     AFD_AUTO_CONFIG, p_work_dir);
-      if ((fp = popen(db_file, "r")) == NULL)
-      {
-         (void)fprintf(stderr, _("Failed to popen() `%s' : %s\n"),
-                       db_file, strerror(errno));
-         return(-1);
-      }
-      db_file[0] = '\0';
-      while (fgets(db_file, MAX_PATH_LENGTH, fp) != NULL)
-      {
-         ;
-      }
-      if (db_file[0] != '\0')
-      {
-         (void)fprintf(stderr, _("%s failed : `%s'\n"),
-                       AFD_AUTO_CONFIG, db_file);
-      }
-      if (ferror(fp))
-      {
-         (void)fprintf(stderr, _("ferror() error : %s\n"), strerror(errno));
-      }
-      if (pclose(fp) == -1)
-      {
-         (void)fprintf(stderr, _("Failed to pclose() : %s\n"), strerror(errno));
-      }
-      (void)snprintf(db_file, MAX_PATH_LENGTH, "%s%s%s",
-                     p_work_dir, ETC_DIR, DEFAULT_DIR_CONFIG_FILE);
-      return(eaccess(db_file, R_OK));
-   }
-   else
-   {
-      return(0);
-   }
-#else
-   return(ret);
-#endif
-}
-
-
 /*+++++++++++++++++++++++++++++++ usage() +++++++++++++++++++++++++++++++*/
 static void
 usage(char *progname)
@@ -1397,9 +1323,10 @@ usage(char *progname)
    (void)fprintf(stderr, _("Usage: %s[ -w <AFD working dir>][ -p <role>][ -u[ <user>]] [option]\n"), progname);
    (void)fprintf(stderr, _("\n   Other possible options:\n"));
    (void)fprintf(stderr, _("    -a                        only start AFD\n"));
-#ifdef AFDBENCH_CONFIG
-   (void)fprintf(stderr, _("    -A                        only start AFD, but do not scan directories\n"));
+#ifdef WITH_SYSTEMD
+   (void)fprintf(stderr, _("    --all                     in combination with -s or -S, stop all process\n"));
 #endif
+   (void)fprintf(stderr, _("    -A                        only start AFD, but do not scan directories\n"));
    (void)fprintf(stderr, _("    -b                        blocks starting of AFD\n"));
    (void)fprintf(stderr, _("    -c[ <timeout in seconds>] only check if AFD is active\n"));
    (void)fprintf(stderr, _("    -C[ <timeout in seconds>] check if AFD is active, if not start it\n"));
@@ -1418,6 +1345,7 @@ usage(char *progname)
    (void)fprintf(stderr, _("    -r                        removes blocking startup of AFD\n"));
    (void)fprintf(stderr, _("    -s                        shutdown AFD\n"));
    (void)fprintf(stderr, _("    -S                        silent AFD shutdown\n"));
+   (void)fprintf(stderr, _("    -sn <name>                Provide a service name.\n"));
    (void)fprintf(stderr, _("    -T                        check if data types match current binary\n"));
    (void)fprintf(stderr, _("    -z                        set shutdown bit\n"));
    (void)fprintf(stderr, _("    --help                    prints out this syntax\n"));

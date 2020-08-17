@@ -1,6 +1,6 @@
 /*
  *  logger.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -84,7 +84,8 @@ extern char         *fifo_buffer,
                     *msg_str,
                     *p_log_fifo,
                     *p_log_his,
-                    *prev_msg_str;
+                    *prev_msg_str,
+                    *progname;
 
 /* Local global varaibles. */
 static int          log_fd;
@@ -104,7 +105,8 @@ logger(FILE  *fp,
 {
    log_fd = fd;
    p_log_file = fp;
-   if (signal(SIGINT, sig_exit) == SIG_ERR)
+   if ((signal(SIGINT, sig_exit) == SIG_ERR) ||
+       (signal(SIGTERM, sig_exit) == SIG_ERR))
    {
       (void)fprintf(stderr, "Could not set signal handler : %s (%s %d)\n",
                     strerror(errno), __FILE__, __LINE__);
@@ -128,6 +130,13 @@ static void
 sig_exit(int signo)
 {
    check_data(0L);
+   (void)fprintf(stderr,
+#if SIZEOF_PID_T == 4
+                 "%s terminated by signal %d (%d)\n",
+#else
+                 "%s terminated by signal %d (%lld)\n",
+#endif
+                 progname, signo, (pri_pid_t)getpid());
 
    exit(SUCCESS);
 }

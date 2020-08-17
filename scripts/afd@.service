@@ -1,0 +1,18 @@
+[Unit]
+Description=Automatic File Distributor (AFD) for %i
+PartOf=afd.target
+
+[Service]
+Type=notify
+EnvironmentFile=/etc/afd/%i_environment.conf
+RuntimeDirectory=%n
+User=%i
+ExecStart=/usr/bin/init_afd -sn %n -C -nd
+ExecStop=/usr/bin/afd -sn %n -S --all
+KillMode=none
+Restart=on-abnormal
+WatchdogSec=40
+WatchdogSignal=SIGTERM
+
+[Install]
+WantedBy=afd.target
