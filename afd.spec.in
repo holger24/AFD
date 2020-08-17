@@ -142,6 +142,7 @@ make DESTDIR=$RPM_BUILD_ROOT install
    install -p -m644 scripts/afd.target $RPM_BUILD_ROOT/%{_unitdir}
    install -p -m644 scripts/afd_environment.conf $RPM_BUILD_ROOT/%{sysconfdir}/afd
 %if %{with_afdmon}
+   install -p -m644 scripts/afdmon@.service $RPM_BUILD_ROOT/%{_unitdir}
    install -p -m644 scripts/afdmon.target $RPM_BUILD_ROOT/%{_unitdir}
    install -p -m644 scripts/afdmon_environment.conf $RPM_BUILD_ROOT/%{sysconfdir}/afdmon
 %endif
