@@ -282,6 +282,7 @@ retry_connect:
       scd.fstatvfs           = 2;
       scd.hardlink           = 1;
       scd.fsync              = 1;
+      scd.unknown            = 0;
       scd.request_id         = 0;
       scd.stored_replies     = 0;
       scd.file_handle_length = 0;
@@ -394,6 +395,7 @@ retry_connect:
                         scd.fstatvfs = 0;
                         scd.hardlink = 0;
                         scd.fsync = 0;
+                        scd.unknown = 0;
                         if (ui_var > 0)
                         {
                            int str_len;
@@ -503,6 +505,7 @@ retry_connect:
                                          ptr += (str_len + 4);
                                          free(p_xfer_str);
                                          p_xfer_str = NULL;
+                                         scd.unknown++;
                                          if ((str_len = get_xfer_str(ptr, &p_xfer_str)) == 0)
                                          {
                                             break;
@@ -571,6 +574,18 @@ retry_connect:
    }
 
    return(status);
+}
+
+
+/*########################### sftp_features() ###########################*/
+void
+sftp_features(void)
+{
+   (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                  "posix_rename=%d statvfs=%d fstatvfs=%d hardlink=%d fsync=%d unknown=%d",
+                  scd.posix_rename, scd.statvfs, scd.fstatvfs,
+                  scd.hardlink, scd.fsync, scd.unknown);
+   return;
 }
 
 

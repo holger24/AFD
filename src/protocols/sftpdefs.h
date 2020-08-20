@@ -1,6 +1,6 @@
 /*
  *  sftpdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -251,6 +251,7 @@ struct sftp_connect_data
           unsigned char          fstatvfs;      /* Unused */
           unsigned char          hardlink;      /* Unused */
           unsigned char          fsync;         /* Unused */
+          unsigned char          unknown;       /* Used   */
        };
 
 
@@ -283,7 +284,8 @@ extern int          sftp_cd(char *, int, mode_t, char *),
                     sftp_set_file_time(char *, time_t, time_t),
                     sftp_stat(char *, struct stat *),
                     sftp_write(char *, int);
-extern void         sftp_multi_read_discard(int),
+extern void         sftp_features(void),
+                    sftp_multi_read_discard(int),
                     sftp_quit(void);
 
 #endif /* __sftpdefs_h */

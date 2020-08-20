@@ -385,9 +385,10 @@ main(int argc, char *argv[])
    {
       if (fsa->debug > NORMAL_MODE)
       {
+         sftp_features();
          trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                      "Agreed on SFTP version %u.",
-                      sftp_version());
+                      "Agreed on SFTP version %u. [%s]",
+                      sftp_version(), msg_str);
       }
 
       if (db.special_flag & CREATE_TARGET_DIR)
@@ -412,7 +413,9 @@ main(int argc, char *argv[])
       {
          if (fsa->debug > NORMAL_MODE)
          {
-            trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL, "SFTP Bursting.");
+            trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                         "SFTP Bursting. [values_changed=%u]",
+                         values_changed);
          }
          (void)memcpy(fsa->job_status[(int)db.job_no].unique_name,
                       db.msg_name, MAX_MSG_NAME_LENGTH);

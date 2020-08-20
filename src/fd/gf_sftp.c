@@ -331,9 +331,10 @@ main(int argc, char *argv[])
    {
       if (fsa->debug > NORMAL_MODE)
       {
+         sftp_features();
          trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                      "Connected. Agreed on SFTP version %u.",
-                      sftp_version());
+                      "Connected. Agreed on SFTP version %u. [%s]",
+                      sftp_version(), msg_str);
       }
    }
    connected = time(NULL);
