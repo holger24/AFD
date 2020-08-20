@@ -485,8 +485,7 @@ main(int argc, char *argv[])
               ret = execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
                            "-p", profile, (char *) 0);
            }
-           if (execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
-                      (char *) 0) == -1)
+           if (ret == -1)
            {
               (void)fprintf(stderr,
                             "ERROR   : Failed to execute %s : %s (%s %d)\n",
