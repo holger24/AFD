@@ -102,9 +102,10 @@ in his directories ~/tick, ~/trick and ~/track, it can be done as
 follows by the system administrator:
 </p>
 <pre>
-   cp /usr/lib/systemd/system/afd@.service /etc/systemd/system/afd.target.wants/afd@donald_tick.service
-   cp /usr/lib/systemd/system/afd@.service /etc/systemd/system/afd.target.wants/afd@donald_trick.service
-   cp /usr/lib/systemd/system/afd@.service /etc/systemd/system/afd.target.wants/afd@donald_track.service
+   cd /usr/lib/systemd/system
+   cp afd@.service afd@donald_tick.service
+   cp afd@.service afd@donald_trick.service
+   cp afd@.service afd@donald_track.service
 </pre>
 <p>
 These three files must then be modified by the system administrator by
@@ -134,13 +135,17 @@ need to be created in /etc/afd with the following contend:
    cat /etc/afd/donald_track_environment.conf
    AFD_WORK_DIR=/home/donald/track
 </pre>
+<p>
+Then issue the command 'systemctl daemon-reload', so systemd sees those
+modifications.
+</p>
 <hr size=3 noshade>
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
    Copyright &copy; 2020 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 10.08.2020
+   Last updated: 19.08.2020
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

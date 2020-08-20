@@ -58,11 +58,13 @@ are some changes in running AFD as a background daemon.
      1) Copy the afd@.service file with an instance name foo
         to /etc/systemd/system/afd.target.wants as follows:
 
-          cp /usr/lib/systemd/system/afd@.service /etc/systemd/system/afd.target.wants/afd@foo.service
+          cd /usr/lib/systemd/system
+          cp afd@.service afd@foo.service
 
         Edit the file afd@foo.service and change the line
         'User=%i' by resolving %i to the real username under
-        which the AFD instance should run.
+        which the AFD instance should run. Then do a
+        'systemctl daemon-reload'.
 
      2) Next create the environment file /etc/afd/foo_environment.conf
         and set the variable AFD_WORK_DIR variable to point to the
