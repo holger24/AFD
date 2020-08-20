@@ -14,6 +14,40 @@ can decide what parts of AFD you want to compile and how and where
 you want it to install the binaries.
 </p>
 <p>
+If you do not have a configure file you can create it by running the
+script ac-tools/bootstrap. This script needs autoconfig and automake.
+Here the commands to install them on the different systems:
+<ul>
+   <li>RedHat/CentOS/Scientific Linux up to 7.x and Fedora up to Version 17</li>
+   <ul>
+      <pre>
+      su -
+      yum install automake autoconf
+      </pre>
+   </ul>
+   <li>RedHat/CentOS as of Version 8.x and Fedora as of Version 18</li>
+   <ul>
+      <pre>
+      su -
+      dnf install automake autoconf
+      </pre>
+   </ul>
+   <li>Debian/Ubuntu</li>
+   <ul>
+      <pre>
+      sudo apt-get install automake autoconf
+      </pre>
+   </ul>
+   <li>SLES as of Version 10 and openSUSE</li>
+   <ul>
+      <pre>
+      su -
+      zypper install automake autoconf
+      </pre>
+   </ul>
+</ul>
+</p>
+<p>
 But before you start you need to ensure that your system has all the
 required packages installed. Here follow some system specific description
 on how to install the necessary tools:
@@ -150,13 +184,21 @@ command:
 <pre>
             make install
 </pre>
+<p>
+The Makefile also has support for generating an RPM. For this to work
+the package rpm-build needs to be installed. If this is installed, all
+you need to do is run the following command instead of the 'make install':
+</p>
+<pre>
+            make rpm
+</pre>
 <hr size=3 noshade>
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
    Copyright &copy; 2005 - 2020 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 30.07.2020
+   Last updated: 19.08.2020
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
