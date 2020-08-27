@@ -1547,7 +1547,14 @@ read_passwd_reply:
                        ptr++;
                     }
                     status = status - (ptr - msg_str);
-                    (void)memcpy(msg_str, ptr, status);
+                    if (status >= (MAX_RET_MSG_LENGTH - 1))
+                    {
+                       trans_log(WARN_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
+                                 "msg_str buffer to small. Wanted to copy %d bytes.",
+                                 status);
+                       status = MAX_RET_MSG_LENGTH - 1;
+                    }
+                    (void)memmove(msg_str, ptr, status);
                  }
                  if (status > 0)
                  {
