@@ -1,6 +1,6 @@
 /*
  *  eval_recipient.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -78,6 +78,8 @@ DESCR__S_M3
  **                        during a burst.
  **   24.04.2012 S.Knudsen Scheme ftpS was ignored.
  **   21.04.2013 H.Kiehl   Handle case when we rename host_alias in message.
+ **   03.09.2020 H.Kiehl   For HTTP do not set a default user, otherwise
+ **                        we always send Basic Authorization for nothing.
  **
  */
 DESCR__E_M3
@@ -192,7 +194,8 @@ eval_recipient(char       *recipient,
       else if (p_db->user[0] == '\0')
            {
               if (((p_db->protocol & LOC_FLAG) == 0) &&
-                  ((p_db->protocol & EXEC_FLAG) == 0)) 
+                  ((p_db->protocol & EXEC_FLAG) == 0) &&
+                  ((p_db->protocol & HTTP_FLAG) == 0)) 
               {
                  p_db->user[0] = 'a'; p_db->user[1] = 'n';
                  p_db->user[2] = 'o'; p_db->user[3] = 'n';
