@@ -339,10 +339,20 @@ main(int argc, char *argv[])
    }
 
    /* Make sure that no other AFD is running in this directory. */
-   if (check_afd_heartbeat(DEFAULT_HEARTBEAT_TIMEOUT, YES) == 1)
+   if ((status = check_afd_heartbeat(DEFAULT_HEARTBEAT_TIMEOUT, NO)) != 0)
    {
-      (void)fprintf(stderr, _("ERROR   : Another AFD is already active.\n"));
-      exit(INCORRECT);
+      if (status == 3)
+      {
+         (void)fprintf(stderr, _("INFO    : AFD is already running.\n"));
+         exit(SUCCESS);
+      }
+      else
+      {
+         (void)fprintf(stderr,
+                       _("ERROR   : Another AFD is already active. (%d)\n"),
+                       status);
+         exit(INCORRECT);
+      }
    }
    probe_only = 0;
    if ((afd_active_fd = coe_open(afd_active_file, (O_RDWR | O_CREAT | O_TRUNC),
