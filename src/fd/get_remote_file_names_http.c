@@ -52,7 +52,7 @@ DESCR__E_M3
 /* #define DUMP_DIR_LIST_TO_DISK */
 
 #include <stdio.h>
-#include <string.h>                /* strcpy(), strerror(), memmove()    */
+#include <string.h>                /* strerror(), memmove()              */
 #include <stdlib.h>                /* malloc(), realloc(), free()        */
 #include <time.h>                  /* time(), mktime()                   */ 
 #include <ctype.h>                 /* isdigit()                          */
@@ -75,8 +75,8 @@ DESCR__E_M3
 #define STORE_HTML_STRING(html_str, str_len, max_str_length, end_char)\
         {                                                          \
            str_len = 0;                                            \
-           while ((*ptr != end_char) && (*ptr != '\n') && (*ptr != '\r') &&\
-                  (*ptr != '\0') && (str_len < ((max_str_length) - 1)))\
+           while ((str_len < ((max_str_length) - 1)) && (*ptr != end_char) &&\
+                  (*ptr != '\n') && (*ptr != '\r') && (*ptr != '\0'))\
            {                                                       \
               if (*ptr == '&')                                     \
               {                                                    \
@@ -178,8 +178,8 @@ DESCR__E_M3
            int i = 0,                                              \
                space_counter = 0;                                  \
                                                                    \
-           while ((*ptr != '<') && (*ptr != '\n') && (*ptr != '\r') &&\
-                  (*ptr != '\0') && (i < (MAX_FILENAME_LENGTH - 1)))\
+           while ((i < (MAX_FILENAME_LENGTH - 1)) && (*ptr != '<') &&\
+                  (*ptr != '\n') && (*ptr != '\r') && (*ptr != '\0'))\
            {                                                       \
               if (*ptr == ' ')                                     \
               {                                                    \
@@ -2430,7 +2430,7 @@ check_list(char   *file,
       ptr += AFD_WORD_OFFSET;
       rl = (struct retrieve_list *)ptr;
    }
-   (void)strcpy(rl[no_of_listed_files].file_name, file);
+   (void)my_strncpy(rl[no_of_listed_files].file_name, file, MAX_FILENAME_LENGTH);
    rl[no_of_listed_files].retrieved = NO;
    rl[no_of_listed_files].in_list = YES;
 

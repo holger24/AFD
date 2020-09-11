@@ -47,7 +47,7 @@ DESCR__S_M3
 DESCR__E_M3
 
 #include <stdio.h>
-#include <string.h>                /* strcpy(), strerror(), memmove()    */
+#include <string.h>                /* strerror(), memmove()              */
 #include <stdlib.h>                /* malloc(), realloc(), free()        */
 #include <ctype.h>                 /* isdigit()                          */
 #include <time.h>                  /* time(), mktime(), strftime()       */ 
@@ -1162,7 +1162,7 @@ check_list(char   *file,
       ptr += AFD_WORD_OFFSET;
       rl = (struct retrieve_list *)ptr;
    }
-   (void)strcpy(rl[no_of_listed_files].file_name, file);
+   (void)my_strncpy(rl[no_of_listed_files].file_name, file, MAX_FILENAME_LENGTH);
    rl[no_of_listed_files].retrieved = NO;
    rl[no_of_listed_files].in_list = YES;
    rl[no_of_listed_files].size = file_size;
