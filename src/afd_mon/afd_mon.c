@@ -219,7 +219,6 @@ main(int argc, char *argv[])
    char           afd_mon_status_file[MAX_PATH_LENGTH],
                   *fifo_buffer,
                   hostname[64],
-                  mon_status_file[MAX_PATH_LENGTH],
                   *ptr,
                   work_dir[MAX_PATH_LENGTH];
    struct stat    stat_buf;
@@ -268,13 +267,11 @@ main(int argc, char *argv[])
    *ptr = '\0';
 
    /* Initialise variables. */
-   (void)strcpy(mon_status_file, work_dir);
-   (void)strcat(mon_status_file, FIFO_DIR);
-   (void)strcpy(mon_active_file, mon_status_file);
+   (void)strcpy(afd_mon_status_file, work_dir);
+   (void)strcat(afd_mon_status_file, FIFO_DIR);
+   (void)strcpy(mon_active_file, afd_mon_status_file);
    (void)strcat(mon_active_file, MON_ACTIVE_FILE);
-   (void)strcpy(afd_mon_status_file, mon_status_file);
    (void)strcat(afd_mon_status_file, AFD_MON_STATUS_FILE);
-   (void)strcat(mon_status_file, MON_STATUS_FILE);
    (void)strcpy(afd_mon_db_file, work_dir);
    (void)strcat(afd_mon_db_file, ETC_DIR);
    (void)strcat(afd_mon_db_file, AFD_MON_CONFIG_FILE);
