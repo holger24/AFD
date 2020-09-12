@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -55,6 +55,8 @@ DESCR__S_M3
  **   27.02.2005 H.Kiehl Option to switch between two AFD's.
  **   17.07.2019 H.Kiehl Option to disable backing store and save
  **                      under.
+ **   12.09.2020 H.Kiehl Option to disable SSH strict host key
+ **                      checking.
  **
  */
 DESCR__E_M3
@@ -1384,7 +1386,7 @@ start_remote_prog(Widget    w,
                  "You must first select an AFD!\nUse mouse button 1 together with the SHIFT or CTRL key.");
       return;
    }
-   if ((args = malloc(22 * sizeof(char *))) == NULL)
+   if ((args = malloc(24 * sizeof(char *))) == NULL)
    {
       (void)xrec(FATAL_DIALOG, "malloc() error : %s [%d] (%s %d)",
                  strerror(errno), errno, __FILE__, __LINE__);
@@ -1429,6 +1431,12 @@ start_remote_prog(Widget    w,
             else
             {
                arg_count = 2;
+            }
+            if (msa[i].options & DISABLE_SSH_STRICT_HOST_KEY)
+            {
+               args[arg_count] = "-oUserKnownHostsFile /dev/null";
+               args[arg_count + 1] = "-oStrictHostKeyChecking no";
+               arg_count += 2;
             }
             args[arg_count] = "-l";
             args[arg_count + 3] = progname;

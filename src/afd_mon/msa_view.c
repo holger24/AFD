@@ -206,6 +206,10 @@ main(int argc, char *argv[])
          {
             (void)fprintf(stdout, " ENABLE_SSL_ENCRYPTION");
          }
+         if (msa[j].options & DISABLE_SSH_STRICT_HOST_KEY)
+         {
+            (void)fprintf(stdout, " DISABLE_SSH_STRICT_HOST_KEY");
+         }
          if (msa[j].options & AFDD_SYSTEM_LOG)
          {
             (void)fprintf(stdout, " System");

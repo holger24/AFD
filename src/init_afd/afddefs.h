@@ -1352,7 +1352,7 @@ typedef unsigned long       u_long_64;
 #endif
 
 /* Definitions for AFDD Logs. */
-/* NOTE: Bits 1 - 4 are defined in afd_mon/mondefs.h */
+/* NOTE: Bits 1-4, 24 are defined in afd_mon/mondefs.h */
 #define AFDD_SYSTEM_LOG                  16
 #define AFDD_RECEIVE_LOG                 32
 #define AFDD_TRANSFER_LOG                64

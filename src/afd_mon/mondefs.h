@@ -23,135 +23,136 @@
 
 /* #define NEW_MSA 1 */
 
-#define MON_WD_ENV_NAME          "MON_WORK_DIR"  /* Environment variable */
-                                                 /* for working          */
-                                                 /* directory.           */
+#define MON_WD_ENV_NAME             "MON_WORK_DIR" /* Environment variable */
+                                                   /* for working          */
+                                                   /* directory.           */
 
 #ifndef MAX_AFDNAME_LENGTH
-# define MAX_AFDNAME_LENGTH      12
+# define MAX_AFDNAME_LENGTH         12
 #endif
-#define MAX_REMOTE_CMD_LENGTH    10
+#define MAX_REMOTE_CMD_LENGTH       10
 #ifndef MAX_REAL_HOSTNAME_LENGTH
 # if defined NEW_FSA && defined NEW_PWB
-#  define MAX_REAL_HOSTNAME_LENGTH     65
+#  define MAX_REAL_HOSTNAME_LENGTH  65
 # else
-#  define MAX_REAL_HOSTNAME_LENGTH     40
+#  define MAX_REAL_HOSTNAME_LENGTH  40
 # endif
 #endif
-#define MAX_RET_MSG_LENGTH       4096  /* How much data is buffered from */
-                                       /* the remote TCP port.           */
-#define MAX_VERSION_LENGTH       40
-#define MAX_CONVERT_USERNAME     5
-#define MAX_INODE_LOG_NO_LENGTH  (MAX_LONG_LONG_LENGTH + 1 + MAX_INT_LENGTH + 1)
-#define DATA_STEP_SIZE           10
-#define AFD_MON_RESCAN_TIME      1
+#define MAX_RET_MSG_LENGTH          4096  /* How much data is buffered from */
+                                          /* the remote TCP port.           */
+#define MAX_VERSION_LENGTH          40
+#define MAX_CONVERT_USERNAME        5
+#define MAX_INODE_LOG_NO_LENGTH     (MAX_LONG_LONG_LENGTH + 1 + MAX_INT_LENGTH + 1)
+#define DATA_STEP_SIZE              10
+#define AFD_MON_RESCAN_TIME         1
 
-#define MON_CONFIG_FILE          "/MON_CONFIG"
-#define AFD_MON_CONFIG_FILE      "/AFD_MON_CONFIG"
+#define MON_CONFIG_FILE             "/MON_CONFIG"
+#define AFD_MON_CONFIG_FILE         "/AFD_MON_CONFIG"
 
-#define REMOTE_INODE_EXTENSION   "remote.inode"
+#define REMOTE_INODE_EXTENSION      "remote.inode"
 
-#define MON_ACTIVE_FILE          "/AFD_MON_ACTIVE"
-#define MON_STATUS_FILE          "/mon_status"
-#define MON_STATUS_FILE_ALL      "/mon_status.*"
-#define AFD_MON_STATUS_FILE      "/afd_mon.status"
-#define MSA_ID_FILE              "/msa.id"
-#define ADL_FILE_NAME            "/afd_dir_list."
-#define ADL_FILE_NAME_ALL        "/afd_dir_list.*"
-#define OLD_ADL_FILE_NAME        "/afd_old_dir_list."
-#define OLD_ADL_FILE_NAME_ALL    "/afd_old_dir_list.*"
-#define TMP_ADL_FILE_NAME        "/afd_tmp_dir_list."
-#define TMP_ADL_FILE_NAME_ALL    "/afd_tmp_dir_list.*"
+#define MON_ACTIVE_FILE             "/AFD_MON_ACTIVE"
+#define MON_STATUS_FILE             "/mon_status"
+#define MON_STATUS_FILE_ALL         "/mon_status.*"
+#define AFD_MON_STATUS_FILE         "/afd_mon.status"
+#define MSA_ID_FILE                 "/msa.id"
+#define ADL_FILE_NAME               "/afd_dir_list."
+#define ADL_FILE_NAME_ALL           "/afd_dir_list.*"
+#define OLD_ADL_FILE_NAME           "/afd_old_dir_list."
+#define OLD_ADL_FILE_NAME_ALL       "/afd_old_dir_list.*"
+#define TMP_ADL_FILE_NAME           "/afd_tmp_dir_list."
+#define TMP_ADL_FILE_NAME_ALL       "/afd_tmp_dir_list.*"
 #ifdef _INPUT_LOG
-# define MAX_ADL_FILES_DEF       MAX_INPUT_LOG_FILES_DEF
-# define MAX_ADL_FILES           MAX_INPUT_LOG_FILES
+# define MAX_ADL_FILES_DEF          MAX_INPUT_LOG_FILES_DEF
+# define MAX_ADL_FILES              MAX_INPUT_LOG_FILES
 #else
 # ifdef _DISTRIBUTION_LOG
-#  define MAX_ADL_FILES_DEF      MAX_DISTRIBUTION_LOG_FILES_DEF
-#  define MAX_ADL_FILES          MAX_DISTRIBUTION_LOG_FILES
+#  define MAX_ADL_FILES_DEF         MAX_DISTRIBUTION_LOG_FILES_DEF
+#  define MAX_ADL_FILES             MAX_DISTRIBUTION_LOG_FILES
 # else
-#  define MAX_ADL_FILES_DEF      "MAX_AFD_DIR_LIST_FILES"
-#  define MAX_ADL_FILES          7
+#  define MAX_ADL_FILES_DEF         "MAX_AFD_DIR_LIST_FILES"
+#  define MAX_ADL_FILES             7
 # endif
 #endif
-#define AHL_FILE_NAME            "/afd_host_list."
-#define AHL_FILE_NAME_ALL        "/afd_host_list.*"
-#define AJL_FILE_NAME            "/afd_job_list."
-#define AJL_FILE_NAME_ALL        "/afd_job_list.*"
-#define OLD_AJL_FILE_NAME        "/afd_old_job_list."
-#define OLD_AJL_FILE_NAME_ALL    "/afd_old_job_list.*"
-#define TMP_AJL_FILE_NAME        "/afd_tmp_job_list."
-#define TMP_AJL_FILE_NAME_ALL    "/afd_tmp_job_list.*"
-#define ATD_FILE_NAME            "/afd_typesize_data."
+#define AHL_FILE_NAME               "/afd_host_list."
+#define AHL_FILE_NAME_ALL           "/afd_host_list.*"
+#define AJL_FILE_NAME               "/afd_job_list."
+#define AJL_FILE_NAME_ALL           "/afd_job_list.*"
+#define OLD_AJL_FILE_NAME           "/afd_old_job_list."
+#define OLD_AJL_FILE_NAME_ALL       "/afd_old_job_list.*"
+#define TMP_AJL_FILE_NAME           "/afd_tmp_job_list."
+#define TMP_AJL_FILE_NAME_ALL       "/afd_tmp_job_list.*"
+#define ATD_FILE_NAME               "/afd_typesize_data."
 #ifdef _OUTPUT_LOG
-# define MAX_AJL_FILES_DEF       MAX_OUTPUT_LOG_FILES_DEF
-# define MAX_AJL_FILES           MAX_OUTPUT_LOG_FILES
+# define MAX_AJL_FILES_DEF          MAX_OUTPUT_LOG_FILES_DEF
+# define MAX_AJL_FILES              MAX_OUTPUT_LOG_FILES
 #else
-# define MAX_AJL_FILES_DEF       "MAX_AFD_JOB_LIST_FILES"
-# define MAX_AJL_FILES           7
+# define MAX_AJL_FILES_DEF          "MAX_AFD_JOB_LIST_FILES"
+# define MAX_AJL_FILES              7
 #endif
-#define MON_CMD_FIFO             "/afd_mon_cmd.fifo"
-#define MON_RESP_FIFO            "/afd_mon_resp.fifo"
-#define MON_PROBE_ONLY_FIFO      "/afd_mon_probe_only.fifo"
-#define RETRY_MON_FIFO           "/retry_mon.fifo."
-#define RETRY_MON_FIFO_ALL       "/retry_mon.fifo.*"
-#define MON_SYS_LOG_FIFO         "/mon_sys_log.fifo"
+#define MON_CMD_FIFO                "/afd_mon_cmd.fifo"
+#define MON_RESP_FIFO               "/afd_mon_resp.fifo"
+#define MON_PROBE_ONLY_FIFO         "/afd_mon_probe_only.fifo"
+#define RETRY_MON_FIFO              "/retry_mon.fifo."
+#define RETRY_MON_FIFO_ALL          "/retry_mon.fifo.*"
+#define MON_SYS_LOG_FIFO            "/mon_sys_log.fifo"
 
-#define STORAGE_TIME             7    /* Time in days to store top       */
+#define STORAGE_TIME                7 /* Time in days to store top       */
                                       /* values for transfer rate and    */
                                       /* file rate.                      */
-#define SUM_STORAGE              6    /* The number of summary values    */
+#define SUM_STORAGE                 6 /* The number of summary values    */
                                       /* stored. See sumdefs.h for the   */
                                       /* meaning each value defined.     */
-#define CURRENT_SUM              0
-#define HOUR_SUM                 1
-#define DAY_SUM                  2
-#define WEEK_SUM                 3
-#define MONTH_SUM                4
-#define YEAR_SUM                 5
-#define DEFAULT_POLL_INTERVAL    5
-#define DEFAULT_OPTION_ENTRY     0
-#define DEFAULT_REMOTE_CMD       "ssh"
-#define DEFAULT_CONNECT_TIME     0
-#define DEFAULT_DISCONNECT_TIME  0
-#define RETRY_INTERVAL           60   /* Interval at which the mon       */
-                                      /* process will try to reconnect   */
-                                      /* after an error occured.         */
+#define CURRENT_SUM                 0
+#define HOUR_SUM                    1
+#define DAY_SUM                     2
+#define WEEK_SUM                    3
+#define MONTH_SUM                   4
+#define YEAR_SUM                    5
+#define DEFAULT_POLL_INTERVAL       5
+#define DEFAULT_OPTION_ENTRY        0
+#define DEFAULT_REMOTE_CMD          "ssh"
+#define DEFAULT_CONNECT_TIME        0
+#define DEFAULT_DISCONNECT_TIME     0
+#define RETRY_INTERVAL              60 /* Interval at which the mon       */
+                                       /* process will try to reconnect   */
+                                       /* after an error occured.         */
 
 /* Values for special flag in MSA. */
-#define SUM_VAL_INITIALIZED      1
+#define SUM_VAL_INITIALIZED         1
 
-#define LOG_RESHUFFEL            1
-#define LOG_STALE                2
+#define LOG_RESHUFFEL               1
+#define LOG_STALE                   2
 
 /* Error return values for mon process. */
-#define MON_SYNTAX_ERROR         1
-#define MON_SELECT_ERROR         2
+#define MON_SYNTAX_ERROR            1
+#define MON_SELECT_ERROR            2
 
 /* Return values of log sub process of afd_mon. */
-#define MISSED_PACKET            5
-#define REMOTE_HANGUP            6
-#define FAILED_LOG_CMD           7
-#define LOG_CONNECT_ERROR        8
-#define LOG_DATA_TIMEOUT         9
+#define MISSED_PACKET               5
+#define REMOTE_HANGUP               6
+#define FAILED_LOG_CMD              7
+#define LOG_CONNECT_ERROR           8
+#define LOG_DATA_TIMEOUT            9
 
 /* Different return codes for function evaluate_message(). */
-#define UNKNOWN_MESSAGE          1
-#define AFDD_SHUTTING_DOWN       24
+#define UNKNOWN_MESSAGE             1
+#define AFDD_SHUTTING_DOWN          24
 /* NOTE: Do not go above 99! Values from 100 on are used to return */
 /*       the true return code of a TCP command.                    */
 
 /* Flags for the options field in struct mon_status_area. */
-#define COMPRESS_FLAG            1
-#define MINUS_Y_FLAG             2
-#define DONT_USE_FULL_PATH_FLAG  4
-#define ENABLE_SSL_ENCRYPTION    8 /* Still to be implemented. */
-/* NOTE: afddefs.h defines bits 5 - 16 . */
+#define COMPRESS_FLAG               1
+#define MINUS_Y_FLAG                2
+#define DONT_USE_FULL_PATH_FLAG     4
+#define ENABLE_SSL_ENCRYPTION       8 /* Still to be implemented. */
+#define DISABLE_SSH_STRICT_HOST_KEY 8388608
+/* NOTE: afddefs.h defines bits 5 - 17 . */
 
 /* Different toggling status for switching AFD's. */
-#define NO_SWITCHING             0
-#define AUTO_SWITCHING           1
-#define USER_SWITCHING           2
+#define NO_SWITCHING                0
+#define AUTO_SWITCHING              1
+#define USER_SWITCHING              2
 
 
 #define PRINT_SIZE_STR(value, str)\
@@ -644,7 +645,11 @@ struct mon_status_area
                                                  /*+------+-------------+*/
                                                  /*|Bit(s)|   Meaning   |*/
                                                  /*+------+-------------+*/
-                                                 /*| 18-32| Not used.   |*/
+                                                 /*| 25-31| Not used.   |*/
+                                                 /*| 24   | No strict   |*/
+                                                 /*|      | SSH host key|*/
+                                                 /*|      | check.      |*/
+                                                 /*| 18-23| Not used.   |*/
                                                  /*| 17   | Confirmation|*/
                                                  /*|      | Log.        |*/
                                                  /*| 16   | Distribution|*/

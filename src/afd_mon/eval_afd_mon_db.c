@@ -1,6 +1,6 @@
 /*
  *  eval_afd_mon_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -64,6 +64,8 @@ DESCR__S_M3
  **             8192 - compression method 1
  **            16384 - send EVENT_LOG data
  **            32768 - send DISTRIBUTION_LOG data
+ **            65536 - send CONFIRMATION_LOG data
+ **          8388608 - no strict SSH host key check
  **
  ** RETURN VALUES
  **   None.
