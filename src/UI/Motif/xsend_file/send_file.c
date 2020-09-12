@@ -42,6 +42,7 @@ DESCR__S_M3
  ** HISTORY
  **   05.12.1999 H.Kiehl Created
  **   31.01.2005 H.Kiehl Adapted from xexec_cmd().
+ **   02.01.2019 A.Maul  Add parameter for LOCK_OFF to 'cmd'.
  **
  */
 DESCR__E_M3
@@ -148,6 +149,10 @@ send_file(void)
       {
          length += sprintf(&cmd[length], " -l DOT");
       }
+      else if (db->lock == SET_LOCK_OFF)
+           {
+              length += sprintf(&cmd[length], " -l OFF");
+           }
       else if (db->lock == SET_LOCK_DOT_VMS)
            {
               length += sprintf(&cmd[length], " -l DOT_VMS");

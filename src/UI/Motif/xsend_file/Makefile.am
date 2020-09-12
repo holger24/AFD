@@ -25,6 +25,7 @@ AM_CPPFLAGS          = @AFD_MOTIF_INCLUDES@ -I../../.. -I../../common\
 bin_PROGRAMS         = xsend_file
 xsend_file_SOURCES   = callbacks.c\
                        create_url_file.c\
+                       rr_file_name_file.c\
                        send_file.c\
                        xsend_file.c
 xsend_file_LDADD     = ../common/libmotifafd.a\
