@@ -2715,6 +2715,7 @@ check_input_log(char         *search_afd,
                }
             }
          }
+         clearerr(input.fp);
          if ((input.current_file_no != 0) ||
              (((mode & ALDA_CONTINUOUS_MODE) == 0) &&
               ((mode & ALDA_CONTINUOUS_DAEMON_MODE) == 0)))
@@ -3324,6 +3325,7 @@ check_distribution_log(char         *search_afd,
                   }
                }
             }
+            clearerr(distribution.fp);
             new_log_file = YES;
          }
 #ifdef WITH_DEBUG
@@ -3957,6 +3959,7 @@ check_production_log(char         *search_afd,
                   }
                }
             }
+            clearerr(production.fp);
 #ifdef WITH_DEBUG
             (void)fprintf(stderr, "prod %d: %s\n",
                           production.current_file_no, prev_file_name);
@@ -4650,6 +4653,7 @@ check_output_log(char         *search_afd,
                   }
                }
             }
+            clearerr(output.fp);
             new_log_file = YES;
          }
 #ifdef WITH_DEBUG
@@ -5244,6 +5248,7 @@ check_delete_log(char         *search_afd,
                   }
                }
             }
+            clearerr(delete.fp);
 #ifdef WITH_DEBUG
             (void)fprintf(stderr, "del %d: %s\n",
                           delete.current_file_no, prev_file_name);

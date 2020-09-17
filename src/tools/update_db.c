@@ -1,6 +1,6 @@
 /*
  *  update_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -631,6 +631,7 @@ show_debug_data(int  verbose_level,
                (void)fprintf(stdout, "%s", line);
             }
          }
+         clearerr(*debug_fp);
          fflush(stdout);
       }
    }
