@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1905,19 +1905,6 @@ change_dir_other_cb(Widget w, XtPointer client_data, XtPointer call_data)
          }
          break;
 
-      case FRAMED_GROUPS_W :
-         if (other_options & FRAMED_GROUPS)
-         {
-            other_options &= ~FRAMED_GROUPS;
-            XtVaSetValues(oow[FRAMED_GROUPS_W], XmNset, False, NULL);
-         }
-         else
-         {
-            other_options |= FRAMED_GROUPS;
-            XtVaSetValues(oow[FRAMED_GROUPS_W], XmNset, True, NULL);
-         }
-         break;
-
       default  :
 #if SIZEOF_LONG == 4
          (void)xrec(WARN_DIALOG, "Impossible other selection (%d).", item_no);
@@ -1949,17 +1936,6 @@ change_dir_other_cb(Widget w, XtPointer client_data, XtPointer call_data)
          else
          {
             (void)fprintf(stderr, "Removing auto save.\n");
-         }
-         break;
-
-      case FRAMED_GROUPS_W :
-         if (other_options & FRAMED_GROUPS)
-         {
-            (void)fprintf(stderr, "Adding framed groups.\n");
-         }
-         else
-         {
-            (void)fprintf(stderr, "Removing framed groups.\n");
          }
          break;
 

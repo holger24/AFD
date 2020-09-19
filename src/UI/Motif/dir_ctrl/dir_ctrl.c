@@ -1,6 +1,6 @@
 /*
  *  dir_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -127,7 +127,7 @@ Widget                     appshell,
                            rw[NO_OF_ROWS],       /* Select rows */
                            lw[4],                /* AFD load */
                            lsw[3],               /* Select line style */
-                           oow[3],               /* Other options */
+                           oow[2],               /* Other options */
                            transviewshell = NULL;
 Window                     label_window,
                            line_window;
@@ -426,10 +426,6 @@ main(int argc, char *argv[])
       if (other_options & AUTO_SAVE)
       {
          XtVaSetValues(oow[AUTO_SAVE_W], XmNset, True, NULL);
-      }
-      if (other_options & FRAMED_GROUPS)
-      {
-         XtVaSetValues(oow[FRAMED_GROUPS_W], XmNset, True, NULL);
       }
 
       /* Setup popup menu. */
@@ -1645,18 +1641,6 @@ create_pullright_other(Widget pullright_other_options)
    XtAddCallback(oow[AUTO_SAVE_W], XmNvalueChangedCallback,
                  change_dir_other_cb, (XtPointer)AUTO_SAVE_W);
    XtManageChild(oow[AUTO_SAVE_W]);
-   XmStringFree(x_string);
-
-   argcount = 0;
-   x_string = XmStringCreateLocalized("Force shift select");
-   XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
-   XtSetArg(args[argcount], XmNindicatorType, XmN_OF_MANY); argcount++;
-   XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
-   oow[FRAMED_GROUPS_W] = XmCreateToggleButton(pullright_other_options,
-                                            "other_2", args, argcount);
-   XtAddCallback(oow[FRAMED_GROUPS_W], XmNvalueChangedCallback,
-                 change_dir_other_cb, (XtPointer)FRAMED_GROUPS_W);
-   XtManageChild(oow[FRAMED_GROUPS_W]);
    XmStringFree(x_string);
 
    return;
