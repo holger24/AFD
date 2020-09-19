@@ -1,7 +1,7 @@
 /*
  *  setup_dir_window.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 2000 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2000 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -65,7 +65,8 @@ extern Widget                   mw[],
                                 rw[],
                                 lw[],
                                 lsw[],
-                                oow[];
+                                oow[],
+                                pw[];
 extern GC                       letter_gc,
                                 normal_letter_gc,
                                 locked_letter_gc,
@@ -155,14 +156,17 @@ setup_dir_window(char *font_name)
       if (dcp.stop != NO_PERMISSION)
       {
          XtVaSetValues(dw[DIR_STOP_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(pw[1], XmNfontList, fontlist, NULL);
       }
       if (dcp.disable != NO_PERMISSION)
       {
          XtVaSetValues(dw[DIR_DISABLE_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(pw[2], XmNfontList, fontlist, NULL);
       }
       if (dcp.rescan != NO_PERMISSION)
       {
          XtVaSetValues(dw[DIR_RESCAN_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(pw[3], XmNfontList, fontlist, NULL);
       }
       if (dcp.afd_load != NO_PERMISSION)
       {
@@ -199,6 +203,7 @@ setup_dir_window(char *font_name)
          if (dcp.show_rlog != NO_PERMISSION)
          {
             XtVaSetValues(vw[DIR_RECEIVE_W], XmNfontList, fontlist, NULL);
+            XtVaSetValues(pw[0], XmNfontList, fontlist, NULL);
          }
          if (dcp.show_tlog != NO_PERMISSION)
          {
@@ -227,10 +232,12 @@ setup_dir_window(char *font_name)
          if (dcp.info != NO_PERMISSION)
          {
             XtVaSetValues(vw[DIR_INFO_W], XmNfontList, fontlist, NULL);
+            XtVaSetValues(pw[4], XmNfontList, fontlist, NULL);
          }
          if (dcp.view_dc != NO_PERMISSION)
          {
             XtVaSetValues(vw[DIR_VIEW_DC_W], XmNfontList, fontlist, NULL);
+            XtVaSetValues(pw[5], XmNfontList, fontlist, NULL);
          }
       }
 
@@ -280,6 +287,7 @@ setup_dir_window(char *font_name)
 
       /* Set the font for the Other options pulldown. */
       XtVaSetValues(oow[FORCE_SHIFT_SELECT_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(oow[AUTO_SAVE_W], XmNfontList, fontlist, NULL);
    }
 
    glyph_height       = font_struct->ascent + font_struct->descent;

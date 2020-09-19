@@ -128,6 +128,7 @@ Widget                     appshell,
                            lw[4],                /* AFD load */
                            lsw[3],               /* Select line style */
                            oow[2],               /* Other options */
+                           pw[6],
                            transviewshell = NULL;
 Window                     label_window,
                            line_window;
@@ -1254,101 +1255,86 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
 static void
 init_popup_menu(Widget line_window_w)
 {
-   XmString x_string;
-   Widget   popupmenu,
-            pushbutton;
-   Arg      args[4];
+   Arg      args[1];
    Cardinal argcount;
+   Widget   popupmenu;
 
    argcount = 0;
    XtSetArg(args[argcount], XmNtearOffModel, XmTEAR_OFF_ENABLED); argcount++;
    popupmenu = XmCreateSimplePopupMenu(line_window_w, "popup", args, argcount);
 
    if ((dcp.show_rlog != NO_PERMISSION) ||
+       (dcp.stop != NO_PERMISSION) ||
        (dcp.disable != NO_PERMISSION) ||
+       (dcp.rescan != NO_PERMISSION) ||
        (dcp.info != NO_PERMISSION) ||
        (dcp.view_dc != NO_PERMISSION))
    {
       if (dcp.show_rlog != NO_PERMISSION)
       {
-         argcount = 0;
-         x_string = XmStringCreateLocalized("Receive Log");
-         XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
-         XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
-         pushbutton = XmCreatePushButton(popupmenu, "Receive", args, argcount);
-         XtAddCallback(pushbutton, XmNactivateCallback,
+         pw[0] = XtVaCreateManagedWidget("Receive Log",
+                                         xmPushButtonWidgetClass, popupmenu,
+                                         XmNfontList,             fontlist,
+                                         NULL);
+         XtAddCallback(pw[0], XmNactivateCallback,
                        dir_popup_cb, (XtPointer)R_LOG_SEL);
-         XtManageChild(pushbutton);
-         XmStringFree(x_string);
       }
       if (dcp.stop != NO_PERMISSION)
       {
-         argcount = 0;
-         x_string = XmStringCreateLocalized("Start/Stop");
-         XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
-         XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
-         pushbutton = XmCreatePushButton(popupmenu, "Stop", args, argcount);
-         XtAddCallback(pushbutton, XmNactivateCallback,
+         pw[1] = XtVaCreateManagedWidget("Start/Stop",
+                                         xmPushButtonWidgetClass, popupmenu,
+                                         XmNfontList,             fontlist,
+                                         NULL);
+         XtAddCallback(pw[1], XmNactivateCallback,
                        dir_popup_cb, (XtPointer)DIR_STOP_SEL);
-         XtManageChild(pushbutton);
-         XmStringFree(x_string);
       }
       if (dcp.disable != NO_PERMISSION)
       {
-         argcount = 0;
-         x_string = XmStringCreateLocalized("Enable/Disable");
-         XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
-         XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
-         pushbutton = XmCreatePushButton(popupmenu, "Disable", args, argcount);
-         XtAddCallback(pushbutton, XmNactivateCallback,
+         pw[2] = XtVaCreateManagedWidget("Enable/Disable",
+                                         xmPushButtonWidgetClass, popupmenu,
+                                         XmNfontList,             fontlist,
+                                         NULL);
+         XtAddCallback(pw[2], XmNactivateCallback,
                        dir_popup_cb, (XtPointer)DIR_DISABLE_SEL);
-         XtManageChild(pushbutton);
-         XmStringFree(x_string);
       }
       if (dcp.rescan != NO_PERMISSION)
       {
-         argcount = 0;
-         x_string = XmStringCreateLocalized("Rescan");
-         XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
-         XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
-         pushbutton = XmCreatePushButton(popupmenu, "Disable", args, argcount);
-         XtAddCallback(pushbutton, XmNactivateCallback,
+         pw[3] = XtVaCreateManagedWidget("Rescan",
+                                         xmPushButtonWidgetClass, popupmenu,
+                                         XmNfontList,             fontlist,
+                                         NULL);
+         XtAddCallback(pw[3], XmNactivateCallback,
                        dir_popup_cb, (XtPointer)DIR_RESCAN_SEL);
-         XtManageChild(pushbutton);
-         XmStringFree(x_string);
       }
       if (dcp.info != NO_PERMISSION)
       {
-         argcount = 0;
-         x_string = XmStringCreateLocalized("Info");
-         XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
-         XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
 #ifdef WITH_CTRL_ACCELERATOR
-         XtSetArg(args[argcount], XmNaccelerator, "Ctrl<Key>I"); argcount++;
+         pw[4] = XtVaCreateManagedWidget("Info (Ctrl+i)",
 #else
-         XtSetArg(args[argcount], XmNaccelerator, "Alt<Key>I"); argcount++;
+         pw[4] = XtVaCreateManagedWidget("Info (Alt+i)",
+#endif
+                                         xmPushButtonWidgetClass, popupmenu,
+                                         XmNfontList,             fontlist,
+#ifdef WITH_CTRL_ACCELERATOR
+                                         XmNaccelerator,          "Ctrl<Key>I",
+#else
+                                         XmNaccelerator,          "Alt<Key>I",
 #endif
 #ifdef WHEN_WE_KNOW_HOW_TO_FIX_THIS
-         XtSetArg(args[argcount], XmNmnemonic, 'I'); argcount++;
+                                         XmNmnemonic,             'I',
 #endif
-         pushbutton = XmCreatePushButton(popupmenu, "Info", args, argcount);
-         XtAddCallback(pushbutton, XmNactivateCallback,
+                                         NULL);
+         XtAddCallback(pw[4], XmNactivateCallback,
                        dir_popup_cb, (XtPointer)DIR_INFO_SEL);
-         XtManageChild(pushbutton);
-         XmStringFree(x_string);
       }
       if (dcp.view_dc != NO_PERMISSION)
       {
-         argcount = 0;
-         x_string = XmStringCreateLocalized("Configuration");
-         XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
-         XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
-         pushbutton = XmCreatePushButton(popupmenu, "Configuration",
-                                         args, argcount);
-         XtAddCallback(pushbutton, XmNactivateCallback,
+         pw[5] = XtVaCreateManagedWidget("Configuration",
+                                         xmPushButtonWidgetClass, popupmenu,
+                                         XmNfontList,             fontlist,
+                                         NULL);
+         XtAddCallback(pw[5], XmNactivateCallback,
                        dir_popup_cb, (XtPointer)DIR_VIEW_DC_SEL);
-         XtManageChild(pushbutton);
-         XmStringFree(x_string);
       }
    }
    XtAddEventHandler(line_window_w,
