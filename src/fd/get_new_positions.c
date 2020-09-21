@@ -1,6 +1,6 @@
 /*
  *  get_new_positions.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -104,11 +104,14 @@ get_new_positions(void)
              * will not find a free slot and no more data
              * is distributed for this host.
              */
-            fsa[old_pos].job_status[connection[i].job_no].proc_id = -1;
+            if (connection[i].job_no != -1)
+            {
+               fsa[old_pos].job_status[connection[i].job_no].proc_id = -1;
 #ifdef _WITH_BURST_2
-            fsa[old_pos].job_status[connection[i].job_no].unique_name[0] = '\0';
-            fsa[old_pos].job_status[connection[i].job_no].job_id = NO_ID;
+               fsa[old_pos].job_status[connection[i].job_no].unique_name[0] = '\0';
+               fsa[old_pos].job_status[connection[i].job_no].job_id = NO_ID;
 #endif
+            }
          }
          if (connection[i].fra_pos != -1)
          {
