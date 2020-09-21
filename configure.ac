@@ -358,8 +358,8 @@ AC_ARG_ENABLE(multi_fs_support,
    [  --enable-multi_fs_support       enable multiple local filesystem support],
    [AM_CONDITIONAL(WITH_MULTI_FS_SUPPORT, true)
     AC_DEFINE([MULTI_FS_SUPPORT], [], [Enable multiple local filesystem support])
-    ac_cv_multi_fs_support="YES"],
-   [ac_cv_multi_fs_support="NO"
+    ac_cv_multi_fs_support="yes"],
+   [ac_cv_multi_fs_support="no"
     AM_CONDITIONAL(WITH_MULTI_FS_SUPPORT, false)])
 
 AC_ARG_ENABLE(ftp_reuse_data_port,
@@ -384,7 +384,9 @@ AC_ARG_ENABLE(group_can_write,
    [  --enable-group_can_write        allow group write access],
    [if test x$enableval = xyes; then
       AC_DEFINE([GROUP_CAN_WRITE], [], [Allow group write access])
-   fi])
+   fi
+   ac_cv_group_can_write="$enableval"],
+   [ac_cv_group_can_write="no"])
 
 AC_ARG_ENABLE(lockdebug,
    [  --enable-lockdebug              enable debug messages of locking],
@@ -1822,6 +1824,7 @@ echo "    Maximum real host name length    : ${with_max_real_hostname_length}"
 echo "    Maximum AFD alias name length    : ${with_max_afdname_length}"
 echo "    Max directory alias name length  : ${with_max_dir_alias_length}"
 echo "    Some binaries with setuid flag   : ${ac_cv_setuid_progs}"
+echo "    Group can write                  : ${ac_cv_group_can_write}"
 echo "    Automatically create configs     : ${ac_cv_auto_create_config}"
 echo "    Enable Distro-style RPMs         : ${enable_distro_rpm}"
 if test "$DISTRO" != ""
