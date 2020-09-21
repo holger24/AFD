@@ -1,6 +1,6 @@
 /*
  *  mmap_emu.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1994 - 2013 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1994 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,7 +21,9 @@
 #define __mmap_emu_h
 
 #define SHM_MODE              (SHM_R | SHM_W)
-#define FILE_MODE             (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
+#ifndef FILE_MODE
+# define FILE_MODE            (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
+#endif
 #define MAX_MAPPED_REGIONS    100
 #ifdef ULTRIX
 #define MAX_ALLOWED_SHM_SIZE  2097152
