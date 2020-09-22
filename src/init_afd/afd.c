@@ -178,6 +178,7 @@ main(int argc, char *argv[])
                dry_run = NO,
                initialize_perm,
                init_level = 0,
+               ret,
                startup_perm,
                start_up,
                stop_all = NO,
@@ -870,8 +871,6 @@ main(int argc, char *argv[])
    }
    else if (start_up == AFD_CTRL_ONLY)
         {
-           int ret;
-
            (void)strcpy(exec_cmd, AFD_CTRL);
            if (profile[0] == '\0')
            {
@@ -894,8 +893,6 @@ main(int argc, char *argv[])
         }
    else if (start_up == AFD_ONLY)
         {
-           int ret;
-
            /* Check if starting of AFD is currently disabled.  */
            if (eaccess(auto_block_file, F_OK) == 0)
            {
@@ -981,8 +978,7 @@ main(int argc, char *argv[])
             (start_up == AFD_HEARTBEAT_CHECK) ||
             (start_up == AFD_HEARTBEAT_CHECK_ONLY))
         {
-           int remove_process,
-               ret;
+           int remove_process;
 
            if ((start_up == AFD_CHECK_ONLY) ||
                (start_up == AFD_HEARTBEAT_CHECK_ONLY))
@@ -1135,7 +1131,12 @@ main(int argc, char *argv[])
         }
    else if (start_up == AFD_INITIALIZE)
         {
+#ifdef WITH_SYSTEMD
+           if (((ret = check_afd_heartbeat(DEFAULT_HEARTBEAT_TIMEOUT, NO)) == 1) ||
+               (ret == 3))
+#else
            if (check_afd_heartbeat(DEFAULT_HEARTBEAT_TIMEOUT, NO) == 1)
+#endif
            {
               (void)fprintf(stderr,
                             _("ERROR   : AFD is still active, unable to initialize.\n"));
@@ -1212,8 +1213,6 @@ main(int argc, char *argv[])
    /* Is another AFD active in this directory? */
    if (check_afd_heartbeat(DEFAULT_HEARTBEAT_TIMEOUT, YES) == 1)
    {
-      int ret;
-
       /* Another AFD is active. Only start afd_ctrl. */
       (void)strcpy(exec_cmd, AFD_CTRL);
       if (profile[0] == '\0')
@@ -1236,8 +1235,6 @@ main(int argc, char *argv[])
    }
    else /* Start both. */
    {
-      int ret;
-
       if (check_afd_database() == -1)
       {
          (void)fprintf(stderr,

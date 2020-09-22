@@ -260,7 +260,7 @@ check_afd_heartbeat(long wait_time, int remove_process)
             check_list[0] = *(pid_t *)(pid_list + ((SLOG_NO + 1) * sizeof(pid_t)));
             (void)strcpy(name_list[0], SLOG);
             check_list[1] = *(pid_t *)(pid_list + ((AW_NO + 1) * sizeof(pid_t)));
-            (void)strcpy(name_list[0], ARCHIVE_WATCH);
+            (void)strcpy(name_list[1], ARCHIVE_WATCH);
             for (i = 0; i < 2; i++)
             {
                if (check_list[i] > 0)
