@@ -1,6 +1,6 @@
 /*
  *  create_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -445,7 +445,8 @@ create_db(FILE *udc_reply_fp, int write_fd)
    }
    de[0].dir_id      = fra[de[0].fra_pos].dir_id;
    de[0].search_time = 0;
-   if (fra[de[0].fra_pos].fsa_pos != -1)
+   if ((fra[de[0].fra_pos].fsa_pos != -1) &&
+       (fra[de[0].fra_pos].fsa_pos < no_of_hosts))
    {
       size_t length;
 
@@ -590,7 +591,8 @@ create_db(FILE *udc_reply_fp, int write_fd)
          de[dir_counter].fme           = NULL;
          de[dir_counter].flag          = 0;
          de[dir_counter].search_time   = 0;
-         if (fra[de[dir_counter].fra_pos].fsa_pos != -1)
+         if ((fra[de[dir_counter].fra_pos].fsa_pos != -1) &&
+             (fra[de[dir_counter].fra_pos].fsa_pos < no_of_hosts))
          {
             size_t length;
 
