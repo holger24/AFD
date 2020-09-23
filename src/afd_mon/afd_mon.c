@@ -266,6 +266,8 @@ main(int argc, char *argv[])
    }
    *ptr = '\0';
 
+   (void)umask(0);
+
    /* Initialise variables. */
    (void)strcpy(afd_mon_status_file, work_dir);
    (void)strcat(afd_mon_status_file, FIFO_DIR);
