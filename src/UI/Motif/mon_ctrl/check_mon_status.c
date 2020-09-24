@@ -159,7 +159,7 @@ check_mon_status(Widget w)
          {
             if (*(pid_t *)(pid_list) > 0)
             {
-               if ((kill(*(pid_t *)(pid_list), 0) == -1) &&
+               if ((kill(*(pid_t *)(pid_list), 0) == -1) && (errno == ESRCH) &&
                    (p_afd_mon_status->afd_mon == ON))
                {
                   /* Process is not alive, but it is in the AFD_ACTIVE file?! */
