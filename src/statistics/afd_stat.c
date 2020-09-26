@@ -237,12 +237,12 @@ main(int argc, char *argv[])
 
    /* Attach to FSA (output) and FRA (input) so we can */
    /* accumulate the statistics for both.              */
-   if (fsa_attach(AFD_STAT) != SUCCESS)
+   if (fsa_attach_passive(NO, AFD_STAT) != SUCCESS)
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__, "Failed to attach to FSA.");
       exit(INCORRECT);
    }
-   if (fra_attach() != SUCCESS)
+   if (fra_attach_passive() != SUCCESS)
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__, "Failed to attach to FRA.");
       exit(INCORRECT);
@@ -388,11 +388,11 @@ main(int argc, char *argv[])
           * size of the status is relative small, it seems to be
           * the best solution at this point.
           */
-         if (check_fsa(NO, AFD_STAT) == YES)
+         if (check_fsa(YES, AFD_STAT) == YES)
          {
             read_afd_stat_db(no_of_hosts);
          }
-         if (check_fra(NO) == YES)
+         if (check_fra(YES) == YES)
          {
             read_afd_istat_db(no_of_dirs);
          }
