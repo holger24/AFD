@@ -126,8 +126,6 @@ read_afd_stat_db(int no_of_hosts)
       }
       else /* An old statistics database file exists */
       {
-         int no_of_old_statistic_hosts;  /* Not used. */
-
          if ((lock_fd = lock_file(statistic_file, OFF)) == LOCK_IS_SET)
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
@@ -171,7 +169,6 @@ read_afd_stat_db(int no_of_hosts)
             exit(INCORRECT);
          }
 #endif
-         no_of_old_statistic_hosts = *(int *)old_ptr; /* NOT USED */
          old_stat_db = (struct afdstat *)(old_ptr + AFD_WORD_OFFSET);
          old_stat_db_size = stat_buf.st_size;
          no_of_old_hosts = (old_stat_db_size - AFD_WORD_OFFSET) /

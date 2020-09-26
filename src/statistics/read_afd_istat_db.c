@@ -124,8 +124,6 @@ read_afd_istat_db(int no_of_dirs)
       }
       else /* An old statistics database file exists */
       {
-         int no_of_old_statistic_dirs;  /* Not used. */
-
          if ((locki_fd = lock_file(istatistic_file, OFF)) == LOCK_IS_SET)
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
@@ -169,7 +167,6 @@ read_afd_istat_db(int no_of_dirs)
             exit(INCORRECT);
          }
 #endif
-         no_of_old_statistic_dirs = *(int *)old_ptr; /* NOT USED */
          old_istat_db = (struct afdistat *)(old_ptr + AFD_WORD_OFFSET);
          old_istat_db_size = stat_buf.st_size;
          no_of_old_dirs = (old_istat_db_size - AFD_WORD_OFFSET) /
