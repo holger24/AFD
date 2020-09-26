@@ -79,6 +79,7 @@ int                        sys_log_fd = STDERR_FILENO,
                            fsa_fd = -1,
                            fsa_id,
                            lock_fd,
+                           locki_fd,
                            no_of_dirs = 0,
                            no_of_hosts = 0,
                            other_file = NO;

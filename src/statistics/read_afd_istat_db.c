@@ -1,6 +1,6 @@
 /*
  *  read_afd_istat_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -65,7 +65,7 @@ DESCR__E_M3
 #endif
 
 /* Global external variables. */
-extern int                        lock_fd;
+extern int                        locki_fd;
 extern size_t                     istat_db_size;
 extern char                       istatistic_file[],
                                   new_istatistic_file[];
@@ -126,7 +126,7 @@ read_afd_istat_db(int no_of_dirs)
       {
          int no_of_old_statistic_dirs;  /* Not used. */
 
-         if ((lock_fd = lock_file(istatistic_file, OFF)) == LOCK_IS_SET)
+         if ((locki_fd = lock_file(istatistic_file, OFF)) == LOCK_IS_SET)
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
                        "Another process is currently using file %s",
@@ -318,9 +318,9 @@ read_afd_istat_db(int no_of_dirs)
 #else
       free(old_ptr);
 #endif
-      if (lock_fd > -1)
+      if (locki_fd > -1)
       {
-         if (close(lock_fd) == -1)
+         if (close(locki_fd) == -1)
          {
             system_log(DEBUG_SIGN, __FILE__, __LINE__,
                        "close() error : %s", strerror(errno));
@@ -351,10 +351,10 @@ read_afd_istat_db(int no_of_dirs)
       exit(INCORRECT);
    }
 
-   if ((lock_fd = lock_file(istatistic_file, OFF)) < 0)
+   if ((locki_fd = lock_file(istatistic_file, OFF)) < 0)
    {
       system_log(WARN_SIGN, __FILE__, __LINE__,
-                 "Failed to lock to file `%s' [%d]", istatistic_file, lock_fd);
+                 "Failed to lock to file `%s' [%d]", istatistic_file, locki_fd);
       exit(INCORRECT);
    }
 
