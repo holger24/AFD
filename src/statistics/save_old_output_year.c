@@ -66,8 +66,8 @@ DESCR__E_M3
 
 /* Global external variables. */
 extern int            no_of_hosts;
-extern char           statistic_file[MAX_PATH_LENGTH],
-                      new_statistic_file[MAX_PATH_LENGTH];
+extern char           statistic_file[],
+                      new_statistic_file[];
 extern struct afdstat *stat_db;
 
 

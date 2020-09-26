@@ -67,8 +67,8 @@ DESCR__E_M3
 /* Global external variables. */
 extern int                        lock_fd;
 extern size_t                     istat_db_size;
-extern char                       istatistic_file[MAX_PATH_LENGTH],
-                                  new_istatistic_file[MAX_PATH_LENGTH];
+extern char                       istatistic_file[],
+                                  new_istatistic_file[];
 extern struct afdistat            *istat_db;
 extern struct fileretrieve_status *fra;
 

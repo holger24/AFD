@@ -64,8 +64,8 @@ DESCR__E_M3
 
 /* Global external variables. */
 extern int             no_of_dirs;
-extern char            istatistic_file[MAX_PATH_LENGTH],
-                       new_istatistic_file[MAX_PATH_LENGTH];
+extern char            istatistic_file[],
+                       new_istatistic_file[];
 extern struct afdistat *istat_db;
 
 
