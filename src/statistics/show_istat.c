@@ -1,6 +1,6 @@
 /*
  *  show_istat.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -120,7 +120,8 @@ static FILE                *output_fp = NULL;
 static struct afdistat     *afd_istat;
 
 /* Function prototypes. */
-static void                display_data(int, int, char, int, double, double);
+static void                display_data(int, char *, int, char, int,
+                                        double, double);
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
@@ -471,7 +472,8 @@ main(int argc, char *argv[])
                            nfr += (double)afd_istat[position].year[j].nfr;
                            nbr +=         afd_istat[position].year[j].nbr;
                         }
-                        display_data(position, -1, ' ', -1, nfr, nbr);
+                        display_data(position, afd_istat[position].dir_alias,
+                                     -1, ' ', -1, nfr, nbr);
                         tmp_nfr += nfr; tmp_nbr += nbr;
                      }
                   }
@@ -492,7 +494,7 @@ main(int argc, char *argv[])
                            nbr +=         afd_istat[i].year[j].nbr;
                         }
                      }
-                     display_data(SHOW_SPACE, -1, ' ', j, nfr, nbr);
+                     display_data(SHOW_SPACE, NULL, -1, ' ', j, nfr, nbr);
                      tmp_nfr += nfr;
                      tmp_nbr += nbr;
                   }
@@ -510,7 +512,8 @@ main(int argc, char *argv[])
                            nfr += (double)afd_istat[i].year[j].nfr;
                            nbr +=         afd_istat[i].year[j].nbr;
                         }
-                        display_data(i, -1, ' ', -1, nfr, nbr);
+                        display_data(i, afd_istat[i].dir_alias,
+                                     -1, ' ', -1, nfr, nbr);
                         tmp_nfr += nfr; tmp_nbr += nbr;
                      }
                   }
@@ -519,7 +522,7 @@ main(int argc, char *argv[])
 
             if (display_format == CSV_FORMAT)
             {
-               display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+               display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
             }
             else if (display_format == NUMERIC_TOTAL_ONLY)
                  {
@@ -530,7 +533,7 @@ main(int argc, char *argv[])
                     (void)memset(double_single_line, '-', max_alias_name_length);
                     double_single_line[max_alias_name_length] = '\0';
                     (void)fprintf(output_fp, "%s---------------------------------\n", double_single_line);
-                    display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                    display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                     (void)memset(double_single_line, '=', max_alias_name_length);
                     (void)fprintf(output_fp, "%s=================================\n", double_single_line);
                  }
@@ -576,11 +579,12 @@ main(int argc, char *argv[])
                         nfr = nbr = 0.0;
                         if (show_day == 0) /* Show all days */
                         {
-                           display_data(i, -1, ' ', 0, afd_istat[i].year[0].nfr,
+                           display_data(i, afd_istat[i].dir_alias,
+                                        -1, ' ', 0, afd_istat[i].year[0].nfr,
                                         afd_istat[i].year[0].nbr);
                            for (j = 1; j < DAYS_PER_YEAR; j++)
                            {
-                              display_data(SHOW_SPACE, -1, ' ', j,
+                              display_data(SHOW_SPACE, NULL, -1, ' ', j,
                                            afd_istat[i].year[j].nfr,
                                            afd_istat[i].year[j].nbr);
                               nfr += (double)afd_istat[i].year[j].nfr;
@@ -591,7 +595,8 @@ main(int argc, char *argv[])
                         {
                            nfr += (double)afd_istat[i].year[show_day].nfr;
                            nbr +=         afd_istat[i].year[show_day].nbr;
-                           display_data(i, -1, ' ', -1,
+                           display_data(i, afd_istat[i].dir_alias,
+                                        -1, ' ', -1,
                                         afd_istat[i].year[show_day].nfr,
                                         afd_istat[i].year[show_day].nbr);
                         }
@@ -617,12 +622,14 @@ main(int argc, char *argv[])
                            nfr = nbr = 0.0;
                            if (show_day == 0) /* Show all days */
                            {
-                              display_data(position, -1, ' ', 0,
+                              display_data(position,
+                                           afd_istat[position].dir_alias,
+                                           -1, ' ', 0,
                                            afd_istat[position].year[0].nfr,
                                            afd_istat[position].year[0].nbr);
                               for (j = 1; j < DAYS_PER_YEAR; j++)
                               {
-                                 display_data(SHOW_SPACE, -1, ' ', j,
+                                 display_data(SHOW_SPACE, NULL, -1, ' ', j,
                                               afd_istat[position].year[j].nfr,
                                               afd_istat[position].year[j].nbr);
                                  nfr += (double)afd_istat[position].year[j].nfr;
@@ -633,7 +640,9 @@ main(int argc, char *argv[])
                            {
                               nfr += (double)afd_istat[position].year[show_day].nfr;
                               nbr +=         afd_istat[position].year[show_day].nbr;
-                              display_data(position, -1, ' ', -1,
+                              display_data(position,
+                                           afd_istat[position].dir_alias,
+                                           -1, ' ', -1,
                                            afd_istat[position].year[show_day].nfr,
                                            afd_istat[position].year[show_day].nbr);
                            }
@@ -647,7 +656,7 @@ main(int argc, char *argv[])
                {
                   if (display_format == CSV_FORMAT)
                   {
-                     display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                     display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                   }
                   else if (display_format == NUMERIC_TOTAL_ONLY)
                        {
@@ -655,7 +664,7 @@ main(int argc, char *argv[])
                        }
                        else
                        {
-                          display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                          display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                        }
                }
                else
@@ -756,7 +765,7 @@ main(int argc, char *argv[])
                         nbr +=         afd_istat[i].year[j].nbr;
                      }
                   }
-                  display_data(SHOW_SPACE, -1, ' ', j, nfr, nbr);
+                  display_data(SHOW_SPACE, NULL, -1, ' ', j, nfr, nbr);
                   tmp_nfr += nfr;
                   tmp_nbr += nbr;
                }
@@ -765,7 +774,7 @@ main(int argc, char *argv[])
                {
                   if (display_format == CSV_FORMAT)
                   {
-                     display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                     display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                   }
                   else if (display_format == NUMERIC_TOTAL_ONLY)
                        {
@@ -773,7 +782,7 @@ main(int argc, char *argv[])
                        }
                        else
                        {
-                          display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                          display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                        }
                }
                else
@@ -791,7 +800,7 @@ main(int argc, char *argv[])
 
             if (display_format == CSV_FORMAT)
             {
-               display_data(SHOW_BIG_TOTAL, -1, ' ', -1, total_nfr, total_nbr);
+               display_data(SHOW_BIG_TOTAL, NULL, -1, ' ', -1, total_nfr, total_nbr);
             }
             else if (display_format == NUMERIC_TOTAL_ONLY)
                  {
@@ -799,7 +808,7 @@ main(int argc, char *argv[])
                  }
                  else
                  {
-                    display_data(SHOW_BIG_TOTAL, -1, ' ', -1, total_nfr, total_nbr);
+                    display_data(SHOW_BIG_TOTAL, NULL, -1, ' ', -1, total_nfr, total_nbr);
                  }
          }
 
@@ -991,7 +1000,8 @@ main(int argc, char *argv[])
                            nbr +=         afd_istat[i].hour[j].nbr;
                         }
                      }
-                     display_data(i, -1, ' ', -1, nfr, nbr);
+                     display_data(i, afd_istat[i].dir_alias,
+                                  -1, ' ', -1, nfr, nbr);
                      tmp_nfr += nfr; tmp_nbr += nbr;
                   }
                }
@@ -1034,7 +1044,8 @@ main(int argc, char *argv[])
                               nbr +=         afd_istat[position].hour[j].nbr;
                            }
                         }
-                        display_data(position, -1, ' ', -1, nfr, nbr);
+                        display_data(position, afd_istat[position].dir_alias,
+                                     -1, ' ', -1, nfr, nbr);
                         tmp_nfr += nfr; tmp_nbr += nbr;
                      }
                   }
@@ -1042,7 +1053,7 @@ main(int argc, char *argv[])
             }
             if (display_format == CSV_FORMAT)
             {
-               display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+               display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
             }
             else if (display_format == NUMERIC_TOTAL_ONLY)
                  {
@@ -1053,7 +1064,7 @@ main(int argc, char *argv[])
                     (void)memset(double_single_line, '-', max_alias_name_length);
                     double_single_line[max_alias_name_length] = '\0';
                     (void)fprintf(output_fp, "%s---------------------------------\n", double_single_line);
-                    display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                    display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                     (void)memset(double_single_line, '=', max_alias_name_length);
                     (void)fprintf(output_fp, "%s=================================\n", double_single_line);
                  }
@@ -1146,7 +1157,8 @@ main(int argc, char *argv[])
                            nbr +=         afd_istat[position].year[j].nbr;
                         }
                         tmp_nfr += nfr; tmp_nbr += nbr;
-                        display_data(position, -1, ' ', -1, nfr, nbr);
+                        display_data(position, afd_istat[position].dir_alias,
+                                     -1, ' ', -1, nfr, nbr);
                      }
                   }
                }
@@ -1175,13 +1187,14 @@ main(int argc, char *argv[])
                         nbr +=         afd_istat[i].year[j].nbr;
                      }
                      tmp_nfr += nfr; tmp_nbr += nbr;
-                     display_data(i, -1, ' ', -1, nfr, nbr);
+                     display_data(i, afd_istat[i].dir_alias,
+                                  -1, ' ', -1, nfr, nbr);
                   }
                }
             }
             if (display_format == CSV_FORMAT)
             {
-               display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+               display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
             }
             else if (display_format == NUMERIC_TOTAL_ONLY)
                  {
@@ -1192,7 +1205,7 @@ main(int argc, char *argv[])
                     (void)memset(double_single_line, '-', max_alias_name_length);
                     double_single_line[max_alias_name_length] = '\0';
                     (void)fprintf(output_fp, "%s---------------------------------\n", double_single_line);
-                    display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                    display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                     (void)memset(double_single_line, '=', max_alias_name_length);
                     (void)fprintf(output_fp, "%s=================================\n", double_single_line);
                  }
@@ -1240,16 +1253,18 @@ main(int argc, char *argv[])
                         {
                            if (afd_istat[i].day_counter == 0)
                            {
-                              display_data(i, -1, ' ', 0, 0.0, 0.0);
+                              display_data(i, afd_istat[i].dir_alias,
+                                           -1, ' ', 0, 0.0, 0.0);
                            }
                            else
                            {
-                              display_data(i, -1, ' ', 0,
+                              display_data(i, afd_istat[i].dir_alias,
+                                           -1, ' ', 0,
                                            afd_istat[i].year[0].nfr,
                                            afd_istat[i].year[0].nbr);
                               for (j = 1; j < afd_istat[i].day_counter; j++)
                               {
-                                 display_data(SHOW_SPACE, -1, ' ', j,
+                                 display_data(SHOW_SPACE, NULL, -1, ' ', j,
                                               afd_istat[i].year[j].nfr,
                                               afd_istat[i].year[j].nbr);
                                  nfr += (double)afd_istat[i].year[j].nfr;
@@ -1272,13 +1287,15 @@ main(int argc, char *argv[])
                               }
                               nfr += (double)afd_istat[i].year[j].nfr;
                               nbr +=         afd_istat[i].year[j].nbr;
-                              display_data(i, -1, ' ', -1,
+                              display_data(i, afd_istat[i].dir_alias,
+                                           -1, ' ', -1,
                                            afd_istat[i].year[j].nfr,
                                            afd_istat[i].year[j].nbr);
                            }
                            else
                            {
-                              display_data(i, -1, ' ', -1, 0.0, 0.0);
+                              display_data(i, afd_istat[i].dir_alias,
+                                           -1, ' ', -1, 0.0, 0.0);
                            }
                         }
                         tmp_nfr += nfr; tmp_nbr += nbr;
@@ -1303,12 +1320,14 @@ main(int argc, char *argv[])
                            nfr = nbr = 0.0;
                            if (show_day == 0) /* Show all days */
                            {
-                              display_data(position, -1, ' ', 0,
+                              display_data(position,
+                                           afd_istat[position].dir_alias,
+                                           -1, ' ', 0,
                                            afd_istat[position].year[0].nfr,
                                            afd_istat[position].year[0].nbr);
                               for (j = 1; j < afd_istat[position].day_counter; j++)
                               {
-                                 display_data(SHOW_SPACE, -1, ' ', j,
+                                 display_data(SHOW_SPACE, NULL, -1, ' ', j,
                                               afd_istat[position].year[j].nfr,
                                               afd_istat[position].year[j].nbr);
                                  nfr += (double)afd_istat[position].year[j].nfr;
@@ -1330,13 +1349,17 @@ main(int argc, char *argv[])
                                  }
                                  nfr += (double)afd_istat[position].year[j].nfr;
                                  nbr +=         afd_istat[position].year[j].nbr;
-                                 display_data(position, -1, ' ', -1,
+                                 display_data(position,
+                                              afd_istat[position].dir_alias,
+                                              -1, ' ', -1,
                                               afd_istat[position].year[j].nfr,
                                               afd_istat[position].year[j].nbr);
                               }
                               else
                               {
-                                 display_data(position, -1, ' ', -1, 0.0, 0.0);
+                                 display_data(position,
+                                              afd_istat[position].dir_alias,
+                                              -1, ' ', -1, 0.0, 0.0);
                               }
                            }
                            tmp_nfr += nfr; tmp_nbr += nbr;
@@ -1350,7 +1373,7 @@ main(int argc, char *argv[])
                {
                   if (display_format == CSV_FORMAT)
                   {
-                     display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                     display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                   }
                   else if (display_format == NUMERIC_TOTAL_ONLY)
                        {
@@ -1358,7 +1381,7 @@ main(int argc, char *argv[])
                        }
                        else
                        {
-                          display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                          display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                        }
                }
                else
@@ -1422,7 +1445,7 @@ main(int argc, char *argv[])
                         nbr +=         afd_istat[i].year[j].nbr;
                      }
                   }
-                  display_data(SHOW_SPACE, -1, ' ', j, nfr, nbr);
+                  display_data(SHOW_SPACE, NULL, -1, ' ', j, nfr, nbr);
                   tmp_nfr += nfr; tmp_nbr += nbr;
                }
 
@@ -1431,7 +1454,7 @@ main(int argc, char *argv[])
                {
                   if (display_format == CSV_FORMAT)
                   {
-                     display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                     display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                   }
                   else if (display_format == NUMERIC_TOTAL_ONLY)
                        {
@@ -1439,7 +1462,7 @@ main(int argc, char *argv[])
                        }
                        else
                        {
-                          display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                          display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                        }
                }
                else
@@ -1503,29 +1526,31 @@ main(int argc, char *argv[])
                            }
                            if (afd_istat[i].hour_counter == 0)
                            {
-                              display_data(i, -1, '*', 0, sec_nfr, sec_nbr);
+                              display_data(i, afd_istat[i].dir_alias,
+                                           -1, '*', 0, sec_nfr, sec_nbr);
                            }
                            else
                            {
-                              display_data(i, -1, ' ', 0,
+                              display_data(i, afd_istat[i].dir_alias,
+                                           -1, ' ', 0,
                                            afd_istat[i].day[0].nfr,
                                            afd_istat[i].day[0].nbr);
                               for (j = 1; j < afd_istat[i].hour_counter; j++)
                               {
-                                 display_data(SHOW_SPACE, -1, ' ', j,
+                                 display_data(SHOW_SPACE, NULL, -1, ' ', j,
                                               afd_istat[i].day[j].nfr,
                                               afd_istat[i].day[j].nbr);
                                  nfr += (double)afd_istat[i].day[j].nfr;
                                  nbr +=         afd_istat[i].day[j].nbr;
                               }
-                              display_data(SHOW_SPACE, -1, '*', j, sec_nfr,
-                                           sec_nbr);
+                              display_data(SHOW_SPACE, NULL, -1, '*', j,
+                                           sec_nfr, sec_nbr);
                            }
                            nfr += sec_nfr; nbr += sec_nbr;
                            for (j = (afd_istat[i].hour_counter + 1);
                                 j < HOURS_PER_DAY; j++)
                            {
-                              display_data(SHOW_SPACE, -1, ' ', j,
+                              display_data(SHOW_SPACE, NULL, -1, ' ', j,
                                            afd_istat[i].day[j].nfr,
                                            afd_istat[i].day[j].nbr);
                               nfr += (double)afd_istat[i].day[j].nfr;
@@ -1547,13 +1572,15 @@ main(int argc, char *argv[])
                               }
                               nfr += (double)afd_istat[i].day[j].nfr;
                               nbr +=         afd_istat[i].day[j].nbr;
-                              display_data(i, -1, ' ', -1,
+                              display_data(i, afd_istat[i].dir_alias,
+                                           -1, ' ', -1,
                                            afd_istat[i].day[j].nfr,
                                            afd_istat[i].day[j].nbr);
                            }
                            else
                            {
-                              display_data(i, -1, ' ', -1, 0.0, 0.0);
+                              display_data(i, afd_istat[i].dir_alias,
+                                           -1, ' ', -1, 0.0, 0.0);
                            }
                         }
                         tmp_nfr += nfr; tmp_nbr += nbr;
@@ -1586,30 +1613,33 @@ main(int argc, char *argv[])
                               }
                               if (afd_istat[i].hour_counter == 0)
                               {
-                                 display_data(position, -1, '*', 0, sec_nfr,
-                                              sec_nbr);
+                                 display_data(position,
+                                              afd_istat[position].dir_alias,
+                                              -1, '*', 0, sec_nfr, sec_nbr);
                               }
                               else
                               {
-                                 display_data(position, -1, ' ', 0,
+                                 display_data(position,
+                                              afd_istat[position].dir_alias,
+                                              -1, ' ', 0,
                                               afd_istat[position].day[0].nfr,
                                               afd_istat[position].day[0].nbr);
                                  for (j = 1; j < afd_istat[position].hour_counter; j++)
                                  {
-                                    display_data(SHOW_SPACE, -1, ' ', j,
+                                    display_data(SHOW_SPACE, NULL, -1, ' ', j,
                                                  afd_istat[position].day[j].nfr,
                                                  afd_istat[position].day[j].nbr);
                                     nfr += (double)afd_istat[position].day[j].nfr;
                                     nbr +=         afd_istat[position].day[j].nbr;
                                  }
-                                 display_data(SHOW_SPACE, -1, '*', j, sec_nfr,
-                                             sec_nbr);
+                                 display_data(SHOW_SPACE, NULL, -1, '*', j,
+                                              sec_nfr, sec_nbr);
                               }
                               nfr += sec_nfr; nbr += sec_nbr;
                               for (j = (afd_istat[position].hour_counter + 1);
                                    j < HOURS_PER_DAY; j++)
                               {
-                                 display_data(SHOW_SPACE, -1, ' ', j,
+                                 display_data(SHOW_SPACE, NULL, -1, ' ', j,
                                               afd_istat[position].day[j].nfr,
                                               afd_istat[position].day[j].nbr);
                                  nfr += (double)afd_istat[position].day[j].nfr;
@@ -1632,13 +1662,17 @@ main(int argc, char *argv[])
                                  }
                                  nfr += (double)afd_istat[position].day[j].nfr;
                                  nbr +=         afd_istat[position].day[j].nbr;
-                                 display_data(position, -1, ' ', j,
+                                 display_data(position,
+                                              afd_istat[position].dir_alias,
+                                              -1, ' ', j,
                                               afd_istat[position].day[j].nfr,
                                               afd_istat[position].day[j].nbr);
                               }
                               else
                               {
-                                 display_data(position, -1, ' ', -1, 0.0, 0.0);
+                                 display_data(position,
+                                              afd_istat[position].dir_alias,
+                                              -1, ' ', -1, 0.0, 0.0);
                               }
                            }
                            tmp_nfr += nfr; tmp_nbr += nbr;
@@ -1652,7 +1686,7 @@ main(int argc, char *argv[])
                {
                   if (display_format == CSV_FORMAT)
                   {
-                     display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                     display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                   }
                   else if (display_format == NUMERIC_TOTAL_ONLY)
                        {
@@ -1660,7 +1694,7 @@ main(int argc, char *argv[])
                        }
                        else
                        {
-                          display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                          display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                        }
                }
                else
@@ -1716,7 +1750,7 @@ main(int argc, char *argv[])
                         nbr +=         afd_istat[i].day[j].nbr;
                      }
                   }
-                  display_data(SHOW_SPACE, -1, ' ', j, nfr, nbr);
+                  display_data(SHOW_SPACE, NULL, -1, ' ', j, nfr, nbr);
                   tmp_nfr += nfr; tmp_nbr += nbr;
                }
                nfr = nbr = 0.0;
@@ -1731,7 +1765,7 @@ main(int argc, char *argv[])
                      }
                   }
                }
-               display_data(SHOW_SPACE, -1, '*', afd_istat[0].hour_counter, nfr, nbr);
+               display_data(SHOW_SPACE, NULL, -1, '*', afd_istat[0].hour_counter, nfr, nbr);
                tmp_nfr += nfr; tmp_nbr += nbr;
                for (j = (afd_istat[0].hour_counter + 1); j < HOURS_PER_DAY; j++)
                {
@@ -1744,7 +1778,7 @@ main(int argc, char *argv[])
                         nbr +=         afd_istat[i].day[j].nbr;
                      }
                   }
-                  display_data(SHOW_SPACE, -1, ' ', j, nfr, nbr);
+                  display_data(SHOW_SPACE, NULL, -1, ' ', j, nfr, nbr);
                   tmp_nfr += nfr; tmp_nbr += nbr;
                }
 
@@ -1753,7 +1787,7 @@ main(int argc, char *argv[])
                {
                   if (display_format == CSV_FORMAT)
                   {
-                     display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                     display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                   }
                   else if (display_format == NUMERIC_TOTAL_ONLY)
                        {
@@ -1761,7 +1795,7 @@ main(int argc, char *argv[])
                        }
                        else
                        {
-                          display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                          display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                        }
                }
                else
@@ -1819,7 +1853,8 @@ main(int argc, char *argv[])
                         {
                            nfr += (double)afd_istat[i].hour[0].nfr;
                            nbr +=         afd_istat[i].hour[0].nbr;
-                           display_data(i, 0, ' ', 0, afd_istat[i].hour[0].nfr,
+                           display_data(i, afd_istat[position].dir_alias,
+                                        0, ' ', 0, afd_istat[i].hour[0].nfr,
                                         afd_istat[i].hour[0].nbr);
                            for (j = 1; j < afd_istat[i].sec_counter; j++)
                            {
@@ -1832,7 +1867,7 @@ main(int argc, char *argv[])
                               {
                                  tmp = -1;
                               }
-                              display_data(SHOW_SPACE, tmp, ' ', j,
+                              display_data(SHOW_SPACE, NULL, tmp, ' ', j,
                                            afd_istat[i].hour[j].nfr,
                                            afd_istat[i].hour[j].nbr);
                               nfr += (double)afd_istat[i].hour[j].nfr;
@@ -1847,7 +1882,7 @@ main(int argc, char *argv[])
                            {
                               tmp = -1;
                            }
-                           display_data(SHOW_SPACE, tmp, '*',
+                           display_data(SHOW_SPACE, NULL, tmp, '*',
                                         afd_istat[i].sec_counter, 0.0, 0.0);
                            for (j = (afd_istat[i].sec_counter + 1);
                                 j < SECS_PER_HOUR; j++)
@@ -1863,7 +1898,7 @@ main(int argc, char *argv[])
                               }
                               nfr += (double)afd_istat[i].hour[j].nfr;
                               nbr +=         afd_istat[i].hour[j].nbr;
-                              display_data(SHOW_SPACE, tmp, ' ', j,
+                              display_data(SHOW_SPACE, NULL, tmp, ' ', j,
                                            afd_istat[i].hour[j].nfr,
                                            afd_istat[i].hour[j].nbr);
                            }
@@ -1882,7 +1917,8 @@ main(int argc, char *argv[])
                            }
                            nfr += (double)afd_istat[i].hour[j].nfr;
                            nbr +=         afd_istat[i].hour[j].nbr;
-                           display_data(i, -1, ' ', -1,
+                           display_data(i, afd_istat[i].dir_alias,
+                                        -1, ' ', -1,
                                         afd_istat[i].hour[j].nfr,
                                         afd_istat[i].hour[j].nbr);
                         }
@@ -1910,11 +1946,15 @@ main(int argc, char *argv[])
                            {
                               if (afd_istat[position].sec_counter == 0)
                               {
-                                 display_data(position, 0, '*', 0, 0.0, 0.0);
+                                 display_data(position,
+                                              afd_istat[position].dir_alias,
+                                              0, '*', 0, 0.0, 0.0);
                               }
                               else
                               {
-                                 display_data(position, 0, ' ', 0,
+                                 display_data(position,
+                                              afd_istat[position].dir_alias,
+                                              0, ' ', 0,
                                               afd_istat[position].hour[0].nfr,
                                               afd_istat[position].hour[0].nbr);
                                  for (j = 1; j < afd_istat[position].sec_counter; j++)
@@ -1930,7 +1970,7 @@ main(int argc, char *argv[])
                                     }
                                     nfr += (double)afd_istat[position].hour[j].nfr;
                                     nbr +=         afd_istat[position].hour[j].nbr;
-                                    display_data(SHOW_SPACE, tmp, ' ', j,
+                                    display_data(SHOW_SPACE, NULL, tmp, ' ', j,
                                                  afd_istat[position].hour[j].nfr,
                                                  afd_istat[position].hour[j].nbr);
                                  }
@@ -1943,7 +1983,7 @@ main(int argc, char *argv[])
                                  {
                                     tmp = -1;
                                  }
-                                 display_data(SHOW_SPACE, tmp, '*',
+                                 display_data(SHOW_SPACE, NULL, tmp, '*',
                                               afd_istat[position].sec_counter,
                                               0.0, 0.0);
                               }
@@ -1961,7 +2001,7 @@ main(int argc, char *argv[])
                                  }
                                  nfr += (double)afd_istat[position].hour[j].nfr;
                                  nbr +=         afd_istat[position].hour[j].nbr;
-                                 display_data(SHOW_SPACE, tmp, ' ', j,
+                                 display_data(SHOW_SPACE, NULL, tmp, ' ', j,
                                               afd_istat[position].hour[j].nfr,
                                               afd_istat[position].hour[j].nbr);
                               }
@@ -1983,13 +2023,17 @@ main(int argc, char *argv[])
                                  }
                                  nfr += (double)afd_istat[position].hour[j].nfr;
                                  nbr +=         afd_istat[position].hour[j].nbr;
-                                 display_data(position, -1, ' ', -1,
+                                 display_data(position,
+                                              afd_istat[position].dir_alias,
+                                              -1, ' ', -1,
                                               afd_istat[position].hour[j].nfr,
                                               afd_istat[position].hour[j].nbr);
                               }
                               else
                               {
-                                 display_data(position, -1, ' ', -1, 0.0, 0.0);
+                                 display_data(position,
+                                              afd_istat[position].dir_alias,
+                                              -1, ' ', -1, 0.0, 0.0);
                               }
                            }
                            tmp_nfr += nfr; tmp_nbr += nbr;
@@ -2003,7 +2047,7 @@ main(int argc, char *argv[])
                {
                   if (display_format == CSV_FORMAT)
                   {
-                     display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                     display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                   }
                   else if (display_format == NUMERIC_TOTAL_ONLY)
                        {
@@ -2011,7 +2055,7 @@ main(int argc, char *argv[])
                        }
                        else
                        {
-                          display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                          display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                        }
                }
                else
@@ -2081,7 +2125,7 @@ main(int argc, char *argv[])
                         nbr +=         afd_istat[i].hour[j].nbr;
                      }
                   }
-                  display_data(SHOW_SPACE, tmp, ' ', j, nfr, nbr);
+                  display_data(SHOW_SPACE, NULL, tmp, ' ', j, nfr, nbr);
                   tmp_nfr += nfr; tmp_nbr += nbr;
                }
                tmp = afd_istat[0].sec_counter * STAT_RESCAN_TIME;
@@ -2093,7 +2137,7 @@ main(int argc, char *argv[])
                {
                   tmp = -1;
                }
-               display_data(SHOW_SPACE, tmp, '*', afd_istat[0].sec_counter, 0.0, 0.0);
+               display_data(SHOW_SPACE, NULL, tmp, '*', afd_istat[0].sec_counter, 0.0, 0.0);
                for (j = (afd_istat[0].sec_counter + 1); j < SECS_PER_HOUR; j++)
                {
                   tmp = j * STAT_RESCAN_TIME;
@@ -2114,7 +2158,7 @@ main(int argc, char *argv[])
                         nbr +=         afd_istat[i].hour[j].nbr;
                      }
                   }
-                  display_data(SHOW_SPACE, tmp, ' ', j, nfr, nbr);
+                  display_data(SHOW_SPACE, NULL, tmp, ' ', j, nfr, nbr);
                   tmp_nfr += nfr; tmp_nbr += nbr;
                }
             }
@@ -2147,7 +2191,7 @@ main(int argc, char *argv[])
                                 nbr +=         afd_istat[i].hour[j].nbr;
                              }
                           }
-                          display_data(SHOW_SPACE, tmp, ' ', j, nfr, nbr);
+                          display_data(SHOW_SPACE, NULL, tmp, ' ', j, nfr, nbr);
                           tmp_nfr += nfr; tmp_nbr += nbr;
                        }
                        for (j = 0; j < (sec_ints + left); j++)
@@ -2170,7 +2214,7 @@ main(int argc, char *argv[])
                                 nbr +=         afd_istat[i].hour[j].nbr;
                              }
                           }
-                          display_data(SHOW_SPACE, tmp, ' ', j, nfr, nbr);
+                          display_data(SHOW_SPACE, NULL, tmp, ' ', j, nfr, nbr);
                           tmp_nfr += nfr; tmp_nbr += nbr;
                        }
                     }
@@ -2196,7 +2240,7 @@ main(int argc, char *argv[])
                                 nbr +=         afd_istat[i].hour[j].nbr;
                              }
                           }
-                          display_data(SHOW_SPACE, tmp, ' ', j, nfr, nbr);
+                          display_data(SHOW_SPACE, NULL, tmp, ' ', j, nfr, nbr);
                           tmp_nfr += nfr; tmp_nbr += nbr;
                        }
                     }
@@ -2209,7 +2253,7 @@ main(int argc, char *argv[])
                {
                   if (display_format == CSV_FORMAT)
                   {
-                     display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                     display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                   }
                   else if (display_format == NUMERIC_TOTAL_ONLY)
                        {
@@ -2217,7 +2261,7 @@ main(int argc, char *argv[])
                        }
                        else
                        {
-                          display_data(SHOW_SMALL_TOTAL, -1, ' ', -1, tmp_nfr, tmp_nbr);
+                          display_data(SHOW_SMALL_TOTAL, NULL, -1, ' ', -1, tmp_nfr, tmp_nbr);
                        }
                }
                else
@@ -2238,7 +2282,7 @@ main(int argc, char *argv[])
             }
             else
             {
-               display_data(SHOW_BIG_TOTAL, -1, ' ', -1, total_nfr, total_nbr);
+               display_data(SHOW_BIG_TOTAL, NULL, -1, ' ', -1, total_nfr, total_nbr);
             }
          }
 
@@ -2282,6 +2326,7 @@ main(int argc, char *argv[])
 /*++++++++++++++++++++++++++++ display_data() +++++++++++++++++++++++++++*/
 static void
 display_data(int    position,
+             char   *dir_alias,
              int    val1,
              char   current,
              int    val2,
@@ -2329,7 +2374,7 @@ display_data(int    position,
         {
            if (show_alias == YES)
            {
-              (void)strcpy(name, afd_istat[position].dir_alias);
+              (void)strcpy(name, dir_alias);
            }
            else
            {
@@ -2337,7 +2382,7 @@ display_data(int    position,
 
               if (show_alias == BOTH)
               {
-                 (void)strcpy(name, afd_istat[position].dir_alias);
+                 (void)strcpy(name, dir_alias);
                  offset = strlen(name);
                  name[offset] = ';';
                  offset++;
@@ -2346,7 +2391,7 @@ display_data(int    position,
               {
                  offset = 0;
               }
-              get_dir_name(afd_istat[position].dir_alias, &name[offset]);
+              get_dir_name(dir_alias, &name[offset]);
            }
         }
 
