@@ -1,6 +1,6 @@
 /*
  *  pop3cmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -657,6 +657,10 @@ pop3_quit(void)
 #ifdef WITH_SSL
       if (ssl_con != NULL)
       {
+         if (SSL_shutdown(ssl_con) == 0)
+         {
+            (void)SSL_shutdown(ssl_con);
+         }
          SSL_free(ssl_con);
          ssl_con = NULL;
       }

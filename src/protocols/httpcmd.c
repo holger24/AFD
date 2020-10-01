@@ -2293,6 +2293,10 @@ http_quit(void)
 #ifdef WITH_SSL
       if (ssl_con != NULL)
       {
+         if (SSL_shutdown(ssl_con) == 0)
+         {
+            (void)SSL_shutdown(ssl_con);
+         }
          SSL_free(ssl_con);
          ssl_con = NULL;
       }
