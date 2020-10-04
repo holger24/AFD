@@ -597,7 +597,7 @@ main(int argc, char *argv[])
          new_year = p_ts->tm_year + 1900;
          if (current_year != new_year)
          {
-            if (current_year < new_year)
+            if (current_year > new_year)
             {
                system_log(DEBUG_SIGN, __FILE__, __LINE__,
                           "Hmmm..., year jumped back from %d to %d.",
