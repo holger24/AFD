@@ -40,7 +40,7 @@ endif
 
 AM_CPPFLAGS                  = -I.. -I../init_afd -I../amg -I../fd\
                                -I../statistics -I../log -I../log/alda\
-			       -I../afd_mon
+                               -I../afd_mon
 bin_PROGRAMS                 = afdcmd afdcfg afd_hex_print afd_status $(AFDTR)\
                                $(AFDIPDBCMD) fsa_edit fsa_view fra_edit\
                                fra_view get_dc_data get_hostname grib2wmo\
@@ -52,11 +52,11 @@ sbin_PROGRAMS                = cache_spy convert_fsa convert_stat\
                                view_ls_data
 EXTRA_PROGRAMS               = afdconvert $(EXTRA_AFDIPDBCMD) $(EXTRA_AFDTR)\
                                bfc binfc byte_order convert_jid count_burst\
-			       convert_ls_data del_cache dc_proc_spy\
-			       $(EXTRA_DUPCHECK) fax2gts get_counter\
-			       get_checksum get_full_date get_file_size\
-			       gts2tiff linger reset_fsa rdu sysconf\
-			       tiff_sniffer watch_dir fra_version\
+                               convert_ls_data del_cache dc_proc_spy\
+                               $(EXTRA_DUPCHECK) fax2gts get_counter\
+                               get_checksum get_full_date get_file_size\
+                               gts2tiff linger reset_fsa rdu sysconf\
+                               tiff_sniffer watch_dir fra_version\
                                view_error_queue
 MAINTAINERCLEANFILES         = Makefile.in
 CLEANFILES                   = gmon.out core core.* $(EXTRA_PROGRAMS)
