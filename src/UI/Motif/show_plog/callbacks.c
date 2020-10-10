@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2016 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -121,6 +121,8 @@ extern int                        continues_toggle_set,
                                   no_of_search_dirids,
                                   no_of_search_hosts,
                                   no_of_search_jobids,
+                                  no_of_search_new_file_names,
+                                  no_of_search_orig_file_names,
                                   no_of_search_production_cmd,
                                   file_name_length,
                                   *search_dir_length,
@@ -142,8 +144,8 @@ extern double                     search_cpu_time,
                                   search_prod_time;
 extern char                       header_line[],
                                   **search_production_cmd,
-                                  search_new_file_name[],
-                                  search_orig_file_name[],
+                                  **search_new_file_name,
+                                  **search_orig_file_name,
                                   **search_dir,
                                   *search_dir_filter,
                                   search_return_code_str[],
@@ -732,23 +734,151 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
          break;
 
       case ORIG_FILE_NAME_NO_ENTER :
-         (void)strcpy(search_orig_file_name, value);
-         break;
-
       case ORIG_FILE_NAME :
-         (void)strcpy(search_orig_file_name, value);
+         {
+            int i = 0,
+                ii = 0;
+
+            if (no_of_search_orig_file_names != 0)
+            {
+               FREE_RT_ARRAY(search_orig_file_name);
+               no_of_search_orig_file_names = 0;
+            }
+            ptr = value;
+            for (;;)
+            {
+               while ((*ptr != '\0') && (*ptr != ','))
+               {
+                  if (*ptr == '\\')
+                  {
+                     ptr++;
+                  }
+                  ptr++;
+               }
+               no_of_search_orig_file_names++;
+               if (*ptr == '\0')
+               {
+                  if (ptr == value)
+                  {
+                     no_of_search_orig_file_names = 0;
+                  }
+                  break;
+               }
+               ptr++;
+            }
+            if (no_of_search_orig_file_names > 0)
+            {
+               RT_ARRAY(search_orig_file_name, no_of_search_orig_file_names,
+                        (MAX_PATH_LENGTH + 1), char);
+
+               ptr = value;
+               for (;;)
+               {
+                  i = 0;
+                  while ((*ptr != '\0') && (*ptr != ','))
+                  {
+                     if (*ptr == '\\')
+                     {
+                        ptr++;
+                     }
+                     search_orig_file_name[ii][i] = *ptr;
+                     ptr++; i++;
+                  }
+                  search_orig_file_name[ii][i] = '\0';
+                  if (*ptr == ',')
+                  {
+                     ii++; ptr++;
+                     while ((*ptr == ' ') || (*ptr == '\t'))
+                     {
+                        ptr++;
+                     }
+                  }
+                  else
+                  {
+                     break;
+                  }
+               } /* for (;;) */
+            } /* if (no_of_search_orig_file_names > 0) */
+         }
          reset_message(statusbox_w);
-         XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         if (type == ORIG_FILE_NAME)
+         {
+            XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         }
          break;
 
       case NEW_FILE_NAME_NO_ENTER :
-         (void)strcpy(search_new_file_name, value);
-         break;
-
       case NEW_FILE_NAME :
-         (void)strcpy(search_new_file_name, value);
+         {
+            int i = 0,
+                ii = 0;
+
+            if (no_of_search_new_file_names != 0)
+            {
+               FREE_RT_ARRAY(search_new_file_name);
+               no_of_search_new_file_names = 0;
+            }
+            ptr = value;
+            for (;;)
+            {
+               while ((*ptr != '\0') && (*ptr != ','))
+               {
+                  if (*ptr == '\\')
+                  {
+                     ptr++;
+                  }
+                  ptr++;
+               }
+               no_of_search_new_file_names++;
+               if (*ptr == '\0')
+               {
+                  if (ptr == value)
+                  {
+                     no_of_search_new_file_names = 0;
+                  }
+                  break;
+               }
+               ptr++;
+            }
+            if (no_of_search_new_file_names > 0)
+            {
+               RT_ARRAY(search_new_file_name, no_of_search_new_file_names,
+                        (MAX_PATH_LENGTH + 1), char);
+
+               ptr = value;
+               for (;;)
+               {
+                  i = 0;
+                  while ((*ptr != '\0') && (*ptr != ','))
+                  {
+                     if (*ptr == '\\')
+                     {
+                        ptr++;
+                     }
+                     search_new_file_name[ii][i] = *ptr;
+                     ptr++; i++;
+                  }
+                  search_new_file_name[ii][i] = '\0';
+                  if (*ptr == ',')
+                  {
+                     ii++; ptr++;
+                     while ((*ptr == ' ') || (*ptr == '\t'))
+                     {
+                        ptr++;
+                     }
+                  }
+                  else
+                  {
+                     break;
+                  }
+               } /* for (;;) */
+            } /* if (no_of_search_new_file_names > 0) */
+         }
          reset_message(statusbox_w);
-         XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         if (type == NEW_FILE_NAME)
+         {
+            XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         }
          break;
 
       case DIRECTORY_NAME_NO_ENTER :

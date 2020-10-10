@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -89,6 +89,7 @@ extern int                        file_name_length,
                                   no_of_dirs,
                                   no_of_search_dirs,
                                   no_of_search_dirids,
+                                  no_of_search_file_names,
                                   no_of_search_hosts,
                                   queue_tmp_buf_entries,
                                   *search_dir_length,
@@ -102,7 +103,7 @@ extern time_t                     start_time_val,
                                   end_time_val;
 extern double                     total_file_size;
 extern char                       *p_work_dir,
-                                  search_file_name[],
+                                  **search_file_name,
                                   **search_dir,
                                   *search_dir_filter,
                                   **search_recipient,
@@ -141,7 +142,8 @@ static void                       get_all_input_files(void),
 #else
                                   sort_data(int, int);
 #endif
-static int                        get_job_id(char *, unsigned int *),
+static int                        check_all_file_names(char *),
+                                  get_job_id(char *, unsigned int *),
                                   get_pos(unsigned int),
                                   lookup_fra_pos(unsigned int);
 
@@ -1471,8 +1473,7 @@ insert_file(char         *queue_dir,
          if (dirp->d_name[0] != '.')
          {
             /* Check if we need to search for a specific file. */
-            if ((search_file_name[0] == '\0') ||
-                (pmatch(search_file_name, dirp->d_name, NULL) == 0))
+            if (check_all_file_names(dirp->d_name) != -1)
             {
                (void)strcpy(ptr_file, dirp->d_name);
                if ((stat(queue_dir, &stat_buf) != -1) &&
@@ -1643,6 +1644,35 @@ insert_file(char         *queue_dir,
       }
    }
    return;
+}
+
+
+/*------------------------ check_all_file_names() -----------------------*/
+static int
+check_all_file_names(char *name)
+{
+   int ret;
+
+   if (no_of_search_file_names == 0)
+   {
+      ret = 0;
+   }
+   else
+   {
+      int i;
+
+      ret = -1;
+      for (i = 0; i < no_of_search_file_names; i++)
+      {
+         if (pmatch(search_file_name[i], name, NULL) == 0)
+         {
+            ret = i;
+            break;
+         }
+      }
+   }
+
+   return(ret);
 }
 
 

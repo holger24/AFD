@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -94,6 +94,7 @@ extern int              continues_toggle_set,
                         max_input_log_files,
                         no_of_search_dirs,
                         no_of_search_dirids,
+                        no_of_search_file_names,
                         no_of_search_hosts,
                         *search_dir_length,
                         special_button_flag,
@@ -105,7 +106,7 @@ extern size_t           search_file_size;
 extern time_t           start_time_val,
                         end_time_val;
 extern char             *p_work_dir,
-                        search_file_name[],
+                        **search_file_name,
                         **search_dir,
                         *search_dir_filter,
                         **search_recipient,
@@ -737,42 +738,42 @@ extract_data(char *current_log_file, int file_no, int log_no)
     * ie search for specific file names, recipient, etc.
     */
    ptr = ptr_start;
-   if ((search_file_name[0] == '\0') && (search_file_size == -1) &&
+   if ((no_of_search_file_names == 0) && (search_file_size == -1) &&
        (no_of_search_hosts == 0))
    {
       no_criteria(ptr_start, ptr_end, file_no, src, 0);
    }
-   else if ((search_file_name[0] != '\0') && (search_file_size == -1) &&
+   else if ((no_of_search_file_names != 0) && (search_file_size == -1) &&
             (no_of_search_hosts == 0))
         {
            file_name_only(ptr_start, ptr_end, file_no, src, 0);
         }
-   else if ((search_file_name[0] == '\0') && (search_file_size != -1) &&
+   else if ((no_of_search_file_names == 0) && (search_file_size != -1) &&
             (no_of_search_hosts == 0))
         {
            file_size_only(ptr_start, ptr_end, file_no, src, 0);
         }
-   else if ((search_file_name[0] != '\0') && (search_file_size != -1) &&
+   else if ((no_of_search_file_names != 0) && (search_file_size != -1) &&
             (no_of_search_hosts == 0))
         {
            file_name_and_size(ptr_start, ptr_end, file_no, src, 0);
         }
-   else if ((search_file_name[0] == '\0') && (search_file_size == -1) &&
+   else if ((no_of_search_file_names == 0) && (search_file_size == -1) &&
             (no_of_search_hosts != 0))
         {
            recipient_only(ptr_start, ptr_end, file_no, src, 0);
         }
-   else if ((search_file_name[0] != '\0') && (search_file_size == -1) &&
+   else if ((no_of_search_file_names != 0) && (search_file_size == -1) &&
             (no_of_search_hosts != 0))
         {
            file_name_and_recipient(ptr_start, ptr_end, file_no, src, 0);
         }
-   else if ((search_file_name[0] == '\0') && (search_file_size != -1) &&
+   else if ((no_of_search_file_names == 0) && (search_file_size != -1) &&
             (no_of_search_hosts != 0))
         {
            file_size_and_recipient(ptr_start, ptr_end, file_no, src, 0);
         }
-   else if ((search_file_name[0] != '\0') && (search_file_size != -1) &&
+   else if ((no_of_search_file_names != 0) && (search_file_size != -1) &&
             (no_of_search_hosts != 0))
         {
            file_name_size_recipient(ptr_start, ptr_end, file_no, src, 0);
@@ -858,55 +859,55 @@ check_log_updates(Widget w)
          }
          ptr_end = ptr_start + diff_size;
 
-         if ((search_file_name[0] == '\0') && (search_file_size == -1) &&
+         if ((no_of_search_file_names == 0) && (search_file_size == -1) &&
              (no_of_search_hosts == 0))
          {
             no_criteria(ptr_start, ptr_end, last_file_no,
                         ptr_start, log_offset);
          }
-         else if ((search_file_name[0] != '\0') &&
+         else if ((no_of_search_file_names == 0) &&
                   (search_file_size == -1) &&
                   (no_of_search_hosts == 0))
               {
                  file_name_only(ptr_start, ptr_end, last_file_no, ptr_start,
                                 log_offset);
               }
-         else if ((search_file_name[0] == '\0') &&
+         else if ((no_of_search_file_names == 0) &&
                   (search_file_size != -1) &&
                   (no_of_search_hosts == 0))
               {
                  file_size_only(ptr_start, ptr_end, last_file_no, ptr_start,
                                 log_offset);
               }
-         else if ((search_file_name[0] != '\0') &&
+         else if ((no_of_search_file_names == 0) &&
                   (search_file_size != -1) &&
                   (no_of_search_hosts == 0))
               {
                  file_name_and_size(ptr_start, ptr_end, last_file_no,
                                     ptr_start, log_offset);
               }
-         else if ((search_file_name[0] == '\0') &&
+         else if ((no_of_search_file_names == 0) &&
                   (search_file_size == -1) &&
                   (no_of_search_hosts != 0))
               {
                  recipient_only(ptr_start, ptr_end, last_file_no, ptr_start,
                                 log_offset);
               }
-         else if ((search_file_name[0] != '\0') &&
+         else if ((no_of_search_file_names == 0) &&
                   (search_file_size == -1) &&
                   (no_of_search_hosts != 0))
               {
                  file_name_and_recipient(ptr_start, ptr_end, last_file_no,
                                          ptr_start, log_offset);
               }
-         else if ((search_file_name[0] == '\0') &&
+         else if ((no_of_search_file_names == 0) &&
                   (search_file_size != -1) &&
                   (no_of_search_hosts != 0))
               {
                  file_size_and_recipient(ptr_start, ptr_end, last_file_no,
                                          ptr_start, log_offset);
               }
-         else if ((search_file_name[0] != '\0') &&
+         else if ((no_of_search_file_names == 0) &&
                   (search_file_size != -1) &&
                   (no_of_search_hosts != 0))
               {
@@ -1361,7 +1362,9 @@ file_name_only(register char *ptr,
                off_t         offset)
 {
    register int i,
-                j;
+                iii,
+                j,
+                match_found;
    int          item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 line_counter = 0,
@@ -1417,26 +1420,32 @@ file_name_only(register char *ptr,
          ptr_start_line = ptr;
 
          ptr += log_date_length + 1;
-         if (sfilter(search_file_name, ptr, SEPARATOR_CHAR) == 0)
+         match_found = -1;
+         for (iii = 0; iii < no_of_search_file_names; iii++)
          {
-            il[file_no].line_offset[item_counter] = (off_t)(ptr - (log_date_length + 1) - p_start_log_file + offset);
-            INSERT_TIME();
-            j = 0;
-            while ((*ptr != SEPARATOR_CHAR) && (j < file_name_length))
+            if (sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR) == 0)
             {
-               if ((unsigned char)(*ptr) < ' ')
+               il[file_no].line_offset[item_counter] = (off_t)(ptr - (log_date_length + 1) - p_start_log_file + offset);
+               INSERT_TIME();
+               j = 0;
+               while ((*ptr != SEPARATOR_CHAR) && (j < file_name_length))
                {
-                  *(p_file_name + j) = '?';
-                  unprintable_chars++;
+                  if ((unsigned char)(*ptr) < ' ')
+                  {
+                     *(p_file_name + j) = '?';
+                     unprintable_chars++;
+                  }
+                  else                               
+                  {
+                     *(p_file_name + j) = *ptr;
+                  }
+                  ptr++; j++;
                }
-               else                               
-               {
-                  *(p_file_name + j) = *ptr;
-               }
-               ptr++; j++;
+               match_found = iii;
+               break;
             }
          }
-         else
+         if (match_found == -1)
          {
             IGNORE_ENTRY();
          }
@@ -1769,7 +1778,9 @@ file_name_and_size(register char *ptr,
                    off_t         offset)
 {
    register int i,
-                j;
+                iii,
+                j,
+                match_found;
    int          item_counter = il[file_no].no_of_items,
                 prev_item_counter = il[file_no].no_of_items,
                 line_counter = 0,
@@ -1825,7 +1836,16 @@ file_name_and_size(register char *ptr,
          ptr_start_line = ptr;
 
          ptr += log_date_length + 1;
-         if (sfilter(search_file_name, ptr, SEPARATOR_CHAR) != 0)
+         match_found = -1;
+         for (iii = 0; iii < no_of_search_file_names; iii++)
+         {
+            if (sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR) == 0)
+            {
+               match_found = iii;
+               break;
+            }
+         }
+         if (match_found == -1)
          {
             IGNORE_ENTRY();
          }
@@ -2276,7 +2296,9 @@ file_name_and_recipient(register char *ptr,
                         off_t         offset)
 {
    register int i,
-                j;
+                iii,
+                j,
+                match_found;
    int          gotcha,
                 count,
                 ii,
@@ -2336,29 +2358,35 @@ file_name_and_recipient(register char *ptr,
          ptr_start_line = ptr;
 
          ptr += log_date_length + 1;
-         if (sfilter(search_file_name, ptr, SEPARATOR_CHAR) == 0)
+         match_found = -1;
+         for (iii = 0; iii < no_of_search_file_names; iii++)
          {
-            il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-            INSERT_TIME();
-            j = 0;
-            while ((*ptr != SEPARATOR_CHAR) && (j < file_name_length))
+            if (sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR) == 0)
             {
-               if ((unsigned char)(*ptr) < ' ')
+               il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+               INSERT_TIME();
+               j = 0;
+               while ((*ptr != SEPARATOR_CHAR) && (j < file_name_length))
                {
-                  *(p_file_name + j) = '?';
-                  unprintable_chars++;
+                  if ((unsigned char)(*ptr) < ' ')
+                  {
+                     *(p_file_name + j) = '?';
+                     unprintable_chars++;
+                  }
+                  else                               
+                  {
+                     *(p_file_name + j) = *ptr;
+                  }
+                  id.file_name[j] = *(p_file_name + j);
+                  ptr++; j++;
                }
-               else                               
-               {
-                  *(p_file_name + j) = *ptr;
-               }
-               id.file_name[j] = *(p_file_name + j);
-               ptr++; j++;
+               id.file_name[j] = ' ';
+               id.file_name[j + 1] = '\0';
+               match_found = iii;
+               break;
             }
-            id.file_name[j] = ' ';
-            id.file_name[j + 1] = '\0';
          }
-         else
+         if (match_found == -1)
          {
             IGNORE_ENTRY();
          }
@@ -2943,7 +2971,9 @@ file_name_size_recipient(register char *ptr,
                          off_t         offset)
 {
    register int i,
-                j;
+                iii,
+                j,
+                match_found;
    int          gotcha,
                 count,
                 ii,
@@ -3019,7 +3049,17 @@ file_name_size_recipient(register char *ptr,
          id.file_name[j] = ' ';
          id.file_name[j + 1] = '\0';
 
-         if (sfilter(search_file_name, (char *)id.file_name, ' ') != 0)
+         match_found = -1;
+         for (iii = 0; iii < no_of_search_file_names; iii++)
+         {
+            if (sfilter(search_file_name[iii], (char *)id.file_name,
+                        ' ') == 0)
+            {
+               match_found = iii;
+               break;
+            }
+         }
+         if (match_found == -1)
          {
             IGNORE_ENTRY();
          }

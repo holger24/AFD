@@ -1,6 +1,6 @@
 /*
  *  print_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ extern Widget       listbox_w,
                     summarybox_w;
 extern char         file_name[],
                     header_line[],
-                    search_file_name[],
+                    **search_file_name,
                     **search_dir,
                     **search_recipient,
                     search_file_size_str[],
@@ -76,6 +76,7 @@ extern char         file_name[],
 extern int          items_selected,
                     no_of_search_dirs,
                     no_of_search_dirids,
+                    no_of_search_file_names,
                     no_of_search_hosts,
                     no_of_search_jobids,
                     sum_line_length;
@@ -292,41 +293,70 @@ write_header(int fd, char *sum_sep_line)
 
    length = snprintf(buffer, 1024,
                      "                                AFD OUTPUT LOG\n\n");
+
    if ((start_time_val < 0) && (end_time_val < 0))
    {
       length += snprintf(&buffer[length], 1024 - length,
-                         "\tTime Interval : earliest entry - latest entry\n\tFile name     : %s\n\tFile size     : %s\n",
-                         search_file_name, search_file_size_str);
+                         "\tTime Interval : earliest entry - latest entry");
    }
    else if ((start_time_val > 0) && (end_time_val < 0))
         {
            length += strftime(&buffer[length], 1024 - length,
                               "\tTime Interval : %m.%d. %H:%M",
                               localtime(&start_time_val));
-           length += snprintf(&buffer[length], 1024 - length,
-                              " - latest entry\n\tFile name     : %s\n\tFile size     : %s\n",
-                              search_file_name, search_file_size_str);
+           length += snprintf(&buffer[length], 1024 - length, " - latest entry");
         }
         else if ((start_time_val < 0) && (end_time_val > 0))
              {
                 length += strftime(&buffer[length], 1024 - length,
                                    "\tTime Interval : earliest entry - %m.%d. %H:%M",
                                    localtime(&end_time_val));
-                length += snprintf(&buffer[length], 1024 - length,
-                                   "\n\tFile name     : %s\n\tFile size     : %s\n",
-                                   search_file_name, search_file_size_str);
              }
              else
              {
                 length += strftime(&buffer[length], 1024 - length,
                                    "\tTime Interval : %m.%d. %H:%M",
                                    localtime(&start_time_val));
-                length += strftime(&buffer[length], 1024 - length, " - %m.%d. %H:%M",
+                length += strftime(&buffer[length], 1024 - length,
+                                   " - %m.%d. %H:%M",
                                    localtime(&end_time_val));
-                length += snprintf(&buffer[length], 1024 - length,
-                                   "\n\tFile name     : %s\n\tFile size     : %s\n",
-                                   search_file_name, search_file_size_str);
              }
+   if (length >= 1024)
+   {
+      length = 1024;
+      goto write_data;
+   }
+
+   if (no_of_search_file_names > 1)
+   {
+      int i;
+
+      length += snprintf(&buffer[length], 1024 - length,
+                         "\n\tFile name     : %s\n", search_file_name[0]);
+      if (length > 1024)
+      {
+         length = 1024;
+         goto write_data;
+      }
+      for (i = 1; i < no_of_search_file_names; i++)
+      {
+         length += snprintf(&buffer[length], 1024 - length,
+                            "\t                %s\n", search_file_name[i]);
+         if (length >= 1024)
+         {
+            length = 1024;
+            goto write_data;
+         }
+      }
+      length += snprintf(&buffer[length], 1024 - length,
+                         "\tFile size     : %s\n", search_file_size_str);
+   }
+   else
+   {
+      length += snprintf(&buffer[length], 1024 - length,
+                         "\n\tFile name     :\n\tFile size     : %s\n",
+                         search_file_size_str);
+   }
    if (length >= 1024)
    {
       length = 1024;

@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -142,6 +142,7 @@ extern int                        continues_toggle_set,
                                   items_selected,
                                   no_of_search_dirs,
                                   no_of_search_dirids,
+                                  no_of_search_file_names,
                                   no_of_search_hosts,
                                   no_of_search_jobids,
                                   file_name_length,
@@ -165,7 +166,7 @@ extern time_t                     start_time_val,
 extern size_t                     search_file_size;
 extern double                     search_transport_time;
 extern char                       header_line[],
-                                  search_file_name[],
+                                  **search_file_name,
                                   **search_dir,
                                   *search_dir_filter,
                                   **search_recipient,
@@ -1015,13 +1016,77 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
          break;
 
       case FILE_NAME_NO_ENTER :
-         (void)strcpy(search_file_name, value);
-         break;
-
       case FILE_NAME :
-         (void)strcpy(search_file_name, value);
+         {
+            int i = 0,
+                ii = 0;
+
+            if (no_of_search_file_names != 0)
+            {
+               FREE_RT_ARRAY(search_file_name);
+               no_of_search_file_names = 0;
+            }
+            ptr = value;
+            for (;;)
+            {
+               while ((*ptr != '\0') && (*ptr != ','))
+               {
+                  if (*ptr == '\\')
+                  {
+                     ptr++;
+                  }
+                  ptr++;
+               }
+               no_of_search_file_names++;
+               if (*ptr == '\0')
+               {
+                  if (ptr == value)
+                  {
+                     no_of_search_file_names = 0;
+                  }
+                  break;
+               }
+               ptr++;
+            }
+            if (no_of_search_file_names > 0)
+            {
+               RT_ARRAY(search_file_name, no_of_search_file_names,
+                        (MAX_PATH_LENGTH + 1), char);
+
+               ptr = value;
+               for (;;)
+               {
+                  i = 0;
+                  while ((*ptr != '\0') && (*ptr != ','))
+                  {
+                     if (*ptr == '\\')
+                     {
+                        ptr++;
+                     }
+                     search_file_name[ii][i] = *ptr;
+                     ptr++; i++;
+                  }
+                  search_file_name[ii][i] = '\0';
+                  if (*ptr == ',')
+                  {
+                     ii++; ptr++;
+                     while ((*ptr == ' ') || (*ptr == '\t'))
+                     {
+                        ptr++;
+                     }
+                  }
+                  else
+                  {
+                     break;
+                  }
+               } /* for (;;) */
+            } /* if (no_of_search_file_names > 0) */
+         }
          reset_message(statusbox_w);
-         XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         if (type == FILE_NAME)
+         {
+            XmProcessTraversal(w, XmTRAVERSE_NEXT_TAB_GROUP);
+         }
          break;
 
       case DIRECTORY_NAME_NO_ENTER :

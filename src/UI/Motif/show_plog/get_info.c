@@ -1077,13 +1077,17 @@ get_all(int item)
          id.command[i] = *(ptr + i);
          i++;
       }
-      id.command[i] = '\0';
       if (i == MAX_OPTION_LENGTH)
       {
+         id.command[i - 1] = '\0';
          while (*(ptr + i) != '\n')
          {
             i++;
          }
+      }
+      else
+      {
+         id.command[i] = '\0';
       }
       if (*(ptr + i) == SEPARATOR_CHAR)
       {

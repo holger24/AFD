@@ -111,6 +111,7 @@ int                        char_width,
                            no_of_dirs = 0,
                            no_of_search_dirs,
                            no_of_search_dirids,
+                           no_of_search_file_names = 0,
                            no_of_search_hosts,
                            queue_tmp_buf_entries,
                            *search_dir_length = NULL,
@@ -130,7 +131,7 @@ off_t                      fra_size;
 double                     total_file_size;
 char                       *p_work_dir,
                            font_name[40],
-                           search_file_name[MAX_PATH_LENGTH],
+                           **search_file_name = NULL,
                            **search_dir = NULL,
                            *search_dir_filter = NULL,
                            **search_recipient,
@@ -1854,7 +1855,6 @@ init_show_queue(int *argc, char *argv[], char *window_title)
    start_time_val = -1;
    end_time_val = -1;
    search_file_size = -1;
-   search_file_name[0] = '\0';
    special_button_flag = SEARCH_BUTTON;
    qfl = NULL;
    qtb = NULL;

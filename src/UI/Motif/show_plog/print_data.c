@@ -1,6 +1,6 @@
 /*
  *  print_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2016 - 2020  Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -64,8 +64,8 @@ extern Widget       listbox_w,
                     summarybox_w;
 extern char         file_name[],
                     header_line[],
-                    search_new_file_name[],
-                    search_orig_file_name[],
+                    **search_new_file_name,
+                    **search_orig_file_name,
                     **search_dir,
                     **search_recipient,
                     search_new_file_size_str[],
@@ -80,6 +80,8 @@ extern int          items_selected,
                     no_of_search_dirids,
                     no_of_search_hosts,
                     no_of_search_jobids,
+                    no_of_search_new_file_names,
+                    no_of_search_orig_file_names,
                     ratio_mode,
                     sum_line_length;
 extern unsigned int *search_dirid,
@@ -327,12 +329,72 @@ write_header(int fd, char *sum_sep_line)
       goto write_data;
    }
 
-   length += snprintf(&buffer[length], 1024 - length,
-                      "\tOrig File name: %s\n\tOrig File size: %s\n",
-                      search_orig_file_name, search_orig_file_size_str);
-   length += snprintf(&buffer[length], 1024 - length,
-                      "\tNew File name : %s\n\tNew File size : %s\n",
-                      search_new_file_name, search_new_file_size_str);
+   if (no_of_search_orig_file_names > 0)
+   {
+      int i;
+
+      length += snprintf(&buffer[length], 1024 - length,
+                         "\tOrig File name: %s\n", search_orig_file_name[0]);
+      if (length > 1024)
+      {
+         length = 1024;
+         goto write_data;
+      }
+      for (i = 1; i < no_of_search_orig_file_names; i++)
+      {
+         length += snprintf(&buffer[length], 1024 - length,
+                            "\t                %s\n", search_orig_file_name[i]);
+         if (length >= 1024)
+         {
+            length = 1024;
+            goto write_data;
+         }
+      }
+      length += snprintf(&buffer[length], 1024 - length,
+                         "\tOrig File size: %s\n", search_orig_file_size_str);
+   }
+   else
+   {
+      length += snprintf(&buffer[length], 1024 - length,
+                         "\tOrig File name:\n\tOrig File size: %s\n",
+                         search_orig_file_size_str);
+   }
+   if (length >= 1024)
+   {
+      length = 1024;
+      goto write_data;
+   }
+
+   if (no_of_search_new_file_names > 0)
+   {
+      int i;
+
+      length += snprintf(&buffer[length], 1024 - length,
+                         "\tNew File name : %s\n", search_new_file_name[0]);
+      if (length > 1024)
+      {
+         length = 1024;
+         goto write_data;
+      }
+      for (i = 1; i < no_of_search_new_file_names; i++)
+      {
+         length += snprintf(&buffer[length], 1024 - length,
+                            "\t                %s\n", search_new_file_name[i]);
+         if (length >= 1024)
+         {
+            length = 1024;
+            goto write_data;
+         }
+      }
+      length += snprintf(&buffer[length], 1024 - length,
+                         "\tNew File size : %s\n", search_new_file_size_str);
+   }
+   else
+   {
+      length += snprintf(&buffer[length], 1024 - length,
+                         "\tNew File name :\n\tNew File size : %s\n",
+                         search_new_file_size_str);
+   }
    if (length >= 1024)
    {
       length = 1024;

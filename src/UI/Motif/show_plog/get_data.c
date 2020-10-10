@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2016 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2016 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -100,6 +100,8 @@ extern int              continues_toggle_set,
                         no_of_search_dirids,
                         no_of_search_hosts,
                         no_of_search_jobids,
+                        no_of_search_new_file_names,
+                        no_of_search_orig_file_names,
                         no_of_search_production_cmd,
                         ratio_mode,
                         *search_dir_length,
@@ -118,8 +120,8 @@ extern time_t           start_time_val,
 extern double           search_cpu_time,
                         search_prod_time;
 extern char             *p_work_dir,
-                        search_new_file_name[],
-                        search_orig_file_name[],
+                        **search_new_file_name,
+                        **search_orig_file_name,
                         **search_production_cmd,
                         **search_recipient,
                         **search_dir,
@@ -169,6 +171,8 @@ static void   check_log_updates(Widget),
               end_log_updates(void),
               extract_data(char *, int, int),
               collect_data(register char *, char *, int, char *, off_t);
+static int    check_all_new_file_names(char *),
+              check_all_orig_file_names(char *);
 
 #define REALLOC_OFFSET_BUFFER()                                   \
         {                                                         \
@@ -1484,10 +1488,8 @@ collect_data(register char *ptr,
 
             /* Check the original filename. */
             ptr++; /* Away with SEPARATOR_CHAR */
-            if ((search_orig_file_name[0] == '\0') ||
-                ((search_orig_file_name[0] == '*') &&
-                 (search_orig_file_name[1] == '\0')) ||
-                (sfilter(search_orig_file_name, ptr, SEPARATOR_CHAR) == 0))
+
+            if (check_all_orig_file_names(ptr) != -1)
             {
                j = 0;
                while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))
@@ -1568,10 +1570,7 @@ collect_data(register char *ptr,
             }
 
             /* Check new filename. */
-            if ((search_new_file_name[0] == '\0') ||
-                ((search_new_file_name[0] == '*') &&
-                 (search_new_file_name[1] == '\0')) ||
-                (sfilter(search_new_file_name, ptr, SEPARATOR_CHAR) == 0))
+            if (check_all_new_file_names(ptr) != -1)
             {
                j = 0;
                while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))
@@ -2264,6 +2263,70 @@ collect_data(register char *ptr,
    }
 
    return;
+}
+
+
+/*---------------------- check_all_new_file_names() ---------------------*/
+static int
+check_all_new_file_names(char *name)
+{
+   int ret;
+
+   if ((no_of_search_new_file_names == 0) ||
+       ((no_of_search_new_file_names == 1) &&
+        (search_new_file_name[0] == '*') &&
+        (search_new_file_name[1] == '\0')))
+   {
+      ret = 0;
+   }
+   else
+   {
+      int i;
+
+      ret = -1;
+      for (i = 0; i < no_of_search_new_file_names; i++)
+      {
+         if (sfilter(search_new_file_name[i], name, SEPARATOR_CHAR) == 0)
+         {
+            ret = i;
+            break;
+         }
+      }
+   }
+
+   return(ret);
+}
+
+
+/*---------------------- check_all_orig_file_names() --------------------*/
+static int
+check_all_orig_file_names(char *name)
+{
+   int ret;
+
+   if ((no_of_search_orig_file_names == 0) ||
+       ((no_of_search_orig_file_names == 1) &&
+        (search_orig_file_name[0] == '*') &&
+        (search_orig_file_name[1] == '\0')))
+   {
+      ret = 0;
+   }
+   else
+   {
+      int i;
+
+      ret = -1;
+      for (i = 0; i < no_of_search_orig_file_names; i++)
+      {
+         if (sfilter(search_orig_file_name[i], name, SEPARATOR_CHAR) == 0)
+         {
+            ret = i;
+            break;
+         }
+      }
+   }
+
+   return(ret);
 }
 
 

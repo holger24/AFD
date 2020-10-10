@@ -126,6 +126,8 @@ int                        char_width,
                            no_of_search_dirids,
                            no_of_search_hosts,
                            no_of_search_jobids,
+                           no_of_search_new_file_names = 0,
+                           no_of_search_orig_file_names = 0,
                            no_of_search_production_cmd,
                            no_of_view_modes,
                            ratio_mode,
@@ -151,8 +153,8 @@ double                     search_cpu_time = -1.0,
 char                       font_name[40],
                            header_line[MAX_PRODUCTION_LINE_LENGTH + SHOW_LONG_FORMAT + 1 + SHOW_LONG_FORMAT + 1],
                            *p_work_dir,
-                           search_new_file_name[MAX_PATH_LENGTH],
-                           search_orig_file_name[MAX_PATH_LENGTH],
+                           **search_new_file_name,
+                           **search_orig_file_name,
                            **search_production_cmd = NULL,
                            **search_dir = NULL,
                            *search_dir_filter = NULL,
@@ -1678,9 +1680,7 @@ init_show_plog(int *argc, char *argv[], char *window_title)
    start_time_val = -1;
    end_time_val = -1;
    search_orig_file_size = -1;
-   search_orig_file_name[0] = '\0';
    search_new_file_size = -1;
-   search_new_file_name[0] = '\0';
    search_return_code = -1;
    special_button_flag = SEARCH_BUTTON;
    no_of_log_files = 0;
