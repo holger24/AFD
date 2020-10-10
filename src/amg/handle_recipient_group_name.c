@@ -1,7 +1,7 @@
 /*
  *  handle_recipient_group_name.c - Part of AFD, an automatic file
  *                                  distribution program.
- *  Copyright (c) 2017, 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2017 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -330,8 +330,15 @@ continue_search:
             ptr++;
             goto continue_search;
          }
-         (void)strcpy(location + start_group_pos, group_list[0]);
-         (void)strcat(location + start_group_pos, last_part);
+         if (group_list == NULL)
+         {
+            (void)strcpy(location + start_group_pos, last_part);
+         }
+         else
+         {
+            (void)strcpy(location + start_group_pos, group_list[0]);
+            (void)strcat(location + start_group_pos, last_part);
+         }
          next_group_pos = 1;
       }
    }
