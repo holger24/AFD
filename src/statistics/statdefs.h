@@ -1,6 +1,6 @@
 /*
  *  statdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,9 +54,11 @@
 /**************************************************************************/
 
 #define STATISTIC_FILE         "/afd_statistic_file"
+#define STATISTIC_FILE_NAME    "afd_statistic_file"
 #define NEW_STATISTIC_FILE     "/.afd_statistic_file.NEW"
 #define STATISTIC_FILE_ALL     "afd_statistic_file.*"
 #define ISTATISTIC_FILE        "/afd_istatistic_file"
+#define ISTATISTIC_FILE_NAME   "afd_istatistic_file"
 #define NEW_ISTATISTIC_FILE    "/.afd_istatistic_file.NEW"
 #define ISTATISTIC_FILE_ALL    "afd_istatistic_file.*"
 

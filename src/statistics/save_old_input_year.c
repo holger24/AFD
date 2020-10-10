@@ -1,6 +1,6 @@
 /*
  *  save_old_input_year.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   23.02.2003 H.Kiehl Created
+ **   05.10.2020 H.Kiehl Added support for truncating old statistic files.
  **
  */
 DESCR__E_M3
@@ -81,41 +82,44 @@ save_old_input_year(int new_year)
                          *ptr;
    struct afd_year_istat *old_istat_db = NULL;
 
-   system_log(INFO_SIGN, __FILE__, __LINE__,
-              "Saving input statistics for year %d", new_year - 1);
-
    /*
     * Rename the file we are currently mapped to, to the new
     * year.
     */
-   (void)strcpy(new_file, istatistic_file);
-   ptr = new_file + strlen(new_file) - 1;
-   while ((*ptr != '.') && (ptr != new_file))
+   if (new_year != -1)
    {
-      ptr--;
+      system_log(INFO_SIGN, __FILE__, __LINE__,
+                 "Saving input statistics for year %d", new_year - 1);
+
+      (void)strcpy(new_file, istatistic_file);
+      ptr = new_file + strlen(new_file) - 1;
+      while ((*ptr != '.') && (ptr != new_file))
+      {
+         ptr--;
+      }
+      if (*ptr == '.')
+      {
+         ptr++;
+      }
+      (void)sprintf(ptr, "%d", new_year);
+      if (rename(istatistic_file, new_file) == -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to rename() %s to %s : %s",
+                    istatistic_file, new_file, strerror(errno));
+         return;
+      }
+      ptr = new_istatistic_file + strlen(new_istatistic_file) - 1;
+      while ((*ptr != '.') && (ptr != new_istatistic_file))
+      {
+         ptr--;
+      }
+      if (*ptr == '.')
+      {
+         ptr++;
+      }
+      (void)sprintf(ptr, "%d", new_year);
    }
-   if (*ptr == '.')
-   {
-      ptr++;
-   }
-   (void)sprintf(ptr, "%d", new_year);
-   if (rename(istatistic_file, new_file) == -1)
-   {
-      system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to rename() %s to %s : %s",
-                 istatistic_file, new_file, strerror(errno));
-      return;
-   }
-   ptr = new_istatistic_file + strlen(new_istatistic_file) - 1;
-   while ((*ptr != '.') && (ptr != new_istatistic_file))
-   {
-      ptr--;
-   }
-   if (*ptr == '.')
-   {
-      ptr++;
-   }
-   (void)sprintf(ptr, "%d", new_year);
 
    old_year_istat_size = AFD_WORD_OFFSET +
                          (no_of_dirs * sizeof(struct afd_year_istat));
@@ -214,7 +218,10 @@ save_old_input_year(int new_year)
    free(ptr);
 #endif
 
-   (void)strcpy(istatistic_file, new_file);
+   if (new_year != -1)
+   {
+      (void)strcpy(istatistic_file, new_file);
+   }
 
    return;
 }

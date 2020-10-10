@@ -1853,7 +1853,7 @@ main(int argc, char *argv[])
                         {
                            nfr += (double)afd_istat[i].hour[0].nfr;
                            nbr +=         afd_istat[i].hour[0].nbr;
-                           display_data(i, afd_istat[position].dir_alias,
+                           display_data(i, afd_istat[i].dir_alias,
                                         0, ' ', 0, afd_istat[i].hour[0].nfr,
                                         afd_istat[i].hour[0].nbr);
                            for (j = 1; j < afd_istat[i].sec_counter; j++)
