@@ -1,6 +1,6 @@
 /*
  *  init_asftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015-2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -168,6 +168,13 @@ init_asftp(int argc, char *argv[], struct data *p_db)
                p_db->blocksize = atoi(*(argv + 1));
                argc--;
                argv++;
+               if (p_db->blocksize > MAX_SFTP_BLOCKSIZE)
+               {
+                  (void)fprintf(stdout,
+                                "Decreasing block size to %d because it is the maximum SFTP can handle.\n",
+                                MAX_SFTP_BLOCKSIZE);
+                  p_db->blocksize = MAX_SFTP_BLOCKSIZE;
+               }
             }
             break;
 

@@ -21,6 +21,7 @@
 #define __sftpdefs_h
 
 #define MAX_SFTP_MSG_LENGTH                 MAX_TRANSFER_BLOCKSIZE
+#define MAX_SFTP_BLOCKSIZE                  262144    /* 256 KBytes */
 #define MAX_PENDING_WRITE_BUFFER            786432    /* 768 KBytes */
 #define MAX_PENDING_WRITES                  (MAX_PENDING_WRITE_BUFFER / 16384)
 #define MAX_PENDING_READS                   64

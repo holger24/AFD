@@ -277,6 +277,14 @@ main(int argc, char *argv[])
    {
       blocksize = fsa->block_size;
    }
+   /* Fixme. SFTP can only handle a maximum of 262144 bytes. */
+   if (blocksize > MAX_SFTP_BLOCKSIZE)
+   {
+      trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                "Decreasing block size from %d to %d",
+                blocksize, MAX_SFTP_BLOCKSIZE);
+      blocksize = MAX_SFTP_BLOCKSIZE;
+   }
    (void)strcpy(fullname, file_path);
    p_fullname = fullname + strlen(fullname);
    if (*(p_fullname - 1) != '/')
