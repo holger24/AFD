@@ -2274,8 +2274,8 @@ check_all_new_file_names(char *name)
 
    if ((no_of_search_new_file_names == 0) ||
        ((no_of_search_new_file_names == 1) &&
-        (search_new_file_name[0] == '*') &&
-        (search_new_file_name[1] == '\0')))
+        (search_new_file_name[0][0] == '*') &&
+        (search_new_file_name[0][1] == '\0')))
    {
       ret = 0;
    }
@@ -2306,8 +2306,8 @@ check_all_orig_file_names(char *name)
 
    if ((no_of_search_orig_file_names == 0) ||
        ((no_of_search_orig_file_names == 1) &&
-        (search_orig_file_name[0] == '*') &&
-        (search_orig_file_name[1] == '\0')))
+        (search_orig_file_name[0][0] == '*') &&
+        (search_orig_file_name[0][1] == '\0')))
    {
       ret = 0;
    }
