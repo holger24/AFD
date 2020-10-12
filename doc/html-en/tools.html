@@ -43,6 +43,7 @@ any parameters it will show all commands it knows:
                   -j              start directory
                   -J              stop directory
                   -R              rescan directory
+                  -U              toggle start/stop directory
                   -W              toggle enable/disable directory
    General options:
                   -f              start FD
@@ -54,6 +55,7 @@ any parameters it will show all commands it knows:
                   -k              force file dir check
                   -i              reread local interface file
                   -o              show exec statistics
+                  -O              force search for old files
                   -P              force archive check
                   -v              just print Version
 </pre>
@@ -218,6 +220,9 @@ afd@r2d2:~$ fra_view 3
 Directory alias      : testmaus
 Directory ID         : 99ca01ad
 URL                  : ftp://funk:bla@testmaus
+Dir mtime            : 0
+ls data alias        :
+Retrieve work dir    : /home/afd
 Host alias           : testmaus
 Wait for             : 
 FSA position         : 25
@@ -233,8 +238,10 @@ Bytes in queue(s)    : 0
 Accumulate size      : 0
 Accumulate           : 0
 gt_lt_sign           : 0
+Create Dir Mode      : 0
 Max errors           : 10
-Error counter        : 0
+Error counter        : 0A
+Info time            : 0
 Warn time            : 0
 Keep connected       : 0
 Ignore size          : 0
@@ -246,7 +253,7 @@ Directory flag(  8)  : LINK_NO_EXEC
 In DIR_CONFIG flag   : DIR_ALIAS
 Dupcheck timeout     : Disabled
 Force reread         : NO
-Queued               : NO
+Queued               : 0
 Remove files         : NO
 Stupid mode          : NO
 Protocol (   0)      : FTP
@@ -254,6 +261,7 @@ Delete input files   : NO
 Report unknown files : YES
 Important directory  : NO
 End character        : NONE
+Timezone             : Not set, taking system default
 Time option          : 1
 Next check time      : Sun Jun 19 11:32:00 2005
 Minute (long long)   : 01000000 00001000 00100001 10000100 00010000 01000010 00001000 00100001
@@ -281,44 +289,45 @@ The program afd_status prints the current status of the AFD that is displayed
 at the bottom row of the afd_ctrl dialog.
 </p>
 <pre>
-Hostname             : ducktown
-Working directory    : /home/afd
-User name + ID       : afd (9999)
-AMG                  : 1
-AMG jobs status flag : 0
-FD                   : 1
-System log           : 1
-Event log            : 1
-Transfer log         : 1
-Trans debug log      : 1
-Archive watch        : 1
-afd_stat             : 1
-afdd                 : 1
-input_log            : 1
-output_log           : 1
-delete_log           : 1
-production_log       : 1
-distribution_log     : 1
-ALDA daemon          : 1
-Receivelog indicator : 155 &lt; I I W I I &gt;
-Receive log history  : ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? I E ? ? ? ? ? I I ? I I I I W W W W I
-Syslog indicator     : 787 &lt; I I I I I &gt;
-System log history   : ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? W W C I W C C W I W W W I I W W I W W
-Translog indicator   : 2317 &lt; I I I I I &gt;
-Transfer log history : ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? I I I I I I I I I I I I I I E E I E I
-Number of transfers  : 0
-Number of retrieves  : 0
-Jobs in queue        : 0
-AMG fork() counter   : 6
-FD fork() counter    : 1213
-Burst2 counter       : 4
-AMG child user time  : 0.26994
-AMG child system time: 0.20995
-FD child user time   : 0.28980
-FD child system time : 0.179952
-Max. FD queue length : 17
-Directories scanned  : 2418
-AFD start time       : Thu Jan 19 20:29:37 2006
+Hostname              : ducktown
+Working directory     : /home/afd
+User name + ID        : afd (9999)
+AMG                   : 1
+AMG jobs status flag  : 0
+FD                    : 1
+System log            : 1
+Event log             : 1
+Transfer log          : 1
+Trans debug log       : 1
+Archive watch         : 1
+afd_stat              : 1
+afdd                  : 1
+input_log             : 1
+output_log            : 1
+delete_log            : 1
+production_log        : 1
+distribution_log      : 1
+ALDA daemon           : 1
+Receivelog indicator  : 155 &lt; I I W I I &gt;
+Receive log history   : ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? I E ? ? ? ? ? I I ? I I I I W W W W I
+Syslog indicator      : 787 &lt; I I I I I &gt;
+System log history    : ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? W W C I W C C W I W W W I I W W I W W
+Translog indicator    : 2317 &lt; I I I I I &gt;
+Transfer log history  : ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? I I I I I I I I I I I I I I E E I E I
+Number of transfers   : 0
+Number of retrieves   : 0
+Jobs in queue         : 0
+AMG fork() counter    : 6
+FD fork() counter     : 1213
+Burst2 counter        : 4
+AMG child user time   : 0.26994
+AMG child system time : 0.20995
+FD child user time    : 0.28980
+FD child system time  : 0.179952
+Max. FD queue length  : 17
+Directories scanned   : 2418
+Inotify events handled: 12744
+AFD start time        : Thu Jan 19 20:29:37 2006
 </pre>
 <p>
 The process status of each can have the following numbers:
@@ -560,7 +569,7 @@ If you do not want to store passwords in the DIR_CONFIG you can set them
 with this program. The syntax is as follows:
 </p>
 <pre>
-   Usage: set_pw [-w &lt;AFD work dir&gt;] [--version] [-e 0|1|2] [-s] -i &lt;job id&gt;|-c &lt;user@hostname&gt;
+   Usage: set_pw [-w &lt;AFD work dir&gt;] [--version] [-e 0|1|2] [-s] [-t] -i &lt;job id&gt;|-c &lt;user@hostname&gt;
 </pre>
 <p>
 All passwords are stored at one location within AFD regardless if you
@@ -611,7 +620,7 @@ again. The password is now always set within AFD.
 </p>
 <p>
 By default AFD uses its own internal 'encryption' when storing the password
-in the internal database. You can choose a diferent encryption type with the
+in the internal database. You can choose a different encryption type with the
 -e parameter. There are currently 3 different types supported: 0, 1 and 2.
 0 is in clear plain text. 1 is the AFD internal version. And 2 is a simple
 XOR encryption with a key that you need to specify in
@@ -669,6 +678,7 @@ user interaction, so it can be used from any shell scripts or programs such as
                                           that are to be send.
      -h &lt;host name | IP number&gt;         - Hostname or IP number to which to
                                           send the file(s).
+     -I                                 - Enable implicit FTPS. Works only with -z or -Z. 
      -k                                 - Keep FTP control connection with STAT
                                           calls alive/fresh.
      -l &lt;DOT | DOT_VMS | OFF | xyz.&gt;    - How to lock the file on the remote site.
@@ -692,6 +702,7 @@ user interaction, so it can be used from any shell scripts or programs such as
                                           mode when doing the data connection.
      -X                                 - Use extended mode active or passive
                                           (-x) mode.
+     -Y                                 - Use strict SSL/TLS checks. 
      -z                                 - Use SSL/TLS for control connection.
      -Z                                 - Use SSL/TLS for control and data
                                           connection.
@@ -704,6 +715,66 @@ user interaction, so it can be used from any shell scripts or programs such as
           3 - Wrong password.
           4 - Failed to set ascii/binary mode.
           5 - Failed to send NLST command.
+         10 - Failed to open remote file.
+         11 - Error when writing into remote file.
+         12 - Failed to close remote file.
+         13 - Failed to rename remote file.
+         14 - Remote directory could not be set.
+         20 - Operation received timeout.
+         28 - Connection reset by peer.
+         29 - Connection refused.
+         30 - Could not open source file.
+         31 - Failed to read source file.
+         17 - System error stat().
+         34 - System error malloc().
+         40 - Failed to read file name file.
+         60 - Syntax wrong.
+</pre>
+<h3 align=center><a name="asftp"><u>Automatic SFTP (asftp)</u></a></h3>
+<p>
+As aftp asftp can retrieve and send files via SFTP. The syntax of asftp
+is as follows:
+</p>
+<pre>
+   SYNTAX: [t|r]asftp [options] [file 1 ... file n]
+
+      When calling it with rasftp files will be retrieved from the
+      given host, otherwise (when using asftp) files will be send to that host.
+
+     OPTIONS                              DESCRIPTION
+     --version                          - Show current version
+     -a                                 - Append file.
+     -b &lt;block size&gt;                    - Transfer block size in byte. Default 4096
+                                          byte.
+     -c &lt;config file&gt;                   - Configuration file holding user name,
+                                          password and target directory in URL
+                                          format.
+     -C[ &lt;mode&gt;]                        - If target directory does not exist create
+                                          it. The optional mode can be used to
+                                          set the permission of this directory.
+     -d &lt;remote directory&gt;              - Directory where file(s) are to be stored.
+     -f &lt;filename&gt;                      - File containing a list of filenames
+                                          that are to be send.
+     -h &lt;host name | IP number&gt;         - Hostname or IP number to which to
+                                          send the file(s).
+     -l &lt;DOT | DOT_VMS | OFF | xyz.&gt;    - How to lock the file on the remote site.
+     -o &lt;mode&gt;                          - Changes the permission of each file
+                                          distributed.
+     -p &lt;port number&gt;                   - Remote port number of SFTP-server.
+     -u &lt;user&gt; &lt;password&gt;               - Remote user name and password.
+     -r                                 - Remove transmitted file.
+     -S &lt;buffer size&gt;                   - Socket send buffer size
+                                          (in bytes).
+     -t &lt;timout&gt;                        - SFTP timeout in seconds. Default 120s.
+     -v                                 - Verbose. Shows all SFTP commands and
+                                          the reply from the remote server.
+     -?                                 - Display this help and exit.
+     The following values are returned on exit:
+          0 - File transmitted successfully.
+          1 - Failed to connect.
+          2 - User name wrong.
+          3 - Wrong password.
+          4 - Failed to set ascii/binary mode.
          10 - Failed to open remote file.
          11 - Error when writing into remote file.
          12 - Failed to close remote file.
@@ -833,7 +904,7 @@ user interaction, so it can be used from any shell scripts or programs such as
    <td width="90%"><address><small>
    Copyright &copy; 2001 - 2020 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 23.02.2020
+   Last updated: 12.10.2020
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
