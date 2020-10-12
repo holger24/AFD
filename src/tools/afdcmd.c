@@ -59,10 +59,11 @@ DESCR__S_M1
  **                -k              force file dir check
  **                -i              reread local interface file
  **                -o              show exec statistics
+ **                -O              force search for old files
  **                -P              force archive check
  **                -S              enable scanning of directories [afdbench]
  **                -v              Just print the version number.
- **     [aAbBcCdeEfFgGhiIjJkopPqQrRsStTuUWXYZ]
+ **     [aAbBcCdeEfFgGhiIjJkoOpPqQrRsStTuUWXYZ]
  **
  ** DESCRIPTION
  **
@@ -87,6 +88,7 @@ DESCR__S_M1
  **   31.03.2017 H.Kiehl Do not allow to set things on group identifier.
  **   19.07.2019 H.Kiehl Write simulate mode to HOST_CONFIG.
  **   23.02.2020 H.Kiehl Added -h to change the real_hostname.
+ **   12.10.2020 H.Kiehl Added -O to force a search for old files.
  **
  */
 DESCR__E_M1
@@ -175,6 +177,7 @@ static void                eval_input(int, char **),
 #endif
 #define SIMULATE_SEND_MODE_OPTION          1
 #define CHANGE_REAL_HOSTNAME               2
+#define FORCE_SEARCH_OLD_FILES_OPTION      4
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ afdcmd() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
@@ -532,6 +535,17 @@ main(int argc, char *argv[])
                         options &= ~SHOW_EXEC_STAT_OPTION;
                         (void)fprintf(stderr,
                                       _("User %s not allowed to show exec statistics.\n"),
+                                      user);
+                     }
+                  }
+                  if (options2 & FORCE_SEARCH_OLD_FILES_OPTION)
+                  {
+                     if (lposi(perm_buffer, SEARCH_OLD_FILES_PERM,
+                               SEARCH_OLD_FILES_PERM_LENGTH) == NULL)
+                     {
+                        options2 &= ~FORCE_SEARCH_OLD_FILES_OPTION;
+                        (void)fprintf(stderr,
+                                      _("User %s not allowed to force a search for old files.\n"),
                                       user);
                      }
                   }
@@ -2313,7 +2327,8 @@ main(int argc, char *argv[])
       }
    }
 
-   if (options & SHOW_EXEC_STAT_OPTION)
+   if ((options & SHOW_EXEC_STAT_OPTION) ||
+       (options2 & FORCE_SEARCH_OLD_FILES_OPTION))
    {
       int  dc_cmd_fd;
 #ifdef WITHOUT_FIFO_RW_SUPPORT
@@ -2334,11 +2349,23 @@ main(int argc, char *argv[])
       }
       else
       {
-         if (send_cmd(SR_EXEC_STAT, dc_cmd_fd) != SUCCESS)
+         if (options & SHOW_EXEC_STAT_OPTION)
          {
-            (void)fprintf(stderr,
-                          _("Was not able to send command SR_EXEC_STAT to %s : %s (%s %d)\n"),
-                          DIR_CHECK, strerror(errno), __FILE__, __LINE__);
+            if (send_cmd(SR_EXEC_STAT, dc_cmd_fd) != SUCCESS)
+            {
+               (void)fprintf(stderr,
+                             _("Was not able to send command SR_EXEC_STAT to %s : %s (%s %d)\n"),
+                             DIR_CHECK, strerror(errno), __FILE__, __LINE__);
+            }
+         }
+         if (options2 & FORCE_SEARCH_OLD_FILES_OPTION)
+         {
+            if (send_cmd(SEARCH_OLD_FILES, dc_cmd_fd) != SUCCESS)
+            {
+               (void)fprintf(stderr,
+                             _("Was not able to send command SEARCH_OLD_FILES to %s : %s (%s %d)\n"),
+                             DIR_CHECK, strerror(errno), __FILE__, __LINE__);
+            }
          }
 
 #ifdef WITHOUT_FIFO_RW_SUPPORT
@@ -2672,6 +2699,10 @@ eval_input(int argc, char *argv[])
                options ^= SHOW_EXEC_STAT_OPTION;
                break;
 
+            case 'O': /* Force a search for old files. */
+               options2 ^= FORCE_SEARCH_OLD_FILES_OPTION;
+               break;
+
             case 'P': /* Force archive check. */
                options ^= FORCE_ARCHIVE_CHECK_OPTION;
                break;
@@ -2821,6 +2852,8 @@ usage(char *progname)
                  _("               -i              reread local interface file\n"));
    (void)fprintf(stderr,
                  _("               -o              show exec statistics\n"));
+   (void)fprintf(stderr,
+                 _("               -O              force search for old files\n"));
    (void)fprintf(stderr,
                  _("               -P              force archive check\n"));
    (void)fprintf(stderr,

@@ -3870,6 +3870,12 @@ check_fifo(int read_fd, int write_fd)
                }
                break;
 
+            case SEARCH_OLD_FILES :
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                          "Force check for old files started.");
+               search_old_files(time(NULL));
+               break;
+
             case CHECK_FILE_DIR :
                force_check = YES;
                break;

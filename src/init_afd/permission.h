@@ -1,6 +1,6 @@
 /*
  *  permission.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -85,6 +85,9 @@
 #define SHOW_EXEC_STAT_PERM      "show_exec_stat"  /* Show and reset exec  */
                                                    /* stats for dir_check  */
 #define SHOW_EXEC_STAT_PERM_LENGTH (sizeof(SHOW_EXEC_STAT_PERM) - 1)
+#define SEARCH_OLD_FILES_PERM    "search_old_files"/* Allow search of old  */
+                                                   /* files.               */
+#define SEARCH_OLD_FILES_PERM_LENGTH (sizeof(SEARCH_OLD_FILES_PERM) - 1)
 #define DO_NOT_DELETE_DATA_PERM  "ctrl_delete_data"/* Enable/disable ctrl  */
                                                    /* of deleteing data.   */
 #define DO_NOT_DELETE_DATA_PERM_LENGTH (sizeof(DO_NOT_DELETE_DATA_PERM) - 1)

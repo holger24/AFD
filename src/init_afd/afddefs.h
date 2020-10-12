@@ -1972,6 +1972,7 @@ typedef unsigned long       u_long_64;
 #define SHUTDOWN_ALL               35
 #define START_AFD                  36
 #define START_AFD_NO_DIR_SCAN      37
+#define SEARCH_OLD_FILES           38
 
 #define DELETE_ALL_JOBS_FROM_HOST  1
 #define DELETE_MESSAGE             2
