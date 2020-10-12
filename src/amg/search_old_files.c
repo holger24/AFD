@@ -1,6 +1,6 @@
 /*
  *  search_old_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -86,6 +86,9 @@ extern struct fileretrieve_status *fra,
 extern struct delete_log          dl;
 #endif
 
+/* Local function prototypes. */
+static int                        is_dir_with_changing_date(char *);
+
 
 /*######################### search_old_files() ##########################*/
 void
@@ -163,6 +166,8 @@ search_old_files(time_t current_time)
                /* Sure it is a normal file? */
                if (S_ISREG(stat_buf.st_mode))
                {
+                  int changing_date_dir = NO;
+
                   /*
                    * Regardless of what the delete_files_flag is set, also
                    * delete old files that are of zero length or have a
@@ -177,7 +182,9 @@ search_old_files(time_t current_time)
                        (diff_time > 3600L) &&
                        ((fra[de[i].fra_pos].unknown_file_time == 0) ||
                         ((fra[de[i].fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
-                         (diff_time > fra[de[i].fra_pos].locked_file_time)))) ||
+                         (diff_time > fra[de[i].fra_pos].locked_file_time)) ||
+                        ((fra[de[i].fra_pos].fsa_pos != -1) &&
+                         ((changing_date_dir = is_dir_with_changing_date(fra[de[i].fra_pos].url)) == YES)))) ||
                       ((diff_time > 5L) &&
                        (diff_time > fra[de[i].fra_pos].unknown_file_time)))
                   {
@@ -201,10 +208,18 @@ search_old_files(time_t current_time)
                               }
 #endif
                            }
-                           else
-                           {
-                              delete_file = NO;
-                           }
+                           else if ((fra[de[i].fra_pos].fsa_pos != -1) &&
+                                    (changing_date_dir == YES))
+                                {
+                                   delete_file = YES;
+#ifdef _DELETE_LOG
+                                   reason = DEL_OLD_LOCKED_FILE;
+#endif
+                                }
+                                else
+                                {
+                                   delete_file = NO;
+                                }
                         }
                         else
                         {
@@ -646,4 +661,28 @@ search_old_files(time_t current_time)
    }
 
    return;
+}
+
+
+/*--------------------- is_dir_with_changing_date() ---------------------*/
+static int
+is_dir_with_changing_date(char *dir)
+{
+   int i = 0;
+
+   while ((i < MAX_RECIPIENT_LENGTH) && (*(dir + i) != '\0'))
+   {
+      if ((*(dir + i) == '%') &&
+          ((*(dir + i + 1) == 't') || (*(dir + i + 1) == 'T')))
+      {
+         return(YES);
+      }
+      if (*(dir + i) == '\\')
+      {
+         i++;
+      }
+      i++;
+   }
+
+   return(NO);
 }
