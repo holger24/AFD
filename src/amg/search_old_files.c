@@ -184,6 +184,7 @@ search_old_files(time_t current_time)
                         ((fra[de[i].fra_pos].delete_files_flag & OLD_LOCKED_FILES) &&
                          (diff_time > fra[de[i].fra_pos].locked_file_time)) ||
                         ((fra[de[i].fra_pos].fsa_pos != -1) &&
+                         (diff_time > (DEFAULT_OLD_FILE_TIME * 3600)) &&
                          ((changing_date_dir = is_dir_with_changing_date(fra[de[i].fra_pos].url)) == YES)))) ||
                       ((diff_time > 5L) &&
                        (diff_time > fra[de[i].fra_pos].unknown_file_time)))
