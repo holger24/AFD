@@ -1508,6 +1508,7 @@ afd_mon_exit(void)
 {
    if (in_child == NO)
    {
+      int    i;
       size_t length;
       char   *buffer,
              hostname[64];
@@ -1561,8 +1562,16 @@ afd_mon_exit(void)
          }
          if (mon_log_pid != NOT_RUNNING)
          {
-            system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "Failed to stop monitor log process for AFD_MON.");
+            if (kill(mon_log_pid, SIGKILL) != -1)
+            {
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
+                          _("Killed %s (%d) the hard way!"),
+#else
+                          _("Killed %s (%lld) the hard way!"),
+#endif
+                          MONITOR_LOG, mon_log_pid);
+            }
          }
       }
       p_afd_mon_status->mon_log = STOPPED;
@@ -1600,17 +1609,57 @@ afd_mon_exit(void)
       /* As the last process kill the system log process. */
       if (sys_log_pid > 0)
       {
-         FILE *p_sys_log;
+         int            gotcha = NO;
+         fd_set         rset;
+         struct timeval timeout;
+         FILE           *p_sys_log;
 
          if ((p_sys_log = fdopen(sys_log_fd, "a+")) != NULL)
          {
             (void)fflush(p_sys_log);
             (void)fclose(p_sys_log);
          }
-         /* Give system log to tell whether AMG, FD, etc */
-         /* have been stopped.                           */
+
+         /* Give system log some time to tell whether all mon, */
+         /* log_mon, etc have been stopped.                    */
+         FD_ZERO(&rset);
+         i = 0;
+         do
+         {
+            (void)my_usleep(5000L);
+            FD_SET(sys_log_fd, &rset);
+            timeout.tv_usec = 10000L;
+            timeout.tv_sec = 0L;
+            i++;
+         } while ((select(sys_log_fd + 1, &rset, NULL, NULL, &timeout) > 0) &&
+                  (i < 1000));
          (void)my_usleep(10000L);
          (void)kill(sys_log_pid, SIGINT);
+
+         (void)my_usleep(100000L);
+         for (i = 0; i < 3; i++)
+         {
+            if (waitpid(sys_log_pid, NULL, WNOHANG) == sys_log_pid)
+            {
+               gotcha = YES;
+               break;
+            }
+            else
+            {
+               (void)my_usleep(100000L);
+            }
+         }
+         if (gotcha == NO)
+         {
+            (void)kill(sys_log_pid, SIGKILL);
+            (void)fprintf(stderr,
+#if SIZEOF_PID_T == 4
+                          "Killed process %s (%d) the hard way. (%s %d)\n",
+#else
+                          "Killed process %s (%lld) the hard way. (%s %d)\n",
+#endif
+                          MON_SYS_LOG, (pri_pid_t)sys_log_pid, __FILE__, __LINE__);
+         }
       }
       p_afd_mon_status->mon_sys_log = STOPPED;
 #ifdef HAVE_MMAP
@@ -1632,6 +1681,18 @@ afd_mon_exit(void)
                     "munmap_emu() error : %s", strerror(errno));
       }
 #endif
+
+      if ((got_shuttdown_message == YES) && (mon_resp_fd > 0))
+      {
+         if (send_cmd(PROC_TERM, mon_resp_fd) < 0)
+         {
+            (void)fprintf(stderr,
+                          "Failed to send PROC_TERM : %s\n",
+                          strerror(errno));
+         }
+         (void)close(mon_resp_fd);
+         mon_resp_fd = -1;
+      }
 
       if (service_name == NULL)
       {

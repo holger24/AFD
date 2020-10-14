@@ -1,6 +1,6 @@
 /*
  *  stop_process.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2010 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ DESCR__S_M3
  **   27.12.1998 H.Kiehl Created
  **   14.05.2000 H.Kiehl Enable killing only a single process.
  **   21.03.2007 H.Kiehl Added stop_log_process().
+ **   14.10.2020 H.Kiehl Do not send a PROC_TERM if process is -1.
  **
  */
 DESCR__E_M3
@@ -114,7 +115,8 @@ stop_process(int process, int shutdown)
                   pl[i].start_time = 0;
                   pl[i].number_of_restarts = 0;
 
-                  if ((shutdown == YES) && (mon_resp_fd > 0))
+                  if ((shutdown == YES) && (mon_resp_fd > 0) &&
+                      (process != -1))
                   {
                      if (send_cmd(PROC_TERM, mon_resp_fd) < 0)
                      {
