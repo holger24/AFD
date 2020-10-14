@@ -4548,13 +4548,33 @@ qb_pos_fsa(int fsa_pos, int *qb_pos)
 static int
 check_dir_in_use(int fra_pos)
 {
-   register int i;
-
-   for (i = 0; i < fsa[fra[fra_pos].fsa_pos].allowed_transfers; i++)
+   if ((fra_pos < no_of_dirs) && (fra[fra_pos].fsa_pos >= 0) &&
+       (fra[fra_pos].fsa_pos < no_of_hosts))
    {
-      if (fsa[fra[fra_pos].fsa_pos].job_status[i].job_id == fra[fra_pos].dir_id)
+      register int i;
+
+      for (i = 0; i < fsa[fra[fra_pos].fsa_pos].allowed_transfers; i++)
       {
-         return(YES);
+         if (fsa[fra[fra_pos].fsa_pos].job_status[i].job_id == fra[fra_pos].dir_id)
+         {
+            return(YES);
+         }
+      }
+   }
+   else
+   {
+      if (fra_pos < no_of_dirs)
+      {
+         system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                    "Hmm. Somthing is wrong here! fra_pos=%d no_of_dirs=%d",
+                    fra_pos, no_of_dirs);
+      }
+      else
+      {
+         system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                    "Hmm. Somthing is wrong here! fra_pos=%d no_of_dirs=%d fra[%d].fsa_pos=%d no_of_hosts=%d",
+                    fra_pos, no_of_dirs, fra_pos, fra[fra_pos].fsa_pos,
+                    no_of_hosts);
       }
    }
 
