@@ -2281,16 +2281,24 @@ check_all_new_file_names(char *name)
    }
    else
    {
-      int i;
+      int i,
+          val;
 
       ret = -1;
       for (i = 0; i < no_of_search_new_file_names; i++)
       {
-         if (sfilter(search_new_file_name[i], name, SEPARATOR_CHAR) == 0)
+         if ((val = sfilter(search_new_file_name[i], name, SEPARATOR_CHAR)) == 0)
          {
-            ret = i;
-            break;
+            if (search_new_file_name[i][0] != '!')
+            {
+               ret = i;
+               break;
+            }
          }
+         else if (val == 1)
+              {
+                 break;
+              }
       }
    }
 
@@ -2313,16 +2321,24 @@ check_all_orig_file_names(char *name)
    }
    else
    {
-      int i;
+      int i,
+          val;
 
       ret = -1;
       for (i = 0; i < no_of_search_orig_file_names; i++)
       {
-         if (sfilter(search_orig_file_name[i], name, SEPARATOR_CHAR) == 0)
+         if ((val = sfilter(search_orig_file_name[i], name, SEPARATOR_CHAR)) == 0)
          {
-            ret = i;
-            break;
+            if (search_orig_file_name[i][0] != '!')
+            {
+               ret = i;
+               break;
+            }
          }
+         else if (val == 1)
+              {
+                 break;
+              }
       }
    }
 

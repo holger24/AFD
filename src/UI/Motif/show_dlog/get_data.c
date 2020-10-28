@@ -454,28 +454,35 @@ static void             display_data(int, time_t, time_t),
                ptr += log_date_length + 1 + max_hostname_length + 3 + id.offset;\
                for (iii = 0; iii < no_of_search_file_names; iii++)     \
                {                                                       \
-                  if (sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR) == 0)\
+                  if ((ret = sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR)) == 0)\
                   {                                                    \
-                     il[file_no].line_offset[item_counter] = (int)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);\
-                     INSERT_TIME_REASON((reason_pos));                 \
-                     j = 0;                                            \
-                     while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))\
+                     if (search_file_name[iii][0] != '!')              \
                      {                                                 \
-                        if ((unsigned char)(*(ptr + j)) < ' ')         \
+                        il[file_no].line_offset[item_counter] = (int)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);\
+                        INSERT_TIME_REASON((reason_pos));              \
+                        j = 0;                                         \
+                        while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))\
                         {                                              \
-                           *(p_file_name + j) = '?';                   \
-                           unprintable_chars++;                        \
+                           if ((unsigned char)(*(ptr + j)) < ' ')      \
+                           {                                           \
+                              *(p_file_name + j) = '?';                \
+                              unprintable_chars++;                     \
+                           }                                           \
+                           else                                        \
+                           {                                           \
+                              *(p_file_name + j) = *(ptr + j);         \
+                           }                                           \
+                           j++;                                        \
                         }                                              \
-                        else                                           \
-                        {                                              \
-                           *(p_file_name + j) = *(ptr + j);            \
-                        }                                              \
-                        j++;                                           \
+                        ptr += j;                                      \
+                        match_found = iii;                             \
+                        break;                                         \
                      }                                                 \
-                     ptr += j;                                         \
-                     match_found = iii;                                \
-                     break;                                            \
                   }                                                    \
+                  else if (ret == 1)                                   \
+                       {                                               \
+                          break;                                       \
+                       }                                               \
                }                                                       \
                if (match_found == -1)                                  \
                {                                                       \
@@ -1374,7 +1381,8 @@ file_name_only(register char *ptr,
                 j,
                 match_found;
    int          item_counter = 0,
-                loops = 0;
+                loops = 0,
+                ret;
    time_t       now,
                 prev_time_val = 0L,
                 time_when_transmitted = 0L;
@@ -1445,28 +1453,35 @@ file_name_only(register char *ptr,
          match_found = -1;
          for (iii = 0; iii < no_of_search_file_names; iii++)
          {
-            if (sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR) == 0)
+            if ((ret = sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR)) == 0)
             {
-               il[file_no].line_offset[item_counter] = (int)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);
-               INSERT_TIME_REASON(id.delete_reason_no);
-               j = 0;
-               while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))
+               if (search_file_name[iii][0] != '!')
                {
-                  if ((unsigned char)(*(ptr + j)) < ' ')
+                  il[file_no].line_offset[item_counter] = (int)(ptr_start_line + log_date_length + 1 + max_hostname_length + 3 + id.offset - p_start_log_file);
+                  INSERT_TIME_REASON(id.delete_reason_no);
+                  j = 0;
+                  while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))
                   {
-                     *(p_file_name + j) = '?';
-                     unprintable_chars++;
+                     if ((unsigned char)(*(ptr + j)) < ' ')
+                     {
+                        *(p_file_name + j) = '?';
+                        unprintable_chars++;
+                     }
+                     else
+                     {
+                        *(p_file_name + j) = *(ptr + j);
+                     }
+                     j++;
                   }
-                  else
-                  {
-                     *(p_file_name + j) = *(ptr + j);
-                  }
-                  j++;
+                  ptr += j;
+                  match_found = iii;
+                  break;
                }
-               ptr += j;
-               match_found = iii;
-               break;
             }
+            else if (ret == 1)
+                 {
+                    break;
+                 }
          }
          if (match_found == -1)
          {
@@ -1691,7 +1706,8 @@ file_name_and_size(register char *ptr,
                 j,
                 match_found;
    int          item_counter = 0,
-                loops = 0;
+                loops = 0,
+                ret;
    time_t       now,
                 prev_time_val = 0L,
                 time_when_transmitted = 0L;
@@ -1761,11 +1777,18 @@ file_name_and_size(register char *ptr,
          match_found = -1;
          for (iii = 0; iii < no_of_search_file_names; iii++)
          {
-            if (sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR) == 0)
+            if ((ret = sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR)) == 0)
             {
-               match_found = iii;
-               break;
+               if (search_file_name[iii][0] != '!')
+               {
+                  match_found = iii;
+                  break;
+               }
             }
+            else if (ret == 1)
+                 {
+                    break;
+                 }
          }
          if (match_found == -1)
          {
@@ -2052,7 +2075,8 @@ file_name_and_recipient(register char *ptr,
    register int i,
                 j;
    int          item_counter = 0,
-                loops = 0;
+                loops = 0,
+                ret;
    time_t       now,
                 prev_time_val = 0L,
                 time_when_transmitted = 0L;
@@ -2326,7 +2350,8 @@ file_name_size_recipient(register char *ptr,
                 j,
                 match_found;
    int          item_counter = 0,
-                loops = 0;
+                loops = 0,
+                ret;
    time_t       now,
                 prev_time_val = 0L,
                 time_when_transmitted = 0L;
@@ -2410,11 +2435,18 @@ file_name_size_recipient(register char *ptr,
             match_found = -1;
             for (iii = 0; iii < no_of_search_file_names; iii++)
             {
-               if (sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR) == 0)
+               if ((ret = sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR)) == 0)
                {
-                  match_found = iii;
-                  break;
+                  if (search_file_name[iii][0] != '!')
+                  {
+                     match_found = iii;
+                     break;
+                  }
                }
+               else if (ret == 1)
+                    {
+                       break;
+                    }
             }
             if (match_found == -1)
             {

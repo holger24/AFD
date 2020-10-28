@@ -1371,7 +1371,8 @@ file_name_only(register char *ptr,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
-                loops = 0;
+                loops = 0,
+                ret;
    time_t       now,
                 prev_time_val = 0L,
                 time_when_transmitted = 0L;
@@ -1423,27 +1424,35 @@ file_name_only(register char *ptr,
          match_found = -1;
          for (iii = 0; iii < no_of_search_file_names; iii++)
          {
-            if (sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR) == 0)
+            if ((ret = sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR)) == 0)
             {
-               il[file_no].line_offset[item_counter] = (off_t)(ptr - (log_date_length + 1) - p_start_log_file + offset);
-               INSERT_TIME();
-               j = 0;
-               while ((*ptr != SEPARATOR_CHAR) && (j < file_name_length))
+               if (search_file_name[iii][0] != '!')
                {
-                  if ((unsigned char)(*ptr) < ' ')
+                  il[file_no].line_offset[item_counter] = (off_t)(ptr - (log_date_length + 1) - p_start_log_file + offset);
+                  INSERT_TIME();
+                  j = 0;
+                  while ((*ptr != SEPARATOR_CHAR) && (j < file_name_length))
                   {
-                     *(p_file_name + j) = '?';
-                     unprintable_chars++;
+                     if ((unsigned char)(*ptr) < ' ')
+                     {
+                        *(p_file_name + j) = '?';
+                        unprintable_chars++;
+                     }
+                     else                               
+                     {
+                        *(p_file_name + j) = *ptr;
+                     }
+                     ptr++; j++;
                   }
-                  else                               
-                  {
-                     *(p_file_name + j) = *ptr;
-                  }
-                  ptr++; j++;
+
+                  match_found = iii;
+                  break;
                }
-               match_found = iii;
-               break;
             }
+            else if (ret == 1)
+                 {
+                    break;
+                 }
          }
          if (match_found == -1)
          {
@@ -1787,7 +1796,8 @@ file_name_and_size(register char *ptr,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
-                loops = 0;
+                loops = 0,
+                ret;
    time_t       now,
                 prev_time_val = 0L,
                 time_when_transmitted = 0L;
@@ -1839,11 +1849,18 @@ file_name_and_size(register char *ptr,
          match_found = -1;
          for (iii = 0; iii < no_of_search_file_names; iii++)
          {
-            if (sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR) == 0)
+            if ((ret = sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR)) == 0)
             {
-               match_found = iii;
-               break;
+               if (search_file_name[iii][0] != '!')
+               {
+                  match_found = iii;
+                  break;
+               }
             }
+            else if (ret == 1)
+                 {
+                    break;
+                 }
          }
          if (match_found == -1)
          {
@@ -2308,7 +2325,8 @@ file_name_and_recipient(register char *ptr,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
-                loops = 0;
+                loops = 0,
+                ret;
    time_t       now,
                 prev_time_val = 0L,
                 time_when_transmitted = 0L;
@@ -2361,30 +2379,37 @@ file_name_and_recipient(register char *ptr,
          match_found = -1;
          for (iii = 0; iii < no_of_search_file_names; iii++)
          {
-            if (sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR) == 0)
+            if ((ret = sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR)) == 0)
             {
-               il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-               INSERT_TIME();
-               j = 0;
-               while ((*ptr != SEPARATOR_CHAR) && (j < file_name_length))
+               if (search_file_name[iii][0] != '!')
                {
-                  if ((unsigned char)(*ptr) < ' ')
+                  il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                  INSERT_TIME();
+                  j = 0;
+                  while ((*ptr != SEPARATOR_CHAR) && (j < file_name_length))
                   {
-                     *(p_file_name + j) = '?';
-                     unprintable_chars++;
+                     if ((unsigned char)(*ptr) < ' ')
+                     {
+                        *(p_file_name + j) = '?';
+                        unprintable_chars++;
+                     }
+                     else                               
+                     {
+                        *(p_file_name + j) = *ptr;
+                     }
+                     id.file_name[j] = *(p_file_name + j);
+                     ptr++; j++;
                   }
-                  else                               
-                  {
-                     *(p_file_name + j) = *ptr;
-                  }
-                  id.file_name[j] = *(p_file_name + j);
-                  ptr++; j++;
+                  id.file_name[j] = ' ';
+                  id.file_name[j + 1] = '\0';
+                  match_found = iii;
+                  break;
                }
-               id.file_name[j] = ' ';
-               id.file_name[j + 1] = '\0';
-               match_found = iii;
-               break;
             }
+            else if (ret == 1)
+                 {
+                    break;
+                 }
          }
          if (match_found == -1)
          {
@@ -2983,7 +3008,8 @@ file_name_size_recipient(register char *ptr,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
-                loops = 0;
+                loops = 0,
+                ret;
    time_t       now,
                 prev_time_val = 0L,
                 time_when_transmitted = 0L;
@@ -3052,12 +3078,19 @@ file_name_size_recipient(register char *ptr,
          match_found = -1;
          for (iii = 0; iii < no_of_search_file_names; iii++)
          {
-            if (sfilter(search_file_name[iii], (char *)id.file_name,
-                        ' ') == 0)
+            if ((ret = sfilter(search_file_name[iii], (char *)id.file_name,
+                               ' ')) == 0)
             {
-               match_found = iii;
-               break;
+               if (search_file_name[iii][0] != '!')
+               {
+                  match_found = iii;
+                  break;
+               }
             }
+            else if (ret == 1)
+                 {
+                    break;
+                 }
          }
          if (match_found == -1)
          {

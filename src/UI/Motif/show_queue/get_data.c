@@ -1659,16 +1659,24 @@ check_all_file_names(char *name)
    }
    else
    {
-      int i;
+      int i,
+          val;
 
       ret = -1;
       for (i = 0; i < no_of_search_file_names; i++)
       {
-         if (pmatch(search_file_name[i], name, NULL) == 0)
+         if ((val = pmatch(search_file_name[i], name, NULL)) == 0)
          {
-            ret = i;
-            break;
+            if (search_file_name[i][0] != '!')
+            {
+               ret = i;
+               break;
+            }
          }
+         else if (val == 1)
+                 {
+                    break;
+                 }
       }
    }
 

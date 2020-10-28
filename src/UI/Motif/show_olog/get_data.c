@@ -1147,28 +1147,35 @@ static void   check_log_updates(Widget),
                   SET_FILE_NAME_POINTER();                 \
                   for (iii = 0; iii < no_of_search_file_names; iii++)\
                   {                                        \
-                     if (sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR) == 0) \
+                     if ((ret = sfilter(search_file_name[iii], ptr, SEPARATOR_CHAR)) == 0) \
                      {                                     \
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);\
-                        INSERT_TIME_TYPE((id_string));     \
-                        j = 0;                             \
-                        while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))\
+                        if (search_file_name[iii][0] != '!')\
                         {                                  \
-                           if ((unsigned char)(*(ptr + j)) < ' ')\
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);\
+                           INSERT_TIME_TYPE((id_string));  \
+                           j = 0;                          \
+                           while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))\
                            {                               \
-                              *(p_file_name + j) = '?';    \
-                              unprintable_chars++;         \
+                              if ((unsigned char)(*(ptr + j)) < ' ')\
+                              {                            \
+                                 *(p_file_name + j) = '?'; \
+                                 unprintable_chars++;      \
+                              }                            \
+                              else                         \
+                              {                            \
+                                 *(p_file_name + j) = *(ptr + j);\
+                              }                            \
+                              j++;                         \
                            }                               \
-                           else                            \
-                           {                               \
-                              *(p_file_name + j) = *(ptr + j);\
-                           }                               \
-                           j++;                            \
+                           ptr += j;                       \
+                           match_found = iii;              \
+                           break;                          \
                         }                                  \
-                        ptr += j;                          \
-                        match_found = iii;                 \
-                        break;                             \
                      }                                     \
+                     else if (ret == 1)                    \
+                          {                                \
+                             break;                        \
+                          }                                \
                   }                                        \
                   if (match_found == -1)                   \
                   {                                        \
@@ -3125,6 +3132,7 @@ file_name_only(register char *ptr,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
+                ret,
                 type,
                 type_offset;
    time_t       now,
@@ -3345,29 +3353,36 @@ file_name_only(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                        INSERT_TIME_TYPE(FTP_ID_STR);
-                        j = 0;
-                        while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))
+                        if (search_file_name[iii][0] != '!')
                         {
-                           if ((unsigned char)(*(ptr + j)) < ' ')
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                           INSERT_TIME_TYPE(FTP_ID_STR);
+                           j = 0;
+                           while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))
                            {
-                              *(p_file_name + j) = '?';
-                              unprintable_chars++;
+                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              {
+                                 *(p_file_name + j) = '?';
+                                 unprintable_chars++;
+                              }
+                              else
+                              {
+                                 *(p_file_name + j) = *(ptr + j);
+                              }
+                              j++;
                            }
-                           else
-                           {
-                              *(p_file_name + j) = *(ptr + j);
-                           }
-                           j++;
+                           ptr += j;
+                           match_found = iii;
+                           break;
                         }
-                        ptr += j;
-                        match_found = iii;
-                        break;
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -3393,27 +3408,34 @@ file_name_only(register char *ptr,
                      if (sfilter(search_file_name[iii], ptr,
                                  SEPARATOR_CHAR) == 0)
                      {
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                        INSERT_TIME_TYPE(FILE_ID_STR);
-                        j = 0;
-                        while ((*(ptr + j) != SEPARATOR_CHAR) &&
-                               (j < file_name_length))
+                        if (search_file_name[iii][0] != '!')
                         {
-                           if ((unsigned char)(*(ptr + j)) < ' ')
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                           INSERT_TIME_TYPE(FILE_ID_STR);
+                           j = 0;
+                           while ((*(ptr + j) != SEPARATOR_CHAR) &&
+                                  (j < file_name_length))
                            {
-                              *(p_file_name + j) = '?';
-                              unprintable_chars++;
+                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              {
+                                 *(p_file_name + j) = '?';
+                                 unprintable_chars++;
+                              }
+                              else
+                              {
+                                 *(p_file_name + j) = *(ptr + j);
+                              }
+                              j++;
                            }
-                           else
-                           {
-                              *(p_file_name + j) = *(ptr + j);
-                           }
-                           j++;
+                           ptr += j;
+                           match_found = iii;
+                           break;
                         }
-                        ptr += j;
-                        match_found = iii;
-                        break;
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -3439,27 +3461,34 @@ file_name_only(register char *ptr,
                      if (sfilter(search_file_name[iii], ptr,
                                  SEPARATOR_CHAR) == 0)
                      {
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                        INSERT_TIME_TYPE(EXEC_ID_STR);
-                        j = 0;
-                        while ((*(ptr + j) != SEPARATOR_CHAR) &&
-                               (j < file_name_length))
+                        if (search_file_name[iii][0] != '!')
                         {
-                           if ((unsigned char)(*(ptr + j)) < ' ')
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                           INSERT_TIME_TYPE(EXEC_ID_STR);
+                           j = 0;
+                           while ((*(ptr + j) != SEPARATOR_CHAR) &&
+                                  (j < file_name_length))
                            {
-                              *(p_file_name + j) = '?';
-                              unprintable_chars++;
+                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              {
+                                 *(p_file_name + j) = '?';
+                                 unprintable_chars++;
+                              }
+                              else
+                              {
+                                 *(p_file_name + j) = *(ptr + j);
+                              }
+                              j++;
                            }
-                           else
-                           {
-                              *(p_file_name + j) = *(ptr + j);
-                           }
-                           j++;
+                           ptr += j;
+                           match_found = iii;
+                           break;
                         }
-                        ptr += j;
-                        match_found = iii;
-                        break;
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -3485,27 +3514,34 @@ file_name_only(register char *ptr,
                      if (sfilter(search_file_name[iii], ptr,
                                  SEPARATOR_CHAR) == 0)
                      {
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                        INSERT_TIME_TYPE(HTTP_ID_STR);
-                        j = 0;
-                        while ((*(ptr + j) != SEPARATOR_CHAR) &&
-                               (j < file_name_length))
+                        if (search_file_name[iii][0] != '!')
                         {
-                           if ((unsigned char)(*(ptr + j)) < ' ')
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                           INSERT_TIME_TYPE(HTTP_ID_STR);
+                           j = 0;
+                           while ((*(ptr + j) != SEPARATOR_CHAR) &&
+                                  (j < file_name_length))
                            {
-                              *(p_file_name + j) = '?';
-                              unprintable_chars++;
+                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              {
+                                 *(p_file_name + j) = '?';
+                                 unprintable_chars++;
+                              }
+                              else
+                              {
+                                 *(p_file_name + j) = *(ptr + j);
+                              }
+                              j++;
                            }
-                           else
-                           {
-                              *(p_file_name + j) = *(ptr + j);
-                           }
-                           j++;
+                           ptr += j;
+                           match_found = iii;
+                           break;
                         }
-                        ptr += j;
-                        match_found = iii;
-                        break;
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -3531,27 +3567,34 @@ file_name_only(register char *ptr,
                      if (sfilter(search_file_name[iii], ptr,
                                  SEPARATOR_CHAR) == 0)
                      {
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                        INSERT_TIME_TYPE(SMTP_ID_STR);
-                        j = 0;
-                        while ((*(ptr + j) != SEPARATOR_CHAR) &&
-                               (j < file_name_length))
+                        if (search_file_name[iii][0] != '!')
                         {
-                           if ((unsigned char)(*(ptr + j)) < ' ')
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                           INSERT_TIME_TYPE(SMTP_ID_STR);
+                           j = 0;
+                           while ((*(ptr + j) != SEPARATOR_CHAR) &&
+                                  (j < file_name_length))
                            {
-                              *(p_file_name + j) = '?';
-                              unprintable_chars++;
+                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              {
+                                 *(p_file_name + j) = '?';
+                                 unprintable_chars++;
+                              }
+                              else
+                              {
+                                 *(p_file_name + j) = *(ptr + j);
+                              }
+                              j++;
                            }
-                           else
-                           {
-                              *(p_file_name + j) = *(ptr + j);
-                           }
-                           j++;
+                           ptr += j;
+                           match_found = iii;
+                           break;
                         }
-                        ptr += j;
-                        match_found = iii;
-                        break;
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -3577,27 +3620,34 @@ file_name_only(register char *ptr,
                      if (sfilter(search_file_name[iii], ptr,
                                  SEPARATOR_CHAR) == 0)
                      {
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                        INSERT_TIME_TYPE(DEMAIL_ID_STR);
-                        j = 0;
-                        while ((*(ptr + j) != SEPARATOR_CHAR) &&
-                               (j < file_name_length))
+                        if (search_file_name[iii][0] != '!')
                         {
-                           if ((unsigned char)(*(ptr + j)) < ' ')
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                           INSERT_TIME_TYPE(DEMAIL_ID_STR);
+                           j = 0;
+                           while ((*(ptr + j) != SEPARATOR_CHAR) &&
+                                  (j < file_name_length))
                            {
-                              *(p_file_name + j) = '?';
-                              unprintable_chars++;
+                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              {
+                                 *(p_file_name + j) = '?';
+                                 unprintable_chars++;
+                              }
+                              else
+                              {
+                                 *(p_file_name + j) = *(ptr + j);
+                              }
+                              j++;
                            }
-                           else
-                           {
-                              *(p_file_name + j) = *(ptr + j);
-                           }
-                           j++;
+                           ptr += j;
+                           match_found = iii;
+                           break;
                         }
-                        ptr += j;
-                        match_found = iii;
-                        break;
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -3623,27 +3673,34 @@ file_name_only(register char *ptr,
                      if (sfilter(search_file_name[iii], ptr,
                                  SEPARATOR_CHAR) == 0)
                      {
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                        INSERT_TIME_TYPE(SFTP_ID_STR);
-                        j = 0;
-                        while ((*(ptr + j) != SEPARATOR_CHAR) &&
-                               (j < file_name_length))
+                        if (search_file_name[iii][0] != '!')
                         {
-                           if ((unsigned char)(*(ptr + j)) < ' ')
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                           INSERT_TIME_TYPE(SFTP_ID_STR);
+                           j = 0;
+                           while ((*(ptr + j) != SEPARATOR_CHAR) &&
+                                  (j < file_name_length))
                            {
-                              *(p_file_name + j) = '?';
-                              unprintable_chars++;
+                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              {
+                                 *(p_file_name + j) = '?';
+                                 unprintable_chars++;
+                              }
+                              else
+                              {
+                                 *(p_file_name + j) = *(ptr + j);
+                              }
+                              j++;
                            }
-                           else
-                           {
-                              *(p_file_name + j) = *(ptr + j);
-                           }
-                           j++;
+                           ptr += j;
+                           match_found = iii;
+                           break;
                         }
-                        ptr += j;
-                        match_found = iii;
-                        break;
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -3669,27 +3726,34 @@ file_name_only(register char *ptr,
                      if (sfilter(search_file_name[iii], ptr,
                                  SEPARATOR_CHAR) == 0)
                      {
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                        INSERT_TIME_TYPE(SCP_ID_STR);
-                        j = 0;
-                        while ((*(ptr + j) != SEPARATOR_CHAR) &&
-                               (j < file_name_length))
+                        if (search_file_name[iii][0] != '!')
                         {
-                           if ((unsigned char)(*(ptr + j)) < ' ')
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                           INSERT_TIME_TYPE(SCP_ID_STR);
+                           j = 0;
+                           while ((*(ptr + j) != SEPARATOR_CHAR) &&
+                                  (j < file_name_length))
                            {
-                              *(p_file_name + j) = '?';
-                              unprintable_chars++;
+                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              {
+                                 *(p_file_name + j) = '?';
+                                 unprintable_chars++;
+                              }
+                              else
+                              {
+                                 *(p_file_name + j) = *(ptr + j);
+                              }
+                              j++;
                            }
-                           else
-                           {
-                              *(p_file_name + j) = *(ptr + j);
-                           }
-                           j++;
+                           ptr += j;
+                           match_found = iii;
+                           break;
                         }
-                        ptr += j;
-                        match_found = iii;
-                        break;
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -3715,27 +3779,34 @@ file_name_only(register char *ptr,
                      if (sfilter(search_file_name[iii], ptr,
                                  SEPARATOR_CHAR) == 0)
                      {
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                        INSERT_TIME_TYPE(WMO_ID_STR);
-                        j = 0;
-                        while ((*(ptr + j) != SEPARATOR_CHAR) &&
-                               (j < file_name_length))
+                        if (search_file_name[iii][0] != '!')
                         {
-                           if ((unsigned char)(*(ptr + j)) < ' ')
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                           INSERT_TIME_TYPE(WMO_ID_STR);
+                           j = 0;
+                           while ((*(ptr + j) != SEPARATOR_CHAR) &&
+                                  (j < file_name_length))
                            {
-                              *(p_file_name + j) = '?';
-                              unprintable_chars++;
+                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              {
+                                 *(p_file_name + j) = '?';
+                                 unprintable_chars++;
+                              }
+                              else
+                              {
+                                 *(p_file_name + j) = *(ptr + j);
+                              }
+                              j++;
                            }
-                           else
-                           {
-                              *(p_file_name + j) = *(ptr + j);
-                           }
-                           j++;
+                           ptr += j;
+                           match_found = iii;
+                           break;
                         }
-                        ptr += j;
-                        match_found = iii;
-                        break;
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -3761,27 +3832,34 @@ file_name_only(register char *ptr,
                      if (sfilter(search_file_name[iii], ptr,
                                  SEPARATOR_CHAR) == 0)
                      {
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                        INSERT_TIME_TYPE(MAP_ID_STR);
-                        j = 0;
-                        while ((*(ptr + j) != SEPARATOR_CHAR) &&
-                               (j < file_name_length))
+                        if (search_file_name[iii][0] != '!')
                         {
-                           if ((unsigned char)(*(ptr + j)) < ' ')
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                           INSERT_TIME_TYPE(MAP_ID_STR);
+                           j = 0;
+                           while ((*(ptr + j) != SEPARATOR_CHAR) &&
+                                  (j < file_name_length))
                            {
-                              *(p_file_name + j) = '?';
-                              unprintable_chars++;
+                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              {
+                                 *(p_file_name + j) = '?';
+                                 unprintable_chars++;
+                              }
+                              else
+                              {
+                                 *(p_file_name + j) = *(ptr + j);
+                              }
+                              j++;
                            }
-                           else
-                           {
-                              *(p_file_name + j) = *(ptr + j);
-                           }
-                           j++;
+                           ptr += j;
+                           match_found = iii;
+                           break;
                         }
-                        ptr += j;
-                        match_found = iii;
-                        break;
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -3807,27 +3885,34 @@ file_name_only(register char *ptr,
                      if (sfilter(search_file_name, ptr,
                                  SEPARATOR_CHAR) == 0)
                      {
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                        INSERT_TIME_TYPE(DFAX_ID_STR);
-                        j = 0;
-                        while ((*(ptr + j) != SEPARATOR_CHAR) &&
-                               (j < file_name_length))
+                        if (search_file_name[iii][0] != '!')
                         {
-                           if ((unsigned char)(*(ptr + j)) < ' ')
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                           INSERT_TIME_TYPE(DFAX_ID_STR);
+                           j = 0;
+                           while ((*(ptr + j) != SEPARATOR_CHAR) &&
+                                  (j < file_name_length))
                            {
-                              *(p_file_name + j) = '?';
-                              unprintable_chars++;
+                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              {
+                                 *(p_file_name + j) = '?';
+                                 unprintable_chars++;
+                              }
+                              else
+                              {
+                                 *(p_file_name + j) = *(ptr + j);
+                              }
+                              j++;
                            }
-                           else
-                           {
-                              *(p_file_name + j) = *(ptr + j);
-                           }
-                           j++;
+                           ptr += j;
+                           match_found = iii;
+                           break;
                         }
-                        ptr += j;
-                        match_found = iii;
-                        break;
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -3854,27 +3939,34 @@ file_name_only(register char *ptr,
                      if (sfilter(search_file_name[iii], ptr,
                                  SEPARATOR_CHAR) == 0)
                      {
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                        INSERT_TIME_TYPE(FTPS_ID_STR);
-                        j = 0;
-                        while ((*(ptr + j) != SEPARATOR_CHAR) &&
-                               (j < file_name_length))
+                        if (search_file_name[iii][0] != '!')
                         {
-                           if ((unsigned char)(*(ptr + j)) < ' ')
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                           INSERT_TIME_TYPE(FTPS_ID_STR);
+                           j = 0;
+                           while ((*(ptr + j) != SEPARATOR_CHAR) &&
+                                  (j < file_name_length))
                            {
-                              *(p_file_name + j) = '?';
-                              unprintable_chars++;
+                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              {
+                                 *(p_file_name + j) = '?';
+                                 unprintable_chars++;
+                              }
+                              else
+                              {
+                                 *(p_file_name + j) = *(ptr + j);
+                              }
+                              j++;
                            }
-                           else
-                           {
-                              *(p_file_name + j) = *(ptr + j);
-                           }
-                           j++;
+                           ptr += j;
+                           match_found = iii;
+                           break;
                         }
-                        ptr += j;
-                        match_found = iii;
-                        break;
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -3900,27 +3992,34 @@ file_name_only(register char *ptr,
                      if (sfilter(search_file_name[iii], ptr,
                                  SEPARATOR_CHAR) == 0)
                      {
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                        INSERT_TIME_TYPE(HTTPS_ID_STR);
-                        j = 0;
-                        while ((*(ptr + j) != SEPARATOR_CHAR) &&
-                               (j < file_name_length))
+                        if (search_file_name[iii][0] != '!')
                         {
-                           if ((unsigned char)(*(ptr + j)) < ' ')
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                           INSERT_TIME_TYPE(HTTPS_ID_STR);
+                           j = 0;
+                           while ((*(ptr + j) != SEPARATOR_CHAR) &&
+                                  (j < file_name_length))
                            {
-                              *(p_file_name + j) = '?';
-                              unprintable_chars++;
+                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              {
+                                 *(p_file_name + j) = '?';
+                                 unprintable_chars++;
+                              }
+                              else
+                              {
+                                 *(p_file_name + j) = *(ptr + j);
+                              }
+                              j++;
                            }
-                           else
-                           {
-                              *(p_file_name + j) = *(ptr + j);
-                           }
-                           j++;
+                           ptr += j;
+                           match_found = iii;
+                           break;
                         }
-                        ptr += j;
-                        match_found = iii;
-                        break;
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -3946,27 +4045,34 @@ file_name_only(register char *ptr,
                      if (sfilter(search_file_name[iii], ptr,
                                  SEPARATOR_CHAR) == 0)
                      {
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                        INSERT_TIME_TYPE(SMTPS_ID_STR);
-                        j = 0;
-                        while ((*(ptr + j) != SEPARATOR_CHAR) &&
-                               (j < file_name_length))
+                        if (search_file_name[iii][0] != '!')
                         {
-                           if ((unsigned char)(*(ptr + j)) < ' ')
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                           INSERT_TIME_TYPE(SMTPS_ID_STR);
+                           j = 0;
+                           while ((*(ptr + j) != SEPARATOR_CHAR) &&
+                                  (j < file_name_length))
                            {
-                              *(p_file_name + j) = '?';
-                              unprintable_chars++;
+                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              {
+                                 *(p_file_name + j) = '?';
+                                 unprintable_chars++;
+                              }
+                              else
+                              {
+                                 *(p_file_name + j) = *(ptr + j);
+                              }
+                              j++;
                            }
-                           else
-                           {
-                              *(p_file_name + j) = *(ptr + j);
-                           }
-                           j++;
+                           ptr += j;
+                           match_found = iii;
+                           break;
                         }
-                        ptr += j;
-                        match_found = iii;
-                        break;
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -3988,30 +4094,37 @@ file_name_only(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                        INSERT_TIME_TYPE(UNKNOWN_ID_STR);
-                        j = 0;
-                        while ((*(ptr + j) != SEPARATOR_CHAR) &&
-                               (j < file_name_length))
+                        if (search_file_name[iii][0] != '!')
                         {
-                           if ((unsigned char)(*(ptr + j)) < ' ')
+                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                           INSERT_TIME_TYPE(UNKNOWN_ID_STR);
+                           j = 0;
+                           while ((*(ptr + j) != SEPARATOR_CHAR) &&
+                                  (j < file_name_length))
                            {
-                              *(p_file_name + j) = '?';
-                              unprintable_chars++;
+                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              {
+                                 *(p_file_name + j) = '?';
+                                 unprintable_chars++;
+                              }
+                              else
+                              {
+                                 *(p_file_name + j) = *(ptr + j);
+                              }
+                              j++;
                            }
-                           else
-                           {
-                              *(p_file_name + j) = *(ptr + j);
-                           }
-                           j++;
+                           ptr += j;
+                           match_found = iii;
+                           break;
                         }
-                        ptr += j;
-                        match_found = iii;
-                        break;
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -4657,6 +4770,7 @@ file_name_and_size(register char *ptr,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
+                ret,
                 type,
                 type_offset;
    time_t       now,
@@ -4877,12 +4991,19 @@ file_name_and_size(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        match_found = iii;
-                        break;
+                        if (search_file_name[iii][0] != '!')
+                        {
+                           match_found = iii;
+                           break;
+                        }
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -4905,12 +5026,19 @@ file_name_and_size(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        match_found = iii;
-                        break;
+                        if (search_file_name[iii][0] != '!')
+                        {
+                           match_found = iii;
+                           break;
+                        }
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -4933,12 +5061,19 @@ file_name_and_size(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        match_found = iii;
-                        break;
+                        if (search_file_name[iii][0] != '!')
+                        {
+                           match_found = iii;
+                           break;
+                        }
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -4961,12 +5096,19 @@ file_name_and_size(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        match_found = iii;
-                        break;
+                        if (search_file_name[iii][0] != '!')
+                        {
+                           match_found = iii;
+                           break;
+                        }
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -4989,12 +5131,19 @@ file_name_and_size(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        match_found = iii;
-                        break;
+                        if (search_file_name[iii][0] != '!')
+                        {
+                           match_found = iii;
+                           break;
+                        }
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -5017,12 +5166,19 @@ file_name_and_size(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        match_found = iii;
-                        break;
+                        if (search_file_name[iii][0] != '!')
+                        {
+                           match_found = iii;
+                           break;
+                        }
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -5045,12 +5201,19 @@ file_name_and_size(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        match_found = iii;
-                        break;
+                        if (search_file_name[iii][0] != '!')
+                        {
+                           match_found = iii;
+                           break;
+                        }
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -5073,12 +5236,19 @@ file_name_and_size(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        match_found = iii;
-                        break;
+                        if (search_file_name[iii][0] != '!')
+                        {
+                           match_found = iii;
+                           break;
+                        }
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -5101,12 +5271,19 @@ file_name_and_size(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        match_found = iii;
-                        break;
+                        if (search_file_name[iii][0] != '!')
+                        {
+                           match_found = iii;
+                           break;
+                        }
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -5129,12 +5306,19 @@ file_name_and_size(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        match_found = iii;
-                        break;
+                        if (search_file_name[iii][0] != '!')
+                        {
+                           match_found = iii;
+                           break;
+                        }
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -5157,12 +5341,19 @@ file_name_and_size(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        match_found = iii;
-                        break;
+                        if (search_file_name[iii][0] != '!')
+                        {
+                           match_found = iii;
+                           break;
+                        }
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -5186,12 +5377,19 @@ file_name_and_size(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        match_found = iii;
-                        break;
+                        if (search_file_name[iii][0] != '!')
+                        {
+                           match_found = iii;
+                           break;
+                        }
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -5214,12 +5412,19 @@ file_name_and_size(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        match_found = iii;
-                        break;
+                        if (search_file_name[iii][0] != '!')
+                        {
+                           match_found = iii;
+                           break;
+                        }
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -5242,12 +5447,19 @@ file_name_and_size(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        match_found = iii;
-                        break;
+                        if (search_file_name[iii][0] != '!')
+                        {
+                           match_found = iii;
+                           break;
+                        }
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -5269,12 +5481,19 @@ file_name_and_size(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
-                        match_found = iii;
-                        break;
+                        if (search_file_name[iii][0] != '!')
+                        {
+                           match_found = iii;
+                           break;
+                        }
                      }
+                     else if (ret == 1)
+                          {
+                             break;
+                          }
                   }
                   if (match_found == -1)
                   {
@@ -6627,6 +6846,7 @@ file_name_and_recipient(register char *ptr,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
+                ret,
                 type,
                 type_offset;
    time_t       now,
@@ -6930,29 +7150,36 @@ file_name_and_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
-                           INSERT_TIME_TYPE(UNKNOWN_ID_STR);
-                           j = 0;
-                           while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))
+                           if (search_file_name[iii][0] != '!')
                            {
-                              if ((unsigned char)(*(ptr + j)) < ' ')
+                              il[file_no].line_offset[item_counter] = (off_t)(ptr_start_line - p_start_log_file + offset);
+                              INSERT_TIME_TYPE(UNKNOWN_ID_STR);
+                              j = 0;
+                              while ((*(ptr + j) != SEPARATOR_CHAR) && (j < file_name_length))
                               {
-                                 *(p_file_name + j) = '?';
-                                 unprintable_chars++;
+                                 if ((unsigned char)(*(ptr + j)) < ' ')
+                                 {
+                                    *(p_file_name + j) = '?';
+                                    unprintable_chars++;
+                                 }
+                                 else
+                                 {
+                                    *(p_file_name + j) = *(ptr + j);
+                                 }
+                                 j++;
                               }
-                              else
-                              {
-                                 *(p_file_name + j) = *(ptr + j);
-                              }
-                              j++;
+                              ptr += j;
+                              match_found = iii;
+                              break;
                            }
-                           ptr += j;
-                           match_found = iii;
-                           break;
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {
@@ -7593,6 +7820,7 @@ file_name_size_recipient(register char *ptr,
 #ifndef LESSTIF_WORKAROUND
                 unmanaged,
 #endif
+                ret,
                 type,
                 type_offset;
    time_t       now,
@@ -7826,12 +8054,19 @@ file_name_size_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           match_found = iii;
-                           break;
+                           if (search_file_name[iii][0] != '!')
+                           {
+                              match_found = iii;
+                              break;
+                           }
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {
@@ -7871,12 +8106,19 @@ file_name_size_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           match_found = iii;
-                           break;
+                           if (search_file_name[iii][0] != '!')
+                           {
+                              match_found = iii;
+                              break;
+                           }
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {
@@ -7916,12 +8158,19 @@ file_name_size_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           match_found = iii;
-                           break;
+                           if (search_file_name[iii][0] != '!')
+                           {
+                              match_found = iii;
+                              break;
+                           }
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {
@@ -7961,12 +8210,19 @@ file_name_size_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           match_found = iii;
-                           break;
+                           if (search_file_name[iii][0] != '!')
+                           {
+                              match_found = iii;
+                              break;
+                           }
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {
@@ -8006,12 +8262,19 @@ file_name_size_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           match_found = iii;
-                           break;
+                           if (search_file_name[iii][0] != '!')
+                           {
+                              match_found = iii;
+                              break;
+                           }
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {
@@ -8051,12 +8314,19 @@ file_name_size_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           match_found = iii;
-                           break;
+                           if (search_file_name[iii][0] != '!')
+                           {
+                              match_found = iii;
+                              break;
+                           }
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {
@@ -8096,12 +8366,19 @@ file_name_size_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           match_found = iii;
-                           break;
+                           if (search_file_name[iii][0] != '!')
+                           {
+                              match_found = iii;
+                              break;
+                           }
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {
@@ -8141,12 +8418,19 @@ file_name_size_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           match_found = iii;
-                           break;
+                           if (search_file_name[iii][0] != '!')
+                           {
+                              match_found = iii;
+                              break;
+                           }
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {
@@ -8186,12 +8470,19 @@ file_name_size_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           match_found = iii;
-                           break;
+                           if (search_file_name[iii][0] != '!')
+                           {
+                              match_found = iii;
+                              break;
+                           }
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {
@@ -8231,12 +8522,19 @@ file_name_size_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           match_found = iii;
-                           break;
+                           if (search_file_name[iii][0] != '!')
+                           {
+                              match_found = iii;
+                              break;
+                           }
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {
@@ -8276,12 +8574,19 @@ file_name_size_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           match_found = iii;
-                           break;
+                           if (search_file_name[iii][0] != '!')
+                           {
+                              match_found = iii;
+                              break;
+                           }
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {
@@ -8322,12 +8627,19 @@ file_name_size_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           match_found = iii;
-                           break;
+                           if (search_file_name[iii][0] != '!')
+                           {
+                              match_found = iii;
+                              break;
+                           }
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {
@@ -8367,12 +8679,19 @@ file_name_size_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           match_found = iii;
-                           break;
+                           if (search_file_name[iii][0] != '!')
+                           {
+                              match_found = iii;
+                              break;
+                           }
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {
@@ -8412,12 +8731,19 @@ file_name_size_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           match_found = iii;
-                           break;
+                           if (search_file_name[iii][0] != '!')
+                           {
+                              match_found = iii;
+                              break;
+                           }
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {
@@ -8456,12 +8782,19 @@ file_name_size_recipient(register char *ptr,
                      SET_FILE_NAME_POINTER();
                      for (iii = 0; iii < no_of_search_file_names; iii++)
                      {
-                        if (sfilter(search_file_name[iii], ptr,
-                                    SEPARATOR_CHAR) == 0)
+                        if ((ret = sfilter(search_file_name[iii], ptr,
+                                           SEPARATOR_CHAR)) == 0)
                         {
-                           match_found = iii;
-                           break;
+                           if (search_file_name[iii][0] != '!')
+                           {
+                              match_found = iii;
+                              break;
+                           }
                         }
+                        else if (ret == 1)
+                             {
+                                break;
+                             }
                      }
                      if (match_found == -1)
                      {

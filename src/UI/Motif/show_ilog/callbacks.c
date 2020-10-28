@@ -592,7 +592,8 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
       case FILE_NAME :
          {
             int  i = 0,
-                 ii = 0;
+                 ii = 0,
+                 nots = 0;
             char *ptr;
 
             if (no_of_search_file_names != 0)
@@ -603,6 +604,14 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
             ptr = value;
             for (;;)
             {
+               while ((*ptr == ' ') || (*ptr == '\t'))
+               {
+                  ptr++;
+               }
+               if (*ptr == '!')
+               {
+                  nots++;
+               }
                while ((*ptr != '\0') && (*ptr != ','))
                {
                   if (*ptr == '\\')
@@ -624,8 +633,16 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
             }
             if (no_of_search_file_names > 0)
             {
-               RT_ARRAY(search_file_name, no_of_search_file_names,
-                        (MAX_PATH_LENGTH + 1), char);
+               if (nots == no_of_search_file_names)
+               {
+                  RT_ARRAY(search_file_name, no_of_search_file_names + 1,
+                           (MAX_PATH_LENGTH + 1), char);
+               }
+               else
+               {
+                  RT_ARRAY(search_file_name, no_of_search_file_names,
+                           (MAX_PATH_LENGTH + 1), char);
+               }
 
                ptr = value;
                for (;;)
@@ -654,6 +671,14 @@ save_input(Widget w, XtPointer client_data, XtPointer call_data)
                      break;
                   }
                } /* for (;;) */
+
+               if (nots == no_of_search_file_names)
+               {
+                  ii++;
+                  search_file_name[ii][0] = '*';
+                  search_file_name[ii][1] = '\0';
+                  no_of_search_file_names++;
+               }
             } /* if (no_of_search_file_names > 0) */
          }
          reset_message(statusbox_w);
