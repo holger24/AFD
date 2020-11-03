@@ -1005,7 +1005,7 @@ main(int argc, char *argv[])
                                            exit(INCORRECT);
                                         }
                                      }
-                                     (void)strcpy(&iwl[j].file_name[iwl[j].cur_fn_length], &event->name[0]);
+                                     (void)strcpy(&iwl[j].file_name[iwl[j].cur_fn_length], &event->name[1]);
                                      iwl[j].cur_fn_length += iwl[j].fnl[iwl[j].no_of_files] + 1;
                                      iwl[j].no_of_files++;
                                      valid_events++;
