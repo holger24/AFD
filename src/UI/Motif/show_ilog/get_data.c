@@ -865,7 +865,7 @@ check_log_updates(Widget w)
             no_criteria(ptr_start, ptr_end, last_file_no,
                         ptr_start, log_offset);
          }
-         else if ((no_of_search_file_names == 0) &&
+         else if ((no_of_search_file_names != 0) &&
                   (search_file_size == -1) &&
                   (no_of_search_hosts == 0))
               {
@@ -879,7 +879,7 @@ check_log_updates(Widget w)
                  file_size_only(ptr_start, ptr_end, last_file_no, ptr_start,
                                 log_offset);
               }
-         else if ((no_of_search_file_names == 0) &&
+         else if ((no_of_search_file_names != 0) &&
                   (search_file_size != -1) &&
                   (no_of_search_hosts == 0))
               {
@@ -893,7 +893,7 @@ check_log_updates(Widget w)
                  recipient_only(ptr_start, ptr_end, last_file_no, ptr_start,
                                 log_offset);
               }
-         else if ((no_of_search_file_names == 0) &&
+         else if ((no_of_search_file_names != 0) &&
                   (search_file_size == -1) &&
                   (no_of_search_hosts != 0))
               {
@@ -907,7 +907,7 @@ check_log_updates(Widget w)
                  file_size_and_recipient(ptr_start, ptr_end, last_file_no,
                                          ptr_start, log_offset);
               }
-         else if ((no_of_search_file_names == 0) &&
+         else if ((no_of_search_file_names != 0) &&
                   (search_file_size != -1) &&
                   (no_of_search_hosts != 0))
               {
