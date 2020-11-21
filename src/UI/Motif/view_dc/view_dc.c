@@ -1,6 +1,6 @@
 /*
  *  view_dc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1999 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -533,12 +533,12 @@ init_view_dc(int *argc, char *argv[])
     */
    if (job_id[0] == '\0')
    {
-      length = snprintf(cmd, MAX_PATH_LENGTH, "%s %s %s",
+      length = snprintf(cmd, MAX_PATH_LENGTH, "%s %s %s --show-pwd",
                         GET_DC_DATA, WORK_DIR_ID, p_work_dir);
    }
    else
    {
-      length = snprintf(cmd, MAX_PATH_LENGTH, "%s %s %s --dir_config",
+      length = snprintf(cmd, MAX_PATH_LENGTH, "%s %s %s --dir_config --show-pwd",
                         JID_VIEW, WORK_DIR_ID, p_work_dir);
    }
    if (length >= MAX_PATH_LENGTH)

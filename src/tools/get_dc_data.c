@@ -1,6 +1,6 @@
 /*
  *  get_dc_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ DESCR__S_M3
  **               [-D <dir hex id>]
  **               [-h <host alias> [--only_list_target_dirs]]
  **               [-H <host alias 0> [.. <host alias n>]]
+ **               [--show-pwd]
  **
  ** DESCRIPTION
  **
@@ -58,6 +59,8 @@ DESCR__S_M3
  **                      config.
  **   14.11.2019 H.Kiehl When -C is set show from where it comes when
  **                      only one configuration file was updated.
+ **   21.11.2020 H.Kiehl Only when option --show-pwd and the user has
+ **                      the permission will the password be shown.
  **
  */
 DESCR__E_M3
@@ -136,6 +139,7 @@ main(int argc, char *argv[])
 {
    unsigned int dir_id;
    int          no_of_search_host_alias = 0,
+                show_password = NO,
                 ret;
    char         dir_alias[MAX_DIR_ALIAS_LENGTH + 1],
                 fake_user[MAX_FULL_USER_ID_LENGTH],
@@ -190,6 +194,10 @@ main(int argc, char *argv[])
    if (get_arg(&argc, argv, "-p", profile, MAX_PROFILE_NAME_LENGTH) == INCORRECT)
    {
       profile[0] = '\0';
+   }
+   if (get_arg(&argc, argv, "--show-pwd", NULL, 0) == SUCCESS)
+   {
+      show_password = YES;
    }
 
    if (get_arg(&argc, argv, "-h", host_name, MAX_HOSTNAME_LENGTH) != SUCCESS)
@@ -319,7 +327,10 @@ main(int argc, char *argv[])
              (perm_buffer[3] == ' ') ||
              (perm_buffer[3] == '\t')))
          {
-            view_passwd = YES;
+            if (show_password == YES)
+            {
+               view_passwd = YES;
+            }
             free(perm_buffer);
             break;
          }
@@ -332,10 +343,13 @@ main(int argc, char *argv[])
                              PERMISSION_DENIED_STR, __FILE__, __LINE__);
                exit(INCORRECT);
             }
-            if (lposi(perm_buffer, VIEW_PASSWD_PERM,
-                      VIEW_PASSWD_PERM_LENGTH) != NULL)
+            if (show_password == YES)
             {
-               view_passwd = YES;
+               if (lposi(perm_buffer, VIEW_PASSWD_PERM,
+                         VIEW_PASSWD_PERM_LENGTH) != NULL)
+               {
+                  view_passwd = YES;
+               }
             }
          }
          free(perm_buffer);
@@ -1865,6 +1879,7 @@ usage(FILE *stream, char *progname)
    (void)fprintf(stream, "       %*s [-D <dir hex id>]\n", length, "");
    (void)fprintf(stream, "       %*s [-h <host alias> [--only_list_target_dirs]]\n", length, "");
    (void)fprintf(stream, "       %*s [-H <host alias 0> [.. <host alias n>]]\n", length, "");
+   (void)fprintf(stream, "       %*s [--show-pwd]\n", length, "");
 
    return;
 }
