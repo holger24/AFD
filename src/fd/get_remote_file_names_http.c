@@ -888,17 +888,20 @@ try_attach_again:
          }
          else
          {
-            trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+            if ((files_to_retrieve > 0) || (fsa->debug > NORMAL_MODE))
+            {
+               trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
 #if SIZEOF_OFF_T == 4
-                      "%d files %ld bytes found for retrieving %s[%u files with %ld bytes in %s]. @%x",
+                         "%d files %ld bytes found for retrieving %s[%u files with %ld bytes in %s]. @%x",
 #else
-                      "%d files %lld bytes found for retrieving %s[%u files with %lld bytes in %s]. @%x",
+                         "%d files %lld bytes found for retrieving %s[%u files with %lld bytes in %s]. @%x",
 #endif
-                      files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
-                      (*more_files_in_list == YES) ? "(+) " : "",
-                      list_length, (pri_off_t)list_size,
-                      (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
-                      db.id.dir);
+                         files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
+                         (*more_files_in_list == YES) ? "(+) " : "",
+                         list_length, (pri_off_t)list_size,
+                         (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                         db.id.dir);
+            }
          }
       }
       else /* Just copy the file mask list. */
@@ -926,15 +929,18 @@ try_attach_again:
                NEXT(p_mask);
             }
          }
-         trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+         if ((files_to_retrieve > 0) || (fsa->debug > NORMAL_MODE))
+         {
+            trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
 #if SIZEOF_OFF_T == 4
-                   "%d files %ld bytes found for retrieving in %s [%s]. @%x",
+                      "%d files %ld bytes found for retrieving in %s [%s]. @%x",
 #else
-                   "%d files %lld bytes found for retrieving in %s [%s]. @%x",
+                      "%d files %lld bytes found for retrieving in %s [%s]. @%x",
 #endif
-                   files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
-                   (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
-                   DO_NOT_GET_DIR_LIST_ID, db.id.dir);
+                      files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
+                      (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                      DO_NOT_GET_DIR_LIST_ID, db.id.dir);
+         }
       }
 
       /* Free file mask list. */

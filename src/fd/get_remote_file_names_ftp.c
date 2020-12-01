@@ -586,10 +586,13 @@ do_scan(int          *files_to_retrieve,
     */
    if (nlist == NULL)
    {
-      trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
-                "0 files 0 bytes found for retrieving [0 files in %s]. @%x",
-                (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
-                db.id.dir);
+      if (fsa->debug > NORMAL_MODE)
+      {
+         trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+                   "0 files 0 bytes found for retrieving [0 files in %s]. @%x",
+                   (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                   db.id.dir);
+      }
       *files_to_retrieve = 0;
       return;
    }
@@ -883,16 +886,19 @@ do_scan(int          *files_to_retrieve,
    }
    else
    {
-      trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
+      if ((*files_to_retrieve > 0) || (fsa->debug > NORMAL_MODE))
+      {
+         trans_log(DEBUG_SIGN, NULL, 0, NULL, NULL,
 #if SIZEOF_OFF_T == 4
-                "%d files %ld bytes found for retrieving %s[%u files in %s]. @%x",
+                   "%d files %ld bytes found for retrieving %s[%u files in %s]. @%x",
 #else
-                "%d files %lld bytes found for retrieving %s[%u files in %s]. @%x",
+                   "%d files %lld bytes found for retrieving %s[%u files in %s]. @%x",
 #endif
-                *files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
-                (*more_files_in_list == YES) ? "(+) " : "", list_length,
-                (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
-                db.id.dir);
+                   *files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
+                   (*more_files_in_list == YES) ? "(+) " : "", list_length,
+                   (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                   db.id.dir);
+      }
    }
 
    /*

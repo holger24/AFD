@@ -894,17 +894,20 @@ do_scan(int   *files_to_retrieve,
    }
    else
    {
-      trans_log(INFO_SIGN, NULL, 0, NULL, NULL,
+      if ((*files_to_retrieve > 0) || (fsa->debug > NORMAL_MODE))
+      {
+         trans_log(INFO_SIGN, NULL, 0, NULL, NULL,
 #if SIZEOF_OFF_T == 4
-                "%d files %ld bytes found for retrieving %s[%u files with %ld bytes in %s]. @%x",
+                   "%d files %ld bytes found for retrieving %s[%u files with %ld bytes in %s]. @%x",
 #else
-                "%d files %lld bytes found for retrieving %s[%u files with %lld bytes in %s]. @%x",
+                   "%d files %lld bytes found for retrieving %s[%u files with %lld bytes in %s]. @%x",
 #endif
-                *files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
-                (*more_files_in_list == YES) ? "(+) " : "",
-                list_length, (pri_off_t)list_size,
-                (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
-                db.id.dir);
+                   *files_to_retrieve, (pri_off_t)(*file_size_to_retrieve),
+                   (*more_files_in_list == YES) ? "(+) " : "",
+                   list_length, (pri_off_t)list_size,
+                   (db.target_dir[0] == '\0') ? "home dir" : db.target_dir,
+                   db.id.dir);
+      }
    }
 
    /*

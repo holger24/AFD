@@ -893,13 +893,16 @@ main(int argc, char *argv[])
             {
                if (fra->dir_mtime == new_dir_mtime)
                {
-                  char time_str[25];
+                  if (fsa->debug > NORMAL_MODE)
+                  {
+                     char time_str[25];
 
-                  (void)strftime(time_str, 25, "%c", localtime(&new_dir_mtime));
-                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "0 files 0 bytes found for retrieving. Directory time (%s) unchanged in %s.",
-                            time_str,
-                            (db.target_dir[0] == '\0') ? "home dir" : db.target_dir);
+                     (void)strftime(time_str, 25, "%c", localtime(&new_dir_mtime));
+                     trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "0 files 0 bytes found for retrieving. Directory time (%s) unchanged in %s.",
+                               time_str,
+                               (db.target_dir[0] == '\0') ? "home dir" : db.target_dir);
+                  }
                   check_reset_errors();
 
 #ifdef _WITH_BURST_2
