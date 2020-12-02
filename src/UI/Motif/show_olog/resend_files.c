@@ -1,6 +1,6 @@
 /*
  *  resend_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,6 +76,7 @@ DESCR__E_M3
 /* External global variables. */
 extern Display          *display;
 extern Widget           appshell, /* CHECK_INTERRUPT() */
+                        close_button_w,
                         listbox_w,
                         special_button_w,
                         scrollbar_w,

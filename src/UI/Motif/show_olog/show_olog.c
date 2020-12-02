@@ -95,6 +95,7 @@ DESCR__E_M1
 Display                    *display;
 XtAppContext               app;
 Widget                     appshell,
+                           close_button_w,
                            con_toggle_w,
                            cont_togglebox_w,
                            directory_w,
@@ -1275,7 +1276,7 @@ main(int argc, char *argv[])
                            NULL);
       XtAddCallback(print_button_w, XmNactivateCallback,
                     (XtCallbackProc)print_button, (XtPointer)0);
-      button_w = XtVaCreateManagedWidget("Close",
+      close_button_w = XtVaCreateManagedWidget("Close",
                            xmPushButtonWidgetClass, buttonbox_w,
                            XmNfontList,             fontlist,
                            XmNtopAttachment,        XmATTACH_POSITION,
@@ -1350,7 +1351,7 @@ main(int argc, char *argv[])
                            NULL);
            XtAddCallback(print_button_w, XmNactivateCallback,
                          (XtCallbackProc)print_button, (XtPointer)0);
-           button_w = XtVaCreateManagedWidget("Close",
+           close_button_w = XtVaCreateManagedWidget("Close",
                            xmPushButtonWidgetClass, buttonbox_w,
                            XmNfontList,             fontlist,
                            XmNtopAttachment,        XmATTACH_POSITION,
@@ -1439,7 +1440,7 @@ main(int argc, char *argv[])
                            NULL);
            XtAddCallback(print_button_w, XmNactivateCallback,
                          (XtCallbackProc)print_button, (XtPointer)0);
-           button_w = XtVaCreateManagedWidget("Close",
+           close_button_w = XtVaCreateManagedWidget("Close",
                            xmPushButtonWidgetClass, buttonbox_w,
                            XmNfontList,             fontlist,
                            XmNtopAttachment,        XmATTACH_POSITION,
@@ -1542,7 +1543,7 @@ main(int argc, char *argv[])
                            NULL);
            XtAddCallback(print_button_w, XmNactivateCallback,
                          (XtCallbackProc)print_button, (XtPointer)0);
-           button_w = XtVaCreateManagedWidget("Close",
+           close_button_w = XtVaCreateManagedWidget("Close",
                            xmPushButtonWidgetClass, buttonbox_w,
                            XmNfontList,             fontlist,
                            XmNtopAttachment,        XmATTACH_POSITION,
@@ -1746,7 +1747,7 @@ main(int argc, char *argv[])
                               NULL);
               XtAddCallback(print_button_w, XmNactivateCallback,
                             (XtCallbackProc)print_button, (XtPointer)0);
-              button_w = XtVaCreateManagedWidget("Close",
+              close_button_w = XtVaCreateManagedWidget("Close",
                               xmPushButtonWidgetClass, buttonbox_w,
                               XmNfontList,             fontlist,
                               XmNtopAttachment,        XmATTACH_POSITION,
@@ -1760,7 +1761,7 @@ main(int argc, char *argv[])
                               NULL);
            }
         }
-   XtAddCallback(button_w, XmNactivateCallback,
+   XtAddCallback(close_button_w, XmNactivateCallback,
                  (XtCallbackProc)close_button, (XtPointer)0);
    XtManageChild(buttonbox_w);
 

@@ -86,6 +86,7 @@ extern Display          *display;
 extern Window           main_window;
 extern XtAppContext     app;
 extern Widget           appshell, /* CHECK_INTERRUPT() */
+                        close_button_w,
                         listbox_w,
                         scrollbar_w,
                         statusbox_w,
@@ -2341,7 +2342,7 @@ no_criteria(register char *ptr,
          /* Allocate memory for offset to job ID. */
          REALLOC_OFFSET_BUFFER();
 
-         if (((i % 200) == 0) &&
+         if (((loops % 200) == 0) &&
              ((time(&now) - prev_time_val) > CHECK_TIME_INTERVAL))
          {
             prev_time_val = now;
@@ -3405,8 +3406,8 @@ file_name_only(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
                         if (search_file_name[iii][0] != '!')
                         {
@@ -3458,8 +3459,8 @@ file_name_only(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
                         if (search_file_name[iii][0] != '!')
                         {
@@ -3511,8 +3512,8 @@ file_name_only(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
                         if (search_file_name[iii][0] != '!')
                         {
@@ -3564,8 +3565,8 @@ file_name_only(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
                         if (search_file_name[iii][0] != '!')
                         {
@@ -3617,8 +3618,8 @@ file_name_only(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
                         if (search_file_name[iii][0] != '!')
                         {
@@ -3670,8 +3671,8 @@ file_name_only(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
                         if (search_file_name[iii][0] != '!')
                         {
@@ -3723,8 +3724,8 @@ file_name_only(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
                         if (search_file_name[iii][0] != '!')
                         {
@@ -3776,8 +3777,8 @@ file_name_only(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
                         if (search_file_name[iii][0] != '!')
                         {
@@ -3829,8 +3830,8 @@ file_name_only(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
                         if (search_file_name[iii][0] != '!')
                         {
@@ -3882,8 +3883,8 @@ file_name_only(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name, ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name, ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
                         if (search_file_name[iii][0] != '!')
                         {
@@ -3936,8 +3937,8 @@ file_name_only(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
                         if (search_file_name[iii][0] != '!')
                         {
@@ -3989,8 +3990,8 @@ file_name_only(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
                         if (search_file_name[iii][0] != '!')
                         {
@@ -4042,8 +4043,8 @@ file_name_only(register char *ptr,
                   SET_FILE_NAME_POINTER();
                   for (iii = 0; iii < no_of_search_file_names; iii++)
                   {
-                     if (sfilter(search_file_name[iii], ptr,
-                                 SEPARATOR_CHAR) == 0)
+                     if ((ret = sfilter(search_file_name[iii], ptr,
+                                        SEPARATOR_CHAR)) == 0)
                      {
                         if (search_file_name[iii][0] != '!')
                         {

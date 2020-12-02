@@ -266,31 +266,32 @@ struct sol_perm
            (XtClass(summarybox_w))->core_class.expose (summarybox_w, (XEvent *)&xeev, NULL);\
            XmStringFree(xstr);                                                \
         }
-#define CHECK_INTERRUPT()                                                  \
-        {                                                                  \
-           XEvent event;                                                   \
-                                                                           \
-           XFlush(display);                                                \
-           XmUpdateDisplay(appshell);                                      \
-                                                                           \
-           while (XCheckMaskEvent(display, ButtonPressMask |               \
-                  ButtonReleaseMask | ButtonMotionMask | KeyPressMask,     \
-                  &event))                                                 \
-           {                                                               \
-              if ((event.xany.window == XtWindow(special_button_w)) ||     \
-                  (event.xany.window == XtWindow(scrollbar_w)) ||          \
-                  (event.xany.window == XtWindow(listbox_w)))              \
-              {                                                            \
-                 XtDispatchEvent(&event);                                  \
-              }                                                            \
-              else                                                         \
-              {                                                            \
-                 if (event.type != MotionNotify)                           \
-                 {                                                         \
-                    XBell(display, 50);                                    \
-                 }                                                         \
-              }                                                            \
-           }                                                               \
+#define CHECK_INTERRUPT()                                             \
+        {                                                             \
+           XEvent event;                                              \
+                                                                      \
+           XFlush(display);                                           \
+           XmUpdateDisplay(appshell);                                 \
+                                                                      \
+           while (XCheckMaskEvent(display, ButtonPressMask |          \
+                  ButtonReleaseMask | ButtonMotionMask | KeyPressMask,\
+                  &event))                                            \
+           {                                                          \
+              if ((event.xany.window == XtWindow(special_button_w)) ||\
+                  (event.xany.window == XtWindow(close_button_w)) ||  \
+                  (event.xany.window == XtWindow(scrollbar_w)) ||     \
+                  (event.xany.window == XtWindow(listbox_w)))         \
+              {                                                       \
+                 XtDispatchEvent(&event);                             \
+              }                                                       \
+              else                                                    \
+              {                                                       \
+                 if (event.type != MotionNotify)                      \
+                 {                                                    \
+                    XBell(display, 50);                               \
+                 }                                                    \
+              }                                                       \
+           }                                                          \
         }
 
 /* Function prototypes. */
