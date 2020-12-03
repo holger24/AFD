@@ -112,6 +112,7 @@ DESCR__E_M1
 /* #define _MACRO_DEBUG */
 /* #define _FDQUEUE_ */
 /* #define DEBUG_BURST 0xb5cf91b2 */
+/* #define START_PROCESS_DEBUG */
 
 /* Global variables. */
 int                        crash = NO,
@@ -226,6 +227,42 @@ static uid_t               euid, /* Effective user ID. */
 static time_t              now;
 static double              max_threshold;
 
+#ifdef START_PROCESS_DEBUG
+#define START_PROCESS()                                       \
+        {                                                     \
+           int fsa_pos,                                       \
+               kk;                                            \
+                                                              \
+           /* Try handle any pending jobs. */                 \
+           for (kk = 0; kk < *no_msg_queued; kk++)            \
+           {                                                  \
+              if (qb[kk].pid == PENDING)                      \
+              {                                               \
+                 if ((qb[kk].special_flag & FETCH_JOB) == 0)  \
+                 {                                            \
+                    fsa_pos = mdb[qb[kk].pos].fsa_pos;        \
+                 }                                            \
+                 else                                         \
+                 {                                            \
+                    fsa_pos = fra[qb[kk].pos].fsa_pos;        \
+                 }                                            \
+                 if (start_process(fsa_pos, kk, now, NO, __LINE__) == REMOVED) \
+                 {                                            \
+                    /*                                        \
+                     * The message can be removed because the \
+                     * files are queued in another message    \
+                     * or have been removed due to age.       \
+                     */                                       \
+                    remove_msg(kk, NO);                       \
+                    if (kk < *no_msg_queued)                  \
+                    {                                         \
+                       kk--;                                  \
+                    }                                         \
+                 }                                            \
+              }                                               \
+           }                                                  \
+        }
+#else
 #define START_PROCESS()                                       \
         {                                                     \
            int fsa_pos,                                       \
@@ -260,6 +297,7 @@ static double              max_threshold;
               }                                               \
            }                                                  \
         }
+#endif
 
 /* Local function prototypes. */
 static void  check_zombie_queue(time_t, int),
@@ -282,7 +320,11 @@ static int   check_dir_in_use(int),
 #endif
              zombie_check(struct connection *, time_t, int *, int);
 static pid_t make_process(struct connection *, int),
+#ifdef START_PROCESS_DEBUG
+             start_process(int, int, time_t, int, int);
+#else
              start_process(int, int, time_t, int);
+#endif
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
@@ -1222,8 +1264,13 @@ system_log(DEBUG_SIGN, NULL, 0,
                      if ((fsa[fra[retrieve_list[i]].fsa_pos].error_counter <= *(unsigned char *)((char *)fsa - AFD_START_ERROR_OFFSET_END)) &&
                          (stop_flag == 0))
                      {
+#ifdef START_PROCESS_DEBUG
+                        if (start_process(fra[retrieve_list[i]].fsa_pos,
+                                          qb_pos, now, NO, __LINE__) == REMOVED)
+#else
                         if (start_process(fra[retrieve_list[i]].fsa_pos,
                                           qb_pos, now, NO) == REMOVED)
+#endif
                         {
                            if (qb[qb_pos].pos < no_of_dirs)
                            {
@@ -1583,8 +1630,13 @@ system_log(DEBUG_SIGN, NULL, 0,
                               CHECK_INCREMENT_JOB_QUEUED(fra[qb[qb_pos].pos].fsa_pos);
                               fra[qb[qb_pos].pos].queued += 1;
 
+# ifdef START_PROCESS_DEBUG
+                              (void)start_process(fra[qb[qb_pos].pos].fsa_pos,
+                                                  new_qb_pos, now, NO, __LINE__);
+# else
                               (void)start_process(fra[qb[qb_pos].pos].fsa_pos,
                                                   new_qb_pos, now, NO);
+# endif
                               /*
                                * Note, if start_process() returns PENDING,
                                * we must we must remove it because it was
@@ -1885,7 +1937,11 @@ system_log(DEBUG_SIGN, NULL, 0,
                qb_pos_fsa(fsa_pos, &qb_pos);
                if (qb_pos != -1)
                {
+#ifdef START_PROCESS_DEBUG
+                  if (start_process(fsa_pos, qb_pos, time(NULL), YES, __LINE__) == REMOVED)
+#else
                   if (start_process(fsa_pos, qb_pos, time(NULL), YES) == REMOVED)
+#endif
                   {
                      remove_msg(qb_pos, NO);
                   }
@@ -2284,7 +2340,11 @@ system_log(DEBUG_SIGN, NULL, 0,
                   {
                      fsa_pos = fra[qb[i].pos].fsa_pos;
                   }
+# ifdef START_PROCESS_DEBUG
+                  if (start_process(fsa_pos, i, now, NO, __LINE__) == REMOVED)
+# else
                   if (start_process(fsa_pos, i, now, NO) == REMOVED)
+# endif
                   {
                      /*
                       * The message can be removed because the
@@ -2471,10 +2531,19 @@ system_log(DEBUG_SIGN, NULL, 0,
 
 /*++++++++++++++++++++++++++++ start_process() ++++++++++++++++++++++++++*/
 static pid_t
+#ifdef START_PROCESS_DEBUG
+start_process(int fsa_pos, int qb_pos, time_t current_time, int retry, int line)
+#else
 start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
+#endif
 {
    pid_t pid = PENDING;
 
+#ifdef START_PROCESS_DEBUG
+   (void)system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                    "Function start_process() called at line %d in fd.c fsa_pos=%d qb_pos=%d retry=%d",
+                    line, fsa_pos, qb_pos, retry);
+#endif
    if (fsa_pos < 0)
    {
       /*
