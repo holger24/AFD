@@ -454,13 +454,13 @@ eval_dir_config(off_t        db_size,
       if (onetime == NO)
       {
 #endif
-         system_log(INFO_SIGN, NULL, 0, "Reading %s",
+         system_log(DEBUG_SIGN, NULL, 0, "Reading %s",
                     dcl[dcd].dir_config_file);
 #ifdef WITH_ONETIME
       }
       else
       {
-         receive_log(INFO_SIGN, NULL, 0, 0L,
+         receive_log(DEBUG_SIGN, NULL, 0, 0L,
                      "Reading %s", dcl[dcd].dir_config_file);
       }
 #endif
