@@ -1261,7 +1261,7 @@ system_log(DEBUG_SIGN, NULL, 0,
                      CHECK_INCREMENT_JOB_QUEUED(fra[retrieve_list[i]].fsa_pos);
                      fra[retrieve_list[i]].queued += 1;
 
-                     if ((fsa[fra[retrieve_list[i]].fsa_pos].error_counter <= *(unsigned char *)((char *)fsa - AFD_START_ERROR_OFFSET_END)) &&
+                     if ((fsa[fra[retrieve_list[i]].fsa_pos].error_counter == 0) &&
                          (stop_flag == 0))
                      {
 #ifdef START_PROCESS_DEBUG
@@ -1610,7 +1610,7 @@ system_log(DEBUG_SIGN, NULL, 0,
                                ((fra[qb[qb_pos].pos].dir_flag & DIR_DISABLED) == 0) &&
                                ((fsa[fra[qb[qb_pos].pos].fsa_pos].special_flag & HOST_DISABLED) == 0) &&
                                ((fsa[fra[qb[qb_pos].pos].fsa_pos].host_status & STOP_TRANSFER_STAT) == 0) &&
-                               (fsa[fra[qb[qb_pos].pos].fsa_pos].error_counter <= *(unsigned char *)((char *)fsa - AFD_START_ERROR_OFFSET_END)))
+                               (fsa[fra[qb[qb_pos].pos].fsa_pos].error_counter == 0))
                            {
                               int new_qb_pos = *no_msg_queued;
 
@@ -2614,7 +2614,6 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
 #ifdef WITH_ERROR_QUEUE
       if (((fsa[fsa_pos].host_status & STOP_TRANSFER_STAT) == 0) &&
           ((retry == YES) ||
-           (fsa[fsa_pos].error_counter <= *(unsigned char *)((char *)fsa - AFD_START_ERROR_OFFSET_END)) ||
            ((fsa[fsa_pos].error_counter == 0) &&
             (((fsa[fsa_pos].host_status & ERROR_QUEUE_SET) == 0) ||
              ((fsa[fsa_pos].host_status & ERROR_QUEUE_SET) &&
@@ -2629,7 +2628,6 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
 #else
       if (((fsa[fsa_pos].host_status & STOP_TRANSFER_STAT) == 0) &&
           ((fsa[fsa_pos].error_counter == 0) ||
-           (fsa[fsa_pos].error_counter <= *(unsigned char *)((char *)fsa - AFD_START_ERROR_OFFSET_END)) ||
            (retry == YES) ||
            ((fsa[fsa_pos].active_transfers == 0) && ((current_time - (fsa[fsa_pos].last_retry_time + fsa[fsa_pos].retry_interval)) >= 0))))
 #endif
@@ -2988,7 +2986,7 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
 #endif
                   (void)memcpy(fsa[fsa_pos].job_status[connection[pos].job_no].unique_name,
                                connection[pos].msg_name, MAX_MSG_NAME_LENGTH);
-                  if ((fsa[fsa_pos].error_counter <= *(unsigned char *)((char *)fsa - AFD_START_ERROR_OFFSET_END)) &&
+                  if ((fsa[fsa_pos].error_counter == 0) &&
                       (fsa[fsa_pos].auto_toggle == ON) &&
                       (fsa[fsa_pos].original_toggle_pos != NONE) &&
                       (fsa[fsa_pos].max_successful_retries > 0))
