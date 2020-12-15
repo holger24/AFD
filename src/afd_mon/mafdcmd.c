@@ -1,6 +1,6 @@
 /*
  *  mafdcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -107,6 +107,14 @@ main(int argc, char *argv[])
         *ptr,
         user[MAX_FULL_USER_ID_LENGTH],
         work_dir[MAX_PATH_LENGTH];
+
+   if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "-help", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "--help", NULL, 0) == SUCCESS))
+   {
+      usage(argv[0]);
+      exit(SUCCESS);
+   }
 
    CHECK_FOR_VERSION(argc, argv);
 

@@ -570,7 +570,16 @@ If you do not want to store passwords in the DIR_CONFIG you can set them
 with this program. The syntax is as follows:
 </p>
 <pre>
-   Usage: set_pw [-w &lt;AFD work dir&gt;] [--version] [-e 0|1|2] [-s] [-t] -i &lt;job id&gt;|-c &lt;user@hostname&gt;
+   Usage: set_pw [options] -i &lt;job id&gt;|-c &lt;user@hostname&gt;
+                    -e 0|1|2           Encryption type to use.
+                                         0 clear plain text
+                                         1 AFD internal version (default)
+                                         2 simple XOR encryption
+                    -s                 Read from stdin.
+                    -t                 Write to stdout.
+                    -u &lt;user&gt;          Fake user.
+                    --version          Version number.
+                    -w &lt;AFD work dir&gt;  Set AFD working directory.
 </pre>
 <p>
 All passwords are stored at one location within AFD regardless if you
@@ -642,7 +651,7 @@ all commands it knows:
                                               -r          retry
                                               -s          switch AFD
                                               -X          toggle enable/disable AFD
-                                              -u[ <user>] fake user
+                                              -u[ &lt;user&gt;] fake user
                                               -v          just print Version
 </pre>
 <p>
@@ -905,7 +914,7 @@ user interaction, so it can be used from any shell scripts or programs such as
    <td width="90%"><address><small>
    Copyright &copy; 2001 - 2020 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 21.11.2020
+   Last updated: 15.12.2020
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

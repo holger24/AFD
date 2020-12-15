@@ -1,6 +1,6 @@
 /*
  *  view_ls_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2005 - 2020 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -82,6 +82,14 @@ main(int argc, char *argv[])
                         *work_ptr;
    struct stat          stat_buf;
    struct retrieve_list *rl;
+
+   if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "-help", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "--help", NULL, 0) == SUCCESS))
+   {
+      usage(argv[0]);
+      exit(SUCCESS);
+   }
 
    CHECK_FOR_VERSION(argc, argv);
 

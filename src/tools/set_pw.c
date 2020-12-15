@@ -1,6 +1,6 @@
 /*
  *  set_pw.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -69,7 +69,8 @@ struct termios       buf,
                      set;
 
 /* Local function prototypes. */
-static void          sig_handler(int);
+static void          sig_handler(int),
+                     usage(char *);
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
@@ -108,6 +109,14 @@ main(int argc, char *argv[])
    struct passwd_buf  *pwb;
    struct job_id_data *jd;
    struct stat        stat_buf;
+
+   if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "-help", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "--help", NULL, 0) == SUCCESS))
+   {
+      usage(argv[0]);
+      exit(SUCCESS);
+   }
 
    CHECK_FOR_VERSION(argc, argv);
    check_fake_user(&argc, argv, AFD_CONFIG_FILE, fake_user);
@@ -236,9 +245,7 @@ main(int argc, char *argv[])
         }
         else
         {
-           (void)fprintf(stderr,
-                         "Usage: %s [-w <AFD work dir>] [--version] [-e 0|1|2] [-s] [-t] -i <job id>|-c <user@hostname>\n",
-                         argv[0]);
+           usage(argv[0]);
            exit(INCORRECT);
         }
 
@@ -900,6 +907,37 @@ main(int argc, char *argv[])
 
    exit(SUCCESS);
 }
+
+
+/*+++++++++++++++++++++++++++++++ usage() +++++++++++++++++++++++++++++++*/
+static void
+usage(char *progname)
+{
+   (void)fprintf(stderr,
+                 "Usage: %s [options] -i <job id>|-c <user@hostname>\n",
+                 progname);
+   (void)fprintf(stderr,
+                 "                 -e 0|1|2           Encryption type to use.\n");
+   (void)fprintf(stderr,
+                 "                                      0 clear plain text\n");
+   (void)fprintf(stderr,
+                 "                                      1 AFD internal version (default)\n");
+   (void)fprintf(stderr,
+                 "                                      2 simple XOR encryption\n");
+   (void)fprintf(stderr,
+                 "                 -s                 Read from stdin.\n");
+   (void)fprintf(stderr,
+                 "                 -t                 Write to stdout.\n");
+   (void)fprintf(stderr,
+                 "                 -u <user>          Fake user.\n");
+   (void)fprintf(stderr,
+                 "                 --version          Version number.\n");
+   (void)fprintf(stderr,
+                 "                 -w <AFD work dir>  Set AFD working directory.\n");
+                          
+   return;
+}
+
 
 
 /*---------------------------- sig_handler() ----------------------------*/

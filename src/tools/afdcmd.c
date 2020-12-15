@@ -200,6 +200,14 @@ main(int argc, char *argv[])
                     work_dir[MAX_PATH_LENGTH];
    struct host_list *hl = NULL;
 
+   if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "-help", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "--help", NULL, 0) == SUCCESS))
+   {
+      usage(argv[0]);
+      exit(SUCCESS);
+   }
+
    CHECK_FOR_VERSION(argc, argv);
 
    if ((argc > 1) &&

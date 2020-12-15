@@ -90,6 +90,14 @@ main(int argc, char *argv[])
                         work_dir[MAX_PATH_LENGTH];
    struct afd_host_list *ahl;
 
+   if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "-help", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "--help", NULL, 0) == SUCCESS))
+   {
+      usage();
+      exit(SUCCESS);
+   }
+
    CHECK_FOR_VERSION(argc, argv);
 
    if (get_mon_path(&argc, argv, work_dir) < 0)

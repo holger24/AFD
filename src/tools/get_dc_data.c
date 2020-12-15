@@ -165,6 +165,7 @@ main(int argc, char *argv[])
 #endif
 
    if ((get_arg(&argc, argv, "-?", NULL, 0) == SUCCESS) ||
+       (get_arg(&argc, argv, "-help", NULL, 0) == SUCCESS) ||
        (get_arg(&argc, argv, "--help", NULL, 0) == SUCCESS))
    {
       usage(stdout, argv[0]);
