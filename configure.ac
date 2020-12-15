@@ -479,18 +479,27 @@ AC_ARG_ENABLE(eumetsat,
    fi],
    AM_CONDITIONAL(WITH_MISC_LIB, true))
 
-AC_ARG_ENABLE(ssl,
-   [  --enable-ssl                    enable TLS/SSL support],
-   [if test x$enableval != xno
+AC_ARG_ENABLE([ssl],
+   [  --disable-ssl                    disable TLS/SSL support],
+   [if test x$enableval = xyes
     then
-      if test x$enableval != xyes
-      then
-         ssl_all_roots=$enableval
-      else
-         ssl_all_roots="/usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr /opt"
-      fi
-      with_ssl="yes"
-    fi])
+       if test x$enableval != xyes
+       then
+          ssl_all_roots=$enableval
+       else
+          ssl_all_roots="/usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr /opt"
+       fi
+       with_ssl="yes"
+    else
+       with_ssl="no"
+    fi],
+   [if test x$enableval != xyes
+    then
+       ssl_all_roots=$enableval
+    else
+       ssl_all_roots="/usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr /opt"
+    fi
+    with_ssl="yes"])
 
 AC_ARG_WITH(ssl-includes,
    [  --with-ssl-includes=DIR         location where TLS/SSL includes are],

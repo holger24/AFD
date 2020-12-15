@@ -66,6 +66,9 @@
 --disable-fd_exec_support            - Support for using an external program
                                        to transmit the data.
                                        [Default: enabled]
+--disable-ssl                        - Disable TLS/SSL support for the FTP and
+                                       HTTP protocol.
+                                       [Default: enabled]
 --enable-atpd_support                - Enable support for the ATP daemon.
                                        ATP is AFD's own transfer protocol.
                                        [Default: disabled]
@@ -243,9 +246,6 @@
                                        [Default: disabled]
 --enable-eumetsat                    - Support to write EUMETSAT headers into
                                        each file send via FTP.
-                                       [Default: disabled]
---enable-ssl                         - Enable TLS/SSL support for the FTP and
-                                       HTTP protocol.
                                        [Default: disabled]
 --enable-editres                     - This enables the dynamic resource editor
                                        for X Toolkit applications. This can be
