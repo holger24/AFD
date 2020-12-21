@@ -101,6 +101,7 @@ extern Widget                     active_mode_w,
                                   dc_crc_w,
                                   dc_crc32_w,
                                   dc_crc32c_w,
+                                  dc_murmur3_w,
 #endif
                                   disable_mlst_w,
                                   disable_strict_host_key_w,
@@ -718,8 +719,10 @@ edc_radio_button(Widget w, XtPointer client_data, XtPointer call_data)
       XtSetSensitive(dc_crc_label_w, True);
       XtSetSensitive(dc_crc32_w, True);
       XtSetSensitive(dc_crc32c_w, True);
+      XtSetSensitive(dc_murmur3_w, True);
       XtVaSetValues(dc_crc32_w, XmNset, True, NULL);
       XtVaSetValues(dc_crc32c_w, XmNset, False, NULL);
+      XtVaSetValues(dc_murmur3_w, XmNset, False, NULL);
       (void)sprintf(numeric_str, "%ld", ce[cur_pos].dup_check_timeout);
       XtVaSetValues(dc_timeout_w, XmNvalue, numeric_str, NULL);
    }
@@ -742,6 +745,7 @@ edc_radio_button(Widget w, XtPointer client_data, XtPointer call_data)
       XtSetSensitive(dc_crc_label_w, False);
       XtSetSensitive(dc_crc32_w, False);
       XtSetSensitive(dc_crc32c_w, False);
+      XtSetSensitive(dc_murmur3_w, False);
    }
    ce[cur_pos].value_changed |= DC_TYPE_CHANGED;
    ce[cur_pos].value_changed |= DC_DELETE_CHANGED;
@@ -832,12 +836,20 @@ dc_crc_radio_button(Widget w, XtPointer client_data, XtPointer call_data)
    {
       ce[cur_pos].dup_check_flag |= DC_CRC32C;
       ce[cur_pos].dup_check_flag &= ~DC_CRC32;
+      ce[cur_pos].dup_check_flag &= ~DC_MURMUR3;
    }
-   else
-   {
-      ce[cur_pos].dup_check_flag |= DC_CRC32;
-      ce[cur_pos].dup_check_flag &= ~DC_CRC32C;
-   }
+   else if ((XT_PTR_TYPE)client_data == MURMUR3_DUPCHECK_SEL)
+        {
+           ce[cur_pos].dup_check_flag |= DC_MURMUR3;
+           ce[cur_pos].dup_check_flag &= ~DC_CRC32;
+           ce[cur_pos].dup_check_flag &= ~DC_CRC32C;
+        }
+        else
+        {
+           ce[cur_pos].dup_check_flag |= DC_CRC32;
+           ce[cur_pos].dup_check_flag &= ~DC_CRC32C;
+           ce[cur_pos].dup_check_flag &= ~DC_MURMUR3;
+        }
 
    return;
 }
@@ -1417,6 +1429,7 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
          XtSetSensitive(dc_crc_label_w, False);
          XtSetSensitive(dc_crc32_w, False);
          XtSetSensitive(dc_crc32c_w, False);
+         XtSetSensitive(dc_murmur3_w, False);
          XmToggleButtonSetState(dc_disable_w, True, True);
 #endif
          XtSetSensitive(pt.label_w, False);
@@ -2271,6 +2284,7 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
                XtSetSensitive(dc_crc_label_w, False);
                XtSetSensitive(dc_crc32_w, False);
                XtSetSensitive(dc_crc32c_w, False);
+               XtSetSensitive(dc_murmur3_w, False);
                XmToggleButtonSetState(dc_disable_w, True, True);
             }
             else
@@ -2292,6 +2306,7 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
                XtSetSensitive(dc_crc_label_w, True);
                XtSetSensitive(dc_crc32_w, True);
                XtSetSensitive(dc_crc32c_w, True);
+               XtSetSensitive(dc_murmur3_w, True);
                XmToggleButtonSetState(dc_enable_w, True, True);
             }
          }
@@ -2410,12 +2425,20 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
             {
                XtVaSetValues(dc_crc32_w, XmNset, False, NULL);
                XtVaSetValues(dc_crc32c_w, XmNset, True, NULL);
+               XtVaSetValues(dc_murmur3_w, XmNset, False, NULL);
             }
-            else
-            {
-               XtVaSetValues(dc_crc32_w, XmNset, True, NULL);
-               XtVaSetValues(dc_crc32c_w, XmNset, False, NULL);
-            }
+            else if (fsa[cur_pos].dup_check_flag & DC_MURMUR3)
+                 {
+                    XtVaSetValues(dc_crc32_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_crc32c_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_murmur3_w, XmNset, True, NULL);
+                 }
+                 else
+                 {
+                    XtVaSetValues(dc_crc32_w, XmNset, True, NULL);
+                    XtVaSetValues(dc_crc32c_w, XmNset, False, NULL);
+                    XtVaSetValues(dc_murmur3_w, XmNset, False, NULL);
+                 }
          }
 
          if ((ce[cur_pos].value_changed2 & DC_TIMEOUT_FIXED_CHANGED) == 0)
@@ -3157,12 +3180,20 @@ submite_button(Widget w, XtPointer client_data, XtPointer call_data)
             {
                fsa[i].dup_check_flag |= DC_CRC32C;
                fsa[i].dup_check_flag &= ~DC_CRC32;
+               fsa[i].dup_check_flag &= ~DC_MURMUR3;
             }
-            else
-            {
-               fsa[i].dup_check_flag |= DC_CRC32;
-               fsa[i].dup_check_flag &= ~DC_CRC32C;
-            }
+            else if (ce[i].dup_check_flag & DC_MURMUR3)
+                 {
+                    fsa[i].dup_check_flag |= DC_MURMUR3;
+                    fsa[i].dup_check_flag &= ~DC_CRC32;
+                    fsa[i].dup_check_flag &= ~DC_CRC32C;
+                 }
+                 else
+                 {
+                    fsa[i].dup_check_flag |= DC_CRC32;
+                    fsa[i].dup_check_flag &= ~DC_CRC32C;
+                    fsa[i].dup_check_flag &= ~DC_MURMUR3;
+                 }
             changes++;
          }
          if ((ce[i].value_changed & DC_TYPE_CHANGED) ||

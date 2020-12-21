@@ -1,6 +1,6 @@
 /*
  *  get_dir_options.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -966,12 +966,18 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                                   MAX_OPTION_LENGTH - length,
                                   " %d", DC_CRC32C_BIT);
             }
-            else
-            {
-               length += snprintf(&d_o->aoptions[d_o->no_of_dir_options][length],
-                                  MAX_OPTION_LENGTH - length,
-                                  " %d", DC_CRC32_BIT);
-            }
+            else if (fra[i].dup_check_flag & DC_MURMUR3)
+                 {
+                    length += snprintf(&d_o->aoptions[d_o->no_of_dir_options][length],
+                                       MAX_OPTION_LENGTH - length,
+                                       " %d", DC_MURMUR3_BIT);
+                 }
+                 else
+                 {
+                    length += snprintf(&d_o->aoptions[d_o->no_of_dir_options][length],
+                                       MAX_OPTION_LENGTH - length,
+                                       " %d", DC_CRC32_BIT);
+                 }
             d_o->aoptions[d_o->no_of_dir_options][length] = '\0';
             d_o->no_of_dir_options++;
             if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)

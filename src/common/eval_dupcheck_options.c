@@ -1,7 +1,7 @@
 /*
  *  eval_dupcheck_options.c - Part of AFD, an automatic file distribution
  *                            program.
- *  Copyright (c) 2005 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -237,6 +237,10 @@ eval_dupcheck_options(char         *ptr,
                else if (val == DC_CRC32C_BIT)
                     {
                        *flag |= DC_CRC32C;
+                    }
+               else if (val == DC_MURMUR3_BIT)
+                    {
+                       *flag |= DC_MURMUR3;
                     }
                     else
                     {

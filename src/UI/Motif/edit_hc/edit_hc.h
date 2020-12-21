@@ -68,6 +68,7 @@
 # define RECIPIENT_DUPCHECK_SEL 13
 # define CRC32_DUPCHECK_SEL     14
 # define CRC32C_DUPCHECK_SEL    15
+# define MURMUR3_DUPCHECK_SEL   16
 #endif
 
 #define MAX_TB_BUTTONS          15

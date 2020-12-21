@@ -2045,6 +2045,8 @@ typedef unsigned long       u_long_64;
 # define DC_CRC32_BIT              16
 # define DC_CRC32C                 65536
 # define DC_CRC32C_BIT             17
+# define DC_MURMUR3                131072
+# define DC_MURMUR3_BIT            18
 # define DC_DELETE                 8388608
 # define DC_DELETE_BIT             24
 # define DC_STORE                  16777216
@@ -2556,7 +2558,8 @@ struct filetransfer_status
                                             /*|   26| DC_WARN           |*/
                                             /*|   25| DC_STORE          |*/
                                             /*|   24| DC_DELETE         |*/
-                                            /*|18-23| Not used.         |*/
+                                            /*|19-23| Not used.         |*/
+                                            /*|   18| DC_MURMUR3        |*/
                                             /*|   17| DC_CRC32C         |*/
                                             /*|   16| DC_CRC32          |*/
                                             /*| 6-15| Not used.         |*/
@@ -2724,7 +2727,8 @@ struct host_list
                                             /*|   26 | DC_WARN          |*/
                                             /*|   25 | DC_STORE         |*/
                                             /*|   24 | DC_DELETE        |*/
-                                            /*|18-23 | Not used.        |*/
+                                            /*|19-23 | Not used.        |*/
+                                            /*|   18 | DC_MURMUR3        |*/
                                             /*|   17 | DC_CRC32C        |*/
                                             /*|   16 | DC_CRC32         |*/
                                             /*| 6-15 | Not used.        |*/
@@ -3015,7 +3019,8 @@ struct fileretrieve_status
                                             /*|   26 | DC_WARN          |*/
                                             /*|   25 | DC_STORE         |*/
                                             /*|   24 | DC_DELETE        |*/
-                                            /*|18-23 | Not used.        |*/
+                                            /*|19-23 | Not used.        |*/
+                                            /*|   18 | DC_MURMUR3       |*/
                                             /*|   17 | DC_CRC32C        |*/
                                             /*|   16 | DC_CRC32         |*/
                                             /*| 6-15 | Not used.        |*/
@@ -3994,6 +3999,9 @@ extern unsigned int get_afd_status_struct_size(void),
                     get_checksum_crc32c(const unsigned int, char *, size_t),
                     get_str_checksum_crc32c(char *),
 #endif
+                    get_checksum_murmur3(const unsigned int,
+                                         const unsigned char *, size_t),
+                    get_str_checksum_murmur3(char *),
                     get_str_checksum(char *),
                     url_evaluate(char *, unsigned int *, char *,
                                  unsigned char *, char *,
@@ -4110,6 +4118,8 @@ extern int          assemble(char *, char *, int, char *, int, unsigned int,
 #else
                                              unsigned int *),
 #endif
+                    get_file_checksum_murmur3(int, char *, size_t, size_t,
+                                              unsigned int *),
                     get_host_id_position(struct filetransfer_status *,
                                          unsigned int, int),
                     get_host_position(struct filetransfer_status *,

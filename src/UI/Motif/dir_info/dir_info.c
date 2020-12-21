@@ -1,6 +1,6 @@
 /*
  *  dir_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -737,6 +737,10 @@ main(int argc, char *argv[])
       else if (prev.dup_check_flag & DC_CRC32C)
            {
               length += sprintf(&dupcheck_label_str[length], ", CRC32C");
+           }
+      else if (prev.dup_check_flag & DC_MURMUR3)
+           {
+              length += sprintf(&dupcheck_label_str[length], ", MURMUR3");
            }
            else
            {

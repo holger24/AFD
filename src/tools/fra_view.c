@@ -672,6 +672,10 @@ main(int argc, char *argv[])
                  {
                     (void)fprintf(stdout, "CRC32C");
                  }
+            else if (fra[i].dup_check_flag & DC_MURMUR3)
+                 {
+                    (void)fprintf(stdout, "MURMUR3");
+                 }
                  else
                  {
                     (void)fprintf(stdout, "UNKNOWN_CRC");

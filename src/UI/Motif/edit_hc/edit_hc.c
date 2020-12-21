@@ -164,6 +164,7 @@ Widget                     active_mode_w,
                            dc_crc_w,
                            dc_crc32_w,
                            dc_crc32c_w,
+                           dc_murmur3_w,
 #endif
                            disable_mlst_w,
                            disable_strict_host_key_w,
@@ -1827,6 +1828,14 @@ main(int argc, char *argv[])
    XtAddCallback(dc_crc32c_w, XmNdisarmCallback,
                  (XtCallbackProc)dc_crc_radio_button,
                  (XtPointer)CRC32C_DUPCHECK_SEL);
+   dc_murmur3_w = XtVaCreateManagedWidget("Murmur3",
+                            xmToggleButtonGadgetClass, dc_crc_w,
+                            XmNfontList,               fontlist,
+                            XmNset,                    False,
+                            NULL);
+   XtAddCallback(dc_murmur3_w, XmNdisarmCallback,
+                 (XtCallbackProc)dc_crc_radio_button,
+                 (XtPointer)MURMUR3_DUPCHECK_SEL);
    XtManageChild(dc_crc_w);
    XtManageChild(box_w);
 #endif /* WITH_DUP_CHECK */

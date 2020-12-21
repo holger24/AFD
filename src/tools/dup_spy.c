@@ -1,6 +1,6 @@
 /*
  *  dup_spy.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -182,6 +182,10 @@ main(int argc, char *argv[])
          if (cdb[i].flag & DC_CRC32C)
          {
             (void)fprintf(stdout, " CRC32C");
+         }
+         if (cdb[i].flag & DC_MURMUR3)
+         {
+            (void)fprintf(stdout, " MURMUR3");
          }
          if (cdb[i].flag & DC_DELETE)
          {

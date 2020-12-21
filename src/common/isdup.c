@@ -1,6 +1,6 @@
 /*
  *  isdup.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,6 +76,7 @@ DESCR__S_M3
  **   12.01.2014 H.Kiehl Added optional parameter filename, so it is
  **                      possible to do a check on a filename before
  **                      it is renamed.
+ **   15.12.2020 H.Kiehl Added murmurhash3.
  **
  */
 DESCR__E_M3
@@ -646,10 +647,15 @@ get_crc(char         *fullname,
                                    (p_end - ptr));
 #endif
       }
-      else
-      {
-         crc = get_checksum(INITIAL_CRC, ptr, (p_end - ptr));
-      }
+      else if (flag & DC_MURMUR3)
+           {
+              crc = get_checksum_murmur3(INITIAL_CRC, (unsigned char *)ptr,
+                                         (size_t)(p_end - ptr));
+           }
+           else
+           {
+              crc = get_checksum(INITIAL_CRC, ptr, (p_end - ptr));
+           }
    }
    else if (flag & DC_FILENAME_AND_SIZE)
         {
@@ -692,11 +698,17 @@ get_crc(char         *fullname,
                                         i + sizeof(off_t));
 #endif
            }
-           else
-           {
-              crc = get_checksum(INITIAL_CRC, filename_size,
-                                 i + sizeof(off_t));
-           }
+           else if (flag & DC_MURMUR3)
+                {
+                   crc = get_checksum_murmur3(INITIAL_CRC,
+                                              (unsigned char *)filename_size,
+                                              (size_t)(i + sizeof(off_t)));
+                }
+                else
+                {
+                   crc = get_checksum(INITIAL_CRC, filename_size,
+                                      i + sizeof(off_t));
+                }
         }
    else if (flag & DC_NAME_NO_SUFFIX)
         {
@@ -748,10 +760,15 @@ get_crc(char         *fullname,
                                         (p_end - ptr));
 #endif
            }
-           else
-           {
-              crc = get_checksum(INITIAL_CRC, ptr, (p_end - ptr));
-           }
+           else if (flag & DC_MURMUR3)
+                {
+                   crc = get_checksum_murmur3(INITIAL_CRC, (unsigned char *)ptr,
+                                              (size_t)(p_end - ptr));
+                }
+                else
+                {
+                   crc = get_checksum(INITIAL_CRC, ptr, (p_end - ptr));
+                }
 #if defined (DEBUG_ISDUP) && defined (_MAINTAINER_LOG)
            if (id == DEBUG_ISDUP)
            {
@@ -785,10 +802,14 @@ get_crc(char         *fullname,
                                              &crc);
 #endif
            }
-           else
-           {
-              ret = get_file_checksum(fd, buffer, 4096, 0, &crc);
-           }
+           else if (flag & DC_MURMUR3)
+                {
+                   ret = get_file_checksum_murmur3(fd, buffer, 4096, 0, &crc);
+                }
+                else
+                {
+                   ret = get_file_checksum(fd, buffer, 4096, 0, &crc);
+                }
            if (ret != SUCCESS)
            {
               system_log(WARN_SIGN, __FILE__, __LINE__,
@@ -850,10 +871,17 @@ get_crc(char         *fullname,
                                              &crc);
 #endif
            }
-           else
-           {
-              ret = get_file_checksum(fd, buffer, 4096, (p_end - ptr), &crc);
-           }
+           else if (flag & DC_CRC32C)
+                {
+                   ret = get_file_checksum_murmur3(fd, buffer, 4096,
+                                                   (size_t)(p_end - ptr),
+                                                   &crc);
+                }
+                else
+                {
+                   ret = get_file_checksum(fd, buffer, 4096, (p_end - ptr),
+                                           &crc);
+                }
            if (ret != SUCCESS)
            {
               system_log(WARN_SIGN, __FILE__, __LINE__,

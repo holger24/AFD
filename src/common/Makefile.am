@@ -177,6 +177,7 @@ libafd_a_SOURCES     = attach_afd_status.c\
                        get_arg.c\
                        get_checksum.c\
                        get_checksum_crc32c.c\
+			     get_checksum_murmur3.c\
                        get_definition.c\
                        get_dir_alias.c\
                        get_dir_number.c\
