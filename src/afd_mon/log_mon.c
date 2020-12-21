@@ -578,7 +578,8 @@ eval_log_buffer(char *log_data_buffer,
                         str_number[j] = log_data_buffer[i];
                         i++; j++;
                      }
-                     if ((j > 0) && (log_data_buffer[i] == ' '))
+                     if ((j > 0) && (i < bytes_read) &&
+                         (log_data_buffer[i] == ' '))
                      {
                         unsigned int packet_number;
 
@@ -654,7 +655,8 @@ eval_log_buffer(char *log_data_buffer,
                         {
                            i++;
                         }
-                        if ((i > j) && (log_data_buffer[i] == '\0'))
+                        if ((i > j) && (i < bytes_read) &&
+                            (log_data_buffer[i] == '\0'))
                         {
                            unsigned int packet_length;
 
