@@ -133,7 +133,8 @@ main(int argc, char *argv[])
    /* Get the maximum number of logfiles we keep for history. */
    get_max_log_values(&max_event_log_files, MAX_EVENT_LOG_FILES_DEF,
                       MAX_EVENT_LOG_FILES, &max_eve_logfile_size,
-                      MAX_EVE_LOGFILE_SIZE_DEF, MAX_EVE_LOGFILE_SIZE);
+                      MAX_EVE_LOGFILE_SIZE_DEF, MAX_EVE_LOGFILE_SIZE,
+                      AFD_CONFIG_FILE);
 
    /*
     * Set umask so that all log files have the permission 644.

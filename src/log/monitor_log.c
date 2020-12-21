@@ -183,7 +183,7 @@ main(int argc, char *argv[])
 
    /* Get the maximum number of logfiles we keep for history. */
    get_max_log_values(&max_mon_log_files, MAX_MON_LOG_FILES_DEF,
-                      MAX_MON_LOG_FILES, NULL, NULL, 0);
+                      MAX_MON_LOG_FILES, NULL, NULL, 0, MON_CONFIG_FILE);
 
    /* Attach to the AFD_MON Status Area and position pointers. */
    if (attach_afd_mon_status() < 0)

@@ -184,7 +184,7 @@ main(int argc, char *argv[])
 
    /* Get the maximum number of logfiles we keep for history. */
    get_max_log_values(&max_receive_log_files, MAX_RECEIVE_LOG_FILES_DEF,
-                      MAX_RECEIVE_LOG_FILES, NULL, NULL, 0);
+                      MAX_RECEIVE_LOG_FILES, NULL, NULL, 0, AFD_CONFIG_FILE);
 
    /* Attach to the AFD Status Area and position pointers. */
    if (attach_afd_status(NULL, WAIT_AFD_STATUS_ATTACH) < 0)

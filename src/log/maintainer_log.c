@@ -152,7 +152,7 @@ main(int argc, char *argv[])
    get_max_log_values(&max_maintainer_log_files, MAX_MAINTAINER_LOG_FILES_DEF,
                       MAX_MAINTAINER_LOG_FILES, &max_maintainer_logfile_size,
                       MAX_MAINTAINER_LOGFILE_SIZE_DEF,
-                      MAX_MAINTAINER_LOGFILE_SIZE);
+                      MAX_MAINTAINER_LOGFILE_SIZE, AFD_CONFIG_FILE);
 
    /*
     * Set umask so that all log files have the permission 644.

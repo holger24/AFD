@@ -4279,7 +4279,7 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
                     get_log_type_data(char *),
                     get_log_number(int *, int, char *, int, char *),
                     get_max_log_values(int *, char *, int, off_t *, char *,
-                                       off_t),
+                                       off_t, char *),
 #ifdef LINUX
                     get_proc_name_from_pid(pid_t, char *),
 #endif

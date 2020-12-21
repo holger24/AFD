@@ -1,6 +1,6 @@
 /*
  *  alda.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -5341,7 +5341,13 @@ init_file_data(time_t start_time,
          }
          input.max_log_files = MAX_INPUT_LOG_FILES;
          get_max_log_values(&input.max_log_files, MAX_INPUT_LOG_FILES_DEF,
-                            MAX_INPUT_LOG_FILES, NULL, NULL, 0);
+                            MAX_INPUT_LOG_FILES, NULL, NULL, 0,
+# ifdef WITH_AFD_MON
+                            (mode & ALDA_LOCAL_MODE) ? AFD_CONFIG_FILE : MON_CONFIG_FILE
+# else
+                            AFD_CONFIG_FILE
+# endif
+                            );
          no_of_log_files = input.max_log_files;
          p_data = &input;
          break;
@@ -5366,7 +5372,13 @@ init_file_data(time_t start_time,
          distribution.max_log_files = MAX_DISTRIBUTION_LOG_FILES;
          get_max_log_values(&distribution.max_log_files,
                             MAX_DISTRIBUTION_LOG_FILES_DEF,
-                            MAX_DISTRIBUTION_LOG_FILES, NULL, NULL, 0);
+                            MAX_DISTRIBUTION_LOG_FILES, NULL, NULL, 0,
+# ifdef WITH_AFD_MON
+                            (mode & ALDA_LOCAL_MODE) ? AFD_CONFIG_FILE : MON_CONFIG_FILE
+# else
+                            AFD_CONFIG_FILE
+# endif
+                            );
          no_of_log_files = distribution.max_log_files;
          p_data = &distribution;
          break;
@@ -5391,7 +5403,13 @@ init_file_data(time_t start_time,
          production.max_log_files = MAX_PRODUCTION_LOG_FILES;
          get_max_log_values(&production.max_log_files,
                             MAX_PRODUCTION_LOG_FILES_DEF,
-                            MAX_PRODUCTION_LOG_FILES, NULL, NULL, 0);
+                            MAX_PRODUCTION_LOG_FILES, NULL, NULL, 0,
+# ifdef WITH_AFD_MON
+                            (mode & ALDA_LOCAL_MODE) ? AFD_CONFIG_FILE : MON_CONFIG_FILE
+# else
+                            AFD_CONFIG_FILE
+# endif
+                            );
          no_of_log_files = production.max_log_files;
          p_data = &production;
          break;
@@ -5430,7 +5448,13 @@ init_file_data(time_t start_time,
          }
          output.max_log_files = MAX_OUTPUT_LOG_FILES;
          get_max_log_values(&output.max_log_files, MAX_OUTPUT_LOG_FILES_DEF,
-                            MAX_OUTPUT_LOG_FILES, NULL, NULL, 0);
+                            MAX_OUTPUT_LOG_FILES, NULL, NULL, 0,
+# ifdef WITH_AFD_MON
+                            (mode & ALDA_LOCAL_MODE) ? AFD_CONFIG_FILE : MON_CONFIG_FILE
+# else
+                            AFD_CONFIG_FILE
+# endif
+                            );
          no_of_log_files = output.max_log_files;
          p_data = &output;
          break;
@@ -5454,7 +5478,13 @@ init_file_data(time_t start_time,
          }
          delete.max_log_files = MAX_DELETE_LOG_FILES;
          get_max_log_values(&delete.max_log_files, MAX_DELETE_LOG_FILES_DEF,
-                            MAX_DELETE_LOG_FILES, NULL, NULL, 0);
+                            MAX_DELETE_LOG_FILES, NULL, NULL, 0,
+# ifdef WITH_AFD_MON
+                            (mode & ALDA_LOCAL_MODE) ? AFD_CONFIG_FILE : MON_CONFIG_FILE
+# else
+                            AFD_CONFIG_FILE
+# endif
+                            );
          no_of_log_files = delete.max_log_files;
          p_data = &delete;
          break;

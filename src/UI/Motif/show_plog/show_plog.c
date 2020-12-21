@@ -1692,7 +1692,7 @@ init_show_plog(int *argc, char *argv[], char *window_title)
 
    /* Get the maximum number of logfiles we keep for history. */
    get_max_log_values(&max_production_log_files, MAX_PRODUCTION_LOG_FILES_DEF,
-                      MAX_PRODUCTION_LOG_FILES, NULL, NULL, 0);
+                      MAX_PRODUCTION_LOG_FILES, NULL, NULL, 0, AFD_CONFIG_FILE);
 
    return;
 }

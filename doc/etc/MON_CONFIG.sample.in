@@ -14,6 +14,36 @@
 #MAX_MON_LOG_FILES                14
 
 ##########################################################################
+# The number of remote old logfiles that AFD keeps before they are       #
+# deleted.                                                               #
+# Default SYSTEM_LOG        : 4                                          #
+# Default RECEIVE_LOG       : 7                                          #
+# Default TRANSFER_LOG      : 7                                          #
+# Default TRANS_DB_LOG      : 3                                          #
+# Default EVENT_LOG         : 5                                          #
+# Default MON_SYS_LOG       : 4                                          #
+# Default MON_LOG           : 14                                         #
+# Default INPUT_LOG         : 7                                          #
+# Default DISTRIBUTION_LOG  : 7                                          #
+# Default PRODUCTION_LOG_LOG: 7                                          #
+# Default OUTPUT_LOG        : 7                                          #
+# Default DELETE_LOG        : 7                                          #
+##########################################################################
+#MAX_SYSTEM_LOG_FILES             4
+#MAX_RECEIVE_LOG_FILES            7
+#MAX_TRANSFER_LOG_FILES           7
+#MAX_TRANS_DB_LOG_FILES           3
+#MAX_EVENT_LOG_FILES              5
+#MAX_INPUT_LOG_FILES              7
+#MAX_DISTRIBUTION_LOG_FILES       7
+#MAX_AFD_DIR_LIST_FILES           7
+#MAX_PRODUCTION_LOG_FILES         7
+#MAX_OUTPUT_LOG_FILES             7
+#MAX_AFD_JOB_LIST_FILES           7
+#MAX_DELETE_LOG_FILES             7
+
+
+##########################################################################
 # Default printer command to print.                                      #
 ##########################################################################
 DEFAULT_PRINTER_CMD              "lpr -P"

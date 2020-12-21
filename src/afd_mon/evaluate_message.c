@@ -1650,7 +1650,7 @@ reshuffel_dir_data(int no_of_dirs)
             ptr += AFD_WORD_OFFSET;
             oadl = (struct afd_dir_list *)ptr;
             get_max_log_values(&gotcha, MAX_ADL_FILES_DEF, MAX_ADL_FILES,
-                               NULL, NULL, 0);
+                               NULL, NULL, 0, MON_CONFIG_FILE);
             offset_time = gotcha * SWITCH_FILE_TIME;
             no_added = no_deleted = 0;
             for (i = 0; i < old_no_of_dirs; i++)
@@ -1881,7 +1881,7 @@ reshuffel_job_data(int no_of_job_ids)
             ptr += AFD_WORD_OFFSET;
             oajl = (struct afd_job_list *)ptr;
             get_max_log_values(&gotcha, MAX_AJL_FILES_DEF, MAX_AJL_FILES,
-                               NULL, NULL, 0);
+                               NULL, NULL, 0, MON_CONFIG_FILE);
             offset_time = gotcha * SWITCH_FILE_TIME;
             no_added = no_deleted = 0;
             for (i = 0; i < old_no_of_job_ids; i++)

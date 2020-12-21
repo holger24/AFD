@@ -1020,7 +1020,8 @@ init_log_file(int *argc, char *argv[], char *window_title)
       max_logfile_size = MAX_SYS_LOGFILE_SIZE;
       get_max_log_values(&max_log_number, MAX_SYSTEM_LOG_FILES_DEF,
                          MAX_SYSTEM_LOG_FILES, &max_logfile_size,
-                         MAX_SYS_LOGFILE_SIZE_DEF, MAX_SYS_LOGFILE_SIZE);
+                         MAX_SYS_LOGFILE_SIZE_DEF, MAX_SYS_LOGFILE_SIZE,
+                         AFD_CONFIG_FILE);
       max_log_number--;
       log_type_flag = SYSTEM_LOG_TYPE;
    }
@@ -1034,7 +1035,8 @@ init_log_file(int *argc, char *argv[], char *window_title)
            get_max_log_values(&max_log_number, MAX_MAINTAINER_LOG_FILES_DEF,
                               MAX_MAINTAINER_LOG_FILES, &max_logfile_size,
                               MAX_MAINTAINER_LOGFILE_SIZE_DEF,
-                              MAX_MAINTAINER_LOGFILE_SIZE);
+                              MAX_MAINTAINER_LOGFILE_SIZE,
+                              AFD_CONFIG_FILE);
            max_log_number--;
            log_type_flag = MAINTAINER_LOG_TYPE;
         }
@@ -1050,7 +1052,8 @@ init_log_file(int *argc, char *argv[], char *window_title)
               alias_name_length = DEFAULT_DIR_ALIAS_DISPLAY_LENGTH;
            }
            get_max_log_values(&max_log_number, MAX_RECEIVE_LOG_FILES_DEF,
-                              MAX_RECEIVE_LOG_FILES, NULL, NULL, 0);
+                              MAX_RECEIVE_LOG_FILES, NULL, NULL, 0,
+                              AFD_CONFIG_FILE);
            max_log_number--;
            log_type_flag = RECEIVE_LOG_TYPE;
         }
@@ -1065,7 +1068,8 @@ init_log_file(int *argc, char *argv[], char *window_title)
               alias_name_length = DEFAULT_HOSTNAME_DISPLAY_LENGTH;
            }
            get_max_log_values(&max_log_number, MAX_TRANSFER_LOG_FILES_DEF,
-                              MAX_TRANSFER_LOG_FILES, NULL, NULL, 0);
+                              MAX_TRANSFER_LOG_FILES, NULL, NULL, 0,
+                              AFD_CONFIG_FILE);
            max_log_number--;
            log_type_flag = TRANSFER_LOG_TYPE;
         }
@@ -1083,7 +1087,8 @@ init_log_file(int *argc, char *argv[], char *window_title)
            get_max_log_values(&max_log_number, MAX_TRANS_DB_LOG_FILES_DEF,
                               MAX_TRANS_DB_LOG_FILES, &max_logfile_size,
                               MAX_TRANS_DB_LOGFILE_SIZE_DEF,
-                              MAX_TRANS_DB_LOGFILE_SIZE);
+                              MAX_TRANS_DB_LOGFILE_SIZE,
+                              AFD_CONFIG_FILE);
            max_log_number--;
            log_type_flag = TRANS_DB_LOG_TYPE;
         }
@@ -1093,7 +1098,8 @@ init_log_file(int *argc, char *argv[], char *window_title)
            max_log_number = MAX_MON_SYS_LOG_FILES;
            max_alias_length = MAX_DIR_ALIAS_LENGTH;
            get_max_log_values(&max_log_number, MAX_MON_SYS_LOG_FILES_DEF,
-                              MAX_MON_SYS_LOG_FILES, NULL, NULL, 0);
+                              MAX_MON_SYS_LOG_FILES, NULL, NULL, 0,
+                              MON_CONFIG_FILE);
            max_log_number--;
            log_type_flag = MON_SYSTEM_LOG_TYPE;
         }
@@ -1108,7 +1114,8 @@ init_log_file(int *argc, char *argv[], char *window_title)
               alias_name_length = DEFAULT_AFD_ALIAS_DISPLAY_LENGTH;
            }
            get_max_log_values(&max_log_number, MAX_MON_LOG_FILES_DEF,
-                              MAX_MON_LOG_FILES, NULL, NULL, 0);
+                              MAX_MON_LOG_FILES, NULL, NULL, 0,
+                              MON_CONFIG_FILE);
            max_log_number--;
            log_type_flag = MONITOR_LOG_TYPE;
         }

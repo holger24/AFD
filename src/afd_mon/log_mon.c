@@ -995,7 +995,8 @@ eval_log_buffer(char *log_data_buffer,
                               return;
                         }
                         get_max_log_values(&max_log_files, max_log_def,
-                                           default_log_files, NULL, NULL, 0);
+                                           default_log_files, NULL, NULL, 0,
+                                           MON_CONFIG_FILE);
                         get_log_number(&log_number, (max_log_files - 1),
                                        log_name, log_name_length, p_mon_alias);
                         if (log_number < (max_log_files - 1))

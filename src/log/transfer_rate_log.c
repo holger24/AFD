@@ -143,7 +143,8 @@ main(int argc, char *argv[])
    /* Get the maximum number of logfiles we keep for history. */
    get_max_log_values(&max_transfer_rate_log_files,
                       MAX_TRANSFER_RATE_LOG_FILES_DEF,
-                      MAX_TRANSFER_RATE_LOG_FILES, NULL, NULL, 0);
+                      MAX_TRANSFER_RATE_LOG_FILES,
+                      NULL, NULL, 0, AFD_CONFIG_FILE);
 
    /* Attach to the FSA. */
    if (fsa_attach_passive(NO, TRLOG) != SUCCESS)

@@ -1,6 +1,6 @@
 /*
  *  get_max_log_values.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,12 +26,13 @@ DESCR__S_M3
  **                        to keep from AFD_CONFIG file
  **
  ** SYNOPSIS
- **   void get_max_log_values(int  *max_log_file_number,
- **                           char *max_number_def,
- **                           int  default_number,
+ **   void get_max_log_values(int   *max_log_file_number,
+ **                           char  *max_number_def,
+ **                           int   default_number,
  **                           off_t *max_log_file_size,
  **                           char  *max_size_def,
- **                           off_t default_size)
+ **                           off_t default_size,
+ **                           char  *main_config_file)
  **
  ** DESCRIPTION
  **
@@ -63,13 +64,14 @@ get_max_log_values(int   *max_log_file_number,
                    int   default_number,
                    off_t *max_log_file_size,
                    char  *max_size_def,
-                   off_t default_size)
+                   off_t default_size,
+                   char  *main_config_file)
 {
    char *buffer,
         config_file[MAX_PATH_LENGTH];
 
    (void)snprintf(config_file, MAX_PATH_LENGTH, "%s%s%s",
-                  p_work_dir, ETC_DIR, AFD_CONFIG_FILE);
+                  p_work_dir, ETC_DIR, main_config_file);
    if ((eaccess(config_file, F_OK) == 0) &&
        (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {

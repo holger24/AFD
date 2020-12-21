@@ -153,7 +153,8 @@ main(int argc, char *argv[])
    /* Get the maximum number of logfiles we keep for history. */
    get_max_log_values(&max_system_log_files, MAX_SYSTEM_LOG_FILES_DEF,
                       MAX_SYSTEM_LOG_FILES, &max_sys_logfile_size,
-                      MAX_SYS_LOGFILE_SIZE_DEF, MAX_SYS_LOGFILE_SIZE);
+                      MAX_SYS_LOGFILE_SIZE_DEF, MAX_SYS_LOGFILE_SIZE,
+                      AFD_CONFIG_FILE);
 
    /* Attach to the AFD Status Area. */
    if (attach_afd_status(NULL, WAIT_AFD_STATUS_ATTACH) < 0)

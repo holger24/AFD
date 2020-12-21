@@ -1206,7 +1206,7 @@ init_show_elog(int *argc, char *argv[], char *window_title)
    /* Get the maximum number of event logfiles. */
    max_event_log_files = MAX_EVENT_LOG_FILES;
    get_max_log_values(&max_event_log_files, MAX_EVENT_LOG_FILES_DEF,
-                      MAX_EVENT_LOG_FILES, NULL, NULL, 0);
+                      MAX_EVENT_LOG_FILES, NULL, NULL, 0, AFD_CONFIG_FILE);
 
    ea_toggles_set_1 = (1 << EA_REREAD_DIR_CONFIG) |
                       (1 << EA_REREAD_HOST_CONFIG) |

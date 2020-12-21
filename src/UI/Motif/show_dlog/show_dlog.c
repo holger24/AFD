@@ -1245,7 +1245,7 @@ init_show_dlog(int *argc, char *argv[], char *window_title)
 
    /* Get the maximum number of logfiles we keep for history. */
    get_max_log_values(&max_delete_log_files, MAX_DELETE_LOG_FILES_DEF,
-                      MAX_DELETE_LOG_FILES, NULL, NULL, 0);
+                      MAX_DELETE_LOG_FILES, NULL, NULL, 0, AFD_CONFIG_FILE);
 
    return;
 }

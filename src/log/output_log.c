@@ -313,7 +313,7 @@ main(int argc, char *argv[])
 
    /* Get the maximum number of logfiles we keep for history. */
    get_max_log_values(&max_output_log_files, MAX_OUTPUT_LOG_FILES_DEF,
-                      MAX_OUTPUT_LOG_FILES, NULL, NULL, 0);
+                      MAX_OUTPUT_LOG_FILES, NULL, NULL, 0, AFD_CONFIG_FILE);
 
    /*
     * Set umask so that all log files have the permission 644.

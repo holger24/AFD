@@ -154,7 +154,8 @@ main(int argc, char *argv[])
    /* Get the maximum number of logfiles we keep for history. */
    get_max_log_values(&max_trans_db_log_files, MAX_TRANS_DB_LOG_FILES_DEF,
                       MAX_TRANS_DB_LOG_FILES, &max_trans_db_logfile_size,
-                      MAX_TRANS_DB_LOGFILE_SIZE_DEF, MAX_TRANS_DB_LOGFILE_SIZE);
+                      MAX_TRANS_DB_LOGFILE_SIZE_DEF, MAX_TRANS_DB_LOGFILE_SIZE,
+                      AFD_CONFIG_FILE);
 
    /*
     * Set umask so that all log files have the permission 644.
