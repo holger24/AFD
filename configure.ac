@@ -1200,7 +1200,7 @@ then
    VL_PROG_CC_WARNINGS
    if test "x${GCC}" = "xyes"
    then
-      CFLAGS="$CFLAGS -Wno-format-y2k"
+      CFLAGS="$CFLAGS -Wno-format-y2k -Wno-restrict"
    fi
 fi
 
