@@ -3205,7 +3205,7 @@ check_distribution_log(char         *search_afd,
                                                      prev_log_time, prev_dir_id,
                                                      prev_unique_number)) == SUCCESS)
                   {
-                     if (trace_mode == ON)
+                     if ((trace_mode == ON) && (ucache != NULL))
                      {
                         upl[distribution.current_file_no][ucache[distribution.current_file_no].pc - 1].gotcha = YES;
                      }
@@ -3845,7 +3845,10 @@ check_production_log(char         *search_afd,
                   {
                      if (trace_mode == ON)
                      {
-                        ppl[production.current_file_no][pcache[production.current_file_no].pc - 1].gotcha = YES;
+                        if (pcache != NULL)
+                        {
+                           ppl[production.current_file_no][pcache[production.current_file_no].pc - 1].gotcha = YES;
+                        }
                         if (prev_proc_cycles > 0)
                         {
                            if (plog.new_filename[0] != '\0')
@@ -4529,7 +4532,7 @@ check_output_log(char         *search_afd,
                   }
                   if (ret == SUCCESS)
                   {
-                     if (trace_mode == ON)
+                     if ((trace_mode == ON) && (ocache != NULL))
                      {
                         opl[output.current_file_no][ocache[output.current_file_no].pc - 1].gotcha = YES;
                      }
@@ -5145,7 +5148,7 @@ check_delete_log(char         *search_afd,
                                         prev_job_id, prev_unique_number,
                                         prev_split_job_counter) == SUCCESS)
                   {
-                     if (trace_mode == ON)
+                     if ((trace_mode == ON) && (dcache != NULL))
                      {
                         dpl[delete.current_file_no][dcache[delete.current_file_no].pc - 1].gotcha = YES;
                      }
