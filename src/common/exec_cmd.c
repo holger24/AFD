@@ -291,6 +291,10 @@ exec_cmd(char           *cmd,
             {
                exec_start_time = time(NULL);
             }
+            else
+            {
+               exec_start_time = 0; /* Silence compiler. */
+            }
 
             FD_ZERO(&rset);
             for (;;)

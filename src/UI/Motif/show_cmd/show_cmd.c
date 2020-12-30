@@ -465,7 +465,10 @@ init_cmd(int *argc, char *argv[], char *title_cmd)
       *ptr = '\0';
       ptr++;
    }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
    (void)strncat(title_cmd, ptr, 25);
+#pragma GCC diagnostic pop
 
    return;
 }
