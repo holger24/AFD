@@ -1,0 +1,53 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2001 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+noinst_HEADERS                     += src/statistics/statdefs.h
+bin_PROGRAMS                       += bin/afd_stat\
+                                      bin/show_stat\
+                                      bin/show_istat\
+                                      bin/show_bench_stat
+EXTRA_PROGRAMS                     += bin/truncate_old_year_stat
+CLEANFILES                         += src/statistics/gmon.out\
+                                      src/statistics/core\
+                                      src/statistics/core.*\
+                                      $(EXTRA_PROGRAMS)
+bin_afd_stat_SOURCES                = src/statistics/afd_stat.c\
+                                      src/statistics/eval_input_as.c\
+                                      src/statistics/locate_dir.c\
+                                      src/statistics/locate_host.c\
+                                      src/statistics/read_afd_istat_db.c\
+                                      src/statistics/read_afd_stat_db.c\
+                                      src/statistics/save_old_input_year.c\
+                                      src/statistics/save_old_output_year.c
+bin_afd_stat_LDADD                  = lib/libafd.a
+bin_show_stat_SOURCES               = src/statistics/show_stat.c\
+                                      src/statistics/eval_input_ss.c\
+                                      src/statistics/get_real_hostname.c\
+                                      src/statistics/locate_host.c
+bin_show_stat_LDADD                 = lib/libafd.a
+bin_show_istat_SOURCES              = src/statistics/show_istat.c\
+                                      src/statistics/eval_input_ss.c\
+                                      src/statistics/get_dir_name.c\
+                                      src/statistics/locate_dir.c
+bin_show_istat_LDADD                = lib/libafd.a
+bin_truncate_old_year_stat_SOURCES  = src/statistics/save_old_input_year.c\
+                                      src/statistics/save_old_output_year.c\
+                                      src/statistics/truncate_old_year_stat.c
+bin_truncate_old_year_stat_LDADD    = lib/libafd.a
+bin_show_bench_stat_SOURCES         = src/statistics/show_bench_stat.c
+bin_show_bench_stat_LDADD           = lib/libafd.a

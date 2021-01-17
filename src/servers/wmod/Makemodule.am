@@ -1,0 +1,30 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2005 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+CLEANFILES       += src/servers/wmod/gmon.out\
+                    src/servers/wmod/core\
+                    src/servers/wmod/core.*
+noinst_HEADERS   += src/servers/wmod/commondefs.h\
+                    src/servers/wmod/wmoddefs.h
+bin_PROGRAMS     += bin/wmod
+bin_wmod_SOURCES  = src/servers/wmod/check_fsa_pos.c\
+                    src/servers/wmod/get_free_connection.c\
+                    src/servers/wmod/handle_wmo_request.c\
+                    src/servers/wmod/trans_log.c\
+                    src/servers/wmod/wmod.c
+bin_wmod_LDADD    = lib/libafd.a

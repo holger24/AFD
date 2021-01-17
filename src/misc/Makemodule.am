@@ -1,0 +1,49 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2001 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+noinst_HEADERS                  += src/misc/eumetsat_header_defs.h\
+                                   src/misc/mmap_emu.h
+noinst_LIBRARIES                += lib/libmisc.a
+lib_libmisc_a_SOURCES            = src/misc/afw2wmo.c\
+                                   src/misc/assemble.c\
+                                   src/misc/bin_file_chopper.c\
+                                   src/misc/convert.c\
+                                   src/misc/convert_grib2wmo.c\
+                                   src/misc/create_eumetsat_header.c\
+                                   src/misc/extract.c\
+                                   src/misc/fax2gts.c\
+                                   src/misc/gts2tiff.c\
+                                   src/misc/iso8859_2ascii.c\
+                                   src/misc/tiff2gts.c\
+                                   src/misc/wmo2ascii.c\
+                                   src/misc/wmoheader_from_grib.c
+if WITHOUT_MMAP
+   bin_PROGRAMS                 += bin/mapper
+   bin_mapper_SOURCES            = src/misc/mapper.c
+   bin_mapper_LDADD              = lib/libafd.a
+else
+   EXTRA_DIST                   += src/misc/mapper.c
+endif
+EXTRA_PROGRAMS                  += bin/create_eumetsat_name\
+                                   bin/todos
+bin_create_eumetsat_name_SOURCES = src/misc/create_eumetsat_name.c
+bin_todos_SOURCES                = src/misc/todos.c
+CLEANFILES                      += src/misc/gmon.out\
+                                   src/misc/core\
+                                   src/misc/core.*\
+                                   $(EXTRA_PROGRAMS)

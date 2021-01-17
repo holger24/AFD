@@ -1,0 +1,40 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2008 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option) 
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of 
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software      
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  
+##
+
+CLEANFILES            += src/UI/Gtk+/gshow_log/gmon.out\
+                         src/UI/Gtk+/gshow_log/core\
+                         src/UI/Gtk+/gshow_log/core.*
+noinst_HEADERS        += src/UI/Gtk+/gshow_log/gshow_log.h
+bin_PROGRAMS          += bin/gshow_log                         
+bin_gshow_log_SOURCES  = src/UI/Gtk+/gshow_log/check_log.c\
+                         src/UI/Gtk+/gshow_log/init_text.c\
+                         src/UI/Gtk+/gshow_log/log_callbacks.c\
+                         src/UI/Gtk+/gshow_log/log_filter.c\
+                         src/UI/Gtk+/gshow_log/gshow_log.c
+bin_gshow_log_LDADD    = lib/libgtkafd.a\
+                         lib/libafd.a\
+                         @AFD_GTK_LIBS@
+
+install-exec-hook-gshowlog:
+	cd $(DESTDIR)$(bindir) && rm -f show_log && ln -s gshow_log show_log
+
+uninstall-hook-gshowlog:
+	cd $(DESTDIR)$(bindir) && rm -f show_log
+
+INSTALL_EXEC_HOOKS += install-exec-hook-gshowlog
+UNINSTALL_HOOKS += uninstall-hook-gshowlog

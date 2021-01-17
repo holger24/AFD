@@ -1,0 +1,138 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2001 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+if WITH_DELETE_LOG
+   REMOVE_POOL_DIR           = src/amg/remove_pool_directory.c
+   EXTRA_RM_POOL_DIR         =
+else
+   REMOVE_POOL_DIR           =
+   EXTRA_RM_POOL_DIR         = src/amg/remove_pool_directory.c
+endif
+if WITH_DISTRIBUTION_LOG
+   DIS_LOG                   = src/amg/dis_log.c
+   EXTRA_DIS_LOG             =
+else
+   DIS_LOG                   =
+   EXTRA_DIS_LOG             = src/amg/dis_log.c
+endif
+if WITH_ONETIME_SUPPORT
+   CHECK_OT_CONF             = src/amg/check_onetime_config.c\
+                               src/amg/receive_log.c
+   EXTRA_CHECK_OT_CONF       =
+else
+   CHECK_OT_CONF             =
+   EXTRA_CHECK_OT_CONF       = src/amg/check_onetime_config.c
+endif
+if WITH_INOTIFY_SUPPORT
+   CHECK_INOTIFY_FILES       = src/amg/check_inotify_files.c\
+                               src/amg/del_unknown_inotify_files.c
+   EXTRA_CHECK_INOTIFY_FILES =
+else
+   CHECK_INOTIFY_FILES       =
+   EXTRA_CHECK_INOTIFY_FILES = src/amg/check_inotify_files.c\
+                               src/amg/del_unknown_inotify_files.c
+endif
+
+noinst_HEADERS              += src/amg/amgdefs.h
+bin_PROGRAMS                += bin/amg\
+                               bin/dir_check\
+                               $(ONETIME_PROG)
+EXTRA_PROGRAMS              += bin/test_in_time\
+                               bin/test_time\
+                               bin/show_amg_data
+EXTRA_DIST                  += $(EXTRA_RM_POOL_DIR)\
+                               $(EXTRA_DIS_LOG)\
+                               $(EXTRA_CHECK_OT_CONF)
+CLEANFILES                  += src/amg/gmon.out\
+                               src/amg/core\
+                               src/amg/core.*\
+                               $(EXTRA_PROGRAMS)
+bin_amg_SOURCES              = src/amg/add_file_mask.c\
+                               src/amg/amg.c\
+                               src/amg/amg_zombie_check.c\
+                               $(CHECK_OT_CONF)\
+                               src/amg/check_option.c\
+                               src/amg/clear_pool_dir.c\
+                               src/amg/com.c\
+                               src/amg/convert_fsa.c\
+                               src/amg/convert_fra.c\
+                               src/amg/create_fsa.c\
+                               src/amg/create_fra.c\
+                               src/amg/create_sa.c\
+                               src/amg/eval_dir_config.c\
+                               src/amg/eval_dir_options.c\
+                               src/amg/get_com_action_str.c\
+                               src/amg/handle_dir_group_name.c\
+                               src/amg/handle_file_group_name.c\
+                               src/amg/handle_full_dc_names.c\
+                               src/amg/handle_group_list_changes.c\
+                               src/amg/handle_recipient_group_name.c\
+                               src/amg/lookup_dc_id.c\
+                               src/amg/lookup_dir_id.c\
+                               src/amg/make_process_amg.c\
+                               $(REMOVE_POOL_DIR)\
+                               src/amg/reread_dir_config.c\
+                               src/amg/reread_host_config.c\
+                               src/amg/store_file_mask.c\
+                               src/amg/store_passwd.c
+bin_amg_LDADD                = lib/libafd.a
+bin_dir_check_SOURCES        = src/amg/check_file_dir.c\
+                               src/amg/check_files.c\
+                               src/amg/check_file_pool_mem.c\
+                               src/amg/check_paused_dir.c\
+                               src/amg/check_old_time_jobs.c\
+                               src/amg/clear_msg_buffer.c\
+                               src/amg/convert_jid.c\
+                               src/amg/count_pool_files.c\
+                               src/amg/create_db.c\
+                               src/amg/dir_check.c\
+                               $(DIS_LOG)\
+                               src/amg/enter_time_job.c\
+                               src/amg/eval_bul_rep_config.c\
+                               src/amg/get_last_char.c\
+                               $(CHECK_INOTIFY_FILES)\
+                               src/amg/handle_options.c\
+                               src/amg/handle_retrieve_list.c\
+                               src/amg/handle_time_jobs.c\
+                               src/amg/init_dir_check.c\
+                               src/amg/init_job_data.c\
+                               src/amg/init_msg_buffer.c\
+                               src/amg/in_time.c\
+                               src/amg/link_files.c\
+                               src/amg/lookup_fra_pos.c\
+                               src/amg/lookup_file_mask_id.c\
+                               src/amg/lookup_job_id.c\
+                               src/amg/next.c\
+                               src/amg/receive_log.c\
+                               src/amg/remove_old_ls_data_files.c\
+                               src/amg/remove_time_dir.c\
+                               src/amg/rename_files.c\
+                               src/amg/save_files.c\
+                               src/amg/search_old_files.c\
+                               src/amg/send_message.c\
+                               src/amg/sort_time_job.c\
+                               src/amg/store_passwd.c
+bin_dir_check_LDADD          = lib/libmisc.a\
+                               lib/libafd.a @EXTRA_SOCKET_LIBS@
+bin_test_time_SOURCES        = src/amg/test_time.c
+bin_test_time_LDADD          = lib/libafd.a
+bin_test_in_time_SOURCES     = src/amg/in_time.c\
+                               src/amg/test_in_time.c
+bin_test_in_time_LDADD       = lib/libafd.a
+bin_show_amg_data_SOURCES    = src/amg/show_amg_data.c
+bin_show_amg_data_LDADD      = lib/libafd.a

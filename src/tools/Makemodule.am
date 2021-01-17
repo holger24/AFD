@@ -1,0 +1,218 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2001 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+if WITHOUT_DUPCHECK
+   DUPCHECK                        =
+   EXTRA_DUPCHECK                  = sbin/dup_spy
+else
+   DUPCHECK                        = sbin/dup_spy
+   EXTRA_DUPCHECK                  =
+endif
+if WITH_IP_DATABASE
+   AFDIPDBCMD                      = bin/afdipdbcmd
+   EXTRA_AFDIPDBCMD                =
+else
+   AFDIPDBCMD                      =
+   EXTRA_AFDIPDBCMD                = bin/afdipdbcmd
+endif
+if WITH_TRANSFER_RATE_LOG
+   AFDTR                           = bin/afdtr
+   EXTRA_AFDTR                     =
+else
+   AFDTR                           =
+   EXTRA_AFDTR                     = bin/afdtr
+endif
+
+bin_PROGRAMS                      += bin/afdcmd\
+                                     bin/afdcfg\
+                                     bin/afd_hex_print\
+                                     bin/afd_status\
+                                     $(AFDTR)\
+                                     $(AFDIPDBCMD)\
+                                     bin/fsa_edit\
+                                     bin/fsa_view\
+                                     bin/fra_edit\
+                                     bin/fra_view\
+                                     bin/get_dc_data\
+                                     bin/get_hostname\
+                                     bin/grib2wmo\
+                                     bin/jid_view\
+                                     bin/set_pw\
+                                     bin/udc
+sbin_PROGRAMS                     += sbin/cache_spy\
+                                     sbin/convert_fsa\
+                                     sbin/convert_stat\
+                                     sbin/current_job_list_spy\
+                                     sbin/dc_id_spy\
+                                     sbin/dir_spy\
+                                     $(DUPCHECK)\
+                                     sbin/file_mask_list_spy\
+                                     sbin/gen_file\
+                                     sbin/queue_spy\
+                                     sbin/set_counter\
+                                     sbin/rm_job\
+                                     sbin/view_ls_data
+EXTRA_PROGRAMS                    += bin/afdconvert\
+                                     $(EXTRA_AFDIPDBCMD)\
+                                     $(EXTRA_AFDTR)\
+                                     bin/bfc\
+                                     bin/binfc\
+                                     bin/byte_order\
+                                     bin/convert_jid\
+                                     bin/count_burst\
+                                     bin/convert_ls_data\
+                                     bin/del_cache\
+                                     bin/dc_proc_spy\
+                                     $(EXTRA_DUPCHECK)\
+                                     bin/fax2gts\
+                                     bin/get_counter\
+                                     bin/get_checksum\
+                                     bin/get_full_date\
+                                     bin/get_file_size\
+                                     bin/gts2tiff\
+                                     bin/linger\
+                                     bin/reset_fsa\
+                                     bin/rdu\
+                                     bin/sysconf\
+                                     bin/tiff_sniffer\
+                                     bin/watch_dir\
+                                     bin/fra_version\
+                                     bin/view_error_queue
+CLEANFILES                        += src/tools/gmon.out\
+                                     src/tools/core\
+                                     src/tools/core.*\
+                                     $(EXTRA_PROGRAMS)
+bin_afdcfg_SOURCES                 = src/tools/afdcfg.c
+bin_afdcfg_LDADD                   = lib/libafd.a
+bin_afdcmd_SOURCES                 = src/tools/afdcmd.c
+bin_afdcmd_LDADD                   = lib/libafd.a
+bin_afdconvert_SOURCES             = src/tools/afdconvert.c\
+                                     src/tools/receive_log.c
+bin_afdconvert_LDADD               = lib/libmisc.a\
+                                     lib/libafd.a
+bin_afd_hex_print_SOURCES          = src/tools/afd_hex_print.c
+bin_afdipdbcmd_SOURCES             = src/tools/afdipdbcmd.c
+bin_afdipdbcmd_LDADD               = lib/libafd.a
+bin_afd_status_SOURCES             = src/tools/afd_status.c
+bin_afd_status_LDADD               = lib/libafd.a
+bin_afdtr_SOURCES                  = src/tools/afdtr.c
+bin_afdtr_LDADD                    = lib/libafd.a
+bin_bfc_SOURCES                    = src/tools/bull_file_check.c
+bin_bfc_LDADD                      = lib/libafd.a
+bin_binfc_SOURCES                  = src/tools/binfc.c
+bin_binfc_LDADD                    = lib/libafd.a\
+                                     lib/libmisc.a
+bin_byte_order_SOURCES             = src/tools/byte_order.c
+sbin_cache_spy_SOURCES             = src/tools/cache_spy.c
+sbin_cache_spy_LDADD               = lib/libafd.a
+sbin_convert_fsa_SOURCES           = src/tools/convert_fsa.c
+sbin_convert_fsa_LDADD             = lib/libafd.a
+bin_convert_jid_SOURCES            = src/tools/convert_jid.c
+bin_convert_jid_LDADD              = lib/libafd.a
+bin_convert_ls_data_SOURCES        = src/tools/convert_ls_data.c
+bin_convert_ls_data_LDADD          = lib/libafd.a
+sbin_convert_stat_SOURCES          = src/tools/convert_stat.c
+sbin_convert_stat_LDADD            = lib/libafd.a
+bin_count_burst_SOURCES            = src/tools/count_burst.c
+sbin_current_job_list_spy_SOURCES  = src/tools/current_job_list_spy.c
+sbin_current_job_list_spy_LDADD    = lib/libafd.a
+sbin_dc_id_spy_SOURCES             = src/tools/dc_id_spy.c
+sbin_dc_id_spy_LDADD               = lib/libafd.a
+bin_dc_proc_spy_SOURCES            = src/tools/dc_proc_spy.c
+bin_dc_proc_spy_LDADD              = lib/libafd.a
+bin_del_cache_SOURCES              = src/tools/del_cache.c
+bin_del_cache_LDADD                = lib/libafd.a
+sbin_dir_spy_SOURCES               = src/tools/dir_spy.c
+sbin_dir_spy_LDADD                 = lib/libafd.a
+sbin_dup_spy_SOURCES               = src/tools/dup_spy.c
+sbin_dup_spy_LDADD                 = lib/libafd.a
+bin_fax2gts_SOURCES                = src/tools/fax2gts.c
+bin_fax2gts_LDADD                  = lib/libafd.a
+sbin_file_mask_list_spy_SOURCES    = src/tools/file_mask_list_spy.c
+sbin_file_mask_list_spy_LDADD      = lib/libafd.a
+bin_fsa_edit_SOURCES               = src/tools/fsa_edit.c
+bin_fsa_edit_LDADD                 = lib/libafd.a
+bin_fsa_view_SOURCES               = src/tools/fsa_view.c
+bin_fsa_view_LDADD                 = lib/libafd.a\
+                                     @AFD_MATH_LIB@
+bin_fra_version_SOURCES            = src/tools/fra_version.c
+bin_fra_version_LDADD              = lib/libafd.a
+bin_fra_edit_SOURCES               = src/tools/fra_edit.c
+bin_fra_edit_LDADD                 = lib/libafd.a
+bin_fra_view_SOURCES               = src/tools/fra_view.c
+bin_fra_view_LDADD                 = lib/libafd.a
+sbin_gen_file_SOURCES              = src/tools/gen_file.c
+bin_get_counter_SOURCES            = src/tools/get_counter.c
+bin_get_counter_LDADD              = lib/libafd.a
+bin_get_checksum_SOURCES           = src/tools/get_checksum.c
+bin_get_checksum_LDADD             = lib/libafd.a
+bin_get_dc_data_SOURCES            = src/tools/get_current_jid_list.c\
+                                     src/tools/get_dc_data.c
+bin_get_dc_data_LDADD              = lib/libafd.a
+bin_get_file_size_SOURCES          = src/tools/get_file_size.c
+bin_get_full_date_SOURCES          = src/tools/get_full_date.c
+bin_get_hostname_SOURCES           = src/tools/get_hostname.c
+bin_get_hostname_LDADD             = lib/libafd.a
+bin_grib2wmo_SOURCES               = src/tools/grib2wmo.c\
+                                     src/tools/receive_log.c
+bin_grib2wmo_LDADD                 = lib/libmisc.a
+bin_gts2tiff_SOURCES               = src/tools/gts2tiff.c\
+                                     src/tools/receive_log.c
+bin_gts2tiff_LDADD                 = lib/libmisc.a\
+                                     lib/libafd.a 
+bin_jid_view_SOURCES               = src/tools/jid_view.c
+bin_jid_view_LDADD                 = lib/libafd.a
+bin_linger_SOURCES                 = src/tools/linger.c
+sbin_queue_spy_SOURCES             = src/tools/queue_spy.c
+sbin_queue_spy_LDADD               = lib/libafd.a
+bin_rdu_SOURCES                    = src/tools/rdu.c
+bin_reset_fsa_SOURCES              = src/tools/reset_fsa.c
+bin_reset_fsa_LDADD                = lib/libafd.a
+sbin_rm_job_SOURCES                = src/tools/rm_job.c
+sbin_rm_job_LDADD                  = lib/libafd.a
+sbin_set_counter_SOURCES           = src/tools/set_counter.c
+sbin_set_counter_LDADD             = lib/libafd.a
+bin_set_pw_SOURCES                 = src/tools/get_current_jid_list.c\
+                                     src/tools/set_pw.c
+bin_set_pw_LDADD                   = lib/libafd.a
+bin_sysconf_SOURCES                = src/tools/sysconf.c
+bin_sysconf_LDADD                  = lib/libafd.a
+bin_tiff_sniffer_SOURCES           = src/tools/tiff_sniffer.c
+bin_udc_SOURCES                    = src/tools/update_db.c
+bin_udc_LDADD                      = lib/libafd.a
+bin_view_error_queue_SOURCES       = src/tools/view_error_queue.c
+bin_view_error_queue_LDADD         = lib/libafd.a
+sbin_view_ls_data_SOURCES          = src/tools/view_ls_data.c
+sbin_view_ls_data_LDADD            = lib/libafd.a
+bin_watch_dir_SOURCES              = src/tools/watch_dir.c
+bin_watch_dir_LDADD                = lib/libafd.a
+
+install-exec-hook-tools:
+if WITH_SETUID_PROGS
+	chmod 4755 $(DESTDIR)$(bindir)/afdcmd
+	chmod 4755 $(DESTDIR)$(bindir)/udc
+	chmod 4755 $(DESTDIR)$(bindir)/get_dc_data
+endif
+	cd $(DESTDIR)$(bindir) && rm -f uhc
+	cd $(DESTDIR)$(bindir) && ln -s udc uhc
+
+uninstall-hook-tools:
+	cd $(DESTDIR)$(bindir) && rm -f uhc
+
+INSTALL_EXEC_HOOKS += install-exec-hook-tools
+UNINSTALL_HOOKS += uninstall-hook-tools

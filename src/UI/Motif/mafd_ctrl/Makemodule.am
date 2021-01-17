@@ -1,0 +1,64 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2001 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+CLEANFILES            += src/UI/Motif/mafd_ctrl/gmon.out\
+                         src/UI/Motif/mafd_ctrl/core\
+                         src/UI/Motif/mafd_ctrl/core.*
+noinst_HEADERS        += src/UI/Motif/mafd_ctrl/mafd_ctrl.h
+bin_PROGRAMS          += bin/mafd_ctrl
+bin_mafd_ctrl_SOURCES  = src/UI/Motif/mafd_ctrl/mafd_ctrl.c\
+                         src/UI/Motif/mafd_ctrl/calc_but_coord.c\
+                         src/UI/Motif/mafd_ctrl/check_host_status.c\
+                         src/UI/Motif/mafd_ctrl/check_status.c\
+                         src/UI/Motif/mafd_ctrl/check_tv_status.c\
+                         src/UI/Motif/mafd_ctrl/create_tv_window.c\
+                         src/UI/Motif/mafd_ctrl/draw_line.c\
+                         src/UI/Motif/mafd_ctrl/draw_tv_line.c\
+                         src/UI/Motif/mafd_ctrl/error_history.c\
+                         src/UI/Motif/mafd_ctrl/event_reason.c\
+                         src/UI/Motif/mafd_ctrl/expose_handler.c\
+                         src/UI/Motif/mafd_ctrl/find_host_dialog.c\
+                         src/UI/Motif/mafd_ctrl/get_job_priority.c\
+                         src/UI/Motif/mafd_ctrl/get_vpl_pos.c\
+                         src/UI/Motif/mafd_ctrl/init_jd_structure.c\
+                         src/UI/Motif/mafd_ctrl/locate_xy_column.c\
+                         src/UI/Motif/mafd_ctrl/mouse_handler.c\
+                         src/UI/Motif/mafd_ctrl/redraw_all.c\
+                         src/UI/Motif/mafd_ctrl/resize_tv_window.c\
+                         src/UI/Motif/mafd_ctrl/resize_window.c\
+                         src/UI/Motif/mafd_ctrl/setup_tv_window.c\
+                         src/UI/Motif/mafd_ctrl/setup_window.c\
+                         src/UI/Motif/mafd_ctrl/tv_window_size.c\
+                         src/UI/Motif/mafd_ctrl/window_size.c
+bin_mafd_ctrl_LDADD    = @AFD_MATH_LIB@\
+                         lib/libmotifafd.a\
+                         lib/libuiafd.a\
+                         lib/libafd.a\
+                         @AFD_MOTIF_LIBS@
+
+install-exec-hook-mafdctrl:
+if WITH_SETUID_PROGS
+	chmod 4755 $(DESTDIR)$(bindir)/mafd_ctrl
+endif
+	cd $(DESTDIR)$(bindir) && rm -f afd_ctrl && ln -s mafd_ctrl afd_ctrl
+
+uninstall-hook-mafdctrl:
+	cd $(DESTDIR)$(bindir) && rm -f afd_ctrl
+
+INSTALL_EXEC_HOOKS += install-exec-hook-mafdctrl
+UNINSTALL_HOOKS += uninstall-hook-mafdctrl

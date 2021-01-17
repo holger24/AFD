@@ -1,0 +1,38 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2001 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+EXTRA_PROGRAMS       += bin/tfilter\
+                        bin/tfilter1\
+                        bin/tfilter2\
+                        bin/tfilter3
+CLEANFILES           += src/test/filter/gmon.out\
+                        src/test/filter/core\
+                        src/test/filter/core.*\
+                        $(EXTRA_PROGRAMS)
+bin_tfilter_SOURCES   = src/test/filter/tfilter.c
+bin_tfilter_LDADD     = lib/libafd.a
+bin_tfilter1_SOURCES  = src/test/filter/tfilter.c\
+                        src/test/filter/filter1.c
+bin_tfilter2_SOURCES  = src/test/filter/tfilter.c\
+                        src/test/filter/filter2.c
+bin_tfilter3_SOURCES  = src/test/filter/tfilter.c\
+                        src/test/filter/filter3.c
+EXTRA_DIST           += src/test/filter/match.c\
+                        src/test/filter/match2.c\
+                        src/test/filter/sfilter.c\
+                        src/test/filter/pmatch.data

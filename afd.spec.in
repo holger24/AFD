@@ -430,7 +430,6 @@ exit 0
 %doc %{mandir}/man5/*
 %{prefix}/bin/*
 %{prefix}/sbin/*
-%{prefix}/%{_lib}/*
 
 
 %changelog

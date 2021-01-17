@@ -1,0 +1,36 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2001 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+CLEANFILES            += src/UI/Motif/show_dlog/gmon.out\
+                         src/UI/Motif/show_dlog/core\
+                         src/UI/Motif/show_dlog/core.*
+noinst_HEADERS        += src/UI/Motif/show_dlog/show_dlog.h\
+                         src/UI/Motif/show_dlog/sdr_str.h
+bin_PROGRAMS          += bin/show_dlog
+bin_show_dlog_SOURCES  = src/UI/Motif/show_dlog/calculate_summary.c\
+                         src/UI/Motif/show_dlog/callbacks.c\
+                         src/UI/Motif/show_dlog/format_info.c\
+                         src/UI/Motif/show_dlog/get_data.c\
+                         src/UI/Motif/show_dlog/get_info.c\
+                         src/UI/Motif/show_dlog/print_data.c\
+                         src/UI/Motif/show_dlog/select_delete_reason.c\
+                         src/UI/Motif/show_dlog/show_dlog.c
+bin_show_dlog_LDADD    = lib/libmotifafd.a\
+                         lib/libuiafd.a\
+                         lib/libafd.a\
+                         @AFD_MOTIF_LIBS@

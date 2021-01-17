@@ -1,0 +1,609 @@
+## Makefile.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2001 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+if WITH_MISC_LIB
+   MISC_LIB                = lib/libmisc.a
+else
+   MISC_LIB                =
+endif
+if WITH_MAP_SUPPORT
+   AFD_MAP_PROG            = bin/sf_map
+   EXTRA_MAP_PROG          =
+else
+   AFD_MAP_PROG            =
+   EXTRA_MAP_PROG          = bin/sf_map
+endif
+if WITH_DFAX_SUPPORT
+   AFD_DFAX_PROG           = bin/sf_dfax
+   EXTRA_DFAX_PROG         =
+else
+   AFD_DFAX_PROG           =
+   EXTRA_DFAX_PROG         = bin/sf_dfax
+endif
+if WITH_LOC_SUPPORT
+   LOC_PROG                = bin/sf_loc
+   EXTRA_LOC_PROG          =
+else
+   LOC_PROG                =
+   EXTRA_LOC_PROG          = bin/sf_loc
+endif
+if WITH_FD_EXEC_SUPPORT
+   EXEC_PROG               = bin/gf_exec\
+                             bin/sf_exec
+   EXTRA_EXEC_PROG         =
+else
+   EXEC_PROG               =
+   EXTRA_EXEC_PROG         = bin/gf_exec\
+                             bin/sf_exec
+endif
+if WITH_FTP_SUPPORT
+   FTP_PROG                = bin/gf_ftp\
+                             bin/gf_ftp_trace\
+                             bin/sf_ftp\
+                             bin/sf_ftp_trace
+   EXTRA_FTP_PROG          =
+else
+   FTP_PROG                =
+   EXTRA_FTP_PROG          = bin/gf_ftp\
+                             bin/gf_ftp_trace\
+                             bin/sf_ftp\
+                             bin/sf_ftp_trace
+endif
+if WITH_SCP_SUPPORT
+   SCP_PROG                = bin/sf_scp\
+                             bin/sf_scp_trace
+   EXTRA_SCP_PROG          =
+else
+   SCP_PROG                =
+   EXTRA_SCP_PROG          = bin/sf_scp\
+                             bin/sf_scp_trace
+endif
+if WITH_WMO_SUPPORT
+   WMO_PROG                = bin/sf_wmo\
+                             bin/sf_wmo_trace
+   EXTRA_WMO_PROG          =
+else
+   WMO_PROG                =
+   EXTRA_WMO_PROG          = bin/sf_wmo\
+                             bin/sf_wmo_trace
+endif
+if WITH_SMTP_SUPPORT
+   SMTP_PROG               = bin/sf_smtp\
+                             bin/sf_smtp_trace
+   EXTRA_SMTP_PROG         =
+else
+   SMTP_PROG               =
+   EXTRA_SMTP_PROG         = bin/sf_smtp\
+                             bin/sf_smtp_trace
+endif
+if WITH_HTTP_SUPPORT
+   HTTP_PROG               = bin/gf_http\
+                             bin/gf_http_trace\
+                             bin/sf_http\
+                             bin/sf_http_trace
+   EXTRA_HTTP_PROG         =
+else
+   HTTP_PROG               =
+   EXTRA_HTTP_PROG         = bin/gf_http\
+                             bin/gf_http_trace\
+                             bin/sf_http\
+                             bin/sf_http_trace
+endif
+if WITH_SFTP_SUPPORT
+   SFTP_PROG               = bin/gf_sftp\
+                             bin/gf_sftp_trace\
+                             bin/sf_sftp\
+                             bin/sf_sftp_trace
+   EXTRA_SFTP_PROG         =
+else
+   SFTP_PROG               =
+   EXTRA_SFTP_PROG         = bin/gf_sftp\
+                             bin/gf_sftp_trace\
+                             bin/sf_sftp\
+                             bin/sf_sftp_trace
+endif
+if WITH_TRANS_EXEC
+   TRANS_EXEC_PTRS         = src/fd/trans_exec.c
+   EXTRA_TRANS_EXEC_PTRS   =
+else
+   TRANS_EXEC_PTRS         =
+   EXTRA_TRANS_EXEC_PTRS   = src/fd/trans_exec.c
+endif
+if WITH_DE_MAIL_SUPPORT
+   DEMCD_LOG_FD            = src/fd/demcd_log_fd.c
+   EXTRA_DEMCD_LOG_FD      =
+   DEMCD_LOG_PTRS          = src/fd/demcd_log_ptrs.c
+   EXTRA_DEMCD_LOG_PTRS    =
+else
+   DEMCD_LOG_FD            =
+   EXTRA_DEMCD_LOG_FD      = src/fd/demcd_log_fd.c
+   DEMCD_LOG_PTRS          =
+   EXTRA_DEMCD_LOG_PTRS    = src/fd/demcd_log_ptrs.c
+endif
+
+noinst_HEADERS            += src/fd/fddefs.h
+bin_PROGRAMS              += bin/fd\
+                             $(EXEC_PROG)\
+                             $(FTP_PROG)\
+                             $(SMTP_PROG)\
+                             $(SCP_PROG)\
+                             $(SFTP_PROG)\
+                             $(WMO_PROG)\
+                             $(AFD_MAP_PROG)\
+                             $(LOC_PROG)\
+                             $(HTTP_PROG)\
+                             $(AFD_DFAX_PROG)
+EXTRA_PROGRAMS            += $(EXTRA_MAP_PROG)\
+                             $(EXTRA_FTP_PROG)\
+                             $(EXTRA_SFTP_PROG)\
+                             $(EXTRA_WMO_PROG)\
+                             $(EXTRA_HTTP_PROG)\
+                             $(EXTRA_SCP_PROG)\
+                             $(EXTRA_EXEC_PROG)\
+                             $(EXTRA_LOC_PROG)\
+                             $(EXTRA_SMTP_PROG)\
+                             $(EXTRA_DFAX_PROG)
+EXTRA_DIST                += $(EXTRA_TRANS_EXEC_PTRS)\
+                             $(EXTRA_DEMCD_LOG_FD)\
+                             $(EXTRA_DEMCD_LOG_PTRS)
+CLEANFILES                += src/fd/gmon.out\
+                             src/fd/core\
+                             src/fd/core.*\
+                             $(EXTRA_PROGRAMS)
+bin_fd_SOURCES             = src/fd/check_fra_fd.c\
+                             src/fd/check_fsa_entries.c\
+                             src/fd/check_msg_time.c\
+                             src/fd/check_queue_space.c\
+                             src/fd/fd.c\
+                             src/fd/fd_check_fsa.c\
+                             src/fd/get_job_data.c\
+                             src/fd/get_new_positions.c\
+                             src/fd/handle_delete_fifo.c\
+                             src/fd/handle_ls_data.c\
+                             src/fd/init_fifos_fd.c\
+                             src/fd/init_fra_data.c\
+                             src/fd/init_ls_data.c\
+                             src/fd/init_msg_buffer.c\
+                             src/fd/init_msg_ptrs.c\
+                             src/fd/lookup_job_id.c\
+                             src/fd/manage_trl_process.c\
+                             src/fd/read_current_msg_list.c\
+                             src/fd/recount_jobs_queued.c\
+                             src/fd/recreate_msg.c\
+                             src/fd/remove_connection.c\
+                             src/fd/remove_msg.c
+bin_fd_LDADD               = lib/libafd.a
+bin_fd_DEPENDENCIES        = $(bin_fd_LDADD)\
+                             src/fd/fddefs.h
+bin_sf_ftp_SOURCES         = src/fd/append.c\
+                             src/fd/archive_file.c\
+                             src/fd/check_burst_sf.c\
+                             src/fd/check_exec_type.c\
+                             src/fd/eval_input_sf.c\
+                             src/fd/eval_message.c\
+                             src/fd/eval_recipient.c\
+                             src/fd/fsa_attach_pos.c\
+                             src/fd/get_file_names.c\
+                             src/fd/get_group_list.c\
+                             src/fd/gsf_check_fsa.c\
+                             src/fd/handle_proxy.c\
+                             src/fd/init_sf.c\
+                             src/fd/init_sf_burst2.c\
+                             src/fd/limit_transfer_rate.c\
+                             src/fd/noop_wrapper_ftp.c\
+                             src/fd/receive_log.c\
+                             src/fd/reset_fsa.c\
+                             src/fd/send_proc_fin.c\
+                             src/fd/sf_ftp.c\
+                             src/fd/trans_db_log.c\
+                             $(TRANS_EXEC_PTRS)\
+                             src/fd/trans_log.c\
+                             src/fd/update_tfc.c
+bin_sf_ftp_LDADD           = $(MISC_LIB)\
+                             @EXTRA_SOCKET_LIBS@\
+                             lib/libprotocols.a\
+                             lib/libafd.a\
+                             @AFD_SSL_LIBS@
+bin_sf_ftp_trace_SOURCES   = $(bin_sf_ftp_SOURCES)\
+                             src/fd/trace_log.c
+bin_sf_ftp_trace_LDADD     = $(MISC_LIB)\
+                             @EXTRA_SOCKET_LIBS@\
+                             lib/libtraceprotocols.a\
+                             lib/libafd.a\
+                             @AFD_SSL_LIBS@
+bin_sf_http_SOURCES        = src/fd/append.c\
+                             src/fd/archive_file.c\
+                             src/fd/check_burst_sf.c\
+                             src/fd/check_exec_type.c\
+                             src/fd/eval_input_sf.c\
+                             src/fd/eval_message.c\
+                             src/fd/eval_recipient.c\
+                             src/fd/fsa_attach_pos.c\
+                             src/fd/get_file_names.c\
+                             src/fd/get_group_list.c\
+                             src/fd/gsf_check_fsa.c\
+                             src/fd/init_sf.c\
+                             src/fd/init_sf_burst2.c\
+                             src/fd/limit_transfer_rate.c\
+                             src/fd/noop_wrapper_dummy.c\
+                             src/fd/receive_log.c\
+                             src/fd/reset_fsa.c\
+                             src/fd/send_proc_fin.c\
+                             src/fd/sf_http.c\
+                             src/fd/trans_db_log.c\
+                             $(TRANS_EXEC_PTRS)\
+                             src/fd/trans_log.c\
+                             src/fd/update_tfc.c
+bin_sf_http_LDADD          = $(MISC_LIB)\
+                             @EXTRA_SOCKET_LIBS@\
+                             lib/libprotocols.a\
+                             lib/libafd.a\
+                             @AFD_SSL_LIBS@
+bin_sf_http_trace_SOURCES  = $(bin_sf_http_SOURCES)\
+                             src/fd/trace_log.c
+bin_sf_http_trace_CFLAGS   = -DWITH_TRACE
+bin_sf_http_trace_LDADD    = $(MISC_LIB)\
+                             @EXTRA_SOCKET_LIBS@\
+                             lib/libtraceprotocols.a\
+                             lib/libafd.a\
+                             @AFD_SSL_LIBS@
+bin_sf_sftp_SOURCES        = src/fd/append.c\
+                             src/fd/archive_file.c\
+                             src/fd/check_burst_sf.c\
+                             src/fd/check_exec_type.c\
+                             src/fd/eval_input_sf.c\
+                             src/fd/eval_message.c\
+                             src/fd/eval_recipient.c\
+                             src/fd/fsa_attach_pos.c\
+                             src/fd/get_file_names.c\
+                             src/fd/get_group_list.c\
+                             src/fd/gsf_check_fsa.c\
+                             src/fd/init_sf.c\
+                             src/fd/init_sf_burst2.c\
+                             src/fd/limit_transfer_rate.c\
+                             src/fd/noop_wrapper_sftp.c\
+                             src/fd/receive_log.c\
+                             src/fd/reset_fsa.c\
+                             src/fd/send_proc_fin.c\
+                             src/fd/sf_sftp.c\
+                             src/fd/trans_db_log.c\
+                             $(TRANS_EXEC_PTRS)\
+                             src/fd/trans_log.c\
+                             src/fd/update_tfc.c
+bin_sf_sftp_LDADD          = $(MISC_LIB)\
+                             @EXTRA_SOCKET_LIBS@\
+                             lib/libprotocols.a\
+                             lib/libafd.a\
+                             @AFD_UTIL_LIB@
+bin_sf_sftp_trace_SOURCES  = $(bin_sf_sftp_SOURCES)\
+                             src/fd/trace_log.c
+bin_sf_sftp_trace_LDADD    = $(MISC_LIB)\
+                             @EXTRA_SOCKET_LIBS@\
+                             lib/libtraceprotocols.a\
+                             lib/libafd.a\
+                             @AFD_UTIL_LIB@
+bin_sf_smtp_SOURCES        = src/fd/append.c\
+                             src/fd/archive_file.c\
+                             src/fd/check_burst_sf.c\
+                             src/fd/check_exec_type.c\
+                             $(DEMCD_LOG_FD)\
+                             $(DEMCD_LOG_PTRS)\
+                             src/fd/eval_input_sf.c\
+                             src/fd/eval_message.c\
+                             src/fd/eval_recipient.c\
+                             src/fd/fsa_attach_pos.c\
+                             src/fd/get_file_names.c\
+                             src/fd/get_group_list.c\
+                             src/fd/gsf_check_fsa.c\
+                             src/fd/init_sf.c\
+                             src/fd/init_sf_burst2.c\
+                             src/fd/limit_transfer_rate.c\
+                             src/fd/noop_wrapper_smtp.c\
+                             src/fd/receive_log.c\
+                             src/fd/reset_fsa.c\
+                             src/fd/send_proc_fin.c\
+                             src/fd/sf_smtp.c\
+                             src/fd/trans_db_log.c\
+                             $(TRANS_EXEC_PTRS)\
+                             src/fd/trans_log.c\
+                             src/fd/update_tfc.c
+bin_sf_smtp_LDADD          = @EXTRA_SOCKET_LIBS@\
+                             lib/libprotocols.a\
+                             lib/libafd.a\
+                             @AFD_SSL_LIBS@
+bin_sf_smtp_trace_SOURCES  = $(bin_sf_smtp_SOURCES)\
+                             src/fd/trace_log.c
+bin_sf_smtp_trace_LDADD    = @EXTRA_SOCKET_LIBS@\
+                             lib/libtraceprotocols.a\
+                             lib/libafd.a\
+                             @AFD_SSL_LIBS@
+bin_sf_scp_SOURCES         = src/fd/append.c\
+                             src/fd/archive_file.c\
+                             src/fd/check_burst_sf.c\
+                             src/fd/check_exec_type.c\
+                             src/fd/eval_input_sf.c\
+                             src/fd/eval_message.c\
+                             src/fd/eval_recipient.c\
+                             src/fd/fsa_attach_pos.c\
+                             src/fd/get_file_names.c\
+                             src/fd/get_group_list.c\
+                             src/fd/gsf_check_fsa.c\
+                             src/fd/init_sf.c\
+                             src/fd/init_sf_burst2.c\
+                             src/fd/limit_transfer_rate.c\
+                             src/fd/noop_wrapper_dummy.c\
+                             src/fd/receive_log.c\
+                             src/fd/reset_fsa.c\
+                             src/fd/send_proc_fin.c\
+                             src/fd/sf_scp.c\
+                             src/fd/trans_db_log.c\
+                             $(TRANS_EXEC_PTRS)\
+                             src/fd/trans_log.c\
+                             src/fd/update_tfc.c
+bin_sf_scp_LDADD           = @EXTRA_SOCKET_LIBS@\
+                             lib/libprotocols.a\
+                             lib/libafd.a\
+                             @AFD_UTIL_LIB@
+bin_sf_scp_trace_SOURCES   = $(bin_sf_scp_SOURCES)\
+                             src/fd/trace_log.c
+bin_sf_scp_trace_LDADD     = @EXTRA_SOCKET_LIBS@\
+                             lib/libtraceprotocols.a\
+                             lib/libafd.a\
+                             @AFD_UTIL_LIB@
+bin_sf_wmo_SOURCES         = src/fd/append.c\
+                             src/fd/archive_file.c\
+                             src/fd/check_burst_sf.c\
+                             src/fd/check_exec_type.c\
+                             src/fd/eval_input_sf.c\
+                             src/fd/eval_message.c\
+                             src/fd/eval_recipient.c\
+                             src/fd/fsa_attach_pos.c\
+                             src/fd/get_file_names.c\
+                             src/fd/get_group_list.c\
+                             src/fd/gsf_check_fsa.c\
+                             src/fd/init_sf.c\
+                             src/fd/init_sf_burst2.c\
+                             src/fd/limit_transfer_rate.c\
+                             src/fd/noop_wrapper_dummy.c\
+                             src/fd/receive_log.c\
+                             src/fd/reset_fsa.c\
+                             src/fd/send_proc_fin.c\
+                             src/fd/sf_wmo.c\
+                             src/fd/trans_db_log.c\
+                             $(TRANS_EXEC_PTRS)\
+                             src/fd/trans_log.c\
+                             src/fd/update_tfc.c
+bin_sf_wmo_LDADD           = @EXTRA_SOCKET_LIBS@\
+                             lib/libprotocols.a\
+                             lib/libafd.a
+bin_sf_wmo_trace_SOURCES   = $(bin_sf_wmo_SOURCES)\
+                             src/fd/trace_log.c
+bin_sf_wmo_trace_LDADD     = @EXTRA_SOCKET_LIBS@\
+                             lib/libtraceprotocols.a\
+                             lib/libafd.a
+bin_sf_map_SOURCES         = src/fd/append.c\
+                             src/fd/archive_file.c\
+                             src/fd/check_exec_type.c\
+                             src/fd/eval_input_sf.c\
+                             src/fd/eval_message.c\
+                             src/fd/eval_recipient.c\
+                             src/fd/fsa_attach_pos.c\
+                             src/fd/get_file_names.c\
+                             src/fd/get_group_list.c\
+                             src/fd/gsf_check_fsa.c\
+                             src/fd/init_sf.c\
+                             src/fd/noop_wrapper_dummy.c\
+                             src/fd/receive_log.c\
+                             src/fd/reset_fsa.c\
+                             src/fd/send_proc_fin.c\
+                             src/fd/sf_map.c\
+                             src/fd/trans_db_log.c\
+                             src/fd/trans_log.c\
+                             src/fd/update_tfc.c
+bin_sf_map_LDADD           = @EXTRA_SOCKET_LIBS@\
+                             lib/libafd.a\
+                             @AFD_MAP_LIBS@
+bin_sf_dfax_SOURCES        = src/fd/append.c\
+                             src/fd/archive_file.c\
+                             src/fd/check_exec_type.c\
+                             src/fd/eval_input_sf.c\
+                             src/fd/eval_message.c\
+                             src/fd/eval_recipient.c\
+                             src/fd/fsa_attach_pos.c\
+                             src/fd/get_file_names.c\
+                             src/fd/get_group_list.c\
+                             src/fd/gsf_check_fsa.c\
+                             src/fd/init_sf.c\
+                             src/fd/noop_wrapper_dummy.c\
+                             src/fd/receive_log.c\
+                             src/fd/reset_fsa.c\
+                             src/fd/send_proc_fin.c\
+                             src/fd/sf_dfax.c\
+                             src/fd/trans_db_log.c\
+                             src/fd/trans_log.c\
+                             src/fd/update_tfc.c
+bin_sf_dfax_LDADD          = @EXTRA_SOCKET_LIBS@\
+                             lib/libafd.a\
+                             @AFD_DFAX_LIBS@
+bin_sf_loc_SOURCES         = src/fd/append.c\
+                             src/fd/archive_file.c\
+                             src/fd/handle_ls_data.c\
+                             src/fd/check_burst_sf.c\
+                             src/fd/check_exec_type.c\
+                             src/fd/compare_dir_local.c\
+                             src/fd/eval_input_sf.c\
+                             src/fd/eval_message.c\
+                             src/fd/eval_recipient.c\
+                             src/fd/fsa_attach_pos.c\
+                             src/fd/get_file_names.c\
+                             src/fd/get_group_list.c\
+                             src/fd/gsf_check_fsa.c\
+                             src/fd/init_sf.c\
+                             src/fd/init_sf_burst2.c\
+                             src/fd/noop_wrapper_dummy.c\
+                             src/fd/receive_log.c\
+                             src/fd/reset_fsa.c\
+                             src/fd/send_proc_fin.c\
+                             src/fd/sf_loc.c\
+                             src/fd/trans_db_log.c\
+                             $(TRANS_EXEC_PTRS)\
+                             src/fd/trans_log.c\
+                             src/fd/update_tfc.c
+bin_sf_loc_LDADD           = @EXTRA_SOCKET_LIBS@\
+                             lib/libafd.a
+bin_sf_exec_SOURCES        = src/fd/append.c\
+                             src/fd/archive_file.c\
+                             src/fd/handle_ls_data.c\
+                             src/fd/check_burst_sf.c\
+                             src/fd/check_exec_type.c\
+                             src/fd/eval_input_sf.c\
+                             src/fd/eval_message.c\
+                             src/fd/eval_recipient.c\
+                             src/fd/fsa_attach_pos.c\
+                             src/fd/get_file_names.c\
+                             src/fd/get_group_list.c\
+                             src/fd/gsf_check_fsa.c\
+                             src/fd/init_sf.c\
+                             src/fd/init_sf_burst2.c\
+                             src/fd/noop_wrapper_dummy.c\
+                             src/fd/receive_log.c\
+                             src/fd/reset_fsa.c\
+                             src/fd/send_proc_fin.c\
+                             src/fd/sf_exec.c\
+                             src/fd/trans_db_log.c\
+                             $(TRANS_EXEC_PTRS)\
+                             src/fd/trans_log.c\
+                             src/fd/update_tfc.c
+bin_sf_exec_LDADD          = lib/libafd.a
+bin_gf_exec_SOURCES        = src/fd/eval_input_gf.c\
+                             src/fd/eval_recipient.c\
+                             src/fd/fra_attach_pos.c\
+                             src/fd/fsa_attach_pos.c\
+                             src/fd/get_group_list.c\
+                             src/fd/gf_exec.c\
+                             src/fd/gsf_check_fra.c\
+                             src/fd/gsf_check_fsa.c\
+                             src/fd/init_gf.c\
+                             src/fd/reset_fsa.c\
+                             src/fd/reset_values.c\
+                             src/fd/send_proc_fin.c\
+                             src/fd/trans_db_log.c\
+                             src/fd/trans_log.c
+bin_gf_exec_LDADD          = lib/libafd.a
+bin_gf_ftp_SOURCES         = src/fd/check_burst_gf.c\
+                             src/fd/handle_ls_data.c\
+                             src/fd/delete_remote_file.c\
+                             src/fd/delete_wrapper_ftp.c\
+                             src/fd/eval_input_gf.c\
+                             src/fd/eval_recipient.c\
+                             src/fd/fra_attach_pos.c\
+                             src/fd/fsa_attach_pos.c\
+                             src/fd/get_group_list.c\
+                             src/fd/get_remote_file_names_ftp.c\
+                             src/fd/get_remote_file_names_ftp_list.c\
+                             src/fd/get_remote_file_names_ftp_mlst.c\
+                             src/fd/gf_ftp.c\
+                             src/fd/gsf_check_fra.c\
+                             src/fd/gsf_check_fsa.c\
+                             src/fd/handle_proxy.c\
+                             src/fd/init_gf.c\
+                             src/fd/init_gf_burst2.c\
+                             src/fd/limit_transfer_rate.c\
+                             src/fd/noop_wrapper_ftp.c\
+                             src/fd/read_file_mask.c\
+                             src/fd/reset_fsa.c\
+                             src/fd/reset_values.c\
+                             src/fd/send_proc_fin.c\
+                             src/fd/trans_db_log.c\
+                             src/fd/trans_log.c
+bin_gf_ftp_LDADD           = @EXTRA_SOCKET_LIBS@\
+                             lib/libprotocols.a\
+                             lib/libafd.a\
+                             @AFD_SSL_LIBS@
+bin_gf_ftp_trace_SOURCES   = $(bin_gf_ftp_SOURCES)\
+                             src/fd/trace_log.c
+bin_gf_ftp_trace_LDADD     = @EXTRA_SOCKET_LIBS@\
+                             lib/libtraceprotocols.a\
+                             lib/libafd.a\
+                             @AFD_SSL_LIBS@
+bin_gf_sftp_SOURCES        = src/fd/check_burst_gf.c\
+                             src/fd/handle_ls_data.c\
+                             src/fd/delete_remote_file.c\
+                             src/fd/delete_wrapper_sftp.c\
+                             src/fd/eval_input_gf.c\
+                             src/fd/eval_recipient.c\
+                             src/fd/fra_attach_pos.c\
+                             src/fd/fsa_attach_pos.c\
+                             src/fd/get_group_list.c\
+                             src/fd/get_remote_file_names_sftp.c\
+                             src/fd/gf_sftp.c\
+                             src/fd/gsf_check_fra.c\
+                             src/fd/gsf_check_fsa.c\
+                             src/fd/init_gf.c\
+                             src/fd/init_gf_burst2.c\
+                             src/fd/limit_transfer_rate.c\
+                             src/fd/noop_wrapper_sftp.c\
+                             src/fd/read_file_mask.c\
+                             src/fd/reset_fsa.c\
+                             src/fd/reset_values.c\
+                             src/fd/send_proc_fin.c\
+                             src/fd/trans_db_log.c\
+                             src/fd/trans_log.c
+bin_gf_sftp_LDADD          = @EXTRA_SOCKET_LIBS@\
+                             lib/libprotocols.a\
+                             lib/libafd.a\
+                             @AFD_UTIL_LIB@
+bin_gf_sftp_trace_SOURCES  = $(bin_gf_sftp_SOURCES)\
+                             src/fd/trace_log.c
+bin_gf_sftp_trace_LDADD    = @EXTRA_SOCKET_LIBS@\
+                             lib/libtraceprotocols.a\
+                             lib/libafd.a\
+                             @AFD_UTIL_LIB@
+bin_gf_http_SOURCES        = src/fd/check_burst_gf.c\
+                             src/fd/handle_ls_data.c\
+                             src/fd/delete_remote_file.c\
+                             src/fd/delete_wrapper_http.c\
+                             src/fd/eval_input_gf.c\
+                             src/fd/eval_recipient.c\
+                             src/fd/fra_attach_pos.c\
+                             src/fd/fsa_attach_pos.c\
+                             src/fd/get_group_list.c\
+                             src/fd/get_remote_file_names_http.c\
+                             src/fd/gf_http.c\
+                             src/fd/gsf_check_fra.c\
+                             src/fd/gsf_check_fsa.c\
+                             src/fd/init_gf.c\
+                             src/fd/init_gf_burst2.c\
+                             src/fd/limit_transfer_rate.c\
+                             src/fd/noop_wrapper_dummy.c\
+                             src/fd/read_file_mask.c\
+                             src/fd/reset_fsa.c\
+                             src/fd/reset_values.c\
+                             src/fd/send_proc_fin.c\
+                             src/fd/trans_db_log.c\
+                             src/fd/trans_log.c
+bin_gf_http_LDADD          = @EXTRA_SOCKET_LIBS@\
+                             lib/libprotocols.a\
+                             lib/libafd.a\
+                             @AFD_SSL_LIBS@
+bin_gf_http_trace_SOURCES  = $(bin_gf_http_SOURCES)\
+                             src/fd/trace_log.c
+bin_gf_http_trace_LDADD    = @EXTRA_SOCKET_LIBS@\
+                             lib/libtraceprotocols.a\
+                             lib/libafd.a\
+                             @AFD_SSL_LIBS@

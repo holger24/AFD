@@ -1,0 +1,39 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2007 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+noinst_HEADERS         += src/UI/common/ui_common_defs.h\
+                          src/UI/common/afd_logo.h
+noinst_LIBRARIES       += lib/libuiafd.a
+lib_libuiafd_a_SOURCES  = src/UI/common/check_host_permissions.c\
+                          src/UI/common/config_log.c\
+                          src/UI/common/eval_alda_data.c\
+                          src/UI/common/get_current_jid_list.c\
+                          src/UI/common/get_dir_id.c\
+                          src/UI/common/get_ip_no.c\
+                          src/UI/common/get_printer_cmd.c\
+                          src/UI/common/handle_setup_file.c\
+                          src/UI/common/init_color.c\
+                          src/UI/common/insert_passwd.c\
+                          src/UI/common/locate_xy.c\
+                          src/UI/common/lookup_color.c\
+                          src/UI/common/print_file_size.c\
+                          src/UI/common/sfilter.c\
+                          src/UI/common/store_host_names.c\
+                          src/UI/common/view_data.c\
+                          src/UI/common/view_data_no_filter.c\
+                          src/UI/common/window_id.c

@@ -1,0 +1,97 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2008 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+if WITH_INPUT_LOG
+   AFD_CHECK_INPUT_LINE              = src/log/alda/check_input_line.c
+   EXTRA_CHECK_INPUT_LINE            =
+else
+   AFD_CHECK_INPUT_LINE              =
+   EXTRA_CHECK_INPUT_LINE            = src/log/alda/check_input_line.c
+endif
+if WITH_DISTRIBUTION_LOG
+   AFD_CHECK_DISTRIBUTION_LINE       = src/log/alda/check_distribution_line.c
+   EXTRA_CHECK_DISTRIBUTION_LINE     =
+else
+   AFD_CHECK_DISTRIBUTION_LINE       =
+   EXTRA_CHECK_DISTRIBUTION_LINE     = src/log/alda/check_distribution_line.c
+endif
+if WITH_OUTPUT_LOG
+   AFD_CHECK_OUTPUT_LINE             = src/log/alda/check_output_line.c\
+                                       src/log/alda/get_recipient.c
+   EXTRA_CHECK_OUTPUT_LINE           =
+else
+   AFD_CHECK_OUTPUT_LINE             =
+   EXTRA_CHECK_OUTPUT_LINE           = src/log/alda/check_output_line.c\
+                                       src/log/alda/get_recipient.c
+endif
+if WITH_DELETE_LOG
+   AFD_CHECK_DELETE_LINE             = src/log/alda/check_delete_line.c\
+                                       src/log/alda/get_alias_name.c
+   EXTRA_CHECK_DELETE_LINE           =
+else
+   AFD_CHECK_DELETE_LINE             =
+   EXTRA_CHECK_DELETE_LINE           = src/log/alda/check_delete_line.c\
+                                       src/log/alda/get_alias_name.c
+endif
+if WITH_PRODUCTION_LOG
+   AFD_CHECK_PRODUCTION_LINE         = src/log/alda/check_production_line.c
+   EXTRA_CHECK_PRODUCTION_LINE       =
+else
+   AFD_CHECK_PRODUCTION_LINE         =
+   EXTRA_CHECK_PRODUCTION_LINE       = src/log/alda/check_production_line.c
+endif
+if WITH_ALDA_CACHE_POSITIONING
+   AFD_SEEK_ALDA_CACHE_POSITION      = src/log/alda/seek_cache_position.c
+   EXTRA_SEEK_ALDA_CACHE_POSITION    =
+else
+   AFD_SEEK_ALDA_CACHE_POSITION      =
+   EXTRA_SEEK_ALDA_CACHE_POSITION    = src/log/alda/seek_cache_position.c
+endif
+EXTRA_DIST                          += $(EXTRA_CHECK_INPUT_LINE)\
+                                       $(EXTRA_CHECK_DISTRIBUTION_LINE)\
+                                       $(EXTRA_CHECK_OUTPUT_LINE)\
+                                       $(EXTRA_CHECK_DELETE_LINE)\
+                                       $(EXTRA_CHECK_PRODUCTION_LINE)\
+                                       $(EXTRA_SEEK_ALDA_CACHE_POSITION)
+noinst_HEADERS                      += src/log/alda/aldadefs.h\
+                                       src/log/alda/ot_str.h
+bin_PROGRAMS                        += bin/alda\
+                                       bin/aldad
+EXTRA_PROGRAMS                      += bin/check_alda_cache
+CLEANFILES                          += gmon.out\
+                                       core core.* $(EXTRA_PROGRAMS)
+bin_alda_SOURCES                     = src/log/alda/alda.c\
+                                       $(AFD_CHECK_DELETE_LINE)\
+                                       src/log/alda/check_did.c\
+                                       $(AFD_CHECK_DISTRIBUTION_LINE)\
+                                       src/log/alda/check_dna.c\
+                                       src/log/alda/check_host_alias.c\
+                                       $(AFD_CHECK_INPUT_LINE)\
+                                       $(AFD_CHECK_OUTPUT_LINE)\
+                                       $(AFD_CHECK_PRODUCTION_LINE)\
+                                       src/log/alda/eval_input_alda.c\
+                                       src/log/alda/get_full_source.c\
+                                       src/log/alda/get_real_hostname.c\
+                                       src/log/alda/print_alda_data.c\
+                                       $(AFD_SEEK_ALDA_CACHE_POSITION)\
+                                       src/log/alda/show_file_content.c
+bin_alda_LDADD                       = lib/libafd.a
+bin_aldad_SOURCES                    = src/log/alda/aldad.c
+bin_aldad_LDADD                      = lib/libafd.a
+bin_check_alda_cache_SOURCES         = src/log/alda/check_alda_cache.c
+bin_check_alda_cache_LDADD           = lib/libafd.a

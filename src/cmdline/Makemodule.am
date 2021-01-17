@@ -1,0 +1,107 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2001 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+if WITH_WMO_SUPPORT
+   WMO_PROG_CMD        = bin/awmo
+   EXTRA_WMO_PROG_CMD  =
+else
+   WMO_PROG_CMD        =
+   EXTRA_WMO_PROG_CMD  = bin/awmo
+endif
+if WITH_FTP_SUPPORT
+   FTP_PROG_CMD        = bin/aftp
+   EXTRA_FTP_PROG_CMD  =
+else
+   FTP_PROG_CMD        =
+   EXTRA_FTP_PROG_CMD  = bin/aftp
+endif
+if WITH_SFTP_SUPPORT
+   SFTP_PROG_CMD       = bin/asftp
+   EXTRA_SFTP_PROG_CMD =
+else
+   SFTP_PROG_CMD       =
+   EXTRA_SFTP_PROG_CMD = bin/asftp
+endif
+if WITH_SMTP_SUPPORT
+   SMTP_PROG_CMD       = bin/asmtp
+   EXTRA_SMTP_PROG_CMD =
+else
+   SMTP_PROG_CMD       =
+   EXTRA_SMTP_PROG_CMD = bin/asmtp
+endif
+
+noinst_HEADERS        += src/cmdline/aftpdefs.h\
+                         src/cmdline/asftpdefs.h\
+                         src/cmdline/asmtpdefs.h\
+                         src/cmdline/awmodefs.h\
+                         src/cmdline/cmdline.h
+bin_PROGRAMS          += $(WMO_PROG_CMD)\
+                         $(FTP_PROG_CMD)\
+                         $(SFTP_PROG_CMD)\
+                         $(SMTP_PROG_CMD)
+EXTRA_PROGRAMS        += $(EXTRA_WMO_PROG_CMD)\
+                         $(EXTRA_FTP_PROG_CMD)\
+                         $(EXTRA_SFTP_PROG_CMD)\
+                         $(EXTRA_SMTP_PROG_CMD)
+CLEANFILES            += src/cmdline/gmon.out\
+                         src/cmdline/core\
+                         src/cmdline/core.*\
+                         $(EXTRA_PROGRAMS)
+bin_aftp_SOURCES       = src/cmdline/aftp.c\
+                         src/cmdline/eval_files.c\
+                         src/cmdline/get_remote_file_names_ftp_cmd.c\
+                         src/cmdline/init_aftp.c\
+                         src/cmdline/trans_log.c
+bin_aftp_LDADD         = @EXTRA_SOCKET_LIBS@\
+                         lib/libprotocols.a\
+                         lib/libafd.a\
+                         @AFD_SSL_LIBS@
+bin_asftp_SOURCES      = src/cmdline/asftp.c\
+                         src/cmdline/eval_files.c\
+                         src/cmdline/get_remote_file_names_sftp_cmd.c\
+                         src/cmdline/init_asftp.c\
+                         src/cmdline/trans_log.c
+bin_asftp_LDADD        = @EXTRA_SOCKET_LIBS@\
+                         lib/libprotocols.a\
+                         lib/libafd.a\
+                         @AFD_UTIL_LIB@
+bin_asmtp_SOURCES      = src/cmdline/asmtp.c\
+                         src/cmdline/eval_files.c\
+                         src/cmdline/init_asmtp.c\
+                         src/cmdline/trans_log.c
+bin_asmtp_LDADD        = @EXTRA_SOCKET_LIBS@\
+                         lib/libprotocols.a\
+                         lib/libafd.a\
+                         @AFD_SSL_LIBS@
+bin_awmo_SOURCES       = src/cmdline/awmo.c\
+                         src/cmdline/eval_files.c\
+                         src/cmdline/init_awmo.c\
+                         src/cmdline/trans_log.c
+bin_awmo_LDADD         = @EXTRA_SOCKET_LIBS@\
+                         lib/libprotocols.a\
+                         lib/libafd.a
+
+install-exec-hook-cmdline:
+	cd $(DESTDIR)$(bindir) && rm -f raftp rasftp
+	cd $(DESTDIR)$(bindir) && ln -s aftp raftp && ln -s asftp rasftp
+
+uninstall-hook-cmdline:
+	cd $(DESTDIR)$(bindir) && rm -f raftp rasftp
+
+INSTALL_EXEC_HOOKS += install-exec-hook-cmdline
+UNINSTALL_HOOKS += uninstall-hook-cmdline

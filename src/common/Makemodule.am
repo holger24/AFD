@@ -1,0 +1,285 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2001 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+if WITH_AFD_MON
+   AFD_MON_PROGS_COMMON         = src/common/msa_attach.c\
+                                  src/common/msa_detach.c\
+                                  src/common/attach_afd_mon_status.c\
+                                  src/common/detach_afd_mon_status.c\
+                                  src/common/handle_adl.c\
+                                  src/common/handle_ahl.c\
+                                  src/common/handle_atd.c
+   EXTRA_AFD_MON_COMMON         =
+else
+   AFD_MON_PROGS_COMMON         =
+   EXTRA_AFD_MON_COMMON         = src/common/msa_attach.c\
+                                  src/common/msa_detach.c\
+                                  src/common/attach_afd_mon_status.c\
+                                  src/common/detach_afd_mon_status.c\
+                                  src/common/handle_adl.c\
+                                  src/common/handle_ahl.c\
+                                  src/common/handle_atd.c
+endif
+if IS_LINUX
+   LINUX_SPECIAL                = src/common/get_proc_name_from_pid.c
+   EXTRA_LINUX_SPECIAL          =
+else
+   LINUX_SPECIAL                =
+   EXTRA_LINUX_SPECIAL          = src/common/get_proc_name_from_pid.c
+endif
+if WITHOUT_MMAP
+   AFD_MAPPER                   = src/common/mmap_emu.c\
+                                  src/common/msync_emu.c\
+                                  src/common/munmap_emu.c
+   EXTRA_MAPPER                 =
+else
+   AFD_MAPPER                   =
+   EXTRA_MAPPER                 = src/common/mmap_emu.c\
+                                  src/common/msync_emu.c\
+                                  src/common/munmap_emu.c
+endif
+if HAVE_EACCESS
+   AFD_EACCESS                  =
+   EXTRA_EACCESS                = src/common/eaccess.c
+else
+   AFD_EACCESS                  = src/common/eaccess.c
+   EXTRA_EACCESS                =
+endif
+if WITHOUT_DUPCHECK
+   DUPCHECK_COMMON              =
+   EXTRA_DUPCHECK_COMMON        = src/common/isdup.c\
+                                  src/common/eval_dupcheck_options.c
+else
+   DUPCHECK_COMMON              = src/common/isdup.c\
+                                  src/common/eval_dupcheck_options.c
+   EXTRA_DUPCHECK_COMMON        =
+endif
+if WITH_SETUID
+   SET_AFD_EUID                 = src/common/set_afd_euid.c
+   EXTRA_SET_AFD_EUID           =
+else
+   SET_AFD_EUID                 =
+   EXTRA_SET_AFD_EUID           = src/common/set_afd_euid.c
+endif
+if WITH_PRODUCTION_LOG
+   PRODUCTION_LOG_COMMON        = src/common/production_log.c\
+                                  src/common/get_sum_cpu_usage.c
+   EXTRA_PRODUCTION_LOG_COMMON  =
+else
+   PRODUCTION_LOG_COMMON        =
+   EXTRA_PRODUCTION_LOG_COMMON  = src/common/production_log.c\
+                                  src/common/get_sum_cpu_usage.c
+endif
+if WITH_OUTPUT_LOG
+   OUTPUT_LOG_PTRS              = src/common/output_log_fd.c\
+                                  src/common/output_log_ptrs.c
+   EXTRA_OUTPUT_PTRS            =
+else
+   OUTPUT_LOG_PTRS              =
+   EXTRA_OUTPUT_PTRS            = src/common/output_log_fd.c\
+                                  src/common/output_log_ptrs.c
+endif
+if WITH_DELETE_LOG
+   DELETE_LOG_PTRS              = src/common/delete_log_ptrs.c
+   EXTRA_DELETE_LOG_PTRS        =
+else
+   DELETE_LOG_PTRS              =
+   EXTRA_DELETE_LOG_PTRS        = src/common/delete_log_ptrs.c
+endif
+if WITH_FIFO_RW_SUPPORT
+   OPEN_FIFO_RW                 =
+   EXTRA_OPEN_FIFO_RW           = src/common/open_fifo_rw.c
+else
+   OPEN_FIFO_RW                 = src/common/open_fifo_rw.c
+   EXTRA_OPEN_FIFO_RW           =
+endif
+if ERROR_QUEUE_SUPPORT
+   HANDLE_ERROR_QUEUE           = src/common/convert_error_queue.c\
+                                  src/common/handle_error_queue.c
+   EXTRA_HANDLE_ERROR_QUEUE     =
+else
+   HANDLE_ERROR_QUEUE           =
+   EXTRA_HANDLE_ERROR_QUEUE     = src/common/convert_error_queue.c\
+                                  src/common/handle_error_queue.c
+endif
+if WITH_IP_DATABASE
+   HANDLE_IP                    = src/common/handle_ip.c
+   EXTRA_HANDLE_IP              =
+else
+   HANDLE_IP                    =
+   EXTRA_HANDLE_IP              = src/common/handle_ip.c
+endif
+if WITH_MAINTAINER_LOG
+   MAINTAINER_LOG_COMMON        = src/common/maintainer_log.c
+   EXTRA_MAINTAINER_LOG_COMMON  =
+else
+   MAINTAINER_LOG_COMMON        =
+   EXTRA_MAINTAINER_LOG_COMMON  = src/common/maintainer_log.c
+endif
+if WITH_MULTI_FS_SUPPORT
+   HANDLE_EXTRA_WORK_DIRS       = src/common/handle_extra_workdirs.c
+   EXTRA_HANDLE_EXTRA_WORK_DIRS =
+else
+   HANDLE_EXTRA_WORK_DIRS       =
+   EXTRA_HANDLE_EXTRA_WORK_DIRS = src/common/handle_extra_workdirs.c
+endif
+EXTRA_DIST           += $(EXTRA_MAPPER)\
+                        $(EXTRA_AFD_MON_COMMON)\
+                        $(EXTRA_EACCESS)\
+                        $(EXTRA_DUPCHECK_COMMON)\
+                        $(EXTRA_SET_AFD_EUID)\
+                        $(EXTRA_PRODUCTION_LOG_COMMON)\
+                        $(EXTRA_DELETE_LOG_PTRS)\
+                        $(EXTRA_OPEN_FIFO_RW)\
+                        $(EXTRA_OUTPUT_PTRS)\
+                        $(EXTRA_HANDLE_ERROR_QUEUE)\
+                        $(EXTRA_HANDLE_IP)\
+                        $(EXTRA_MAINTAINER_LOG_COMMON)\
+                        $(EXTRA_HANDLE_EXTRA_WORK_DIRS)\
+                        $(EXTRA_LINUX_SPECIAL)\
+                        src/common/pmatch_old.c
+
+noinst_LIBRARIES     += lib/libafd.a
+lib_libafd_a_SOURCES  = src/common/attach_afd_status.c\
+                        src/common/attach_buf.c\
+                        src/common/bitstuff.c\
+                        src/common/calc_next_time.c\
+                        src/common/change_alias_order.c\
+                        src/common/change_name.c\
+                        src/common/check_lock.c\
+                        src/common/coe_open.c\
+                        src/common/convert_ls_data.c\
+                        src/common/create_message.c\
+                        src/common/create_remote_dir.c\
+                        src/common/check_additional_lock_filters.c\
+                        src/common/check_create_path.c\
+                        src/common/check_dir.c\
+                        src/common/check_fake_user.c\
+                        src/common/check_fra.c\
+                        src/common/check_fsa.c\
+                        src/common/check_msa.c\
+                        src/common/clr_fl.c\
+                        src/common/copy_file.c\
+                        src/common/create_name.c\
+                        src/common/daemon_init.c\
+                        src/common/datestr2unixtime.c\
+                        $(DELETE_LOG_PTRS)\
+                        src/common/detach_afd_status.c\
+                        $(AFD_EACCESS)\
+                        src/common/error_action.c\
+                        src/common/eval_host_config.c\
+                        src/common/eval_timeout.c\
+                        src/common/eval_time_str.c\
+                        src/common/event_log.c\
+                        src/common/exec_cmd.c\
+                        src/common/expand_path.c\
+                        src/common/extract_cus.c\
+                        src/common/fra_attach.c\
+                        src/common/fra_detach.c\
+                        src/common/fsa_attach.c\
+                        src/common/fsa_detach.c\
+                        src/common/fra_disable_all_flag.c\
+                        src/common/get_additional_locked_files.c\
+                        src/common/get_afd_name.c\
+                        src/common/get_afd_path.c\
+                        src/common/get_afd_status_struct_size.c\
+                        src/common/get_arg.c\
+                        src/common/get_checksum.c\
+                        src/common/get_checksum_crc32c.c\
+                        src/common/get_checksum_murmur3.c\
+                        src/common/get_definition.c\
+                        src/common/get_dir_alias.c\
+                        src/common/get_dir_number.c\
+                        src/common/get_dir_options.c\
+                        src/common/get_error_str.c\
+                        src/common/get_file_mask_list.c\
+                        src/common/get_log_type_data.c\
+                        src/common/get_log_number.c\
+                        src/common/get_max_log_values.c\
+                        src/common/get_mon_path.c\
+                        src/common/get_permissions.c\
+                        src/common/get_position.c\
+                        $(LINUX_SPECIAL)\
+                        src/common/get_progname.c\
+                        src/common/get_pw.c\
+                        src/common/get_rename_rules.c\
+                        src/common/get_rule.c\
+                        src/common/get_update_config_str.c\
+                        src/common/get_user.c\
+                        src/common/handle_counter.c\
+                        $(HANDLE_ERROR_QUEUE)\
+                        $(HANDLE_EXTRA_WORK_DIRS)\
+                        $(HANDLE_IP)\
+                        src/common/handle_jid.c\
+                        src/common/handle_jis.c\
+                        src/common/handle_xor_crypt.c\
+                        src/common/inform_fd_about_fsa_change.c\
+                        $(DUPCHECK_COMMON)\
+                        src/common/is_msgname.c\
+                        src/common/jid_attach.c\
+                        src/common/jid_detach.c\
+                        src/common/lock_file.c\
+                        src/common/lock_proc.c\
+                        src/common/lock_region.c\
+                        src/common/lock_region_w.c\
+                        $(MAINTAINER_LOG_COMMON)\
+                        src/common/make_fifo.c\
+                        src/common/map_file.c\
+                        src/common/mode_t2str.c\
+                        $(AFD_MAPPER)\
+                        src/common/mmap_resize.c\
+                        $(AFD_MON_PROGS_COMMON)\
+                        src/common/move_file.c\
+                        src/common/my_power.c\
+                        src/common/my_strcmp.c\
+                        src/common/my_strncpy.c\
+                        src/common/my_usleep.c\
+                        $(OPEN_FIFO_RW)\
+                        $(OUTPUT_LOG_PTRS)\
+                        src/common/posi.c\
+                        src/common/pmatch.c\
+                        $(PRODUCTION_LOG_COMMON)\
+                        src/common/read_file.c\
+                        src/common/read_file_no_cr.c\
+                        src/common/read_job_ids.c\
+                        src/common/readn.c\
+                        src/common/rec.c\
+                        src/common/rec_rmdir.c\
+                        src/common/remove_dir.c\
+                        src/common/remove_files.c\
+                        src/common/remove_nnn_files.c\
+                        src/common/remove_job_files.c\
+                        src/common/reshuffel_log_files.c\
+                        src/common/rlock_region.c\
+                        src/common/handle_alias_name.c\
+                        src/common/send_cmd.c\
+                        $(SET_AFD_EUID)\
+                        src/common/set_fl.c\
+                        src/common/show_fifo_data.c\
+                        src/common/store_real_hostname.c\
+                        src/common/str2mode_t.c\
+                        src/common/system_data.c\
+                        src/common/system_log.c\
+                        src/common/t_hostname.c\
+                        src/common/typesize_data.c\
+                        src/common/unlock_region.c\
+                        src/common/unmap_data.c\
+                        src/common/update_db_log.c\
+                        src/common/url.c\
+                        src/common/write_host_config.c\
+                        src/common/writen.c

@@ -1,0 +1,63 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2001 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.                                                 
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of 
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+## GNU General Public License for more details.                 
+##                    
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software      
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  
+##                                                          
+                      
+EXTRA_PROGRAMS           += bin/als\
+                            bin/arg\
+                            bin/ahttp\
+                            bin/ascp\
+                            bin/bt\
+                            bin/change_name\
+                            bin/copy_file\
+                            bin/create_files\
+                            bin/encode64\
+                            bin/html_listing\
+                            bin/testlock\
+                            bin/url_check\
+                            bin/get_pw
+CLEANFILES               += src/test/gmon.out\
+                            src/test/core\
+                            src/test/core.*\
+                            $(EXTRA_PROGRAMS)
+bin_als_SOURCES           = src/test/als.c
+bin_als_LDADD             = lib/libafd.a
+bin_encode64_SOURCES      = src/test/encode64.c\
+                            src/test/encode_base64.c
+bin_encode64_LDADD        = lib/libafd.a
+bin_arg_SOURCES           = src/test/arg.c
+bin_arg_LDADD             = lib/libafd.a
+bin_bt_SOURCES            = src/test/bt.c
+bin_change_name_SOURCES   = src/test/change_name.c
+bin_change_name_LDADD     = lib/libafd.a
+bin_copy_file_SOURCES     = src/test/copy_file.c
+bin_create_files_SOURCES  = src/test/create_files.c
+bin_testlock_SOURCES      = src/test/testlock.c
+bin_testlock_LDADD        = lib/libafd.a
+bin_ahttp_SOURCES         = src/test/ahttp.c\
+                            src/test/trans_log.c
+bin_ahttp_LDADD           = lib/libprotocols.a\
+                            lib/libafd.a
+bin_ascp_SOURCES          = src/test/ascp.c\
+                            src/test/trans_log.c
+bin_ascp_LDADD            = lib/libprotocols.a\
+                            lib/libafd.a
+bin_url_check_SOURCES     = src/test/url_check.c
+bin_url_check_LDADD       = lib/libafd.a
+bin_get_pw_SOURCES        = src/test/get_pw.c
+bin_get_pw_LDADD          = lib/libafd.a
+bin_html_listing_SOURCES  = src/test/html_listing.c
+bin_html_listing_LDADD    = lib/libafd.a

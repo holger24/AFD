@@ -1,0 +1,45 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2001 - 2021 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+CLEANFILES           += src/UI/Motif/dir_ctrl/gmon.out\
+                        src/UI/Motif/dir_ctrl/core\
+                        src/UI/Motif/dir_ctrl/core.*
+noinst_HEADERS       += src/UI/Motif/dir_ctrl/dir_ctrl.h
+bin_PROGRAMS         += bin/dir_ctrl
+bin_dir_ctrl_SOURCES  = src/UI/Motif/dir_ctrl/check_dir_status.c\
+                        src/UI/Motif/dir_ctrl/dir_ctrl.c\
+                        src/UI/Motif/dir_ctrl/dir_expose_handler.c\
+                        src/UI/Motif/dir_ctrl/dir_window_size.c\
+                        src/UI/Motif/dir_ctrl/draw_dir_line.c\
+                        src/UI/Motif/dir_ctrl/mouse_handler.c\
+                        src/UI/Motif/dir_ctrl/redraw_all.c\
+                        src/UI/Motif/dir_ctrl/resize_dir_window.c\
+                        src/UI/Motif/dir_ctrl/select_dir_dialog.c\
+                        src/UI/Motif/dir_ctrl/setup_dir_window.c
+bin_dir_ctrl_LDADD    = @AFD_MATH_LIB@\
+                        lib/libmotifafd.a\
+                        lib/libuiafd.a\
+                        lib/libafd.a\
+                        @AFD_MOTIF_LIBS@
+
+install-exec-hook-motifdirctrl:
+if WITH_SETUID_PROGS
+	chmod 4755 $(DESTDIR)$(bindir)/dir_ctrl
+endif
+
+INSTALL_EXEC_HOOKS += install-exec-hook-motifdirctrl
