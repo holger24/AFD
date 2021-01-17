@@ -62,6 +62,14 @@
 #endif
 #include <float.h>                    /* DBL_MANT_DIG, DBL_MIN_EXP       */
 
+#if defined(__GNUC__)
+# define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+# if GCC_VERSION >= 40500
+  /* gcc diagnostic pragmas available */
+# define GCC_DIAGNOSTIC_PRAGMA
+# endif
+#endif
+
 #define MY_MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MY_MAX(a, b) (((a) > (b)) ? (a) : (b))
 
