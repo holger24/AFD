@@ -117,7 +117,9 @@ UNINSTALL_HOOKS      =
 
 include src/common/Makemodule.am
 include src/log/Makemodule.am
+if WITH_ALDA
 include src/log/alda/Makemodule.am
+endif
 if WITH_AFD_MON
 include src/afd_mon/Makemodule.am
 endif

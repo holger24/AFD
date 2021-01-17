@@ -188,8 +188,10 @@ main(int argc, char *argv[])
 #ifdef _WITH_BURST_2
    int              cb2_ret;
 #endif
-   int              current_toggle,
-                    exit_status = TRANSFER_SUCCESS,
+#ifdef _OUTPUT_LOG
+   int              current_toggle;
+#endif
+   int              exit_status = TRANSFER_SUCCESS,
                     fd,
                     status,
                     bytes_buffered,
@@ -294,19 +296,25 @@ main(int argc, char *argv[])
       if (fsa->host_toggle == HOST_ONE)
       {
          (void)strcpy(db.hostname, fsa->real_hostname[HOST_TWO - 1]);
+#ifdef _OUTPUT_LOG
          current_toggle = HOST_TWO;
+#endif
       }
       else
       {
          (void)strcpy(db.hostname, fsa->real_hostname[HOST_ONE - 1]);
+#ifdef _OUTPUT_LOG
          current_toggle = HOST_ONE;
+#endif
       }
    }
    else
    {
       (void)strcpy(db.hostname,
                    fsa->real_hostname[(int)(fsa->host_toggle - 1)]);
+#ifdef _OUTPUT_LOG
       current_toggle = (int)(fsa->host_toggle);
+#endif
    }
 
    /* Connect to remote SSH-server via local SSH-client. */

@@ -523,7 +523,9 @@ eval_input_alda(int *argc, char *argv[])
                   int i;
 
                   search_log_type = 0;
+#ifdef _OUTPUT_LOG
                   show_output_type = 0;
+#endif
                   i = 0;
                   do
                   {
@@ -1131,11 +1133,11 @@ eval_input_alda(int *argc, char *argv[])
    /* Set default output string if not set. */
    if (format_str == NULL)
    {
-      if ((format_str = malloc(DEFAULT_OUTPUT_ALL_FORMAT_LENGTH + 1)) == NULL)
+      if ((format_str = malloc(DEFAULT_OUTPUT_ALL_FORMAT_LENGTH + 3)) == NULL)
       {
          (void)fprintf(stderr,
                        "ERROR  : Failed to malloc() %d bytes for format string : %s (%s %d)\n",
-                       (int)(DEFAULT_OUTPUT_ALL_FORMAT_LENGTH + 1),
+                       (int)(DEFAULT_OUTPUT_ALL_FORMAT_LENGTH + 3),
                        strerror(errno), __FILE__, __LINE__);
          exit(INCORRECT);
       }

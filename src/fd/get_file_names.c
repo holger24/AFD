@@ -108,11 +108,15 @@ extern struct delete_log          dl;
 
 #if defined (_DELETE_LOG) || defined (_OUTPUT_LOG)
 /* Local function prototypes. */
+static void                       log_data(char *,
+                                           struct stat *,
 # ifdef WITH_DUP_CHECK
-static void                       log_data(char *, struct stat *, time_t, int, char);
-# else
-static void                       log_data(char *, struct stat *, time_t, char);
+                                           int,
 # endif
+# ifdef _OUTPUT_LOG
+                                           char,
+# endif
+                                           time_t);
 #endif
 
 
@@ -481,8 +485,11 @@ get_file_names(char *file_path, off_t *file_size_to_send)
 # if defined (_DELETE_LOG) || defined (_OUTPUT_LOG)
                   else
                   {
-                     log_data(p_dir->d_name, &stat_buf, now,
-                              YES, OT_DUPLICATE_DELETE + '0');
+                     log_data(p_dir->d_name, &stat_buf, YES,
+#  ifdef _OUTPUT_LOG
+                              OT_DUPLICATE_DELETE + '0',
+#  endif
+                              now);
                   }
 # endif
                }
@@ -503,8 +510,11 @@ get_file_names(char *file_path, off_t *file_size_to_send)
 # if defined (_DELETE_LOG) || defined (_OUTPUT_LOG)
                      else
                      {
-                        log_data(p_dir->d_name, &stat_buf, now,
-                                 YES, OT_DUPLICATE_STORED + '0');
+                        log_data(p_dir->d_name, &stat_buf, YES,
+#  ifdef _OUTPUT_LOG
+                                 OT_DUPLICATE_STORED + '0',
+#  endif
+                                 now);
                      }
 # endif
                   }
@@ -524,12 +534,18 @@ get_file_names(char *file_path, off_t *file_size_to_send)
                else
                {
 #if defined (_DELETE_LOG) || defined (_OUTPUT_LOG)
-                  log_data(p_dir->d_name, &stat_buf, now,
+                  log_data(p_dir->d_name, &stat_buf,
 # ifdef WITH_DUP_CHECK
-                           is_duplicate, (is_duplicate == YES) ? (OT_DUPLICATE_DELETE + '0') : (OT_AGE_LIMIT_DELETE + '0'));
+                           is_duplicate,
+#  ifdef _OUTPUT_LOG
+                           (is_duplicate == YES) ? (OT_DUPLICATE_DELETE + '0') : (OT_AGE_LIMIT_DELETE + '0'),
+#  endif
 # else
-                           OT_AGE_LIMIT_DELETE + '0');
+#  ifdef _OUTPUT_LOG
+                           OT_AGE_LIMIT_DELETE + '0',
+#  endif
 # endif
+                           now);
 #endif
 #ifndef _DELETE_LOG
                   if ((db.protocol & FTP_FLAG) || (db.protocol & SFTP_FLAG))
@@ -860,11 +876,13 @@ get_file_names(char *file_path, off_t *file_size_to_send)
 static void
 log_data(char        *d_name,
          struct stat *stat_buf,
-         time_t      now,
 # ifdef WITH_DUP_CHECK
          int         is_duplicate,
 # endif
-         char        output_type)
+# ifdef _OUTPUT_LOG
+         char        output_type,
+# endif
+         time_t      now)
 {
 # ifdef _DELETE_LOG
    int    prog_name_length;

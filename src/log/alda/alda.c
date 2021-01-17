@@ -847,7 +847,9 @@ search_afd(char *search_afd)
 #endif
    unsigned int got_data,
                 more_log_data,
+#if defined (_INPUT_LOG) || defined (_DISTRIBUTION_LOG) || defined (_PRODUCTION_LOG)
                 prev_dir_id,
+#endif
                 prev_job_id = 0,
                 *p_prev_split_job_counter = NULL,
                 *p_prev_unique_number = NULL;
@@ -1016,27 +1018,33 @@ search_afd(char *search_afd)
                      dlog.deletion_type = DELETE_HOST_DISABLED;
                      dlog.unique_number = ulog.unique_number;
                      dlog.split_job_counter = 0;
+#  ifdef _OUTPUT_LOG
                      olog.output_type = OT_HOST_DISABLED_DELETE;
                      olog.job_id = ulog.job_id_list[dis_counter];
                      olog.output_time = ulog.distribution_time;
+#  endif
                      got_data |= SEARCH_DELETE_LOG;
 # endif
                   }
 # ifdef WITH_DUP_CHECK
                   else if (ulog.distribution_type == DUPCHECK_DIS_TYPE)
                        {
+#  ifdef _OUTPUT_LOG
                           olog.output_type = OT_DUPLICATE;
                           olog.job_id = ulog.job_id_list[dis_counter];
                           olog.output_time = ulog.distribution_time;
+#  endif
                           search_loop = SEARCH_DELETE_LOG;
                        }
                            
 # endif
                   else if (ulog.distribution_type == AGE_LIMIT_DELETE_DIS_TYPE)
                        {
+# ifdef _OUTPUT_LOG
                           olog.output_type = OT_AGE_LIMIT_DELETE;
                           olog.job_id = ulog.job_id_list[dis_counter];
                           olog.output_time = ulog.distribution_time;
+# endif
                           search_loop = SEARCH_DELETE_LOG;
                        }
                   else if (ulog.distribution_type == QUEUE_STOPPED_DIS_TYPE)

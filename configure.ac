@@ -23,6 +23,7 @@ AC_SUBST(AFD_RELEASE)
 AC_TRY_COMPILE(,[long long i;],
                AC_DEFINE(HAVE_LONG_LONG, 1, [Define if C compiler supports long long type.]))
 
+compile_alda=false
 dnl# --------------------------------------------------------------------------
 dnl# Checking Configure Command Line Options
 dnl# --------------------------------------------------------------------------
@@ -32,6 +33,7 @@ AC_ARG_ENABLE(input_log,
     ac_cv_input_log=""],
    [AC_DEFINE([_INPUT_LOG], [], [With input log support])
     ac_cv_input_log="INPUT "
+    compile_alda=true
     AM_CONDITIONAL(WITH_INPUT_LOG, true)])
 
 AC_ARG_ENABLE(distribution_log,
@@ -48,6 +50,7 @@ AC_ARG_ENABLE(output_log,
     ac_cv_output_log=""],
    [AC_DEFINE([_OUTPUT_LOG], [], [With output log support])
     ac_cv_output_log="OUTPUT "
+    compile_alda=true
     AM_CONDITIONAL(WITH_OUTPUT_LOG, true)])
 
 AC_ARG_ENABLE(confirmation_log,
@@ -64,6 +67,7 @@ AC_ARG_ENABLE(delete_log,
     ac_cv_delete_log=""],
    [AC_DEFINE([_DELETE_LOG], [], [With delete log support])
     ac_cv_delete_log="DELETE "
+    compile_alda=true
     AM_CONDITIONAL(WITH_DELETE_LOG, true)])
 
 AC_ARG_ENABLE(production_log,
@@ -72,6 +76,7 @@ AC_ARG_ENABLE(production_log,
     ac_cv_production_log=""],
    [AC_DEFINE([_PRODUCTION_LOG], [], [With production log support])
     ac_cv_production_log="PRODUCTION "
+    compile_alda=true
     AM_CONDITIONAL(WITH_PRODUCTION_LOG, true)])
 
 AC_ARG_ENABLE(maintainer_log,
@@ -97,6 +102,8 @@ AC_ARG_ENABLE(alda_cache_positioning,
     AM_CONDITIONAL(WITH_ALDA_CACHE_POSITIONING, true)],
    [AM_CONDITIONAL(WITH_ALDA_CACHE_POSITIONING, false)
     ac_cv_alda_cache=""])
+
+AM_CONDITIONAL(WITH_ALDA, $compile_alda)
 
 AC_ARG_ENABLE(ncurses_ui,
    [  --disable-ncurses_ui            disable nCurses support],

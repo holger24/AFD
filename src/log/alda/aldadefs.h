@@ -337,6 +337,12 @@
 #endif
 #if !defined (_INPUT_LOG) && defined (_DISTRIBUTION_LOG) && defined (_PRODUCTION_LOG) && defined (_OUTPUT_LOG) && defined (_DELETE_LOG)
 # undef  SEARCH_ALL_LOGS
+# define SEARCH_ALL_LOGS                    (SEARCH_DISTRIBUTION_LOG | SEARCH_PRODUCTION_LOG | SEARCH_OUTPUT_LOG | SEARCH_DELETE_LOG)
+# undef  DEFAULT_OUTPUT_ALL_FORMAT
+# define DEFAULT_OUTPUT_ALL_FORMAT          "%UTd %UTX|%-12AH|%-30UF|%11USB|+|%Ptd %PtX (%PDX)|%-30Pf|%-30PF|%11PSB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE|+|%DTd %DTX|%DR"
+#endif
+#if !defined (_INPUT_LOG) && !defined (_DISTRIBUTION_LOG) && defined (_PRODUCTION_LOG) && defined (_OUTPUT_LOG) && defined (_DELETE_LOG)
+# undef  SEARCH_ALL_LOGS
 # define SEARCH_ALL_LOGS                    (SEARCH_PRODUCTION_LOG | SEARCH_OUTPUT_LOG | SEARCH_DELETE_LOG)
 # undef  DEFAULT_OUTPUT_ALL_FORMAT
 # define DEFAULT_OUTPUT_ALL_FORMAT          "%UTd %UTX|%-12AH|%-30UF|%11USB|+|%Ptd %PtX (%PDX)|%-30Pf|%-30PF|%11PSB|+|%OTd %OTX (%ODX)|%-6OP|%-8OH|%-30OE|+|%DTd %DTX|%DR"

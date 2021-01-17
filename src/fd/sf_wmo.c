@@ -1,6 +1,6 @@
 /*
  *  sf_wmo.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -184,8 +184,10 @@ main(int argc, char *argv[])
 #ifdef _WITH_BURST_2
    int              cb2_ret;
 #endif
-   int              current_toggle,
-                    exit_status = TRANSFER_SUCCESS,
+#ifdef _OUTPUT_LOG
+   int              current_toggle;
+#endif
+   int              exit_status = TRANSFER_SUCCESS,
                     j,
                     fd,
                     status,
@@ -293,19 +295,25 @@ main(int argc, char *argv[])
       if (fsa->host_toggle == HOST_ONE)
       {
          (void)strcpy(db.hostname, fsa->real_hostname[HOST_TWO - 1]);
+#ifdef _OUTPUT_LOG
          current_toggle = HOST_TWO;
+#endif
       }
       else
       {
          (void)strcpy(db.hostname, fsa->real_hostname[HOST_ONE - 1]);
+#ifdef _OUTPUT_LOG
          current_toggle = HOST_ONE;
+#endif
       }
    }
    else
    {
       (void)strcpy(db.hostname,
                    fsa->real_hostname[(int)(fsa->host_toggle - 1)]);
+#ifdef _OUTPUT_LOG
       current_toggle = (int)fsa->host_toggle;
+#endif
    }
 
    /* Connect to remote WMO-server. */

@@ -1,6 +1,6 @@
 /*
  *  handle_options.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -241,7 +241,7 @@ static void                       prepare_rename_ow(int, char **, off_t **),
 #endif
                                                    int, char *, char *);
 static int                        cleanup_rename_ow(int,
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
                                                     int, time_t, unsigned int,
                                                     unsigned int, char *,
 #endif
@@ -277,7 +277,7 @@ handle_options(int          position,
          j;
    off_t size;
    char  *options,
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
          *p_option,
 #endif
          *ptr,
@@ -300,7 +300,7 @@ handle_options(int          position,
       if ((db[position].loptions_flag & RENAME_ID_FLAG) &&
           (CHECK_STRNCMP(options, RENAME_ID, RENAME_ID_LENGTH) == 0))
       {
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
          p_option = options;
 #endif
          /*
@@ -574,7 +574,7 @@ handle_options(int          position,
                      } /* for (j = 0; j < file_counter; j++) */
 
                      *files_to_send = cleanup_rename_ow(file_counter,
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
                                                         position, creation_time,
                                                         unique_number,
                                                         split_job_counter,
@@ -602,7 +602,7 @@ handle_options(int          position,
       {
          char *p_rule;
 
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
          p_option = options;
 #endif
 
@@ -905,7 +905,7 @@ handle_options(int          position,
                         } /* for (j = 0; j < file_counter; j++) */
 
                         *files_to_send = cleanup_rename_ow(file_counter,
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
                                                            position, creation_time,
                                                            unique_number,
                                                            split_job_counter,
@@ -958,7 +958,7 @@ handle_options(int          position,
           */
 
          /* Determine the type of exec command, first the old one. */
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
          p_option = options;
 #endif
          p_command = options + EXEC_ID_LENGTH;
@@ -1291,7 +1291,12 @@ handle_options(int          position,
                                          sched_priority,
 #endif
                                          "", &cpu_usage, &production_time,
-                                         clktck, exec_timeout,
+#ifdef _PRODUCTION_LOG
+                                         clktck,
+#else
+                                         0,
+#endif
+                                         exec_timeout,
                                          YES, YES)) != 0) /* ie != SUCCESS */
                      {
                         receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
@@ -1540,7 +1545,12 @@ handle_options(int          position,
 #ifdef HAVE_SETPRIORITY
                                    sched_priority,
 #endif
-                                   "", &cpu_usage, &production_time, clktck,
+                                   "", &cpu_usage, &production_time,
+#ifdef _PRODUCTION_LOG
+                                   clktck,
+#else
+                                   0,
+#endif
                                    exec_timeout, YES, YES)) != 0)
                {
                   receive_log(WARN_SIGN, __FILE__, __LINE__, 0L,
@@ -1901,7 +1911,7 @@ handle_options(int          position,
             }
 
             *files_to_send = cleanup_rename_ow(file_counter,
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
                                                position, creation_time,
                                                unique_number,
                                                split_job_counter, options,
@@ -2004,7 +2014,7 @@ handle_options(int          position,
                p_file_name += MAX_FILENAME_LENGTH;
             }
             *files_to_send = cleanup_rename_ow(file_counter,
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
                                                position, creation_time,
                                                unique_number,
                                                split_job_counter, options,
@@ -2035,7 +2045,7 @@ handle_options(int          position,
                *p_prefix_newname;
 
          /* Get the prefix. */
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
          p_option = options;
 #endif
          p_prefix = options + ADD_PREFIX_ID_LENGTH;
@@ -2084,7 +2094,7 @@ handle_options(int          position,
                p_file_name += MAX_FILENAME_LENGTH;
             }
             *files_to_send = cleanup_rename_ow(file_counter,
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
                                                position, creation_time,
                                                unique_number,
                                                split_job_counter, p_option,
@@ -2120,7 +2130,7 @@ handle_options(int          position,
          char  *new_name_buffer;
 
          /* Get the prefix. */
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
          p_option = options;
 #endif
          p_prefix = options + DEL_PREFIX_ID_LENGTH;
@@ -2167,7 +2177,7 @@ handle_options(int          position,
                p_file_name += MAX_FILENAME_LENGTH;
             }
             *files_to_send = cleanup_rename_ow(file_counter,
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
                                                position, creation_time,
                                                unique_number,
                                                split_job_counter, p_option,
@@ -2488,7 +2498,7 @@ handle_options(int          position,
                p_file_name += MAX_FILENAME_LENGTH;
             }
             *files_to_send = cleanup_rename_ow(file_counter,
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
                                                position, creation_time,
                                                unique_number,
                                                split_job_counter, options,
@@ -2561,7 +2571,7 @@ handle_options(int          position,
                p_file_name += MAX_FILENAME_LENGTH;
             }
             *files_to_send = cleanup_rename_ow(file_counter,
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
                                                position, creation_time,
                                                unique_number,
                                                split_job_counter, options,
@@ -3115,7 +3125,9 @@ handle_options(int          position,
             struct tms     tval;
             struct rusage  ru;
             struct timeval cpu_usage;
+#endif
 
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
             p_option = options;
 #endif
             if ((*(options + GRIB2WMO_ID_LENGTH) == ' ') ||
@@ -3254,7 +3266,7 @@ handle_options(int          position,
          char *p_extract_id,
               *p_filter;
 
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
          p_option = options;
 #endif
          p_extract_id = options + EXTRACT_ID_LENGTH + 1;
@@ -3734,7 +3746,9 @@ handle_options(int          position,
          struct tms     tval;
          struct rusage  ru;
          struct timeval cpu_usage;
+#endif
 
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
          p_option = options;
 #endif
          p_assemble_id = options + ASSEMBLE_ID_LENGTH + 1;
@@ -3936,7 +3950,9 @@ handle_options(int          position,
             struct tms     tval;
             struct rusage  ru;
             struct timeval cpu_usage;
+#endif
 
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
             p_option = options;
 #endif
             p_convert_id = options + CONVERT_ID_LENGTH + 1;
@@ -4440,7 +4456,7 @@ prepare_rename_ow(int   file_counter,
 /*++++++++++++++++++++++++++ cleanup_rename_ow() ++++++++++++++++++++++++*/
 static int
 cleanup_rename_ow(int          file_counter,
-#ifdef _PRODUCTION_LOG
+#if defined (_PRODUCTION_LOG) || defined (_DELETE_LOG)
                   int          position,
                   time_t       creation_time,
                   unsigned int unique_number,

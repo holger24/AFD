@@ -1,6 +1,6 @@
 /*
  *  sf_smtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -234,7 +234,6 @@ int
 main(int argc, char *argv[])
 {
    int              buffer_size = 0,
-                    current_toggle,
                     encode_buffer_size = 0,
                     exit_status = TRANSFER_SUCCESS,
                     fd,
@@ -243,7 +242,10 @@ main(int argc, char *argv[])
                     loops,
                     rest,
                     mail_header_size = 0,
+#ifdef _OUTPUT_LOG
+                    current_toggle,
                     mail_id_length,
+#endif
                     blocksize,
                     *unique_counter,
                     write_size;
@@ -276,8 +278,10 @@ main(int argc, char *argv[])
                     fullname[MAX_PATH_LENGTH + 1],
                     file_path[MAX_PATH_LENGTH],
                     *extra_mail_header_buffer = NULL,
-                    *mail_header_buffer = NULL,
-                    mail_id[1 + MAX_MAIL_ID_LENGTH + 1];
+#ifdef _OUTPUT_LOG
+                    mail_id[1 + MAX_MAIL_ID_LENGTH + 1],
+#endif
+                    *mail_header_buffer = NULL;
    clock_t          clktck;
    struct stat      stat_buf;
    struct job       *p_db;
@@ -378,7 +382,9 @@ main(int argc, char *argv[])
    {
       (void)my_strncpy(db.smtp_server, SMTP_HOST_NAME,
                        MAX_REAL_HOSTNAME_LENGTH);
+#ifdef _OUTPUT_LOG
       current_toggle = HOST_ONE;
+#endif
    }
    else
    {
@@ -391,14 +397,18 @@ main(int argc, char *argv[])
                (void)my_strncpy(db.smtp_server,
                                 fsa->real_hostname[HOST_TWO - 1],
                                 MAX_REAL_HOSTNAME_LENGTH);
+#ifdef _OUTPUT_LOG
                current_toggle = HOST_TWO;
+#endif
             }
             else
             {
                (void)my_strncpy(db.smtp_server,
                                 fsa->real_hostname[HOST_ONE - 1],
                                 MAX_REAL_HOSTNAME_LENGTH);
+#ifdef _OUTPUT_LOG
                current_toggle = HOST_ONE;
+#endif
             }
          }
          else
@@ -406,9 +416,12 @@ main(int argc, char *argv[])
             (void)my_strncpy(db.smtp_server,
                              fsa->real_hostname[(int)(fsa->host_toggle - 1)],
                              MAX_REAL_HOSTNAME_LENGTH);
+#ifdef _OUTPUT_LOG
             current_toggle = (int)fsa->host_toggle;
+#endif
          }
       }
+#ifdef _OUTPUT_LOG
       else
       {
          if (db.toggle_host == YES)
@@ -427,6 +440,7 @@ main(int argc, char *argv[])
             current_toggle = (int)fsa->host_toggle;
          }
       }
+#endif
    }
 
 #ifdef _OUTPUT_LOG
@@ -1340,7 +1354,9 @@ main(int argc, char *argv[])
          }
 
          /* Read (local) and write (remote) file */
+#ifdef _OUTPUT_LOG
          mail_id_length = 0;
+#endif
          no_of_bytes = 0;
          loops = *p_file_size_buffer / blocksize;
          rest = *p_file_size_buffer % blocksize;
@@ -2627,6 +2643,7 @@ main(int argc, char *argv[])
                                "Closing data mode.");
                }
 
+#ifdef _OUTPUT_LOG
                /*
                 * Try get queue ID under which the server has queued
                 * the mail. Unfortunatly I do not know if there is some
@@ -2692,6 +2709,7 @@ main(int argc, char *argv[])
                   mail_id[0] = '\0';
                   mail_id_length = 0;
                }
+#endif
             }
          }
 

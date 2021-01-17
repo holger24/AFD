@@ -1,6 +1,6 @@
 /*
  *  print_alda_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,7 +54,9 @@ DESCR__E_M3
 #ifdef _DELETE_LOG
 # include "dr_str.h"
 #endif
-#include "ot_str.h"
+#ifdef _OUTPUT_LOG
+# include "ot_str.h"
+#endif
 
 /* External global variables. */
 extern unsigned int      mode;
@@ -85,8 +87,10 @@ extern struct alda_ddata dlog;
 static char              output_line[MAX_OUTPUT_LINE_LENGTH + 1];
 
 /* Local function prototypes. */
-static int               pri_duration(char *, int, int, int, char, double, int),
-                         pri_id(char *, int, int, int, unsigned int, int),
+#if defined (_PRODUCTION_LOG) || defined (_OUTPUT_LOG)
+static int               pri_duration(char *, int, int, int, char, double, int);
+#endif
+static int               pri_id(char *, int, int, int, unsigned int, int),
                          pri_int(char *, int, int, int, int, int),
 #ifdef _DISTRIBUTION_LOG
                          pri_int_array(char *, int, int, int, int,
@@ -1888,6 +1892,7 @@ pri_int_char_array(char          *format_orientation,
 #endif /* _DISTRIBUTION_LOG */
 
 
+#if defined (_PRODUCTION_LOG) || defined (_OUTPUT_LOG)
 /*+++++++++++++++++++++++++++++ pri_duration() ++++++++++++++++++++++++++*/
 static int
 pri_duration(char   *format_orientation,
@@ -2006,6 +2011,7 @@ pri_duration(char   *format_orientation,
 
    return(fo_pos);
 }
+#endif /* defined (_PRODUCTION_LOG) || defined (_OUTPUT_LOG) */
 
 
 /*++++++++++++++++++++++++++++++++ pri_time() +++++++++++++++++++++++++++*/
