@@ -50,6 +50,7 @@ bin_PROGRAMS                      += bin/afdcmd\
                                      bin/fra_view\
                                      bin/get_dc_data\
                                      bin/get_hostname\
+                                     bin/get_rr_data\
                                      bin/grib2wmo\
                                      bin/jid_view\
                                      bin/set_pw\
@@ -168,6 +169,8 @@ bin_get_file_size_SOURCES          = src/tools/get_file_size.c
 bin_get_full_date_SOURCES          = src/tools/get_full_date.c
 bin_get_hostname_SOURCES           = src/tools/get_hostname.c
 bin_get_hostname_LDADD             = lib/libafd.a
+bin_get_rr_data_SOURCES            = src/tools/get_rr_data.c
+bin_get_rr_data_LDADD              = lib/libafd.a
 bin_grib2wmo_SOURCES               = src/tools/grib2wmo.c\
                                      src/tools/receive_log.c
 bin_grib2wmo_LDADD                 = lib/libmisc.a
