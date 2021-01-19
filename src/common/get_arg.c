@@ -1,6 +1,6 @@
 /*
  *  get_arg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,6 +30,8 @@ DESCR__S_M3
  **   int get_argb(int *argc, char *argv[], char *arg, char *buffer)
  **   int get_arg_array(int *argc, char *argv[], char *arg,
  **                     char ***buffer, int *no_of_elements)
+ **   int get_arg_array_all(int *argc, char *argv[],
+ **                         char ***buffer, int *no_of_elements)
  **   int get_arg_int_array(int *argc, char *argv[], char *arg,
  **                         unsigned int **buffer, int *no_of_elements)
  **
@@ -43,6 +45,11 @@ DESCR__S_M3
  **   Function get_arg_array() collects all elements of an argument
  **   into a two dimensional array that it allocates. The caller
  **   is responsible to free this free this memory with FREE_RT_ARRAY().
+ **
+ **   Function get_arg_array_all() collects all elements of the rest
+ **   arguments, except the fist one and stores them into a two
+ **   dimensional array that it allocates. The caller is responsible
+ **   to free this free this memory with FREE_RT_ARRAY().
  **
  **   Function get_arg_int_array() collects all elements of an argument
  **   into a unsigned int array that it allocates. The caller
@@ -60,6 +67,7 @@ DESCR__S_M3
  **   20.10.2005 H.Kiehl Added function get_arg_array().
  **   25.03.2011 H.Kiehl Added function get_arg_int_array().
  **   25.07.2020 H.Kiehl Added function get_argb().
+ **   19.01.2021 H.Kiehl Added function get_arg_array_all().
  **
  */
 DESCR__E_M3
@@ -290,6 +298,84 @@ get_arg_array(int  *argc,
          }
 
          return(SUCCESS);
+      }
+   }
+
+   /* Argument NOT found. */
+   return(INCORRECT);
+}
+
+
+/*######################### get_arg_array_all() ##########################*/
+int
+get_arg_array_all(int  *argc,
+                  char *argv[],
+                  char ***buffer,
+                  int  *no_of_elements)
+{
+   register int i, j;
+   int          max_length = 0,
+                tmp_i = 1;
+
+   for (i = 1; i < *argc; i++)
+   {
+      *no_of_elements = 0;
+      max_length = 0;
+      while (i < *argc)
+      {
+         j = 0;
+         while (argv[i][j] != '\0')
+         {
+            j++;
+         }
+         if (j > max_length)
+         {
+            max_length = j;
+         }
+         (*no_of_elements)++;
+         i++;
+      }
+      if (*no_of_elements > 0)
+      {
+         i = tmp_i;
+         max_length++;
+         RT_ARRAY(*buffer, *no_of_elements, max_length, char);
+         for (j = 0; j < *no_of_elements; j++)
+         {
+            (void)strcpy((*buffer)[j], argv[i + j]);
+         }
+         if ((i + *no_of_elements + 1) < *argc)
+         {
+            for (j = i; j < (*argc - *no_of_elements - 1); j++)
+            {
+               argv[j] = argv[j + *no_of_elements + 1];
+            }
+            argv[j] = NULL;
+         }
+         else
+         {
+            argv[i] = NULL;
+         }
+         *argc -= *no_of_elements;
+
+         return(SUCCESS);
+      }
+      else
+      {
+         *buffer = NULL;
+         if ((i + 1) < *argc)
+         {
+            for (j = i; j < *argc; j++)
+            {
+               argv[j] = argv[j + 1];
+            }
+            argv[j] = NULL;
+         }
+         else
+         {
+            argv[i] = NULL;
+         }
+         *argc -= 1;
       }
    }
 
