@@ -1,6 +1,6 @@
 /*
  *  afddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -351,6 +351,8 @@ typedef unsigned long       u_long_64;
 #define VIEW_DC                    "view_dc"
 #define GET_DC_DATA                "get_dc_data"
 #define GET_DC_DATA_LENGTH         (sizeof(GET_DC_DATA) - 1)
+#define GET_RR_DATA                "get_rr_data"
+#define GET_RR_DATA_LENGTH         (sizeof(GET_RR_DATA) - 1)
 #define JID_VIEW                   "jid_view"
 #define DIR_CTRL                   "dir_ctrl"
 #define DIR_INFO                   "dir_info"
