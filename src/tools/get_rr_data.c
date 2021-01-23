@@ -63,7 +63,8 @@ static int  check_rule_header(char *, int, char **);
 int
 main(int argc, char *argv[])
 {
-   int  no_of_search_rule_alias = 0;
+   int  no_of_search_rule_alias = 0,
+        ret = SUCCESS;
    char **search_rule_alias = NULL,
         work_dir[MAX_PATH_LENGTH];
 
@@ -122,30 +123,56 @@ main(int argc, char *argv[])
       }
 
       /* Now show them. */
-      for (i = 0; i < no_of_rule_headers; i++)
+      if (headers_to_do > 0)
       {
-         if ((no_of_search_rule_alias == 0) ||
-             (check_rule_header(rule[i].header,
-                                no_of_search_rule_alias,
-                                search_rule_alias) == YES))
-         {
-            (void)fprintf(stdout, "[%s]\n", rule[i].header);
-            for (j = 0; j < rule[i].no_of_rules; j++)
-            {
-               (void)fprintf(stdout, "%-*s %s\n", longest_filter_length,
-                             rule[i].filter[j], rule[i].rename_to[j]);
-            }
-            headers_to_do--;
+         int show_alias;
 
-            if (headers_to_do > 0)
+         if (headers_to_do > 1)
+         {
+            show_alias = YES;
+         }
+         else
+         {
+            show_alias = NO;
+         }
+         for (i = 0; i < no_of_rule_headers; i++)
+         {
+            if ((no_of_search_rule_alias == 0) ||
+                (check_rule_header(rule[i].header,
+                                   no_of_search_rule_alias,
+                                   search_rule_alias) == YES))
             {
-               (void)fprintf(stdout, "\n");
+               if (show_alias == YES)
+               {
+                  (void)fprintf(stdout, "[%s]\n", rule[i].header);
+               }
+               for (j = 0; j < rule[i].no_of_rules; j++)
+               {
+                  (void)fprintf(stdout, "%-*s %s\n", longest_filter_length,
+                                rule[i].filter[j], rule[i].rename_to[j]);
+               }
+               headers_to_do--;
+
+               if (headers_to_do > 0)
+               {
+                  (void)fprintf(stdout, "\n");
+               }
             }
          }
       }
+      else
+      {
+         (void)fprintf(stdout, "No such header(s) in rename.rule(s)\n");
+         ret = INCORRECT;
+      }
+   }
+   else
+   {
+      (void)fprintf(stdout, "Rename rules are empty\n");
+      ret = INCORRECT;
    }
 
-   exit(SUCCESS);
+   exit(ret);
 }
 
 
