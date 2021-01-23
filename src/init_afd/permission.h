@@ -1,6 +1,6 @@
 /*
  *  permission.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -105,6 +105,8 @@
 #define AFD_CFG_PERM_LENGTH      (sizeof(AFD_CFG_PERM) - 1)
 #define VIEW_DIR_CONFIG_PERM     "view_dir_config" /* Info on DIR_CONFIG   */
 #define VIEW_DIR_CONFIG_PERM_LENGTH (sizeof(VIEW_DIR_CONFIG_PERM) - 1)
+#define VIEW_RENAME_RULES_PERM   "view_rename_rules"/* Info on rename rules.*/
+#define VIEW_RENAME_RULES_PERM_LENGTH (sizeof(VIEW_RENAME_RULES_PERM) - 1)
 #define SHOW_QUEUE_PERM          "show_queue"      /* Show + delete queue. */
 #define DELETE_QUEUE_PERM        "delete_queue"    /* Delete queue.        */
 #define XSHOW_STAT_PERM          "xshow_stat"      /* Show statistics.     */

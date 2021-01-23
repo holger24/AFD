@@ -15,6 +15,7 @@
 #   dir_info                          : Allow dir_info.
 #   afd_load                          : View afd_load dialog.
 #   view_dir_config                   : Allow to view DIR_CONFIG.
+#   view_rename_rules                 : Allow to view rename rules.
 #   startup                           : Start the AFD.
 #   shutdown                          : Do a shutdown of the AFD.
 #   mon_startup                       : Start afd_mon.
