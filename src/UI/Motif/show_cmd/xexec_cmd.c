@@ -1,6 +1,6 @@
 /*
  *  xexec_cmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2007 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -63,7 +63,8 @@ DESCR__E_M3
 
 /* External global variables. */
 extern int            cmd_fd,
-                      go_to_beginning;
+                      go_to_beginning,
+                      no_repeat_button;
 extern pid_t          cmd_pid;
 extern Display        *display;
 extern Widget         appshell,
@@ -153,9 +154,12 @@ read_data(XtPointer client_data, int *fd, XtInputId *id)
    }
    else if (n == 0)
         {
-           buffer[0] = '>';
-           buffer[1] = '\0';
-           XmTextInsert(cmd_output, wpr_position, buffer);
+           if (no_repeat_button == NO)
+           {
+              buffer[0] = '>';
+              buffer[1] = '\0';
+              XmTextInsert(cmd_output, wpr_position, buffer);
+           }
            if (go_to_beginning == NO)
            {
               XmTextShowPosition(cmd_output, wpr_position);

@@ -1,6 +1,6 @@
 /*
  *  show_cmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ DESCR__S_M1
  ** HISTORY
  **   04.12.1999 H.Kiehl Created
  **   18.03.2000 H.Kiehl Added print button.
+ **   21.01.2021 H.Kiehl Added option -nrb to remove repeat button.
  **
  */
 DESCR__E_M1
@@ -82,6 +83,7 @@ Widget         appshell,
 XmFontList     fontlist;
 int            cmd_fd,
                go_to_beginning = NO,
+               no_repeat_button = NO,
                sys_log_fd = STDERR_FILENO;
 pid_t          cmd_pid;
 char           cmd[MAX_PATH_LENGTH],
@@ -197,7 +199,9 @@ main(int argc, char *argv[])
    XtSetArg(args[argcount], XmNfractionBase, 31);
    argcount++;
    buttonbox_w = XmCreateForm(mainform_w, "buttonbox_w", args, argcount);
-   button = XtVaCreateManagedWidget("Repeat",
+   if (no_repeat_button == NO)
+   {
+      button = XtVaCreateManagedWidget("Repeat",
                         xmPushButtonWidgetClass, buttonbox_w,
                         XmNfontList,         fontlist,
                         XmNtopAttachment,    XmATTACH_POSITION,
@@ -209,9 +213,9 @@ main(int argc, char *argv[])
                         XmNbottomAttachment, XmATTACH_POSITION,
                         XmNbottomPosition,   30,
                         NULL);
-   XtAddCallback(button, XmNactivateCallback,
-                 (XtCallbackProc)repeat_button, 0);
-   button = XtVaCreateManagedWidget("Print",
+      XtAddCallback(button, XmNactivateCallback,
+                    (XtCallbackProc)repeat_button, 0);
+      button = XtVaCreateManagedWidget("Print",
                         xmPushButtonWidgetClass, buttonbox_w,
                         XmNfontList,         fontlist,
                         XmNtopAttachment,    XmATTACH_POSITION,
@@ -223,9 +227,9 @@ main(int argc, char *argv[])
                         XmNbottomAttachment, XmATTACH_POSITION,
                         XmNbottomPosition,   30,
                         NULL);
-   XtAddCallback(button, XmNactivateCallback,
-                 (XtCallbackProc)print_button, 0);
-   button = XtVaCreateManagedWidget("Close",
+      XtAddCallback(button, XmNactivateCallback,
+                    (XtCallbackProc)print_button, 0);
+      button = XtVaCreateManagedWidget("Close",
                         xmPushButtonWidgetClass, buttonbox_w,
                         XmNfontList,         fontlist,
                         XmNtopAttachment,    XmATTACH_POSITION,
@@ -237,8 +241,40 @@ main(int argc, char *argv[])
                         XmNbottomAttachment, XmATTACH_POSITION,
                         XmNbottomPosition,   30,
                         NULL);
-   XtAddCallback(button, XmNactivateCallback,
-                 (XtCallbackProc)close_button, 0);
+      XtAddCallback(button, XmNactivateCallback,
+                    (XtCallbackProc)close_button, 0);
+   }
+   else
+   {
+      button = XtVaCreateManagedWidget("Print",
+                        xmPushButtonWidgetClass, buttonbox_w,
+                        XmNfontList,         fontlist,
+                        XmNtopAttachment,    XmATTACH_POSITION,
+                        XmNtopPosition,      1,
+                        XmNleftAttachment,   XmATTACH_POSITION,
+                        XmNleftPosition,     1,
+                        XmNrightAttachment,  XmATTACH_POSITION,
+                        XmNrightPosition,    15,
+                        XmNbottomAttachment, XmATTACH_POSITION,
+                        XmNbottomPosition,   30,
+                        NULL);
+      XtAddCallback(button, XmNactivateCallback,
+                    (XtCallbackProc)print_button, 0);
+      button = XtVaCreateManagedWidget("Close",
+                        xmPushButtonWidgetClass, buttonbox_w,
+                        XmNfontList,         fontlist,
+                        XmNtopAttachment,    XmATTACH_POSITION,
+                        XmNtopPosition,      1,
+                        XmNleftAttachment,   XmATTACH_POSITION,
+                        XmNleftPosition,     16,
+                        XmNrightAttachment,  XmATTACH_POSITION,
+                        XmNrightPosition,    30,
+                        XmNbottomAttachment, XmATTACH_POSITION,
+                        XmNbottomPosition,   30,
+                        NULL);
+      XtAddCallback(button, XmNactivateCallback,
+                    (XtCallbackProc)close_button, 0);
+   }
    XtManageChild(buttonbox_w);
 
 /*-----------------------------------------------------------------------*/
@@ -258,37 +294,40 @@ main(int argc, char *argv[])
    separator_w = XmCreateSeparator(mainform_w, "separator", args, argcount);
    XtManageChild(separator_w);                                              
 
+   if (no_repeat_button == NO)
+   {
 /*-----------------------------------------------------------------------*/
 /*                            Status Box                                 */
 /*                            ----------                                 */
 /* The status of the output log is shown here. If eg. no files are found */
 /* it will be shown here.                                                */
 /*-----------------------------------------------------------------------*/
-   statusbox_w = XtVaCreateManagedWidget(" ",                              
-                        xmLabelWidgetClass,  mainform_w,
-                        XmNfontList,         fontlist,  
-                        XmNleftAttachment,   XmATTACH_FORM,
-                        XmNrightAttachment,  XmATTACH_FORM,
-                        XmNbottomAttachment, XmATTACH_WIDGET,
-                        XmNbottomWidget,     separator_w,
-                        NULL);
+      statusbox_w = XtVaCreateManagedWidget(" ",                              
+                           xmLabelWidgetClass,  mainform_w,
+                           XmNfontList,         fontlist,  
+                           XmNleftAttachment,   XmATTACH_FORM,
+                           XmNrightAttachment,  XmATTACH_FORM,
+                           XmNbottomAttachment, XmATTACH_WIDGET,
+                           XmNbottomWidget,     separator_w,
+                           NULL);
 
 /*-----------------------------------------------------------------------*/
 /*                         Horizontal Separator                          */
 /*-----------------------------------------------------------------------*/
-   argcount = 0;
-   XtSetArg(args[argcount], XmNorientation,      XmHORIZONTAL);
-   argcount++;
-   XtSetArg(args[argcount], XmNbottomAttachment, XmATTACH_WIDGET);
-   argcount++;
-   XtSetArg(args[argcount], XmNbottomWidget,     statusbox_w);
-   argcount++;
-   XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_FORM);
-   argcount++;
-   XtSetArg(args[argcount], XmNrightAttachment,  XmATTACH_FORM);
-   argcount++;
-   separator_w = XmCreateSeparator(mainform_w, "separator", args, argcount);
-   XtManageChild(separator_w);
+      argcount = 0;
+      XtSetArg(args[argcount], XmNorientation,      XmHORIZONTAL);
+      argcount++;
+      XtSetArg(args[argcount], XmNbottomAttachment, XmATTACH_WIDGET);
+      argcount++;
+      XtSetArg(args[argcount], XmNbottomWidget,     statusbox_w);
+      argcount++;
+      XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_FORM);
+      argcount++;
+      XtSetArg(args[argcount], XmNrightAttachment,  XmATTACH_FORM);
+      argcount++;
+      separator_w = XmCreateSeparator(mainform_w, "separator", args, argcount);
+      XtManageChild(separator_w);
+   }
 
    /* Create cmd_output as a ScrolledText window. */
    argcount = 0;
@@ -304,7 +343,14 @@ main(int argc, char *argv[])
    argcount++;
    XtSetArg(args[argcount], XmNscrollHorizontal,       True);
    argcount++;
-   XtSetArg(args[argcount], XmNcursorPositionVisible,  True);
+   if (no_repeat_button == NO)
+   {
+      XtSetArg(args[argcount], XmNcursorPositionVisible,  True);
+   }
+   else
+   {
+      XtSetArg(args[argcount], XmNcursorPositionVisible,  False);
+   }
    argcount++;
    XtSetArg(args[argcount], XmNautoShowCursorPosition, False);
    argcount++;
@@ -380,6 +426,11 @@ init_cmd(int *argc, char *argv[], char *title_cmd)
    if (get_arg(argc, argv, "-b", NULL, 0) == SUCCESS)
    {
       go_to_beginning = YES;
+   }
+   if ((get_arg(argc, argv, "-nrb", NULL, 0) == SUCCESS) ||
+       (get_arg(argc, argv, "--no_repeat_button", NULL, 0) == SUCCESS))
+   {
+      no_repeat_button = YES;
    }
    if (*argc < 2)
    {
@@ -484,7 +535,9 @@ usage(char *progname)
 {
    (void)fprintf(stderr, "Usage: %s [options] <command to execute>\n", progname);
    (void)fprintf(stderr, "              --version\n");
-   (void)fprintf(stderr, "              -b\n");
+   (void)fprintf(stderr, "              -b   # go to begining\n");
+   (void)fprintf(stderr, "              -nrb # no repeat button\n");
+   (void)fprintf(stderr, "              --no_repeat_button\n");
    (void)fprintf(stderr, "              -f <font name>\n");
    (void)fprintf(stderr, "              -w <working directory>\n");
    return;

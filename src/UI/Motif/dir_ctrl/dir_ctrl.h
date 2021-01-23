@@ -1,6 +1,6 @@
 /*
  *  dir_ctrl.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -61,7 +61,8 @@
 #define DIR_SHOW_QUEUE_W               8
 #define DIR_INFO_W                     9
 #define DIR_VIEW_DC_W                  10
-#define NO_DIR_VIEW_MENU               11
+#define DIR_VIEW_RR_W                  11
+#define NO_DIR_VIEW_MENU               12
 
 /* Definitions of popup selections. */
 #define DIR_INFO_SEL                   70
@@ -70,6 +71,7 @@
 #define DIR_DISABLE_SEL                73
 #define DIR_RESCAN_SEL                 74
 #define DIR_VIEW_DC_SEL                75
+#define DIR_VIEW_RR_SEL                76
 /* NOTE: Since some of these are used by more then one */
 /*       program each may define only a certain range: */
 /*         mafd_ctrl.h       0 - 39                    */
@@ -155,6 +157,7 @@ struct dir_control_perm
           char        **show_queue_list;
           char        **afd_load_list;
           char        **view_dc_list;
+          char        **view_rr_list;
           signed char info;                  /* Info about AFD           */
           signed char handle_event;          /* Handle event             */
           signed char stop;                  /* Start/Stop Directory     */
@@ -171,6 +174,7 @@ struct dir_control_perm
           signed char show_queue;            /* Show Queue               */
           signed char afd_load;              /* Show load of AFD         */
           signed char view_dc;               /* View DIR_CONFIG entries  */
+          signed char view_rr;               /* View rename rules        */
        };
 
 /* Function Prototypes. */

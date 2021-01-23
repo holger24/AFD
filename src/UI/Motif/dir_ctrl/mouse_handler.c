@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -885,7 +885,7 @@ dir_popup_cb(Widget    w,
          args[7] = NULL;
          (void)strcpy(progname, AFD_LOAD);
          (void)strcpy(log_typ, SHOW_FILE_LOAD);
-	 make_xprocess(progname, progname, args, -1);
+         make_xprocess(progname, progname, args, -1);
          free(args);
          FREE_RT_ARRAY(dirs)
          FREE_RT_ARRAY(hosts)
@@ -902,7 +902,7 @@ dir_popup_cb(Widget    w,
          args[7] = NULL;
          (void)strcpy(progname, AFD_LOAD);
          (void)strcpy(log_typ, SHOW_KBYTE_LOAD);
-	 make_xprocess(progname, progname, args, -1);
+         make_xprocess(progname, progname, args, -1);
          free(args);
          FREE_RT_ARRAY(dirs)
          FREE_RT_ARRAY(hosts)
@@ -968,6 +968,22 @@ dir_popup_cb(Widget    w,
          args[offset] = NULL;
          (void)strcpy(progname, VIEW_DC);
          break;
+
+      case DIR_VIEW_RR_SEL : /* View rename rules. */
+         args[0] = progname;
+         args[1] = "-f";
+         args[2] = font_name;
+         args[3] = WORK_DIR_ID;
+         args[4] = p_work_dir;
+         args[5] = "-nrb";
+         args[6] = GET_RR_DATA;
+         args[7] = NULL;
+         (void)strcpy(progname, SHOW_CMD);
+         make_xprocess(progname, progname, args, -1);
+         free(args);
+         FREE_RT_ARRAY(dirs)
+         FREE_RT_ARRAY(hosts)
+         return;
 
       case EXIT_SEL  : /* Exit */
          XFreeFont(display, font_struct);

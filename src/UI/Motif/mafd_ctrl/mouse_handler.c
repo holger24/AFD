@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@ DESCR__S_M3
  **   17.07.2019 H.Kiehl Option to disable backing store and save
  **                      under.
  **   19.07.2019 H.Kiehl Added writing simulate mode to HOST_CONFIG.
+ **   23.01.2021 H.Kiehl Added viewing rename rules.
  **
  */
 DESCR__E_M3
@@ -1632,6 +1633,21 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
          (void)strcpy(progname, VIEW_DC);
          break;
 
+      case VIEW_RR_SEL : /* View rename rules. */
+         args[0] = progname;
+         args[1] = "-f";
+         args[2] = font_name;
+         args[3] = WORK_DIR_ID;
+         args[4] = p_work_dir;
+         args[5] = "-nrb";
+         args[6] = GET_RR_DATA;
+         args[7] = NULL;
+         (void)strcpy(progname, SHOW_CMD);
+         make_xprocess(progname, progname, args, -1);
+         free(args);
+         FREE_RT_ARRAY(hosts);
+         return;
+
       case VIEW_JOB_SEL : /* View job details. */
          if (tv_window == ON)
          {
@@ -3037,6 +3053,7 @@ popup_cb(Widget w, XtPointer client_data, XtPointer call_data)
            args[k + offset] = NULL;
            make_xprocess(progname, progname, args, -1);
         }
+        /* View DIR_CONFIG entries. */
    else if ((sel_typ == VIEW_DC_SEL) && (no_selected == 0) &&
             (no_selected_static == 0))
         {

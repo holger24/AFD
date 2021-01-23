@@ -1,6 +1,6 @@
 /*
  *  dir_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,6 +52,7 @@ DESCR__S_M1
  **   26.09.2016 H.Kiehl Added production log.
  **   17.07.2019 H.Kiehl Added parameter -bs to disable backing store
  **                      and save under.
+ **   23.01.2021 H.Kiehl Added viewing rename rules.
  **
  */
 DESCR__E_M1
@@ -650,6 +651,8 @@ init_dir_ctrl(int *argc, char *argv[], char *window_title)
          dcp.show_queue_list    = NULL;
          dcp.view_dc            = YES; /* View DIR_CONFIG entry   */
          dcp.view_dc_list       = NULL;
+         dcp.view_rr            = YES; /* View rename rules       */
+         dcp.view_rr_list       = NULL;
          break;
 
       default : /* Something must be wrong! */
@@ -1011,7 +1014,8 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
        (dcp.show_elog != NO_PERMISSION) ||
        (dcp.show_queue != NO_PERMISSION) ||
        (dcp.info != NO_PERMISSION) ||
-       (dcp.view_dc != NO_PERMISSION))
+       (dcp.view_dc != NO_PERMISSION) ||
+       (dcp.view_rr != NO_PERMISSION))
    {
       view_pull_down_w = XmCreatePulldownMenu(*menu_w,
                                               "View Pulldown", NULL, 0);
@@ -1128,7 +1132,8 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
          XtAddCallback(vw[DIR_SHOW_QUEUE_W], XmNactivateCallback, dir_popup_cb,
                        (XtPointer)SHOW_QUEUE_SEL);
       }
-      if ((dcp.info != NO_PERMISSION) || (dcp.view_dc != NO_PERMISSION))
+      if ((dcp.info != NO_PERMISSION) || (dcp.view_dc != NO_PERMISSION) ||
+          (dcp.view_rr != NO_PERMISSION))
       {
          XtVaCreateManagedWidget("Separator",
                               xmSeparatorWidgetClass, view_pull_down_w,
@@ -1150,6 +1155,15 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                               NULL);
             XtAddCallback(vw[DIR_VIEW_DC_W], XmNactivateCallback, dir_popup_cb,
                           (XtPointer)DIR_VIEW_DC_SEL);
+         }
+         if (dcp.view_rr != NO_PERMISSION)
+         {
+            vw[DIR_VIEW_RR_W] = XtVaCreateManagedWidget("Rename rules",
+                              xmPushButtonWidgetClass, view_pull_down_w,
+                              XmNfontList,             fontlist,
+                              NULL);
+            XtAddCallback(vw[DIR_VIEW_RR_W], XmNactivateCallback, dir_popup_cb,
+                          (XtPointer)DIR_VIEW_RR_SEL);
          }
       }
    }
@@ -1675,6 +1689,8 @@ eval_permissions(char *perm_buffer)
       dcp.show_elog_list     = NULL;
       dcp.view_dc            = YES;   /* View DIR_CONFIG entry   */
       dcp.view_dc_list       = NULL;
+      dcp.view_rr            = YES;   /* View rename rules       */
+      dcp.view_rr_list       = NULL;
    }
    else
    {
@@ -1942,6 +1958,26 @@ eval_permissions(char *perm_buffer)
          {
             dcp.view_dc = NO_LIMIT;
             dcp.view_dc_list = NULL;
+         }
+      }
+
+      /* May the user view the rename rules. */
+      if ((ptr = posi(perm_buffer, VIEW_RENAME_RULES_PERM)) == NULL)
+      {
+         /* The user may NOT view the rename rules. */
+         dcp.view_rr = NO_PERMISSION;
+      }
+      else
+      {
+         ptr--;
+         if ((*ptr == ' ') || (*ptr == '\t'))
+         {
+            dcp.view_rr = store_host_names(&dcp.view_rr_list, ptr + 1);
+         }
+         else
+         {
+            dcp.view_rr = NO_LIMIT;
+            dcp.view_rr_list = NULL;
          }
       }
    }

@@ -28,6 +28,7 @@ EXTRA_DIST                += $(EXTRA_AFD_SETUP_ICON)
 noinst_HEADERS            += src/UI/Motif/common/motif_common_defs.h
 noinst_LIBRARIES          += lib/libmotifafd.a
 lib_libmotifafd_a_SOURCES  = src/UI/Motif/common/check_nummeric.c\
+                             src/UI/Motif/common/check_rename_selection.c\
                              src/UI/Motif/common/disable_drag_drop.c\
                              src/UI/Motif/common/eval_time.c\
                              src/UI/Motif/common/generic_print.c\

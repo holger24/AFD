@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1999 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -50,6 +50,8 @@ DESCR__E_M3
 #include "view_dc.h"
 
 /* External global variables. */
+extern char   font_name[],
+              *p_work_dir;
 extern Widget searchbox_w,
               text_w;
 

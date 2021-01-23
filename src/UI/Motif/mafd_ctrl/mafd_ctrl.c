@@ -1,6 +1,6 @@
 /*
  *  mafd_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -59,6 +59,7 @@ DESCR__S_M1
  **   04.03.2017 H.Kiehl Added group support.
  **   17.07.2019 H.Kiehl Added parameter -bs to disable backing store
  **                      and save under.
+ **   23.01.2021 H.Kiehl Added viewing rename rules.
  **
  */
 DESCR__E_M1
@@ -133,7 +134,7 @@ XFontStruct                *font_struct = NULL;
 XmFontList                 fontlist = NULL;
 Widget                     mw[5],          /* Main menu */
                            ow[13],         /* Host menu */
-                           vw[14],         /* View menu */
+                           vw[15],         /* View menu */
                            cw[8],          /* Control menu */
                            sw[7],          /* Setup menu */
                            hw[3],          /* Help menu */
@@ -840,6 +841,8 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
          acp.edit_hc_list             = NULL;
          acp.view_dc                  = YES; /* View DIR_CONFIG entry */
          acp.view_dc_list             = NULL;
+         acp.view_rr                  = YES; /* View DIR_CONFIG entry */
+         acp.view_rr_list             = NULL;
          acp.dir_ctrl                 = YES;
          break;
 
@@ -1619,7 +1622,8 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
        (acp.show_ilog != NO_PERMISSION) || (acp.show_plog != NO_PERMISSION) ||
        (acp.show_olog != NO_PERMISSION) || (acp.show_dlog != NO_PERMISSION) ||
        (acp.show_queue != NO_PERMISSION) || (acp.info != NO_PERMISSION) ||
-       (acp.view_dc != NO_PERMISSION) || (acp.view_jobs != NO_PERMISSION))
+       (acp.view_dc != NO_PERMISSION) || (acp.view_rr != NO_PERMISSION) ||
+       (acp.view_jobs != NO_PERMISSION))
    {
       pull_down_w = XmCreatePulldownMenu(*menu_w,
                                               "View Pulldown", NULL, 0);
@@ -1757,7 +1761,8 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
          XtAddCallback(vw[SHOW_QUEUE_W], XmNactivateCallback, popup_cb,
                        (XtPointer)SHOW_QUEUE_SEL);
       }
-      if ((acp.info != NO_PERMISSION) || (acp.view_dc != NO_PERMISSION))
+      if ((acp.info != NO_PERMISSION) || (acp.view_dc != NO_PERMISSION) ||
+          (acp.view_rr != NO_PERMISSION))
       {
          XtVaCreateManagedWidget("Separator",
                                  xmSeparatorWidgetClass, pull_down_w,
@@ -1779,6 +1784,15 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                                     NULL);
             XtAddCallback(vw[VIEW_DC_W], XmNactivateCallback, popup_cb,
                           (XtPointer)VIEW_DC_SEL);
+         }
+         if (acp.view_rr != NO_PERMISSION)
+         {
+            vw[VIEW_RR_W] = XtVaCreateManagedWidget("Rename rules",
+                                    xmPushButtonWidgetClass, pull_down_w,
+                                    XmNfontList,             fontlist,
+                                    NULL);
+            XtAddCallback(vw[VIEW_RR_W], XmNactivateCallback, popup_cb,
+                          (XtPointer)VIEW_RR_SEL);
          }
       }
       if (acp.view_jobs != NO_PERMISSION)
@@ -3412,6 +3426,26 @@ eval_permissions(char *perm_buffer)
          {
             acp.view_dc = NO_LIMIT;
             acp.view_dc_list = NULL;
+         }
+      }
+
+      /* May the user view the rename rules? */
+      if ((ptr = posi(perm_buffer, VIEW_RENAME_RULES_PERM)) == NULL)
+      {
+         /* The user may NOT view the rename rules. */
+         acp.view_rr = NO_PERMISSION;
+      }
+      else
+      {
+         ptr--;
+         if ((*ptr == ' ') || (*ptr == '\t'))
+         {
+            acp.view_rr = store_host_names(&acp.view_rr_list, ptr + 1);
+         }
+         else
+         {
+            acp.view_rr = NO_LIMIT;
+            acp.view_rr_list = NULL;
          }
       }
    }

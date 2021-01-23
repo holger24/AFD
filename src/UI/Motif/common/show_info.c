@@ -46,6 +46,8 @@ DESCR__E_M3
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <signal.h>                 /* kill(), SIGINT                    */
 #include <Xm/Xm.h>
 #include <Xm/Form.h>
 #include <Xm/Text.h>
@@ -59,23 +61,25 @@ DESCR__E_M3
 #include "motif_common_defs.h"
 
 /* External global variables. */
-extern Display   *display;
-extern Widget    appshell;
-extern char      font_name[];
-extern int       max_x,
-                 max_y;
-extern Dimension button_height;
+extern Display          *display;
+extern Widget           appshell;
+extern char             font_name[];
+extern int              max_x,
+                        max_y,
+                        no_of_active_process;
+extern Dimension        button_height;
+extern struct apps_list *apps_list;
 
 /* Local global variables. */
-static int       glyph_height,
-                 glyph_width;
-static Widget    infoshell = (Widget)NULL,
-                 searchbox_w,
-                 text_w;
+static int              glyph_height,
+                        glyph_width;
+static Widget           infoshell = (Widget)NULL,
+                        searchbox_w,
+                        text_w;
 
 /* Local function prototypes. */
-static void      close_info_button(Widget, XtPointer, XtPointer),
-                 search_button(Widget, XtPointer, XtPointer);
+static void             close_info_button(Widget, XtPointer, XtPointer),
+                        search_button(Widget, XtPointer, XtPointer);
 
 
 /*############################## show_info() ############################*/
@@ -253,6 +257,8 @@ show_info(char *text, int with_search_function)
       argcount++;
       text_w = XmCreateScrolledText(form_w, "info_text", args, argcount);
       XtManageChild(text_w);
+      XtAddCallback(text_w, XmNgainPrimaryCallback,
+                 (XtCallbackProc)check_rename_selection, (XtPointer)NULL);
 
       argcount = 0;
       XtSetArg(args[argcount], XmNtopAttachment,    XmATTACH_WIDGET);
@@ -330,6 +336,25 @@ show_info(char *text, int with_search_function)
 static void
 close_info_button(Widget w, XtPointer client_data, XtPointer call_data)
 {
+   int i;
+
+   for (i = 0; i < no_of_active_process; i++)
+   {
+      if (apps_list[i].pid > 0)
+      {
+         if (kill(apps_list[i].pid, SIGINT) < 0)
+         {
+#if SIZEOF_PID_T == 4
+            (void)xrec(WARN_DIALOG, "Failed to kill() process %s (%d) : %s",
+#else
+            (void)xrec(WARN_DIALOG, "Failed to kill() process %s (%lld) : %s",
+#endif
+                       apps_list[i].progname,
+                       (pri_pid_t)apps_list[i].pid, strerror(errno));
+         }
+      }
+   }
+
    XtPopdown(infoshell);
 
    return;

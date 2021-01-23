@@ -1,6 +1,6 @@
 /*
  *  motif_common_defs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ extern int    check_info_file(char *, char *, int),
               prepare_printer(int *),
               prepare_file(int *, int);
 extern void   check_nummeric(Widget, XtPointer, XtPointer),
+              check_rename_selection(Widget, XtPointer, XtPointer),
               disable_drag_drop(Widget),
               prepare_tmp_name(void),
               print_data(Widget, XtPointer, XtPointer),

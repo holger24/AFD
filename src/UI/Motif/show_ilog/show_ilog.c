@@ -1,6 +1,6 @@
 /*
  *  show_ilog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ DESCR__E_M1
 #include <string.h>            /* strcpy(), strcat(), strerror()         */
 #include <ctype.h>             /* toupper()                              */
 #include <signal.h>            /* signal()                               */
-#include <stdlib.h>            /* malloc(), free()                       */
+#include <stdlib.h>            /* malloc(), free(), atexit()             */
 #ifdef HAVE_SETPRIORITY
 # include <sys/time.h>
 # include <sys/resource.h>     /* setpriority()                          */
@@ -115,6 +115,7 @@ int                        acd_counter = 0,
                            log_date_length = LOG_DATE_LENGTH,
                            max_hostname_length = MAX_HOSTNAME_LENGTH, /* not used */
                            max_input_log_files = MAX_INPUT_LOG_FILES,
+                           no_of_active_process = 0,
                            no_of_dirs = 0,
                            no_of_log_files,
                            no_of_search_hosts,
@@ -146,6 +147,7 @@ struct item_list           *il = NULL;
 struct alda_call_data      *acd = NULL;
 struct sol_perm            perm;
 struct fileretrieve_status *fra = NULL;
+struct apps_list           *apps_list;
 const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 
 /* Local function prototypes. */
@@ -154,6 +156,7 @@ static void                eval_permissions(char *),
                            get_afd_config_value(void),
 #endif
                            init_show_ilog(int *, char **, char *),
+                           show_ilog_exit(void),
                            sig_bus(int),
                            sig_segv(int),
                            usage(char *);
@@ -999,6 +1002,12 @@ main(int argc, char *argv[])
       }
    }
 
+   if (atexit(show_ilog_exit) != 0)
+   {
+      (void)xrec(WARN_DIALOG, "Failed to set exit handler for %s : %s",
+                 SHOW_ILOG, strerror(errno));
+   }
+
    /* Get Window for resizing the main window. */
    main_window = XtWindow(appshell);
 
@@ -1327,6 +1336,33 @@ eval_permissions(char *perm_buffer)
          else
          {
             perm.list_limit = NO_LIMIT;
+         }
+      }
+   }
+
+   return;
+}
+
+
+/*++++++++++++++++++++++++++ show_ilog_exit() +++++++++++++++++++++++++++*/
+static void
+show_ilog_exit(void)
+{
+   int i;
+
+   for (i = 0; i < no_of_active_process; i++)
+   {
+      if (apps_list[i].pid > 0)
+      {
+         if (kill(apps_list[i].pid, SIGINT) < 0)
+         {
+#if SIZEOF_PID_T == 4
+            (void)xrec(WARN_DIALOG, "Failed to kill() process %s (%d) : %s",
+#else
+            (void)xrec(WARN_DIALOG, "Failed to kill() process %s (%lld) : %s",
+#endif
+                       apps_list[i].progname,
+                       (pri_pid_t)apps_list[i].pid, strerror(errno));
          }
       }
    }

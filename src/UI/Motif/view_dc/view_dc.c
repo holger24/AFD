@@ -1,6 +1,6 @@
 /*
  *  view_dc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1999 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -62,6 +62,7 @@ DESCR__E_M1
 #include <sys/types.h>
 #include <stdlib.h>              /* getenv(), atexit()                   */
 #include <unistd.h>
+#include <signal.h>              /* kill(), SIGINT                       */
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
@@ -86,31 +87,34 @@ DESCR__E_M1
 #include "permission.h"
 
 /* Global variables. */
-Display      *display;
-XtAppContext app;
-Widget       appshell,
-             searchbox_w,
-             text_w;
-XmFontList   fontlist;
-int          sys_log_fd = STDERR_FILENO;
-char         dir_alias[MAX_DIR_ALIAS_LENGTH + 1],
-             dir_id[MAX_INT_HEX_LENGTH + 1],
-             host_alias[MAX_HOSTNAME_LENGTH + 1],
-             job_id[MAX_INT_HEX_LENGTH + 1],
-             font_name[40],
-             *p_work_dir,
-             window_title[100];
-const char   *sys_log_name = SYSTEM_LOG_FIFO;
+Display          *display;
+XtAppContext     app;
+Widget           appshell,
+                 searchbox_w,
+                 text_w;
+XmFontList       fontlist;
+int              no_of_active_process = 0,
+                 sys_log_fd = STDERR_FILENO,
+                 view_rename_rules = YES;
+char             dir_alias[MAX_DIR_ALIAS_LENGTH + 1],
+                 dir_id[MAX_INT_HEX_LENGTH + 1],
+                 host_alias[MAX_HOSTNAME_LENGTH + 1],
+                 job_id[MAX_INT_HEX_LENGTH + 1],
+                 font_name[40],
+                 *p_work_dir,
+                 window_title[100];
+const char       *sys_log_name = SYSTEM_LOG_FIFO;
+struct apps_list *apps_list = NULL;
 
 /* Local variables. */
-static char  *view_buffer = NULL;
-static int   max_x,
-             max_y;
+static int       max_x,
+                 max_y;
+static char      *view_buffer = NULL;
 
 /* Local function prototypes. */
-static void  init_view_dc(int *, char **),
-             usage(char *),
-             view_dc_exit(void);
+static void      init_view_dc(int *, char **),
+                 usage(char *),
+                 view_dc_exit(void);
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
@@ -307,6 +311,12 @@ main(int argc, char *argv[])
    argcount++;
    text_w = XmCreateScrolledText(form_w, "dc_text", args, argcount);
    XtManageChild(text_w);
+   if (view_rename_rules == YES)
+   {
+      XtAddCallback(text_w, XmNgainPrimaryCallback,
+                    (XtCallbackProc)check_rename_selection,
+                    (XtPointer)view_buffer);
+   }
 
    /* Create a horizontal separator. */
    argcount = 0;
@@ -513,6 +523,16 @@ init_view_dc(int *argc, char *argv[])
                  (void)fprintf(stderr, "%s (%s %d)\n",
                                PERMISSION_DENIED_STR, __FILE__, __LINE__);
                  exit(INCORRECT);
+              }
+              else
+              {
+                 if (posi(perm_buffer, VIEW_RENAME_RULES_PERM) == NULL)
+                 {
+                    (void)fprintf(stderr,
+                                  "No permission to view rename rules (%s %d)\n",
+                                  __FILE__, __LINE__);
+                    view_rename_rules = NO;
+                 }
               }
          free(perm_buffer);
          break;
@@ -865,6 +885,26 @@ usage(char *progname)
 static void
 view_dc_exit(void)
 {
+   int i;
+
+   for (i = 0; i < no_of_active_process; i++)
+   {
+      if (apps_list[i].pid > 0)
+      {
+         if (kill(apps_list[i].pid, SIGINT) < 0)
+         {
+            (void)xrec(WARN_DIALOG,
+#if SIZEOF_PID_T == 4
+                       "Failed to kill() process %s (%d) : %s",
+#else
+                       "Failed to kill() process %s (%lld) : %s",
+#endif
+                       apps_list[i].progname,
+                       (pri_pid_t)apps_list[i].pid, strerror(errno));
+         }
+      }
+   }
    remove_window_id(getpid(), VIEW_DC);
+
    return;
 }

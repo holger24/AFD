@@ -1,6 +1,6 @@
 /*
  *  mafd_ctrl.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,7 +76,8 @@
 #define SHOW_QUEUE_W                   10
 #define INFO_W                         11
 #define VIEW_DC_W                      12
-#define VIEW_JOB_W                     13
+#define VIEW_RR_W                      13
+#define VIEW_JOB_W                     14
 
 /* Definitions for Control pulldown. */
 #define AMG_CTRL_W                      0
@@ -108,6 +109,7 @@
 #define VIEW_JOB_SEL                    11
 #define SWITCH_SEL                      12
 #define VIEW_DC_SEL                     13
+#define VIEW_RR_SEL                     14
 /* NOTE: Since some of these are used by more then one */
 /*       program each may define only a certain range: */
 /*         mafd_ctrl.h       0 - 39                    */
@@ -228,6 +230,7 @@ struct afd_control_perm
           char        **view_jobs_list;
           char        **edit_hc_list;
           char        **view_dc_list;
+          char        **view_rr_list;
           signed char amg_ctrl;              /* Start/Stop the AMG       */
           signed char fd_ctrl;               /* Start/Stop the FD        */
           signed char rr_dc;                 /* Reread DIR_CONFIG        */
@@ -261,6 +264,7 @@ struct afd_control_perm
           signed char view_jobs;             /* View detailed transfer   */
           signed char edit_hc;               /* Edit HOST_CONFIG         */
           signed char view_dc;               /* View DIR_CONFIG entries  */
+          signed char view_rr;               /* View rename rule entries */
           signed char dir_ctrl;              /* dir_ctrl dialog          */
        };
 
