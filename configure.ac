@@ -630,6 +630,15 @@ AC_ARG_ENABLE(compiler_address_sanitizer,
      *) AC_MSG_ERROR(bad value ${enableval} for --enable-compiler-address-sanitizer) ;;
    esac],[compiler_address_sanitizer=false])
 
+dnl **** check if user wants to compile with analyzer
+AC_ARG_ENABLE(compiler_analyzer,
+   [  --enable-compiler-analyzer          Enable compiler analyzer],
+   [case "$enableval" in
+     yes) compiler_analyzer=true ;;
+     no)  compiler_analyzer=false;;
+     *) AC_MSG_ERROR(bad value ${enableval} for --enable-compiler-analyzer) ;;
+   esac],[compiler_analyzer=false])
+
 dnl **** check if user wants to compile with profiling information
 AC_ARG_ENABLE(compiler_profiling,
    [  --enable-compiler-profiling     Enable compiler profiling support],
@@ -1040,6 +1049,14 @@ then
    fi
 fi
 
+if test "${compiler_analyzer}" = "true"
+then
+   if test "x${GCC}" = "xyes"
+   then
+      AX_CHECK_COMPILE_FLAG("-fanalyzer", [ANALYZER_FLAG="${ANALYZER_FLAG} -fanalyzer"], [ANALYZER_FLAG="${ANALYZER_FLAG}"])
+   fi
+fi
+
 if test "${compiler_debug}" = "true"
 then
    if test "x${GCC}" = "xyes"
@@ -1084,6 +1101,10 @@ fi
 if test "${compiler_address_sanitizer}" = "true"
 then
    CFLAGS="$CFLAGS $SANITIZER_FLAG"
+fi
+if test "${compiler_analyzer}" = "true"
+then
+   CFLAGS="$CFLAGS $ANALYZER_FLAG"
 fi
 if test "${compiler_profiling}" = "true"
 then

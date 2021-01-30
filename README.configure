@@ -265,6 +265,7 @@
                                        [Default: disabled]
 --enable-compiler-warn               - Turns on lots of warning when compiling.
                                        [Default: disabled]
+--enable-compiler-analyzer           - Turns on gcc static analyzer.
 --enable-compiler-optimizations      - Enables some compiler optimizations.
                                        [Default: disabled]
 --enable-compiler-profiling          - Turns on compiler profiling support.
