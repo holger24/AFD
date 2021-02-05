@@ -1,6 +1,6 @@
 /*
  *  init_sf_burst2.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -136,6 +136,11 @@ init_sf_burst2(struct job   *p_new_db,
          {
             db.special_flag &= ~EXEC_ONCE_ONLY;
          }
+         db.exec_cmd = db.target_dir;
+      }
+      else
+      {
+         db.exec_cmd = NULL;
       }
       if (((db.transfer_mode == 'A') || (db.transfer_mode == 'D')) &&
           (p_new_db->transfer_mode == 'N'))
@@ -268,7 +273,6 @@ init_sf_burst2(struct job   *p_new_db,
          free(db.lock_file_name);
       }
       db.lock_file_name = p_new_db->lock_file_name;
-      db.exec_cmd = p_new_db->exec_cmd;
 # ifdef _WITH_TRANS_EXEC
       db.trans_exec_timeout = p_new_db->trans_exec_timeout;
       db.set_trans_exec_lock = p_new_db->set_trans_exec_lock;

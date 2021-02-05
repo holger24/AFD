@@ -1,6 +1,6 @@
 /*
  *  check_burst_sf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -689,6 +689,7 @@ check_burst_sf(char         *file_path,
 #endif
                p_new_db->charset                  = NULL;
                p_new_db->lock_file_name           = NULL;
+               p_new_db->exec_cmd                 = NULL;
 #ifdef _WITH_TRANS_EXEC
                p_new_db->trans_exec_cmd           = NULL;
                p_new_db->trans_exec_timeout       = DEFAULT_EXEC_TIMEOUT;
@@ -878,7 +879,8 @@ check_burst_sf(char         *file_path,
             }
             else
             {
-               if ((db.special_flag & PATH_MAY_CHANGE) &&
+               if (((db.protocol & EXEC_FLAG) == 0) &&
+                   (db.special_flag & PATH_MAY_CHANGE) &&
                    (db.recipient != NULL))
                {
                   unsigned int error_mask;
@@ -890,8 +892,8 @@ check_burst_sf(char         *file_path,
                                                  NULL, NULL,
 #endif
                                                  NULL, NO, NULL, NULL,
-                                                 db.target_dir, NULL, &now, NULL,
-                                                 NULL, NULL)) > 3)
+                                                 db.target_dir, NULL, &now,
+                                                 NULL, NULL, NULL)) > 3)
                   {
                      char error_msg[MAX_URL_ERROR_MSG];
 
