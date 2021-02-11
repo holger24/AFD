@@ -78,8 +78,7 @@ stop_process(int process, int shutdown)
             kill_counter = 0,
             *kill_pos_list = NULL,
             i,
-            last,
-            status;
+            last;
       pid_t *kill_list;
 
       if (process == -1)
@@ -148,7 +147,7 @@ stop_process(int process, int shutdown)
          pid_t pid;
 
          /* Give them some time to terminate themself. */
-         (void)my_usleep(100000);
+         (void)my_usleep(200000); /* 0.2 seconds */
 
          /* Catch zombies. */
          if (kill_counter > 0)
@@ -157,7 +156,8 @@ stop_process(int process, int shutdown)
             {
                if (kill_pos_list[i] != -1)
                {
-                  for (j = 0; j < 9; j++)
+                  /* Wait at most 15 seconds per process. */
+                  for (j = 0; j < 75; j++)
                   {
                      if ((pid = waitpid(kill_list[i], NULL, WNOHANG)) > 0)
                      {
@@ -211,7 +211,7 @@ stop_process(int process, int shutdown)
 #ifdef WITH_SYSTEMD
                            UPDATE_HEARTBEAT();
 #endif
-                           my_usleep(100000);
+                           my_usleep(200000); /* 0.2 seconds */
                         }
                      }
                      else
@@ -219,7 +219,7 @@ stop_process(int process, int shutdown)
 #ifdef WITH_SYSTEMD
                         UPDATE_HEARTBEAT();
 #endif
-                        my_usleep(100000);
+                        my_usleep(200000); /* 0.2 seconds */
                      }
                   }
                }
@@ -242,7 +242,11 @@ stop_process(int process, int shutdown)
                                 (pri_pid_t)kill_list[i]);
 
                      /* Hopefully catch zombie! */
-                     (void)waitpid(kill_list[i], &status, 0);
+                     my_usleep(100000);
+                     (void)waitpid(kill_list[i], NULL, WNOHANG);
+#ifdef WITH_SYSTEMD
+                     UPDATE_HEARTBEAT();
+#endif
                   }
                   pl[kill_pos_list[i]].mon_pid = 0;
                   pl[kill_pos_list[i]].afd_alias[0] = '\0';
@@ -290,7 +294,7 @@ stop_process(int process, int shutdown)
          pid_t pid;
 
          /* Give them some time to terminate themself. */
-         (void)my_usleep(100000);
+         (void)my_usleep(200000); /* 0.2 seconds */
 
          /* Catch zombies. */
          if (kill_counter > 0)
@@ -299,7 +303,8 @@ stop_process(int process, int shutdown)
             {
                if (kill_pos_list[i] != -1)
                {
-                  for (j = 0; j < 9; j++)
+                  /* Wait at most 15 seconds per process. */
+                  for (j = 0; j < 75; j++)
                   {
                      if ((pid = waitpid(kill_list[i], NULL, WNOHANG)) > 0)
                      {
@@ -325,7 +330,7 @@ stop_process(int process, int shutdown)
 #ifdef WITH_SYSTEMD
                            UPDATE_HEARTBEAT();
 #endif
-                           my_usleep(100000);
+                           my_usleep(200000); /* 0.2 seconds */
                         }
                      }
                      else
@@ -333,7 +338,7 @@ stop_process(int process, int shutdown)
 #ifdef WITH_SYSTEMD
                         UPDATE_HEARTBEAT();
 #endif
-                        my_usleep(100000);
+                        my_usleep(200000); /* 0.2 seconds */
                      }
                   }
                }
@@ -356,7 +361,11 @@ stop_process(int process, int shutdown)
                                 (pri_pid_t)kill_list[i]);
 
                      /* Hopefully catch zombie! */
-                     (void)waitpid(kill_list[i], &status, 0);
+                     my_usleep(100000);
+                     (void)waitpid(kill_list[i], NULL, WNOHANG);
+#ifdef WITH_SYSTEMD
+                     UPDATE_HEARTBEAT();
+#endif
                   }
                   pl[kill_pos_list[i]].log_pid = 0;
                }
@@ -394,7 +403,8 @@ stop_log_process(int process)
       int   j;
       pid_t pid;
 
-      for (j = 0; j < 9; j++)
+      /* Wait at most 15 seconds per process. */
+      for (j = 0; j < 75; j++)
       {
          if ((pid = waitpid(pl[process].log_pid, NULL, WNOHANG)) > 0)
          {
@@ -415,7 +425,7 @@ stop_log_process(int process)
 #ifdef WITH_SYSTEMD
                UPDATE_HEARTBEAT();
 #endif
-               my_usleep(100000);
+               my_usleep(200000); /* 0.2 seconds */
             }
          }
          else
@@ -423,14 +433,12 @@ stop_log_process(int process)
 #ifdef WITH_SYSTEMD
             UPDATE_HEARTBEAT();
 #endif
-            my_usleep(100000);
+            my_usleep(200000); /* 0.2 seconds */
          }
       }
 
       if (pl[process].log_pid != 0)
       {
-         int status;
-
          /* Assume process hangs, so kill it hard. */
          if (kill(pl[process].log_pid, SIGKILL) != -1)
          {
@@ -444,7 +452,11 @@ stop_log_process(int process)
                        (pri_pid_t)pl[process].log_pid);
 
             /* Hopefully catch zombie! */
-            (void)waitpid(pl[process].log_pid, &status, 0);
+            my_usleep(100000);
+            (void)waitpid(pl[process].log_pid, NULL, WNOHANG);
+#ifdef WITH_SYSTEMD
+            UPDATE_HEARTBEAT();
+#endif
          }
          pl[process].log_pid = 0;
       }

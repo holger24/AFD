@@ -1571,6 +1571,8 @@ afd_mon_exit(void)
                           _("Killed %s (%lld) the hard way!"),
 #endif
                           MONITOR_LOG, mon_log_pid);
+               my_usleep(100000);
+               (void)waitpid(mon_log_pid, NULL, WNOHANG);
             }
          }
       }
@@ -1659,6 +1661,8 @@ afd_mon_exit(void)
                           "Killed process %s (%lld) the hard way. (%s %d)\n",
 #endif
                           MON_SYS_LOG, (pri_pid_t)sys_log_pid, __FILE__, __LINE__);
+            my_usleep(100000);
+            (void)waitpid(sys_log_pid, NULL, WNOHANG);
          }
       }
       p_afd_mon_status->mon_sys_log = STOPPED;
