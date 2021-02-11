@@ -1,6 +1,6 @@
 /*
  *  ssh_common.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -980,6 +980,9 @@ retry_read:
                   {
                      trans_log(WARN_SIGN, __FILE__, __LINE__, "ssh_login", NULL,
                                _("Killed ssh process."));
+                     my_usleep(100000);
+                     (void)waitpid(data_pid, NULL, WNOHANG);
+                     data_pid = 0;
                   }
                }
                break;

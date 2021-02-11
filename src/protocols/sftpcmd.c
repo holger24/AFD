@@ -1,6 +1,6 @@
 /*
  *  sftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -3277,13 +3277,12 @@ sftp_quit(void)
    if (data_pid > 0)
    {
       int loop_counter,
-          max_waitpid_loops,
-          status;
+          max_waitpid_loops;
 
       errno = 0;
       loop_counter = 0;
       max_waitpid_loops = (transfer_timeout / 2) * 10;
-      while ((waitpid(data_pid, &status, WNOHANG) != data_pid) &&
+      while ((waitpid(data_pid, NULL, WNOHANG) != data_pid) &&
              (loop_counter < max_waitpid_loops))
       {
          my_usleep(100000L);
@@ -3310,6 +3309,8 @@ sftp_quit(void)
             {
                trans_log(WARN_SIGN, __FILE__, __LINE__, "sftp_quit", NULL,
                          _("Killing hanging data ssh process."));
+               my_usleep(100000L);
+               (void)waitpid(data_pid, NULL, WNOHANG);
             }
          }
          else

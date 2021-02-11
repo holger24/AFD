@@ -1,6 +1,6 @@
 /*
  *  init_afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -3213,6 +3213,10 @@ stop_afd(void)
 #endif
                              proc_table[kill_pos_list[i] - 1].proc_name,
                              (pri_pid_t)kill_list[i]);
+
+                  /* Hopefully catch zombie! */
+                  my_usleep(100000);
+                  (void)waitpid(kill_list[i], NULL, WNOHANG);
                }
             }
          }
@@ -3304,6 +3308,10 @@ stop_afd(void)
                           "Killed process %s (%lld) the hard way. (%s %d)\n",
 #endif
                           SLOG, (pri_pid_t)syslog, __FILE__, __LINE__);
+
+            /* Hopefully catch zombie! */
+            my_usleep(100000);
+            (void)waitpid(syslog, NULL, WNOHANG);
          }
       }
       current_afd_status = OFF;

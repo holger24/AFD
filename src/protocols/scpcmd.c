@@ -1,6 +1,6 @@
 /*
  *  scpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -351,13 +351,12 @@ scp_quit(void)
    if (data_pid > 0)
    {
       int   loop_counter,
-            max_waitpid_loops,
-            status;
+            max_waitpid_loops;
       pid_t return_pid;
 
       loop_counter = 0;
       max_waitpid_loops = (transfer_timeout / 2) * 10;
-      while (((return_pid = waitpid(data_pid, &status, WNOHANG)) != data_pid) &&
+      while (((return_pid = waitpid(data_pid, NULL, WNOHANG)) != data_pid) &&
              (return_pid != -1) &&
              (loop_counter < max_waitpid_loops))
       {
@@ -394,6 +393,9 @@ scp_quit(void)
                          _("Killing hanging data ssh process %lld."),
 #endif
                          (pri_pid_t)data_pid);
+
+               my_usleep(100000L);
+               (void)waitpid(data_pid, NULL, WNOHANG);
             }
          }
          else

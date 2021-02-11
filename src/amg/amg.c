@@ -996,6 +996,9 @@ main(int argc, char *argv[])
 #endif
                                 DIR_CHECK, (pri_pid_t)dc_pid);
                      dc_pid = NOT_RUNNING;
+
+                     my_usleep(100000);
+                     (void)waitpid(dc_pid, NULL, WNOHANG);
                   }
                }
             }
