@@ -1,6 +1,6 @@
 /*
  *  mondefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -411,6 +411,16 @@
                    }\
            }\
    }
+
+#ifdef WITH_SYSTEMD
+#define UPDATE_HEARTBEAT()\
+        {\
+           if (systemd_watchdog_enabled > 0)\
+           {\
+              sd_notify(0, "WATCHDOG=1");\
+           }\
+        }
+#endif
 
 
 /* Structure to hold all host alias names and their real names. */

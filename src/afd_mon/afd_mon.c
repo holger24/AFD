@@ -1,6 +1,6 @@
 /*
  *  afd_mon.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -114,15 +114,6 @@ DESCR__E_M1
 #include "sumdefs.h"
 #include "version.h"
 
-#ifdef WITH_SYSTEMD
-#define UPDATE_HEARTBEAT()                   \
-        {                                    \
-           if (systemd_watchdog_enabled > 0) \
-           {                                 \
-              sd_notify(0, "WATCHDOG=1");    \
-           }                                 \
-        }
-#endif
 
 /* Global variables. */
 int                    got_shuttdown_message = NO,
@@ -620,6 +611,9 @@ main(int argc, char *argv[])
          {
             system_log(INFO_SIGN, NULL, 0, "Rereading AFD_MON_CONFIG.");
             afd_mon_db_time = stat_buf.st_mtime;
+#ifdef WITH_SYSTEMD
+            UPDATE_HEARTBEAT();
+#endif
 
             /* Kill all process. */
             stop_process(-1, NO);
@@ -630,6 +624,9 @@ main(int argc, char *argv[])
                           "Failed to detach from MSA.");
             }
             create_msa();
+#ifdef WITH_SYSTEMD
+            UPDATE_HEARTBEAT();
+#endif
 
             if (msa_attach() != SUCCESS)
             {
@@ -640,6 +637,9 @@ main(int argc, char *argv[])
 
             /* Start all process. */
             start_all();
+#ifdef WITH_SYSTEMD
+            UPDATE_HEARTBEAT();
+#endif
 
             mon_active();
          }
