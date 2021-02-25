@@ -1,6 +1,6 @@
 /*
  *  print_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -58,34 +58,34 @@ DESCR__E_M3
 #include "show_dlog.h"
 
 /* External global variables. */
-extern Display     *display;
-extern Widget      listbox_w,
-                   printshell,
-                   statusbox_w,
-                   summarybox_w;
-extern char        file_name[],
-                   header_line[],
-                   **search_dir,
-                   **search_dirid,
-                   **search_file_name,
-                   **search_recipient,
-                   search_file_size_str[],
-                   summary_str[],
-                   total_summary_str[];
-extern int         no_of_search_dirs,
-                   no_of_search_dirids,
-                   no_of_search_file_names,
-                   no_of_search_hosts,
-                   sum_line_length;
-extern XT_PTR_TYPE device_type,
-                   range_type;
-extern time_t      start_time_val,
-                   end_time_val;
-extern FILE        *fp;
+extern Display      *display;
+extern Widget       listbox_w,
+                    printshell,
+                    statusbox_w,
+                    summarybox_w;
+extern char         file_name[],
+                    header_line[],
+                    **search_dir,
+                    **search_file_name,
+                    **search_recipient,
+                    search_file_size_str[],
+                    summary_str[],
+                    total_summary_str[];
+extern int          no_of_search_dirs,
+                    no_of_search_dirids,
+                    no_of_search_file_names,
+                    no_of_search_hosts,
+                    sum_line_length;
+extern unsigned int *search_dirid;
+extern XT_PTR_TYPE  device_type,
+                    range_type;
+extern time_t       start_time_val,
+                    end_time_val;
+extern FILE         *fp;
 
 /* Local function prototypes. */
-static void        write_header(int, char *),
-                   write_summary(int, char *);
+static void         write_header(int, char *),
+                    write_summary(int, char *);
 
 
 /*######################### print_data_button() #########################*/
@@ -426,7 +426,7 @@ write_header(int fd, char *sum_sep_line)
       if (no_of_search_dirids > 0)
       {
          length += snprintf(&buffer[length], 1024 - length,
-                            "\tDir Identifier: %s", search_dirid[0]);
+                            "\tDir Identifier: %x", search_dirid[0]);
          if (length >= 1024)
          {
             length = 1024;
@@ -435,7 +435,7 @@ write_header(int fd, char *sum_sep_line)
          for (i = 1; i < no_of_search_dirids; i++)
          {
             length += snprintf(&buffer[length], 1024 - length,
-                               ", %s", search_dirid[i]);
+                               ", %x", search_dirid[i]);
             if (length >= 1024)
             {
                length = 1024;
