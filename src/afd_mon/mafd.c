@@ -1,6 +1,6 @@
 /*
  *  mafd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@ DESCR__S_M1
  ** SYNOPSIS
  **   mafd [options]
  **          -a            only start AFD_MON
+ **          --all         in combination with -s or -S, stop all
+ **                        process
  **          -c            only check if AFD_MON is active
  **          -C            check if AFD_MON is active, if not start it
  **          -d            only start mon_ctrl dialog
@@ -84,15 +86,17 @@ DESCR__E_M1
 #include "permission.h"
 
 /* Some local definitions. */
-#define AFD_MON_ONLY            1
-#define AFD_MON_CHECK_ONLY      2
-#define AFD_MON_CHECK           3
-#define MON_CTRL_ONLY           4
-#define SHUTDOWN_ONLY           5
-#define SILENT_SHUTDOWN_ONLY    6
-#define START_BOTH              7
-#define AFD_MON_INITIALIZE      8
-#define AFD_MON_FULL_INITIALIZE 9
+#define AFD_MON_ONLY             1
+#define AFD_MON_CHECK_ONLY       2
+#define AFD_MON_CHECK            3
+#define MON_CTRL_ONLY            4
+#define SHUTDOWN_ONLY            5
+#define SILENT_SHUTDOWN_ONLY     6
+#define START_BOTH               7
+#define MAKE_BLOCK_FILE          8
+#define REMOVE_BLOCK_FILE        9
+#define AFD_MON_INITIALIZE      10
+#define AFD_MON_FULL_INITIALIZE 11
 
 /* External global variables. */
 int         sys_log_fd = STDERR_FILENO;
@@ -106,7 +110,6 @@ const char  *sys_log_name = MON_SYS_LOG_FIFO;
 static void delete_fifodir_files(char *, int),
             delete_log_files(char *, int),
             usage(char *);
-static int  check_database(void);
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ main() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
@@ -118,16 +121,18 @@ main(int argc, char *argv[])
                   mon_ctrl_perm,
                   n,
                   readfd,
+                  ret,
 #ifdef WITHOUT_FIFO_RW_SUPPORT
                   writefd,
 #endif
                   shutdown_perm,
                   start_up,
                   startup_perm,
+                  stop_all = NO,
                   user_offset;
    char           buffer[2],
                   *perm_buffer,
-                  block_file[MAX_PATH_LENGTH],
+                  auto_block_file[MAX_PATH_LENGTH],
                   exec_cmd[MAX_PATH_LENGTH],
                   fake_user[MAX_FULL_USER_ID_LENGTH],
                   profile[MAX_PROFILE_NAME_LENGTH + 1],
@@ -258,9 +263,9 @@ main(int argc, char *argv[])
          exit(INCORRECT);
    }
 
-   if (argc <= 2)
+   if (argc <= 3)
    {
-      if (argc == 2)
+      if ((argc == 2) || (argc == 3))
       {
          if (my_strcmp(argv[1], "-a") == 0) /* Start AFD_MON. */
          {
@@ -272,6 +277,10 @@ main(int argc, char *argv[])
             }
             start_up = AFD_MON_ONLY;
          }
+         else if (my_strcmp(argv[1], "-b") == 0) /* Block auto restart. */
+              {
+                 start_up = MAKE_BLOCK_FILE;
+              }
          else if (my_strcmp(argv[1], "-c") == 0) /* Only check if AFD_MON is active. */
               {
                  start_up = AFD_MON_CHECK_ONLY;
@@ -324,6 +333,11 @@ main(int argc, char *argv[])
                                   "You do not have the permission to shutdown the AFD_MON.\n");
                     exit(INCORRECT);
                  }
+                 if ((argc == 3) &&
+                     (my_strcmp(argv[2], "--all") == 0))
+                 {
+                    stop_all = YES;
+                 }
                  start_up = SHUTDOWN_ONLY;
               }
          else if (my_strcmp(argv[1], "-S") == 0) /* Silent AFD_MON shutdown. */
@@ -334,7 +348,16 @@ main(int argc, char *argv[])
                                   "You do not have the permission to shutdown the AFD_MON.\n");
                     exit(INCORRECT);
                  }
+                 if ((argc == 3) &&
+                     (my_strcmp(argv[2], "--all") == 0))
+                 {
+                    stop_all = YES;
+                 }
                  start_up = SILENT_SHUTDOWN_ONLY;
+              }
+         else if (my_strcmp(argv[1], "-r") == 0) /* Removes blocking file. */
+              {
+                 start_up = REMOVE_BLOCK_FILE;
               }
          else if ((my_strcmp(argv[1], "-h") == 0) ||
                   (my_strcmp(argv[1], "-?") == 0) ||
@@ -386,9 +409,9 @@ main(int argc, char *argv[])
    }
 
    /* Initialise variables. */
-   (void)strcpy(block_file, work_dir);
-   (void)strcat(block_file, ETC_DIR);
-   (void)strcat(block_file, BLOCK_FILE);
+   (void)strcpy(auto_block_file, work_dir);
+   (void)strcat(auto_block_file, ETC_DIR);
+   (void)strcat(auto_block_file, AFDMON_BLOCK_FILE);
    (void)strcpy(mon_active_file, work_dir);
    (void)strcat(mon_active_file, FIFO_DIR);
    if (check_dir(mon_active_file, R_OK | X_OK) < 0)
@@ -408,7 +431,7 @@ main(int argc, char *argv[])
       if (make_fifo(sys_log_fifo) < 0)
       {
          (void)fprintf(stderr, "ERROR   : Could not create fifo %s. (%s %d)\n",
-                   sys_log_fifo, __FILE__, __LINE__);
+                       sys_log_fifo, __FILE__, __LINE__);
          exit(INCORRECT);
       }
    }
@@ -459,21 +482,27 @@ main(int argc, char *argv[])
          (void)fprintf(stdout, "Starting %s shutdown ", AFD_MON);
          fflush(stdout);
 
+#ifdef WITH_SYSTEMD
+         shutdown_mon(NO, user, stop_all);
+#else
          shutdown_mon(NO, user);
+#endif
 
          (void)fprintf(stdout, "\nDone!\n");
       }
       else
       {
+#ifdef WITH_SYSTEMD
+         shutdown_mon(YES, user, stop_all);
+#else
          shutdown_mon(YES, user);
+#endif
       }
 
       exit(0);
    }
    else if (start_up == MON_CTRL_ONLY)
         {
-           int ret;
-
            (void)strcpy(exec_cmd, MON_CTRL);
            if (profile[0] == '\0')
            {
@@ -496,7 +525,15 @@ main(int argc, char *argv[])
         }
    else if (start_up == AFD_MON_ONLY)
         {
-           if (check_database() == -1)
+           /* Check if starting of AFD_MON is currently disabled. */
+           if (eaccess(auto_block_file, F_OK) == 0)
+           {
+              (void)fprintf(stderr,
+                            _("AFD_MON is currently disabled by system manager.\n"));
+              exit(AFD_DISABLED_BY_SYSADM);
+           }
+
+           if (check_afdmon_database() == -1)
            {
               (void)fprintf(stderr,
                             "Cannot read AFD_MON_CONFIG file : %s\nUnable to start AFD_MON.\n",
@@ -504,50 +541,81 @@ main(int argc, char *argv[])
               exit(INCORRECT);
            }
 
-           (void)strcpy(exec_cmd, AFD_MON);
-           system_log(INFO_SIGN, NULL, 0,
-                      "AFD_MON startup initiated by %s", user);
-           switch (fork())
-           {
-              case -1 :
-
-                 /* Could not generate process. */
-                 (void)fprintf(stderr,
-                               "Could not create a new process : %s (%s %d)\n",
-                               strerror(errno),  __FILE__, __LINE__);
-                 break;
-
-              case  0 :
-
-                 /* Child process. */
-                 if (execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
-                            (char *) 0) == -1)
-                 {
-                    (void)fprintf(stderr,
-                                  "ERROR   : Failed to execute %s : %s (%s %d)\n",
-                                  exec_cmd, strerror(errno),
-                                  __FILE__, __LINE__);
-                    exit(1);
-                 }
-                 exit(0);
-
-              default :
-
-                 /* Parent process. */
-                 break;
-           }
-           exit(0);
-        }
-   else if ((start_up == AFD_MON_CHECK) || (start_up == AFD_MON_CHECK_ONLY))
-        {
-           if (check_mon(18L) == 1)
+           if ((ret = check_mon(5L)) == ACKN)
            {
               (void)fprintf(stdout, "AFD_MON is active in %s\n", p_work_dir);
               exit(5);
            }
+           else if (ret == ACKN_STOPPED)
+                {
+                   if (send_afdmon_start() != 1)
+                   {
+                      exit(1);
+                   }
+                }
+                else
+                {
+                   (void)strcpy(exec_cmd, AFD_MON);
+                   system_log(INFO_SIGN, NULL, 0,
+                              "AFD_MON startup initiated by %s", user);
+                   switch (fork())
+                   {
+                      case -1 :
+
+                         /* Could not generate process. */
+                         (void)fprintf(stderr,
+                                       "Could not create a new process : %s (%s %d)\n",
+                                       strerror(errno),  __FILE__, __LINE__);
+                         break;
+
+                      case  0 :
+
+                         /* Child process. */
+                         if (execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
+                                    (char *) 0) == -1)
+                         {
+                            (void)fprintf(stderr,
+                                          "ERROR   : Failed to execute %s : %s (%s %d)\n",
+                                          exec_cmd, strerror(errno),
+                                          __FILE__, __LINE__);
+                            exit(1);
+                         }
+                         exit(0);
+
+                      default :
+
+                         /* Parent process. */
+                         break;
+                   }
+                }
+
+           exit(0);
+        }
+   else if ((start_up == AFD_MON_CHECK) || (start_up == AFD_MON_CHECK_ONLY))
+        {
+           /* Check if starting of AFD_MON is currently disabled. */
+           if (eaccess(auto_block_file, F_OK) == 0)
+           {
+              (void)fprintf(stderr,
+                            _("AFD_MON is currently disabled by system manager.\n"));
+              exit(AFD_DISABLED_BY_SYSADM);
+           }
+
+           if ((ret = check_mon(18L)) == ACKN)
+           {
+              (void)fprintf(stdout, "AFD_MON is active in %s\n", p_work_dir);
+              exit(5);
+           }
+           else if (ret == ACKN_STOPPED)
+                {
+                   if (send_afdmon_start() != 1)
+                   {
+                      exit(1);
+                   }
+                }
            else if (start_up == AFD_MON_CHECK)
                 {
-                   if (check_database() == -1)
+                   if (check_afdmon_database() == -1)
                    {
                       (void)fprintf(stderr,
                                     "Cannot read AFD_MON_CONFIG file : %s\nUnable to start AFD_MON.\n",
@@ -594,7 +662,7 @@ main(int argc, char *argv[])
    else if ((start_up == AFD_MON_INITIALIZE) ||
             (start_up == AFD_MON_FULL_INITIALIZE))
         {
-           if (check_mon(18L) == 1)
+           if (((ret = check_mon(18L)) == ACKN) || (ret == ACKN_STOPPED))
            {
               (void)fprintf(stderr,
                             "ERROR   : AFD_MON is still active, unable to initialize.\n");
@@ -617,6 +685,45 @@ main(int argc, char *argv[])
               exit(SUCCESS);
            }
         }
+   else if (start_up == MAKE_BLOCK_FILE)
+        {
+           int fd;
+
+           if ((fd = open(auto_block_file, O_WRONLY | O_CREAT | O_TRUNC,
+#ifdef GROUP_CAN_WRITE
+                          S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
+#else
+                          S_IRUSR | S_IWUSR)) == -1)
+#endif
+           {
+              (void)fprintf(stderr,
+                            _("ERROR   : Failed to create block file `%s' : %s (%s %d)\n"),
+                            auto_block_file, strerror(errno),
+                            __FILE__, __LINE__);
+              exit(INCORRECT);
+           }
+           if (close(fd) == -1)
+           {
+              (void)fprintf(stderr,
+                            _("WARNING : Failed to close() block file `%s' : %s (%s %d)\n"),
+                            auto_block_file, strerror(errno),
+                            __FILE__, __LINE__);
+           }
+           exit(SUCCESS);
+        }
+   else if (start_up == REMOVE_BLOCK_FILE)
+        {
+           if (remove(auto_block_file) < 0)
+           {
+              (void)fprintf(stderr,
+                            _("ERROR   : Failed to remove block file `%s' : %s (%s %d)\n"),
+                            auto_block_file, strerror(errno),
+                            __FILE__, __LINE__);
+              exit(INCORRECT);
+           }
+           exit(SUCCESS);
+        }
+
 
    /* Create a lock, to ensure that AFD_MON does not get started twice. */
    if ((fd = lock_file(sys_log_fifo, ON)) == INCORRECT)
@@ -637,10 +744,8 @@ main(int argc, char *argv[])
         }
 
    /* Is another AFD_MON active in this directory? */
-   if (check_mon(10L) == 1)
+   if ((ret = check_mon(10L)) == ACKN)
    {
-      int ret;
-
       /* Unlock, so other users don't get blocked. */
       (void)close(fd);
 
@@ -667,7 +772,7 @@ main(int argc, char *argv[])
    {
       int status;
 
-      if (check_database() == -1)
+      if (check_afdmon_database() == -1)
       {
          (void)fprintf(stderr,
                        "Cannot read AFD_MON_CONFIG file : %s\nUnable to start AFD_MON.\n",
@@ -675,53 +780,63 @@ main(int argc, char *argv[])
          exit(INCORRECT);
       }
 
-      if ((stat(probe_only_fifo, &stat_buf_fifo) == -1) ||
-          (!S_ISFIFO(stat_buf_fifo.st_mode)))
+      if (ret == ACKN_STOPPED)
       {
-         if (make_fifo(probe_only_fifo) < 0)
+         if (send_afdmon_start() != 1)
          {
-            (void)fprintf(stderr,
-                          "Could not create fifo %s. (%s %d)\n",
-                          probe_only_fifo, __FILE__, __LINE__);
-            exit(INCORRECT);
+            exit(1);
          }
       }
-#ifdef WITHOUT_FIFO_RW_SUPPORT
-      if (open_fifo_rw(probe_only_fifo, &readfd, &writefd) == -1)
-#else
-      if ((readfd = coe_open(probe_only_fifo, O_RDWR)) == -1)
-#endif
+      else
       {
-         (void)fprintf(stderr, "Could not open fifo %s : %s (%s %d)\n",
-                       probe_only_fifo, strerror(errno), __FILE__, __LINE__);
-         exit(INCORRECT);
-      }
-
-      /* Start AFD_MON. */
-      (void)strcpy(exec_cmd, AFD_MON);
-      system_log(INFO_SIGN, NULL, 0,
-                 "AFD_MON automatic startup initiated by %s", user);
-      switch (fork())
-      {
-         case -1 : /* Could not generate process. */
-            (void)fprintf(stderr,
-                          "Could not create a new process : %s (%s %d)\n",
-                          strerror(errno),  __FILE__, __LINE__);
-            break;
-
-         case  0 : /* Child process. */
-            if (execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
-                       (char *) 0) < 0)
+         if ((stat(probe_only_fifo, &stat_buf_fifo) == -1) ||
+             (!S_ISFIFO(stat_buf_fifo.st_mode)))
+         {
+            if (make_fifo(probe_only_fifo) < 0)
             {
                (void)fprintf(stderr,
-                             "ERROR   : Failed to execute %s : %s (%s %d)\n",
-                             exec_cmd, strerror(errno), __FILE__, __LINE__);
-               exit(1);
+                             "Could not create fifo %s. (%s %d)\n",
+                             probe_only_fifo, __FILE__, __LINE__);
+               exit(INCORRECT);
             }
-            exit(0);
+         }
+#ifdef WITHOUT_FIFO_RW_SUPPORT
+         if (open_fifo_rw(probe_only_fifo, &readfd, &writefd) == -1)
+#else
+         if ((readfd = coe_open(probe_only_fifo, O_RDWR)) == -1)
+#endif
+         {
+            (void)fprintf(stderr, "Could not open fifo %s : %s (%s %d)\n",
+                          probe_only_fifo, strerror(errno), __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
 
-         default : /* Parent process. */
-            break;
+         /* Start AFD_MON. */
+         (void)strcpy(exec_cmd, AFD_MON);
+         system_log(INFO_SIGN, NULL, 0,
+                    "AFD_MON automatic startup initiated by %s", user);
+         switch (fork())
+         {
+            case -1 : /* Could not generate process. */
+               (void)fprintf(stderr,
+                             "Could not create a new process : %s (%s %d)\n",
+                             strerror(errno),  __FILE__, __LINE__);
+               break;
+
+            case  0 : /* Child process. */
+               if (execlp(exec_cmd, exec_cmd, WORK_DIR_ID, work_dir,
+                          (char *) 0) < 0)
+               {
+                  (void)fprintf(stderr,
+                                "ERROR   : Failed to execute %s : %s (%s %d)\n",
+                                exec_cmd, strerror(errno), __FILE__, __LINE__);
+                  exit(1);
+               }
+               exit(0);
+
+            default : /* Parent process. */
+               break;
+         }
       }
 
       /* Now lets wait for the AFD_MON to have finished */
@@ -749,8 +864,6 @@ main(int argc, char *argv[])
               {
                  if (buffer[0] == ACKN)
                  {
-                    int ret;
-
                     /* Unlock, so other users don't get blocked. */
                     (void)close(fd);
 
@@ -816,19 +929,6 @@ main(int argc, char *argv[])
    }
 
    exit(0);
-}
-
-
-/*++++++++++++++++++++++++++++ check_database() +++++++++++++++++++++++++*/
-static int
-check_database(void)
-{
-   char db_file[MAX_PATH_LENGTH];
-
-   (void)sprintf(db_file, "%s%s%s",
-                 p_work_dir, ETC_DIR, AFD_MON_CONFIG_FILE);
-
-   return(eaccess(db_file, R_OK));
 }
 
 
@@ -935,6 +1035,10 @@ usage(char *progname)
 {
    (void)fprintf(stderr, "Usage: %s[ -w <AFD_MON working dir>][ -p <role>][ -u[ <user>]] [option]\n", progname);
    (void)fprintf(stderr, "              -a          only start AFD_MON\n");
+#ifdef WITH_SYSTEMD
+   (void)fprintf(stderr, "              --all       in combination with -s or -S, stop all process\n");
+#endif
+   (void)fprintf(stderr, "              -b          blocks starting of AFD_MON\n");
    (void)fprintf(stderr, "              -c          only check if AFD_MON is active\n");
    (void)fprintf(stderr, "              -C          check if AFD_MON is active, if not start it\n");
    (void)fprintf(stderr, "              -d          only start mon_ctrl dialog\n");
@@ -942,6 +1046,7 @@ usage(char *progname)
    (void)fprintf(stderr, "              -I          initialize AFD_MON, by deleting everything\n");
    (void)fprintf(stderr, "              -s          shutdown AFD_MON\n");
    (void)fprintf(stderr, "              -S          silent AFD_MON shutdown\n");
+   (void)fprintf(stderr, "              -r          removes blocking startup of AFD_MON\n");
    (void)fprintf(stderr, "              --help      Prints out this syntax\n");
    (void)fprintf(stderr, "              -v          Just print version number\n");
    (void)fprintf(stderr, "              --version   Show current version\n");

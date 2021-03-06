@@ -31,6 +31,7 @@ bin_PROGRAMS               += bin/afd_mon\
                               bin/log_mon\
                               bin/mafdcmd
 bin_afd_mon_SOURCES         = src/afd_mon/afd_mon.c\
+                              src/afd_mon/check_afdmon_database.c\
                               src/afd_mon/check_mon.c\
                               src/afd_mon/convert_msa.c\
                               src/afd_mon/create_msa.c\
@@ -45,8 +46,10 @@ bin_afd_mon_LDADD           = lib/libafd.a\
                               @LIBSYSTEMD_LIBS@
 bin_afd_mon_status_SOURCES  = src/afd_mon/afd_mon_status.c
 bin_afd_mon_status_LDADD    = lib/libafd.a
-bin_mafd_SOURCES            = src/afd_mon/check_mon.c\
+bin_mafd_SOURCES            = src/afd_mon/check_afdmon_database.c\
+                              src/afd_mon/check_mon.c\
                               src/afd_mon/mafd.c\
+                              src/afd_mon/send_afdmon_start.c\
                               src/afd_mon/shutdown_mon.c
 bin_mafd_LDADD              = lib/libafd.a
 bin_msa_view_SOURCES        = src/afd_mon/msa_view.c

@@ -1957,6 +1957,7 @@ typedef unsigned long       u_long_64;
 #define STOP_AMG                   9
 #define STOP_FD                    10
 #define AMG_READY                  11
+#define ACKN_STOPPED               12
 #define PROC_TERM                  13
 #define DEBUG                      14
 #define RETRY                      15

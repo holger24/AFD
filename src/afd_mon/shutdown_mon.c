@@ -1,6 +1,6 @@
 /*
  *  shutdown_mon.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -61,7 +61,11 @@ extern char *p_work_dir;
 
 /*########################### shutdown_mon() ############################*/
 void
+#ifdef WITH_SYSTEMD
+shutdown_mon(int silent_shutdown, char *user, int stop_all)
+#else
 shutdown_mon(int silent_shutdown, char *user)
+#endif
 {
    int            mon_cmd_fd,
                   mon_resp_fd,
@@ -110,9 +114,17 @@ shutdown_mon(int silent_shutdown, char *user)
 
    /* Send SHUTDOWN command. */
 #ifdef WITHOUT_FIFO_RW_SUPPORT
+# ifdef WITH_SYSTEMD
+   if (send_cmd((stop_all == YES) ? SHUTDOWN_ALL : SHUTDOWN, mon_cmd_writefd) < 0)
+# else
    if (send_cmd(SHUTDOWN, mon_cmd_writefd) < 0)
+# endif
 #else
+# ifdef WITH_SYSTEMD
+   if (send_cmd((stop_all == YES) ? SHUTDOWN_ALL : SHUTDOWN, mon_cmd_fd) < 0)
+# else
    if (send_cmd(SHUTDOWN, mon_cmd_fd) < 0)
+# endif
 #endif
    {
       (void)fprintf(stderr,
@@ -192,25 +204,17 @@ shutdown_mon(int silent_shutdown, char *user)
         {
            if (read(mon_resp_fd, buffer, 1) > 0)
            {
-              if (buffer[0] == PROC_TERM)
+              if (buffer[0] == ACKN)
               {
-                 if (silent_shutdown == NO)
-                 {
-                    (void)fprintf(stdout, ".");
-                    fflush(stdout);
-                 }
+                 /* Tell user we are done */
+                 system_log(CONFIG_SIGN, NULL, 0, "Done!");
               }
-              else if (buffer[0] == ACKN)
-                   {
-                      /* Tell user we are done */
-                      system_log(CONFIG_SIGN, NULL, 0, "Done!");
-                   }
-                   else
-                   {
-                      (void)fprintf(stderr,
-                                    "Hmm. Something is wrong here! (%s %d)\n",
-                                    __FILE__, __LINE__);
-                   }
+              else
+              {
+                 (void)fprintf(stderr,
+                               "Hmm. Something is wrong here! (%s %d)\n",
+                               __FILE__, __LINE__);
+              }
            }
         }
    else if (status < 0)

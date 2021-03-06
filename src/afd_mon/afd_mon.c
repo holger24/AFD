@@ -29,6 +29,7 @@ DESCR__S_M1
  **   afd_mon [--version] [-w <working directory>] [-nd] [-sn <name>]
  **        --version      Prints current version and copyright
  **        -w <work dir>  Working directory of the AFD.
+ **        -C             Start with all checks done by cmdline mafd.
  **        -nd            Do not start as daemon process.
  **        -sn <name>     Provide a service name.
  **
@@ -101,7 +102,7 @@ DESCR__E_M1
 #include <sys/wait.h>         /* waitpid()                               */
 #include <sys/time.h>         /* struct timeval                          */
 #ifdef HAVE_MMAP
-# include <sys/mman.h>        /* mmap(), munmap()                        */
+# include <sys/mman.h>        /* mmap()                                  */
 #endif
 #include <sys/stat.h>
 #ifdef HAVE_FCNTL_H
@@ -116,7 +117,8 @@ DESCR__E_M1
 
 
 /* Global variables. */
-int                    got_shuttdown_message = NO,
+int                    daemon_log_fd = -1,
+                       got_shuttdown_message = NO,
                        in_child = NO,
                        mon_cmd_fd,
                        mon_log_fd = STDERR_FILENO,
@@ -131,6 +133,7 @@ int                    got_shuttdown_message = NO,
                        mon_resp_readfd,
                        probe_only_readfd,
 #endif
+                       sleep_sys_log_fd = -1,
                        started_as_daemon,
 #ifdef WITH_SYSTEMD
                        systemd_watchdog_enabled = 0,
@@ -140,28 +143,26 @@ int                    got_shuttdown_message = NO,
 long                   tcp_timeout = 120L;     /* not used (mon_log()) */
 off_t                  msa_size;
 size_t                 proc_list_size;
-pid_t                  log_proc_pid,
-                       mon_log_pid,
+pid_t                  mon_log_pid,
                        own_pid,
                        sys_log_pid;
 time_t                 afd_mon_db_time;
 char                   afd_mon_db_file[MAX_PATH_LENGTH],
+                       afd_mon_status_file[MAX_PATH_LENGTH],
                        mon_active_file[MAX_PATH_LENGTH],
                        mon_cmd_fifo[MAX_PATH_LENGTH],
                        *p_mon_alias,
                        probe_only_fifo[MAX_PATH_LENGTH],
-                       *p_work_dir;
-struct afd_mon_status  *p_afd_mon_status;
+                       *p_work_dir,
+                       *service_name;
+struct afd_mon_status  *p_afd_mon_status = NULL;
 struct mon_status_area *msa;
 struct process_list    *pl = NULL;
 const char             *sys_log_name = MON_SYS_LOG_FIFO;
 
-/* Local global variables. */
-static char            *service_name;
-
 /* Local function prototypes. */
 static void            afd_mon_exit(void),
-                       eval_cmd_buffer(char *, int, int *),
+                       eval_cmd_buffer(char *, int, int *, int *),
                        get_sum_data(int),
                        mon_active(void),
 #ifdef NEW_MSA
@@ -176,6 +177,7 @@ static void            afd_mon_exit(void),
                        sig_bus(int),
                        sig_exit(int),
                        sig_segv(int),
+                       start_afdmon(int *),
                        usage(char *),
                        zombie_check(time_t);
 
@@ -188,13 +190,12 @@ main(int argc, char *argv[])
                   current_month,
                   current_week,
                   current_year,
-                  fd,
-                  group_elements = 0,
+                  group_elements,
                   i,
                   new_month,
                   new_week,
                   new_year,
-                  old_afd_mon_stat,
+                  startup_with_check,
                   status;
    unsigned int   new_total_no_of_hosts,
                   new_total_no_of_dirs,
@@ -207,9 +208,7 @@ main(int argc, char *argv[])
                   new_hour_sum_time,
                   now;
    size_t         fifo_size;
-   char           afd_mon_status_file[MAX_PATH_LENGTH],
-                  *fifo_buffer,
-                  hostname[64],
+   char           *fifo_buffer,
                   *ptr,
                   work_dir[MAX_PATH_LENGTH];
    struct stat    stat_buf;
@@ -232,6 +231,14 @@ main(int argc, char *argv[])
    }
    p_work_dir = work_dir;
 
+   if (get_arg(&argc, argv, "-C", NULL, 0) == SUCCESS)
+   {
+      startup_with_check = YES;
+   }
+   else
+   {
+      startup_with_check = NO;
+   }
    if (get_argb(&argc, argv, "-sn", &service_name) != SUCCESS)
    {
       service_name = NULL;
@@ -242,6 +249,8 @@ main(int argc, char *argv[])
    {
       exit(INCORRECT);
    }
+
+   (void)umask(0);
 
    /* Now check if the log directory has been created. */
    ptr = p_work_dir + strlen(p_work_dir);
@@ -257,8 +266,6 @@ main(int argc, char *argv[])
    }
    *ptr = '\0';
 
-   (void)umask(0);
-
    /* Initialise variables. */
    (void)strcpy(afd_mon_status_file, work_dir);
    (void)strcat(afd_mon_status_file, FIFO_DIR);
@@ -269,23 +276,15 @@ main(int argc, char *argv[])
    (void)strcat(afd_mon_db_file, ETC_DIR);
    (void)strcat(afd_mon_db_file, AFD_MON_CONFIG_FILE);
 
-   if (init_fifos_mon() == INCORRECT)
-   {
-      (void)fprintf(stderr,
-                    "ERROR   : Failed to initialize fifos. (%s %d)\n",
-                    __FILE__, __LINE__);
-      exit(INCORRECT);
-   }
-
    /* Determine the size of the fifo buffer and allocate buffer. */
-   if ((fd = (int)fpathconf(mon_cmd_fd, _PC_PIPE_BUF)) < 0)
+   if ((i = (int)fpathconf(mon_cmd_fd, _PC_PIPE_BUF)) < 0)
    {
       /* If we cannot determine the size of the fifo set default value. */
       fifo_size = DEFAULT_FIFO_SIZE;
    }
    else
    {
-      fifo_size = fd;
+      fifo_size = i;
    }
    if ((fifo_buffer = malloc(fifo_size)) == NULL)
    {
@@ -294,8 +293,61 @@ main(int argc, char *argv[])
                  fifo_size, strerror(errno));
    }
 
+   if (startup_with_check == YES)
+   {
+      char auto_block_file[MAX_PATH_LENGTH],
+           sys_log_fifo[MAX_PATH_LENGTH];
+
+      (void)strcpy(auto_block_file, work_dir);
+      (void)strcat(auto_block_file, ETC_DIR);
+      (void)strcat(auto_block_file, AFDMON_BLOCK_FILE);
+
+      /* Check if starting of AFD is currently disabled.  */
+      if (eaccess(auto_block_file, F_OK) == 0)
+      {
+         (void)fprintf(stderr,
+                       _("AFD_MON is currently disabled by system manager.\n"));
+         exit(AFD_DISABLED_BY_SYSADM);
+      }
+
+      (void)strcpy(sys_log_fifo, work_dir);
+      (void)strcat(sys_log_fifo, FIFO_DIR);
+      if (check_dir(sys_log_fifo, R_OK | W_OK | X_OK) < 0)
+      {
+         exit(INCORRECT);
+      }
+      (void)strcat(sys_log_fifo, MON_SYS_LOG_FIFO);
+      if ((stat(sys_log_fifo, &stat_buf) == -1) ||
+          (!S_ISFIFO(stat_buf.st_mode)))
+      {
+         if (make_fifo(sys_log_fifo) < 0)
+         {
+            (void)fprintf(stderr,
+                          "ERROR   : Could not create fifo %s. (%s %d)\n",
+                          sys_log_fifo, __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+      }
+
+      if (check_afdmon_database() == -1)
+      {
+         (void)fprintf(stderr,
+                       _("ERROR   : Cannot read AFD_MON_CONFIG file : %s\nUnable to start AFD_MON.\n"),
+                       strerror(errno));
+         exit(INCORRECT);
+      }
+   }
+
+   if (init_fifos_mon() == INCORRECT)
+   {
+      (void)fprintf(stderr,
+                    "ERROR   : Failed to initialize fifos. (%s %d)\n",
+                    __FILE__, __LINE__);
+      exit(INCORRECT);
+   }
+
    /* Make sure that no other afd_monitor is running in this directory. */
-   if (check_mon(10L) == 1)
+   if (((status = check_mon(10L)) == ACKN) || (status == ACKN_STOPPED))
    {
       (void)fprintf(stderr, "Another %s is active, terminating.\n", AFD_MON);
       exit(0);
@@ -361,12 +413,12 @@ main(int argc, char *argv[])
          if (service_name == NULL)
          {
             (void)fprintf(stderr, _("%s\n%.24s : Started %s\n"),
-                          buffer, ctime(&now), AFD);
+                          buffer, ctime(&now), AFD_MON);
          }
          else
          {
             (void)fprintf(stderr, _("%s\n%.24s : Started %s for %s\n"),
-                          buffer, ctime(&now), AFD, service_name);
+                          buffer, ctime(&now), AFD_MON, service_name);
          }
          (void)memset(buffer, '-', length);
          (void)fprintf(stderr, "%s\n", buffer);
@@ -380,133 +432,7 @@ main(int argc, char *argv[])
    }
    own_pid = getpid();
 
-   if ((stat(afd_mon_status_file, &stat_buf) == -1) ||
-       (stat_buf.st_size != sizeof(struct afd_mon_status)))
-   {
-      if (errno != ENOENT)
-      {
-         (void)fprintf(stderr, "Failed to stat() %s : %s (%s %d)\n",
-                       afd_mon_status_file, strerror(errno),
-                       __FILE__, __LINE__);
-         exit(INCORRECT);
-      }
-      if ((fd = coe_open(afd_mon_status_file, O_RDWR | O_CREAT | O_TRUNC,
-#ifdef GROUP_CAN_WRITE
-                         S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
-#else
-                         S_IRUSR | S_IWUSR)) == -1)
-#endif
-      {
-         (void)fprintf(stderr, "Failed to create %s : %s (%s %d)\n",
-                       afd_mon_status_file, strerror(errno),
-                       __FILE__, __LINE__);
-         exit(INCORRECT);
-      }
-      if (lseek(fd, sizeof(struct afd_mon_status) - 1, SEEK_SET) == -1)
-      {
-         (void)fprintf(stderr, "Could not seek() on %s : %s (%s %d)\n",
-                       afd_mon_status_file, strerror(errno),
-                       __FILE__, __LINE__);
-         exit(INCORRECT);
-      }
-      if (write(fd, "", 1) != 1)
-      {
-         (void)fprintf(stderr, "write() error : %s (%s %d)\n",
-                       strerror(errno), __FILE__, __LINE__);
-         exit(INCORRECT);
-      }
-      old_afd_mon_stat = NO;
-   }
-   else
-   {
-      if ((fd = coe_open(afd_mon_status_file, O_RDWR)) == -1)
-      {
-         (void)fprintf(stderr, "Failed to create %s : %s (%s %d)\n",
-                       afd_mon_status_file, strerror(errno),
-                       __FILE__, __LINE__);
-         exit(INCORRECT);
-      }
-      old_afd_mon_stat = YES;
-   }
-#ifdef HAVE_MMAP
-   if ((ptr = mmap(0, sizeof(struct afd_mon_status), (PROT_READ | PROT_WRITE),
-                   MAP_SHARED, fd, 0)) == (caddr_t) -1)
-#else
-   if ((ptr = mmap_emu(0, sizeof(struct afd_mon_status),
-                       (PROT_READ | PROT_WRITE),
-                       MAP_SHARED, afd_mon_status_file, 0)) == (caddr_t) -1)
-#endif
-   {
-      (void)fprintf(stderr, "mmap() error : %s (%s %d)\n",
-                    strerror(errno), __FILE__, __LINE__);
-      exit(INCORRECT);
-   }
-   if (close(fd) == -1)
-   {
-      (void)fprintf(stderr, "close() error : %s (%s %d)\n",
-                    strerror(errno), __FILE__, __LINE__);
-   }
-   p_afd_mon_status = (struct afd_mon_status *)ptr;
-   if (old_afd_mon_stat == NO)
-   {
-      (void)memset(p_afd_mon_status, 0, sizeof(struct afd_mon_status));
-   }
-   p_afd_mon_status->afd_mon       = ON;
-   p_afd_mon_status->mon_sys_log   = 0;
-   p_afd_mon_status->mon_log       = 0;
-
-   /* Start log process for afd_monitor */
-   if ((sys_log_pid = start_process(MON_SYS_LOG, -1)) < 0)
-   {
-      (void)fprintf(stderr, 
-                    "ERROR   : Could not start system log process for AFD_MON. (%s %d)\n",
-                    __FILE__, __LINE__);
-      exit(INCORRECT);
-   }
-   p_afd_mon_status->mon_sys_log = ON;
-   if ((mon_log_pid = start_process(MONITOR_LOG, -1)) < 0)
-   {
-      (void)fprintf(stderr, 
-                    "ERROR   : Could not start monitor log process for AFD_MON. (%s %d)\n",
-                    __FILE__, __LINE__);
-      exit(INCORRECT);
-   }
-   p_afd_mon_status->mon_log = ON;
-
-   now = p_afd_mon_status->start_time = time(NULL);
-   system_log(INFO_SIGN, NULL, 0,
-              "=================> STARTUP <=================");
-   if (gethostname(hostname, 64) == 0)
-   {
-      char      dstr[26];
-      struct tm *p_ts;
-
-      p_ts = localtime(&p_afd_mon_status->start_time);
-      strftime(dstr, 26, "%a %h %d %H:%M:%S %Y", p_ts);
-      system_log(CONFIG_SIGN, NULL, 0, "Starting on <%s> %s", hostname, dstr);
-   }
-   system_log(INFO_SIGN, NULL, 0,
-              "Starting %s (%s)", AFD_MON, PACKAGE_VERSION);
-
-   if (msa_attach() != SUCCESS)
-   {
-      system_log(FATAL_SIGN, __FILE__, __LINE__, "Failed to attach to MSA.");
-      exit(INCORRECT);
-   }
-
-   for (i = 0; i < no_of_afds; i++)
-   {
-      if (msa[i].rcmd[0] == '\0')
-      {
-         group_elements++;
-      }
-   }
-
-   /* Start all process. */
-   start_all();
-
-   /* Log all pid's in MON_ACTIVE file. */
-   mon_active();
+   start_afdmon(&group_elements);
 
 #ifdef WITH_SYSTEMD
    if (started_as_daemon == NO)
@@ -521,10 +447,11 @@ main(int argc, char *argv[])
       sd_notifyf(0, "READY=1\n"
                  "STATUS=All process up\n"
                  "MAINPID=%lu",
-                 (unsigned long)getpid());
+                 (unsigned long)own_pid);
    }
 #endif
 
+   now = p_afd_mon_status->start_time;
    afd_mon_db_check_time = ((now / 10) * 10) + 10;
    new_hour_sum_time = ((now / 3600) * 3600) + 3600;
    new_day_sum_time = ((now / 86400) * 86400) + 86400;
@@ -558,7 +485,8 @@ main(int argc, char *argv[])
       /* Wait for message x seconds and then continue. */
       status = select(mon_cmd_fd + 1, &rset, NULL, NULL, &timeout);
 
-      if ((status == 0) && ((now = time(NULL)) >= new_hour_sum_time))
+      if ((status == 0) && (got_shuttdown_message == NO) &&
+          ((now = time(NULL)) >= new_hour_sum_time))
       {
          get_sum_data(HOUR_SUM);
 
@@ -598,7 +526,8 @@ main(int argc, char *argv[])
          new_hour_sum_time = ((new_hour_sum_time / 3600) * 3600) + 3600;
       }
 
-      if ((status == 0) && (now >= afd_mon_db_check_time))
+      if ((status == 0) && (got_shuttdown_message == NO) &&
+          (now >= afd_mon_db_check_time))
       {
          if (stat(afd_mon_db_file, &stat_buf) == -1)
          {
@@ -682,18 +611,21 @@ main(int argc, char *argv[])
          if ((n = read(mon_cmd_fd, &fifo_buffer[bytes_buffered],
                        fifo_size - bytes_buffered)) > 0)
          {
-            eval_cmd_buffer(fifo_buffer, n, &bytes_buffered);
+            eval_cmd_buffer(fifo_buffer, n, &bytes_buffered, &group_elements);
          }
       }
       else if (status == 0)
            {
-              if (group_elements > 0)
+              if (got_shuttdown_message == NO)
               {
-                 update_group_summary();
-              }
+                 if (group_elements > 0)
+                 {
+                    update_group_summary();
+                 }
 
-              /* Check if any process terminated for whatever reason. */
-              zombie_check(now);
+                 /* Check if any process terminated for whatever reason. */
+                 zombie_check(now);
+              }
            }
            else
            {
@@ -710,7 +642,10 @@ main(int argc, char *argv[])
 
 /*++++++++++++++++++++++++++ eval_cmd_buffer() ++++++++++++++++++++++++++*/
 static void
-eval_cmd_buffer(char *buffer, int bytes_read, int *bytes_buffered)
+eval_cmd_buffer(char *buffer,
+                int  bytes_read,
+                int  *bytes_buffered,
+                int  *group_elements)
 {
    int count,
        pos;
@@ -727,24 +662,70 @@ eval_cmd_buffer(char *buffer, int bytes_read, int *bytes_buffered)
    {
       switch (buffer[count])
       {
-         case SHUTDOWN  : /* Shutdown AFDMON */
-
+         case SHUTDOWN_ALL : /* Shutdown AFD_MON. */
+         case SHUTDOWN  : /* Shutdown mon process. */
             got_shuttdown_message = YES;
-            p_afd_mon_status->afd_mon = SHUTDOWN;
+            if (p_afd_mon_status != NULL)
+            {
+               p_afd_mon_status->afd_mon = SHUTDOWN;
+            }
 
-            /* Shutdown of other process is handled by */
-            /* the exit handler.                       */
-            exit(SUCCESS);
+            if ((buffer[count] == SHUTDOWN_ALL) ||
+                (started_as_daemon == YES))
+            {
+               /* Shutdown of other process is handled by */
+               /* the exit handler.                       */
+               exit(SUCCESS);
+            }
+            else
+            {
+               /* Kill all process. */
+               stop_process(-1, YES);
+               count++;
+#ifdef WITH_SYSTEMD
+               sd_notify(0, "STATUS=Stopped on user request\n");
+#endif
+               break;
+            }
 
-         case IS_ALIVE  : /* Somebody wants to know whether an */
-                          /* AFDMON process is running in this */
-                          /* directory.                        */
-
+         case START : /* Start afd_mon. */
+            got_shuttdown_message = NO;
+            start_afdmon(group_elements);
+#ifdef WITH_SYSTEMD
+            if (started_as_daemon == NO)
+            {
+               sd_notify(0, "STATUS=All process up\n");
+            }
+#endif
             if (send_cmd(ACKN, probe_only_fd) < 0)
             {
                system_log(FATAL_SIGN, __FILE__, __LINE__,
                           "Was not able to send acknowledge via fifo.");
                exit(INCORRECT);
+            }
+            count++;
+            break;
+
+         case IS_ALIVE  : /* Somebody wants to know whether an */
+                          /* AFDMON process is running in this */
+                          /* directory.                        */
+            {
+               char cmd;
+
+               if (sleep_sys_log_fd == -1)
+               {
+                  cmd = ACKN;
+               }
+               else
+               {
+                  cmd = ACKN_STOPPED;
+               }
+               if (send_cmd(cmd, probe_only_fd) < 0)
+               {
+                  system_log(FATAL_SIGN, __FILE__, __LINE__,
+                             "Was not able to send acknowledge via fifo.");
+                  exit(INCORRECT);
+               }
             }
             count++;
             break;
@@ -1090,6 +1071,192 @@ zombie_check(time_t now)
          start_log_process(i, msa[i].log_capabilities);
       }
    } /* for (i = 0; i < no_of_afds; i++) */
+
+   return;
+}
+
+
+/*++++++++++++++++++++++++++++ start_afdmon() +++++++++++++++++++++++++++*/
+void
+start_afdmon(int *group_elements)
+{
+   if ((p_afd_mon_status == NULL) || (p_afd_mon_status->afd_mon != ON))
+   {
+      int         fd,
+                  i,
+                  old_afd_mon_stat;
+      char        hostname[64],
+                  *ptr;
+      struct stat stat_buf;
+
+      if (stat(afd_mon_db_file, &stat_buf) == -1)
+      {
+         (void)fprintf(stderr,
+                       "ERROR   : Could not stat() %s : %s (%s %d)\n",
+                       afd_mon_db_file, strerror(errno), __FILE__, __LINE__);
+         exit(INCORRECT);
+      }
+      if (afd_mon_db_time != stat_buf.st_mtime)
+      {
+         afd_mon_db_time = stat_buf.st_mtime;
+         create_msa();
+      }
+#ifdef WITH_SYSTEMD
+      UPDATE_HEARTBEAT();
+#endif
+
+      if ((stat(afd_mon_status_file, &stat_buf) == -1) ||
+          (stat_buf.st_size != sizeof(struct afd_mon_status)))
+      {
+         if (errno != ENOENT)
+         {
+            (void)fprintf(stderr, "Failed to stat() %s : %s (%s %d)\n",
+                          afd_mon_status_file, strerror(errno),
+                          __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+         if ((fd = coe_open(afd_mon_status_file, O_RDWR | O_CREAT | O_TRUNC,
+#ifdef GROUP_CAN_WRITE
+                            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) == -1)
+#else
+                            S_IRUSR | S_IWUSR)) == -1)
+#endif
+         {
+            (void)fprintf(stderr, "Failed to create %s : %s (%s %d)\n",
+                          afd_mon_status_file, strerror(errno),
+                          __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+         if (lseek(fd, sizeof(struct afd_mon_status) - 1, SEEK_SET) == -1)
+         {
+            (void)fprintf(stderr, "Could not seek() on %s : %s (%s %d)\n",
+                          afd_mon_status_file, strerror(errno),
+                          __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+         if (write(fd, "", 1) != 1)
+         {
+            (void)fprintf(stderr, "write() error : %s (%s %d)\n",
+                          strerror(errno), __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+         old_afd_mon_stat = NO;
+      }
+      else
+      {
+         if ((fd = coe_open(afd_mon_status_file, O_RDWR)) == -1)
+         {
+            (void)fprintf(stderr, "Failed to create %s : %s (%s %d)\n",
+                          afd_mon_status_file, strerror(errno),
+                          __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+         old_afd_mon_stat = YES;
+      }
+#ifdef HAVE_MMAP
+      if ((ptr = mmap(0, sizeof(struct afd_mon_status), (PROT_READ | PROT_WRITE),
+                      MAP_SHARED, fd, 0)) == (caddr_t) -1)
+#else
+      if ((ptr = mmap_emu(0, sizeof(struct afd_mon_status),
+                          (PROT_READ | PROT_WRITE),
+                          MAP_SHARED, afd_mon_status_file, 0)) == (caddr_t) -1)
+#endif
+      {
+         (void)fprintf(stderr, "mmap() error : %s (%s %d)\n",
+                       strerror(errno), __FILE__, __LINE__);
+         exit(INCORRECT);
+      }
+      if (close(fd) == -1)
+      {
+         (void)fprintf(stderr, "close() error : %s (%s %d)\n",
+                       strerror(errno), __FILE__, __LINE__);
+      }
+      p_afd_mon_status = (struct afd_mon_status *)ptr;
+      if (old_afd_mon_stat == NO)
+      {
+         (void)memset(p_afd_mon_status, 0, sizeof(struct afd_mon_status));
+      }
+      p_afd_mon_status->afd_mon     = ON;
+      p_afd_mon_status->mon_sys_log = 0;
+      p_afd_mon_status->mon_log     = 0;
+#ifdef WITH_SYSTEMD
+      UPDATE_HEARTBEAT();
+#endif
+
+      /* Start log process for afd_monitor */
+      if ((sys_log_pid = start_process(MON_SYS_LOG, -1)) < 0)
+      {
+         (void)fprintf(stderr,
+                       "ERROR   : Could not start system log process for AFD_MON. (%s %d)\n",
+                       __FILE__, __LINE__);
+         exit(INCORRECT);
+      }
+      if (daemon_log_fd != -1)
+      {
+         (void)close(daemon_log_fd);
+         daemon_log_fd = -1;
+      }
+      if (sleep_sys_log_fd != -1)
+      {
+         sys_log_fd = sleep_sys_log_fd;
+         sleep_sys_log_fd = -1;
+      }
+      p_afd_mon_status->mon_sys_log = ON;
+      if ((mon_log_pid = start_process(MONITOR_LOG, -1)) < 0)
+      {
+         (void)fprintf(stderr,
+                       "ERROR   : Could not start monitor log process for AFD_MON. (%s %d)\n",
+                       __FILE__, __LINE__);
+         exit(INCORRECT);
+      }
+      p_afd_mon_status->mon_log = ON;
+
+      p_afd_mon_status->start_time = time(NULL);
+      system_log(INFO_SIGN, NULL, 0,
+                 "=================> STARTUP <=================");
+      if (gethostname(hostname, 64) == 0)
+      {
+         char      dstr[26];
+         struct tm *p_ts;
+
+         p_ts = localtime(&p_afd_mon_status->start_time);
+         strftime(dstr, 26, "%a %h %d %H:%M:%S %Y", p_ts);
+         system_log(CONFIG_SIGN, NULL, 0, "Starting on <%s> %s", hostname, dstr);
+      }
+      system_log(INFO_SIGN, NULL, 0,
+                 "Starting %s (%s)", AFD_MON, PACKAGE_VERSION);
+
+      if (msa_attach() != SUCCESS)
+      {
+         system_log(FATAL_SIGN, __FILE__, __LINE__, "Failed to attach to MSA.");
+         exit(INCORRECT);
+      }
+
+      *group_elements = 0;
+      for (i = 0; i < no_of_afds; i++)
+      {
+         if (msa[i].rcmd[0] == '\0')
+         {
+            (*group_elements)++;
+         }
+      }
+#ifdef WITH_SYSTEMD
+      UPDATE_HEARTBEAT();
+#endif
+
+      /* Start all process. */
+      start_all();
+
+      /* Log all pid's in MON_ACTIVE file. */
+      mon_active();
+#ifdef WITH_SYSTEMD
+      UPDATE_HEARTBEAT();
+#endif
+   }
+   else
+   {
+      *group_elements = 0;
+   }
 
    return;
 }
@@ -1508,11 +1675,6 @@ afd_mon_exit(void)
 {
    if (in_child == NO)
    {
-      int    i;
-      size_t length;
-      char   *buffer,
-             hostname[64];
-
 #ifdef WITH_SYSTEMD
       if (started_as_daemon != YES)
       {
@@ -1524,213 +1686,13 @@ afd_mon_exit(void)
 
       /* Kill any job still active! */
       stop_process(-1, got_shuttdown_message);
-      p_afd_mon_status->afd_mon = STOPPED;
 
-      system_log(INFO_SIGN, NULL, 0, "Stopped %s.", AFD_MON);
-      (void)unlink(mon_active_file);
-
-      if (mon_log_pid > 0)
+      if (unlink(mon_active_file) == -1)
       {
-         int j;
-
-         if (kill(mon_log_pid, SIGINT) == -1)
-         {
-            if (errno != ESRCH)
-            {
-               system_log(WARN_SIGN, __FILE__, __LINE__,
-#if SIZEOF_PID_T == 4
-                          "Failed to kill monitor log process (%d) : %s",
-#else
-                          "Failed to kill monitor log process (%lld) : %s",
-#endif
-                          (pri_pid_t)mon_log_pid, strerror(errno));
-            }
-         }
-
-         /* Wait for the child to terminate. */
-         for (j = 0; j < MAX_SHUTDOWN_TIME;  j++)
-         {
-            if (waitpid(mon_log_pid, NULL, WNOHANG) == mon_log_pid)
-            {
-               mon_log_pid = NOT_RUNNING;
-               break;
-            }
-            else
-            {
-               my_usleep(100000L);
-            }
-         }
-         if (mon_log_pid != NOT_RUNNING)
-         {
-            if (kill(mon_log_pid, SIGKILL) != -1)
-            {
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-#if SIZEOF_PID_T == 4
-                          _("Killed %s (%d) the hard way!"),
-#else
-                          _("Killed %s (%lld) the hard way!"),
-#endif
-                          MONITOR_LOG, mon_log_pid);
-               my_usleep(100000);
-               (void)waitpid(mon_log_pid, NULL, WNOHANG);
-            }
-         }
+         (void)fprintf(stderr,
+                       _("Failed to unlink() `%s' : %s (%s %d)\n"),
+                       mon_active_file, strerror(errno), __FILE__, __LINE__);
       }
-      p_afd_mon_status->mon_log = STOPPED;
-
-      if (msa_detach() != SUCCESS)
-      {
-         system_log(ERROR_SIGN, __FILE__, __LINE__, "Failed to detach from MSA.");
-      }
-
-      if (gethostname(hostname, 64) == 0)
-      {
-         char      date_str[26];
-         time_t    now;
-         struct tm *p_ts;
-
-         now = time(NULL);
-         p_ts = localtime(&now);
-         strftime(date_str, 26, "%a %h %d %H:%M:%S %Y", p_ts);
-         system_log(CONFIG_SIGN, NULL, 0,
-                    "Shutdown on <%s> %s", hostname, date_str);
-      }
-      system_log(INFO_SIGN, NULL, 0,
-                 "=================> SHUTDOWN <=================");
-
-      if (got_shuttdown_message == YES)
-      {
-         /* Tell 'mafd' that we received shutdown message */
-         if (send_cmd(ACKN, mon_resp_fd) < 0)
-         {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "Failed to send ACKN : %s", strerror(errno));
-         }
-      }
-
-      /* As the last process kill the system log process. */
-      if (sys_log_pid > 0)
-      {
-         int            gotcha = NO;
-         fd_set         rset;
-         struct timeval timeout;
-         FILE           *p_sys_log;
-
-         if ((p_sys_log = fdopen(sys_log_fd, "a+")) != NULL)
-         {
-            (void)fflush(p_sys_log);
-            (void)fclose(p_sys_log);
-         }
-
-         /* Give system log some time to tell whether all mon, */
-         /* log_mon, etc have been stopped.                    */
-         FD_ZERO(&rset);
-         i = 0;
-         do
-         {
-            (void)my_usleep(5000L);
-            FD_SET(sys_log_fd, &rset);
-            timeout.tv_usec = 10000L;
-            timeout.tv_sec = 0L;
-            i++;
-         } while ((select(sys_log_fd + 1, &rset, NULL, NULL, &timeout) > 0) &&
-                  (i < 1000));
-         (void)my_usleep(10000L);
-         (void)kill(sys_log_pid, SIGINT);
-
-         (void)my_usleep(100000L);
-         for (i = 0; i < 3; i++)
-         {
-            if (waitpid(sys_log_pid, NULL, WNOHANG) == sys_log_pid)
-            {
-               gotcha = YES;
-               break;
-            }
-            else
-            {
-               (void)my_usleep(100000L);
-            }
-         }
-         if (gotcha == NO)
-         {
-            (void)kill(sys_log_pid, SIGKILL);
-            (void)fprintf(stderr,
-#if SIZEOF_PID_T == 4
-                          "Killed process %s (%d) the hard way. (%s %d)\n",
-#else
-                          "Killed process %s (%lld) the hard way. (%s %d)\n",
-#endif
-                          MON_SYS_LOG, (pri_pid_t)sys_log_pid, __FILE__, __LINE__);
-            my_usleep(100000);
-            (void)waitpid(sys_log_pid, NULL, WNOHANG);
-         }
-      }
-      p_afd_mon_status->mon_sys_log = STOPPED;
-#ifdef HAVE_MMAP
-      if (msync((void *)p_afd_mon_status, sizeof(struct afd_mon_status),
-                 MS_SYNC) == -1)
-      {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "msync() error : %s", strerror(errno));
-      }
-      if (munmap((void *)p_afd_mon_status, sizeof(struct afd_mon_status)) == -1)
-      {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "munmap() error : %s", strerror(errno));
-      }
-#else
-      if (munmap_emu((void *)p_afd_mon_status) == -1)
-      {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "munmap_emu() error : %s", strerror(errno));
-      }
-#endif
-
-      if ((got_shuttdown_message == YES) && (mon_resp_fd > 0))
-      {
-         if (send_cmd(PROC_TERM, mon_resp_fd) < 0)
-         {
-            (void)fprintf(stderr,
-                          "Failed to send PROC_TERM : %s\n",
-                          strerror(errno));
-         }
-         (void)close(mon_resp_fd);
-         mon_resp_fd = -1;
-      }
-
-      if (service_name == NULL)
-      {
-         length = 38 + AFD_LENGTH;
-      }
-      else
-      {
-         length = 44 + AFD_LENGTH + strlen(service_name);
-      }
-      if ((buffer = malloc(length + 1)) != NULL)
-      {
-         time_t current_time;
-
-         current_time = time(NULL);
-         (void)memset(buffer, '-', length);
-         buffer[length] = '\0';
-         if (service_name == NULL)
-         {
-            (void)fprintf(stderr,
-                          _("%.24s : %s terminated (%s %d)\n%s\n"),
-                          ctime(&current_time), AFD_MON, __FILE__,
-                          __LINE__, buffer);
-         }
-         else
-         {
-            (void)fprintf(stderr,
-                          _("%.24s : %s for %s terminated (%s %d)\n%s\n"),
-                          ctime(&current_time), AFD_MON, service_name,
-                          __FILE__, __LINE__, buffer);
-         }
-         (void)free(buffer);
-      }
-
-      (void)close(sys_log_fd);
 
 #ifdef WITH_SYSTEMD
       sd_notify(0, "STATUS=Terminated\n");
@@ -1749,6 +1711,8 @@ usage(char *progname)
                  _("SYNTAX  : %s[ -w working directory]\n"), progname);
    (void)fprintf(stderr,
                  _("                    -nd        Do not start as daemon process.\n"));
+   (void)fprintf(stderr,
+                 _("                    -C         Start with all checks done by cmdline mafd.\n"));
    (void)fprintf(stderr,
                  _("                    -sn <name> Provide a service name.\n"));
    (void)fprintf(stderr,

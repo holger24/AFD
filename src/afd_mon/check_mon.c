@@ -1,6 +1,6 @@
 /*
  *  check_mon.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2012 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -23,20 +23,22 @@
 DESCR__S_M3
 /*
  ** NAME
- **   check_mon - Checks if another mafd process is running in this
+ **   check_mon - Checks if another afd_mon process is running in this
  **               directory
  **
  ** SYNOPSIS
  **   int check_mon(long wait_time)
  **
  ** DESCRIPTION
- **   This function checks if another mafd is running. If not and the
+ **   This function checks if another afd_mon is running. If not and the
  **   mafd process has crashed, it removes all jobs that might have
  **   survived the crash.
- **   This function is always called when we start the mafd process.
+ **   This function is always called when we start the mafd or afd_mon
+ **   process.
  **
  ** RETURN VALUES
- **   Returns 1 if another mafd process is active, otherwise it returns 0.
+ **   Returns ACKN or ACKN_STOPPED if another afd_mon process is active,
+ **   otherwise it returns 0.
  **
  ** AUTHOR
  **   H.Kiehl
@@ -212,7 +214,7 @@ check_mon(long wait_time)
 #ifdef _FIFO_DEBUG
                     show_fifo_data('R', "probe_only", buffer, 1, __FILE__, __LINE__);
 #endif
-                    if (buffer[0] == ACKN)
+                    if ((buffer[0] == ACKN) || (buffer[0] == ACKN_STOPPED))
                     {
                        if (close(readfd) == -1)
                        {
@@ -236,7 +238,7 @@ check_mon(long wait_time)
                           system_log(DEBUG_SIGN, __FILE__, __LINE__,
                                      "close() error : %s", strerror(errno));
                        }
-                       return(1);
+                       return((int)buffer[0]);
                     }
                     else
                     {

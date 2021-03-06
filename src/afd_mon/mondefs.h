@@ -51,6 +51,7 @@
 
 #define REMOTE_INODE_EXTENSION      "remote.inode"
 
+#define AFDMON_BLOCK_FILE           "/NO_AFDMON_AUTO_RESTART"
 #define MON_ACTIVE_FILE             "/AFD_MON_ACTIVE"
 #define MON_STATUS_FILE             "/mon_status"
 #define MON_STATUS_FILE_ALL         "/mon_status.*"
@@ -780,12 +781,14 @@ struct process_list
 
 /* Function prototypes. */
 extern int   attach_afd_mon_status(void),
+             check_afdmon_database(void),
              check_mon(long),
              detach_afd_mon_status(void),
              evaluate_message(int *),
              handle_log_data(int, int),
              init_fifos_mon(void),
              read_msg(void),
+             send_afdmon_start(void),
              send_log_cmd(int, char *, int *),
              tcp_connect(char *, int, int),
              tcp_quit(void);
@@ -795,7 +798,11 @@ extern char  *convert_msa(int, char *, off_t *, int, unsigned char,
 extern void  create_msa(void),
              eval_afd_mon_db(struct mon_list **),
              mon_log(char *, char *, int, time_t, char *, char *, ...),
+#ifdef WITH_SYSTEMD
+             shutdown_mon(int, char *, int),
+#else
              shutdown_mon(int, char *),
+#endif
              start_all(void),
              start_log_process(int, unsigned int),
              stop_log_process(int),
