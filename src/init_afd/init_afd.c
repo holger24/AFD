@@ -176,6 +176,8 @@ struct proc_table          proc_table[NO_OF_PROCESS + 1];
 const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 
 /* Local global definitions. */
+static int                 daemon_log_fd = -1,
+                           sleep_sys_log_fd = -1;
 static char                *path_to_self = NULL,
                            *service_name;
 
@@ -2831,6 +2833,16 @@ start_afd(int          binary_changed,
    /* Start all log process. */
    proc_table[SLOG_NO].pid = make_process(SLOG, p_work_dir, NULL);
    *(pid_t *)(pid_list + ((SLOG_NO + 1) * sizeof(pid_t))) = proc_table[SLOG_NO].pid;
+   if (daemon_log_fd != -1)
+   {
+      (void)close(daemon_log_fd);
+      daemon_log_fd = -1;
+   }
+   if (sleep_sys_log_fd != -1)
+   {
+      sys_log_fd = sleep_sys_log_fd;
+      sleep_sys_log_fd = -1;
+   }
    *proc_table[SLOG_NO].status = ON;
    proc_table[ELOG_NO].pid = make_process(ELOG, p_work_dir, NULL);
    *(pid_t *)(pid_list + ((ELOG_NO + 1) * sizeof(pid_t))) = proc_table[ELOG_NO].pid;
@@ -3033,6 +3045,7 @@ stop_afd(void)
             i;
       pid_t kill_list[NO_OF_PROCESS + 1],
             syslog = 0;
+      char  daemon_log[MAX_PATH_LENGTH];
 
       system_log(INFO_SIGN, NULL, 0,
                  _("Stopped %s. (%s)"), AFD, PACKAGE_VERSION);
@@ -3314,6 +3327,27 @@ stop_afd(void)
             (void)waitpid(syslog, NULL, WNOHANG);
          }
       }
+
+      /* At this point writting to sys log Fifo is dangerous   */
+      /* since it will block because there is no reader. Lets  */
+      /* try to write to $AFD_WORK_DIR/log/DAEMON_LOG.init_afd.*/
+      /* If this somehow fails, write to STDERR_FILENO.        */
+      sleep_sys_log_fd = sys_log_fd;
+      (void)snprintf(daemon_log, MAX_PATH_LENGTH, "%s%s/DAEMON_LOG.%s",
+                     p_work_dir, LOG_DIR, AFD);
+      if ((daemon_log_fd = coe_open(daemon_log,
+                                    O_CREAT | O_APPEND | O_WRONLY,
+                                    (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH))) == -1)
+      {
+         (void)fprintf(stderr, _("Failed to coe_open() `%s' : %s (%s %d)\n"),
+                       daemon_log, strerror(errno), __FILE__, __LINE__);
+         sys_log_fd = STDERR_FILENO;
+      }
+      else
+      {
+         sys_log_fd = daemon_log_fd;
+      }
+
       current_afd_status = OFF;
 #ifdef WITH_SYSTEMD
       sd_notify(0, "STATUS=Stopped on user request\n");
