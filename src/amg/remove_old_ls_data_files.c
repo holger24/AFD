@@ -1,7 +1,7 @@
 /*
  *  remove_old_ls_data_files.c - Part of AFD, an automatic file distribution
  *                               program.
- *  Copyright (c) 2006 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   23.08.2006 H.Kiehl Created
+ **   26.03.2021 H.Kiehl We also need to check the ls_data_alias variable.
  **
  */
 DESCR__E_M3
@@ -90,7 +91,8 @@ remove_old_ls_data_files(void)
             gotcha = NO;
             for (i = 0; i < no_of_local_dirs; i++)
             {
-               if (CHECK_STRCMP(fra[de[i].fra_pos].dir_alias, p_dir->d_name) == 0)
+               if ((CHECK_STRCMP(fra[de[i].fra_pos].dir_alias, p_dir->d_name) == 0) ||
+                   (CHECK_STRCMP(fra[de[i].fra_pos].ls_data_alias, p_dir->d_name) == 0))
                {
                   gotcha = YES;
                   break;
