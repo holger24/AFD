@@ -3015,12 +3015,17 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
 #if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
                      maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
 # if SIZEOF_PID_T == 4
-                                    "FD started process: pid=%d msg_name=%s",
+                                    "FD started process: pid=%d fsa_pos=%d fra_pos=%d protocol=%d msg_name=%s qb_pos=%d special_flag=%d connect_pos=%d pos=%d",
 # else
-                                    "FD started process: pid=%lld msg_name=%s",
+                                    "FD started process: pid=%lld fsa_pos=%d fra_pos=%d protocol=%d msg_name=%s qb_pos=%d special_flag=%d connect_pos=%d pos=%d",
 # endif
                                     (pri_pid_t)connection[pos].pid,
-                                    connection[pos].msg_name);
+                                    connection[pos].fsa_pos,
+                                    connection[pos].fra_pos,
+                                    connection[pos].protocol,
+                                    connection[pos].msg_name,
+                                    qb_pos, (int)qb[qb_pos].special_flag,
+                                    qb[qb_pos].connect_pos, pos);
 #endif
                      pid = fsa[fsa_pos].job_status[connection[pos].job_no].proc_id = connection[pos].pid;
 #ifdef HAVE_SETPRIORITY
