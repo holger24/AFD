@@ -3224,7 +3224,8 @@ make_process(struct connection *con, int qb_pos)
         }
 #endif
 
-   if ((fsa[con->fsa_pos].protocol_options & FILE_WHEN_LOCAL_FLAG) &&
+   if ((con->fra_pos == -1) &&
+       (fsa[con->fsa_pos].protocol_options & FILE_WHEN_LOCAL_FLAG) &&
        (check_local_interface_names(fsa[con->fsa_pos].real_hostname[(int)(fsa[con->fsa_pos].host_toggle - 1)]) == YES))
    {
       args[0] = SEND_FILE_LOC;
