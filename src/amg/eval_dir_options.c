@@ -1,7 +1,7 @@
 /*
  *  eval_dir_options.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 2000 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -617,7 +617,10 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
                  ptr++;
               }
            }
-      else if (strncmp(ptr, TIME_ID, TIME_ID_LENGTH) == 0)
+      else if ((strncmp(ptr, TIME_ID, TIME_ID_LENGTH) == 0) &&
+               (*(ptr + TIME_ID_LENGTH) != '\0') &&
+               ((*(ptr + TIME_ID_LENGTH) == ' ') ||
+                (*(ptr + TIME_ID_LENGTH) == '\t')))
            {
               if (dd[dir_pos].no_of_time_entries < MAX_FRA_TIME_ENTRIES)
               {
