@@ -5758,7 +5758,7 @@ fd_exit(void)
                      int faulty;
 
                      if (((faulty = zombie_check(&connection[i], now,
-                                                &qb_pos, 0)) == YES) ||
+                                                &qb_pos, WNOHANG)) == YES) ||
                          (faulty == NONE))
                      {
                         if ((qb[qb_pos].special_flag & FETCH_JOB) == 0)
