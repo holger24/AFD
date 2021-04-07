@@ -157,15 +157,9 @@ attach_ls_data(struct fileretrieve_status *fra,
                            (create == YES) ? (O_RDWR | O_CREAT) : O_RDWR,
                            FILE_MODE)) == -1)
          {
-            if ((create == YES) || (errno != ENOENT))
+            if ((errno != ENOENT) || (create == YES))
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          "Failed to open() `%s' : %s",
-                          list_file, strerror(errno));
-            }
-            else
-            {
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
                           "Failed to open() `%s' : %s",
                           list_file, strerror(errno));
             }
