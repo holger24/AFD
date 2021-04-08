@@ -5526,6 +5526,13 @@ get_free_disp_pos(int pos)
 {
    register int i;
 
+   if ((pos >= no_of_hosts) || (pos < 0))
+   {
+      system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                 "Hmm. FSA position %d out of range (%d). Unable to get display position.",
+                 pos, no_of_hosts);
+      return(INCORRECT);
+   }
 #ifdef WITH_CHECK_SINGLE_RETRIEVE_JOB
    if ((qb[qb_pos].special_flag & FETCH_JOB) &&
        ((qb[qb_pos].special_flag & HELPER_JOB) == 0))
