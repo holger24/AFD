@@ -1,6 +1,6 @@
 /*
  *  httpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -64,6 +64,7 @@ DESCR__S_M3
  **                      support IPv6.
  **   11.09.2014 H.Kiehl Added simulation mode.
  **   03.11.2018 H.Kiehl Implemented ServerNameIndication for TLS.
+ **   23.03.2021 H.Kiehl Added etag support for http_get().
  */
 DESCR__E_M3
 
@@ -152,6 +153,9 @@ static void                      read_last_chunk(void),
 #ifdef WITH_SSL
                                  sig_handler(int),
 #endif
+#ifdef _WITH_EXTRA_CHECK
+                                 store_http_etag(int, int),
+#endif
                                  store_http_options(int, int);
 
 
@@ -220,6 +224,10 @@ http_connect(char *hostname,
          hmr.http_options_not_working = 0;
          hmr.bytes_buffered = 0;
          hmr.bytes_read = 0;
+#ifdef _WITH_EXTRA_CHECK
+         hmr.http_etag[0] = '\0';
+         hmr.http_weak_etag = YES;
+#endif
       }
    }
    else
@@ -701,6 +709,10 @@ http_connect(char *hostname,
       hmr.http_options_not_working = 0;
       hmr.bytes_buffered = 0;
       hmr.bytes_read = 0;
+#ifdef _WITH_EXTRA_CHECK
+      hmr.http_etag[0] = '\0';
+      hmr.http_weak_etag = YES;
+#endif
 
 #ifdef WITH_SSL
       hmr.strict = strict;
@@ -912,6 +924,9 @@ int
 http_get(char  *host,
          char  *path,
          char  *filename,
+#ifdef _WITH_EXTRA_CHECK
+         char  *etag,
+#endif
          off_t *content_length,
          off_t offset)
 {
@@ -924,6 +939,9 @@ http_get(char  *host,
    else
    {
       char range[13 + MAX_OFF_T_LENGTH + 1 + MAX_OFF_T_LENGTH + 3],
+#ifdef _WITH_EXTRA_CHECK
+           none_match[16 + MAX_EXTRA_LS_DATA_LENGTH + 5],
+#endif
            resource[MAX_RECIPIENT_LENGTH];
 
       hmr.bytes_read = 0;
@@ -1049,12 +1067,53 @@ retry_get_range:
                            (pri_off_t)offset, (pri_off_t)*content_length);
          }
       }
+#ifdef _WITH_EXTRA_CHECK
+      if (etag[0] == '\0')
+      {
+         none_match[0] = '\0';
+      }
+      else
+      {
+         size_t bytes_copied;
+
+         /* If-None-Match */
+         none_match[0] = 'I';
+         none_match[1] = 'f';
+         none_match[2] = '-';
+         none_match[3] = 'N';
+         none_match[4] = 'o';
+         none_match[5] = 'n';
+         none_match[6] = 'e';
+         none_match[7] = '-';
+         none_match[8] = 'M';
+         none_match[9] = 'a';
+         none_match[10] = 't';
+         none_match[11] = 'c';
+         none_match[12] = 'h';
+         none_match[13] = ':';
+         none_match[14] = ' ';
+         none_match[15] = '"';
+         bytes_copied = my_strlcpy(&none_match[16], etag, MAX_EXTRA_LS_DATA_LENGTH);
+         none_match[16 + bytes_copied] = '"';
+         none_match[16 + bytes_copied + 1] = '\r';
+         none_match[16 + bytes_copied + 2] = '\n';
+         none_match[16 + bytes_copied + 3] = '\0';
+      }
+#endif
 retry_get:
+#ifdef _WITH_EXTRA_CHECK
+      if ((reply = command(http_fd,
+                           "GET %s HTTP/1.1\r\n%sUser-Agent: AFD/%s\r\n%s%sHost: %s\r\nContent-length: 0\r\nAccept: */*\r\n",
+                           resource, range, PACKAGE_VERSION,
+                           (hmr.authorization == NULL) ? "" : hmr.authorization,
+                           none_match, host)) == SUCCESS)
+#else
       if ((reply = command(http_fd,
                            "GET %s HTTP/1.1\r\n%sUser-Agent: AFD/%s\r\n%sHost: %s\r\nContent-length: 0\r\nAccept: */*\r\n",
                            resource, range, PACKAGE_VERSION,
                            (hmr.authorization == NULL) ? "" : hmr.authorization,
                            host)) == SUCCESS)
+#endif
       {
          hmr.content_length = -1;
          if (((reply = get_http_reply(&hmr.bytes_buffered, 200, __LINE__)) == 200) ||
@@ -1081,7 +1140,14 @@ retry_get:
             {
                *content_length = hmr.content_length;
             }
+#ifdef _WITH_EXTRA_CHECK
+            (void)strcpy(etag, hmr.http_etag);
+#endif
          }
+         else if (reply == 304) /* Not Modified */
+              {
+                 reply = NOTHING_TO_FETCH;
+              }
          else if ((reply == 403) || /* Forbidden */
                   (reply == 404))   /* Not Found */
               {
@@ -2650,6 +2716,24 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
                        hmr.date = datestr2unixtime(&msg_str[i]);
                     }
                  }
+#ifdef _WITH_EXTRA_CHECK
+                 /* ETag: */
+            else if ((read_length > 5) && (msg_str[4] == ':') &&
+                     ((msg_str[0] == 'E') || (msg_str[0] == 'e')) &&
+                     ((msg_str[1] == 'T') || (msg_str[1] == 't')) &&
+                     ((msg_str[2] == 'a') || (msg_str[2] == 'A')) &&
+                     ((msg_str[3] == 'g') || (msg_str[3] == 'G')))
+                 {
+                    int i = 5;
+
+                    while ((i < read_length) &&
+                           ((msg_str[i] == ' ') || (msg_str[i] == '\t')))
+                    {
+                       i++;
+                    }
+                    store_http_etag(i, read_length);
+                 }
+#endif
                  /* Allow: */
             else if ((read_length > 6) && (msg_str[5] == ':') &&
                      ((msg_str[0] == 'A') || (msg_str[0] == 'a')) &&
@@ -3079,6 +3163,64 @@ read_last_chunk(void)
 
    return;
 }
+
+
+#ifdef _WITH_EXTRA_CHECK
+/*-------------------------- store_http_etag() --------------------------*/
+static void
+store_http_etag(int i, int read_length)
+{
+   if ((read_length > 2) && (msg_str[i] == 'W') && (msg_str[i + 1] == '/'))
+   {
+      hmr.http_weak_etag = YES;
+      i += 2;
+   }
+   else
+   {
+      hmr.http_weak_etag = NO;
+   }
+   if (msg_str[i] == '"')
+   {
+      int j = 0;
+
+      i++;
+      while ((i < read_length) && (j < MAX_EXTRA_LS_DATA_LENGTH) &&
+             (msg_str[i] != '\0') && (msg_str[i] != '"'))
+      {
+         hmr.http_etag[j] = msg_str[i];
+         i++; j++;
+      }
+      if (msg_str[i] != '"')
+      {
+         if (j >= MAX_EXTRA_LS_DATA_LENGTH)
+         {
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, "store_http_etag", NULL,
+                      _("Buffer for storing ETAG not long enough, may only be %d bytes long."),
+                      MAX_EXTRA_LS_DATA_LENGTH);
+         }
+         else if (msg_str[i] == '\0')
+              {
+                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, "store_http_etag", msg_str,
+                           _("ETAG not terminated properly."));
+              }
+              else
+              {
+                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, "store_http_etag", msg_str,
+                           _("Unable to store ETAG. Premature end of buffer [i=%d read_length=%d]."),
+                           i, read_length);
+              }
+         j = 0; /* Clear storage for ETAG. */
+      }
+      hmr.http_etag[j] = '\0';
+   }
+   else
+   {
+      hmr.http_etag[0] = '\0';
+   }
+
+   return;
+}
+#endif
 
 
 /*------------------------- store_http_options() ------------------------*/

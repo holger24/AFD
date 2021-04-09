@@ -19,7 +19,7 @@ struct job db;
 const char *sys_log_name = SYSTEM_LOG_FIFO;
 
 
-/*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ ascp $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
+/*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ ahttp $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
 int
 main(int argc, char *argv[])
 {
@@ -28,6 +28,9 @@ main(int argc, char *argv[])
          hunk_size;
    off_t bytes_read = 0;
    char  block[1024],
+#ifdef _WITH_EXTRA_CHECK
+         etag[MAX_EXTRA_LS_DATA_LENGTH + 1],
+#endif
          hostname[45],
          path[MAX_PATH_LENGTH];
 
@@ -56,7 +59,12 @@ main(int argc, char *argv[])
       (void)fprintf(stderr, "http_connect() failed\n");
       exit(-1);
    }
+#ifdef _WITH_EXTRA_CHECK
+   etag[0] = '\0';
+   if (http_get(hostname, path, argv[1], etag, &bytes_buffered) == INCORRECT)
+#else
    if (http_get(hostname, path, argv[1], &bytes_buffered) == INCORRECT)
+#endif
    {
       (void)fprintf(stderr, "http_get() failed\n");
       exit(-1);

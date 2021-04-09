@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_http.c - Part of AFD, an automatic file distribution
  *                                 program.
- *  Copyright (c) 2006 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -632,9 +632,18 @@ try_attach_again:
                       content_length = 0,
                       file_size_deleted = 0,
                       list_size = 0;
+#ifdef _WITH_EXTRA_CHECK
+         char         etag[MAX_EXTRA_LS_DATA_LENGTH + 1];
+#endif
          char         *listbuffer = NULL;
 
+#ifdef _WITH_EXTRA_CHECK
+         etag[0] = '\0';
+#endif
          if (((status = http_get(db.hostname, db.target_dir, "",
+#ifdef _WITH_EXTRA_CHECK
+                                 etag,
+#endif
                                  &content_length, 0)) != SUCCESS) &&
              (status != CHUNKED))
          {
@@ -2437,6 +2446,9 @@ check_list(char   *file,
       rl = (struct retrieve_list *)ptr;
    }
    (void)my_strncpy(rl[no_of_listed_files].file_name, file, MAX_FILENAME_LENGTH);
+#ifdef _WITH_EXTRA_CHECK
+   rl[no_of_listed_files].extra_data[0] = '\0';
+#endif
    rl[no_of_listed_files].retrieved = NO;
    rl[no_of_listed_files].in_list = YES;
 

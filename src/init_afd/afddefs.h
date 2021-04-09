@@ -33,6 +33,17 @@
 
 #define WITH_TIMEZONE 1
 
+/*
+ * This enables extra checks when retrieving data. The only protocol
+ * where this is currently implemented is HTTP. Here it uses the ETag
+ * as an additional check in the GET statement via If-None-Match.
+ * However I could not find a useful use of this because most HTTP
+ * servers use in the etag the modification time and size. And these
+ * two values are already checked. So we still must always issue a
+ * HEAD :-(
+ */
+/* #define _WITH_EXTRA_CHECK 1 */
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 # include "ports.h"
@@ -930,6 +941,9 @@ typedef unsigned long       u_long_64;
 #define DISABLE_STRICT_HOST_KEY    33554432
 #define USE_STAT_LIST              67108864
 #define IMPLICIT_FTPS              134217728
+#ifdef _WITH_EXTRA_CHECK
+# define USE_EXTRA_CHECK           268435456
+#endif
 
 #define FTP_SHEME                  "ftp"
 #define FTP_SHEME_LENGTH           (sizeof(FTP_SHEME) - 1)
@@ -2514,7 +2528,10 @@ struct filetransfer_status
                                             /*+------+------------------+*/
                                             /*|Bit(s)|     Meaning      |*/
                                             /*+------+------------------+*/
-                                            /*| 29-32| Not used.        |*/
+                                            /*| 31-32| Not used.        |*/
+#ifdef _WITH_EXTRA_CHECK
+                                            /*| 30   | USE_EXTRA_CHECK  |*/
+#endif
                                             /*| 29   | IMPLICIT_FTPS    |*/
                                             /*| 27   | USE_STAT_LIST    |*/
                                             /*| 26   | DISABLE_STRICT_HOST_KEY|*/
@@ -3469,11 +3486,24 @@ struct dir_options
        };
 
 /* Structure holding all filenames that are/have been retrieved. */
-#define CURRENT_RL_VERSION      2
-#define RETRIEVE_LIST_STEP_SIZE 50
+#ifdef _WITH_EXTRA_CHECK
+# define CURRENT_RL_VERSION       3
+#else
+# define CURRENT_RL_VERSION       2
+#endif
+#define RETRIEVE_LIST_STEP_SIZE   50
+#ifdef _WITH_EXTRA_CHECK
+# define MAX_EXTRA_LS_DATA_LENGTH 90
+#endif
 struct retrieve_list
        {
           char          file_name[MAX_FILENAME_LENGTH];
+#ifdef _WITH_EXTRA_CHECK
+          char          extra_data[MAX_EXTRA_LS_DATA_LENGTH]; /* Store some*/
+                                         /* extra information that might   */
+                                         /* be useful depnding on protocol */
+                                         /* like: ETAG, CRC, etc.          */
+#endif
           unsigned char assigned;        /* Which job has been assigned to */
                                          /* fetch these files.             */
           unsigned char special_flag;    /* Currently not used.            */
@@ -4220,6 +4250,7 @@ extern off_t        bin_file_convert(char *, off_t, int, char *, unsigned int),
                     read_file(char *, char **),
                     read_file_no_cr(char *, char **, int, char *, int),
                     tiff2gts(char *, char *);
+extern size_t       my_strlcpy(char *, const char *, const size_t);
 extern ssize_t      readn(int, void *, int, long),
                     writen(int, const void *, size_t, ssize_t);
 #ifdef WITH_TIMEZONE

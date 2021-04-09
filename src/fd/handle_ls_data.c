@@ -1,6 +1,6 @@
 /*
  *  handle_ls_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2009 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2009 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -341,6 +341,9 @@ attach_ls_data(struct fileretrieve_status *fra,
                      for (i = 0; i < no_of_old_listed_files; i++)
                      {
                         (void)strcpy(nrl[i].file_name, orl[i].file_name);
+#ifdef _WITH_EXTRA_CHECK
+                        nrl[i].extra_data[0] = '\0';
+#endif
                         nrl[i].retrieved = orl[i].retrieved;
                         nrl[i].in_list = orl[i].in_list;
                         nrl[i].size = orl[i].size;
@@ -500,6 +503,9 @@ attach_ls_data(struct fileretrieve_status *fra,
                           for (i = 0; i < no_of_old_listed_files; i++)
                           {
                              (void)strcpy(nrl[i].file_name, orl[i].file_name);
+#ifdef _WITH_EXTRA_CHECK
+                             nrl[i].extra_data[0] = '\0';
+#endif
                              nrl[i].retrieved = orl[i].retrieved;
                              nrl[i].in_list = orl[i].in_list;
                              nrl[i].size = orl[i].size;

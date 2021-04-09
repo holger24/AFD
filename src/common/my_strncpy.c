@@ -1,6 +1,6 @@
 /*
  *  my_strncpy.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,14 +25,18 @@ DESCR__S_M3
  **   my_strncpy - copy a string
  **
  ** SYNOPSIS
- **   int my_strncpy(char *dest, const char *src, const size_t n)
- **   void myfillncpy(char *dest, const char *src,
- **                   const char fill_char, const size_t n)
+ **   int    my_strncpy(char *dest, const char *src, const size_t n)
+ **   size_t my_strlcpy(char *dest, const char *src, const size_t n)
+ **   void   my_fillncpy(char *dest, const char *src,
+ **                      const char fill_char, const size_t n)
  **
  ** DESCRIPTION
  **   The my_strncpy() function copies the string pointed to by src
  **   to the array pointed to by dest. Only n bytes will be copied.
  **   dest will always be terminated with a null byte.
+ **
+ **   my_strlcpy() function differs from my_strncpy() in that
+ **   it returns the number of bytes it has copied.
  **
  **   Function my_fillncpy() copies n bytes from src to dest, if
  **   src is shorter then n, the remaining bytes are filled by
@@ -40,14 +44,20 @@ DESCR__S_M3
  **
  ** RETURN VALUES
  **   In my_strncpy() if n is not reached SUCCESS will be returned,
- **   otherwise -1 is returned. None foe function myfillncpy().
+ **   otherwise -1 is returned.
+ **
+ **   Function my_strlcpy() returns the number of bytes copied.
+ **
+ **   None for function my_fillncpy().
  **
  ** AUTHOR
  **   H.Kiehl
  **
  ** HISTORY
  **   31.08.2002 H.Kiehl Created
- **   18.12.2017 H.Kiehl Added function myfillncpy().
+ **   18.12.2017 H.Kiehl Added function my_fillncpy().
+ **   23.03.2021 H.Kiehl Added function my_strlcpy().
+ **                      Fixed case where n is zero for my_strncpy().
  **
  */
 DESCR__E_M3
@@ -66,7 +76,10 @@ my_strncpy(char *dest, const char *src, const size_t n)
    }
    if (i == n)
    {
-      dest[i - 1] = '\0';
+      if (n > 1)
+      {
+         dest[i - 1] = '\0';
+      }
       return(-1);
    }
    else
@@ -74,6 +87,34 @@ my_strncpy(char *dest, const char *src, const size_t n)
       dest[i] = '\0';
       return(SUCCESS);
    }
+}
+
+
+/*############################# my_strlcpy() ############################*/
+size_t
+my_strlcpy(char *dest, const char *src, const size_t n)
+{
+   size_t i = 0;
+
+   while ((i < n) && (src[i] != '\0'))
+   {
+      dest[i] = src[i];
+      i++;
+   }
+   if (i == n)
+   {
+      if (n > 1)
+      {
+         dest[i - 1] = '\0';
+         i--;
+      }
+   }
+   else
+   {
+      dest[i] = '\0';
+   }
+
+   return(i);
 }
 
 

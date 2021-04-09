@@ -1,6 +1,6 @@
 /*
  *  view_ls_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2005 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -154,23 +154,50 @@ main(int argc, char *argv[])
                   (void)fprintf(stdout, "\n        %s (%d entries  Struct Version: %d  Create time: %s)\n\n",
                                 argv[i], no_of_listed_files, version, time_str);
                   (void)fprintf(stdout, "                        |            |  Previous  |Got |    | In |Assi|\n");
+#ifdef _WITH_EXTRA_CHECK
+                  (void)fprintf(stdout, "          Date          |    Size    |    Size    |date|Retr|list|nged|Flag|   File name + possible extra data\n");
+#else
                   (void)fprintf(stdout, "          Date          |    Size    |    Size    |date|Retr|list|nged|Flag|   File name\n");
-                  (void)fprintf(stdout, "------------------------+------------+------------+----+----+----+----+----+-------------------------------\n");
+#endif
+                  (void)fprintf(stdout, "------------------------+------------+------------+----+----+----+----+----+----------------------------------\n");
                   for (j = 0; j < no_of_listed_files; j++)
                   {
                      (void)strftime(time_str, 25, "%c", localtime(&rl[j].file_mtime));
-#if SIZEOF_OFF_T == 4
-                     (void)fprintf(stdout, "%s|%12ld|%12ld| %s| %s| %s| %3d| %3d|%s\n",
-#else
-                     (void)fprintf(stdout, "%s|%12lld|%12lld| %s| %s| %s| %3d| %3d|%s\n",
+#ifdef _WITH_EXTRA_CHECK
+                     if (rl[j].extra_data[0] != '\0')
+                     {
+# if SIZEOF_OFF_T == 4
+                        (void)fprintf(stdout, "%s|%12ld|%12ld| %s| %s| %s| %3d| %3d|%s|%s\n",
+# else
+                        (void)fprintf(stdout, "%s|%12lld|%12lld| %s| %s| %s| %3d| %3d|%s|%s\n",
+# endif
+                                      time_str, (pri_off_t)rl[j].size,
+                                      (pri_off_t)rl[j].prev_size,
+                                      (rl[j].got_date == YES) ? "YES" : "NO ",
+                                      (rl[j].retrieved == YES) ? "YES" : "NO ",
+                                      (rl[j].in_list == YES) ? "YES" : "NO ",
+                                      rl[j].assigned,
+                                      rl[j].special_flag, rl[j].file_name,
+                                      rl[j].extra_data);
+                     }
+                     else
+                     {
 #endif
-                                   time_str, (pri_off_t)rl[j].size,
-                                   (pri_off_t)rl[j].prev_size,
-                                   (rl[j].got_date == YES) ? "YES" : "NO ",
-                                   (rl[j].retrieved == YES) ? "YES" : "NO ",
-                                   (rl[j].in_list == YES) ? "YES" : "NO ",
-                                   rl[j].assigned,
-                                   rl[j].special_flag, rl[j].file_name);
+#if SIZEOF_OFF_T == 4
+                        (void)fprintf(stdout, "%s|%12ld|%12ld| %s| %s| %s| %3d| %3d|%s\n",
+#else
+                        (void)fprintf(stdout, "%s|%12lld|%12lld| %s| %s| %s| %3d| %3d|%s\n",
+#endif
+                                      time_str, (pri_off_t)rl[j].size,
+                                      (pri_off_t)rl[j].prev_size,
+                                      (rl[j].got_date == YES) ? "YES" : "NO ",
+                                      (rl[j].retrieved == YES) ? "YES" : "NO ",
+                                      (rl[j].in_list == YES) ? "YES" : "NO ",
+                                      rl[j].assigned,
+                                      rl[j].special_flag, rl[j].file_name);
+#ifdef _WITH_EXTRA_CHECK
+                     }
+#endif
                   }
                   ptr -= AFD_WORD_OFFSET;
                }

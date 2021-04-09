@@ -1,6 +1,6 @@
 /*
  *  httpdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,6 +52,9 @@ struct http_message_reply
           char         http_proxy[MAX_REAL_HOSTNAME_LENGTH + 1];
           char         user[MAX_USER_NAME_LENGTH + 1];
           char         passwd[MAX_USER_NAME_LENGTH + 1];
+#ifdef _WITH_EXTRA_CHECK
+          char         http_etag[MAX_EXTRA_LS_DATA_LENGTH + 1];
+#endif
           off_t        content_length;
           time_t       date;
           char         *authorization;
@@ -72,6 +75,9 @@ struct http_message_reply
           char         chunked;
           char         close;
           char         free;
+#ifdef _WITH_EXTRA_CHECK
+          char         http_weak_etag;
+#endif
 #ifdef WITH_SSL
           char         ssl;
 #endif
@@ -84,7 +90,11 @@ extern int  http_connect(char *, char *, int, char *, char *, int, int, int, int
 extern int  http_connect(char *, char *, int, char *, char *, int, int),
 #endif
             http_del(char *, char *, char *),
+#ifdef _WITH_EXTRA_CHECK
+            http_get(char *, char *, char *, char *, off_t *, off_t),
+#else
             http_get(char *, char *, char *, off_t *, off_t),
+#endif
             http_head(char *, char *, char *, off_t *, time_t *),
             http_options(char *, char *),
             http_put(char *, char *, char *, off_t, int),
