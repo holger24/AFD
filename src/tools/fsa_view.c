@@ -1,6 +1,6 @@
 /*
  *  fsa_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1237,17 +1237,44 @@ main(int argc, char *argv[])
             (void)fprintf(stdout, "Unique name         ");
             for (i = 0; i < sfsa.allowed_transfers; i++)
             {
-               if ((sfsa.job_status[i].unique_name[1] == '\0') ||
-                   (sfsa.job_status[i].unique_name[2] == '\0'))
+               if ((sfsa.job_status[i].unique_name[1] == 1) ||
+                   (sfsa.job_status[i].unique_name[1] == 2) ||
+                   (sfsa.job_status[i].unique_name[1] == 3) ||
+                   (sfsa.job_status[i].unique_name[1] == 4) ||
+                   (sfsa.job_status[i].unique_name[1] == 5) ||
+                   (sfsa.job_status[i].unique_name[1] == 6) ||
+                   (sfsa.job_status[i].unique_name[2] == 1) ||
+                   (sfsa.job_status[i].unique_name[2] == 2) ||
+                   (sfsa.job_status[i].unique_name[2] == 3) ||
+                   (sfsa.job_status[i].unique_name[2] == 4) ||
+                   (sfsa.job_status[i].unique_name[2] == 5) ||
+                   (sfsa.job_status[i].unique_name[2] == 6) ||
+                   (sfsa.job_status[i].unique_name[3] == 1) ||
+                   (sfsa.job_status[i].unique_name[3] == 2) ||
+                   (sfsa.job_status[i].unique_name[3] == 3) ||
+                   (sfsa.job_status[i].unique_name[3] == 4) ||
+                   (sfsa.job_status[i].unique_name[3] == 5) ||
+                   (sfsa.job_status[i].unique_name[3] == 6))
                {
-                  (void)fprintf(stdout, "|%*.*s", max_digits + 1, max_digits + 1,
-                                " ");
+                  (void)fprintf(stdout, "|<%d><%d><%d><%d><%d>",
+                                (int)sfsa.job_status[i].unique_name[0],
+                                (int)sfsa.job_status[i].unique_name[1],
+                                (int)sfsa.job_status[i].unique_name[2],
+                                (int)sfsa.job_status[i].unique_name[3],
+                                (int)sfsa.job_status[i].unique_name[4]);
                }
-               else
-               {
-                  (void)fprintf(stdout, "|%*.*s", max_digits + 1, max_digits + 1,
-                                sfsa.job_status[i].unique_name);
-               }
+               else if ((sfsa.job_status[i].unique_name[1] == '\0') ||
+                        (sfsa.job_status[i].unique_name[2] == '\0'))
+                    {
+                       (void)fprintf(stdout, "|%*.*s",
+                                     max_digits + 1, max_digits + 1, " ");
+                    }
+                    else
+                    {
+                       (void)fprintf(stdout, "|%*.*s",
+                                     max_digits + 1, max_digits + 1,
+                                     sfsa.job_status[i].unique_name);
+                    }
             }
             (void)fprintf(stdout, "\n");
             (void)fprintf(stdout, "Job ID              ");
@@ -1421,16 +1448,42 @@ main(int argc, char *argv[])
 #endif
                              (pri_off_t)fsa[j].job_status[i].file_size_in_use_done);
 #ifdef _WITH_BURST_2
-               if ((fsa[j].job_status[i].unique_name[1] == '\0') ||
-                   (fsa[j].job_status[i].unique_name[2] == '\0'))
+               if ((fsa[j].job_status[i].unique_name[1] == 1) ||
+                   (fsa[j].job_status[i].unique_name[1] == 2) ||
+                   (fsa[j].job_status[i].unique_name[1] == 3) ||
+                   (fsa[j].job_status[i].unique_name[1] == 4) ||
+                   (fsa[j].job_status[i].unique_name[1] == 5) ||
+                   (fsa[j].job_status[i].unique_name[1] == 6) ||
+                   (fsa[j].job_status[i].unique_name[2] == 1) ||
+                   (fsa[j].job_status[i].unique_name[2] == 2) ||
+                   (fsa[j].job_status[i].unique_name[2] == 3) ||
+                   (fsa[j].job_status[i].unique_name[2] == 4) ||
+                   (fsa[j].job_status[i].unique_name[2] == 5) ||
+                   (fsa[j].job_status[i].unique_name[2] == 6) ||
+                   (fsa[j].job_status[i].unique_name[3] == 1) ||
+                   (fsa[j].job_status[i].unique_name[3] == 2) ||
+                   (fsa[j].job_status[i].unique_name[3] == 3) ||
+                   (fsa[j].job_status[i].unique_name[3] == 4) ||
+                   (fsa[j].job_status[i].unique_name[3] == 5) ||
+                   (fsa[j].job_status[i].unique_name[3] == 6))
                {
-                  (void)fprintf(stdout, "Unique name          : \n");
+                  (void)fprintf(stdout, "|<%d><%d><%d><%d><%d>",
+                                (int)fsa[j].job_status[i].unique_name[0],
+                                (int)fsa[j].job_status[i].unique_name[1],
+                                (int)fsa[j].job_status[i].unique_name[2],
+                                (int)fsa[j].job_status[i].unique_name[3],
+                                (int)fsa[j].job_status[i].unique_name[4]);
                }
-               else
-               {
-                  (void)fprintf(stdout, "Unique name          : %s\n",
-                                fsa[j].job_status[i].unique_name);
-               }
+               else if ((fsa[j].job_status[i].unique_name[1] == '\0') ||
+                        (fsa[j].job_status[i].unique_name[2] == '\0'))
+                    {
+                       (void)fprintf(stdout, "Unique name          : \n");
+                    }
+                    else
+                    {
+                       (void)fprintf(stdout, "Unique name          : %s\n",
+                                     fsa[j].job_status[i].unique_name);
+                    }
                (void)fprintf(stdout, "Job ID               : %x\n",
                              fsa[j].job_status[i].job_id);
 #endif
