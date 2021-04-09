@@ -1,6 +1,6 @@
 /*
  *  resend_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -664,19 +664,25 @@ get_archive_data(int pos, int file_no)
    }
 
    /* Away with the job ID. */
-   while (*ptr != SEPARATOR_CHAR)
+   while ((*ptr != SEPARATOR_CHAR) && (*ptr != '\n'))
    {
       ptr++;
    }
-   ptr++;
+   if (*ptr == SEPARATOR_CHAR)
+   {
+      ptr++;
+   }
 
    /* Away with the unique string. */
    p_unique_string = ptr;
-   while (*ptr != SEPARATOR_CHAR)
+   while ((*ptr != SEPARATOR_CHAR) && (*ptr != '\n'))
    {
       ptr++;
    }
-   ptr++;
+   if (*ptr == SEPARATOR_CHAR)
+   {
+      ptr++;
+   }
 
    /* Ahhh. Now here is the archive directory we are looking for. */
    i = 0;
@@ -684,6 +690,11 @@ get_archive_data(int pos, int file_no)
    {
       *(p_archive_name + i) = *ptr;
       i++; ptr++;
+   }
+   if (i == 0)
+   {
+      /* Could not find any archive data. */
+      return(INCORRECT);
    }
    *(p_archive_name + i++) = '/';
    while ((*p_unique_string != SEPARATOR_CHAR) && (*p_unique_string != ' ') &&
