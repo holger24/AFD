@@ -1,6 +1,6 @@
 /*
  *  gf_http.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -79,6 +79,7 @@ int                        *current_no_of_listed_files = NULL,
                            fra_id,
                            fsa_fd = -1,
                            fsa_id,
+                           fsa_pos_save = NO,
 #ifdef HAVE_HW_CRC32
                            have_hw_crc32 = NO,
 #endif
@@ -2292,7 +2293,7 @@ gf_http_exit(void)
 #endif
    }
 
-   if ((fsa != NULL) && (db.fsa_pos >= 0))
+   if ((fsa != NULL) && (db.fsa_pos >= 0) && (fsa_pos_save == YES))
    {
       int     diff_no_of_files_done;
       u_off_t diff_file_size_done;

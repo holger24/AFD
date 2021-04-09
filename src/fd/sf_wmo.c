@@ -105,6 +105,7 @@ int                        counter_fd = -1,     /* NOT USED. */
                            fra_id,
                            fsa_fd = -1,
                            fsa_id,
+                           fsa_pos_save = NO,
                            prev_no_of_files_done = 0,
                            simulation_mode = NO,
                            sys_log_fd = STDERR_FILENO,
@@ -1242,7 +1243,7 @@ try_again_unlink:
 
    /* Disconnect from remote port. */
    wmo_quit();
-   if ((fsa != NULL) && (fsa->debug > NORMAL_MODE))
+   if ((fsa != NULL) && (fsa_pos_save == YES) && (fsa->debug > NORMAL_MODE))
    {
       trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                    "Disconnected from port %d.", db.port);
@@ -1262,7 +1263,7 @@ try_again_unlink:
 static void
 sf_wmo_exit(void)
 {
-   if ((fsa != NULL) && (db.fsa_pos >= 0))
+   if ((fsa != NULL) && (db.fsa_pos >= 0) && (fsa_pos_save == YES))
    {
       int     diff_no_of_files_done;
       u_off_t diff_file_size_done;

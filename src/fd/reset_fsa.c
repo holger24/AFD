@@ -1,6 +1,6 @@
 /*
  *  reset_fsa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,7 +47,8 @@ DESCR__E_M3
 #include "fddefs.h"
 
 /* External global variables. */
-extern int                        fsa_fd;
+extern int                        fsa_fd,
+                                  fsa_pos_save;
 extern struct filetransfer_status *fsa;
 
 
@@ -58,7 +59,7 @@ reset_fsa(struct job *p_db,
           int        file_total_shown,
           off_t      file_size_total_shown)
 {
-   if ((fsa != NULL) && (p_db->fsa_pos != INCORRECT))
+   if ((fsa != NULL) && (p_db->fsa_pos != INCORRECT) && (fsa_pos_save == YES))
    {
       if (gsf_check_fsa(p_db) != NEITHER)
       {

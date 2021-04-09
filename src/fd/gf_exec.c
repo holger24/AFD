@@ -1,6 +1,6 @@
 /*
  *  gf_exec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2013 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -71,6 +71,7 @@ int                        *current_no_of_listed_files = NULL,
                            fra_id,
                            fsa_fd = -1,
                            fsa_id,
+                           fsa_pos_save = NO,
 #ifdef HAVE_HW_CRC32
                            have_hw_crc32 = NO,
 #endif
@@ -464,7 +465,7 @@ main(int argc, char *argv[])
 static void
 gf_exec_exit(void)
 {
-   if ((fsa != NULL) && (db.fsa_pos >= 0))
+   if ((fsa != NULL) && (db.fsa_pos >= 0) && (fsa_pos_save == YES))
    {
       int  length = MAX_INT_LENGTH + 16 + MAX_OFF_T_LENGTH + 16 + MAX_INT_LENGTH + 8 + 1;
       char buffer[MAX_INT_LENGTH + 16 + MAX_OFF_T_LENGTH + 16 + MAX_INT_LENGTH + 8 + 1];

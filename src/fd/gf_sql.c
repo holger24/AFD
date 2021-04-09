@@ -1,6 +1,6 @@
 /*
  *  gf_sql.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -70,6 +70,7 @@ int                        *current_no_of_listed_files = NULL,
                            fra_id,
                            fsa_fd = -1,
                            fsa_id,
+                           fsa_pos_save = NO,
 #ifdef HAVE_HW_CRC32
                            have_hw_crc32 = NO,
 #endif
@@ -1109,7 +1110,7 @@ main(int argc, char *argv[])
 static void
 gf_sql_exit(void)
 {
-   if ((fsa != NULL) && (db.fsa_pos >= 0))
+   if ((fsa != NULL) && (db.fsa_pos >= 0) && (fsa_pos_save == YES))
    {
       WHAT_DONE("retrieved", fsa->job_status[(int)db.job_no].file_size_done,
                 fsa->job_status[(int)db.job_no].no_of_files_done);

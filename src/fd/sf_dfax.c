@@ -1,6 +1,6 @@
 /*
  *  sf_dfax.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2015 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -95,6 +95,7 @@ int                        counter_fd = -1,    /* NOT USED */
                            fra_id,
                            fsa_fd = -1,
                            fsa_id,
+                           fsa_pos_save = NO,
                            simulation_mode = NO,
                            sys_log_fd = STDERR_FILENO,
                            transfer_log_fd = STDERR_FILENO,

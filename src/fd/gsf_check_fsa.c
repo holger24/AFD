@@ -1,6 +1,6 @@
 /*
  *  gsf_check_fsa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2013 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,6 +45,8 @@ DESCR__S_M3
  **
  ** HISTORY
  **   18.03.2003 H.Kiehl Created
+ **   09.04.2021 H.Kiehl Introduce global variable fsa_pos_save to
+ **                      indicate if the fsa pointer is save to use.
  **
  */
 DESCR__E_M3
@@ -53,7 +55,8 @@ DESCR__E_M3
 #include "fddefs.h"
 
 /* Global variables. */
-extern int                        *p_no_of_hosts,
+extern int                        fsa_pos_save,
+                                  *p_no_of_hosts,
                                   no_of_hosts;
 extern struct filetransfer_status *fsa;
 
@@ -72,6 +75,7 @@ gsf_check_fsa(struct job *p_db)
    {
       if ((p_no_of_hosts != NULL) && (*p_no_of_hosts == STALE))
       {
+         fsa_pos_save = NO;
          fsa_detach_pos(p_db->fsa_pos);
          if (fsa_attach("sf/gf_xxx") == SUCCESS)
          {
@@ -104,6 +108,7 @@ gsf_check_fsa(struct job *p_db)
             p_db->fsa_pos = INCORRECT;
             ret = NEITHER;
          }
+         fsa_pos_save = YES;
       }
       else
       {

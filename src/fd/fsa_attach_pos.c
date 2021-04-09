@@ -1,6 +1,6 @@
 /*
  *  fsa_attach_pos.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -67,6 +67,7 @@ DESCR__E_M3
 /* Global variables. */
 extern int                        fsa_fd,
                                   fsa_id,
+                                  fsa_pos_save,
                                   *p_no_of_hosts;
 #ifdef HAVE_MMAP
 extern off_t                      fsa_size;
@@ -254,6 +255,7 @@ fsa_attach_pos(int pos)
                      else
                      {
                         fsa = (struct filetransfer_status *)(ptr + map_offset);
+                        fsa_pos_save = YES;
                         ret = SUCCESS;
                      }
                   }

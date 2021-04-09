@@ -136,6 +136,7 @@ int                        counter_fd = -1,
                            fra_id,
                            fsa_fd = -1,
                            fsa_id,
+                           fsa_pos_save = NO,
                            line_length = 0, /* encode_base64()           */
                            *p_no_of_hosts = NULL,
                            prev_no_of_files_done = 0,
@@ -3251,7 +3252,7 @@ try_again_unlink:
    }
    else
    {
-      if ((fsa != NULL) && (fsa->debug > NORMAL_MODE))
+      if ((fsa != NULL) && (fsa_pos_save == YES) && (fsa->debug > NORMAL_MODE))
       {
          trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str, "Logged out.");
       }
@@ -3352,7 +3353,7 @@ gen_privat_id(char *host_name)
 static void
 sf_smtp_exit(void)
 {
-   if ((fsa != NULL) && (db.fsa_pos >= 0))
+   if ((fsa != NULL) && (db.fsa_pos >= 0) && (fsa_pos_save == YES))
    {
       int     diff_no_of_files_done;
       u_off_t diff_file_size_done;

@@ -1,6 +1,6 @@
 /*
  *  sf_http.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -100,6 +100,7 @@ int                        counter_fd = -1,     /* NOT USED */
                            fra_id,
                            fsa_fd = -1,
                            fsa_id,
+                           fsa_pos_save = NO,
                            prev_no_of_files_done = 0,
                            simulation_mode = NO,
                            sys_log_fd = STDERR_FILENO,
@@ -1361,7 +1362,7 @@ try_again_unlink:
 
    /* Disconnect from remote port. */
    http_quit();
-   if ((fsa != NULL) && (fsa->debug > NORMAL_MODE))
+   if ((fsa != NULL) && (fsa_pos_save == YES) && (fsa->debug > NORMAL_MODE))
    {
       trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                    "Disconnected from port %d.", db.port);
@@ -1381,7 +1382,7 @@ try_again_unlink:
 static void
 sf_http_exit(void)
 {
-   if ((fsa != NULL) && (db.fsa_pos >= 0))
+   if ((fsa != NULL) && (db.fsa_pos >= 0) && (fsa_pos_save == YES))
    {
       int     diff_no_of_files_done;
       u_off_t diff_file_size_done;
