@@ -698,8 +698,19 @@ main(int argc, char *argv[])
                      start_time = times(&tmsdummy);
                   }
 #endif
+#ifdef _WITH_EXTRA_CHECK
+                  if (fsa->protocol_options & USE_EXTRA_CHECK)
+                  {
+                     rl[i].extra_data[0] = '\0';
+                  }
+#endif
                   if (((status = http_get(db.hostname, db.target_dir,
-                                          rl[i].file_name, &tmp_content_length,
+#ifdef _WITH_EXTRA_CHECK
+                                          rl[i].file_name, rl[i].extra_data,
+#else
+                                          rl[i].file_name,
+#endif
+                                          &tmp_content_length,
                                           offset)) != SUCCESS) &&
                       (status != CHUNKED) && (status != NOTHING_TO_FETCH) &&
                       (status != 301) && (status != 400) && (status != 404))
