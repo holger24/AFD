@@ -66,6 +66,7 @@ sbin_PROGRAMS                     += sbin/cache_spy\
                                      sbin/gen_file\
                                      sbin/queue_spy\
                                      sbin/set_counter\
+                                     sbin/set_ls_data\
                                      sbin/rm_job\
                                      sbin/view_ls_data
 EXTRA_PROGRAMS                    += bin/afdconvert\
@@ -193,6 +194,8 @@ sbin_set_counter_LDADD             = lib/libafd.a
 bin_set_pw_SOURCES                 = src/tools/get_current_jid_list.c\
                                      src/tools/set_pw.c
 bin_set_pw_LDADD                   = lib/libafd.a
+sbin_set_ls_data_SOURCES           = src/tools/set_ls_data.c
+sbin_set_ls_data_LDADD             = lib/libafd.a
 bin_sysconf_SOURCES                = src/tools/sysconf.c
 bin_sysconf_LDADD                  = lib/libafd.a
 bin_tiff_sniffer_SOURCES           = src/tools/tiff_sniffer.c
