@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -2220,71 +2220,75 @@ search_time(char   *src,
    {
       return(src + size);
    }
-   else
-   {
-      /*
-       * YUCK! Now we have to search for it! We know the
-       * time of the very first entry and the last entry. So
-       * lets see if 'search_time_val' is closer to the beginning
-       * or end in our buffer. Thats where we will start our
-       * search.
-       */
-      if (labs(search_time_val - earliest_entry) >
-          labs(latest_entry - search_time_val))
-      {
-         /* Start search from end. */
-         bs_ptr = src + size - 2;
-         do
-         {
-            ptr = bs_ptr;
-            ptr -= log_date_length + 1 + max_hostname_length + 3;
-            while ((ptr >= src) && (*ptr != '\n'))
-            {
-               ptr--;
-            }
-            bs_ptr = ptr - 1;
-            ptr++;
-            if (*ptr == '#')
-            {
-               time_val = search_time_val;
-            }
-            else
-            {
-               time_val = (time_t)str2timet(ptr, NULL, 16);
-            }
-         } while ((time_val >= search_time_val) && (ptr > src));
-         while (*ptr != '\n')
-         {
-            ptr++;
-         }
-      }
-      else /* Start search from beginning. */
-      {
-         ptr = src;
-         do
-         {
-            ptr += log_date_length + 1 + max_hostname_length + 3;
-            while (*ptr != '\n')
-            {
-               ptr++;
-            }
-            ptr++;
-            if (*ptr == '#')
-            {
-               time_val = search_time_val - 1;
-            }
-            else
-            {
-               time_val = (time_t)str2timet(ptr, NULL, 16);
-            }
-         } while ((time_val < search_time_val) && (ptr < (src + size)));
-         while (*ptr != '\n')
-         {
-            ptr--;
-         }
-      }
-      return(ptr + 1);
-   }
+   else if ((search_time_val > 0) && (earliest_entry > search_time_val))
+        {
+           return(src);
+        }
+        else
+        {
+           /*
+            * YUCK! Now we have to search for it! We know the
+            * time of the very first entry and the last entry. So
+            * lets see if 'search_time_val' is closer to the beginning
+            * or end in our buffer. Thats where we will start our
+            * search.
+            */
+           if (labs(search_time_val - earliest_entry) >
+               labs(latest_entry - search_time_val))
+           {
+              /* Start search from end. */
+              bs_ptr = src + size - 2;
+              do
+              {
+                 ptr = bs_ptr;
+                 ptr -= log_date_length + 1 + max_hostname_length + 3;
+                 while ((ptr >= src) && (*ptr != '\n'))
+                 {
+                    ptr--;
+                 }
+                 bs_ptr = ptr - 1;
+                 ptr++;
+                 if (*ptr == '#')
+                 {
+                    time_val = search_time_val;
+                 }
+                 else
+                 {
+                    time_val = (time_t)str2timet(ptr, NULL, 16);
+                 }
+              } while ((time_val >= search_time_val) && (ptr > src));
+              while (*ptr != '\n')
+              {
+                 ptr++;
+              }
+           }
+           else /* Start search from beginning. */
+           {
+              ptr = src;
+              do
+              {
+                 ptr += log_date_length + 1 + max_hostname_length + 3;
+                 while (*ptr != '\n')
+                 {
+                    ptr++;
+                 }
+                 ptr++;
+                 if (*ptr == '#')
+                 {
+                    time_val = search_time_val - 1;
+                 }
+                 else
+                 {
+                    time_val = (time_t)str2timet(ptr, NULL, 16);
+                 }
+              } while ((time_val < search_time_val) && (ptr < (src + size)));
+              while (*ptr != '\n')
+              {
+                 ptr--;
+              }
+           }
+           return(ptr + 1);
+        }
 }
 
 
