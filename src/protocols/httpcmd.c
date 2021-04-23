@@ -959,7 +959,8 @@ http_get(char  *host,
          }
          else
          {
-            if ((reply == 405) || /* Method Not Allowed */
+            if ((reply == 400) || /* Bad Request */
+                (reply == 405) || /* Method Not Allowed */
                 (reply == 403) || /* Forbidden */
                 (reply == 501))   /* Not Implemented */
             {
@@ -1727,7 +1728,8 @@ retry_head:
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
               }
-         else if ((reply == 405) || /* Method Not Allowed */
+         else if ((reply == 400) || /* Bad Request */
+                  (reply == 405) || /* Method Not Allowed */
                   (reply == 403) || /* Forbidden */
                   (reply == 501))   /* Not Implemented */
               {
