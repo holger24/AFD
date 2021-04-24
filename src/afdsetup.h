@@ -1,6 +1,6 @@
 /*
  *  afdsetup.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,10 +59,10 @@
  * DO_NOT_ARCHIVE_UNIQUE_PART    - This will not store the unique part of
  *                                 the file name in the archive. Do NOT
  *                                 activate this! Only activate this in
- *                                 benchmarking to have comparible
+ *                                 benchmarking to have comparable
  *                                 results to AFD releases prior to 1.3.0.
  *                                 Otherwise the results are just not
- *                                 comparible.
+ *                                 comparable.
  *-----------------------------------------------------------------------*/
 #define _WITH_BURST_2
 /* #define _LOG_REMOVE_INFO */
@@ -180,7 +180,7 @@
  * time deleted again. This value can be used to reduce the number of
  * archives. The higher this value will be, the smaller will be the
  * number of archive directories created. But note that the higher it
- * will be, it will increase the the possibility that files will be
+ * will be, it will increase the possibility that files will be
  * over written in that archive directory. The lowest value is 1.
  * DEFAULT: 240 (=> 4 minute)
  *-----------------------------------------------------------------------*/
@@ -312,7 +312,7 @@
  *                        until it reaches ONE_DIR_COPY_TIMEOUT timeout.
  *                        DEFAULT: 5 (seconds)
  * FULL_SCAN_TIMEOUT    - The timeout for scanning all directories. If
- *                        set to 0 this is diasbled. When this is set
+ *                        set to 0 this is disabled. When this is set
  *                        it will only take effect if during a scan there
  *                        are directories which still have files to be
  *                        distributed but could not because of
@@ -482,7 +482,7 @@
  * If a transfer of a big file gets interrupted, it is annoying to
  * always retransmit the complete file. So files will be appended when
  * we already have send a part of that file. However it does not make
- * sense to do this for very small files, or when we only have transfered
+ * sense to do this for very small files, or when we only have transferred
  * a couple of bytes. With this definition you can define when a file
  * should be appended.
  *-----------------------------------------------------------------------*/
