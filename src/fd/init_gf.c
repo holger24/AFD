@@ -1,6 +1,6 @@
 /*
  *  init_gf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -152,7 +152,10 @@ init_gf(int argc, char *argv[], int protocol)
    }
    db.fra_lock_offset = AFD_WORD_OFFSET +
                         (db.fra_pos * sizeof(struct fileretrieve_status));
-   if ((db.special_flag & OLD_ERROR_JOB) && (fra->queued == 1))
+   if ((db.special_flag & OLD_ERROR_JOB) &&
+       ((fra->queued == 1) ||
+        (((db.special_flag & DISTRIBUTED_HELPER_JOB) == 0) &&
+         (fra->dir_flag & ONE_PROCESS_JUST_SCANNING))))
    {
       /* No need to do any locking in get_remote_file_names_xxx(). */
       db.special_flag &= ~OLD_ERROR_JOB;

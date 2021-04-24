@@ -1,6 +1,6 @@
 /*
  *  fra_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -536,6 +536,10 @@ main(int argc, char *argv[])
             if (fra[i].dir_flag & DO_NOT_MOVE)
             {
                (void)fprintf(stdout, "DO_NOT_MOVE ");
+            }
+            if (fra[i].dir_flag & ONE_PROCESS_JUST_SCANNING)
+            {
+               (void)fprintf(stdout, "ONE_PROCESS_JUST_SCANNING ");
             }
             (void)fprintf(stdout, "\n");
          }

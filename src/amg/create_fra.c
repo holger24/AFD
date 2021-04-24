@@ -1,6 +1,6 @@
 /*
  *  create_fra.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -453,6 +453,10 @@ create_fra(int no_of_dirs)
          {
             fra[i].dir_flag |= DONT_GET_DIR_LIST;
          }
+         if (dd[i].one_process_just_scaning == YES)
+         {
+            fra[i].dir_flag |= ONE_PROCESS_JUST_SCANNING;
+         }
          if (dd[i].create_source_dir == YES)
          {
             if (fra[i].dir_mode == 0)
@@ -631,6 +635,13 @@ create_fra(int no_of_dirs)
             {
                fra[i].dir_flag ^= DONT_GET_DIR_LIST;
             }
+            if (((fra[i].dir_flag & ONE_PROCESS_JUST_SCANNING) &&
+                 (dd[i].one_process_just_scaning == NO)) ||
+                (((fra[i].dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) &&
+                 (dd[i].one_process_just_scaning == YES)))
+            {
+               fra[i].dir_flag ^= ONE_PROCESS_JUST_SCANNING;
+            }
             if ((dd[i].create_source_dir == NO) &&
                 (fra[i].dir_mode != 0))
             {
@@ -748,6 +759,10 @@ create_fra(int no_of_dirs)
             if (dd[i].do_not_get_dir_list == YES)
             {
                fra[i].dir_flag |= DONT_GET_DIR_LIST;
+            }
+            if (dd[i].one_process_just_scaning == YES)
+            {
+               fra[i].dir_flag |= ONE_PROCESS_JUST_SCANNING;
             }
             if (dd[i].create_source_dir == YES)
             {

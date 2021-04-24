@@ -256,7 +256,8 @@ extern struct fileretrieve_status *fra;
 extern struct filetransfer_status *fsa;
 
 /* Local global variables. */
-static int                        nfg;           /* Number of file mask. */
+static int                        cached_i,
+                                  nfg;           /* Number of file mask. */
 static time_t                     current_time;
 static struct file_mask           *fml = NULL;
 
@@ -456,7 +457,15 @@ try_attach_again:
                               *file_size_to_retrieve += rl[i].size;
                            }
                         }
-                        rl[i].assigned = (unsigned char)db.job_no + 1;
+                        if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                            (db.special_flag & DISTRIBUTED_HELPER_JOB))
+                        {
+                           rl[i].assigned = (unsigned char)db.job_no + 1;
+                        }
+                        else
+                        {
+                           *more_files_in_list = YES;
+                        }
                      }
                      else
                      {
@@ -483,7 +492,15 @@ try_attach_again:
                                  *file_size_to_retrieve += rl[i].size;
                               }
                            }
-                           rl[i].assigned = (unsigned char)db.job_no + 1;
+                           if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                               (db.special_flag & DISTRIBUTED_HELPER_JOB))
+                           {
+                              rl[i].assigned = (unsigned char)db.job_no + 1;
+                           }
+                           else
+                           {
+                              *more_files_in_list = YES;
+                           }
                         }
                      }
 #ifdef DEBUG_ASSIGNMENT
@@ -923,6 +940,7 @@ try_attach_again:
             now = time(NULL);
          }
 
+         cached_i = -1;
          for (i = 0; i < nfg; i++)
          {
             p_mask = fml[i].file_list;
@@ -1111,6 +1129,7 @@ eval_html_dir_list(char         *html_buffer,
    else
    {
 #endif
+      cached_i = -1;
       if ((ptr = llposi(html_buffer, (size_t)bytes_buffered, "<h1>", 4)) == NULL)
       {
          if ((ptr = llposi(html_buffer, (size_t)bytes_buffered, "<PRE>", 5)) == NULL)
@@ -1948,7 +1967,8 @@ check_list(char   *file,
            off_t  *file_size_to_retrieve,
            int    *more_files_in_list)
 {
-   int i;
+   int i,
+       start_i;
 
    if (file_name_length >= (MAX_FILENAME_LENGTH - 1))
    {
@@ -1958,12 +1978,23 @@ check_list(char   *file,
       return(1);
    }
 
+   if ((cached_i != -1) && ((cached_i + 1) < no_of_listed_files) &&
+       (CHECK_STRCMP(rl[cached_i + 1].file_name, file) == 0))
+   {
+      start_i = cached_i + 1;
+   }
+   else
+   {
+      start_i = 0;
+   }
+
    if ((fra->stupid_mode == YES) || (fra->remove == YES))
    {
-      for (i = 0; i < no_of_listed_files; i++)
+      for (i = start_i; i < no_of_listed_files; i++)
       {
          if (CHECK_STRCMP(rl[i].file_name, file) == 0)
          {
+            cached_i = i;
             rl[i].in_list = YES;
             if (((rl[i].assigned == 0) || (rl[i].retrieved == YES)) &&
                 (((db.special_flag & OLD_ERROR_JOB) == 0) ||
@@ -2055,7 +2086,16 @@ check_list(char   *file,
 #endif
                      {
                         rl[i].retrieved = NO;
-                        rl[i].assigned = (unsigned char)db.job_no + 1;
+                        if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                            (db.special_flag & DISTRIBUTED_HELPER_JOB))
+                        {
+                           rl[i].assigned = (unsigned char)db.job_no + 1;
+                        }
+                        else
+                        {
+                           rl[i].assigned = 0;
+                           *more_files_in_list = YES;
+                        }
                      }
                      else
                      {
@@ -2097,7 +2137,16 @@ check_list(char   *file,
 #endif
                         {
                            rl[i].retrieved = NO;
-                           rl[i].assigned = (unsigned char)db.job_no + 1;
+                           if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                               (db.special_flag & DISTRIBUTED_HELPER_JOB))
+                           {
+                              rl[i].assigned = (unsigned char)db.job_no + 1;
+                           }
+                           else
+                           {
+                              rl[i].assigned = 0;
+                              *more_files_in_list = YES;
+                           }
                         }
                         else
                         {
@@ -2152,15 +2201,31 @@ check_list(char   *file,
    else
    {
       /* Check if this file is in the list. */
-      for (i = 0; i < no_of_listed_files; i++)
+      for (i = start_i; i < no_of_listed_files; i++)
       {
          if (CHECK_STRCMP(rl[i].file_name, file) == 0)
          {
+            cached_i = i;
             rl[i].in_list = YES;
             if ((rl[i].assigned != 0) ||
                 ((fra->stupid_mode == GET_ONCE_ONLY) &&
-                 (rl[i].retrieved == YES)))
+                 ((rl[i].special_flag & RL_GOT_EXACT_SIZE_DATE) ||
+                  (rl[i].retrieved == YES))))
             {
+               if ((rl[i].retrieved == NO) && (rl[i].assigned == 0))
+               {
+                  if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                      (db.special_flag & DISTRIBUTED_HELPER_JOB))
+                  {
+                     rl[i].assigned = (unsigned char)db.job_no + 1;
+                  }
+                  else
+                  {
+                     rl[i].assigned = 0;
+                     *more_files_in_list = YES;
+                  }
+                  *files_to_retrieve += 1;
+               }
                return(1);
             }
 
@@ -2293,7 +2358,16 @@ check_list(char   *file,
                             ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size))
 #endif
                         {
-                           rl[i].assigned = (unsigned char)db.job_no + 1;
+                           if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                               (db.special_flag & DISTRIBUTED_HELPER_JOB))
+                           {
+                              rl[i].assigned = (unsigned char)db.job_no + 1;
+                           }
+                           else
+                           {
+                              rl[i].assigned = 0;
+                              *more_files_in_list = YES;
+                           }
                            *file_size_to_retrieve += size_to_retrieve;
                            *files_to_retrieve += 1;
                         }
@@ -2343,7 +2417,16 @@ check_list(char   *file,
                                ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size))
 #endif
                            {
-                              rl[i].assigned = (unsigned char)db.job_no + 1;
+                              if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                                  (db.special_flag & DISTRIBUTED_HELPER_JOB))
+                              {
+                                 rl[i].assigned = (unsigned char)db.job_no + 1;
+                              }
+                              else
+                              {
+                                 rl[i].assigned = 0;
+                                 *more_files_in_list = YES;
+                              }
                               *file_size_to_retrieve += size_to_retrieve;
                               *files_to_retrieve += 1;
                            }
@@ -2451,6 +2534,7 @@ check_list(char   *file,
 #endif
    rl[no_of_listed_files].retrieved = NO;
    rl[no_of_listed_files].in_list = YES;
+   rl[no_of_listed_files].special_flag = 0;
 
    if (((fra->dir_flag & DONT_GET_DIR_LIST) == 0) &&
        ((file_mtime == -1) || (file_size == -1) || (exact_size != 1)))
@@ -2502,6 +2586,10 @@ check_list(char   *file,
    else
    {
       rl[no_of_listed_files].got_date = YES;
+   }
+   if ((file_mtime != -1) && (file_size != -1))
+   {
+      rl[no_of_listed_files].special_flag |= RL_GOT_EXACT_SIZE_DATE;
    }
 
    if ((fra->ignore_size == -1) ||
@@ -2555,7 +2643,16 @@ check_list(char   *file,
           (*file_size_to_retrieve < fra->max_copied_file_size))
 #endif
       {
-         rl[no_of_listed_files - 1].assigned = (unsigned char)db.job_no + 1;
+         if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+             (db.special_flag & DISTRIBUTED_HELPER_JOB))
+         {
+            rl[no_of_listed_files - 1].assigned = (unsigned char)db.job_no + 1;
+         }
+         else
+         {
+            rl[no_of_listed_files - 1].assigned = 0;
+            *more_files_in_list = YES;
+         }
       }
       else
       {

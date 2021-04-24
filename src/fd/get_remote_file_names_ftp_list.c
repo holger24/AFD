@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_ftp_list.c - Part of AFD, an automatic file
  *                                     distribution program.
- *  Copyright (c) 2014 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -220,7 +220,15 @@ try_attach_again:
                         {
                            *file_size_to_retrieve += rl[i].size;
                         }
-                        rl[i].assigned = (unsigned char)db.job_no + 1;
+                        if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                            (db.special_flag & DISTRIBUTED_HELPER_JOB))
+                        {
+                           rl[i].assigned = (unsigned char)db.job_no + 1;
+                        }
+                        else
+                        {
+                           *more_files_in_list = YES;
+                        }
                      }
                      else
                      {
@@ -244,7 +252,15 @@ try_attach_again:
                            {
                               *file_size_to_retrieve += rl[i].size;
                            }
-                           rl[i].assigned = (unsigned char)db.job_no + 1;
+                           if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                               (db.special_flag & DISTRIBUTED_HELPER_JOB))
+                           {
+                              rl[i].assigned = (unsigned char)db.job_no + 1;
+                           }
+                           else
+                           {
+                              *more_files_in_list = YES;
+                           }
                         }
                      }
 #ifdef DEBUG_ASSIGNMENT
@@ -858,7 +874,16 @@ check_list(char   *file,
 #endif
                      {
                         rl[i].retrieved = NO;
-                        rl[i].assigned = (unsigned char)db.job_no + 1;
+                        if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                            (db.special_flag & DISTRIBUTED_HELPER_JOB))
+                        {
+                           rl[i].assigned = (unsigned char)db.job_no + 1;
+                        }
+                        else
+                        {
+                           rl[i].assigned = 0;
+                           *more_files_in_list = YES;
+                        }
                      }
                      else
                      {
@@ -894,7 +919,16 @@ check_list(char   *file,
 #endif
                         {
                            rl[i].retrieved = NO;
-                           rl[i].assigned = (unsigned char)db.job_no + 1;
+                           if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                               (db.special_flag & DISTRIBUTED_HELPER_JOB))
+                           {
+                              rl[i].assigned = (unsigned char)db.job_no + 1;
+                           }
+                           else
+                           {
+                              rl[i].assigned = 0;
+                              *more_files_in_list = YES;
+                           }
                         }
                         else
                         {
@@ -954,8 +988,23 @@ check_list(char   *file,
             rl[i].in_list = YES;
             if ((rl[i].assigned != 0) ||
                 ((fra->stupid_mode == GET_ONCE_ONLY) &&
-                 (rl[i].retrieved == YES)))
+                 ((rl[i].special_flag & RL_GOT_EXACT_SIZE_DATE) ||
+                  (rl[i].retrieved == YES))))
             {
+               if ((rl[i].retrieved == NO) && (rl[i].assigned == 0))
+               {
+                  if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                      (db.special_flag & DISTRIBUTED_HELPER_JOB))
+                  {
+                     rl[i].assigned = (unsigned char)db.job_no + 1;
+                  }
+                  else
+                  {
+                     rl[i].assigned = 0;
+                     *more_files_in_list = YES;
+                  }
+                  *files_to_retrieve += 1;
+               }
                return(1);
             }
 
@@ -1020,7 +1069,16 @@ check_list(char   *file,
                             ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size))
 #endif
                         {
-                           rl[i].assigned = (unsigned char)db.job_no + 1;
+                           if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                               (db.special_flag & DISTRIBUTED_HELPER_JOB))
+                           {
+                              rl[i].assigned = (unsigned char)db.job_no + 1;
+                           }
+                           else
+                           {
+                              rl[i].assigned = 0;
+                              *more_files_in_list = YES;
+                           }
                            *file_size_to_retrieve += size_to_retrieve;
                            *files_to_retrieve += 1;
                         }
@@ -1063,7 +1121,16 @@ check_list(char   *file,
                                ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size))
 #endif
                            {
-                              rl[i].assigned = (unsigned char)db.job_no + 1;
+                              if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                                  (db.special_flag & DISTRIBUTED_HELPER_JOB))
+                              {
+                                 rl[i].assigned = (unsigned char)db.job_no + 1;
+                              }
+                              else
+                              {
+                                 rl[i].assigned = 0;
+                                 *more_files_in_list = YES;
+                              }
                               *file_size_to_retrieve += size_to_retrieve;
                               *files_to_retrieve += 1;
                            }
@@ -1173,6 +1240,11 @@ check_list(char   *file,
    rl[no_of_listed_files].file_mtime = file_mtime;
    rl[no_of_listed_files].got_date = YES;
 
+   /* Note, the following is not true, since with a LIST type listing   */
+   /* we never know if we get the exact size and date. Some FTP servers */
+   /* begin to round this up in one or the other way.                   */
+   rl[no_of_listed_files].special_flag = RL_GOT_EXACT_SIZE_DATE;
+
    if ((fra->ignore_size == -1) ||
        ((fra->gt_lt_sign & ISIZE_EQUAL) &&
         (fra->ignore_size == rl[no_of_listed_files].size)) ||
@@ -1218,7 +1290,16 @@ check_list(char   *file,
           (*file_size_to_retrieve < fra->max_copied_file_size))
 #endif
       {
-         rl[no_of_listed_files - 1].assigned = (unsigned char)db.job_no + 1;
+         if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+             (db.special_flag & DISTRIBUTED_HELPER_JOB))
+         {
+            rl[no_of_listed_files - 1].assigned = (unsigned char)db.job_no + 1;
+         }
+         else
+         {
+            rl[no_of_listed_files - 1].assigned = 0;
+            *more_files_in_list = YES;
+         }
       }
       else
       {

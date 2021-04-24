@@ -240,7 +240,7 @@ bin_sf_http_SOURCES        = src/fd/append.c\
                              src/fd/init_sf.c\
                              src/fd/init_sf_burst2.c\
                              src/fd/limit_transfer_rate.c\
-                             src/fd/noop_wrapper_dummy.c\
+                             src/fd/noop_wrapper_http.c\
                              src/fd/receive_log.c\
                              src/fd/reset_fsa.c\
                              src/fd/send_proc_fin.c\
@@ -590,13 +590,14 @@ bin_gf_http_SOURCES        = src/fd/check_burst_gf.c\
                              src/fd/init_gf.c\
                              src/fd/init_gf_burst2.c\
                              src/fd/limit_transfer_rate.c\
-                             src/fd/noop_wrapper_dummy.c\
+                             src/fd/noop_wrapper_http.c\
                              src/fd/read_file_mask.c\
                              src/fd/reset_fsa.c\
                              src/fd/reset_values.c\
                              src/fd/send_proc_fin.c\
                              src/fd/trans_db_log.c\
-                             src/fd/trans_log.c
+                             src/fd/trans_log.c\
+                             src/fd/unset_error_counter.c
 bin_gf_http_LDADD          = @EXTRA_SOCKET_LIBS@\
                              lib/libprotocols.a\
                              lib/libafd.a\

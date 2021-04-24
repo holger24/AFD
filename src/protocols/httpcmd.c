@@ -31,6 +31,7 @@ DESCR__S_M3
  **   int  http_del(char *host, char *path, char *filename)
  **   int  http_get(char *host, char *path, char *filename, off_t *content_length, off_t offset)
  **   int  http_head(char *host, char *path, char *filename, off_t *content_length, time_t date)
+ **   int  http_noop(void)
  **   int  http_put(char *host, char *path, char *filename, off_t length)
  **   int  http_read(char *block, int blocksize)
  **   int  http_chunk_read(char **chunk, int *chunksize)
@@ -2335,6 +2336,35 @@ http_chunk_read(char **chunk, int *chunksize)
         }
 
    return(bytes_buffered);
+}
+
+
+/*############################ http_noop() ##############################*/
+int
+http_noop(void)
+{
+   char   *p_hostname;
+   off_t  file_size;
+   time_t file_mtime;
+
+   /* I do not know of a better way. HTTP does not support  */
+   /* a NOOP command, so lets just do a HEAD on the current */
+   /* current server.                                       */
+   if (hmr.http_proxy[0] == '\0')
+   {
+      p_hostname = hmr.hostname;
+   }
+   else
+   {
+      p_hostname = hmr.http_proxy;
+   }
+
+#ifdef WITH_TRACE
+   trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
+             "http_noop(): Calling http_head(\"%s\", \"\", \"\")",
+             p_hostname);
+#endif
+   return(http_head(p_hostname, "", "", &file_size, &file_mtime));
 }
 
 

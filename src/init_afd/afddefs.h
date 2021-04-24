@@ -1074,6 +1074,8 @@ typedef unsigned long       u_long_64;
 #define LS_DATA_FILENAME_ID_LENGTH       (sizeof(LS_DATA_FILENAME_ID) - 1)
 #define LOCAL_REMOTE_DIR_ID              "local remote dir"
 #define LOCAL_REMOTE_DIR_ID_LENGTH       (sizeof(LOCAL_REMOTE_DIR_ID) - 1)
+#define ONE_PROCESS_JUST_SCANNING_ID     "one process just scanning"
+#define ONE_PROCESS_JUST_SCANNING_ID_LENGTH (sizeof(ONE_PROCESS_JUST_SCANNING_ID) - 1)
 #define UNKNOWN_FILES                    1
 #define QUEUED_FILES                     2
 #define OLD_LOCKED_FILES                 4
@@ -2041,6 +2043,7 @@ typedef unsigned long       u_long_64;
 # define INOTIFY_DELETE            8388608
 #endif
 #define DIR_DISABLED_STATIC        16777216
+#define ONE_PROCESS_JUST_SCANNING  33554432
 
 #ifdef WITH_INOTIFY
 /*
@@ -2945,7 +2948,8 @@ struct fileretrieve_status
                                             /*+------+------------------+*/
                                             /*|Bit(s)|     Meaning      |*/
                                             /*+------+------------------+*/
-                                            /*|26-32 | Not used.        |*/
+                                            /*|27-32 | Not used.        |*/
+                                            /*|   26 | ONE_PROCESS_JUST_SCANNING|*/
                                             /*|   25 | DIR_DISABLED_STATIC|*/
                                             /*|   24 | INOTIFY_DELETE   |*/
                                             /*|   23 | DO_NOT_MOVE      |*/
@@ -3029,6 +3033,7 @@ struct fileretrieve_status
                                             /*| 4 | IFTIME_EQUAL        |*/
                                             /*| 5 | IFTIME_LESS_THEN    |*/
                                             /*| 6 | IFTIME_GREATER_THEN |*/
+                                            /*+---+---------------------+*/
                                             /*+---+---------------------+*/
                                             /*| * | Rest not used.      |*/
                                             /*+---+---------------------+*/
@@ -3495,6 +3500,8 @@ struct dir_options
 #ifdef _WITH_EXTRA_CHECK
 # define MAX_EXTRA_LS_DATA_LENGTH 90
 #endif
+
+#define RL_GOT_EXACT_SIZE_DATE    1
 struct retrieve_list
        {
           char          file_name[MAX_FILENAME_LENGTH];
@@ -3506,7 +3513,11 @@ struct retrieve_list
 #endif
           unsigned char assigned;        /* Which job has been assigned to */
                                          /* fetch these files.             */
-          unsigned char special_flag;    /* Currently not used.            */
+          unsigned char special_flag;    /*+------+------------------------+*/
+                                         /*|Bit(s)|        Meaning         |*/
+                                         /*+------+------------------------+*/
+                                         /*|   1  | RL_GOT_EXACT_SIZE_DATE |*/
+                                         /*+------+------------------------+*/
           char          got_date;
           char          retrieved;       /* Has the file already been      */
                                          /* retrieved?                     */

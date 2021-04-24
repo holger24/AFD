@@ -66,6 +66,7 @@ DESCR__S_M3
  **        dupcheck[ <timeout in secs>[ <check type>[ <action>[ <CRC type>]]]]
  **        accept dot files
  **        inotify <value>                       [DEFAULT 0]
+ **        one process just scaning
  **
  ** RETURN VALUES
  **   0 when no problems are found when evaluating the directory options.
@@ -179,6 +180,7 @@ extern struct dir_data *dd;
 #define TIMEZONE_FLAG                    4
 #define LS_DATA_FILENAME_FLAG            8
 #define LOCAL_REMOTE_DIR_FLAG            16
+#define ONE_PROCESS_JUST_SCANNING_FLAG   32
 
 
 /*########################## eval_dir_options() #########################*/
@@ -255,6 +257,7 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
    dd[dir_pos].do_not_parallelize = NO;
    dd[dir_pos].do_not_move = NO;
    dd[dir_pos].retrieve_work_dir[0] = '\0';
+   dd[dir_pos].one_process_just_scaning = NO;
 
    /*
     * Now for the new directory options.
@@ -1935,6 +1938,17 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
               {
                  ptr++;
               }
+           }
+      else if (((used2 & ONE_PROCESS_JUST_SCANNING_FLAG) == 0) &&
+               (strncmp(ptr, ONE_PROCESS_JUST_SCANNING_ID, ONE_PROCESS_JUST_SCANNING_ID_LENGTH) == 0))
+           {
+              used2 |= ONE_PROCESS_JUST_SCANNING_FLAG;
+              ptr += ONE_PROCESS_JUST_SCANNING_ID_LENGTH;
+              while ((*ptr != '\n') && (*ptr != '\0'))
+              {
+                 ptr++;
+              }
+              dd[dir_pos].one_process_just_scaning = YES;
            }
            else
            {

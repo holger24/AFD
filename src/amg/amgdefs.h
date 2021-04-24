@@ -472,6 +472,9 @@ struct dir_data
           unsigned char create_source_dir;  /* Create the source         */
                                             /* directory if it does not  */
                                             /* exist.                    */
+          unsigned char one_process_just_scaning; /* One process just for*/
+                                            /* getting the directory     */
+                                            /* listing.                  */
           mode_t        dir_mode;           /* The permissions which a   */
                                             /* newly created source      */
                                             /* directory should have.    */

@@ -1,6 +1,6 @@
 /*
  *  fddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -927,5 +927,10 @@ extern void  calc_trl_per_process(int),
              trans_db_log(char *, char *, int, char *, char *, ...),
              trans_exec(char *, char *, char *, clock_t),
              trans_log(char *, char *, int, char *, char *, char *, ...),
+             unset_error_counter_fra(int, char *, struct fileretrieve_status *,
+                                     struct job *),
+             unset_error_counter_fsa(int, int, char *,
+                                     struct filetransfer_status *,
+                                     struct job *),
              update_tfc(int, off_t, off_t *, int, int, time_t);
 #endif /* __fddefs_h */

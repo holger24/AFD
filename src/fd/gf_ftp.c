@@ -985,14 +985,8 @@ main(int argc, char *argv[])
 
          if (files_to_retrieve > 0)
          {
-            int         diff_no_of_files_done,
-                        fd,
-                        i,
-                        local_file_length;
-            off_t       bytes_done;
-            char        *buffer,
-                        *p_local_tmp_file;
-            struct stat stat_buf;
+            int  local_file_length;
+            char *p_local_tmp_file;
 
             if ((more_files_in_list == YES) &&
                 ((fra->dir_flag & DO_NOT_PARALLELIZE) == 0) &&
@@ -1007,27 +1001,31 @@ main(int argc, char *argv[])
             /* will now start to retrieve data.                */
             if (gsf_check_fsa((struct job *)&db) != NEITHER)
             {
-               fsa->job_status[(int)db.job_no].no_of_files += files_to_retrieve;
-               fsa->job_status[(int)db.job_no].file_size += file_size_to_retrieve;
-               files_to_retrieve_shown += files_to_retrieve;
-               file_size_to_retrieve_shown += file_size_to_retrieve;
+               if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                    (db.special_flag & DISTRIBUTED_HELPER_JOB))
+               {
+                  fsa->job_status[(int)db.job_no].no_of_files += files_to_retrieve;
+                  fsa->job_status[(int)db.job_no].file_size += file_size_to_retrieve;
+                  files_to_retrieve_shown += files_to_retrieve;
+                  file_size_to_retrieve_shown += file_size_to_retrieve;
 
-               /* Number of connections. */
-               fsa->connections += 1;
+                  /* Number of connections. */
+                  fsa->connections += 1;
 
-               /* Total file counter. */
+                  /* Total file counter. */
 #ifdef LOCK_DEBUG
-               lock_region_w(fsa_fd, db.lock_offset + LOCK_TFC, __FILE__, __LINE__);
+                  lock_region_w(fsa_fd, db.lock_offset + LOCK_TFC, __FILE__, __LINE__);
 #else
-               lock_region_w(fsa_fd, db.lock_offset + LOCK_TFC);
+                  lock_region_w(fsa_fd, db.lock_offset + LOCK_TFC);
 #endif
-               fsa->total_file_counter += files_to_retrieve;
-               fsa->total_file_size += file_size_to_retrieve;
+                  fsa->total_file_counter += files_to_retrieve;
+                  fsa->total_file_size += file_size_to_retrieve;
 #ifdef LOCK_DEBUG
-               unlock_region(fsa_fd, db.lock_offset + LOCK_TFC, __FILE__, __LINE__);
+                  unlock_region(fsa_fd, db.lock_offset + LOCK_TFC, __FILE__, __LINE__);
 #else
-               unlock_region(fsa_fd, db.lock_offset + LOCK_TFC);
+                  unlock_region(fsa_fd, db.lock_offset + LOCK_TFC);
 #endif
+               }
             }
             else if (db.fsa_pos == INCORRECT)
                  {
@@ -1087,57 +1085,53 @@ main(int argc, char *argv[])
                p_local_tmp_file++;
             }
 
-            /* Allocate buffer to read data from the source file. */
-            if ((buffer = malloc(blocksize + 4)) == NULL)
+            if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                (db.special_flag & DISTRIBUTED_HELPER_JOB))
             {
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          "malloc() error : %s", strerror(errno));
-               (void)ftp_quit();
-               reset_values(files_retrieved, file_size_retrieved,
-                            files_to_retrieve, file_size_to_retrieve,
-                            (struct job *)&db);
-               exit(ALLOC_ERROR);
-            }
+               int                  diff_no_of_files_done,
+                                    fd,
+                                    i;
+               off_t                bytes_done;
+               char                 *buffer;
+               struct stat          stat_buf;
+               struct retrieve_list tmp_rl;
 
-            /* Retrieve all files. */
-            for (i = 0; i < no_of_listed_files; i++)
-            {
-               /* Check if real_hostname has changed. */
-               if (db.toggle_host == YES)
+               /* Allocate buffer to read data from the source file. */
+               if ((buffer = malloc(blocksize + 4)) == NULL)
                {
-                  if (fsa->host_toggle == HOST_ONE)
-                  {
-                     p_current_real_hostname = fsa->real_hostname[HOST_TWO - 1];
-                  }
-                  else
-                  {
-                     p_current_real_hostname = fsa->real_hostname[HOST_ONE - 1];
-                  }
-               }
-               else
-               {
-                  p_current_real_hostname = fsa->real_hostname[(int)(fsa->host_toggle - 1)];
-               }
-               if (strcmp(db.hostname, p_current_real_hostname) != 0)
-               {
-                  trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "hostname changed (%s -> %s), exiting.",
-                            db.hostname, p_current_real_hostname);
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "malloc() error : %s", strerror(errno));
                   (void)ftp_quit();
                   reset_values(files_retrieved, file_size_retrieved,
                                files_to_retrieve, file_size_to_retrieve,
                                (struct job *)&db);
-                  exitflag = 0;
-                  exit(TRANSFER_SUCCESS);
+                  exit(ALLOC_ERROR);
                }
 
-               if (*current_no_of_listed_files != no_of_listed_files)
+               /* Retrieve all files. */
+               for (i = 0; i < no_of_listed_files; i++)
                {
-                  if (i >= *current_no_of_listed_files)
+                  /* Check if real_hostname has changed. */
+                  if (db.toggle_host == YES)
+                  {
+                     if (fsa->host_toggle == HOST_ONE)
+                     {
+                        p_current_real_hostname = fsa->real_hostname[HOST_TWO - 1];
+                     }
+                     else
+                     {
+                        p_current_real_hostname = fsa->real_hostname[HOST_ONE - 1];
+                     }
+                  }
+                  else
+                  {
+                     p_current_real_hostname = fsa->real_hostname[(int)(fsa->host_toggle - 1)];
+                  }
+                  if (strcmp(db.hostname, p_current_real_hostname) != 0)
                   {
                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                               "no_of_listed_files has been reduced (%d -> %d)!",
-                               no_of_listed_files, *current_no_of_listed_files);
+                               "hostname changed (%s -> %s), exiting.",
+                               db.hostname, p_current_real_hostname);
                      (void)ftp_quit();
                      reset_values(files_retrieved, file_size_retrieved,
                                   files_to_retrieve, file_size_to_retrieve,
@@ -1145,412 +1139,319 @@ main(int argc, char *argv[])
                      exitflag = 0;
                      exit(TRANSFER_SUCCESS);
                   }
-               }
-               if ((rl[i].retrieved == NO) &&
-                   (rl[i].assigned == ((unsigned char)db.job_no + 1)))
-               {
-                  int   prev_download_exists = NO;
-                  off_t offset;
 
-                  if (rl[i].file_name[0] != '.')
+                  if (*current_no_of_listed_files != no_of_listed_files)
                   {
-                     (void)strcpy(p_local_tmp_file, rl[i].file_name);
+                     if (i >= *current_no_of_listed_files)
+                     {
+                        trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                  "no_of_listed_files has been reduced (%d -> %d)!",
+                                  no_of_listed_files,
+                                  *current_no_of_listed_files);
+                        (void)ftp_quit();
+                        reset_values(files_retrieved, file_size_retrieved,
+                                     files_to_retrieve, file_size_to_retrieve,
+                                     (struct job *)&db);
+                        exitflag = 0;
+                        exit(TRANSFER_SUCCESS);
+                     }
                   }
-                  else
+                  (void)memcpy(&tmp_rl, &rl[i], sizeof(struct retrieve_list));
+                  if ((tmp_rl.retrieved == NO) &&
+                      (tmp_rl.assigned == ((unsigned char)db.job_no + 1)))
                   {
-                     (void)strcpy(p_local_file, rl[i].file_name);
-                  }
-                  if (fsa->file_size_offset != -1)
-                  {
-                     if (stat(local_tmp_file, &stat_buf) == -1)
+                     int   prev_download_exists = NO;
+                     off_t offset;
+
+                     if (tmp_rl.file_name[0] != '.')
+                     {
+                        (void)strcpy(p_local_tmp_file, tmp_rl.file_name);
+                     }
+                     else
+                     {
+                        (void)strcpy(p_local_file, tmp_rl.file_name);
+                     }
+                     if (fsa->file_size_offset != -1)
+                     {
+                        if (stat(local_tmp_file, &stat_buf) == -1)
+                        {
+                           if (fra->stupid_mode == APPEND_ONLY)
+                           {
+                              offset = tmp_rl.prev_size;
+                           }
+                           else
+                           {
+                              offset = 0;
+                           }
+                        }
+                        else
+                        {
+                           offset = stat_buf.st_size;
+                           prev_download_exists = YES;
+                        }
+                     }
+                     else
                      {
                         if (fra->stupid_mode == APPEND_ONLY)
                         {
-                           offset = rl[i].prev_size;
+                           offset = tmp_rl.prev_size;
                         }
                         else
                         {
                            offset = 0;
                         }
                      }
-                     else
-                     {
-                        offset = stat_buf.st_size;
-                        prev_download_exists = YES;
-                     }
-                  }
-                  else
-                  {
-                     if (fra->stupid_mode == APPEND_ONLY)
-                     {
-                        offset = rl[i].prev_size;
-                     }
-                     else
-                     {
-                        offset = 0;
-                     }
-                  }
 #ifdef _OUTPUT_LOG
-                  if (db.output_log == YES)
-                  {
-                     start_time = times(&tmsdummy);
-                  }
-#endif
-                  if (((status = ftp_data(rl[i].file_name, offset, db.mode_flag,
-                                          DATA_READ, db.rcvbuf_size,
-                                          (str_mode[0] == '\0') ? NO : YES,
-                                          str_mode, created_path)) != SUCCESS) &&
-                      (status != -550))
-                  {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                               "Failed to open remote file %s in %s (status=%d data port=%d %s).",
-                               rl[i].file_name, fra->dir_alias,
-                               status, ftp_data_port(),
-                               (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
-                     (void)ftp_quit();
-                     reset_values(files_retrieved, file_size_retrieved,
-                                  files_to_retrieve, file_size_to_retrieve,
-                                  (struct job *)&db);
-                     exit(eval_timeout(OPEN_REMOTE_ERROR));
-                  }
-                  if (status == -550) /* ie. file has been deleted or is NOT a file. */
-                  {
-                     time_t current_time = time(NULL),
-                            diff_time = current_time - rl[i].file_mtime;
-
-                     trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                               "Failed to open remote file %s in %s (status=%d data port=%d %s).",
-                               rl[i].file_name, fra->dir_alias,
-                               status, ftp_data_port(),
-                               (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
-
-                     if ((eval_timeout(OPEN_REMOTE_ERROR) == OPEN_REMOTE_ERROR) &&
-                         (diff_time > fra->unreadable_file_time) &&
-                         (fra->delete_files_flag & UNREADABLE_FILES))
+                     if (db.output_log == YES)
                      {
-                        delete_remote_file(FTP, rl[i].file_name,
-                                           strlen(rl[i].file_name),
+                        start_time = times(&tmsdummy);
+                     }
+#endif
+                     if (((status = ftp_data(tmp_rl.file_name, offset,
+                                             db.mode_flag, DATA_READ,
+                                             db.rcvbuf_size,
+                                             (str_mode[0] == '\0') ? NO : YES,
+                                             str_mode,
+                                             created_path)) != SUCCESS) &&
+                         (status != -550))
+                     {
+                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                  "Failed to open remote file %s in %s (status=%d data port=%d %s).",
+                                  tmp_rl.file_name, fra->dir_alias,
+                                  status, ftp_data_port(),
+                                  (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
+                        (void)ftp_quit();
+                        reset_values(files_retrieved, file_size_retrieved,
+                                     files_to_retrieve, file_size_to_retrieve,
+                                     (struct job *)&db);
+                        exit(eval_timeout(OPEN_REMOTE_ERROR));
+                     }
+                     if (status == -550) /* ie. file has been deleted or is NOT a file. */
+                     {
+                        time_t current_time = time(NULL),
+                               diff_time = current_time - tmp_rl.file_mtime;
+
+                        trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                  "Failed to open remote file %s in %s (status=%d data port=%d %s).",
+                                  tmp_rl.file_name, fra->dir_alias,
+                                  status, ftp_data_port(),
+                                  (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
+
+                        if ((eval_timeout(OPEN_REMOTE_ERROR) == OPEN_REMOTE_ERROR) &&
+                            (diff_time > fra->unreadable_file_time) &&
+                            (fra->delete_files_flag & UNREADABLE_FILES))
+                        {
+                           delete_remote_file(FTP, tmp_rl.file_name,
+                                              strlen(tmp_rl.file_name),
 #ifdef _DELETE_LOG
-                                           DEL_UNREADABLE_FILE,
-                                           diff_time, current_time,
-                                           rl[i].file_mtime,
+                                              DEL_UNREADABLE_FILE,
+                                              diff_time, current_time,
+                                              tmp_rl.file_mtime,
 #endif
-                                           NULL, NULL, rl[i].size);
-                     }
+                                              NULL, NULL, tmp_rl.size);
+                        }
 
-                     /* Delete partly downloaded file. */
-                     if ((prev_download_exists == YES) ||
-                         (fsa->file_size_offset == -1))
-                     {
-                        (void)unlink(local_tmp_file);
-                        prev_download_exists = NO;
-                     }
+                        /* Delete partly downloaded file. */
+                        if ((prev_download_exists == YES) ||
+                            (fsa->file_size_offset == -1))
+                        {
+                           (void)unlink(local_tmp_file);
+                           prev_download_exists = NO;
+                        }
 
-                     /*
-                      * Mark this file as retrieved or else we will always
-                      * fall over this file.
-                      */
-                     rl[i].retrieved = YES;
-                     rl[i].assigned = 0;
-                     if (gsf_check_fsa((struct job *)&db) != NEITHER)
-                     {
+                        /*
+                         * Mark this file as retrieved or else we will always
+                         * fall over this file.
+                         */
+                        tmp_rl.retrieved = YES;
+                        tmp_rl.assigned = 0;
+                        if (gsf_check_fsa((struct job *)&db) != NEITHER)
+                        {
 #ifdef LOCK_DEBUG
-                        lock_region_w(fsa_fd, db.lock_offset + LOCK_TFC, __FILE__, __LINE__);
+                           lock_region_w(fsa_fd, db.lock_offset + LOCK_TFC, __FILE__, __LINE__);
 #else
-                        lock_region_w(fsa_fd, db.lock_offset + LOCK_TFC);
+                           lock_region_w(fsa_fd, db.lock_offset + LOCK_TFC);
 #endif
-                        fsa->job_status[(int)db.job_no].file_name_in_use[0] = '\0';
-                        fsa->job_status[(int)db.job_no].no_of_files_done++;
-                        fsa->job_status[(int)db.job_no].file_size_in_use = 0;
-                        fsa->job_status[(int)db.job_no].file_size_in_use_done = 0;
+                           fsa->job_status[(int)db.job_no].file_name_in_use[0] = '\0';
+                           fsa->job_status[(int)db.job_no].no_of_files_done++;
+                           fsa->job_status[(int)db.job_no].file_size_in_use = 0;
+                           fsa->job_status[(int)db.job_no].file_size_in_use_done = 0;
 
-                        /* Total file counter. */
-                        fsa->total_file_counter -= 1;
-                        files_to_retrieve_shown -= 1;
+                           /* Total file counter. */
+                           fsa->total_file_counter -= 1;
+                           files_to_retrieve_shown -= 1;
 #ifdef _VERIFY_FSA
-                        if (fsa->total_file_counter < 0)
-                        {
-                           int tmp_val;
-
-                           tmp_val = files_to_retrieve - (files_retrieved + 1);
-                           if (tmp_val < 0)
+                           if (fsa->total_file_counter < 0)
                            {
-                              tmp_val = 0;
+                              int tmp_val;
+
+                              tmp_val = files_to_retrieve - (files_retrieved + 1);
+                              if (tmp_val < 0)
+                              {
+                                 tmp_val = 0;
+                              }
+                              trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                        "Total file counter less then zero. Correcting to %d.",
+                                        tmp_val);
+                              fsa->total_file_counter = tmp_val;
+                              file_size_to_retrieve_shown = tmp_val;
                            }
-                           trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                     "Total file counter less then zero. Correcting to %d.",
-                                     tmp_val);
-                           fsa->total_file_counter = tmp_val;
-                           file_size_to_retrieve_shown = tmp_val;
-                        }
 #endif
 
-                        /* Total file size. */
-                        fsa->total_file_size -= rl[i].size;
-                        file_size_to_retrieve_shown -= rl[i].size;
+                           /* Total file size. */
+                           fsa->total_file_size -= tmp_rl.size;
+                           file_size_to_retrieve_shown -= tmp_rl.size;
 #ifdef _VERIFY_FSA
-                        if (fsa->total_file_size < 0)
-                        {
-                           off_t new_size = file_size_to_retrieve - file_size_retrieved;
-
-                           if (new_size < 0)
+                           if (fsa->total_file_size < 0)
                            {
-                              new_size = 0;
-                           }
-                           fsa->total_file_size = new_size;
-                           file_size_to_retrieve_shown = new_size;
-                           trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                              off_t new_size = file_size_to_retrieve - file_size_retrieved;
+
+                              if (new_size < 0)
+                              {
+                                 new_size = 0;
+                              }
+                              fsa->total_file_size = new_size;
+                              file_size_to_retrieve_shown = new_size;
+                              trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
 # if SIZEOF_OFF_T == 4
-                                     "Total file size overflowed. Correcting to %ld.",
+                                        "Total file size overflowed. Correcting to %ld.",
 # else
-                                     "Total file size overflowed. Correcting to %lld.",
+                                        "Total file size overflowed. Correcting to %lld.",
 # endif
-                                     (pri_off_t)fsa->total_file_size);
+                                        (pri_off_t)fsa->total_file_size);
+                           }
+                           else if ((fsa->total_file_counter == 0) &&
+                                    (fsa->total_file_size > 0))
+                                {
+                                   trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+# if SIZEOF_OFF_T == 4
+                                             "fc is zero but fs is not zero (%ld). Correcting.",
+# else
+                                             "fc is zero but fs is not zero (%lld). Correcting.",
+# endif
+                                             (pri_off_t)fsa->total_file_size);
+                                   fsa->total_file_size = 0;
+                                   file_size_to_retrieve_shown = 0;
+                                }
+#endif
+#ifdef LOCK_DEBUG
+                           unlock_region(fsa_fd, db.lock_offset + LOCK_TFC, __FILE__, __LINE__);
+#else
+                           unlock_region(fsa_fd, db.lock_offset + LOCK_TFC);
+#endif
                         }
-                        else if ((fsa->total_file_counter == 0) &&
-                                 (fsa->total_file_size > 0))
+                        else if (db.fsa_pos == INCORRECT)
                              {
-                                trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
-# if SIZEOF_OFF_T == 4
-                                          "fc is zero but fs is not zero (%ld). Correcting.",
-# else
-                                          "fc is zero but fs is not zero (%lld). Correcting.",
-# endif
-                                          (pri_off_t)fsa->total_file_size);
-                                fsa->total_file_size = 0;
-                                file_size_to_retrieve_shown = 0;
+                                /* Host is no longer in FSA, so lets exit. */
+                                if (i < *current_no_of_listed_files)
+                                {
+                                   (void)memcpy(&rl[i], &tmp_rl,
+                                                sizeof(struct retrieve_list));
+                                }
+                                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                          "Database changed, exiting.");
+                                (void)ftp_quit();
+                                reset_values(files_retrieved, file_size_retrieved,
+                                             files_to_retrieve,
+                                             file_size_to_retrieve,
+                                             (struct job *)&db);
+                                exitflag = 0;
+                                exit(TRANSFER_SUCCESS);
                              }
-#endif
-#ifdef LOCK_DEBUG
-                        unlock_region(fsa_fd, db.lock_offset + LOCK_TFC, __FILE__, __LINE__);
-#else
-                        unlock_region(fsa_fd, db.lock_offset + LOCK_TFC);
-#endif
-                     }
-                     else if (db.fsa_pos == INCORRECT)
-                          {
-                             /* Host is no longer in FSA, so lets exit. */
-                             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                       "Database changed, exiting.");
-                             (void)ftp_quit();
-                             reset_values(files_retrieved, file_size_retrieved,
-                                          files_to_retrieve,
-                                          file_size_to_retrieve,
-                                          (struct job *)&db);
-                             exitflag = 0;
-                             exit(TRANSFER_SUCCESS);
-                          }
-                     files_retrieved++;
-                     file_size_retrieved += rl[i].size;
+                        files_retrieved++;
+                        file_size_retrieved += tmp_rl.size;
 
-                     continue;
-                  }
-                  else /* status == SUCCESS */
-                  {
-                     int delete_failed = NO;
+                        continue;
+                     }
+                     else /* status == SUCCESS */
+                     {
+                        int delete_failed = NO;
 
-                     if (fsa->debug > NORMAL_MODE)
-                     {
-                        trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                     "Opened data connection for file %s (data port %d %s).",
-                                     rl[i].file_name, ftp_data_port(),
-                                     (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
-                     }
-                     if ((created_path != NULL) && (created_path[0] != '\0'))
-                     {
-                        trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                  "Created directory `%s'.", created_path);
-                        created_path[0] = '\0';
-                     }
-#ifdef WITH_SSL
-                     if (db.auth == BOTH)
-                     {
-                        if (ftp_auth_data() == INCORRECT)
+                        if (fsa->debug > NORMAL_MODE)
                         {
-                           trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                                     "TSL/SSL data connection to server `%s' failed. [%s]",
+                           trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                        "Opened data connection for file %s (data port %d %s).",
+                                        tmp_rl.file_name, ftp_data_port(),
+                                        (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
+                        }
+                        if ((created_path != NULL) && (created_path[0] != '\0'))
+                        {
+                           trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                     "Created directory `%s'.", created_path);
+                           created_path[0] = '\0';
+                        }
+#ifdef WITH_SSL
+                        if (db.auth == BOTH)
+                        {
+                           if (ftp_auth_data() == INCORRECT)
+                           {
+                              trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                        "TSL/SSL data connection to server `%s' failed. [%s]",
                                      db.hostname, fra->dir_alias);
+                              (void)ftp_quit();
+                              exit(eval_timeout(AUTH_ERROR));
+                           }
+                           else
+                           {
+                              if (fsa->debug > NORMAL_MODE)
+                              {
+                                 trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
+                                              "Authentification successful.");
+                              }
+                           }
+                        }
+#endif
+
+                        if (prev_download_exists == YES)
+                        {
+#ifdef O_LARGEFILE
+                           fd = open(local_tmp_file, O_WRONLY | O_APPEND | O_LARGEFILE);
+#else
+                           fd = open(local_tmp_file, O_WRONLY | O_APPEND);
+#endif
+                        }
+                        else
+                        {
+#ifdef O_LARGEFILE
+                           fd = open(local_tmp_file, O_WRONLY | O_CREAT | O_LARGEFILE,
+                                     FILE_MODE);
+#else
+                           fd = open(local_tmp_file, O_WRONLY | O_CREAT, FILE_MODE);
+#endif
+                        }
+                        if (fd == -1)
+                        {
+                           trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                     "Failed to open local file %s : %s",
+                                     local_tmp_file, strerror(errno));
                            (void)ftp_quit();
-                           exit(eval_timeout(AUTH_ERROR));
+                           reset_values(files_retrieved, file_size_retrieved,
+                                        files_to_retrieve, file_size_to_retrieve,
+                                        (struct job *)&db);
+                           exit(OPEN_LOCAL_ERROR);
                         }
                         else
                         {
                            if (fsa->debug > NORMAL_MODE)
                            {
-                              trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                                           "Authentification successful.");
+                              trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                           "Opened local file %s.",
+                                           local_tmp_file);
                            }
-                        }
-                     }
-#endif
-
-                     if (prev_download_exists == YES)
-                     {
-#ifdef O_LARGEFILE
-                        fd = open(local_tmp_file, O_WRONLY | O_APPEND | O_LARGEFILE);
-#else
-                        fd = open(local_tmp_file, O_WRONLY | O_APPEND);
-#endif
-                     }
-                     else
-                     {
-#ifdef O_LARGEFILE
-                        fd = open(local_tmp_file, O_WRONLY | O_CREAT | O_LARGEFILE,
-                                  FILE_MODE);
-#else
-                        fd = open(local_tmp_file, O_WRONLY | O_CREAT, FILE_MODE);
-#endif
-                     }
-                     if (fd == -1)
-                     {
-                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                  "Failed to open local file %s : %s",
-                                  local_tmp_file, strerror(errno));
-                        (void)ftp_quit();
-                        reset_values(files_retrieved, file_size_retrieved,
-                                     files_to_retrieve, file_size_to_retrieve,
-                                     (struct job *)&db);
-                        exit(OPEN_LOCAL_ERROR);
-                     }
-                     else
-                     {
-                        if (fsa->debug > NORMAL_MODE)
-                        {
-                           trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                        "Opened local file %s.",
-                                        local_tmp_file);
-                        }
-                     }
-
-                     if (gsf_check_fsa((struct job *)&db) != NEITHER)
-                     {
-                        if (rl[i].size == -1)
-                        {
-                           fsa->job_status[(int)db.job_no].file_size_in_use = 0;
-                        }
-                        else
-                        {
-                           fsa->job_status[(int)db.job_no].file_size_in_use = rl[i].size;
-                        }
-                        (void)strcpy(fsa->job_status[(int)db.job_no].file_name_in_use,
-                                     rl[i].file_name);
-                     }
-                     else if (db.fsa_pos == INCORRECT)
-                          {
-                             /* Host is no longer in FSA, so lets exit. */
-                             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                       "Database changed, exiting.");
-                             (void)ftp_quit(); /* also closes data_fd */
-                             (void)close(fd);
-                             (void)unlink(local_tmp_file);
-                             reset_values(files_retrieved, file_size_retrieved,
-                                          files_to_retrieve,
-                                          file_size_to_retrieve,
-                                          (struct job *)&db);
-                             exitflag = 0;
-                             exit(TRANSFER_SUCCESS);
-                          }
-
-                     bytes_done = 0;
-                     if (fsa->trl_per_process > 0)
-                     {
-                        init_limit_transfer_rate();
-                     }
-                     if (fsa->protocol_options & TIMEOUT_TRANSFER)
-                     {
-                        start_transfer_time_file = time(NULL);
-                     }
-
-                     do
-                     {
-                        if ((status = ftp_read(buffer, blocksize)) == INCORRECT)
-                        {
-                           status = errno;
-                           if (status == EPIPE)
-                           {
-                              (void)ftp_get_reply();
-                           }
-                           trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
-                                     (status == EPIPE) ? msg_str : NULL,
-                                     "Failed to read from remote file %s in %s (%d)",
-                                     rl[i].file_name, fra->dir_alias, status);
-                           reset_values(files_retrieved, file_size_retrieved,
-                                        files_to_retrieve,
-                                        file_size_to_retrieve,
-                                        (struct job *)&db);
-                           if (status == EPIPE)
-                           {
-                              trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                        "Hmm. Pipe is broken. Will NOT send a QUIT.");
-                           }
-                           else
-                           {
-                              (void)ftp_quit();
-                           }
-                           if (bytes_done == 0)
-                           {
-                              (void)unlink(local_tmp_file);
-                           }
-                           exit(eval_timeout(READ_REMOTE_ERROR));
-                        }
-
-                        if (fsa->trl_per_process > 0)
-                        {
-                           limit_transfer_rate(status, fsa->trl_per_process,
-                                               clktck);
-                        }
-                        if (status > 0)
-                        {
-                           if (write(fd, buffer, status) != status)
-                           {
-                              trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                        "Failed to write() to file %s : %s",
-                                        local_tmp_file, strerror(errno));
-                              (void)ftp_quit();
-                              reset_values(files_retrieved, file_size_retrieved,
-                                           files_to_retrieve,
-                                           file_size_to_retrieve,
-                                           (struct job *)&db);
-                              if (bytes_done == 0)
-                              {
-                                 (void)unlink(local_tmp_file);
-                              }
-                              exit(WRITE_LOCAL_ERROR);
-                           }
-                           bytes_done += status;
                         }
 
                         if (gsf_check_fsa((struct job *)&db) != NEITHER)
                         {
-                           fsa->job_status[(int)db.job_no].file_size_in_use_done = bytes_done;
-                           fsa->job_status[(int)db.job_no].file_size_done += status;
-                           fsa->job_status[(int)db.job_no].bytes_send += status;
-                           if (fsa->protocol_options & TIMEOUT_TRANSFER)
+                           if (tmp_rl.size == -1)
                            {
-                              end_transfer_time_file = time(NULL);
-                              if (end_transfer_time_file < start_transfer_time_file)
-                              {
-                                 start_transfer_time_file = end_transfer_time_file;
-                              }
-                              else
-                              {
-                                 if ((end_transfer_time_file - start_transfer_time_file) > transfer_timeout)
-                                 {
-                                    trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-#if SIZEOF_TIME_T == 4
-                                              "Transfer timeout reached for `%s' in %s after %ld seconds.",
-#else
-                                              "Transfer timeout reached for `%s' in %s after %lld seconds.",
-#endif
-                                              fsa->job_status[(int)db.job_no].file_name_in_use,
-                                              fra->dir_alias,
-                                              (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
-                                    (void)ftp_quit();
-                                    exitflag = 0;
-                                    exit(STILL_FILES_TO_SEND);
-                                 }
-                              }
+                              fsa->job_status[(int)db.job_no].file_size_in_use = 0;
                            }
+                           else
+                           {
+                              fsa->job_status[(int)db.job_no].file_size_in_use = tmp_rl.size;
+                           }
+                           (void)strcpy(fsa->job_status[(int)db.job_no].file_name_in_use,
+                                        tmp_rl.file_name);
                         }
                         else if (db.fsa_pos == INCORRECT)
                              {
@@ -1568,158 +1469,355 @@ main(int argc, char *argv[])
                                 exitflag = 0;
                                 exit(TRANSFER_SUCCESS);
                              }
-                     } while (status != 0);
 
-                     /* Close the FTP data connection. */
-                     if ((status = ftp_close_data()) != SUCCESS)
-                     {
-                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                                  "Failed to close data connection (%d). [%s]",
-                                  status, fra->dir_alias);
-                        (void)ftp_quit();
-                        reset_values(files_retrieved, file_size_retrieved,
-                                     files_to_retrieve, file_size_to_retrieve,
-                                     (struct job *)&db);
-                        exit(eval_timeout(CLOSE_REMOTE_ERROR));
-                     }
-                     else
-                     {
-                        if (fsa->debug > NORMAL_MODE)
+                        bytes_done = 0;
+                        if (fsa->trl_per_process > 0)
                         {
-                           trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                                        "Closed data connection for file %s.",
-                                        rl[i].file_name);
+                           init_limit_transfer_rate();
                         }
-                     }
-
-#ifdef _OUTPUT_LOG
-                     if (db.output_log == YES)
-                     {
-                        end_time = times(&tmsdummy);
-                     }
-#endif
-
-                     if (fsa->protocol_options & KEEP_TIME_STAMP)
-                     {
-                        struct utimbuf old_time;
-
-                        old_time.actime = time(NULL);
-                        if (rl[i].got_date != YES)
+                        if (fsa->protocol_options & TIMEOUT_TRANSFER)
                         {
-                           (void)ftp_date(rl[i].file_name, &rl[i].file_mtime);
+                           start_transfer_time_file = time(NULL);
                         }
-                        old_time.modtime = rl[i].file_mtime;
-                        if (utime(local_tmp_file, &old_time) == -1)
+
+                        do
                         {
-                           trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                     "Failed to set time of file %s : %s",
-                                     local_tmp_file, strerror(errno));
-                        }
-                     }
-
-                     /* Close the local file. */
-                     if (close(fd) == -1)
-                     {
-                        trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                  "Failed to close() local file %s : %s",
-                                  local_tmp_file, strerror(errno));
-                     }
-                     else
-                     {
-                        if (fsa->debug > NORMAL_MODE)
-                        {
-                           trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                        "Closed local file %s.",
-                                        local_tmp_file);
-                        }
-                     }
-                     rename_pending = i;
-
-#ifdef WITH_ERROR_QUEUE
-                     if (fsa->host_status & ERROR_QUEUE_SET)
-                     {
-                        remove_from_error_queue(db.id.dir, fsa, db.fsa_pos,
-                                                fsa_fd);
-                     }
-#endif
-
-                     if (fsa->host_status & HOST_ACTION_SUCCESS)
-                     {
-                        error_action(fsa->host_alias, "start",
-                                     HOST_SUCCESS_ACTION, transfer_log_fd);
-                     }
-
-                     /* Check if remote file is to be deleted. */
-                     if (fra->remove == YES)
-                     {
-                        if ((status = ftp_dele(rl[i].file_name)) != SUCCESS)
-                        {
-                           if (fra->stupid_mode != YES)
+                           if ((status = ftp_read(buffer, blocksize)) == INCORRECT)
                            {
-                              trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                                        "Failed to delete remote file %s in %s (%d).",
-                                        rl[i].file_name, fra->dir_alias,
+                              status = errno;
+                              if (status == EPIPE)
+                              {
+                                 (void)ftp_get_reply();
+                              }
+                              trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                                        (status == EPIPE) ? msg_str : NULL,
+                                        "Failed to read from remote file %s in %s (%d)",
+                                        tmp_rl.file_name, fra->dir_alias,
                                         status);
-                              delete_failed = NEITHER;
+                              reset_values(files_retrieved, file_size_retrieved,
+                                           files_to_retrieve,
+                                           file_size_to_retrieve,
+                                           (struct job *)&db);
+                              if (status == EPIPE)
+                              {
+                                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                           "Hmm. Pipe is broken. Will NOT send a QUIT.");
+                              }
+                              else
+                              {
+                                 (void)ftp_quit();
+                              }
+                              if (bytes_done == 0)
+                              {
+                                 (void)unlink(local_tmp_file);
+                              }
+                              exit(eval_timeout(READ_REMOTE_ERROR));
                            }
-                           else
+
+                           if (fsa->trl_per_process > 0)
                            {
-                              /* When we do not remember what we */
-                              /* already retrieved we must exit. */
-                              /* Otherwise we are in a constant  */
-                              /* loop fetching the same files!   */
-                              trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                                        "Failed to delete remote file %s in %s (%d).",
-                                        rl[i].file_name, fra->dir_alias,
-                                        status);
-                              delete_failed = YES;
+                              limit_transfer_rate(status, fsa->trl_per_process,
+                                                  clktck);
                            }
+                           if (status > 0)
+                           {
+                              if (write(fd, buffer, status) != status)
+                              {
+                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                           "Failed to write() to file %s : %s",
+                                           local_tmp_file, strerror(errno));
+                                 (void)ftp_quit();
+                                 reset_values(files_retrieved,
+                                              file_size_retrieved,
+                                              files_to_retrieve,
+                                              file_size_to_retrieve,
+                                              (struct job *)&db);
+                                 if (bytes_done == 0)
+                                 {
+                                    (void)unlink(local_tmp_file);
+                                 }
+                                 exit(WRITE_LOCAL_ERROR);
+                              }
+                              bytes_done += status;
+                           }
+
+                           if (gsf_check_fsa((struct job *)&db) != NEITHER)
+                           {
+                              fsa->job_status[(int)db.job_no].file_size_in_use_done = bytes_done;
+                              fsa->job_status[(int)db.job_no].file_size_done += status;
+                              fsa->job_status[(int)db.job_no].bytes_send += status;
+                              if (fsa->protocol_options & TIMEOUT_TRANSFER)
+                              {
+                                 end_transfer_time_file = time(NULL);
+                                 if (end_transfer_time_file < start_transfer_time_file)
+                                 {
+                                    start_transfer_time_file = end_transfer_time_file;
+                                 }
+                                 else
+                                 {
+                                    if ((end_transfer_time_file - start_transfer_time_file) > transfer_timeout)
+                                    {
+                                       trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+#if SIZEOF_TIME_T == 4
+                                                 "Transfer timeout reached for `%s' in %s after %ld seconds.",
+#else
+                                                 "Transfer timeout reached for `%s' in %s after %lld seconds.",
+#endif
+                                                 fsa->job_status[(int)db.job_no].file_name_in_use,
+                                                 fra->dir_alias,
+                                                 (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
+                                       (void)ftp_quit();
+                                       exitflag = 0;
+                                       exit(STILL_FILES_TO_SEND);
+                                    }
+                                 }
+                              }
+                           }
+                           else if (db.fsa_pos == INCORRECT)
+                                {
+                                   /* Host is no longer in FSA, so lets exit. */
+                                   trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                             "Database changed, exiting.");
+                                   (void)ftp_quit(); /* also closes data_fd */
+                                   (void)close(fd);
+                                   (void)unlink(local_tmp_file);
+                                   reset_values(files_retrieved,
+                                                file_size_retrieved,
+                                                files_to_retrieve,
+                                                file_size_to_retrieve,
+                                                (struct job *)&db);
+                                   exitflag = 0;
+                                   exit(TRANSFER_SUCCESS);
+                                }
+                        } while (status != 0);
+
+                        /* Close the FTP data connection. */
+                        if ((status = ftp_close_data()) != SUCCESS)
+                        {
+                           trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                     "Failed to close data connection (%d). [%s]",
+                                     status, fra->dir_alias);
+                           (void)ftp_quit();
+                           reset_values(files_retrieved, file_size_retrieved,
+                                        files_to_retrieve,
+                                        file_size_to_retrieve,
+                                        (struct job *)&db);
+                           exit(eval_timeout(CLOSE_REMOTE_ERROR));
                         }
                         else
                         {
                            if (fsa->debug > NORMAL_MODE)
                            {
                               trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                                           "Deleted remote file %s.",
-                                           rl[i].file_name);
+                                           "Closed data connection for file %s.",
+                                           tmp_rl.file_name);
                            }
                         }
-                     }
 
-                     if (gsf_check_fsa((struct job *)&db) != NEITHER)
-                     {
-#ifdef LOCK_DEBUG
-                        lock_region_w(fsa_fd, db.lock_offset + LOCK_TFC, __FILE__, __LINE__);
-#else
-                        lock_region_w(fsa_fd, db.lock_offset + LOCK_TFC);
-#endif
-                        fsa->job_status[(int)db.job_no].file_name_in_use[0] = '\0';
-                        fsa->job_status[(int)db.job_no].no_of_files_done++;
-                        fsa->job_status[(int)db.job_no].file_size_in_use = 0;
-                        fsa->job_status[(int)db.job_no].file_size_in_use_done = 0;
-
-                        /* Total file counter. */
-                        fsa->total_file_counter -= 1;
-                        files_to_retrieve_shown -= 1;
-#ifdef _VERIFY_FSA
-                        if (fsa->total_file_counter < 0)
+#ifdef _OUTPUT_LOG
+                        if (db.output_log == YES)
                         {
-                           int tmp_val;
-
-                           tmp_val = files_to_retrieve - (files_retrieved + 1);
-                           if (tmp_val < 0)
-                           {
-                              tmp_val = 0;
-                           }
-                           trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                     "Total file counter less then zero. Correcting to %d.",
-                                      tmp_val);
-                           fsa->total_file_counter = tmp_val;
+                           end_time = times(&tmsdummy);
                         }
 #endif
 
-                        /* Total file size. */
-                        if ((rl[i].size != -1) && (bytes_done > 0))
+                        if (fsa->protocol_options & KEEP_TIME_STAMP)
+                        {
+                           struct utimbuf old_time;
+
+                           old_time.actime = time(NULL);
+                           if (tmp_rl.got_date != YES)
+                           {
+                              (void)ftp_date(tmp_rl.file_name,
+                                             &tmp_rl.file_mtime);
+                           }
+                           old_time.modtime = tmp_rl.file_mtime;
+                           if (utime(local_tmp_file, &old_time) == -1)
+                           {
+                              trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                        "Failed to set time of file %s : %s",
+                                        local_tmp_file, strerror(errno));
+                           }
+                        }
+
+                        /* Close the local file. */
+                        if (close(fd) == -1)
+                        {
+                           trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                     "Failed to close() local file %s : %s",
+                                     local_tmp_file, strerror(errno));
+                        }
+                        else
+                        {
+                           if (fsa->debug > NORMAL_MODE)
+                           {
+                              trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                           "Closed local file %s.",
+                                           local_tmp_file);
+                           }
+                        }
+                        rename_pending = i;
+
+#ifdef WITH_ERROR_QUEUE
+                        if (fsa->host_status & ERROR_QUEUE_SET)
+                        {
+                           remove_from_error_queue(db.id.dir, fsa, db.fsa_pos,
+                                                   fsa_fd);
+                        }
+#endif
+
+                        if (fsa->host_status & HOST_ACTION_SUCCESS)
+                        {
+                           error_action(fsa->host_alias, "start",
+                                        HOST_SUCCESS_ACTION, transfer_log_fd);
+                        }
+
+                        /* Check if remote file is to be deleted. */
+                        if (fra->remove == YES)
+                        {
+                           if ((status = ftp_dele(tmp_rl.file_name)) != SUCCESS)
+                           {
+                              if (fra->stupid_mode != YES)
+                              {
+                                 trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                           "Failed to delete remote file %s in %s (%d).",
+                                           tmp_rl.file_name, fra->dir_alias,
+                                           status);
+                                 delete_failed = NEITHER;
+                              }
+                              else
+                              {
+                                 /* When we do not remember what we */
+                                 /* already retrieved we must exit. */
+                                 /* Otherwise we are in a constant  */
+                                 /* loop fetching the same files!   */
+                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                           "Failed to delete remote file %s in %s (%d).",
+                                           tmp_rl.file_name, fra->dir_alias,
+                                           status);
+                                 delete_failed = YES;
+                              }
+                           }
+                           else
+                           {
+                              if (fsa->debug > NORMAL_MODE)
+                              {
+                                 trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
+                                              "Deleted remote file %s.",
+                                              tmp_rl.file_name);
+                              }
+                           }
+                        }
+
+                        if (gsf_check_fsa((struct job *)&db) != NEITHER)
+                        {
+#ifdef LOCK_DEBUG
+                           lock_region_w(fsa_fd, db.lock_offset + LOCK_TFC, __FILE__, __LINE__);
+#else
+                           lock_region_w(fsa_fd, db.lock_offset + LOCK_TFC);
+#endif
+                           fsa->job_status[(int)db.job_no].file_name_in_use[0] = '\0';
+                           fsa->job_status[(int)db.job_no].no_of_files_done++;
+                           fsa->job_status[(int)db.job_no].file_size_in_use = 0;
+                           fsa->job_status[(int)db.job_no].file_size_in_use_done = 0;
+
+                           /* Total file counter. */
+                           fsa->total_file_counter -= 1;
+                           files_to_retrieve_shown -= 1;
+#ifdef _VERIFY_FSA
+                           if (fsa->total_file_counter < 0)
+                           {
+                              int tmp_val;
+
+                              tmp_val = files_to_retrieve - (files_retrieved + 1);
+                              if (tmp_val < 0)
+                              {
+                                 tmp_val = 0;
+                              }
+                              trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                        "Total file counter less then zero. Correcting to %d.",
+                                         tmp_val);
+                              fsa->total_file_counter = tmp_val;
+                           }
+#endif
+
+                           /* Total file size. */
+                           if ((tmp_rl.size != -1) && (bytes_done > 0))
+                           {
+                              /*
+                               * If the file size is not the same as the one when
+                               * we did the remote ls command, give a warning in
+                               * the transfer log so some action can be taken
+                               * against the originator.
+                               */
+                              if ((bytes_done + offset) != tmp_rl.size)
+                              {
+                                 trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                                           "File size of file %s in %s changed from %ld to %ld when it was retrieved.",
+#else
+                                           "File size of file %s in %s changed from %lld to %lld when it was retrieved.",
+#endif
+                                           tmp_rl.file_name, fra->dir_alias,
+                                           (pri_off_t)tmp_rl.size,
+                                           (pri_off_t)(bytes_done + offset));
+                                 fsa->total_file_size += (bytes_done + offset - tmp_rl.size);
+                                 tmp_rl.size = bytes_done + offset;
+                              }
+                              fsa->total_file_size -= (tmp_rl.size - offset);
+                              file_size_to_retrieve_shown -= (tmp_rl.size - offset);
+#ifdef _VERIFY_FSA
+                              if (fsa->total_file_size < 0)
+                              {
+                                 off_t new_size = file_size_to_retrieve - file_size_retrieved;
+
+                                 if (new_size < 0)
+                                 {
+                                    new_size = 0;
+                                 }
+                                 fsa->total_file_size = new_size;
+                                 file_size_to_retrieve_shown = new_size;
+                                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                                           "Total file size overflowed. Correcting to %ld.",
+#else
+                                           "Total file size overflowed. Correcting to %lld.",
+#endif
+                                           (pri_off_t)fsa->total_file_size);
+                              }
+                              else if ((fsa->total_file_counter == 0) &&
+                                       (fsa->total_file_size > 0))
+                                   {
+                                      trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                                                "fc is zero but fs is not zero (%ld). Correcting.",
+#else
+                                                "fc is zero but fs is not zero (%lld). Correcting.",
+#endif
+                                                (pri_off_t)fsa->total_file_size);
+                                      fsa->total_file_size = 0;
+                                      file_size_to_retrieve_shown = 0;
+                                   }
+#endif
+                           }
+
+                           /* File counter done. */
+                           fsa->file_counter_done += 1;
+
+                           /* Number of bytes send. */
+                           fsa->bytes_send += bytes_done;
+
+                           /* Update last activity time. */
+                           fsa->last_connection = time(NULL);
+#ifdef LOCK_DEBUG
+                           unlock_region(fsa_fd, db.lock_offset + LOCK_TFC, __FILE__, __LINE__);
+#else
+                           unlock_region(fsa_fd, db.lock_offset + LOCK_TFC);
+#endif
+
+                           check_reset_errors();
+                        }
+                        else
                         {
                            /*
                             * If the file size is not the same as the one when
@@ -1727,7 +1825,8 @@ main(int argc, char *argv[])
                             * the transfer log so some action can be taken
                             * against the originator.
                             */
-                           if ((bytes_done + offset) != rl[i].size)
+                           if ((tmp_rl.size != -1) &&
+                               ((bytes_done + offset) != tmp_rl.size))
                            {
                               trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
 #if SIZEOF_OFF_T == 4
@@ -1735,182 +1834,153 @@ main(int argc, char *argv[])
 #else
                                         "File size of file %s in %s changed from %lld to %lld when it was retrieved.",
 #endif
-                                        rl[i].file_name, fra->dir_alias,
-                                        (pri_off_t)rl[i].size,
-                                        (pri_off_t)(bytes_done + offset));
-                              fsa->total_file_size += (bytes_done + offset - rl[i].size);
-                              rl[i].size = bytes_done + offset;
+                                        tmp_rl.file_name, fra->dir_alias,
+                                        (pri_off_t)tmp_rl.size,
+                                        (pri_off_t)bytes_done + offset);
+                              tmp_rl.size = bytes_done + offset;
                            }
-                           fsa->total_file_size -= (rl[i].size - offset);
-                           file_size_to_retrieve_shown -= (rl[i].size - offset);
-#ifdef _VERIFY_FSA
-                           if (fsa->total_file_size < 0)
+                        }
+
+                        /* Rename the file so AMG can grab it. */
+                        if (tmp_rl.file_name[0] == '.')
+                        {
+                           (void)strcpy(p_local_file, &tmp_rl.file_name[1]);
+                        }
+                        else
+                        {
+                           (void)strcpy(p_local_file, tmp_rl.file_name);
+                        }
+                        if (rename(local_tmp_file, local_file) == -1)
+                        {
+                           rename_pending = -1;
+                           trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                     "Failed to rename() %s to %s : %s",
+                                     local_tmp_file, local_file,
+                                     strerror(errno));
+                        }
+                        else
+                        {
+                           rename_pending = -1;
+                           if ((db.fsa_pos != INCORRECT) &&
+                               (fsa->debug > NORMAL_MODE))
                            {
-                              off_t new_size = file_size_to_retrieve - file_size_retrieved;
-
-                              if (new_size < 0)
-                              {
-                                 new_size = 0;
-                              }
-                              fsa->total_file_size = new_size;
-                              file_size_to_retrieve_shown = new_size;
-                              trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
-#if SIZEOF_OFF_T == 4
-                                        "Total file size overflowed. Correcting to %ld.",
-#else
-                                        "Total file size overflowed. Correcting to %lld.",
-#endif
-                                        (pri_off_t)fsa->total_file_size);
+                              trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                                           "Renamed local file %s to %s.",
+                                           local_tmp_file, local_file);
                            }
-                           else if ((fsa->total_file_counter == 0) &&
-                                    (fsa->total_file_size > 0))
-                                {
-                                   trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
-#if SIZEOF_OFF_T == 4
-                                             "fc is zero but fs is not zero (%ld). Correcting.",
-#else
-                                             "fc is zero but fs is not zero (%lld). Correcting.",
-#endif
-                                             (pri_off_t)fsa->total_file_size);
-                                   fsa->total_file_size = 0;
-                                   file_size_to_retrieve_shown = 0;
-                                }
-#endif
-                        }
-
-                        /* File counter done. */
-                        fsa->file_counter_done += 1;
-
-                        /* Number of bytes send. */
-                        fsa->bytes_send += bytes_done;
-
-                        /* Update last activity time. */
-                        fsa->last_connection = time(NULL);
-#ifdef LOCK_DEBUG
-                        unlock_region(fsa_fd, db.lock_offset + LOCK_TFC, __FILE__, __LINE__);
-#else
-                        unlock_region(fsa_fd, db.lock_offset + LOCK_TFC);
-#endif
-
-                        check_reset_errors();
-                     }
-                     else
-                     {
-                        /*
-                         * If the file size is not the same as the one when
-                         * we did the remote ls command, give a warning in
-                         * the transfer log so some action can be taken
-                         * against the originator.
-                         */
-                        if ((rl[i].size != -1) &&
-                            ((bytes_done + offset) != rl[i].size))
-                        {
-                           trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-#if SIZEOF_OFF_T == 4
-                                     "File size of file %s in %s changed from %ld to %ld when it was retrieved.",
-#else
-                                     "File size of file %s in %s changed from %lld to %lld when it was retrieved.",
-#endif
-                                     rl[i].file_name, fra->dir_alias,
-                                     (pri_off_t)rl[i].size,
-                                     (pri_off_t)bytes_done + offset);
-                           rl[i].size = bytes_done + offset;
-                        }
-                     }
-
-                     /* Rename the file so AMG can grab it. */
-                     if (rl[i].file_name[0] == '.')
-                     {
-                        (void)strcpy(p_local_file, &rl[i].file_name[1]);
-                     }
-                     else
-                     {
-                        (void)strcpy(p_local_file, rl[i].file_name);
-                     }
-                     if (rename(local_tmp_file, local_file) == -1)
-                     {
-                        rename_pending = -1;
-                        trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                  "Failed to rename() %s to %s : %s",
-                                  local_tmp_file, local_file, strerror(errno));
-                     }
-                     else
-                     {
-                        rename_pending = -1;
-                        if ((db.fsa_pos != INCORRECT) &&
-                            (fsa->debug > NORMAL_MODE))
-                        {
-                           trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                        "Renamed local file %s to %s.",
-                                        local_tmp_file, local_file);
-                        }
-                        rl[i].retrieved = YES;
-                        rl[i].assigned = 0;
+                           tmp_rl.retrieved = YES;
+                           tmp_rl.assigned = 0;
 
 #ifdef _OUTPUT_LOG
-                        if (db.output_log == YES)
-                        {
-                           if (ol_fd == -2)
+                           if (db.output_log == YES)
                            {
+                              if (ol_fd == -2)
+                              {
+                                 output_log_fd(&ol_fd,
 # ifdef WITHOUT_FIFO_RW_SUPPORT
-                              output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
-# else
-                              output_log_fd(&ol_fd, &db.output_log);
+                                               &ol_readfd,
 # endif
-                           }
-                           if ((ol_fd > -1) && (ol_data == NULL))
-                           {
-                              output_log_ptrs(&ol_retries,
-                                              &ol_job_number,                                
-                                              &ol_data,              /* Pointer to buffer.       */
-                                              &ol_file_name,
-                                              &ol_file_name_length,
-                                              &ol_archive_name_length,
-                                              &ol_file_size,
-                                              &ol_unl,
-                                              &ol_size,
-                                              &ol_transfer_time,
-                                              &ol_output_type,
-                                              db.host_alias,
-                                              (current_toggle - 1),
+                                               &db.output_log);
+                              }
+                              if ((ol_fd > -1) && (ol_data == NULL))
+                              {
+                                 output_log_ptrs(&ol_retries,
+                                                 &ol_job_number,
+                                                 &ol_data,     /* Pointer to buffer.       */
+                                                 &ol_file_name,
+                                                 &ol_file_name_length,
+                                                 &ol_archive_name_length,
+                                                 &ol_file_size,
+                                                 &ol_unl,
+                                                 &ol_size,
+                                                 &ol_transfer_time,
+                                                 &ol_output_type,
+                                                 db.host_alias,
+                                                 (current_toggle - 1),
 # ifdef WITH_SSL                                    
-                                              (db.auth == NO) ? FTP : FTPS,
+                                                 (db.auth == NO) ? FTP : FTPS,
 # else
-                                              FTP,
+                                                 FTP,
 # endif
-                                              &db.output_log);
+                                                 &db.output_log);
+                              }
+                              (void)strcpy(ol_file_name, tmp_rl.file_name);
+                              *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+                              ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+                              ol_file_name[*ol_file_name_length + 1] = '\0';
+                              (*ol_file_name_length)++;
+                              *ol_file_size = bytes_done;
+                              *ol_job_number = db.id.dir;
+                              *ol_retries = db.retries;
+                              *ol_unl = 0;
+                              *ol_transfer_time = end_time - start_time;
+                              *ol_archive_name_length = 0;
+                              *ol_output_type = OT_NORMAL_RECEIVED + '0';
+                              ol_real_size = *ol_file_name_length + ol_size;
+                              if (write(ol_fd, ol_data, ol_real_size) != ol_real_size)
+                              {
+                                 system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                            "write() error : %s",
+                                            strerror(errno));
+                              }
                            }
-                           (void)strcpy(ol_file_name, rl[i].file_name);
-                           *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                           ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                           ol_file_name[*ol_file_name_length + 1] = '\0';
-                           (*ol_file_name_length)++;
-                           *ol_file_size = bytes_done;
-                           *ol_job_number = db.id.dir;
-                           *ol_retries = db.retries;
-                           *ol_unl = 0;
-                           *ol_transfer_time = end_time - start_time;
-                           *ol_archive_name_length = 0;
-                           *ol_output_type = OT_NORMAL_RECEIVED + '0';
-                           ol_real_size = *ol_file_name_length + ol_size;
-                           if (write(ol_fd, ol_data, ol_real_size) != ol_real_size)
-                           {
-                              system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                         "write() error : %s", strerror(errno));
-                           }
-                        }
 #endif /* _OUTPUT_LOG */
-                     }
-                     files_retrieved++;
-                     file_size_retrieved += bytes_done;
+                        }
+                        files_retrieved++;
+                        file_size_retrieved += bytes_done;
 
-                     if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
+                        if ((db.fra_pos == INCORRECT) ||
+                            (db.fsa_pos == INCORRECT))
+                        {
+                           /* We must stop here if fra_pos or fsa_pos is */
+                           /* INCORRECT since we try to access these     */
+                           /* structures (FRA/FSA)!                      */
+                           if (i < *current_no_of_listed_files)
+                           {
+                              (void)memcpy(&rl[i], &tmp_rl,
+                                           sizeof(struct retrieve_list));
+                           }
+                           trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                     "Database changed, exiting.");
+                           (void)ftp_quit();
+                           reset_values(files_retrieved, file_size_retrieved,
+                                        files_to_retrieve,
+                                        file_size_to_retrieve,
+                                        (struct job *)&db);
+                           exitflag = 0;
+                           exit(TRANSFER_SUCCESS);
+                        }
+                        if (delete_failed == YES)
+                        {
+                           if (i < *current_no_of_listed_files)
+                           {
+                              (void)memcpy(&rl[i], &tmp_rl,
+                                           sizeof(struct retrieve_list));
+                           }
+                           (void)ftp_quit();
+                           reset_values(files_retrieved, file_size_retrieved,
+                                        files_to_retrieve,
+                                        file_size_to_retrieve,
+                                        (struct job *)&db);
+                           exit(eval_timeout(DELETE_REMOTE_ERROR));
+                        }
+                     } /* status != 550 */
+
+                     if (i < *current_no_of_listed_files)
                      {
-                        /* We must stop here if fra_pos or fsa_pos is */
-                        /* INCORRECT since we try to access these     */
-                        /* structures (FRA/FSA)!                      */
+                        (void)memcpy(&rl[i], &tmp_rl,
+                                     sizeof(struct retrieve_list));
+                     }
+                     else
+                     {
+                        /* Retrieve list database has been reduced by */
+                        /* another process. For now just do a simple  */
+                        /* solution and bail out.                     */
+                        rename_pending = -1;
                         trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                  "Database changed, exiting.");
+                                  "no_of_listed_files has been reduced (%d -> %d)!",
+                                  no_of_listed_files,
+                                  *current_no_of_listed_files);
                         (void)ftp_quit();
                         reset_values(files_retrieved, file_size_retrieved,
                                      files_to_retrieve, file_size_to_retrieve,
@@ -1918,42 +1988,34 @@ main(int argc, char *argv[])
                         exitflag = 0;
                         exit(TRANSFER_SUCCESS);
                      }
-                     if (delete_failed == YES)
-                     {
-                        (void)ftp_quit();
-                        reset_values(files_retrieved, file_size_retrieved,
-                                     files_to_retrieve, file_size_to_retrieve,
-                                     (struct job *)&db);
-                        exit(eval_timeout(DELETE_REMOTE_ERROR));
-                     }
-                  } /* status != 550 */
-               } /* if (rl[i].retrieved == NO) */
-            } /* for (i = 0; i < no_of_listed_files; i++) */
+                  } /* if (tmp_rl.retrieved == NO) */
+               } /* for (i = 0; i < no_of_listed_files; i++) */
 
-            diff_no_of_files_done = fsa->job_status[(int)db.job_no].no_of_files_done -
-                                    prev_no_of_files_done;
-            if (diff_no_of_files_done > 0)
-            {
-               int     length = MAX_INT_LENGTH + 10 + MAX_OFF_T_LENGTH + 16 + MAX_INT_LENGTH + 8 + 1;
-               u_off_t diff_file_size_done;
-               char    buffer[MAX_INT_LENGTH + 10 + MAX_OFF_T_LENGTH + 16 + MAX_INT_LENGTH + 8 + 1];
+               diff_no_of_files_done = fsa->job_status[(int)db.job_no].no_of_files_done -
+                                       prev_no_of_files_done;
+               if (diff_no_of_files_done > 0)
+               {
+                  int     length = MAX_INT_LENGTH + 10 + MAX_OFF_T_LENGTH + 16 + MAX_INT_LENGTH + 8 + 1;
+                  u_off_t diff_file_size_done;
+                  char    buffer[MAX_INT_LENGTH + 10 + MAX_OFF_T_LENGTH + 16 + MAX_INT_LENGTH + 8 + 1];
 
-               diff_file_size_done = fsa->job_status[(int)db.job_no].file_size_done -
-                                     prev_file_size_done;
-               WHAT_DONE_BUFFER(length, buffer, "retrieved",
-                                diff_file_size_done, diff_no_of_files_done);
-               trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s @%x",
-                         buffer, db.id.dir);
-               prev_no_of_files_done = fsa->job_status[(int)db.job_no].no_of_files_done;
-               prev_file_size_done = fsa->job_status[(int)db.job_no].file_size_done;
+                  diff_file_size_done = fsa->job_status[(int)db.job_no].file_size_done -
+                                        prev_file_size_done;
+                  WHAT_DONE_BUFFER(length, buffer, "retrieved",
+                                   diff_file_size_done, diff_no_of_files_done);
+                  trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s @%x",
+                            buffer, db.id.dir);
+                  prev_no_of_files_done = fsa->job_status[(int)db.job_no].no_of_files_done;
+                  prev_file_size_done = fsa->job_status[(int)db.job_no].file_size_done;
+               }
+
+               reset_values(files_retrieved, file_size_retrieved,
+                            files_to_retrieve, file_size_to_retrieve,
+                            (struct job *)&db);
+
+               /* Free memory for the read buffer. */
+               free(buffer);
             }
-
-            reset_values(files_retrieved, file_size_retrieved,
-                         files_to_retrieve, file_size_to_retrieve,
-                         (struct job *)&db);
-
-            /* Free memory for the read buffer. */
-            free(buffer);
 
 #ifdef _WITH_BURST_2
             if (in_burst_loop == YES)
@@ -2185,6 +2247,19 @@ main(int argc, char *argv[])
 #else
                     unlock_region(fra_fd, db.fra_lock_offset + LOCK_EC);
 #endif
+                 }
+                 if ((more_files_in_list == YES) &&
+                     ((db.special_flag & DISTRIBUTED_HELPER_JOB) == 0) &&
+                     (fra->dir_flag & ONE_PROCESS_JUST_SCANNING))
+                 {
+                    more_files_in_list = NO;
+                    if (((fra->dir_flag & DO_NOT_PARALLELIZE) == 0) &&
+                        (fsa->active_transfers < fsa->allowed_transfers))
+                    {
+                       /* Tell fd that he may start some more helper jobs that */
+                       /* help fetching files.                                 */
+                       send_proc_fin(YES);
+                    }
                  }
               }
 

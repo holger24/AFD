@@ -1,6 +1,6 @@
 /*
  *  check_burst_gf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -90,7 +90,6 @@ check_burst_gf(unsigned int *values_changed)
 
    if ((fsa->protocol_options & DISABLE_BURSTING) == 0)
    {
-      int              in_keep_connected_loop;
       unsigned int     alarm_sleep_time;
       time_t           start_time = 0L;
       sigset_t         newmask,
@@ -105,7 +104,6 @@ check_burst_gf(unsigned int *values_changed)
       /*
        * First check if there are any jobs queued for this host.
        */
-      in_keep_connected_loop = NO;
       if ((fsa->keep_connected > 0) &&
           ((fsa->special_flag & KEEP_CON_NO_SEND) == 0))
       {
@@ -130,154 +128,24 @@ check_burst_gf(unsigned int *values_changed)
           */
          return(NO);
       }
-      if ((db.protocol != LOC_FLAG) && (db.protocol != EXEC_FLAG) &&
-          (my_strcmp(db.hostname, fsa->real_hostname[(int)(fsa->host_toggle - 1)]) != 0))
+
+      if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+          (db.special_flag & DISTRIBUTED_HELPER_JOB))
       {
-         /*
-          * Hostname changed, either a switch host or the real
-          * hostname has changed. Regardless what ever happened
-          * we now need to disconnect.
-          */
-         fsa->job_status[(int)db.job_no].unique_name[2] = 0;
-         return(NO);
-      }
-
-      fsa->job_status[(int)db.job_no].unique_name[1] = '\0';
-      if (in_keep_connected_loop == YES)
-      {
-#ifndef AFDBENCH_CONFIG
-         int diff_no_of_files_done;
-#endif
-
-         signal_caught = 0;
-         newact.sa_handler = sig_alarm;
-         sigemptyset(&newact.sa_mask);
-         newact.sa_flags = 0;
-         if ((sigaction(SIGALRM, &newact, &oldact_alrm) < 0) ||
-             (sigaction(SIGUSR1, &newact, &oldact_usr1) < 0))
-         {
-            fsa->job_status[(int)db.job_no].unique_name[2] = 0;
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "Failed to establish a signal handler for SIGUSR1 and/or SIGALRM : %s",
-                       strerror(errno));
-            return(NO);
-         }
-         sigemptyset(&newmask);
-         sigaddset(&newmask, SIGALRM);
-         sigaddset(&newmask, SIGUSR1);
-         if (sigprocmask(SIG_BLOCK, &newmask, &oldmask) < 0)
-         {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "sigprocmask() error : %s", strerror(errno));
-         }
-         fsa->job_status[(int)db.job_no].unique_name[2] = 5;
-
-         /* Indicate to FD that signal handler is in place. */
-         fsa->job_status[(int)db.job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] = 1;
-
-#ifndef AFDBENCH_CONFIG
-         diff_no_of_files_done = fsa->job_status[(int)db.job_no].no_of_files_done -
-                                 prev_no_of_files_done;
-         if (diff_no_of_files_done > 0)
-         {
-            int     length = MAX_PATH_LENGTH;
-            char    msg_str[MAX_PATH_LENGTH];
-            u_off_t diff_file_size_done;
-
-            diff_file_size_done = fsa->job_status[(int)db.job_no].file_size_done - prev_file_size_done;
-            WHAT_DONE_BUFFER(length, msg_str, "retrieved",
-                             diff_file_size_done, diff_no_of_files_done);
-            prev_no_of_files_done = fsa->job_status[(int)db.job_no].no_of_files_done;
-            prev_file_size_done = fsa->job_status[(int)db.job_no].file_size_done;
-            if ((burst_2_counter - 1) == 1)
-            {
-               /* Write " [BURST]" */
-               msg_str[length] = ' '; msg_str[length + 1] = '[';
-               msg_str[length + 2] = 'B'; msg_str[length + 3] = 'U';
-               msg_str[length + 4] = 'R'; msg_str[length + 5] = 'S';
-               msg_str[length + 6] = 'T'; msg_str[length + 7] = ']';
-               msg_str[length + 8] = '\0';
-               burst_2_counter = 1;
-            }
-            else if ((burst_2_counter - 1) > 1)
-                 {
-                    (void)snprintf(&msg_str[length],
-                                   MAX_PATH_LENGTH - length,
-                                   " [BURST * %u]", (burst_2_counter - 1));
-                    burst_2_counter = 1;
-                 }
-            trans_log(INFO_SIGN, NULL, 0, NULL, NULL, "%s #%s",
-                      msg_str, db.msg_name);
-         }
-#endif
-         (void)alarm(alarm_sleep_time);
-         suspmask = oldmask;
-         sigdelset(&suspmask, SIGALRM);
-         sigdelset(&suspmask, SIGUSR1);
-         sigsuspend(&suspmask); /* Wait for SIGUSR1 or SIGALRM. */
-         (void)alarm(0);
-         if (gsf_check_fsa((struct job *)&db) != NEITHER)
-         {
-            if (signal_caught != 2)
-            {
-               if (fsa->job_status[(int)db.job_no].unique_name[2] == 5)
-               {
-                  fsa->job_status[(int)db.job_no].unique_name[2] = 0;
-               }
-            }
-
-            /* Indicate FD we no longer want any signals. */
-            fsa->job_status[(int)db.job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] = 2;
-         }
-
-         /*
-          * Lets unblock any remaining signals before restoring
-          * the original signal handler.
-          */
-         if (sigpending(&pendmask) < 0)
-         {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "sigpending() error : %s", strerror(errno));
-         }
-         else
-         {
-            if ((sigismember(&pendmask, SIGALRM)) ||
-                (sigismember(&pendmask, SIGUSR1)))
-            {
-               if (sigprocmask(SIG_UNBLOCK, &newmask, NULL) < 0)
-               {
-                  system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             "sigprocmask() error : %s", strerror(errno));
-               }
-            }
-         }
-
-         /* Restore the original signal mask. */
-         if ((sigaction(SIGUSR1, &oldact_usr1, NULL) < 0) ||
-             (sigaction(SIGALRM, &oldact_alrm, NULL) < 0))
-         {
-            system_log(WARN_SIGN, __FILE__, __LINE__,
-                       "Failed to reastablish a signal handler for SIGUSR1 and/or SIGALRM : %s",
-                       strerror(errno));
-         }
-         if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0)
-         {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "sigprocmask() error : %s", strerror(errno));
-         }
-
-         if (fsa->job_status[(int)db.job_no].unique_name[2] == 6)
+         if ((db.protocol != LOC_FLAG) && (db.protocol != EXEC_FLAG) &&
+             (my_strcmp(db.hostname,
+                        fsa->real_hostname[(int)(fsa->host_toggle - 1)]) != 0))
          {
             /*
-             * Another job is waiting that cannot use the current
-             * connection.
+             * Hostname changed, either a switch host or the real
+             * hostname has changed. Regardless what ever happened
+             * we now need to disconnect.
              */
             fsa->job_status[(int)db.job_no].unique_name[2] = 0;
             return(NO);
          }
-      }
-      else
-      {
+
+         fsa->job_status[(int)db.job_no].unique_name[1] = '\0';
          if ((fsa->jobs_queued > 0) &&
              (fsa->active_transfers == fsa->allowed_transfers))
          {
@@ -458,321 +326,322 @@ check_burst_gf(unsigned int *values_changed)
                ret = NO;
             }
          }
-      }
 
-      /* It could be that the FSA changed. */
-      if ((gsf_check_fsa((struct job *)&db) == YES) &&
-          (db.fsa_pos == INCORRECT))
-      {
-         /*
-          * Host is no longer in FSA, so there is
-          * no way we can communicate with FD.
-          */
-         return(NO);
-      }
-
-      if ((fsa->job_status[(int)db.job_no].unique_name[1] != '\0') &&
-          (fsa->job_status[(int)db.job_no].unique_name[0] != '\0') &&
-          (fsa->job_status[(int)db.job_no].unique_name[2] != '\0'))
-      {
-#ifdef RETRIEVE_JOB_HACK
-         /*
-          * This is only a hack! Somehow FD sends send jobs
-          * to gf_xxx!. If the bug is found remove this.
-          */
-         int i = 3;
-
-         while ((i < MAX_MSG_NAME_LENGTH) &&
-                (fsa->job_status[(int)db.job_no].unique_name[i] != '/') &&
-                (fsa->job_status[(int)db.job_no].unique_name[i] != '\0'))
+         /* It could be that the FSA changed. */
+         if ((gsf_check_fsa((struct job *)&db) == YES) &&
+             (db.fsa_pos == INCORRECT))
          {
-            i++;
-         }
-         if ((i == MAX_MSG_NAME_LENGTH) ||
-             (fsa->job_status[(int)db.job_no].unique_name[i] == '/'))
-         {
-            system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                       "FD trying to give me a send job #%x. [%s[%d]]",
-                       fsa->job_status[(int)db.job_no].job_id,
-                       fsa->host_dsp_name, (int)db.job_no);
+            /*
+             * Host is no longer in FSA, so there is
+             * no way we can communicate with FD.
+             */
             return(NO);
          }
-         /*
-          * End of hack!
-          */
+
+         if ((fsa->job_status[(int)db.job_no].unique_name[1] != '\0') &&
+             (fsa->job_status[(int)db.job_no].unique_name[0] != '\0') &&
+             (fsa->job_status[(int)db.job_no].unique_name[2] != '\0'))
+         {
+#ifdef RETRIEVE_JOB_HACK
+            /*
+             * This is only a hack! Somehow FD sends send jobs
+             * to gf_xxx!. If the bug is found remove this.
+             */
+            int i = 3;
+
+            while ((i < MAX_MSG_NAME_LENGTH) &&
+                   (fsa->job_status[(int)db.job_no].unique_name[i] != '/') &&
+                   (fsa->job_status[(int)db.job_no].unique_name[i] != '\0'))
+            {
+               i++;
+            }
+            if ((i == MAX_MSG_NAME_LENGTH) ||
+                (fsa->job_status[(int)db.job_no].unique_name[i] == '/'))
+            {
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                          "FD trying to give me a send job #%x. [%s[%d]]",
+                          fsa->job_status[(int)db.job_no].job_id,
+                          fsa->host_dsp_name, (int)db.job_no);
+               return(NO);
+            }
+            /*
+             * End of hack!
+             */
 #endif /* RETRIEVE_JOB_HACK */
 
-         (void)memcpy(db.msg_name, 
-                      fsa->job_status[(int)db.job_no].unique_name,
-                      MAX_INT_HEX_LENGTH);
-         if (fsa->job_status[(int)db.job_no].job_id != db.id.dir)
-         {
-            time_t next_check_time;
-
-            if ((rl_fd != -1) && (rl != NULL))
+            (void)memcpy(db.msg_name, 
+                         fsa->job_status[(int)db.job_no].unique_name,
+                         MAX_INT_HEX_LENGTH);
+            if (fsa->job_status[(int)db.job_no].job_id != db.id.dir)
             {
-               int i;
+               time_t next_check_time;
 
-               for (i = 0; i < no_of_listed_files; i++)
+               if ((rl_fd != -1) && (rl != NULL))
                {
-                  if (rl[i].assigned == ((unsigned char)db.job_no + 1))
+                  int i;
+
+                  for (i = 0; i < no_of_listed_files; i++)
                   {
-                     rl[i].assigned = 0;
+                     if (rl[i].assigned == ((unsigned char)db.job_no + 1))
+                     {
+                        rl[i].assigned = 0;
+                     }
                   }
                }
-            }
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-            if ((fra->stupid_mode == YES) || (fra->remove == YES))
-            {
-               detach_ls_data(YES);
-            }
-            else
-            {
-#endif
-               detach_ls_data(NO);
-#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
-            }
-#endif
-            fra_detach_pos(db.fra_pos);
-            db.id.dir = fsa->job_status[(int)db.job_no].job_id;
-            if (fra_attach() != SUCCESS)
-            {
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          "Failed to attach to FRA.");
-               return(NO);
-            }
-            if ((db.fra_pos = get_dir_id_position(fra, db.id.dir, no_of_dirs)) < 0)
-            {
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          "Failed to locate dir_id %x in the FRA.",
-                          db.id.dir);
-               return(NO);
-            }
-            (void)fra_detach();
-            if (fra_attach_pos(db.fra_pos) != SUCCESS)
-            {
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          "Failed to attach to FRA position %d.", db.fra_pos);
-               return(NO);
-            }
-            if ((p_new_db = malloc(sizeof(struct job))) == NULL)
-            {
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          "malloc() error : %s", strerror(errno));
-               return(NO);
-            }
-
-            if (fsa->protocol_options & FTP_IGNORE_BIN)
-            {
-               p_new_db->transfer_mode       = 'N';
-            }
-            else
-            {
-               p_new_db->transfer_mode       = DEFAULT_TRANSFER_MODE;
-            }
-            p_new_db->special_ptr            = NULL;
-            p_new_db->special_flag           = 0;
-            p_new_db->mode_flag              = 0;
-            if ((fsa->job_status[(int)db.job_no].file_name_in_use[0] == '\0') &&
-                (fsa->job_status[(int)db.job_no].file_name_in_use[1] == 1))
-            {
-               p_new_db->retries             = (unsigned int)atoi(&fsa->job_status[(int)db.job_no].file_name_in_use[2]);
-               fsa->job_status[(int)db.job_no].file_name_in_use[2] = 0;
-               if (p_new_db->retries > 0)
+               if ((fra->stupid_mode == YES) || (fra->remove == YES))
                {
-                  p_new_db->special_flag |= OLD_ERROR_JOB;
-               }
-            }
-            else
-            {
-               p_new_db->retries             = 0;
-            }
-            p_new_db->http_proxy[0]          = '\0';
-            p_new_db->dir_mode               = db.dir_mode;
-            p_new_db->dir_mode_str[0]        = db.dir_mode_str[0];
-            p_new_db->dir_mode_str[1]        = db.dir_mode_str[1];
-            p_new_db->dir_mode_str[2]        = db.dir_mode_str[2];
-            p_new_db->dir_mode_str[3]        = db.dir_mode_str[3];
-            p_new_db->dir_mode_str[4]        = db.dir_mode_str[4];
-            p_new_db->no_of_restart_files    = 0;
-            p_new_db->restart_file           = NULL;
-            p_new_db->user_id                = -1;
-            p_new_db->group_id               = -1;
-#ifdef WITH_SSL
-            p_new_db->auth                   = NO;
-#endif
-            p_new_db->ssh_protocol           = 0;
-            if (db.protocol & FTP_FLAG)
-            {
-               p_new_db->port = DEFAULT_FTP_PORT;
-            }
-            else if (db.protocol & SFTP_FLAG)
-                 {
-                    p_new_db->port = SSH_PORT_UNSET;
-                 }
-#ifdef WITH_SSL
-            else if ((db.protocol & HTTP_FLAG) && (db.protocol & SSL_FLAG) &&
-                     (db.port == DEFAULT_HTTP_PORT))
-                 {
-                    p_new_db->port = DEFAULT_HTTPS_PORT;
-                 }
-#endif
-                 else
-                 {
-                    p_new_db->port = -1;
-                 }
-
-            /*
-             * NOTE: We must set some values for eval_recipient()
-             *       otherwise some values are NOT set!
-             */
-            p_new_db->fsa_pos = db.fsa_pos;
-            p_new_db->protocol = db.protocol;
-            p_new_db->id.dir = db.id.dir;
-            p_new_db->password[0] = '\0';
-            p_new_db->smtp_server[0] = '\0';
-#ifdef HAVE_SETPRIORITY
-            p_new_db->afd_config_mtime = db.afd_config_mtime;
-#endif
-            if ((fsa->error_counter > 0) && (fra->no_of_time_entries > 0))
-            {
-               next_check_time = fra->next_check_time;
-            }
-            else
-            {
-               next_check_time = 0;
-            }
-            if (eval_recipient(fra->url, p_new_db, NULL,
-                               next_check_time) == INCORRECT)
-            {
-               free(p_new_db);
-
-               return(NO);
-            }
-
-            /*
-             * Ports must be the same!
-             */
-            if ((p_new_db->port != db.port) ||
-#ifdef WITH_SSL
-                ((db.auth == NO) && (p_new_db->auth != NO)) ||
-                ((db.auth != NO) && (p_new_db->auth == NO)) ||
-#endif
-                ((db.protocol & SFTP_FLAG) &&
-                 (CHECK_STRCMP(p_new_db->user, db.user) != 0)))
-            {
-               free(p_new_db);
-               ret = NEITHER;
-            }
-            else
-            {
-               if ((p_new_db->protocol & FTP_FLAG) &&
-                   (p_new_db->mode_flag == 0))
-               {
-                  if (fsa->protocol_options & FTP_PASSIVE_MODE)
-                  {
-                     p_new_db->mode_flag = PASSIVE_MODE;
-                     if (fsa->protocol_options & FTP_EXTENDED_MODE)
-                     {
-                        (void)strcpy(p_new_db->mode_str, "extended passive");
-                     }
-                     else
-                     {
-                        if (fsa->protocol_options & FTP_ALLOW_DATA_REDIRECT)
-                        {
-                           (void)strcpy(p_new_db->mode_str,
-                                        "passive (with redirect)");
-                        }
-                        else
-                        {
-                           (void)strcpy(p_new_db->mode_str, "passive");
-                        }
-                     }
-                  }
-                  else
-                  {
-                     p_new_db->mode_flag = ACTIVE_MODE;
-                     if (fsa->protocol_options & FTP_EXTENDED_MODE)
-                     {
-                        (void)strcpy(p_new_db->mode_str, "extended active");
-                     }
-                     else
-                     {
-                        (void)strcpy(p_new_db->mode_str, "active");
-                     }
-                  }
-                  if (fsa->protocol_options & FTP_EXTENDED_MODE)
-                  {
-                     p_new_db->mode_flag |= EXTENDED_MODE;
-                  }
-               }
-               ret = YES;
-            }
-         }
-         else
-         {
-            if (db.special_flag & PATH_MAY_CHANGE)
-            {
-               unsigned int error_mask;
-               time_t       now = time(NULL);
-
-               if ((error_mask = url_evaluate(fra->url, NULL, NULL, NULL, NULL,
-#ifdef WITH_SSH_FINGERPRINT
-                                              NULL, NULL,
-#endif
-                                              NULL, NO, NULL, NULL,
-                                              db.target_dir, NULL, &now, NULL,
-                                              NULL, NULL)) > 3)
-               {
-                  char error_msg[MAX_URL_ERROR_MSG];
-
-                  url_get_error(error_mask, error_msg, MAX_URL_ERROR_MSG);
-                  system_log(WARN_SIGN, __FILE__, __LINE__,
-                             "Incorrect url `%s'. Error is: %s.",
-                             fra->url, error_msg);
-                  ret = NO;
-                  db.keep_connected = 0;
+                  detach_ls_data(YES);
                }
                else
                {
-                  if (error_mask & TARGET_DIR_CAN_CHANGE)
+#endif
+                  detach_ls_data(NO);
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
+               }
+#endif
+               fra_detach_pos(db.fra_pos);
+               db.id.dir = fsa->job_status[(int)db.job_no].job_id;
+               if (fra_attach() != SUCCESS)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "Failed to attach to FRA.");
+                  return(NO);
+               }
+               if ((db.fra_pos = get_dir_id_position(fra, db.id.dir, no_of_dirs)) < 0)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "Failed to locate dir_id %x in the FRA.",
+                             db.id.dir);
+                  return(NO);
+               }
+               (void)fra_detach();
+               if (fra_attach_pos(db.fra_pos) != SUCCESS)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "Failed to attach to FRA position %d.", db.fra_pos);
+                  return(NO);
+               }
+               if ((p_new_db = malloc(sizeof(struct job))) == NULL)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "malloc() error : %s", strerror(errno));
+                  return(NO);
+               }
+
+               if (fsa->protocol_options & FTP_IGNORE_BIN)
+               {
+                  p_new_db->transfer_mode       = 'N';
+               }
+               else
+               {
+                  p_new_db->transfer_mode       = DEFAULT_TRANSFER_MODE;
+               }
+               p_new_db->special_ptr            = NULL;
+               p_new_db->special_flag           = 0;
+               p_new_db->mode_flag              = 0;
+               if ((fsa->job_status[(int)db.job_no].file_name_in_use[0] == '\0') &&
+                   (fsa->job_status[(int)db.job_no].file_name_in_use[1] == 1))
+               {
+                  p_new_db->retries             = (unsigned int)atoi(&fsa->job_status[(int)db.job_no].file_name_in_use[2]);
+                  fsa->job_status[(int)db.job_no].file_name_in_use[2] = 0;
+                  if (p_new_db->retries > 0)
                   {
-                     db.special_flag |= PATH_MAY_CHANGE;
+                     p_new_db->special_flag |= OLD_ERROR_JOB;
                   }
-                  if (db.protocol == HTTP_FLAG)
+               }
+               else
+               {
+                  p_new_db->retries             = 0;
+               }
+               p_new_db->http_proxy[0]          = '\0';
+               p_new_db->dir_mode               = db.dir_mode;
+               p_new_db->dir_mode_str[0]        = db.dir_mode_str[0];
+               p_new_db->dir_mode_str[1]        = db.dir_mode_str[1];
+               p_new_db->dir_mode_str[2]        = db.dir_mode_str[2];
+               p_new_db->dir_mode_str[3]        = db.dir_mode_str[3];
+               p_new_db->dir_mode_str[4]        = db.dir_mode_str[4];
+               p_new_db->no_of_restart_files    = 0;
+               p_new_db->restart_file           = NULL;
+               p_new_db->user_id                = -1;
+               p_new_db->group_id               = -1;
+#ifdef WITH_SSL
+               p_new_db->auth                   = NO;
+#endif
+               p_new_db->ssh_protocol           = 0;
+               if (db.protocol & FTP_FLAG)
+               {
+                  p_new_db->port = DEFAULT_FTP_PORT;
+               }
+               else if (db.protocol & SFTP_FLAG)
+                    {
+                       p_new_db->port = SSH_PORT_UNSET;
+                    }
+#ifdef WITH_SSL
+               else if ((db.protocol & HTTP_FLAG) && (db.protocol & SSL_FLAG) &&
+                        (db.port == DEFAULT_HTTP_PORT))
+                    {
+                       p_new_db->port = DEFAULT_HTTPS_PORT;
+                    }
+#endif
+                    else
+                    {
+                       p_new_db->port = -1;
+                    }
+
+               /*
+                * NOTE: We must set some values for eval_recipient()
+                *       otherwise some values are NOT set!
+                */
+               p_new_db->fsa_pos = db.fsa_pos;
+               p_new_db->protocol = db.protocol;
+               p_new_db->id.dir = db.id.dir;
+               p_new_db->password[0] = '\0';
+               p_new_db->smtp_server[0] = '\0';
+#ifdef HAVE_SETPRIORITY
+               p_new_db->afd_config_mtime = db.afd_config_mtime;
+#endif
+               if ((fsa->error_counter > 0) && (fra->no_of_time_entries > 0))
+               {
+                  next_check_time = fra->next_check_time;
+               }
+               else
+               {
+                  next_check_time = 0;
+               }
+               if (eval_recipient(fra->url, p_new_db, NULL,
+                                  next_check_time) == INCORRECT)
+               {
+                  free(p_new_db);
+
+                  return(NO);
+               }
+
+               /*
+                * Ports must be the same!
+                */
+               if ((p_new_db->port != db.port) ||
+#ifdef WITH_SSL
+                   ((db.auth == NO) && (p_new_db->auth != NO)) ||
+                   ((db.auth != NO) && (p_new_db->auth == NO)) ||
+#endif
+                   ((db.protocol & SFTP_FLAG) &&
+                    (CHECK_STRCMP(p_new_db->user, db.user) != 0)))
+               {
+                  free(p_new_db);
+                  ret = NEITHER;
+               }
+               else
+               {
+                  if ((p_new_db->protocol & FTP_FLAG) &&
+                      (p_new_db->mode_flag == 0))
                   {
-                     if (db.target_dir[0] == '\0')
+                     if (fsa->protocol_options & FTP_PASSIVE_MODE)
                      {
-                        db.target_dir[0] = '/';
-                        db.target_dir[1] = '\0';
+                        p_new_db->mode_flag = PASSIVE_MODE;
+                        if (fsa->protocol_options & FTP_EXTENDED_MODE)
+                        {
+                           (void)strcpy(p_new_db->mode_str, "extended passive");
+                        }
+                        else
+                        {
+                           if (fsa->protocol_options & FTP_ALLOW_DATA_REDIRECT)
+                           {
+                              (void)strcpy(p_new_db->mode_str,
+                                           "passive (with redirect)");
+                           }
+                           else
+                           {
+                              (void)strcpy(p_new_db->mode_str, "passive");
+                           }
+                        }
                      }
                      else
                      {
-                        ret = strlen(db.target_dir) - 1;
-                        if (db.target_dir[ret] != '/')
+                        p_new_db->mode_flag = ACTIVE_MODE;
+                        if (fsa->protocol_options & FTP_EXTENDED_MODE)
                         {
-                           db.target_dir[ret + 1] = '/';
-                           db.target_dir[ret + 2] = '\0';
+                           (void)strcpy(p_new_db->mode_str, "extended active");
+                        }
+                        else
+                        {
+                           (void)strcpy(p_new_db->mode_str, "active");
                         }
                      }
+                     if (fsa->protocol_options & FTP_EXTENDED_MODE)
+                     {
+                        p_new_db->mode_flag |= EXTENDED_MODE;
+                     }
                   }
-                  if (CHECK_STRCMP(db.active_target_dir,
-                                   db.target_dir) != 0)
+                  ret = YES;
+               }
+            }
+            else
+            {
+               if (db.special_flag & PATH_MAY_CHANGE)
+               {
+                  unsigned int error_mask;
+                  time_t       now = time(NULL);
+
+                  if ((error_mask = url_evaluate(fra->url, NULL, NULL, NULL, NULL,
+#ifdef WITH_SSH_FINGERPRINT
+                                                 NULL, NULL,
+#endif
+                                                 NULL, NO, NULL, NULL,
+                                                 db.target_dir, NULL, &now, NULL,
+                                                 NULL, NULL)) > 3)
                   {
-                     *values_changed |= TARGET_DIR_CHANGED;
-                     (void)strcpy(db.active_target_dir, db.target_dir);
+                     char error_msg[MAX_URL_ERROR_MSG];
+
+                     url_get_error(error_mask, error_msg, MAX_URL_ERROR_MSG);
+                     system_log(WARN_SIGN, __FILE__, __LINE__,
+                                "Incorrect url `%s'. Error is: %s.",
+                                fra->url, error_msg);
+                     ret = NO;
+                     db.keep_connected = 0;
                   }
+                  else
+                  {
+                     if (error_mask & TARGET_DIR_CAN_CHANGE)
+                     {
+                        db.special_flag |= PATH_MAY_CHANGE;
+                     }
+                     if (db.protocol == HTTP_FLAG)
+                     {
+                        if (db.target_dir[0] == '\0')
+                        {
+                           db.target_dir[0] = '/';
+                           db.target_dir[1] = '\0';
+                        }
+                        else
+                        {
+                           ret = strlen(db.target_dir) - 1;
+                           if (db.target_dir[ret] != '/')
+                           {
+                              db.target_dir[ret + 1] = '/';
+                              db.target_dir[ret + 2] = '\0';
+                           }
+                        }
+                     }
+                     if (CHECK_STRCMP(db.active_target_dir,
+                                      db.target_dir) != 0)
+                     {
+                        *values_changed |= TARGET_DIR_CHANGED;
+                        (void)strcpy(db.active_target_dir, db.target_dir);
+                     }
+                     ret = YES;
+                     p_new_db = NULL;
+                  }
+               }
+               else
+               {
                   ret = YES;
                   p_new_db = NULL;
                }
             }
-            else
-            {
-               ret = YES;
-               p_new_db = NULL;
-            }
          }
-      }
+      } /* if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) || */
+        /*     (db.special_flag & DISTRIBUTED_HELPER_JOB))           */
 
       if (ret == YES)
       {
@@ -859,10 +728,23 @@ check_burst_gf(unsigned int *values_changed)
                        {
                           break;
                        }
-                       if (fsa->job_status[(int)db.job_no].unique_name[2] == 6)
+                       if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+                           (db.special_flag & DISTRIBUTED_HELPER_JOB))
                        {
-                          fsa->job_status[(int)db.job_no].unique_name[2] = '\0';
-                          return(NO);
+                          if (fsa->job_status[(int)db.job_no].unique_name[2] == 6)
+                          {
+                             fsa->job_status[(int)db.job_no].unique_name[2] = '\0';
+                             return(NO);
+                          }
+                       }
+                       else
+                       {
+                          if (((db.protocol & FTP_FLAG) == 0) &&
+                              ((db.protocol & SFTP_FLAG) == 0) &&
+                              ((db.protocol & HTTP_FLAG) == 0))
+                          {
+                             return(RESCAN_SOURCE);
+                          }
                        }
                        start_time = time(NULL);
                        if (start_time < timeup)
@@ -913,18 +795,20 @@ check_burst_gf(unsigned int *values_changed)
                              }
                           }
 
-                          if ((db.protocol & FTP_FLAG) ||
-                              (db.protocol & SFTP_FLAG))
+                          if ((status = noop_wrapper()) != SUCCESS)
                           {
-                             if ((status = noop_wrapper()) != SUCCESS)
-                             {
-                                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                                          "Failed to send NOOP command (%d). [%s]",
-                                          status, fra->dir_alias);
-                                return(NO);
-                             }
+                             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                       "Failed to send NOOP command (%d). [%s]",
+                                       status, fra->dir_alias);
+                             return(NO);
                           }
                           start_time = time(NULL);
+                       }
+                       if ((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) &&
+                           ((db.special_flag & DISTRIBUTED_HELPER_JOB) == 0) &&
+                           (start_time >= timeup))
+                       {
+                          break;
                        }
                        if ((start_time + sleeptime) > timeup)
                        {
