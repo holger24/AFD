@@ -269,7 +269,8 @@ main(int argc, char *argv[])
 
    /* Check if the working directory does exists and has */
    /* the correct permissions set. If not it is created. */
-   if (check_dir(work_dir, R_OK | W_OK | X_OK) < 0)
+   p_work_dir = work_dir;
+   if (check_dir(p_work_dir, R_OK | W_OK | X_OK) < 0)
    {
       exit(INCORRECT);
    }
@@ -297,7 +298,6 @@ main(int argc, char *argv[])
    (void)umask(0);
 
    /* Initialise variables. */
-   p_work_dir = work_dir;
    (void)strcpy(afd_status_file, work_dir);
    (void)strcat(afd_status_file, FIFO_DIR);
    if (check_dir(afd_status_file, R_OK | X_OK) < 0)
