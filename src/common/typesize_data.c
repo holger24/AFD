@@ -1,6 +1,6 @@
 /*
  *  typesize_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -98,12 +98,19 @@ check_typesize_data(int *old_value_list, FILE *output_fp, int do_conversion)
                   p_work_dir, FIFO_DIR, TYPESIZE_DATA_FILE);
    if ((fd = open(typesize_filename, O_RDONLY)) == -1)
    {
-      if (errno != ENOENT)
+      char *sign;
+
+      if (errno == ENOENT)
       {
-         system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "Failed to open() `%s' : %s",
-                    typesize_filename, strerror(errno));
+         sign = DEBUG_SIGN;
       }
+      else
+      {
+         sign = ERROR_SIGN;
+      }
+      system_log(sign, __FILE__, __LINE__,
+                 "Failed to open() `%s' : %s",
+                 typesize_filename, strerror(errno));
       not_match = INCORRECT;
    }
    else
