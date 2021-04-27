@@ -103,7 +103,17 @@ remove_old_ls_data_files(void)
                (void)strcpy(ptr, p_dir->d_name);
                if (unlink(listfile) == -1)
                {
-                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                  char *sign;
+
+                  if (errno == ENOENT)
+                  {
+                     sign = DEBUG_SIGN;
+                  }
+                  else
+                  {
+                     sign = WARN_SIGN;
+                  }
+                  system_log(sign, __FILE__, __LINE__,
                              "Failed to unlink() file %s : %s",
                              listfile, strerror(errno));
                }
