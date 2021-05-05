@@ -1,6 +1,6 @@
 /*
  *  smtpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1295,9 +1295,12 @@ smtp_quit(void)
 #ifdef WITH_SSL
    if ((simulation_mode != YES) && (ssl_con != NULL))
    {
-      if (SSL_shutdown(ssl_con) == 0)
+      if (timeout_flag != CON_RESET)
       {
-         (void)SSL_shutdown(ssl_con);
+         if (SSL_shutdown(ssl_con) == 0)
+         {
+            (void)SSL_shutdown(ssl_con);
+         }
       }
       SSL_free(ssl_con);
       ssl_con = NULL;
@@ -1766,10 +1769,6 @@ try_again_read_msg:
                            */
                           if (ssl_ret == SSL_ERROR_SSL)
                           {
-                             if (SSL_shutdown(ssl_con) == 0)
-                             {
-                                (void)SSL_shutdown(ssl_con);
-                             }
                              SSL_free(ssl_con);
                              ssl_con = NULL;
                              ssc.ssl_enabled = NO;

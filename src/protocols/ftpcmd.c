@@ -1,6 +1,6 @@
 /*
  *  ftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1286,9 +1286,12 @@ ftp_ssl_disable_ctrl_encrytion(void)
       {
          if (ssl_con != NULL)
          {
-            if (SSL_shutdown(ssl_con) == 0)
+            if (timeout_flag != CON_RESET)
             {
-               (void)SSL_shutdown(ssl_con);
+               if (SSL_shutdown(ssl_con) == 0)
+               {
+                  (void)SSL_shutdown(ssl_con);
+               }
             }
             SSL_free(ssl_con);
             ssl_con = NULL;
@@ -3035,9 +3038,12 @@ ftp_list(int mode, int type, ...)
 #ifdef WITH_SSL
          if ((type & ENCRYPT_DATA) && (ssl_data != NULL))
          {
-            if (SSL_shutdown(ssl_data) == 0)
+            if (timeout_flag != CON_RESET)
             {
-               (void)SSL_shutdown(ssl_data);
+               if (SSL_shutdown(ssl_data) == 0)
+               {
+                  (void)SSL_shutdown(ssl_data);
+               }
             }
             SSL_free(ssl_data);
             ssl_data = NULL;
@@ -4424,9 +4430,12 @@ ftp_close_data(void)
 #ifdef WITH_SSL
       if (ssl_data != NULL)
       {
-         if (SSL_shutdown(ssl_data) == 0)
+         if (timeout_flag != CON_RESET)
          {
-            (void)SSL_shutdown(ssl_data);
+            if (SSL_shutdown(ssl_data) == 0)
+            {
+               (void)SSL_shutdown(ssl_data);
+            }
          }
          SSL_free(ssl_data);
          ssl_data = NULL;
@@ -4883,9 +4892,12 @@ ftp_quit(void)
 #ifdef WITH_SSL
          if (ssl_data != NULL)
          {
-            if (SSL_shutdown(ssl_data) == 0)
+            if (timeout_flag != CON_RESET)
             {
-               (void)SSL_shutdown(ssl_data);
+               if (SSL_shutdown(ssl_data) == 0)
+               {
+                  (void)SSL_shutdown(ssl_data);
+               }
             }
             SSL_free(ssl_data);
             ssl_data = NULL;
@@ -4939,9 +4951,12 @@ ftp_quit(void)
 #ifdef WITH_SSL
             if (ssl_con != NULL)
             {
-               if (SSL_shutdown(ssl_con) == 0)
+               if (timeout_flag != CON_RESET)
                {
-                  (void)SSL_shutdown(ssl_con);
+                  if (SSL_shutdown(ssl_con) == 0)
+                  {
+                     (void)SSL_shutdown(ssl_con);
+                  }
                }
                SSL_free(ssl_con);
                ssl_con = NULL;
@@ -4960,9 +4975,12 @@ ftp_quit(void)
 #ifdef WITH_SSL
       if (ssl_con != NULL)
       {
-         if (SSL_shutdown(ssl_con) == 0)
+         if (timeout_flag != CON_RESET)
          {
-            (void)SSL_shutdown(ssl_con);
+            if (SSL_shutdown(ssl_con) == 0)
+            {
+               (void)SSL_shutdown(ssl_con);
+            }
          }
          SSL_free(ssl_con);
          ssl_con = NULL;
@@ -5737,9 +5755,12 @@ try_again_read_msg:
                            */
                           if (ssl_ret == SSL_ERROR_SSL)
                           {
-                             if (SSL_shutdown(ssl_con) == 0)
+                             if (timeout_flag != CON_RESET)
                              {
-                                (void)SSL_shutdown(ssl_con);
+                                if (SSL_shutdown(ssl_con) == 0)
+                                {
+                                   (void)SSL_shutdown(ssl_con);
+                                }
                              }
                              SSL_free(ssl_con);
                              ssl_con = NULL;
