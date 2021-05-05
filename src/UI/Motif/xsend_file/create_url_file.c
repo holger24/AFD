@@ -89,7 +89,7 @@ create_url_file(void)
    }
    else
    {
-      char   buffer[MAX_PATH_LENGTH];
+      char   buffer[MAX_PATH_LENGTH + 1];
       size_t length;
 
       if (euid != ruid)

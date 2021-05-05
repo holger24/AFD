@@ -88,7 +88,7 @@ send_file(void)
 {
    int    channels[2];
    size_t length = 0;
-   char   cmd[MAX_PATH_LENGTH];
+   char   cmd[2048];
 
    /*
     * First put together the command from the input gathered.
