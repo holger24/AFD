@@ -1046,7 +1046,7 @@ retry_get_range:
       }
       else
       {
-         if (*content_length == 0)
+         if ((*content_length == 0) || (*content_length == -1))
          {
             (void)snprintf(range,
                            13 + MAX_OFF_T_LENGTH + 1 + MAX_OFF_T_LENGTH + 3,

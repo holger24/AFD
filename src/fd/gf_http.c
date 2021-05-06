@@ -704,7 +704,8 @@ main(int argc, char *argv[])
                         }
                      }
 
-                     if (tmp_rl.size == -1)
+                     if ((tmp_rl.size == -1) &&
+                         ((fra->dir_flag & DONT_GET_DIR_LIST) == 0))
                      {
                         content_length = 0;
                      }
