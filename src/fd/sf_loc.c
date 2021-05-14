@@ -692,7 +692,8 @@ try_link_again:
 
                                 *p_file = '\0';
                                 created_path[0] = '\0';
-                                if (((ret = check_create_path(p_to_name, db.dir_mode,
+                                if (((ret = check_create_path(p_to_name,
+                                                              db.dir_mode,
                                                               &error_ptr,
                                                               YES, YES,
                                                               created_path)) == CREATED_DIR) ||
@@ -725,7 +726,8 @@ try_link_again:
                                          {
                                             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                                       "Failed to unlink() `%s' : %s",
-                                                      p_to_name, strerror(errno));
+                                                      p_to_name,
+                                                      strerror(errno));
                                             exit(MOVE_ERROR);
                                          }
                                          else
@@ -750,7 +752,9 @@ try_link_again:
                                                {
                                                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                                             "Failed to link file `%s' to `%s' : %s",
-                                                            source_file, p_to_name, strerror(errno));
+                                                            source_file,
+                                                            p_to_name,
+                                                            strerror(errno));
                                                   exit(MOVE_ERROR);
                                                }
                                             }
@@ -769,7 +773,8 @@ try_link_again:
                                            {
                                               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                                         "Failed to link file `%s' to `%s' : %s",
-                                                        source_file, p_to_name, strerror(errno));
+                                                        source_file, p_to_name,
+                                                        strerror(errno));
                                               exit(MOVE_ERROR);
                                            }
                                    }
@@ -827,7 +832,8 @@ try_link_again:
                                 *p_file = '/';
                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                           "Failed to link file `%s' to `%s' : %s",
-                                          source_file, p_to_name, strerror(errno));
+                                          source_file, p_to_name,
+                                          strerror(errno));
                                 exit(MOVE_ERROR);
                              }
                           }
@@ -1050,7 +1056,8 @@ cross_link_error:
                                    {
                                       trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                                 "Failed to rename() file `%s' to `%s' : %s",
-                                                if_name, ff_name, strerror(errno));
+                                                if_name, ff_name,
+                                                strerror(errno));
                                       exit(RENAME_ERROR);
                                    }
                                 }
@@ -1071,10 +1078,51 @@ cross_link_error:
                      }
                      else
                      {
-                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                  "Failed to rename() file `%s' to `%s' : %s",
-                                  if_name, ff_name, strerror(errno));
-                        exit(RENAME_ERROR);
+                        char reason_str[23],
+                             *sign;
+
+                        if (errno == ENOENT)
+                        {
+                           int         tmp_errno = errno;
+                           char        tmp_char = *p_ff_name;
+                           struct stat tmp_stat_buf;
+
+                           *p_ff_name = '\0';
+                           if ((stat(if_name, &tmp_stat_buf) == -1) &&
+                               (errno == ENOENT))
+                           {
+                              (void)strcpy(reason_str, "(source missing) ");
+                              ret = STILL_FILES_TO_SEND;
+                              sign = DEBUG_SIGN;
+                           }
+                           else if ((stat(ff_name, &tmp_stat_buf) == -1) &&
+                                    (errno == ENOENT))
+                                {
+                                   (void)strcpy(reason_str,
+                                                "(destination missing) ");
+                                   ret = RENAME_ERROR;
+                                   sign = WARN_SIGN;
+                                }
+                                else
+                                {
+                                   reason_str[0] = '\0';
+                                   ret = RENAME_ERROR;
+                                   sign = WARN_SIGN;
+                                }
+
+                           *p_ff_name = tmp_char;
+                           errno = tmp_errno;
+                        }
+                        else
+                        {
+                           ret = RENAME_ERROR;
+                           sign = WARN_SIGN;
+                        }
+                        trans_log(sign, __FILE__, __LINE__, NULL, NULL,
+                                  "Failed to rename() file `%s' to `%s' %s: %s",
+                                  if_name, ff_name, reason_str,
+                                  strerror(errno));
+                        exit(ret);
                      }
                   }
                   else
@@ -1082,7 +1130,8 @@ cross_link_error:
                      if (fsa->debug > NORMAL_MODE)
                      {
                         trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                     "Renamed file `%s' to `%s'.", if_name, ff_name);
+                                     "Renamed file `%s' to `%s'.",
+                                     if_name, ff_name);
                      }
                   }
                }
@@ -1474,7 +1523,8 @@ try_again_unlink:
          if (rmdir(file_path) == -1)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "Failed to rmdir() `%s' : %s", file_path, strerror(errno));
+                       "Failed to rmdir() `%s' : %s",
+                       file_path, strerror(errno));
             exit_status = STILL_FILES_TO_SEND;
          }
 #endif

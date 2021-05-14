@@ -1600,11 +1600,26 @@ main(int argc, char *argv[])
                                     (db.special_flag & CREATE_TARGET_DIR) ? YES : NO,
                                     db.dir_mode, created_path)) != SUCCESS)
             {
-               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+               int  ret;
+               char *sign;
+
+               if (status == 2) /* No such file */
+               {
+                  /* Lets assume some other process has removed it. */
+                  /* Treat this differently, not as a hard error.   */
+                  ret = STILL_FILES_TO_SEND;
+                  sign = WARN_SIGN;
+               }
+               else
+               {
+                  ret = MOVE_REMOTE_ERROR;
+                  sign = ERROR_SIGN;
+               }
+               trans_log(sign, __FILE__, __LINE__, NULL, msg_str,
                          "Failed to move remote file `%s' to `%s' (%d)",
                          initial_filename, remote_filename, status);
                sftp_quit();
-               exit(eval_timeout(MOVE_REMOTE_ERROR));
+               exit(eval_timeout(ret));
             }
             else
             {
