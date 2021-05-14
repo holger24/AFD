@@ -1,6 +1,6 @@
 /*
  *  afd_info.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -112,7 +112,7 @@ char                       host_name[MAX_HOSTNAME_LENGTH + 1],
                            *info_data = NULL,
                            protocol_label_str[80],
                            *p_work_dir,
-                           label_l[NO_OF_FSA_ROWS][40] =
+                           label_l[NO_OF_FSA_ROWS][46] =
                            {
                               "",
                               "Real host name 1:",
@@ -120,7 +120,7 @@ char                       host_name[MAX_HOSTNAME_LENGTH + 1],
                               "Last connection :",
                               "Total errors    :"
                            },
-                           label_r[NO_OF_FSA_ROWS][40] =
+                           label_r[NO_OF_FSA_ROWS][46] =
                            {
                               "",
                               "Real host name 2     :",
