@@ -1054,6 +1054,8 @@ typedef unsigned long       u_long_64;
 #define ACCEPT_DOT_FILES_ID_LENGTH       (sizeof(ACCEPT_DOT_FILES_ID) - 1)
 #define DO_NOT_GET_DIR_LIST_ID           "do not get dir list"
 #define DO_NOT_GET_DIR_LIST_ID_LENGTH    (sizeof(DO_NOT_GET_DIR_LIST_ID) - 1)
+#define URL_CREATES_FILE_NAME_ID         "url creates file name"
+#define URL_CREATES_FILE_NAME_ID_LENGTH  (sizeof(URL_CREATES_FILE_NAME_ID) -1)
 #define DIR_WARN_TIME_ID                 "warn time"
 #define DIR_WARN_TIME_ID_LENGTH          (sizeof(DIR_WARN_TIME_ID) - 1)
 #define DIR_INFO_TIME_ID                 "info time"
@@ -2044,6 +2046,7 @@ typedef unsigned long       u_long_64;
 #endif
 #define DIR_DISABLED_STATIC        16777216
 #define ONE_PROCESS_JUST_SCANNING  33554432
+#define URL_CREATES_FILE_NAME      67108864
 
 #ifdef WITH_INOTIFY
 /*
@@ -2948,7 +2951,8 @@ struct fileretrieve_status
                                             /*+------+------------------+*/
                                             /*|Bit(s)|     Meaning      |*/
                                             /*+------+------------------+*/
-                                            /*|27-32 | Not used.        |*/
+                                            /*|28-32 | Not used.        |*/
+                                            /*|   27 | URL_CREATES_FILE_NAME|*/
                                             /*|   26 | ONE_PROCESS_JUST_SCANNING|*/
                                             /*|   25 | DIR_DISABLED_STATIC|*/
                                             /*|   24 | INOTIFY_DELETE   |*/

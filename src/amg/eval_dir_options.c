@@ -50,6 +50,7 @@ DESCR__S_M3
  **        do not create source dir
  **        do not get dir list
  **        do not remove
+ **        url creates file name
  **        store retrieve list [once]
  **        priority <value>                      [DEFAULT 9]
  **        force reread [local|remote]
@@ -181,6 +182,7 @@ extern struct dir_data *dd;
 #define LS_DATA_FILENAME_FLAG            8
 #define LOCAL_REMOTE_DIR_FLAG            16
 #define ONE_PROCESS_JUST_SCANNING_FLAG   32
+#define URL_CREATES_FILE_NAME_FLAG       64
 
 
 /*########################## eval_dir_options() #########################*/
@@ -241,6 +243,7 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
 #endif
    dd[dir_pos].accept_dot_files = NO;
    dd[dir_pos].do_not_get_dir_list = NO;
+   dd[dir_pos].url_creates_file_name = NO;
    dd[dir_pos].create_source_dir = NO;
    dd[dir_pos].max_errors = 10;
    dd[dir_pos].info_time = default_info_time;
@@ -961,6 +964,17 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
                  ptr++;
               }
               dd[dir_pos].do_not_get_dir_list = YES;
+           }
+      else if (((used2 & URL_CREATES_FILE_NAME_FLAG) == 0) &&
+               (strncmp(ptr, URL_CREATES_FILE_NAME_ID, URL_CREATES_FILE_NAME_ID_LENGTH) == 0))
+           {
+              used2 |= URL_CREATES_FILE_NAME_FLAG;
+              ptr += URL_CREATES_FILE_NAME_ID_LENGTH;
+              while ((*ptr != '\n') && (*ptr != '\0'))
+              {
+                 ptr++;
+              }
+              dd[dir_pos].url_creates_file_name = YES;
            }
       else if (((used & DONT_CREATE_SOURCE_DIR_FLAG) == 0) &&
                (strncmp(ptr, DONT_CREATE_SOURCE_DIR_ID, DONT_CREATE_SOURCE_DIR_ID_LENGTH) == 0))

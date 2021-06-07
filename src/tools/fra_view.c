@@ -467,6 +467,10 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "DONT_GET_DIR_LIST ");
             }
+            if (fra[i].dir_flag & URL_CREATES_FILE_NAME)
+            {
+               (void)fprintf(stdout, "URL_CREATES_FILE_NAME ");
+            }
             if (fra[i].dir_flag & DIR_ERROR_SET)
             {
                (void)fprintf(stdout, "DIR_ERROR_SET ");

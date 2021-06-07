@@ -55,6 +55,7 @@ struct http_message_reply
 #ifdef _WITH_EXTRA_CHECK
           char         http_etag[MAX_EXTRA_LS_DATA_LENGTH + 1];
 #endif
+          char         filename[MAX_FILENAME_LENGTH + 1];
           off_t        content_length;
           time_t       date;
           char         *authorization;
@@ -91,9 +92,9 @@ extern int  http_connect(char *, char *, int, char *, char *, int, int),
 #endif
             http_del(char *, char *, char *),
 #ifdef _WITH_EXTRA_CHECK
-            http_get(char *, char *, char *, char *, off_t *, off_t),
+            http_get(char *, char *, char *, char *, char *, off_t *, off_t),
 #else
-            http_get(char *, char *, char *, off_t *, off_t),
+            http_get(char *, char *, char *, char *, off_t *, off_t),
 #endif
             http_head(char *, char *, char *, off_t *, time_t *),
             http_noop(void),

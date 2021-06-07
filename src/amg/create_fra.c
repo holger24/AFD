@@ -453,6 +453,10 @@ create_fra(int no_of_dirs)
          {
             fra[i].dir_flag |= DONT_GET_DIR_LIST;
          }
+         if (dd[i].url_creates_file_name == YES)
+         {
+            fra[i].dir_flag |= URL_CREATES_FILE_NAME;
+         }
          if (dd[i].one_process_just_scaning == YES)
          {
             fra[i].dir_flag |= ONE_PROCESS_JUST_SCANNING;
@@ -635,6 +639,13 @@ create_fra(int no_of_dirs)
             {
                fra[i].dir_flag ^= DONT_GET_DIR_LIST;
             }
+            if (((fra[i].dir_flag & URL_CREATES_FILE_NAME) &&
+                 (dd[i].url_creates_file_name == NO)) ||
+                (((fra[i].dir_flag & URL_CREATES_FILE_NAME) == 0) &&
+                 (dd[i].url_creates_file_name == YES)))
+            {
+               fra[i].dir_flag ^= URL_CREATES_FILE_NAME;
+            }
             if (((fra[i].dir_flag & ONE_PROCESS_JUST_SCANNING) &&
                  (dd[i].one_process_just_scaning == NO)) ||
                 (((fra[i].dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) &&
@@ -759,6 +770,10 @@ create_fra(int no_of_dirs)
             if (dd[i].do_not_get_dir_list == YES)
             {
                fra[i].dir_flag |= DONT_GET_DIR_LIST;
+            }
+            if (dd[i].url_creates_file_name == YES)
+            {
+               fra[i].dir_flag |= URL_CREATES_FILE_NAME;
             }
             if (dd[i].one_process_just_scaning == YES)
             {

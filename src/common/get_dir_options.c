@@ -492,6 +492,16 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
+         if (fra[i].dir_flag & URL_CREATES_FILE_NAME)
+         {
+            (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
+                         URL_CREATES_FILE_NAME_ID);
+            d_o->no_of_dir_options++;
+            if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
+            {
+               goto done;
+            }
+         }
          if (fra[i].dir_flag & ONE_PROCESS_JUST_SCANNING)
          {
             (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],

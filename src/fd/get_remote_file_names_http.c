@@ -285,6 +285,81 @@ get_remote_file_names_http(off_t *file_size_to_retrieve,
        i = 0;
 
    *file_size_to_retrieve = 0;
+   if (fra->dir_flag & URL_CREATES_FILE_NAME)
+   {
+      /* Add this file to the list. */
+      if (rl_fd == -1)
+      {
+         if (attach_ls_data(fra, db.special_flag, YES) == INCORRECT)
+         {
+            http_quit();
+            exit(INCORRECT);
+         }
+      }
+      if ((no_of_listed_files != 0) &&
+          ((no_of_listed_files % RETRIEVE_LIST_STEP_SIZE) == 0))
+      {
+         char   *ptr;
+         size_t new_size = (((no_of_listed_files / RETRIEVE_LIST_STEP_SIZE) + 1) *
+                            RETRIEVE_LIST_STEP_SIZE * sizeof(struct retrieve_list)) +
+                            AFD_WORD_OFFSET;
+
+         ptr = (char *)rl - AFD_WORD_OFFSET;
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
+         if ((fra->stupid_mode == YES) || (fra->remove == YES))
+         {
+            if ((ptr = realloc(ptr, new_size)) == NULL)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "realloc() error : %s", strerror(errno));
+               http_quit();
+               exit(INCORRECT);
+            }
+         }
+         else
+         {
+#endif
+            if ((ptr = mmap_resize(rl_fd, ptr, new_size)) == (caddr_t) -1)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          "mmap_resize() error : %s", strerror(errno));
+               http_quit();
+               exit(INCORRECT);
+            }
+            rl_size = new_size;
+#ifdef DO_NOT_PARALLELIZE_ALL_FETCH
+         }
+#endif
+         if (no_of_listed_files < 0)
+         {
+            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       "Hmmm, no_of_listed_files = %d", no_of_listed_files);
+               no_of_listed_files = 0;
+         }
+         *(int *)ptr = no_of_listed_files;
+         current_no_of_listed_files = (int *)ptr;
+         ptr += AFD_WORD_OFFSET;
+         rl = (struct retrieve_list *)ptr;
+      }
+
+      rl[0].file_name[0] = '\0';
+#ifdef _WITH_EXTRA_CHECK
+      rl[0].extra_data[0] = '\0';
+#endif
+      rl[0].retrieved = NO;
+      rl[0].assigned = (unsigned char)db.job_no + 1;
+      rl[0].in_list = YES;
+      rl[0].special_flag = 0;
+      rl[0].file_mtime = -1;
+      rl[0].got_date = NO;
+      rl[0].size = -1;
+      rl[0].prev_size = 0;
+      no_of_listed_files = 1;
+      *current_no_of_listed_files = 1;
+      *more_files_in_list = NO;
+
+      return(1);
+   }
 #ifdef DO_NOT_PARALLELIZE_ALL_FETCH
    if ((*more_files_in_list == YES) ||
        (db.special_flag & DISTRIBUTED_HELPER_JOB) ||
@@ -657,7 +732,7 @@ try_attach_again:
 #ifdef _WITH_EXTRA_CHECK
          etag[0] = '\0';
 #endif
-         if (((status = http_get(db.hostname, db.target_dir, "",
+         if (((status = http_get(db.hostname, db.target_dir, "", NULL,
 #ifdef _WITH_EXTRA_CHECK
                                  etag,
 #endif

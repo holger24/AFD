@@ -1,6 +1,6 @@
 /*
  *  amgdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -468,6 +468,11 @@ struct dir_data
                                             /* HTTP, where directory     */
                                             /* listing is not supported  */
                                             /* or wanted.                */
+          unsigned char url_creates_file_name;/* The given URL creates   */
+                                            /* the file name when the    */
+                                            /* request is issued. This   */
+                                            /* is currently only usefull */
+                                            /* for HTTP.                 */
           unsigned char dont_create_source_dir;
           unsigned char create_source_dir;  /* Create the source         */
                                             /* directory if it does not  */

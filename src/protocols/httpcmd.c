@@ -225,6 +225,7 @@ http_connect(char *hostname,
          hmr.http_options_not_working = 0;
          hmr.bytes_buffered = 0;
          hmr.bytes_read = 0;
+         hmr.filename[0] = '\0';
 #ifdef _WITH_EXTRA_CHECK
          hmr.http_etag[0] = '\0';
          hmr.http_weak_etag = YES;
@@ -710,6 +711,7 @@ http_connect(char *hostname,
       hmr.http_options_not_working = 0;
       hmr.bytes_buffered = 0;
       hmr.bytes_read = 0;
+      hmr.filename[0] = '\0';
 #ifdef _WITH_EXTRA_CHECK
       hmr.http_etag[0] = '\0';
       hmr.http_weak_etag = YES;
@@ -925,6 +927,7 @@ int
 http_get(char  *host,
          char  *path,
          char  *filename,
+         char  *new_filename,
 #ifdef _WITH_EXTRA_CHECK
          char  *etag,
 #endif
@@ -948,6 +951,7 @@ http_get(char  *host,
       hmr.bytes_read = 0;
       hmr.retries = 0;
       hmr.date = -1;
+      hmr.filename[0] = '\0';
       if ((*content_length == 0) && (filename[0] != '\0') &&
           ((hmr.http_options_not_working & HTTP_OPTION_HEAD) == 0))
       {
@@ -1079,22 +1083,14 @@ retry_get_range:
          size_t bytes_copied;
 
          /* If-None-Match */
-         none_match[0] = 'I';
-         none_match[1] = 'f';
-         none_match[2] = '-';
-         none_match[3] = 'N';
-         none_match[4] = 'o';
-         none_match[5] = 'n';
-         none_match[6] = 'e';
-         none_match[7] = '-';
-         none_match[8] = 'M';
-         none_match[9] = 'a';
-         none_match[10] = 't';
-         none_match[11] = 'c';
-         none_match[12] = 'h';
-         none_match[13] = ':';
-         none_match[14] = ' ';
-         none_match[15] = '"';
+         none_match[0] = 'I'; none_match[1] = 'f';
+         none_match[2] = '-'; none_match[3] = 'N';
+         none_match[4] = 'o'; none_match[5] = 'n';
+         none_match[6] = 'e'; none_match[7] = '-';
+         none_match[8] = 'M'; none_match[9] = 'a';
+         none_match[10] = 't'; none_match[11] = 'c';
+         none_match[12] = 'h'; none_match[13] = ':';
+         none_match[14] = ' '; none_match[15] = '"';
          bytes_copied = my_strlcpy(&none_match[16], etag, MAX_EXTRA_LS_DATA_LENGTH);
          none_match[16 + bytes_copied] = '"';
          none_match[16 + bytes_copied + 1] = '\r';
@@ -1142,12 +1138,27 @@ retry_get:
             {
                *content_length = hmr.content_length;
             }
+            if (new_filename != NULL)
+            {
+               if (hmr.filename[0] == '\0')
+               {
+                  new_filename[0] = '\0';
+               }
+               else
+               {
+                  (void)strcpy(new_filename, hmr.filename);
+               }
+            }
 #ifdef _WITH_EXTRA_CHECK
             (void)strcpy(etag, hmr.http_etag);
 #endif
          }
          else if (reply == 304) /* Not Modified */
               {
+                 if (new_filename != NULL)
+                 {
+                    new_filename[0] = '\0';
+                 }
                  reply = NOTHING_TO_FETCH;
               }
          else if ((reply == 403) || /* Forbidden */
@@ -1187,6 +1198,10 @@ retry_get:
                  }
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
+                 if (new_filename != NULL)
+                 {
+                    new_filename[0] = '\0';
+                 }
               }
          else if (reply == 401) /* Unauthorized */
               {
@@ -1210,6 +1225,10 @@ retry_get:
 
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
+                 if (new_filename != NULL)
+                 {
+                    new_filename[0] = '\0';
+                 }
               }
          else if (reply == 416) /* Requested Range Not Satisfiable */
               {
@@ -1224,6 +1243,10 @@ retry_get:
               {
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
+                 if (new_filename != NULL)
+                 {
+                    new_filename[0] = '\0';
+                 }
               }
       }
    }
@@ -2785,6 +2808,144 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
                        i++;
                     }
                     store_http_options(i, read_length);
+                 }
+            /* Content-Disposition: */
+            else if ((read_length > 20) && (msg_str[19] == ':') &&
+                     ((msg_str[8] == 'D') || (msg_str[8] == 'd')) &&
+                     ((msg_str[9] == 'i') || (msg_str[9] == 'I')) &&
+                     ((msg_str[10] == 's') || (msg_str[10] == 'S')) &&
+                     ((msg_str[11] == 'p') || (msg_str[11] == 'P')) &&
+                     ((msg_str[12] == 'o') || (msg_str[12] == 'O')) &&
+                     ((msg_str[13] == 's') || (msg_str[13] == 'S')) &&
+                     ((msg_str[14] == 'i') || (msg_str[14] == 'I')) &&
+                     ((msg_str[15] == 't') || (msg_str[15] == 'T')) &&
+                     ((msg_str[16] == 'i') || (msg_str[16] == 'I')) &&
+                     ((msg_str[17] == 'o') || (msg_str[17] == 'O')) &&
+                     ((msg_str[18] == 'n') || (msg_str[18] == 'N')) &&
+                     ((msg_str[0] == 'C') || (msg_str[0] == 'c')) &&
+                     ((msg_str[1] == 'o') || (msg_str[1] == 'O')) &&
+                     ((msg_str[2] == 'n') || (msg_str[2] == 'N')) &&
+                     ((msg_str[3] == 't') || (msg_str[3] == 'T')) &&
+                     ((msg_str[4] == 'e') || (msg_str[4] == 'E')) &&
+                     ((msg_str[5] == 'n') || (msg_str[5] == 'N')) &&
+                     ((msg_str[6] == 't') || (msg_str[6] == 'T')) &&
+                     (msg_str[7] == '-'))
+                 {
+                    int i = 20;
+
+                    while ((i < read_length) &&
+                           ((msg_str[i] == ' ') || (msg_str[i] == '\t')))
+                    {
+                       i++;
+                    }
+                    /* attachment; */
+                    if (((i + 11) < read_length) &&
+                        ((msg_str[i] == 'a') || (msg_str[i] == 'A')) &&
+                        ((msg_str[i + 1] == 't') || (msg_str[i + 1] == 'T')) &&
+                        ((msg_str[i + 2] == 't') || (msg_str[i + 2] == 'T')) &&
+                        ((msg_str[i + 3] == 'a') || (msg_str[i + 3] == 'A')) &&
+                        ((msg_str[i + 4] == 'c') || (msg_str[i + 4] == 'C')) &&
+                        ((msg_str[i + 5] == 'h') || (msg_str[i + 5] == 'H')) &&
+                        ((msg_str[i + 6] == 'm') || (msg_str[i + 6] == 'M')) &&
+                        ((msg_str[i + 7] == 'e') || (msg_str[i + 7] == 'E')) &&
+                        ((msg_str[i + 8] == 'n') || (msg_str[i + 8] == 'N')) &&
+                        ((msg_str[i + 9] == 't') || (msg_str[i + 9] == 'T')) &&
+                        (msg_str[i + 10] == ';'))
+                    {
+                       i = i + 11;
+                       while ((i < read_length) &&
+                              ((msg_str[i] == ' ') || (msg_str[i] == '\t')))
+                       {
+                          i++;
+                       }
+                       if (i < read_length)
+                       {
+                          /* filename= */
+                          if (((i + 9) < read_length) &&
+                              ((msg_str[i] == 'f') || (msg_str[i] == 'F')) &&
+                              ((msg_str[i + 1] == 'i') || (msg_str[i + 1] == 'I')) &&
+                              ((msg_str[i + 2] == 'l') || (msg_str[i + 2] == 'L')) &&
+                              ((msg_str[i + 3] == 'e') || (msg_str[i + 3] == 'E')) &&
+                              ((msg_str[i + 4] == 'n') || (msg_str[i + 4] == 'N')) &&
+                              ((msg_str[i + 5] == 'a') || (msg_str[i + 5] == 'A')) &&
+                              ((msg_str[i + 6] == 'm') || (msg_str[i + 6] == 'M')) &&
+                              ((msg_str[i + 7] == 'e') || (msg_str[i + 7] == 'E')) &&
+                              (msg_str[i + 8] == '='))
+                          {
+                             char end_char;
+
+                             if (msg_str[i + 9] == '"')
+                             {
+                                i = i + 10;
+                                end_char = '"';
+                             }
+                             else
+                             {
+                                i = i + 9;
+                                end_char = '\0';
+                             }
+                             if ((msg_str[i] == '.') || (msg_str[i] == '/'))
+                             {
+                                trans_log(DEBUG_SIGN,  __FILE__, __LINE__,
+                                          "get_http_reply", NULL,
+                                          _("Filename may not start with `%c'."),
+                                          msg_str[i]);
+                             }
+                             else
+                             {
+                                int j = 0;
+
+                                while ((i < read_length) &&
+                                       (j < MAX_FILENAME_LENGTH) &&
+                                       (isascii((int)msg_str[i]) != 0) &&
+                                       (msg_str[i] != end_char) &&
+                                       (msg_str[i] != '/'))
+                                {
+                                   hmr.filename[j] = msg_str[i];
+                                   i++;
+                                   j++;
+                                }
+                                if (msg_str[i] == end_char)
+                                {
+                                   hmr.filename[j] = '\0';
+                                }
+                                else
+                                {
+                                   if (j == MAX_FILENAME_LENGTH)
+                                   {
+                                      trans_log(DEBUG_SIGN,  __FILE__, __LINE__,
+                                                "get_http_reply", NULL,
+                                                "Filename larger then %d bytes",
+                                                MAX_FILENAME_LENGTH);
+                                   }
+                                   else if (i == read_length)
+                                        {
+                                           trans_log(DEBUG_SIGN,  __FILE__,
+                                                     __LINE__, "get_http_reply",
+                                                     NULL,
+                                                     "Premature end of buffer reached.");
+                                        }
+                                   else if (msg_str[i] == '/')
+                                        {
+                                           trans_log(DEBUG_SIGN,  __FILE__,
+                                                     __LINE__, "get_http_reply",
+                                                     NULL,
+                                                     "Filename may not contain directory information.");
+                                        }
+                                        else
+                                        {
+                                           trans_log(DEBUG_SIGN,  __FILE__,
+                                                     __LINE__, "get_http_reply",
+                                                     NULL,
+                                                     "Filename contains non ASCII character (%d).",
+                                                     (int)msg_str[i]);
+                                        }
+                                   hmr.filename[0] = '\0';
+                                }
+                             }
+                          }
+                       }
+                    }
                  }
          } /* for (;;) */
 

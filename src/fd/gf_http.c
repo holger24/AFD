@@ -648,7 +648,8 @@ main(int argc, char *argv[])
                      {
                         trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                                   "no_of_listed_files has been reduced (%d -> %d)!",
-                                  no_of_listed_files, *current_no_of_listed_files);
+                                  no_of_listed_files,
+                                  *current_no_of_listed_files);
                         (void)http_quit();
                         reset_values(files_retrieved, file_size_retrieved,
                                      files_to_retrieve, file_size_to_retrieve,
@@ -665,13 +666,38 @@ main(int argc, char *argv[])
                            prev_download_exists = NO;
                      off_t offset;
 
-                     if (tmp_rl.file_name[0] != '.')
+                     if (fra->dir_flag & URL_CREATES_FILE_NAME)
                      {
-                        (void)strcpy(p_local_tmp_file, tmp_rl.file_name);
+                        int end;
+
+                        *p_local_tmp_file = 'N';
+                        *(p_local_tmp_file + 1) = 'O';
+                        *(p_local_tmp_file + 2) = '_';
+                        *(p_local_tmp_file + 3) = 'N';
+                        *(p_local_tmp_file + 4) = 'A';
+                        *(p_local_tmp_file + 5) = 'M';
+                        *(p_local_tmp_file + 6) = 'E';
+                        *(p_local_tmp_file + 7) = '\0';
+
+                        /* Remove / at end. In this case http_get() will */
+                        /* not get a file name. The file name is in      */
+                        /* db.target_dir.                                */
+                        end = strlen(db.target_dir) - 1;
+                        if (db.target_dir[end] == '/')
+                        {
+                           db.target_dir[end] = '\0';
+                        }
                      }
                      else
                      {
-                        (void)strcpy(p_local_file, tmp_rl.file_name);
+                        if (tmp_rl.file_name[0] != '.')
+                        {
+                           (void)strcpy(p_local_tmp_file, tmp_rl.file_name);
+                        }
+                        else
+                        {
+                           (void)strcpy(p_local_file, tmp_rl.file_name);
+                        }
                      }
                      if (fsa->file_size_offset != -1)
                      {
@@ -705,7 +731,8 @@ main(int argc, char *argv[])
                      }
 
                      if ((tmp_rl.size == -1) &&
-                         ((fra->dir_flag & DONT_GET_DIR_LIST) == 0))
+                         ((fra->dir_flag & DONT_GET_DIR_LIST) == 0) &&
+                         ((fra->dir_flag & URL_CREATES_FILE_NAME) == 0))
                      {
                         content_length = 0;
                      }
@@ -729,6 +756,7 @@ main(int argc, char *argv[])
 #endif
                      if (((status = http_get(db.hostname, db.target_dir,
                                              tmp_rl.file_name,
+                                             (fra->dir_flag & URL_CREATES_FILE_NAME) ? tmp_rl.file_name : NULL,
 #ifdef _WITH_EXTRA_CHECK
                                              tmp_rl.extra_data,
 #endif
@@ -750,6 +778,10 @@ main(int argc, char *argv[])
                      {
                         content_length = tmp_content_length;
                         adjust_rl_size = YES;
+                        if (tmp_rl.size == -1)
+                        {
+                           tmp_rl.size = tmp_content_length;
+                        }
                      }
                      else
                      {
@@ -884,7 +916,8 @@ main(int argc, char *argv[])
                                 trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                                           "Database changed, exiting.");
                                 (void)http_quit();
-                                reset_values(files_retrieved, file_size_retrieved,
+                                reset_values(files_retrieved,
+                                             file_size_retrieved,
                                              files_to_retrieve,
                                              file_size_to_retrieve,
                                              (struct job *)&db);
@@ -927,7 +960,8 @@ main(int argc, char *argv[])
                                      local_tmp_file, strerror(errno));
                            http_quit();
                            reset_values(files_retrieved, file_size_retrieved,
-                                        files_to_retrieve, file_size_to_retrieve,
+                                        files_to_retrieve,
+                                        file_size_to_retrieve,
                                         (struct job *)&db);
                            exit(OPEN_LOCAL_ERROR);
                         }
@@ -975,7 +1009,8 @@ main(int argc, char *argv[])
                                 {
                                    (void)unlink(local_tmp_file);
                                 }
-                                reset_values(files_retrieved, file_size_retrieved,
+                                reset_values(files_retrieved,
+                                             file_size_retrieved,
                                              files_to_retrieve,
                                              file_size_to_retrieve,
                                              (struct job *)&db);
@@ -1073,7 +1108,8 @@ main(int argc, char *argv[])
 # else
                                                     "Blocksize read = %d (bytes_done=%lld)",
 # endif
-                                                    status, (pri_off_t)bytes_done);
+                                                    status,
+                                                    (pri_off_t)bytes_done);
                                     }
 #endif
 
@@ -1112,8 +1148,8 @@ main(int argc, char *argv[])
                                     else if (db.fsa_pos == INCORRECT)
                                          {
                                             /*
-                                             * Looks as if this host is no longer
-                                             * in our database.
+                                             * Looks as if this host is no
+                                             * longer in our database.
                                              */
                                             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                                                       "Database changed, exiting.");
@@ -1154,7 +1190,8 @@ main(int argc, char *argv[])
 # else
                                                     "Reading blocksize %d (bytes_done=%ld).",
 # endif
-                                                    hunk_size, (pri_off_t)bytes_done);
+                                                    hunk_size,
+                                                    (pri_off_t)bytes_done);
                                     }
 #endif
                                     if ((status = http_read(buffer, hunk_size)) <= 0)
@@ -1307,7 +1344,8 @@ main(int argc, char *argv[])
                                  }
                                  if (fsa->trl_per_process > 0)
                                  {
-                                    limit_transfer_rate(status, fsa->trl_per_process,
+                                    limit_transfer_rate(status,
+                                                        fsa->trl_per_process,
                                                         clktck);
                                  }
                                  if (status > 0)
@@ -1316,7 +1354,8 @@ main(int argc, char *argv[])
                                     {
                                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                                  "Failed to write() to file %s : %s",
-                                                 local_tmp_file, strerror(errno));
+                                                 local_tmp_file,
+                                                 strerror(errno));
                                        http_quit();
                                        reset_values(files_retrieved,
                                                     file_size_retrieved,
@@ -1380,7 +1419,8 @@ main(int argc, char *argv[])
                            if (fsa->debug > NORMAL_MODE)
                            {
                               trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                           "Closed local file %s.", local_tmp_file);
+                                           "Closed local file %s.",
+                                           local_tmp_file);
                            }
                         }
                         rename_pending = i;
@@ -1551,8 +1591,8 @@ main(int argc, char *argv[])
 #ifdef WITH_ERROR_QUEUE
                            if (fsa->host_status & ERROR_QUEUE_SET)
                            {
-                              remove_from_error_queue(db.id.dir, fsa, db.fsa_pos,
-                                                      fsa_fd);
+                              remove_from_error_queue(db.id.dir, fsa,
+                                                      db.fsa_pos, fsa_fd);
                            }
 #endif
                            if (fsa->host_status & HOST_ACTION_SUCCESS)
@@ -1585,6 +1625,36 @@ main(int argc, char *argv[])
                         }
 
                         /* Rename the file so AMG can grab it. */
+                        if (fra->dir_flag & URL_CREATES_FILE_NAME)
+                        {
+                           if (tmp_rl.file_name[0] == '\0')
+                           {
+                              int *counter,
+                                  counter_fd;
+
+                              /* Set a default name. */
+                              if ((counter_fd = open_counter_file(COUNTER_FILE,
+                                                                   &counter)) < 0)
+                              {
+                                 trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                           _("Failed to open counter file, just taking 0"));
+                                 (void)snprintf(tmp_rl.file_name,
+                                                MAX_FILENAME_LENGTH,
+                                                "NO_NAME.%d.0",
+                                                (int)db.job_no);
+                              }
+                              else
+                              {
+                                 (void)next_counter(counter_fd, counter,
+                                                    MAX_MSG_PER_SEC);
+                                 (void)snprintf(tmp_rl.file_name,
+                                                MAX_FILENAME_LENGTH,
+                                                "NO_NAME.%d.%x",
+                                                (int)db.job_no, *counter);
+                                 close_counter_file(counter_fd, &counter);
+                              }
+                           }
+                        }
                         if (tmp_rl.file_name[0] == '.')
                         {
                            (void)strcpy(p_local_file, &tmp_rl.file_name[1]);
@@ -1598,7 +1668,8 @@ main(int argc, char *argv[])
                            rename_pending = -1;
                            trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
                                      "Failed to rename() %s to %s : %s",
-                                     local_tmp_file, local_file, strerror(errno));
+                                     local_tmp_file, local_file,
+                                     strerror(errno));
                         }
                         else
                         {
@@ -1619,7 +1690,7 @@ main(int argc, char *argv[])
                               {
 # ifdef WITHOUT_FIFO_RW_SUPPORT
                                  output_log_fd(&ol_fd, &ol_readfd, &db.output_log);
-# else                                                          
+# else
                                  output_log_fd(&ol_fd, &db.output_log);
 # endif
                               }
@@ -1627,7 +1698,7 @@ main(int argc, char *argv[])
                               {
                                  output_log_ptrs(&ol_retries,
                                                  &ol_job_number,
-                                                 &ol_data,              /* Pointer to buffer.       */
+                                                 &ol_data, /* Pointer to buffer.       */
                                                  &ol_file_name,
                                                  &ol_file_name_length,
                                                  &ol_archive_name_length,
@@ -1645,12 +1716,19 @@ main(int argc, char *argv[])
 # endif
                                                  &db.output_log);
                               }
-                              (void)strcpy(ol_file_name, tmp_rl.file_name);
+                              (void)strcpy(ol_file_name, p_local_file);
                               *ol_file_name_length = (unsigned short)strlen(ol_file_name);
                               ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
                               ol_file_name[*ol_file_name_length + 1] = '\0';
                               (*ol_file_name_length)++;
-                              *ol_file_size = tmp_rl.size;
+                              if (tmp_rl.size == -1)
+                              {
+                                 *ol_file_size = bytes_done;
+                              }
+                              else
+                              {
+                                 *ol_file_size = tmp_rl.size;
+                              }
                               *ol_job_number = db.id.dir;
                               *ol_retries = db.retries;
                               *ol_unl = 0;
@@ -1661,7 +1739,8 @@ main(int argc, char *argv[])
                               if (write(ol_fd, ol_data, ol_real_size) != ol_real_size)
                               {
                                  system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                            "write() error : %s", strerror(errno));
+                                            "write() error : %s",
+                                            strerror(errno));
                               }
                            }
 #endif /* _OUTPUT_LOG */
@@ -1689,9 +1768,9 @@ main(int argc, char *argv[])
                            exitflag = 0;
                            exit(TRANSFER_SUCCESS);
                         }
+                        files_retrieved++;
+                        file_size_retrieved += bytes_done;
                      }
-                     files_retrieved++;
-                     file_size_retrieved += bytes_done;
 
                      if ((db.fra_pos == INCORRECT) || (db.fsa_pos == INCORRECT))
                      {
