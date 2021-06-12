@@ -1,6 +1,6 @@
 /*
  *  fsa_edit.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -434,7 +434,7 @@ main(int argc, char *argv[])
 
          case 'e' : /* File name */
             {
-               char buffer[256];
+               char buffer[MAX_FILENAME_LENGTH];
 
                (void)fprintf(stderr, _("\n\n     Enter value [e] : "));
                buffer[0] = '\0';
