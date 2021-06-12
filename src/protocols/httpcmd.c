@@ -946,7 +946,7 @@ http_get(char  *host,
 #ifdef _WITH_EXTRA_CHECK
            none_match[16 + MAX_EXTRA_LS_DATA_LENGTH + 5],
 #endif
-           resource[MAX_RECIPIENT_LENGTH];
+           resource[8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1];
 
       hmr.bytes_read = 0;
       hmr.retries = 0;
@@ -1001,12 +1001,12 @@ http_get(char  *host,
       {
          if (*path == '/')
          {
-            (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+            (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                            "%s%s", path, filename);
          }
          else
          {
-            (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+            (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                            "/%s%s", path, filename);
          }
       }
@@ -1017,12 +1017,12 @@ http_get(char  *host,
          {
             if (*path == '/')
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "https://%s%s%s", host, path, filename);
             }
             else
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "https://%s/%s%s", host, path, filename);
             }
          }
@@ -1031,12 +1031,12 @@ http_get(char  *host,
 #endif
             if (*path == '/')
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "http://%s%s%s", host, path, filename);
             }
             else
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "http://%s/%s%s", host, path, filename);
             }
 #ifdef WITH_SSL
@@ -1349,7 +1349,7 @@ http_del(char *host, char *path, char *filename)
    }
    else
    {
-      char resource[MAX_RECIPIENT_LENGTH];
+      char resource[8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1];
 
       hmr.retries = 0;
       hmr.date = -1;
@@ -1357,12 +1357,12 @@ http_del(char *host, char *path, char *filename)
       {
          if (*path == '/')
          {
-            (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+            (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                            "%s%s", path, filename);
          }
          else
          {
-            (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+            (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                            "/%s%s", path, filename);
          }
       }
@@ -1373,12 +1373,12 @@ http_del(char *host, char *path, char *filename)
          {
             if (*path == '/')
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "https://%s%s%s", host, path, filename);
             }
             else
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "https://%s/%s%s", host, path, filename);
             }
          }
@@ -1387,12 +1387,12 @@ http_del(char *host, char *path, char *filename)
 #endif
             if (*path == '/')
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "http://%s%s%s", host, path, filename);
             }
             else
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "http://%s/%s%s", host, path, filename);
             }
 #ifdef WITH_SSL
@@ -1461,7 +1461,7 @@ http_options(char *host, char *path)
    }
    else
    {
-      char resource[MAX_RECIPIENT_LENGTH];
+      char resource[8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1];
 
       if (hmr.http_options_not_working & HTTP_OPTION_OPTIONS)
       {
@@ -1482,12 +1482,12 @@ http_options(char *host, char *path)
          {
             if (*path == '/')
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "https://%s%s", host, path);
             }
             else
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "https://%s/%s", host, path);
             }
          }
@@ -1496,12 +1496,12 @@ http_options(char *host, char *path)
 #endif
             if (*path == '/')
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "http://%s%s", host, path);
             }
             else
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "http://%s/%s", host, path);
             }
 #ifdef WITH_SSL
@@ -1652,7 +1652,7 @@ http_head(char   *host,
    }
    else
    {
-      char resource[MAX_RECIPIENT_LENGTH];
+      char resource[8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1];
 
       if (hmr.http_options_not_working & HTTP_OPTION_HEAD)
       {
@@ -1671,12 +1671,12 @@ http_head(char   *host,
       {
          if (*path == '/')
          {
-            (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+            (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                            "%s%s", path, filename);
          }
          else
          {
-            (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+            (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                            "/%s%s", path, filename);
          }
       }
@@ -1687,12 +1687,12 @@ http_head(char   *host,
          {
             if (*path == '/')
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "https://%s%s%s", host, path, filename);
             }
             else
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "https://%s/%s%s", host, path, filename);
             }
          }
@@ -1701,12 +1701,12 @@ http_head(char   *host,
 #endif
             if (*path == '/')
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH,
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "http://%s%s%s", host, path, filename);
             }
             else
             {
-               (void)snprintf(resource, MAX_RECIPIENT_LENGTH, 
+               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
                               "http://%s/%s%s", host, path, filename);
             }
 #ifdef WITH_SSL
