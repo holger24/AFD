@@ -108,10 +108,10 @@
                                        where AFD is not active.
                                        [Default: enabled]
 --disable-fifo_rw_support            - Some systems do not support opening a
-                                       FIFO for reading and writting. With
+                                       FIFO for reading and writing. With
                                        this option set AFD will use two file
                                        descriptors one for reading and one
-                                       for writting.
+                                       for writing.
 --disable-sse42                      - Disables SSE4.2 optimizations ie.
                                        support for hardware CRC-32 checksum
                                        calculation.
@@ -163,7 +163,7 @@
 --enable-error_offline_for_new_host  - New host will have the flag
                                        'error + warnings offline' set.
 --enable-setuid_progs                - Enables setting setuid flag for the
-                                       programms afdcmd, afd, init_afd, mafd,
+                                       programs afdcmd, afd, init_afd, mafd,
                                        afd_ctrl, dir_ctrl, mon_ctrl and
                                        show_olog.  The setuid flag is required
                                        if other users want to monitor or
@@ -195,7 +195,7 @@
                                        considerably. However it is dangerous
                                        to enable this since it can lead
                                        to data being lost on systems with
-                                       brocken TCP-stack. Note on some
+                                       broken TCP-stack. Note on some
                                        systems (darwin) it can slowdown the
                                        system considerably.
                                        [Default: disabled]
@@ -325,6 +325,9 @@
                                        dialog. [Default: 12]
 --with-max-real-hostname-length=N    - The maximum length that the real
                                        hostname or IP may have. [Default: 40]
+--with-max-recipient-length=N        - The maximum length that one recipient
+                                       may have, including the directory
+                                       entry. [Default 256]
 --with-xor-key=KEY                   - With compiled in xor key KEY. Where
                                        KEY can be any ASCII string. If this
                                        is not set one needs to set the key

@@ -294,15 +294,12 @@
  *
  * MAX_NO_OPTIONS       - Number of options that may be defined for one
  *                        destination.
- * MAX_RECIPIENT_LENGTH - Maximum length that one recipient may have,
- *                        including the directory entry.
  * MAX_FILE_MASK_BUFFER - Maximum number of bytes that may be used to
  *                        store the file masks for one file group entry.
  *                        Each file mask will be terminated by a new-
  *                        line.
  *-----------------------------------------------------------------------*/
 #define MAX_NO_OPTIONS       15
-#define MAX_RECIPIENT_LENGTH 256
 #define MAX_OPTION_LENGTH    256
 #define MAX_FILE_MASK_BUFFER 4096
 

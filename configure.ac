@@ -738,6 +738,12 @@ AC_ARG_WITH(max-real-hostname-length,
 AC_DEFINE_UNQUOTED([MAX_REAL_HOSTNAME_LENGTH], [$with_max_real_hostname_length], [
   The value of MAX_REAL_HOSTNAME_LENGTH determines how long the real
   hostname or its IP number may be.])
+AC_ARG_WITH(max-recipient-length,
+            AS_HELP_STRING([--with-max-recipient-length=N],
+                           [maximum recipient length (default=256)]),
+            , with_max_recipient_length=256)
+AC_DEFINE_UNQUOTED([MAX_RECIPIENT_LENGTH], [$with_max_recipient_length], [
+  The value of MAX_RECIPIENT_LENGTH sets the maximum length of a recipient.])
 
 
 
@@ -1806,6 +1812,7 @@ echo "    Maximum host alias name length   : ${with_max_hostname_length}"
 echo "    Maximum real host name length    : ${with_max_real_hostname_length}"
 echo "    Maximum AFD alias name length    : ${with_max_afdname_length}"
 echo "    Max directory alias name length  : ${with_max_dir_alias_length}"
+echo "    Max recipient length             : ${with_max_recipient_length}"
 echo "    Some binaries with setuid flag   : ${ac_cv_setuid_progs}"
 echo "    Group can write                  : ${ac_cv_group_can_write}"
 echo "    Automatically create configs     : ${ac_cv_auto_create_config}"
