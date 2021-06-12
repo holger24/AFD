@@ -670,15 +670,6 @@ main(int argc, char *argv[])
                      {
                         int end;
 
-                        *p_local_tmp_file = 'N';
-                        *(p_local_tmp_file + 1) = 'O';
-                        *(p_local_tmp_file + 2) = '_';
-                        *(p_local_tmp_file + 3) = 'N';
-                        *(p_local_tmp_file + 4) = 'A';
-                        *(p_local_tmp_file + 5) = 'M';
-                        *(p_local_tmp_file + 6) = 'E';
-                        *(p_local_tmp_file + 7) = '\0';
-
                         /* Remove / at end. In this case http_get() will */
                         /* not get a file name. The file name is in      */
                         /* db.target_dir.                                */
@@ -687,6 +678,11 @@ main(int argc, char *argv[])
                         {
                            db.target_dir[end] = '\0';
                         }
+
+                        /* Since the file name can change we cannot */
+                        /* do any appending!                        */
+                        content_length = 0;
+                        offset = 0;
                      }
                      else
                      {
@@ -698,10 +694,26 @@ main(int argc, char *argv[])
                         {
                            (void)strcpy(p_local_file, tmp_rl.file_name);
                         }
-                     }
-                     if (fsa->file_size_offset != -1)
-                     {
-                        if (stat(local_tmp_file, &stat_buf) == -1)
+                        if (fsa->file_size_offset != -1)
+                        {
+                           if (stat(local_tmp_file, &stat_buf) == -1)
+                           {
+                              if (fra->stupid_mode == APPEND_ONLY)
+                              {
+                                 offset = tmp_rl.prev_size;
+                              }
+                              else
+                              {
+                                 offset = 0;
+                              }
+                           }
+                           else
+                           {
+                              offset = stat_buf.st_size;
+                              prev_download_exists = YES;
+                           }
+                        }
+                        else
                         {
                            if (fra->stupid_mode == APPEND_ONLY)
                            {
@@ -712,33 +724,16 @@ main(int argc, char *argv[])
                               offset = 0;
                            }
                         }
-                        else
-                        {
-                           offset = stat_buf.st_size;
-                           prev_download_exists = YES;
-                        }
-                     }
-                     else
-                     {
-                        if (fra->stupid_mode == APPEND_ONLY)
-                        {
-                           offset = tmp_rl.prev_size;
-                        }
-                        else
-                        {
-                           offset = 0;
-                        }
-                     }
 
-                     if ((tmp_rl.size == -1) &&
-                         ((fra->dir_flag & DONT_GET_DIR_LIST) == 0) &&
-                         ((fra->dir_flag & URL_CREATES_FILE_NAME) == 0))
-                     {
-                        content_length = 0;
-                     }
-                     else
-                     {
-                        content_length = tmp_rl.size;
+                        if ((tmp_rl.size == -1) &&
+                            ((fra->dir_flag & DONT_GET_DIR_LIST) == 0))
+                        {
+                           content_length = 0;
+                        }
+                        else
+                        {
+                           content_length = tmp_rl.size;
+                        }
                      }
                      tmp_content_length = content_length;
 
@@ -932,6 +927,25 @@ main(int argc, char *argv[])
                            trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                                         "Opened HTTP connection for file %s.",
                                         tmp_rl.file_name);
+                        }
+                        if (fra->dir_flag & URL_CREATES_FILE_NAME)
+                        {
+                           if (tmp_rl.file_name[0] == '\0')
+                           {
+                              *p_local_tmp_file = 'N';
+                              *(p_local_tmp_file + 1) = 'O';
+                              *(p_local_tmp_file + 2) = '_';
+                              *(p_local_tmp_file + 3) = 'N';
+                              *(p_local_tmp_file + 4) = 'A';
+                              *(p_local_tmp_file + 5) = 'M';
+                              *(p_local_tmp_file + 6) = 'E';
+                              *(p_local_tmp_file + 7) = '\0';
+                           }
+                           else
+                           {
+                              (void)strcpy(p_local_tmp_file,
+                                           tmp_rl.file_name);
+                           }
                         }
 
                         if (prev_download_exists == YES)
