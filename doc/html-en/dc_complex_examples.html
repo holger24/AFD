@@ -108,23 +108,16 @@ style and the 'lock ~'. Thanks to Bill Welch for this example!
 
                   [options]
                   lock ~
-                  rename decrypt
+                  srename *.pgp *
                   exec gpg -a -o %s.dec -d %s; mv %s.dec %s
-</pre>
-<p>
-And int the $AFD_WORK_DIR/etc/rename.rule file you would need the following:
-</p>
-<pre>
-      [decrypt]
-      *.pgp *
 </pre>
 <hr size=3 noshade>
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 2013 by H.Kiehl<br>
+   Copyright &copy; 2013 - 2021 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 22.11.2013
+   Last updated: 15.06.2021
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

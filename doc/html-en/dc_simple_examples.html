@@ -38,6 +38,32 @@ send with the priority 1 and will be archived for three days. The ftp
 files will be send with a dot first and only when a file is completely
 transmitted will it be renamed to its original name.
 </p>
+<p>
+There are several ways to specify a source directory. The following
+examples all result to the same directory:
+</p>
+<pre>
+      [directory] don_in
+      /home/donald/data/in
+</pre>
+<pre>
+      [directory] don_in
+      ~donald/data/in
+</pre>
+<pre>
+      [directory] don_in
+      file://home/donald/data/in
+</pre>
+<pre>
+      [directory]
+      file://donald@don_in/data/in
+</pre>
+<p>
+don_in is the directory alias name. If this is not set AFD will assign
+one for it that will be CRC32 checksum of the directory string. This is
+not human readable, so if you want to see readable directory alias names
+in dialog dir_ctrl, set them.
+</p>
 <h3 align=center><u><a name="example2">Example 2</a></u></h3>
 <p>
 In the following example we want different options when we send mails to
@@ -152,7 +178,7 @@ the files on the remote host:
       ftp://micky:mouse@ducktown//usr/data/tmp
 
            [dir options]
-	   do not remove
+           do not remove
 
            [files]
            abc*
@@ -177,8 +203,8 @@ add the following option:
       ftp://micky:mouse@ducktown//usr/data/tmp
 
            [dir options]
-	   do not remove
-	   store retrieve list
+           do not remove
+           store retrieve list
 
            [files]
            abc*
@@ -203,57 +229,96 @@ to 30 minutes, it needs to be done as follows:
       [directory]
       ftp://micky:mouse@ducktown//usr/data/tmp
 
-           [dir options]
-	   do not remove
-	   store retrieve list
-	   time */30 * * * *
+         [dir options]
+         do not remove
+         store retrieve list
+         time */30 * * * *
 
-           [files]
-           abc*
+         files]
+         bc*
 
-                [destination]
+             [destination]
 
-                     [recipient]
-                     ftp://donald:secret@hollywood//home/user
-                     mailto://daisy@hollywood
+                  [recipient]
+                  ftp://donald:secret@hollywood//home/user
+                  mailto://daisy@hollywood
 
-                     [options]
-                     archive 3
-                     priority 1
+                  [options]
+                  archive 3
+                  priority 1
 </pre>
+<h3 align=center><u><a name="example5">Example 5</a></u></h3>
 <p>
-There are several ways to specify a source directory. The following
-examples all result to the same directory:
+If the source directory on the remote host cannot supply a directory
+listing and only deliver a certain filename like for example a web
+cam one needs to set the directory option <a href=
+"dir_config.html#do_not_get_dir_list">do not get dir list</a> as
+shown below:
 </p>
 <pre>
-      [directory] don_in
-      /home/donald/data/in
-</pre>
-<pre>
-      [directory] don_in
-      ~donald/data/in
-</pre>
-<pre>
-      [directory] don_in
-      file://home/donald/data/in
-</pre>
-<pre>
       [directory]
-      file://donald@don_in/data/in
+      http://tick:cam_secret@webcam/pics
+
+         [dir options]
+         do not remove
+         do not get dir list
+         time */10 * * * *
+
+         [files]
+         gif
+
+             [destination]
+
+                  [recipient]
+                  sftp://tick:secret@hollywood/cam
+
+                  [options]
+                  srename gif garden-%tH-%tM.gif
+                  priority 5
 </pre>
 <p>
-don_in is the directory alias name. If this is not set AFD will assign
-one for it that will be CRC32 checksum of the directory string. This is
-not human readable, so if you want to see readable directory alias names
-in dialog dir_ctrl, set them.
+Most remote web services cannot handle wild cards. So ensure that
+you do not specify them under [files].
+</p>
+<p>
+If the remote resource is generating a filename (delivers via the HTTP
+header a 'Content-Disposition Field') at the time of the request one needs
+to use the <a href="dir_config.html#url_creates_file_name">url creates
+file name</a> option instead of 'do not get dir list':
+</p>
+<pre>
+      [directory]
+      http://tick:cam_secret@webcam/pics/gif
+
+         [dir options]
+         do not remove
+         url creates file name
+         time */10 * * * *
+
+         [files]
+         *
+
+             [destination]
+
+                  [recipient]
+                  sftp://tick:secret@hollywood/cam
+
+                  [options]
+                  srename gif garden-%tH-%tM.gif
+                  priority 5
+</pre>
+<p>
+Because the filename is generated at the time of the request, you
+do not know what file name will be delivered, so it is best to just
+specify '*' under [files].
 </p>
 <hr size=3 noshade>
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 1997 - 2013 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2021 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 23.12.2013
+   Last updated: 15.06.2021
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
