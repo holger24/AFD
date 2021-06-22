@@ -1,6 +1,6 @@
 /*
  *  dir_check.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -2865,13 +2865,14 @@ handle_dir(int                       dir_pos,
                                           }
                                           else
                                           {
-                                             char fullname[MAX_PATH_LENGTH];
+                                             char fullname[MAX_PATH_LENGTH + MAX_FILENAME_LENGTH + 1];
 
                                              /*
-                                              * It is an even number so we must delete
-                                              * the last directory.
+                                              * It is an even number so we must
+                                              * delete the last directory.
                                               */
-                                             (void)snprintf(fullname, MAX_PATH_LENGTH,
+                                             (void)snprintf(fullname,
+                                                            MAX_PATH_LENGTH + MAX_FILENAME_LENGTH + 1,
                                                             "%s%s",
 # ifdef MULTI_FS_SUPPORT
                                                             ewl[de[dir_pos].ewl_pos].outgoing_file_dir,
