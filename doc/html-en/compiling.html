@@ -132,13 +132,19 @@ aware that some binaries will have the setuid bit flag set. So you should
 not use this when the binaries belong to root.
 </p>
 <p>
-Some systems require unusual options for compilation or linking that
-the `configure' script does not know about.  You can give `configure'
-initial values for variables by setting them in the environment.
-You can do that on the command line like this:
+Older unix systems may require special options for compilation or
+linking that the `configure' script does not know about. You can give
+`configure' initial values for variables by setting them in the
+environment. Here an example:
 </p>
 <pre>
             ./configure CC=c89 CFLAGS=-O2 LIBS=-lposix
+</pre>
+<p>
+On Linux or newer unix systems you can just say:
+</p>
+<pre>
+            ./configure
 </pre>
 <p>
 Before compiling you might want to set some other preferences in
@@ -175,7 +181,8 @@ Now everything is setup for compiling, run the following command:
 </pre>
 <p>
 To speed up this process try use the -jN parameter, where N is the number
-of cpu cores you have available.
+of cpu cores you have available. On Linux you can just say -j$(nproc),
+this will get the number of threads it can use automatically.
 </p>
 <p>
 The next step is  to install the binaries. This is done with the following
@@ -198,7 +205,7 @@ you need to do is run the following command instead of the 'make install':
    <td width="90%"><small><address>
    Copyright &copy; 2005 - 2021 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 12.01.2021
+   Last updated: 22.06.2021
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
