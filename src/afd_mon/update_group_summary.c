@@ -38,7 +38,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   25.02.2017 H.Kiehl Created
- **   20.07.2021 H.Kiehl Calculate top values as well.
+ **   20.07.2021 H.Kiehl Calculate top values as well and add no_of_jobs.
  **
  */
 DESCR__E_M3
@@ -70,7 +70,8 @@ update_group_summary(void)
                 no_of_transfers;
    unsigned int ec,
                 fc,
-                fr;
+                fr,
+                no_of_jobs;
    long         danger_no_of_jobs;
    u_off_t      fs,
                 tr;
@@ -101,6 +102,7 @@ update_group_summary(void)
          last_data_time = 0;
          no_of_hosts = 0;
          no_of_dirs = 0;
+         no_of_jobs = 0;
          amg = fd = archive_watch = 20;
          for (j = i + 1; j < no_of_afds && msa[j].rcmd[0] != '\0'; j++)
          {
@@ -134,6 +136,7 @@ update_group_summary(void)
             }
             no_of_hosts += msa[j].no_of_hosts;
             no_of_dirs += msa[j].no_of_dirs;
+            no_of_jobs += msa[j].no_of_jobs;
             if (msa[j].amg < amg)
             {
                amg = msa[j].amg;
@@ -186,6 +189,7 @@ update_group_summary(void)
          msa[i].ec = ec;
          msa[i].no_of_hosts = no_of_hosts;
          msa[i].no_of_dirs = no_of_dirs;
+         msa[i].no_of_jobs = no_of_jobs;
          msa[i].connect_status = connect_status;
          for (k = 0;  k < NO_OF_LOG_HISTORY; k++)
          {
