@@ -1,6 +1,6 @@
 /*
  *  msa_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1999 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -341,24 +341,36 @@ main(int argc, char *argv[])
          }
       }
       (void)fprintf(stdout, "\n");
-      if (msa[j].afd_switching != NO_SWITCHING)
+      if (msa[j].rcmd[0] == '\0')
       {
-         (void)fprintf(stdout, "Real hostname 0    : %s\n", msa[j].hostname[0]);
-         (void)fprintf(stdout, "TCP port 0         : %d\n", msa[j].port[0]);
-         (void)fprintf(stdout, "Real hostname 1    : %s\n", msa[j].hostname[1]);
-         (void)fprintf(stdout, "TCP port 1         : %d\n", msa[j].port[1]);
-         (void)fprintf(stdout, "Current host       : AFD %d\n", msa[j].afd_toggle);
-         (void)fprintf(stdout, "Switch type        : %s\n", (msa[j].afd_switching == AUTO_SWITCHING) ? "Auto" : "User");
+         (void)fprintf(stdout, "Real hostname      : \n");
+         (void)fprintf(stdout, "TCP port           : \n");
+         (void)fprintf(stdout, "Switch type        : \n");
+         (void)fprintf(stdout, "Poll interval      : \n");
+         (void)fprintf(stdout, "Connect time       : \n");
+         (void)fprintf(stdout, "Disconnect time    : \n");
       }
       else
       {
-         (void)fprintf(stdout, "Real hostname      : %s\n", msa[j].hostname[0]);
-         (void)fprintf(stdout, "TCP port           : %d\n", msa[j].port[0]);
-         (void)fprintf(stdout, "Switch type        : No switching.\n");
+         if (msa[j].afd_switching != NO_SWITCHING)
+         {
+            (void)fprintf(stdout, "Real hostname 0    : %s\n", msa[j].hostname[0]);
+            (void)fprintf(stdout, "TCP port 0         : %d\n", msa[j].port[0]);
+            (void)fprintf(stdout, "Real hostname 1    : %s\n", msa[j].hostname[1]);
+            (void)fprintf(stdout, "TCP port 1         : %d\n", msa[j].port[1]);
+            (void)fprintf(stdout, "Current host       : AFD %d\n", msa[j].afd_toggle);
+            (void)fprintf(stdout, "Switch type        : %s\n", (msa[j].afd_switching == AUTO_SWITCHING) ? "Auto" : "User");
+         }
+         else
+         {
+            (void)fprintf(stdout, "Real hostname      : %s\n", msa[j].hostname[0]);
+            (void)fprintf(stdout, "TCP port           : %d\n", msa[j].port[0]);
+            (void)fprintf(stdout, "Switch type        : No switching.\n");
+         }
+         (void)fprintf(stdout, "Poll interval      : %d\n", msa[j].poll_interval);
+         (void)fprintf(stdout, "Connect time       : %d\n", msa[j].connect_time);
+         (void)fprintf(stdout, "Disconnect time    : %d\n", msa[j].disconnect_time);
       }
-      (void)fprintf(stdout, "Poll interval      : %d\n", msa[j].poll_interval);
-      (void)fprintf(stdout, "Connect time       : %d\n", msa[j].connect_time);
-      (void)fprintf(stdout, "Disconnect time    : %d\n", msa[j].disconnect_time);
       (void)fprintf(stdout, "Status of AMG      : %d\n", (int)msa[j].amg);
       (void)fprintf(stdout, "Status of FD       : %d\n", (int)msa[j].fd);
       (void)fprintf(stdout, "Status of AW       : %d\n", (int)msa[j].archive_watch);
