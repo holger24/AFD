@@ -1,6 +1,6 @@
 /*
  *  topview.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2015 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2000 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -72,7 +72,7 @@ static void            print_data(int, int),
                        usage(char *);
 
 
-/*$$$$$$$$$$$$$$$$$$$$$$$$$$$$ msa_view() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
+/*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ topview() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
 int
 main(int argc, char *argv[])
 {
@@ -152,23 +152,31 @@ main(int argc, char *argv[])
                          no_of_afds);
         }
    (void)fprintf(stdout, "%-*s  ", MAX_AFDNAME_LENGTH, "AFD-name");
-   if (show == 1)
-   {
-      (void)fprintf(stdout, "     0");
-      for (j = 1; j < STORAGE_TIME; j++)
-      {
-         (void)fprintf(stdout, " %6d", j);
-      }
-      (void)fprintf(stdout, "\n==============================================================\n");
-   }
-   else
+   if (show == 0)
    {
       for (j = 0; j < STORAGE_TIME; j++)
       {
-         (void)fprintf(stdout, " %4d", j);
+         (void)fprintf(stdout, " %6d", j);
       }
-      (void)fprintf(stdout, "\n=================================================\n");
+      (void)fprintf(stdout, "\n===============================================================\n");
    }
+   else if (show == 1)
+        {
+           (void)fprintf(stdout, "     0");
+           for (j = 1; j < STORAGE_TIME; j++)
+           {
+              (void)fprintf(stdout, " %6d", j);
+           }
+           (void)fprintf(stdout, "\n==============================================================\n");
+        }
+        else
+        {
+           for (j = 0; j < STORAGE_TIME; j++)
+           {
+              (void)fprintf(stdout, " %5d", j);
+           }
+           (void)fprintf(stdout, "\n========================================================\n");
+        }
 
    if (show_afds > 0)
    {
@@ -207,7 +215,7 @@ print_data(int pos, int show)
    {
       for (j = 0; j < STORAGE_TIME; j++)
       {
-         (void)fprintf(stdout, " %4u", msa[pos].top_fr[j]);
+         (void)fprintf(stdout, " %6u", msa[pos].top_fr[j]);
       }
    }
    else if (show == 1)
@@ -224,10 +232,30 @@ print_data(int pos, int show)
         {
            for (j = 0; j < STORAGE_TIME; j++)
            {
-              (void)fprintf(stdout, " %4d", msa[pos].top_no_of_transfers[j]);
+              (void)fprintf(stdout, " %5d", msa[pos].top_no_of_transfers[j]);
            }
         }
-   (void)fprintf(stdout, "\n");
+
+   /* Is this a group entry? */
+   if (msa[pos].rcmd[0] == '\0')
+   {
+      if (show == 0)
+      {
+         (void)fprintf(stdout, "\n---------------------------------------------------------------\n");
+      }
+      else if (show == 1)
+           {
+              (void)fprintf(stdout, "\n--------------------------------------------------------------\n");
+           }
+           else
+           {
+              (void)fprintf(stdout, "\n--------------------------------------------------------\n");
+           }
+   }
+   else
+   {
+      (void)fprintf(stdout, "\n");
+   }
 
    return;
 }
