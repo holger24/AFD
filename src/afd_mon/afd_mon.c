@@ -583,9 +583,12 @@ main(int argc, char *argv[])
             {
                group_elements++;
             }
-            new_total_no_of_hosts += msa[i].no_of_hosts;
-            new_total_no_of_dirs += msa[i].no_of_dirs;
-            new_total_no_of_jobs += msa[i].no_of_jobs;
+            else
+            {
+               new_total_no_of_hosts += msa[i].no_of_hosts;
+               new_total_no_of_dirs += msa[i].no_of_dirs;
+               new_total_no_of_jobs += msa[i].no_of_jobs;
+            }
          }
          if ((new_total_no_of_hosts != total_no_of_hosts) ||
              (new_total_no_of_dirs != total_no_of_dirs) ||
