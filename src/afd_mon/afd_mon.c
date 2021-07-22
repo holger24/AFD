@@ -192,6 +192,7 @@ main(int argc, char *argv[])
                   current_year,
                   group_elements,
                   i,
+                  new_day = NO,
                   new_month,
                   new_week,
                   new_year,
@@ -493,6 +494,7 @@ main(int argc, char *argv[])
          /* See if we can do the day summary. */
          if (new_hour_sum_time >= new_day_sum_time)
          {
+            new_day = YES;
             get_sum_data(DAY_SUM);
             new_day_sum_time = ((new_hour_sum_time / 86400) * 86400) + 86400;
 
@@ -623,7 +625,8 @@ main(int argc, char *argv[])
               {
                  if (group_elements > 0)
                  {
-                    update_group_summary();
+                    update_group_summary(new_day);
+                    new_day = NO;
                  }
 
                  /* Check if any process terminated for whatever reason. */

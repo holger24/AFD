@@ -807,7 +807,7 @@ extern void  create_msa(void),
              start_log_process(int, unsigned int),
              stop_log_process(int),
              stop_process(int, int),
-             update_group_summary(void),
+             update_group_summary(int),
              write_afd_log(int, int, unsigned int, unsigned int, char *);
 
 #endif /* __mondefs_h */

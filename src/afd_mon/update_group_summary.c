@@ -26,7 +26,7 @@ DESCR__S_M3
  **   update_group_summary - updates all values of the group elements
  **
  ** SYNOPSIS
- **   void update_group_summary(void)
+ **   void update_group_summary(int new_day)
  **
  ** DESCRIPTION
  **
@@ -54,9 +54,9 @@ extern int                    no_of_afds;
 extern struct mon_status_area *msa;
 
 
-/*############################# mon_log() ###############################*/
+/*######################## update_group_summary() #######################*/
 void
-update_group_summary(void)
+update_group_summary(int new_day)
 {
    int          host_error_counter,
                 i,
@@ -185,6 +185,20 @@ update_group_summary(void)
          {
             msa[i].top_fr[0] = msa[i].fr;
             msa[i].top_fr_time = msa[i].last_data_time;
+         }
+         if (new_day == YES)
+         {
+            int ii;
+
+            for (ii = (STORAGE_TIME - 1); ii > 0; ii--)
+            {
+               msa[i].top_no_of_transfers[ii] = msa[i].top_no_of_transfers[ii - 1];
+               msa[i].top_tr[ii] = msa[i].top_tr[ii - 1];
+               msa[i].top_fr[ii] = msa[i].top_fr[ii - 1];
+            }
+            msa[i].top_no_of_transfers[0] = 0;
+            msa[i].top_tr[0] = msa[i].top_fr[0] = 0;
+            msa[i].top_not_time = msa[i].top_tr_time = msa[i].top_fr_time = 0L;
          }
          msa[i].ec = ec;
          msa[i].no_of_hosts = no_of_hosts;
