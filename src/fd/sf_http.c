@@ -197,6 +197,7 @@ main(int argc, char *argv[])
                     blocksize,
                     *wmo_counter,
                     wmo_counter_fd = -1;
+   unsigned int     values_changed = 0;
 #ifdef WITH_ARCHIVE_COPY_INFO
    unsigned int     archived_copied = 0;
 #endif
@@ -443,7 +444,24 @@ main(int argc, char *argv[])
       {
          if (fsa->debug > NORMAL_MODE)
          {
-            trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL, "HTTP Bursting.");
+            trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+# ifdef WITH_SSL
+                         "%s Bursting. [values_changed=%u]", (db.auth == NO) ? "HTTP" : "HTTPS",
+# else
+                         "HTTP Bursting. [values_changed=%u]",
+# endif
+                         values_changed);
+         }
+      }
+
+      if ((burst_2_counter == 0) || (values_changed & USER_CHANGED))
+      {
+         if (http_init_basic_authentication(db.user, db.password) != SUCCESS)
+         {
+            /* Note, http_init_basic_authentication() writes a message    */
+            /* to trans_log() why it was not able to generate the string. */
+            http_quit();
+            exit(INCORRECT);
          }
       }
 #endif
@@ -1220,7 +1238,7 @@ try_again_unlink:
 # ifndef AFDBENCH_CONFIG
                                       NULL,
 # endif
-                                      NULL)) == YES);
+                                      &values_changed)) == YES);
    burst_2_counter--;
 
    if (cb2_ret == NEITHER)

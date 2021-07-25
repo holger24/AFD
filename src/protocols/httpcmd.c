@@ -66,6 +66,7 @@ DESCR__S_M3
  **   11.09.2014 H.Kiehl Added simulation mode.
  **   03.11.2018 H.Kiehl Implemented ServerNameIndication for TLS.
  **   23.03.2021 H.Kiehl Added etag support for http_get().
+ **   25.07.2021 H.Kiehl Added http_init_basic_authentication().
  */
 DESCR__E_M3
 
@@ -204,16 +205,12 @@ http_connect(char *hostname,
 #endif
          (void)my_strncpy(hmr.hostname, hostname, MAX_REAL_HOSTNAME_LENGTH + 1);
          (void)my_strncpy(hmr.http_proxy, http_proxy, MAX_REAL_HOSTNAME_LENGTH + 1);
-         (void)my_strncpy(hmr.user, user, MAX_USER_NAME_LENGTH + 1);
-         (void)my_strncpy(hmr.passwd, passwd, MAX_USER_NAME_LENGTH + 1);
-         if ((user[0] != '\0') || (passwd[0] != '\0'))
+         hmr.authorization = NULL;
+         if (http_init_basic_authentication(user, passwd) != SUCCESS)
          {
-            if (basic_authentication() != SUCCESS)
-            {
-               (void)close(http_fd);
-               http_fd = -1;
-               return(INCORRECT);
-            }
+            (void)close(http_fd);
+            http_fd = -1;
+            return(INCORRECT);
          }
          hmr.port = port;
          hmr.free = YES;
@@ -693,16 +690,12 @@ http_connect(char *hostname,
 
       (void)my_strncpy(hmr.hostname, hostname, MAX_REAL_HOSTNAME_LENGTH + 1);
       (void)my_strncpy(hmr.http_proxy, http_proxy, MAX_REAL_HOSTNAME_LENGTH + 1);
-      (void)my_strncpy(hmr.user, user, MAX_USER_NAME_LENGTH + 1);
-      (void)my_strncpy(hmr.passwd, passwd, MAX_USER_NAME_LENGTH + 1);
-      if ((user[0] != '\0') || (passwd[0] != '\0'))
+      hmr.authorization = NULL;
+      if (http_init_basic_authentication(user, passwd) != SUCCESS)
       {
-         if (basic_authentication() != SUCCESS)
-         {
-            (void)close(http_fd);
-            http_fd = -1;
-            return(INCORRECT);
-         }
+         (void)close(http_fd);
+         http_fd = -1;
+         return(INCORRECT);
       }
       hmr.port = port;
       hmr.free = YES;
@@ -919,6 +912,29 @@ int
 http_version(void)
 {
    return(hmr.http_version);
+}
+
+
+/*################## http_init_basic_authentication() ###################*/
+int
+http_init_basic_authentication(char *user, char *passwd)
+{
+   int ret;
+
+   (void)my_strncpy(hmr.user, user, MAX_USER_NAME_LENGTH + 1);
+   (void)my_strncpy(hmr.passwd, passwd, MAX_USER_NAME_LENGTH + 1);
+   if ((user[0] != '\0') || (passwd[0] != '\0'))
+   {
+      ret = basic_authentication();
+   }
+   else
+   {
+      free(hmr.authorization);
+      hmr.authorization = NULL;
+      ret = SUCCESS;
+   }
+
+   return(ret);
 }
 
 

@@ -434,6 +434,19 @@ main(int argc, char *argv[])
       }
 #endif /* _WITH_BURST_2 */
 
+#ifdef _WITH_BURST_2
+      if ((in_burst_loop == NO) || (values_changed & USER_CHANGED))
+      {
+         if (http_init_basic_authentication(db.user, db.password) != SUCCESS)
+         {
+            /* Note, http_init_basic_authentication() writes a message    */
+            /* to trans_log() why it was not able to generate the string. */
+            http_quit();
+            exit(INCORRECT);
+         }
+      }
+#endif /* _WITH_BURST_2 */
+
       fsa->job_status[(int)db.job_no].connect_status = HTTP_RETRIEVE_ACTIVE;
       if (db.special_flag & DISTRIBUTED_HELPER_JOB)
       {

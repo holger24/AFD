@@ -97,6 +97,7 @@ extern int  http_connect(char *, char *, int, char *, char *, int, int),
             http_get(char *, char *, char *, char *, off_t *, off_t),
 #endif
             http_head(char *, char *, char *, off_t *, time_t *),
+            http_init_basic_authentication(char *, char*),
             http_noop(void),
             http_options(char *, char *),
             http_put(char *, char *, char *, off_t, int),
