@@ -1,6 +1,6 @@
 /*
  *  check_fsa_entries.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -56,9 +56,7 @@ DESCR__E_M3
 #include "fddefs.h"
 
 /* External global variables. */
-#ifdef WITH_ERROR_QUEUE
 extern int                        fsa_fd;
-#endif
 extern int                        no_of_dirs,
                                   no_of_hosts,
                                   *no_msg_queued;
