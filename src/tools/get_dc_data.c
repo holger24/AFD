@@ -1,6 +1,6 @@
 /*
  *  get_dc_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1722,7 +1722,7 @@ same_file_filter(int          *jd_pos,
        j,
        k;
 
-   for (i = (*jd_pos + 1); i < no_of_job_ids; i++)
+   for (i = 0; i < no_of_job_ids; i++)
    {
       in_gotcha_list = NO;
       for (j = 0; j < no_of_gotchas; j++)
