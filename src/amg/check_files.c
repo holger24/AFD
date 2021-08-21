@@ -1,6 +1,6 @@
 /*
  *  check_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -98,6 +98,8 @@ DESCR__S_M3
  **   10.09.2009 H.Kiehl Tell caller of function it needs to rescan directory
  **                      if file size or time has not yet been reached.
  **   20.05.2013 H.Kiehl Simplified code by deleting lots of duplicate code.
+ **   21.08.2021 H.Kiehl When all host are disabled and 'do not remove' is
+ **                      set, don't delete the files for local dirs.
  **
  */
 DESCR__E_M3
@@ -679,63 +681,67 @@ check_files(struct directory_entry *p_de,
             {
                if (fra[p_de->fra_pos].dir_flag == ALL_DISABLED)
                {
-                  if (unlink(fullname) == -1)
+                  if ((fra[p_de->fra_pos].remove == YES) ||
+                      (fra[p_de->fra_pos].fsa_pos != -1))
                   {
-                     if (errno != ENOENT)
+                     if (unlink(fullname) == -1)
                      {
-                        system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                   _("Failed to unlink() file `%s' : %s"),
-                                   fullname, strerror(errno));
+                        if (errno != ENOENT)
+                        {
+                           system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                      _("Failed to unlink() file `%s' : %s"),
+                                      fullname, strerror(errno));
+                        }
                      }
-                  }
-                  else
-                  {
+                     else
+                     {
 #ifdef _DELETE_LOG
-                     size_t        dl_real_size;
+                        size_t        dl_real_size;
 #endif
 #ifdef _DISTRIBUTION_LOG
-                     unsigned int  dummy_job_id,
-                                   *p_dummy_job_id;
-                     unsigned char dummy_proc_cycles;
+                        unsigned int  dummy_job_id,
+                                      *p_dummy_job_id;
+                        unsigned char dummy_proc_cycles;
 
-                     dummy_job_id = 0;
-                     p_dummy_job_id = &dummy_job_id;
-                     dummy_proc_cycles = 0;
-                     dis_log(DISABLED_DIS_TYPE, current_time, p_de->dir_id,
-                             0, p_dir->d_name, file_name_length,
-                             stat_buf.st_size, 1, &p_dummy_job_id,
-                             &dummy_proc_cycles, 1);
+                        dummy_job_id = 0;
+                        p_dummy_job_id = &dummy_job_id;
+                        dummy_proc_cycles = 0;
+                        dis_log(DISABLED_DIS_TYPE, current_time, p_de->dir_id,
+                                0, p_dir->d_name, file_name_length,
+                                stat_buf.st_size, 1, &p_dummy_job_id,
+                                &dummy_proc_cycles, 1);
 #endif
 #ifdef _DELETE_LOG
-                     (void)my_strncpy(dl.file_name, p_dir->d_name,
-                                      file_name_length + 1);
-                     (void)snprintf(dl.host_name,
-                                    MAX_HOSTNAME_LENGTH + 4 + 1,
-                                    "%-*s %03x",
-                                    MAX_HOSTNAME_LENGTH, "-",
-                                    DELETE_HOST_DISABLED);
-                     *dl.file_size = stat_buf.st_size;
-                     *dl.dir_id = p_de->dir_id;
-                     *dl.job_id = 0;
-                     *dl.input_time = current_time;
-                     *dl.split_job_counter = 0;
-                     *dl.unique_number = 0;
-                     *dl.file_name_length = file_name_length;
-                     dl_real_size = *dl.file_name_length + dl.size +
-                                    snprintf((dl.file_name + *dl.file_name_length + 1),
-                                             MAX_FILENAME_LENGTH + 1,
-                                             "%s%c(%s %d)",
-                                             DIR_CHECK, SEPARATOR_CHAR,
-                                             __FILE__, __LINE__);
-                     if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
-                     {
-                        system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                   _("write() error : %s"),
-                                   strerror(errno));
-                     }
+                        (void)my_strncpy(dl.file_name, p_dir->d_name,
+                                         file_name_length + 1);
+                        (void)snprintf(dl.host_name,
+                                       MAX_HOSTNAME_LENGTH + 4 + 1,
+                                       "%-*s %03x",
+                                       MAX_HOSTNAME_LENGTH, "-",
+                                       DELETE_HOST_DISABLED);
+                        *dl.file_size = stat_buf.st_size;
+                        *dl.dir_id = p_de->dir_id;
+                        *dl.job_id = 0;
+                        *dl.input_time = current_time;
+                        *dl.split_job_counter = 0;
+                        *dl.unique_number = 0;
+                        *dl.file_name_length = file_name_length;
+                        dl_real_size = *dl.file_name_length + dl.size +
+                                       snprintf((dl.file_name + *dl.file_name_length + 1),
+                                                MAX_FILENAME_LENGTH + 1,
+                                                "%s%c(%s %d)",
+                                                DIR_CHECK, SEPARATOR_CHAR,
+                                                __FILE__, __LINE__);
+                        if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
+                        {
+                           system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                      _("write() error : %s"),
+                                      strerror(errno));
+                        }
 #endif
-                     files_in_dir--;
-                     bytes_in_dir -= stat_buf.st_size;
+                        files_in_dir--;
+                        bytes_in_dir -= stat_buf.st_size;
+                     }
                   }
                }
                else

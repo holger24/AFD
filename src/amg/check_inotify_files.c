@@ -1,6 +1,6 @@
 /*
  *  check_inotify_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,6 +37,8 @@ DESCR__S_M1
  **
  ** HISTORY
  **   20.05.2013 H.Kiehl Created
+ **   21.08.2021 H.Kiehl When all host are disabled and 'do not remove' is
+ **                      set, don't delete the files for local dirs.
  **
  */
 DESCR__E_M1
@@ -204,61 +206,65 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
             {
                if (fra[p_de->fra_pos].dir_flag == ALL_DISABLED)
                {
-                  if (unlink(fullname) == -1)
+                  if ((fra[p_de->fra_pos].remove == YES) ||
+                      (fra[p_de->fra_pos].fsa_pos != -1))
                   {
-                     if (errno != ENOENT)
+                     if (unlink(fullname) == -1)
                      {
-                        system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                   _("Failed to unlink() file `%s' : %s"),
-                                   fullname, strerror(errno));
+                        if (errno != ENOENT)
+                        {
+                           system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                      _("Failed to unlink() file `%s' : %s"),
+                                      fullname, strerror(errno));
+                        }
                      }
-                  }
-                  else
-                  {
+                     else
+                     {
 #ifdef _DELETE_LOG
-                     size_t        dl_real_size;
+                        size_t        dl_real_size;
 #endif
 #ifdef _DISTRIBUTION_LOG
-                     unsigned int  dummy_job_id = 0,
-                                   *p_dummy_job_id;
-                     unsigned char dummy_proc_cycles = 0;
+                        unsigned int  dummy_job_id = 0,
+                                      *p_dummy_job_id;
+                        unsigned char dummy_proc_cycles = 0;
 
-                     p_dummy_job_id = &dummy_job_id;
-                     dis_log(DISABLED_DIS_TYPE, current_time,
-                             p_de->dir_id, 0,
-                             &p_iwl->file_name[current_fnl_pos],
-                             p_iwl->fnl[i], stat_buf.st_size, 1,
-                             &p_dummy_job_id, &dummy_proc_cycles, 1);
+                        p_dummy_job_id = &dummy_job_id;
+                        dis_log(DISABLED_DIS_TYPE, current_time,
+                                p_de->dir_id, 0,
+                                &p_iwl->file_name[current_fnl_pos],
+                                p_iwl->fnl[i], stat_buf.st_size, 1,
+                                &p_dummy_job_id, &dummy_proc_cycles, 1);
 #endif
 #ifdef _DELETE_LOG
-                     (void)my_strncpy(dl.file_name,
-                                      &p_iwl->file_name[current_fnl_pos],
-                                      p_iwl->fnl[i] + 1);
-                     (void)snprintf(dl.host_name,
-                                    MAX_HOSTNAME_LENGTH + 4 + 1,
-                                    "%-*s %03x",
-                                    MAX_HOSTNAME_LENGTH, "-",
-                                    DELETE_HOST_DISABLED);
-                     *dl.file_size = stat_buf.st_size;
-                     *dl.dir_id = p_de->dir_id;
-                     *dl.job_id = 0;
-                     *dl.input_time = current_time;
-                     *dl.split_job_counter = 0;
-                     *dl.unique_number = 0;
-                     *dl.file_name_length = p_iwl->fnl[i];
-                     dl_real_size = *dl.file_name_length + dl.size +
-                                    snprintf((dl.file_name + *dl.file_name_length + 1),
-                                             MAX_FILENAME_LENGTH + 1,
-                                             "%s%c(%s %d)",
-                                             DIR_CHECK, SEPARATOR_CHAR,
-                                             __FILE__, __LINE__);
-                     if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
-                     {
-                        system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                   _("write() error : %s"),
-                                   strerror(errno));
-                     }
+                        (void)my_strncpy(dl.file_name,
+                                         &p_iwl->file_name[current_fnl_pos],
+                                         p_iwl->fnl[i] + 1);
+                        (void)snprintf(dl.host_name,
+                                       MAX_HOSTNAME_LENGTH + 4 + 1,
+                                       "%-*s %03x",
+                                       MAX_HOSTNAME_LENGTH, "-",
+                                       DELETE_HOST_DISABLED);
+                        *dl.file_size = stat_buf.st_size;
+                        *dl.dir_id = p_de->dir_id;
+                        *dl.job_id = 0;
+                        *dl.input_time = current_time;
+                        *dl.split_job_counter = 0;
+                        *dl.unique_number = 0;
+                        *dl.file_name_length = p_iwl->fnl[i];
+                        dl_real_size = *dl.file_name_length + dl.size +
+                                       snprintf((dl.file_name + *dl.file_name_length + 1),
+                                                MAX_FILENAME_LENGTH + 1,
+                                                "%s%c(%s %d)",
+                                                DIR_CHECK, SEPARATOR_CHAR,
+                                                __FILE__, __LINE__);
+                        if (write(dl.fd, dl.data, dl_real_size) != dl_real_size)
+                        {
+                           system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                      _("write() error : %s"),
+                                      strerror(errno));
+                        }
 #endif
+                     }
                   }
                }
                else
