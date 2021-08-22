@@ -204,7 +204,7 @@ check_inotify_files(struct inotify_watch_list *p_iwl,
             if ((eaccess(fullname, R_OK) == 0))
 #endif
             {
-               if (fra[p_de->fra_pos].dir_flag == ALL_DISABLED)
+               if (fra[p_de->fra_pos].dir_flag & ALL_DISABLED)
                {
                   if ((fra[p_de->fra_pos].remove == YES) ||
                       (fra[p_de->fra_pos].fsa_pos != -1))

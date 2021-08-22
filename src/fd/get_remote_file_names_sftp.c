@@ -494,15 +494,17 @@ do_scan(int   *files_to_retrieve,
                             (unsigned int)stat_buf.st_gid, filename);
             }
 
-            if (fra->dir_flag == ALL_DISABLED)
+            if (fra->dir_flag & ALL_DISABLED)
             {
-               delete_remote_file(SFTP, filename, namelen,
+               if (fra->remove == YES)
+               {
+                  delete_remote_file(SFTP, filename, namelen,
 #ifdef _DELETE_LOG
-                                  DELETE_HOST_DISABLED,
-                                  0, 0, 0,
+                                     DELETE_HOST_DISABLED, 0, 0, 0,
 #endif
-                                  &files_deleted, &file_size_deleted,
-                                  stat_buf.st_size);
+                                     &files_deleted, &file_size_deleted,
+                                     stat_buf.st_size);
+               }
             }
             else
             {

@@ -679,7 +679,7 @@ check_files(struct directory_entry *p_de,
             if ((eaccess(fullname, R_OK) == 0))
 #endif
             {
-               if (fra[p_de->fra_pos].dir_flag == ALL_DISABLED)
+               if (fra[p_de->fra_pos].dir_flag & ALL_DISABLED)
                {
                   if ((fra[p_de->fra_pos].remove == YES) ||
                       (fra[p_de->fra_pos].fsa_pos != -1))

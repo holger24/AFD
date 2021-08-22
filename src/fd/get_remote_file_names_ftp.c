@@ -738,14 +738,16 @@ do_scan(int          *files_to_retrieve,
             }
             else
             {
-               if (fra->dir_flag == ALL_DISABLED)
+               if (fra->dir_flag & ALL_DISABLED)
                {
-                  delete_remote_file(FTP, p_list, strlen(p_list),
+                  if (fra->remove == YES)
+                  {
+                     delete_remote_file(FTP, p_list, strlen(p_list),
 #ifdef _DELETE_LOG
-                                     DELETE_HOST_DISABLED,
-                                     0, 0, 0,
+                                        DELETE_HOST_DISABLED, 0, 0, 0,
 #endif
-                                     &files_deleted, NULL, -1);
+                                        &files_deleted, NULL, -1);
+                  }
                }
                else
                {
