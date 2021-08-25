@@ -1,6 +1,6 @@
 /*
  *  create_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1256,7 +1256,7 @@ create_db(FILE *udc_reply_fp, int write_fd)
          if ((db[i].job_id != 0) && (db[i].job_id == db[j].job_id))
          {
             update_db_log(WARN_SIGN, __FILE__, __LINE__, udc_reply_fp, NULL,
-                          "Duplicate job entries for job %x with directory %s and recipient %s! Will ignore the duplicate entry.",
+                          "Duplicate job entries for job #%x with directory %s and recipient %s! Will ignore the duplicate entry.",
                           db[i].job_id, db[i].dir, db[i].recipient);
             db[j].job_id = 0;
          }
@@ -1273,7 +1273,7 @@ create_db(FILE *udc_reply_fp, int write_fd)
          if (db[i].job_id == db[j].job_id)
          {
             update_db_log(WARN_SIGN, __FILE__, __LINE__, udc_reply_fp, NULL,
-                          "Duplicate job entries for job %x with directory %s and recipient %s!",
+                          "Duplicate job entries for job #%x with directory %s and recipient %s!",
                           db[i].job_id, db[i].dir, db[i].recipient);
          }
       }
