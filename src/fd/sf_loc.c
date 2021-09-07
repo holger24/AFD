@@ -1282,7 +1282,8 @@ cross_link_error:
                   if (db.output_log == YES)
                   {
                      (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-                     if (db.trans_rename_rule[0] != '\0')
+                     if ((db.trans_rename_rule[0] != '\0') ||
+                         (db.cn_filter != NULL))
                      {
                         *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                         MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
@@ -1337,7 +1338,8 @@ cross_link_error:
                   if (db.output_log == YES)
                   {
                      (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-                     if (db.trans_rename_rule[0] != '\0')
+                     if ((db.trans_rename_rule[0] != '\0') ||
+                         (db.cn_filter != NULL))
                      {
                         *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                         MAX_FILENAME_LENGTH,
@@ -1400,7 +1402,8 @@ try_again_unlink:
                if (db.output_log == YES)
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-                  if (db.trans_rename_rule[0] != '\0')
+                  if ((db.trans_rename_rule[0] != '\0') ||
+                      (db.cn_filter != NULL))
                   {
                      *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                      MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,

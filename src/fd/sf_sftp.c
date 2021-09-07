@@ -1755,15 +1755,8 @@ main(int argc, char *argv[])
                if (db.output_log == YES)
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-                  if (db.trans_rename_rule[0] == '\0')
-                  {
-                     (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-                     *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                     ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                     ol_file_name[*ol_file_name_length + 1] = '\0';
-                     (*ol_file_name_length)++;
-                  }
-                  else
+                  if ((db.trans_rename_rule[0] != '\0') ||
+                      (db.cn_filter != NULL))
                   {
                      *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                      MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
@@ -1775,6 +1768,14 @@ main(int argc, char *argv[])
                      {
                         *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                      }
+                  }
+                  else
+                  {
+                     (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
+                     *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+                     ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+                     ol_file_name[*ol_file_name_length + 1] = '\0';
+                     (*ol_file_name_length)++;
                   }
                   *ol_file_size = no_of_bytes + append_offset + additional_length;
                   *ol_job_number = db.id.job;
@@ -1810,15 +1811,8 @@ main(int argc, char *argv[])
                if (db.output_log == YES)
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-                  if (db.trans_rename_rule[0] == '\0')
-                  {
-                     (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-                     *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                     ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                     ol_file_name[*ol_file_name_length + 1] = '\0';
-                     (*ol_file_name_length)++;
-                  }
-                  else
+                  if ((db.trans_rename_rule[0] != '\0') ||
+                      (db.cn_filter != NULL))
                   {
                      *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                      MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
@@ -1830,6 +1824,14 @@ main(int argc, char *argv[])
                      {
                         *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                      }
+                  }
+                  else
+                  {
+                     (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
+                     *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+                     ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+                     ol_file_name[*ol_file_name_length + 1] = '\0';
+                     (*ol_file_name_length)++;
                   }
                   (void)strcpy(&ol_file_name[*ol_file_name_length + 1],
                                &db.archive_dir[db.archive_offset]);
@@ -1878,15 +1880,8 @@ try_again_unlink:
             if (db.output_log == YES)
             {
                (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-               if (db.trans_rename_rule[0] == '\0')
-               {
-                  (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-                  *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                  ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                  ol_file_name[*ol_file_name_length + 1] = '\0';
-                  (*ol_file_name_length)++;
-               }
-               else
+               if ((db.trans_rename_rule[0] != '\0') ||
+                   (db.cn_filter != NULL))
                {
                   *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                   MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
@@ -1898,6 +1893,14 @@ try_again_unlink:
                   {
                      *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                   }
+               }
+               else
+               {
+                  (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
+                  *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+                  ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+                  ol_file_name[*ol_file_name_length + 1] = '\0';
+                  (*ol_file_name_length)++;
                }
                *ol_file_size = no_of_bytes + append_offset + additional_length;
                *ol_job_number = db.id.job;
