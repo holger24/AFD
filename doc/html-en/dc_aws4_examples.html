@@ -1,0 +1,286 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>DIR_CONFIG AWS4 examples (dc_aws4_examples.html)</title>
+</head>
+<body bgcolor="#F0ECD6">
+<h1 align=center><a name="aws4_examples">AWS4 Examples</a></h1>
+<hr size=3 noshade>
+<p>
+</p>
+<h3><u><a name="upload_aws4">Uploading files to an AWS4 S3 storage</a></u></h3>
+<p>
+In the following example we upload all files from the local directory
+/home/data to AWS4 S3 storage via HTTPS.
+</p>
+<pre>
+      [directory]
+      /home/data
+
+         [files]
+         *
+
+             [destination]
+
+                  [recipient]
+                  https://donald:secret@hollywood/bucketname/data;auth=aws4-hmac-sha256
+
+                  [options]
+                  trans_srename * %tY%tm%td/*
+</pre>
+<p>
+The only difference here is setting the auth= parameter at the end to
+aws4-hmac-sha256. Otherwise it would have tried with the default
+basic authentication. The bucketname is either in the hostname or
+the first element in the path.
+</p>
+<p>
+Note that AWS4 S3 has a flat data structure and does not know about
+directories. So if in the above example data does not exist, it just
+creates a new filename (AWS language: key) with / as part of the name.
+So, here it is not necessary for AFD to perform any extra operation
+to create the directory.
+</p>
+<h3><u><a name="download_aws4">Downloading files from AWS4 S3</a></u></h3>
+<p>
+Downloading files is very similar when you download via other protocols
+like FTP, SFTP an HTTP. But due to the nature of AWS having a flat
+structure, lets explain the extra options having a bucket test with
+the following content:
+</p>
+<pre>
+          test
+           |
+           +------- amdgpu.2
+           +------- aws_authorization.c
+           +------- README.configure
+           |
+           +------- test2
+           |         |
+           |         +------- 1X7
+           |         |         |
+           |         |         +------- rename.rule2
+           |         |
+           |         +------- afd.users.sample
+           |
+           +------- test3
+                     |
+                     +------- 1X8
+                     |         |
+                     |         +------- rename.rule
+                     |
+                     +------- afd.users.sample
+                     +------- afd.users.sample2
+                     +------- afd.users.sample3
+                     +------- afd.users.sample4
+                     +------- afd.users.sample5
+                     +------- IMG_0843.JPG
+</pre>
+<p>
+Taking the above layout and we would just like to retrieve the 3
+files in the root structure of bucket test, we can configure it as
+follows:
+</p>
+<pre>
+      [directory]
+      https://user:secret@host/test;auth=aws4-hmac-sha256
+
+         [dir options]
+         bucketname in path
+         store retrieve list
+         do not remove
+         time * * * * *
+
+         [files]
+         *
+
+             [destination]
+
+                  [recipient]
+                  file://local//tmp
+</pre>
+<p>
+When AFD gets a listing of available files it would see the files
+as follows (from TRANS_DB_LOG with trace enabled):
+</p>
+<pre>
+      06 14:21:00 <D> host [0]: eval_html_dir_list(): filename=README.configure length=16 mtime=1611483449 exact=3 size=22944 exact=1
+      06 14:21:00 <D> host [0]: eval_html_dir_list(): filename=amdgpu.2 length=8 mtime=1628350724 exact=3 size=2785 exact=1
+      06 14:21:00 <D> host [0]: eval_html_dir_list(): filename=aws_authorization.c length=19 mtime=1628349108 exact=3 size=8120 exact=1
+</pre>
+<p>
+If one adds the [dir options] <a href="dir_config.html#no_delimiter">no
+delimiter</a>:
+</p>
+<pre>
+      [directory]
+      https://user:secret@host/test;auth=aws4-hmac-sha256
+
+         [dir options]
+         bucketname in path
+         <span style="background-color:#00FF00">no delimiter</span>
+         store retrieve list
+         do not remove
+         time * * * * *
+
+         [files]
+         *
+
+             [destination]
+
+                  [recipient]
+                  file://local//tmp
+</pre>
+<p>
+One gets a listing of all files in the bucket test:
+</p>
+<pre>
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=README.configure length=16 mtime=1611483449 exact=3 size=22944 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=amdgpu.2 length=8 mtime=1628350724 exact=3 size=2785 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=aws_authorization.c length=19 mtime=1628349108 exact=3 size=8120 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test2/1X7/rename.rule2 length=22 mtime=1630912523 exact=3 size=1805 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test2/afd.users.sample length=22 mtime=1628926069 exact=3 size=3736 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test3/1X8/rename.rule length=21 mtime=1630912441 exact=3 size=9985 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test3/IMG_0843.JPG length=18 mtime=1629042168 exact=3 size=1073143 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test3/afd.users.sample length=22 mtime=1628938088 exact=3 size=3736 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test3/afd.users.sample2 length=23 mtime=1628939026 exact=3 size=3736 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test3/afd.users.sample3 length=23 mtime=1628940807 exact=3 size=3736 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test3/afd.users.sample4 length=23 mtime=1628941351 exact=3 size=3736 exact=1
+      06 14:23:00 <D> host [0]: eval_html_dir_list(): filename=test3/afd.users.sample5 length=23 mtime=1628963020 exact=3 size=3736 exact=1
+</pre>
+<p>
+Since AFD cuts off the path by default you will notice that the file from
+test/test2/afd.users.sample will be overwritten by test/test3/afd.users.sample.
+To avoid this situation you can use the [dir options]
+<a href="dir_config.html#keep_path">keep path</a>:
+</p>
+<pre>
+      [directory]
+      https://user:secret@host/test;auth=aws4-hmac-sha256
+
+         [dir options]
+         bucketname in path
+         no delimiter
+         <span style="background-color:#00FF00">keep path</span>
+         store retrieve list
+         do not remove
+         time * * * * *
+
+         [files]
+         *
+
+             [destination]
+
+                  [recipient]
+                  file://local//tmp
+</pre>
+<p>
+Now AFD will keep the path, however it will replace the delimiter / with
+\, since under Unix it is not possible to have a filename with / in it.
+The \ is also not nice, so it is recommended to use the
+<a href="dir_config.html#srename">srename</a> option to rename it to
+something more useful.
+</p>
+<p>
+Note that AFD uses the prefix option when it requests a listing from the
+AWS4 S3 service, which helps to reduce the listing result if you use
+the <a href="dir_config.html#no_delimiter">no delimiter</a> option. The
+prefix option is added as soon as you specify a path after the bucketname:
+</p>
+<pre>
+      [directory]
+      https://user:secret@host/test<span style="background-color:#00FF00">/test2</span>;auth=aws4-hmac-sha256
+
+         [dir options]
+         bucketname in path
+         no delimiter
+         keep path
+         store retrieve list
+         do not remove
+         time * * * * *
+
+         [files]
+         *
+
+             [destination]
+
+                  [recipient]
+                  file://local//tmp
+</pre>
+<p>
+The listing of the above configuration will look as follows:
+</p>
+<pre>
+      06 10:22:00 <D> host [0]: eval_html_dir_list(): filename=test2/1X7/rename.rule2 length=22 mtime=1630912523 exact=3 size=1805 exact=1
+      06 10:22:00 <D> host [0]: eval_html_dir_list(): filename=test2/afd.users.sample length=22 mtime=1628926069 exact=3 size=3736 exact=1
+</pre>
+<p>
+What also works, but is NOT recommended, is if you put the path
+under the [files] filter:
+</p>
+<pre>
+      [directory]
+      https://user:secret@host/test;auth=aws4-hmac-sha256
+
+         [dir options]
+         bucketname in path
+         no delimiter
+         keep path
+         store retrieve list
+         do not remove
+         time * * * * *
+
+         [files]
+         <span style="background-color:#00FF00">test2?</span>*
+
+             [destination]
+
+                  [recipient]
+                  file://local//tmp
+</pre>
+<p>
+Note the ? instead of the / as delimiter. If you would put a / there AFD
+would fetch the file test2/afd.users.sample, but will not distribute it
+further since AFD stores it as test2\afd.users.sample and the filter
+test/* would not match. test2?* does match. Because it is so tricky, this
+method is not recommended. Rather work without 'no delimiter' and
+'keep path' and just do it via the path:
+</p>
+<pre>
+      [directory]
+      https://user:secret@host/test<span style="background-color:#00FF00">/test2</span>;auth=aws4-hmac-sha256
+
+         [dir options]
+         bucketname in path
+         store retrieve list
+         do not remove
+         time * * * * *
+
+         [files]
+         *
+
+             [destination]
+
+                  [recipient]
+                  file://local//tmp
+</pre>
+<p>
+This will just get you the file afd.users.sample. It makes the DIR_CONFIG
+larger but it is clearer and less error prone. You never know what other
+sub directories might pop up when your not the only one using the bucket.
+</p>
+<hr size=3 noshade>
+<table width="100%">
+<tr>
+   <td width="90%"><address><small>
+   Copyright &copy; 2021 by H.Kiehl<br>
+   <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
+   Last updated: 07.09.2021
+   </small></address></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
+   <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
+   <!-- Insert site specific logo -->
+</tr>
+</table>
+</body>
+</html>

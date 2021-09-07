@@ -741,7 +741,7 @@ check_burst_sf(char         *file_path,
                p_new_db->trans_dup_check_timeout  = 0L;
 #endif
 #ifdef WITH_SSL
-               p_new_db->auth                     = NO;
+               p_new_db->tls_auth                 = NO;
 #endif
                if (db.protocol & FTP_FLAG)
                {
@@ -823,8 +823,8 @@ check_burst_sf(char         *file_path,
                     (CHECK_STRCMP(p_new_db->target_dir, db.target_dir) != 0)) ||
 #endif
 #ifdef WITH_SSL
-                   ((db.auth == NO) && (p_new_db->auth != NO)) ||
-                   ((db.auth != NO) && (p_new_db->auth == NO)) ||
+                   ((db.tls_auth == NO) && (p_new_db->tls_auth != NO)) ||
+                   ((db.tls_auth != NO) && (p_new_db->tls_auth == NO)) ||
 #endif
                    ((db.protocol & SFTP_FLAG) &&
                     (CHECK_STRCMP(p_new_db->user, db.user) != 0)))
@@ -893,7 +893,8 @@ check_burst_sf(char         *file_path,
 #endif
                                                  NULL, NO, NULL, NULL,
                                                  db.target_dir, NULL, &now,
-                                                 NULL, NULL, NULL)) > 3)
+                                                 NULL, NULL, NULL, NULL,
+                                                 NULL, NULL)) > 3)
                   {
                      char error_msg[MAX_URL_ERROR_MSG];
 

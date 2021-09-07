@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_ftp_cmd.c - Part of AFD, an automatic file
  *                                    distribution program.
- *  Copyright (c) 2000 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ get_remote_file_names_ftp_cmd(off_t *file_size_to_retrieve)
     * what files are there.
     */
 #ifdef WITH_SSL
-   if (db.auth == BOTH)
+   if (db.tls_auth == BOTH)
    {
       type = NLIST_CMD | BUFFERED_LIST | ENCRYPT_DATA;
    }

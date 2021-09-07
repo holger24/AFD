@@ -25,14 +25,22 @@ DESCR__S_M3
  **   httpcmd - commands to send and retrieve files via HTTP
  **
  ** SYNOPSIS
- **   int  http_connect(char *hostname, int port, int sndbuf_size, int rcvbuf_size, int strict)
- **   int  http_ssl_auth(void)
- **   int  http_options(char *host, char *path)
- **   int  http_del(char *host, char *path, char *filename)
- **   int  http_get(char *host, char *path, char *filename, off_t *content_length, off_t offset)
- **   int  http_head(char *host, char *path, char *filename, off_t *content_length, time_t date)
+ **   int  http_connect(char *hostname, char *http_proxy, int port,
+ **                     char *user, char *passwd, unsigned char auth_type,
+ **                     int features, unsigned char service, char *region,
+ **                     int ssl, int sndbuf_size, int rcvbuf_size)
+ **   int  http_init_authentication(char *user, char *passwd)
+ **   int  http_options(char *path)
+ **   int  http_del(char *path, char *filename)
+ **   int  http_get(char *path, char *filename, char *new_filename,
+ **                 char *etag, off_t *content_length, off_t offset)
+ **   int  http_head(char *path, char *filename, off_t *content_length,
+ **                  time_t date)
  **   int  http_noop(void)
- **   int  http_put(char *host, char *path, char *filename, off_t length)
+ **   int  http_put(char *path, char *filename, char *fullname,
+ **                 off_t file_size, char *file_content_hash_hex,
+ **                 int first_file)
+ **   int  http_put_response(void)
  **   int  http_read(char *block, int blocksize)
  **   int  http_chunk_read(char **chunk, int *chunksize)
  **   int  http_version(void)
@@ -67,11 +75,12 @@ DESCR__S_M3
  **   03.11.2018 H.Kiehl Implemented ServerNameIndication for TLS.
  **   23.03.2021 H.Kiehl Added etag support for http_get().
  **   25.07.2021 H.Kiehl Added http_init_basic_authentication().
+ **   07.08.2021 H.Kiehl Put authentication into new authcmd.c.
  */
 DESCR__E_M3
 
 
-#include <stdio.h>        /* fprintf(), fdopen(), fclose()               */
+#include <stdio.h>        /* fprintf()                                   */
 #include <stdarg.h>       /* va_start(), va_arg(), va_end()              */
 #include <string.h>       /* memset(), memcpy(), strcpy()                */
 #include <stdlib.h>       /* strtol()                                    */
@@ -115,8 +124,8 @@ DESCR__E_M3
 #include <unistd.h>       /* select(), write(), read(), close(), alarm() */
 #include <errno.h>
 #include "fddefs.h"
-#include "httpdefs.h"
 #include "commondefs.h"
+#include "httpdefs.h"
 
 #ifdef WITH_SSL
 SSL                              *ssl_con = NULL;
@@ -146,12 +155,17 @@ static struct timeval            timeout;
 static struct http_message_reply hmr;
 
 /* Local function prototypes. */
-static int                       basic_authentication(void),
-                                 check_connection(void),
-                                 flush_read(void),
+static int                       check_connection(void),
+                                 flush_read(char *),
                                  get_http_reply(int *, int, int),
+                                 init_basic_authentication(void),
+#ifdef WITH_SSL
+                                 prepare_aws4_listing(char *, char *,
+                                                      char *, int *),
+#endif
                                  read_msg(int *, int, int);
-static void                      read_last_chunk(void),
+static void                      clear_msg_str(void),
+                                 read_last_chunk(void),
 #ifdef WITH_SSL
                                  sig_handler(int),
 #endif
@@ -163,17 +177,22 @@ static void                      read_last_chunk(void),
 
 /*########################## http_connect() #############################*/
 int
-http_connect(char *hostname,
-             char *http_proxy,
-             int  port,
-             char *user,
-             char *passwd,
+http_connect(char          *hostname,
+             char          *http_proxy,
+             int           port,
+             char          *user,
+             char          *passwd,
+             unsigned char auth_type,
+             unsigned int  fra_options,
+             int           features,
 #ifdef WITH_SSL
-             int  ssl,
-             int  strict,
+             unsigned char list_version,
+             unsigned char service,
+             char          *region,
+             char          tls_auth,
 #endif
-             int  sndbuf_size,
-             int  rcvbuf_size)
+             int           sndbuf_size,
+             int           rcvbuf_size)
 {
    if (simulation_mode == YES)
    {
@@ -205,17 +224,44 @@ http_connect(char *hostname,
 #endif
          (void)my_strncpy(hmr.hostname, hostname, MAX_REAL_HOSTNAME_LENGTH + 1);
          (void)my_strncpy(hmr.http_proxy, http_proxy, MAX_REAL_HOSTNAME_LENGTH + 1);
+         (void)my_strncpy(hmr.user, user, MAX_USER_NAME_LENGTH + 1);
+         (void)my_strncpy(hmr.passwd, passwd, MAX_USER_NAME_LENGTH + 1);
          hmr.authorization = NULL;
-         if (http_init_basic_authentication(user, passwd) != SUCCESS)
-         {
-            (void)close(http_fd);
-            http_fd = -1;
-            return(INCORRECT);
-         }
+         hmr.auth_type = auth_type;
          hmr.port = port;
          hmr.free = YES;
+         hmr.fra_options = fra_options;
+         hmr.features = features;
 #ifdef WITH_SSL
-         hmr.strict = strict;
+         hmr.service_type = service;
+         hmr.marker[0] = '\0';
+         hmr.marker_length = 0;
+         if (list_version == '1')
+         {
+            hmr.listobject_version = '1';
+         }
+         else
+         {
+            hmr.listobject_version = DEFAULT_AWS4_LIST_VERSION;
+         }
+         if ((service == SERVICE_S3) || (service == SERVICE_NONE))
+         {
+            /* s3 */
+            hmr.service[0] = 's'; hmr.service[1] = '3'; hmr.service[2] = '\0';
+         }
+         else
+         {
+            hmr.service[0] = '\0';
+         }
+         if (region[0] == '\0')
+         {
+            (void)my_strncpy(hmr.region, DEFAULT_REGION_STR,
+                             MAX_REAL_HOSTNAME_LENGTH + 1);
+         }
+         else
+         {
+            (void)my_strncpy(hmr.region, region, MAX_REAL_HOSTNAME_LENGTH + 1);
+         }
 #endif
          hmr.http_version = 0;
          hmr.http_options = 0;
@@ -690,15 +736,45 @@ http_connect(char *hostname,
 
       (void)my_strncpy(hmr.hostname, hostname, MAX_REAL_HOSTNAME_LENGTH + 1);
       (void)my_strncpy(hmr.http_proxy, http_proxy, MAX_REAL_HOSTNAME_LENGTH + 1);
+      (void)my_strncpy(hmr.user, user, MAX_USER_NAME_LENGTH + 1);
+      (void)my_strncpy(hmr.passwd, passwd, MAX_USER_NAME_LENGTH + 1);
       hmr.authorization = NULL;
-      if (http_init_basic_authentication(user, passwd) != SUCCESS)
+      hmr.auth_type = auth_type;
+#ifdef WITH_SSL
+      hmr.service_type = service;
+      hmr.marker[0] = '\0';
+      hmr.marker_length = 0;
+      if (list_version == '1')
       {
-         (void)close(http_fd);
-         http_fd = -1;
-         return(INCORRECT);
+         hmr.listobject_version = '1';
       }
+      else
+      {
+         hmr.listobject_version = DEFAULT_AWS4_LIST_VERSION;
+      }
+      if ((service == SERVICE_S3) || (service == SERVICE_NONE))
+      {
+         /* s3 */
+         hmr.service[0] = 's'; hmr.service[1] = '3'; hmr.service[2] = '\0';
+      }
+      else
+      {
+         hmr.service[0] = '\0';
+      }
+      if (region[0] == '\0')
+      {
+         (void)my_strncpy(hmr.region, DEFAULT_REGION_STR,
+                          MAX_REAL_HOSTNAME_LENGTH + 1);
+      }
+      else
+      {
+         (void)my_strncpy(hmr.region, region, MAX_REAL_HOSTNAME_LENGTH + 1);
+      }
+#endif
       hmr.port = port;
       hmr.free = YES;
+      hmr.fra_options = fra_options;
+      hmr.features = features;
       hmr.http_version = 0;
       hmr.http_options = 0;
       hmr.http_options_not_working = 0;
@@ -711,8 +787,8 @@ http_connect(char *hostname,
 #endif
 
 #ifdef WITH_SSL
-      hmr.strict = strict;
-      if ((ssl == YES) || (ssl == BOTH))
+      hmr.tls_auth = tls_auth;
+      if ((tls_auth == YES) || (tls_auth == BOTH))
       {
          char *p_env,
               *p_env1;
@@ -721,7 +797,6 @@ http_connect(char *hostname,
          {
             SSL_CTX_free(ssl_ctx);
          }
-         hmr.ssl = YES;
          SSLeay_add_ssl_algorithms();
          if ((ssl_ctx = (SSL_CTX *)SSL_CTX_new(SSLv23_client_method())) == NULL)
          {
@@ -776,7 +851,7 @@ http_connect(char *hostname,
          }
 # endif
          SSL_CTX_set_verify(ssl_ctx,
-                            (strict == YES) ? SSL_VERIFY_PEER : SSL_VERIFY_NONE,
+                            (hmr.features & PROT_OPT_TLS_STRICT_VERIFY) ? SSL_VERIFY_PEER : SSL_VERIFY_NONE,
                             NULL);
 
          ssl_con = (SSL *)SSL_new(ssl_ctx);
@@ -896,10 +971,6 @@ http_connect(char *hostname,
 
          return(reply);
       }
-      else
-      {
-         hmr.ssl = NO;
-      }
 #endif /* WITH_SSL */
    }
 
@@ -915,22 +986,40 @@ http_version(void)
 }
 
 
-/*################## http_init_basic_authentication() ###################*/
+/*########################## http_set_marker() ##########################*/
+void
+http_set_marker(char *marker, int marker_length)
+{
+   (void)strcpy(hmr.marker, marker);
+   hmr.marker_length = marker_length;
+
+   return;
+}
+
+
+/*##################### http_init_authentication() ######################*/
 int
-http_init_basic_authentication(char *user, char *passwd)
+http_init_authentication(char *user, char *passwd)
 {
    int ret;
 
    (void)my_strncpy(hmr.user, user, MAX_USER_NAME_LENGTH + 1);
    (void)my_strncpy(hmr.passwd, passwd, MAX_USER_NAME_LENGTH + 1);
-   if ((user[0] != '\0') || (passwd[0] != '\0'))
+   if (hmr.auth_type != AUTH_AWS4_HMAC_SHA256)
    {
-      ret = basic_authentication();
+      if ((user[0] != '\0') || (passwd[0] != '\0'))
+      {
+         ret = basic_authentication(&hmr);
+      }
+      else
+      {
+         free(hmr.authorization);
+         hmr.authorization = NULL;
+         ret = SUCCESS;
+      }
    }
    else
    {
-      free(hmr.authorization);
-      hmr.authorization = NULL;
       ret = SUCCESS;
    }
 
@@ -940,8 +1029,7 @@ http_init_basic_authentication(char *user, char *passwd)
 
 /*############################## http_get() #############################*/
 int
-http_get(char  *host,
-         char  *path,
+http_get(char  *path,
          char  *filename,
          char  *new_filename,
 #ifdef _WITH_EXTRA_CHECK
@@ -958,12 +1046,41 @@ http_get(char  *host,
    }
    else
    {
-      char range[13 + MAX_OFF_T_LENGTH + 1 + MAX_OFF_T_LENGTH + 3],
+      int  resource_length;
+      char *p_path = path,
+           range[13 + MAX_OFF_T_LENGTH + 1 + MAX_OFF_T_LENGTH + 3],
 #ifdef _WITH_EXTRA_CHECK
            none_match[16 + MAX_EXTRA_LS_DATA_LENGTH + 5],
 #endif
-           resource[8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1];
+           resource[8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + MAX_AWS4_PARAMETER_LENGTH + MAX_INT_LENGTH + MAX_FILENAME_LENGTH + 1],
+#ifdef WITH_SSL
+           tmp_path[MAX_REAL_HOSTNAME_LENGTH],
+#endif
+           *tmp_ptr;
 
+#ifdef WITH_SSL
+      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) && (filename[0] != '\0'))
+      {
+         resource_length = 0;
+         if (hmr.fra_options & BUCKETNAME_IN_PATH)
+         {
+            while ((resource_length < MAX_RECIPIENT_LENGTH) &&
+                   (path[resource_length] != '/') &&
+                   (path[resource_length] != '\0'))
+            {
+               tmp_path[resource_length] = path[resource_length];
+               resource_length++;
+            }
+            if (path[resource_length] == '/')
+            {
+               tmp_path[resource_length] = path[resource_length];
+               resource_length++;
+            }
+         }
+         tmp_path[resource_length] = '\0';
+         p_path = tmp_path;
+      }
+#endif
       hmr.bytes_read = 0;
       hmr.retries = 0;
       hmr.date = -1;
@@ -973,7 +1090,7 @@ http_get(char  *host,
       {
          off_t end;
 
-         if ((reply = http_head(host, path, filename, &end, NULL)) == SUCCESS)
+         if ((reply = http_head(p_path, filename, &end, NULL)) == SUCCESS)
          {
             *content_length = end;
             hmr.retries = 0;
@@ -1015,45 +1132,53 @@ http_get(char  *host,
       }
       if (hmr.http_proxy[0] == '\0')
       {
-         if (*path == '/')
+         if (*p_path == '/')
          {
-            (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                           "%s%s", path, filename);
+            resource_length = 0;
+            tmp_ptr = resource;
          }
          else
          {
-            (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                           "/%s%s", path, filename);
+            resource_length = 1;
+            resource[0] = '/';
+            tmp_ptr = &resource[1];
          }
+         resource_length += snprintf(tmp_ptr,
+                                     1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
+                                     "%s%s", p_path, filename);
       }
       else
       {
 #ifdef WITH_SSL
-         if (hmr.ssl == YES)
+         if (hmr.tls_auth == YES)
          {
-            if (*path == '/')
+            if (*p_path == '/')
             {
-               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "https://%s%s%s", host, path, filename);
+               resource_length = snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
+                                          "https://%s%s%s",
+                                          hmr.hostname, p_path, filename);
             }
             else
             {
-               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "https://%s/%s%s", host, path, filename);
+               resource_length = snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
+                                          "https://%s/%s%s",
+                                          hmr.hostname, p_path, filename);
             }
          }
          else
          {
 #endif
-            if (*path == '/')
+            if (*p_path == '/')
             {
-               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "http://%s%s%s", host, path, filename);
+               resource_length = snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 16 + 1,
+                                          "http://%s%s%s",
+                                          hmr.hostname, p_path, filename);
             }
             else
             {
-               (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "http://%s/%s%s", host, path, filename);
+               resource_length = snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 16 + 1,
+                                          "http://%s/%s%s",
+                                          hmr.hostname, p_path, filename);
             }
 #ifdef WITH_SSL
          }
@@ -1114,19 +1239,52 @@ retry_get_range:
          none_match[16 + bytes_copied + 3] = '\0';
       }
 #endif
+#ifdef WITH_SSL
+      if (hmr.auth_type == AUTH_AWS4_HMAC_SHA256)
+      {
+         /* Directory listing? */
+         if (filename[0] == '\0')
+         {
+            if (prepare_aws4_listing(filename, p_path, resource,
+                                     &resource_length) != SUCCESS)
+            {
+               return(INCORRECT);
+            }
+         }
+         else
+         {
+            if (aws4_cmd_authentication("GET", filename, p_path, "",
+                                        &hmr) != SUCCESS)
+            {
+               return(INCORRECT);
+            }
+         }
+      }
+      else
+      {
+#endif
+         if (hmr.authorization == NULL)
+         {
+            if (init_basic_authentication() != SUCCESS)
+            {
+               return(INCORRECT);
+            }
+         }
+#ifdef WITH_SSL
+      }
+#endif
 retry_get:
 #ifdef _WITH_EXTRA_CHECK
       if ((reply = command(http_fd,
-                           "GET %s HTTP/1.1\r\n%sUser-Agent: AFD/%s\r\n%s%sHost: %s\r\nContent-length: 0\r\nAccept: */*\r\n",
-                           resource, range, PACKAGE_VERSION,
+                           "GET %s HTTP/1.1\r\nHost: %s\r\n%sUser-Agent: AFD/%s\r\n%s%sContent-length: 0\r\nAccept: */*\r\n",
+                           resource, hmr.hostname, range, PACKAGE_VERSION,
                            (hmr.authorization == NULL) ? "" : hmr.authorization,
-                           none_match, host)) == SUCCESS)
+                           none_match)) == SUCCESS)
 #else
       if ((reply = command(http_fd,
-                           "GET %s HTTP/1.1\r\n%sUser-Agent: AFD/%s\r\n%sHost: %s\r\nContent-length: 0\r\nAccept: */*\r\n",
-                           resource, range, PACKAGE_VERSION,
-                           (hmr.authorization == NULL) ? "" : hmr.authorization,
-                           host)) == SUCCESS)
+                           "GET %s HTTP/1.1\r\nHost: %s\r\n%sUser-Agent: AFD/%s\r\n%sContent-length: 0\r\nAccept: */*\r\n",
+                           resource, hmr.hostname, range, PACKAGE_VERSION,
+                           (hmr.authorization == NULL) ? "" : hmr.authorization)) == SUCCESS)
 #endif
       {
          hmr.content_length = -1;
@@ -1180,38 +1338,7 @@ retry_get:
          else if ((reply == 403) || /* Forbidden */
                   (reply == 404))   /* Not Found */
               {
-                 int try_restore_msg_buffer;
-
-                 if (hmr.bytes_buffered > 0)
-                 {
-                    try_restore_msg_buffer = YES;
-                 }
-                 else
-                 {
-                    try_restore_msg_buffer = NO;
-                 }
-
-                 if ((flush_read() == NO) && (hmr.chunked == YES))
-                 {
-                    read_last_chunk();
-                 }
-                 if (try_restore_msg_buffer == YES)
-                 {
-                    /* get_http_reply() has already overwritten the */
-                    /* error message since read_msg() has read more */
-                    /* then required. So in msg_str there is now    */
-                    /* garbage. Let's try to restore at least the   */
-                    /* first line.                                  */
-                    if (hmr.header_length > 0)
-                    {
-                       (void)memcpy(msg_str, hmr.msg_header, hmr.header_length);
-                    }
-                    else
-                    {
-                       /* So we do not show any garbage. */
-                       msg_str[0] = '\0';
-                    }
-                 }
+                 clear_msg_str();
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
                  if (new_filename != NULL)
@@ -1223,7 +1350,7 @@ retry_get:
               {
                  if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
                  {
-                    if (basic_authentication() == SUCCESS)
+                    if (basic_authentication(&hmr) == SUCCESS)
                     {
                        if (check_connection() > INCORRECT)
                        {
@@ -1239,6 +1366,7 @@ retry_get:
                                    _("Digest authentication not yet implemented."));
                       }
 
+                 clear_msg_str();
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
                  if (new_filename != NULL)
@@ -1257,6 +1385,7 @@ retry_get:
               }
               else
               {
+                 clear_msg_str();
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
                  if (new_filename != NULL)
@@ -1265,16 +1394,315 @@ retry_get:
                  }
               }
       }
+
+      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) &&
+          (hmr.authorization != NULL))
+      {
+         free(hmr.authorization);
+         hmr.authorization = NULL;
+      }
    }
 
    return(reply);
 }
 
 
+#ifdef WITH_SSL
+/*####################### prepare_aws4_listing() ########################*/
+static int
+prepare_aws4_listing(char *filename,
+                     char *path,
+                     char *resource,
+                     int  *resource_length)
+{
+   int    i = 0;
+   size_t size;
+   char   bucket_name_only[MAX_PATH_LENGTH],
+          *canonical_query,
+          *p_path;
+
+   p_path = path;
+   if (hmr.fra_options & BUCKETNAME_IN_PATH)
+   {
+      /* Remove bucket name */
+      while ((*p_path != '/') && (*p_path != '\0'))
+      {
+         bucket_name_only[i] = *p_path;
+         i++; p_path++;
+      }
+      if (*p_path == '/')
+      {
+         bucket_name_only[i] = '/';
+         bucket_name_only[i + 1] = '\0';
+         if (*p_path != '\0')
+         {
+            p_path++;
+         }
+         if (hmr.http_proxy[0] == '\0')
+         {
+            char *tmp_ptr;
+
+            if (*path == '/')
+            {
+               *resource_length = 0;
+               tmp_ptr = resource;
+            }
+            else
+            {
+               *resource_length = 1;
+               resource[0] = '/';
+               tmp_ptr = &resource[1];
+            }
+            *resource_length += snprintf(tmp_ptr,
+                                         1 + MAX_RECIPIENT_LENGTH + 1,
+                                         "%s", bucket_name_only);
+         }
+         else
+         {
+            if (*path == '/')
+            {
+               *resource_length = snprintf(resource,
+                                           8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + 1,
+                                           "%s://%s%s",
+                                           (hmr.tls_auth == YES) ? "https" : "http",
+                                           hmr.hostname,
+                                           bucket_name_only);
+            }
+            else
+            {
+               *resource_length = snprintf(resource,
+                                           8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + 1,
+                                           "%s://%s/%s",
+                                           (hmr.tls_auth == YES) ? "https" : "http",
+                                           hmr.hostname,
+                                           bucket_name_only);
+            }
+         }
+      }
+      else
+      {
+         bucket_name_only[i] = '\0';
+      }
+   }
+   else
+   {
+      bucket_name_only[0] = '\0';
+   }
+
+   if (*p_path == '\0')
+   {
+      size = MAX_AWS4_PARAMETER_LENGTH + MAX_INT_LENGTH +
+             (hmr.marker_length * 3) + 1 + 1;
+      if ((canonical_query = malloc(size)) == NULL)
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, "prepare_aws4_listing", NULL,
+                   "Failed to malloc() for canonical query : %s",
+                   strerror(errno));
+         return(INCORRECT);
+      }
+
+      if (hmr.listobject_version == '1')
+      {
+         /* Prepare CanonicalQueryString                          */
+         /* NOTE: This MUST be sorted alphabetically by key name! */
+         if (hmr.marker[0] == '\0')
+         {
+            i = snprintf(canonical_query, size, "%smax-keys=%d",
+                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                         AWS4_MAX_KEYS);
+         }
+         else
+         {
+            char *marker_encoded;
+
+            if ((marker_encoded = malloc(((hmr.marker_length * 3) + 1))) == NULL)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "prepare_aws4_listing", NULL,
+                         "Failed to malloc() for marker : %s",
+                         strerror(errno));
+               free(canonical_query);
+               return(INCORRECT);
+            }
+            url_encode(hmr.marker, marker_encoded);
+            i = snprintf(canonical_query, size,
+                         "%smarker=%s&max-keys=%d",
+                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                         marker_encoded, AWS4_MAX_KEYS);
+            free(marker_encoded);
+         }
+      }
+      else
+      {
+         /* Prepare CanonicalQueryString                          */
+         /* NOTE: This MUST be sorted alphabetically by key name! */
+         if (hmr.marker[0] == '\0')
+         {
+            i = snprintf(canonical_query, size,
+                         "%slist-type=2&max-keys=%d",
+                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                         AWS4_MAX_KEYS);
+         }
+         else
+         {
+            char *marker_encoded;
+
+            if ((marker_encoded = malloc(((hmr.marker_length * 3) + 1))) == NULL)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "prepare_aws4_listing", NULL,
+                         "Failed to malloc() for marker : %s",
+                         strerror(errno));
+               free(canonical_query);
+               return(INCORRECT);
+            }
+            url_encode(hmr.marker, marker_encoded);
+            i = snprintf(canonical_query, size,
+                         "continuation-token=%s&%slist-type=2&max-keys=%d",
+                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                         marker_encoded, AWS4_MAX_KEYS);
+            free(marker_encoded);
+         }
+      }
+   }
+   else
+   {
+      size_t prefix_size;
+      char   *prefix_encoded;
+
+      prefix_size = (strlen(p_path) * 3) + 1;
+      if ((prefix_encoded = malloc(prefix_size)) == NULL)
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, "prepare_aws4_listing", NULL,
+                   "Failed to malloc() for prefix_encoded : %s",
+                   strerror(errno));
+         return(INCORRECT);
+      }
+      url_encode(p_path, prefix_encoded);
+
+      size = MAX_AWS4_PARAMETER_LENGTH + MAX_INT_LENGTH +
+             (hmr.marker_length * 3) + 1 + prefix_size + 1 + 1;
+      if ((canonical_query = malloc(size)) == NULL)
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, "prepare_aws4_listing", NULL,
+                   "Failed to malloc() for canonical query : %s",
+                   strerror(errno));
+         free(prefix_encoded);
+         return(INCORRECT);
+      }
+
+      if (hmr.listobject_version == '1')
+      {
+         /* Prepare CanonicalQueryString                          */
+         /* NOTE: This MUST be sorted alphabetically by key name! */
+         if (hmr.marker[0] == '\0')
+         {
+            i = snprintf(canonical_query, size,
+                         "%smax-keys=%d&prefix=%s",
+                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                         AWS4_MAX_KEYS, prefix_encoded);
+         }
+         else
+         {
+            char *marker_encoded;
+
+            if ((marker_encoded = malloc(((hmr.marker_length * 3) + 1))) == NULL)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "prepare_aws4_listing", NULL,
+                         "Failed to malloc() for marker : %s",
+                         strerror(errno));
+               free(prefix_encoded);
+               free(canonical_query);
+               return(INCORRECT);
+            }
+            url_encode(hmr.marker, marker_encoded);
+            i = snprintf(canonical_query, size,
+                         "%smarker=%s&max-keys=%d&prefix=%s",
+                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                         marker_encoded, AWS4_MAX_KEYS, prefix_encoded);
+            free(marker_encoded);
+         }
+      }
+      else
+      {
+         /* Prepare CanonicalQueryString                          */
+         /* NOTE: This MUST be sorted alphabetically by key name! */
+         if (hmr.marker[0] == '\0')
+         {
+            i = snprintf(canonical_query, size,
+                         "%slist-type=2&max-keys=%d&prefix=%s",
+                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                         AWS4_MAX_KEYS, prefix_encoded);
+         }
+         else
+         {
+            char *marker_encoded;
+
+            if ((marker_encoded = malloc(((hmr.marker_length * 3) + 1))) == NULL)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "prepare_aws4_listing", NULL,
+                         "Failed to malloc() for marker : %s",
+                         strerror(errno));
+               free(prefix_encoded);
+               free(canonical_query);
+               return(INCORRECT);
+            }
+            url_encode(hmr.marker, marker_encoded);
+            i = snprintf(canonical_query, size,
+                         "continuation-token=%s&%slist-type=2&max-keys=%d&prefix=%s",
+                         (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
+                         marker_encoded, AWS4_MAX_KEYS, prefix_encoded);
+            free(marker_encoded);
+         }
+      }
+      free(prefix_encoded);
+   }
+   if (i >= size)
+   {
+      trans_log(ERROR_SIGN, __FILE__, __LINE__, "prepare_aws4_listing", NULL,
+#if SIZEOF_SIZE_T == 4
+                "Overflow in canonical_query detected (%d >= %d)",
+#else
+                "Overflow in canonical_query detected (%d >= %lld)",
+#endif
+                i, (pri_size_t)size);
+      free(canonical_query);
+      return(INCORRECT);
+   }
+
+   resource[*resource_length] = '?';
+   (void)strcpy(&resource[*resource_length + 1], canonical_query);
+   if (my_strlcpy(&resource[*resource_length + 1], canonical_query,
+                  (8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + MAX_AWS4_PARAMETER_LENGTH + MAX_INT_LENGTH + MAX_FILENAME_LENGTH + 1) - (*resource_length + 1)) >=
+                  ((8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + MAX_AWS4_PARAMETER_LENGTH + MAX_INT_LENGTH + MAX_FILENAME_LENGTH + 1) - (*resource_length + 1)))
+   {
+      trans_log(ERROR_SIGN, __FILE__, __LINE__, "prepare_aws4_listing", NULL,
+                "Unable to append canonical query because resource is not large enough.");
+      free(canonical_query);
+      return(INCORRECT);
+   }
+   if (aws4_cmd_authentication("GET", filename, bucket_name_only,
+                               canonical_query, &hmr) != SUCCESS)
+   {
+      free(canonical_query);
+      return(INCORRECT);
+   }
+   free(canonical_query);
+
+   return(SUCCESS);
+}
+#endif /* WITH_SSL */
+
+
 /*############################## http_put() #############################*/
 int
-http_put(char *host, char *path, char *filename, off_t length, int first_file)
+http_put(char *path,
+         char *filename,
+         char *fullname,
+         off_t file_size,
+         char  *file_content_hash_hex,
+         int   first_file)
 {
+   char content_type[MAX_CONTENT_TYPE_LENGTH];
+
    if (http_fd == -1)
    {
       return(PERMANENT_DISCONNECT);
@@ -1289,17 +1717,80 @@ http_put(char *host, char *path, char *filename, off_t length, int first_file)
                    _("Reconnected."));
       }
    }
-   return(command(http_fd,
-#if SIZEOF_OFF_T == 4
-                  "PUT %s%s%s HTTP/1.1\r\nUser-Agent: AFD/%s\r\nContent-length: %ld\r\n%sHost: %s\r\nControl: overwrite=1\r\n",
-#else
-                  "PUT %s%s%s HTTP/1.1\r\nUser-Agent: AFD/%s\r\nContent-length: %lld\r\n%sHost: %s\r\nControl: overwrite=1\r\n",
+#ifdef WITH_SSL
+   if (hmr.auth_type == AUTH_AWS4_HMAC_SHA256)
+   {
+      if (aws4_put_authentication(filename, fullname, file_size, path,
+                                  file_content_hash_hex, &hmr) != SUCCESS)
+      {
+         return(INCORRECT);
+      }
+   }
+   else
+   {
 #endif
-                  (*path != '/') ? "/" : "", path, filename,
-                  PACKAGE_VERSION,
-                  (pri_off_t)length,
-                  (hmr.authorization == NULL) ? "" : hmr.authorization,
-                  host));
+      if (hmr.authorization == NULL)
+      {
+         if (init_basic_authentication() != SUCCESS)
+         {
+            return(INCORRECT);
+         }
+      }
+#ifdef WITH_SSL
+   }
+#endif
+
+   get_content_type(filename, content_type, YES);
+
+   if ((hmr.features & PROT_OPT_NO_EXPECT) == 0)
+   {
+      int reply;
+
+      if ((reply = command(http_fd,
+#if SIZEOF_OFF_T == 4
+                           "PUT %s%s%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: AFD/%s\r\nAccept: */*\r\nContent-length: %ld\r\n%sContent-Type: %s\r\nExpect: 100-continue\r\nControl: overwrite=1\r\n",
+#else
+                           "PUT %s%s%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: AFD/%s\r\nAccept: */*\r\nContent-length: %lld\r\n%sContent-Type: %s\r\nExpect: 100-continue\r\nControl: overwrite=1\r\n",
+#endif
+                           (*path != '/') ? "/" : "", path, filename,
+                           hmr.hostname, PACKAGE_VERSION, (pri_off_t)file_size,
+                           (hmr.authorization == NULL) ? "" : hmr.authorization,
+                           content_type)) == SUCCESS)
+      {
+retry_put_reply:
+         if ((reply = get_http_reply(NULL, 100, __LINE__)) == 100)
+         {
+            reply = SUCCESS;
+         }
+         else if (reply == CONNECTION_REOPENED)
+              {
+                 goto retry_put_reply;
+              }
+              else
+              {
+                 clear_msg_str();
+              }
+      }
+      hmr.bytes_buffered = 0;
+      hmr.bytes_read = 0;
+
+      return(reply);
+   }
+   else
+   {
+      return(command(http_fd,
+#if SIZEOF_OFF_T == 4
+                     "PUT %s%s%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: AFD/%s\r\nAccept: */*\r\nContent-length: %ld\r\n%sContent-Type: %s\r\nControl: overwrite=1\r\n",
+#else
+                     "PUT %s%s%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: AFD/%s\r\nAccept: */*\r\nContent-length: %lld\r\n%sContent-Type: %s\r\nControl: overwrite=1\r\n",
+#endif
+                     (*path != '/') ? "/" : "", path, filename,
+                     hmr.hostname,
+                     PACKAGE_VERSION,
+                     (pri_off_t)file_size,
+                     (hmr.authorization == NULL) ? "" : hmr.authorization,
+                     content_type));
+   }
 }
 
 
@@ -1312,38 +1803,24 @@ http_put_response(void)
    hmr.retries = -1; /* -1 so we do not do a reconnect in get_http_reply()! */
    hmr.date = -1;
    hmr.content_length = 0;
+   if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) && (hmr.authorization != NULL))
+   {
+      free(hmr.authorization);
+      hmr.authorization = NULL;
+   }
 retry_put_response:
    if (((reply = get_http_reply(NULL, 201, __LINE__)) == 201) ||
        (reply == 204) || (reply == 200))
    {
       reply = SUCCESS;
    }
-   else if (reply == 401) /* Unauthorized */
-        {
-           if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
-           {
-              if (basic_authentication() == SUCCESS)
-              {
-                 if (check_connection() > INCORRECT)
-                 {
-                    goto retry_put_response;
-                 }
-              }
-              trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_put_response", NULL,
-                        _("Failed to create basic authentication."));
-           }
-           else if (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST)
-                {
-                   trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_put_response", NULL,
-                             _("Digest authentication not yet implemented."));
-                }
-
-           hmr.bytes_buffered = 0;
-           hmr.bytes_read = 0;
-        }
    else if (reply == CONNECTION_REOPENED)
         {
            goto retry_put_response;
+        }
+        else
+        {
+           clear_msg_str();
         }
 
    hmr.bytes_buffered = 0;
@@ -1355,7 +1832,7 @@ retry_put_response:
 
 /*############################## http_del() #############################*/
 int
-http_del(char *host, char *path, char *filename)
+http_del(char *path, char *filename)
 {
    int reply;
 
@@ -1385,17 +1862,17 @@ http_del(char *host, char *path, char *filename)
       else
       {
 #ifdef WITH_SSL
-         if (hmr.ssl == YES)
+         if (hmr.tls_auth == YES)
          {
             if (*path == '/')
             {
                (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "https://%s%s%s", host, path, filename);
+                              "https://%s%s%s", hmr.hostname, path, filename);
             }
             else
             {
                (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "https://%s/%s%s", host, path, filename);
+                              "https://%s/%s%s", hmr.hostname, path, filename);
             }
          }
          else
@@ -1404,25 +1881,47 @@ http_del(char *host, char *path, char *filename)
             if (*path == '/')
             {
                (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "http://%s%s%s", host, path, filename);
+                              "http://%s%s%s", hmr.hostname, path, filename);
             }
             else
             {
                (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "http://%s/%s%s", host, path, filename);
+                              "http://%s/%s%s", hmr.hostname, path, filename);
             }
 #ifdef WITH_SSL
          }
 #endif
       }
+#ifdef WITH_SSL
+      if (hmr.auth_type == AUTH_AWS4_HMAC_SHA256)
+      {
+         if (aws4_cmd_authentication("DELETE", filename, path,
+                                     "", &hmr) != SUCCESS)
+         {
+            return(INCORRECT);
+         }
+      }
+      else
+      {
+#endif
+         if (hmr.authorization == NULL)
+         {
+            if (init_basic_authentication() != SUCCESS)
+            {
+               return(INCORRECT);
+            }
+         }
+#ifdef WITH_SSL
+      }
+#endif
 retry_del:
       if ((reply = command(http_fd,
-                           "DELETE %s HTTP/1.1\r\nUser-Agent: AFD/%s\r\n%sHost: %s\r\nContent-length: 0\r\n",
-                           resource, PACKAGE_VERSION,
-                           (hmr.authorization == NULL) ? "" : hmr.authorization,
-                           host)) == SUCCESS)
+                           "DELETE %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: AFD/%s\r\n%sContent-length: 0\r\n",
+                           resource, hmr.hostname, PACKAGE_VERSION,
+                           (hmr.authorization == NULL) ? "" : hmr.authorization)) == SUCCESS)
       {
-         if ((reply = get_http_reply(NULL, 200, __LINE__)) == 200)
+         if (((reply = get_http_reply(NULL, 200, __LINE__)) == 200) ||
+             (reply == 204))
          {
             reply = SUCCESS;
          }
@@ -1430,7 +1929,7 @@ retry_del:
               {
                  if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
                  {
-                    if (basic_authentication() == SUCCESS)
+                    if (basic_authentication(&hmr) == SUCCESS)
                     {
                        if (check_connection() > INCORRECT)
                        {
@@ -1446,6 +1945,7 @@ retry_del:
                                    _("Digest authentication not yet implemented."));
                       }
 
+                 clear_msg_str();
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
               }
@@ -1455,9 +1955,17 @@ retry_del:
               }
               else
               {
+                 clear_msg_str();
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
               }
+      }
+
+      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) &&
+          (hmr.authorization != NULL))
+      {
+         free(hmr.authorization);
+         hmr.authorization = NULL;
       }
    }
 
@@ -1467,7 +1975,7 @@ retry_del:
 
 /*############################ http_options() ###########################*/
 int
-http_options(char *host, char *path)
+http_options(char *path)
 {
    int reply;
 
@@ -1494,17 +2002,17 @@ http_options(char *host, char *path)
       else
       {
 #ifdef WITH_SSL
-         if (hmr.ssl == YES)
+         if (hmr.tls_auth == YES)
          {
             if (*path == '/')
             {
                (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "https://%s%s", host, path);
+                              "https://%s%s", hmr.hostname, path);
             }
             else
             {
                (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "https://%s/%s", host, path);
+                              "https://%s/%s", hmr.hostname, path);
             }
          }
          else
@@ -1513,24 +2021,44 @@ http_options(char *host, char *path)
             if (*path == '/')
             {
                (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "http://%s%s", host, path);
+                              "http://%s%s", hmr.hostname, path);
             }
             else
             {
                (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "http://%s/%s", host, path);
+                              "http://%s/%s", hmr.hostname, path);
             }
 #ifdef WITH_SSL
          }
 #endif
       }
+#ifdef WITH_SSL
+      if (hmr.auth_type == AUTH_AWS4_HMAC_SHA256)
+      {
+         if (aws4_cmd_authentication("OPTIONS", "", path, "", &hmr) != SUCCESS)
+         {
+            return(INCORRECT);
+         }
+      }
+      else
+      {
+#endif
+         if (hmr.authorization == NULL)
+         {
+            if (init_basic_authentication() != SUCCESS)
+            {
+               return(INCORRECT);
+            }
+         }
+#ifdef WITH_SSL
+      }
+#endif
 retry_options:
       if ((reply = command(http_fd,
-                           "OPTIONS %s HTTP/1.1\r\nUser-Agent: AFD/%s\r\n%sHost: %s\r\nContent-length: 0\r\nAccept: */*\r\n",
-                           resource,
+                           "OPTIONS %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: AFD/%s\r\n%sContent-length: 0\r\nAccept: */*\r\n",
+                           resource, hmr.hostname,
                            PACKAGE_VERSION,
-                           (hmr.authorization == NULL) ? "" : hmr.authorization,
-                           host)) == SUCCESS)
+                           (hmr.authorization == NULL) ? "" : hmr.authorization)) == SUCCESS)
       {
          if ((reply = get_http_reply(&hmr.bytes_buffered, 200, __LINE__)) == 200)
          {
@@ -1544,7 +2072,7 @@ retry_options:
               {
                  if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
                  {
-                    if (basic_authentication() == SUCCESS)
+                    if (basic_authentication(&hmr) == SUCCESS)
                     {
                        if (check_connection() > INCORRECT)
                        {
@@ -1560,6 +2088,7 @@ retry_options:
                                    _("Digest authentication not yet implemented."));
                       }
 
+                 clear_msg_str();
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
               }
@@ -1567,38 +2096,7 @@ retry_options:
                   (reply == 405) || /* Not Allowed */
                   (reply == 500))   /* Internal Server Error */
               {
-                 int try_restore_msg_buffer;
-
-                 if (hmr.bytes_buffered > 0)
-                 {
-                    try_restore_msg_buffer = YES;
-                 }
-                 else
-                 {
-                    try_restore_msg_buffer = NO;
-                 }
-
-                 if ((flush_read() == NO) && (hmr.chunked == YES))
-                 {
-                    read_last_chunk();
-                 }
-                 if (try_restore_msg_buffer == YES)
-                 {
-                    /* get_http_reply() has already overwritten the */
-                    /* error message since read_msg() has read more */
-                    /* then required. So in msg_str there is now    */
-                    /* garbage. Let's try to restore at least the   */
-                    /* first line.                                  */
-                    if (hmr.header_length > 0)
-                    {
-                       (void)memcpy(msg_str, hmr.msg_header, hmr.header_length);
-                    }
-                    else
-                    {
-                       /* So we do not show any garbage. */
-                       msg_str[0] = '\0';
-                    }
-                 }
+                 clear_msg_str();
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
                  reply = SUCCESS;
@@ -1610,41 +2108,17 @@ retry_options:
               }
               else
               {
-                 int try_restore_msg_buffer;
-
-                 if (hmr.bytes_buffered > 0)
-                 {
-                    try_restore_msg_buffer = YES;
-                 }
-                 else
-                 {
-                    try_restore_msg_buffer = NO;
-                 }
-
-                 if ((flush_read() == NO) && (hmr.chunked == YES))
-                 {
-                    read_last_chunk();
-                 }
-                 if (try_restore_msg_buffer == YES)
-                 {
-                    /* get_http_reply() has already overwritten the */
-                    /* error message since read_msg() has read more */
-                    /* then required. So in msg_str there is now    */
-                    /* garbage. Let's try to restore at least the   */
-                    /* first line.                                  */
-                    if (hmr.header_length > 0)
-                    {
-                       (void)memcpy(msg_str, hmr.msg_header, hmr.header_length);
-                    }
-                    else
-                    {
-                       /* So we do not show any garbage. */
-                       msg_str[0] = '\0';
-                    }
-                 }
+                 clear_msg_str();
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
               }
+      }
+
+      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) &&
+          (hmr.authorization != NULL))
+      {
+         free(hmr.authorization);
+         hmr.authorization = NULL;
       }
    }
 
@@ -1654,11 +2128,7 @@ retry_options:
 
 /*############################# http_head() #############################*/
 int
-http_head(char   *host,
-          char   *path,
-          char   *filename,
-          off_t  *content_length,
-          time_t *date)
+http_head(char *path, char *filename, off_t *content_length, time_t *date)
 {
    int reply;
 
@@ -1699,17 +2169,17 @@ http_head(char   *host,
       else
       {
 #ifdef WITH_SSL
-         if (hmr.ssl == YES)
+         if (hmr.tls_auth == YES)
          {
             if (*path == '/')
             {
                (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "https://%s%s%s", host, path, filename);
+                              "https://%s%s%s", hmr.hostname, path, filename);
             }
             else
             {
                (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "https://%s/%s%s", host, path, filename);
+                              "https://%s/%s%s", hmr.hostname, path, filename);
             }
          }
          else
@@ -1718,23 +2188,44 @@ http_head(char   *host,
             if (*path == '/')
             {
                (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "http://%s%s%s", host, path, filename);
+                              "http://%s%s%s", hmr.hostname, path, filename);
             }
             else
             {
                (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + 1,
-                              "http://%s/%s%s", host, path, filename);
+                              "http://%s/%s%s", hmr.hostname, path, filename);
             }
 #ifdef WITH_SSL
          }
 #endif
       }
+#ifdef WITH_SSL
+      if (hmr.auth_type == AUTH_AWS4_HMAC_SHA256)
+      {
+         if (aws4_cmd_authentication("HEAD", filename, path,
+                                     "", &hmr) != SUCCESS)
+         {
+            return(INCORRECT);
+         }
+      }
+      else
+      {
+#endif
+         if (hmr.authorization == NULL)
+         {
+            if (init_basic_authentication() != SUCCESS)
+            {
+               return(INCORRECT);
+            }
+         }
+#ifdef WITH_SSL
+      }
+#endif
 retry_head:
       if ((reply = command(http_fd,
-                           "HEAD %s HTTP/1.1\r\nUser-Agent: AFD/%s\r\n%sHost: %s\r\nContent-length: 0\r\nAccept: */*\r\n",
-                           resource, PACKAGE_VERSION,
-                           (hmr.authorization == NULL) ? "" : hmr.authorization,
-                           host)) == SUCCESS)
+                           "HEAD %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: AFD/%s\r\n%sContent-length: 0\r\nAccept: */*\r\n",
+                           resource, hmr.hostname, PACKAGE_VERSION,
+                           (hmr.authorization == NULL) ? "" : hmr.authorization)) == SUCCESS)
       {
          if ((reply = get_http_reply(NULL, 999, __LINE__)) == 200)
          {
@@ -1749,7 +2240,7 @@ retry_head:
               {
                  if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
                  {
-                    if (basic_authentication() == SUCCESS)
+                    if (basic_authentication(&hmr) == SUCCESS)
                     {
                        if (check_connection() > INCORRECT)
                        {
@@ -1765,6 +2256,7 @@ retry_head:
                                    _("Digest authentication not yet implemented."));
                       }
 
+                 clear_msg_str();
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
               }
@@ -1788,92 +2280,21 @@ retry_head:
               }
               else
               {
+                 clear_msg_str();
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
               }
       }
+
+      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) &&
+          (hmr.authorization != NULL))
+      {
+         free(hmr.authorization);
+         hmr.authorization = NULL;
+      }
    }
 
    return(reply);
-}
-
-
-/*++++++++++++++++++++++++ basic_authentication() +++++++++++++++++++++++*/
-static int
-basic_authentication(void)
-{
-   size_t length;
-   char   *dst_ptr,
-          *src_ptr,
-          base_64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
-          userpasswd[MAX_USER_NAME_LENGTH + MAX_USER_NAME_LENGTH];
-
-   /*
-    * Let us first construct the authorization string from user name
-    * and passwd:  <user>:<passwd>
-    * And then encode this to using base-64 encoding.
-    */
-   length = snprintf(userpasswd, MAX_USER_NAME_LENGTH + MAX_USER_NAME_LENGTH,
-                     "%s:%s", hmr.user, hmr.passwd);
-   if (length > (MAX_USER_NAME_LENGTH + MAX_USER_NAME_LENGTH))
-   {
-      trans_log(ERROR_SIGN, __FILE__, __LINE__, "basic_authentication", NULL,
-#if SIZEOF_SIZE_T == 4
-                _("Buffer length to store user+passwd not long enough, needs %d bytes"),
-#else
-                _("Buffer length to store user+passwd not long enough, needs %lld bytes"),
-#endif
-               (pri_size_t)length);
-      return(INCORRECT);
-   }
-   free(hmr.authorization);
-   if ((hmr.authorization = malloc(21 + length + (length / 3) + 4 + 2 + 1)) == NULL)
-   {
-      trans_log(ERROR_SIGN, __FILE__, __LINE__, "basic_authentication", NULL,
-                _("malloc() error : %s"), strerror(errno));
-      return(INCORRECT);
-   }
-   dst_ptr = hmr.authorization;
-   *dst_ptr = 'A'; *(dst_ptr + 1) = 'u'; *(dst_ptr + 2) = 't';
-   *(dst_ptr + 3) = 'h'; *(dst_ptr + 4) = 'o'; *(dst_ptr + 5) = 'r';
-   *(dst_ptr + 6) = 'i'; *(dst_ptr + 7) = 'z'; *(dst_ptr + 8) = 'a';
-   *(dst_ptr + 9) = 't'; *(dst_ptr + 10) = 'i'; *(dst_ptr + 11) = 'o';
-   *(dst_ptr + 12) = 'n'; *(dst_ptr + 13) = ':'; *(dst_ptr + 14) = ' ';
-   *(dst_ptr + 15) = 'B'; *(dst_ptr + 16) = 'a'; *(dst_ptr + 17) = 's';
-   *(dst_ptr + 18) = 'i'; *(dst_ptr + 19) = 'c'; *(dst_ptr + 20) = ' ';
-   dst_ptr += 21;
-   src_ptr = userpasswd;
-   while (length > 2)
-   {
-      *dst_ptr = base_64[(int)(*src_ptr) >> 2];
-      *(dst_ptr + 1) = base_64[((((int)(*src_ptr) & 0x3)) << 4) | (((int)(*(src_ptr + 1)) & 0xF0) >> 4)];
-      *(dst_ptr + 2) = base_64[((((int)(*(src_ptr + 1))) & 0xF) << 2) | ((((int)(*(src_ptr + 2))) & 0xC0) >> 6)];
-      *(dst_ptr + 3) = base_64[((int)(*(src_ptr + 2))) & 0x3F];
-      src_ptr += 3;
-      length -= 3;
-      dst_ptr += 4;
-   }
-   if (length == 2)
-   {
-      *dst_ptr = base_64[(int)(*src_ptr) >> 2];
-      *(dst_ptr + 1) = base_64[((((int)(*src_ptr) & 0x3)) << 4) | (((int)(*(src_ptr + 1)) & 0xF0) >> 4)];
-      *(dst_ptr + 2) = base_64[(((int)(*(src_ptr + 1))) & 0xF) << 2];
-      *(dst_ptr + 3) = '=';
-      dst_ptr += 4;
-   }
-   else if (length == 1)
-        {
-           *dst_ptr = base_64[(int)(*src_ptr) >> 2];
-           *(dst_ptr + 1) = base_64[(((int)(*src_ptr) & 0x3)) << 4];
-           *(dst_ptr + 2) = '=';
-           *(dst_ptr + 3) = '=';
-           dst_ptr += 4;
-        }
-   *dst_ptr = '\r';
-   *(dst_ptr + 1) = '\n';
-   *(dst_ptr + 2) = '\0';
-
-   return(SUCCESS);
 }
 
 
@@ -2382,28 +2803,19 @@ http_chunk_read(char **chunk, int *chunksize)
 int
 http_noop(void)
 {
-   char   *p_hostname;
    off_t  file_size;
    time_t file_mtime;
 
    /* I do not know of a better way. HTTP does not support  */
    /* a NOOP command, so lets just do a HEAD on the current */
    /* current server.                                       */
-   if (hmr.http_proxy[0] == '\0')
-   {
-      p_hostname = hmr.hostname;
-   }
-   else
-   {
-      p_hostname = hmr.http_proxy;
-   }
 
 #ifdef WITH_TRACE
    trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
              "http_noop(): Calling http_head(\"%s\", \"\", \"\")",
-             p_hostname);
+             hmr.hostname);
 #endif
-   return(http_head(p_hostname, "", "", &file_size, &file_mtime));
+   return(http_head("", "", &file_size, &file_mtime));
 }
 
 
@@ -2452,6 +2864,30 @@ http_quit(void)
 }
 
 
+/*+++++++++++++++++++++ init_basic_authentication() +++++++++++++++++++++*/
+static int
+init_basic_authentication(void)
+{
+   int ret;
+
+   if (((hmr.auth_type == AUTH_NONE) || (hmr.auth_type == AUTH_BASIC)) &&
+       ((hmr.user[0] != '\0') || (hmr.passwd[0] != '\0')))
+   {
+      if ((ret = basic_authentication(&hmr)) != SUCCESS)
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, "init_basic_authentication", NULL,
+                   _("Failed to create basic authentication."));
+      }
+   }
+   else
+   {
+      ret = SUCCESS;
+   }
+
+   return(ret);
+}
+
+
 /*+++++++++++++++++++++++++ check_connection() ++++++++++++++++++++++++++*/
 static int
 check_connection(void)
@@ -2477,9 +2913,11 @@ check_connection(void)
       int status;
 
       if ((status = http_connect(hmr.hostname, hmr.http_proxy, hmr.port,
-                                 hmr.user, hmr.passwd,
+                                 hmr.user, hmr.passwd, hmr.auth_type,
+                                 hmr.fra_options, hmr.features,
 #ifdef WITH_SSL
-                                 hmr.ssl, hmr.strict,
+                                 hmr.listobject_version, hmr.service_type,
+                                 hmr.region, hmr.tls_auth,
 #endif
                                  hmr.sndbuf_size, hmr.rcvbuf_size)) != SUCCESS)
       {
@@ -2586,10 +3024,6 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
             /* Check if we have reached header end. */
             if  ((read_length == 1) && (msg_str[0] == '\0'))
             {
-               if (status_code >= 300)
-               {
-                  (void)strcpy(msg_str, hmr.msg_header);
-               }
                break;
             }
 
@@ -2714,9 +3148,9 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
                                 ((msg_str[i + 3] == 'E') || (msg_str[i + 3] == 'e')) &&
                                 ((msg_str[i + 4] == 'S') || (msg_str[i + 4] == 's')) &&
                                 ((msg_str[i + 5] == 'T') || (msg_str[i + 5] == 't')))
-                       {
-                          hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST;
-                       }
+                            {
+                               hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST;
+                            }
                     }
                  }
                  /* Transfer-encoding: */
@@ -2787,7 +3221,7 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
                     }
                     if (i < read_length)
                     {
-                       hmr.date = datestr2unixtime(&msg_str[i]);
+                       hmr.date = datestr2unixtime(&msg_str[i], NULL);
                     }
                  }
 #ifdef _WITH_EXTRA_CHECK
@@ -2976,7 +3410,7 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
          }
          if ((read_length == 1) && (msg_str[0] == '\0') && (msg_str[1] == '\n'))
          {
-            (void)memmove(msg_str, msg_str + 1 + 1, (bytes_buffered - 1 - 1));
+            (void)memmove(msg_str, msg_str + 2, (bytes_buffered - 2));
             (void)read_msg(NULL, -2, line);
          }
       }
@@ -3264,6 +3698,58 @@ read_msg(int *read_length, int offset, int line)
 }
 
 
+/*--------------------------- clear_msg_str() ---------------------------*/
+static void
+clear_msg_str(void)
+{
+   int  try_restore_msg_buffer;
+   char extra_msg[MAX_EXTRA_RETURN_STR_LENGTH + 1];
+
+   if (hmr.bytes_buffered > 0)
+   {
+      try_restore_msg_buffer = YES;
+   }
+   else
+   {
+      try_restore_msg_buffer = NO;
+   }
+
+   if ((flush_read(extra_msg) == NO) && (hmr.chunked == YES))
+   {
+      read_last_chunk();
+   }
+   if (try_restore_msg_buffer == YES)
+   {
+      /* get_http_reply() has already overwritten the */
+      /* error message since read_msg() has read more */
+      /* then required. So in msg_str there is now    */
+      /* garbage. Let's try to restore at least the   */
+      /* first line.                                  */
+      if (hmr.header_length > 0)
+      {
+         if (extra_msg[0] == '\0')
+         {
+            (void)memcpy(msg_str, hmr.msg_header,
+                         hmr.header_length);
+         }
+         else
+         {
+            (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                           "%s (%s)", hmr.msg_header, extra_msg);
+         }
+      }
+      else
+      {
+         /* So we do not show any garbage. */
+         (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
+                        "%s", extra_msg);
+      }
+   }
+
+   return;
+}
+
+
 /*----------------------------- flush_read() ----------------------------*/
 /*                              ------------                             */
 /* Some HTTP servers return warn/error information in human readable     */
@@ -3271,7 +3757,7 @@ read_msg(int *read_length, int offset, int line)
 /* otherwise the command/reponce sequence will get mixed up.             */
 /*-----------------------------------------------------------------------*/
 static int
-flush_read(void)
+flush_read(char *extra_return_str)
 {
    off_t content_length;
 
@@ -3289,24 +3775,25 @@ flush_read(void)
       int   bytes_buffered,
             hunk_size;
       off_t total_read = 0;
-      char  buffer[2048];
+      char  buffer[4096];
 
 #ifdef WITH_TRACE
       trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
 # if SIZEOF_OFF_T == 4
-                "Flush reading %ld bytes (bufferd bytes = %d).",
+                "Flush reading %ld bytes (hmr.content_length = %ld hmr.bytes_read = %d bufferd bytes = %d).",
 # else
-                "Flush reading %lld bytes (bufferd bytes = %d).",
+                "Flush reading %lld bytes (hmr.content_length = %lld hmr.bytes_read = %d bufferd bytes = %d).",
 # endif
-                (pri_off_t)content_length, hmr.bytes_buffered);
+                (pri_off_t)content_length, (pri_off_t)hmr.content_length,
+                hmr.bytes_read, hmr.bytes_buffered);
 #endif
 
       while (total_read != content_length)
       {
          hunk_size = content_length - total_read;
-         if (hunk_size > 2048)
+         if (hunk_size > 4096)
          {
-            hunk_size = 2048;
+            hunk_size = 4096;
          }
 #ifdef WITH_TRACE
          trace_log(__FILE__, __LINE__, R_TRACE, NULL, 0,
@@ -3335,6 +3822,79 @@ flush_read(void)
                 "Flushed %lld bytes.", (pri_off_t)total_read);
 # endif
 #endif
+
+      if (extra_return_str != NULL)
+      {
+         extra_return_str[0] = '\0';
+
+         /* Lets see if we can get some useful information that we */
+         /* can return in the reply message. Here we just try to   */
+         /* see if it is XML and it has the <Error> and <Code> tag.*/
+         /* If that is the case, try put it into msg_str.          */
+         if (total_read == hmr.content_length)
+         {
+            /* <?xml version=" */
+            if ((total_read > 16) &&
+                (buffer[0] == '<') && (buffer[1] == '?') &&
+                (buffer[2] == 'x') && (buffer[3] == 'm') &&
+                (buffer[4] == 'l') && (buffer[5] == ' ') &&
+                (buffer[6] == 'v') && (buffer[7] == 'e') &&
+                (buffer[8] == 'r') && (buffer[9] == 's') &&
+                (buffer[10] == 'i') && (buffer[11] == 'o') &&
+                (buffer[12] == 'n') && (buffer[13] == '=') &&
+                (buffer[14] == '"'))
+            {
+               int rpos = 15;
+
+               while ((rpos < total_read) && (buffer[rpos] != '\n'))
+               {
+                  rpos++;
+               }
+               if (buffer[rpos] == '\n')
+               {
+                  rpos++;
+
+                  /* <Error><Code> */
+                  if (((rpos + 14) < total_read) &&
+                      (buffer[rpos] == '<') &&
+                      ((buffer[rpos + 1] == 'E') ||
+                       (buffer[rpos + 1] == 'e')) &&
+                      ((buffer[rpos + 2] == 'r') ||
+                       (buffer[rpos + 2] == 'R')) &&
+                      ((buffer[rpos + 3] == 'r') ||
+                       (buffer[rpos + 3] == 'R')) &&
+                      ((buffer[rpos + 4] == 'o') ||
+                       (buffer[rpos + 4] == 'O')) &&
+                      ((buffer[rpos + 5] == 'r') ||
+                       (buffer[rpos + 5] == 'R')) &&
+                      (buffer[rpos + 6] == '>') && (buffer[rpos + 7] == '<') &&
+                      ((buffer[rpos + 8] == 'C') ||
+                       (buffer[rpos + 8] == 'c')) &&
+                      ((buffer[rpos + 9] == 'o') ||
+                       (buffer[rpos + 9] == 'O')) &&
+                      ((buffer[rpos + 10] == 'd') ||
+                       (buffer[rpos + 10] == 'D')) &&
+                      ((buffer[rpos + 11] == 'e') ||
+                       (buffer[rpos + 11] == 'E')) &&
+                      (buffer[rpos + 12] == '>'))
+                  {
+                     int wpos = 0;
+
+                     rpos += 13;
+                     while ((wpos < MAX_EXTRA_RETURN_STR_LENGTH) &&
+                            (rpos < total_read) &&
+                            (isascii((int)buffer[rpos])) &&
+                            (buffer[rpos] != '<'))
+                     {
+                        extra_return_str[wpos] = buffer[rpos];
+                        wpos++; rpos++;
+                     }
+                     extra_return_str[wpos] = '\0';
+                  }
+               }
+            }
+         }
+      }
 
       if ((bytes_buffered > 4) && (buffer[bytes_buffered - 1] == 10) &&
           (buffer[bytes_buffered - 2] == 13) &&

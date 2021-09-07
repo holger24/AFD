@@ -1,6 +1,6 @@
 /*
  *  init_sf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -184,7 +184,7 @@ init_sf(int argc, char *argv[], char *file_path, int protocol)
    db.filename_pos_subject = -1;
 /* db.subject_rename_rule[0] = '\0'; */
 #ifdef WITH_SSL
-   db.auth = NO;
+   db.tls_auth = NO;
 #endif
 /* db.ssh_protocol = 0; */
 #ifdef WITH_SSH_FINGERPRINT
@@ -482,7 +482,7 @@ init_sf(int argc, char *argv[], char *file_path, int protocol)
    (void)strcpy(db.active_target_dir, db.target_dir);
    db.active_transfer_mode = db.transfer_mode;
 #ifdef WITH_SSL
-   db.active_auth = db.auth;
+   db.active_auth = db.tls_auth;
 #endif
 
    /* Do we want to display the status? */

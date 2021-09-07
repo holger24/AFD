@@ -1,6 +1,6 @@
 /*
  *  jid_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -318,8 +318,9 @@ main(int argc, char *argv[])
 # ifdef WITH_SSH_FINGERPRINT
                                    NULL, NULL,
 # endif
-                                   NULL, NO, host_alias_destination, NULL, NULL,
-                                   NULL, NULL, NULL, NULL, NULL) < 4)
+                                   NULL, NO, host_alias_destination, NULL,
+                                   NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                                   NULL, NULL) < 4)
                   {
                      j = 0;
                      while ((host_alias_destination[j] != '\0') &&
@@ -363,8 +364,9 @@ main(int argc, char *argv[])
 # ifdef WITH_SSH_FINGERPRINT
                                           NULL, NULL,
 # endif
-                                          NULL, NO, host_alias_source, NULL, NULL,
-                                          NULL, NULL, NULL, NULL, NULL) < 4) &&
+                                          NULL, NO, host_alias_source, NULL,
+                                          NULL, NULL, NULL, NULL, NULL, NULL,
+                                          NULL, NULL, NULL) < 4) &&
                             (scheme != LOC_FLAG) && (scheme != UNKNOWN_FLAG))
                         {
                            j = 0;

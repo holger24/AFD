@@ -1,6 +1,6 @@
 /*
  *  init_gf_burst2.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -106,7 +106,7 @@ init_gf_burst2(struct job   *p_new_db,
             *values_changed |= TYPE_CHANGED;
          }
 # ifdef WITH_SSL
-         if (db.active_auth != p_new_db->auth)
+         if (db.active_auth != p_new_db->tls_auth)
          {
             *values_changed |= AUTH_CHANGED;
          }
@@ -124,7 +124,7 @@ init_gf_burst2(struct job   *p_new_db,
          db.transfer_mode = p_new_db->transfer_mode;
       }
 # ifdef WITH_SSL
-      db.auth = p_new_db->auth;
+      db.tls_auth = p_new_db->tls_auth;
 # endif
       (void)strcpy(db.password, p_new_db->password);
       if (p_new_db->http_proxy[0] == '\0')
@@ -217,7 +217,7 @@ init_gf_burst2(struct job   *p_new_db,
    (void)strcpy(db.active_target_dir, db.target_dir);
    db.active_transfer_mode = db.transfer_mode;
 # ifdef WITH_SSL
-   db.active_auth = db.auth;
+   db.active_auth = db.tls_auth;
 # endif
 #endif /* _WITH_BURST_2 */
 

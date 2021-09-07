@@ -1,6 +1,6 @@
 /*
  *  set_pw.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -386,7 +386,8 @@ main(int argc, char *argv[])
                                         NULL, NULL,
 #endif
                                         NULL, NO, real_hostname, NULL, NULL,
-                                        NULL, NULL, NULL, NULL, NULL)) < 4)
+                                        NULL, NULL, NULL, NULL, NULL,
+                                        NULL, NULL, NULL)) < 4)
          {
             int mask = 0;
 
@@ -538,7 +539,8 @@ main(int argc, char *argv[])
                                            NULL, NULL,
 #endif
                                            NULL, NO, real_hostname, NULL, NULL,
-                                           NULL, NULL, NULL, NULL, NULL)) < 4)
+                                           NULL, NULL, NULL, NULL, NULL,
+                                           NULL, NULL, NULL)) < 4)
             {
                int mask = 0;
 
@@ -616,9 +618,9 @@ main(int argc, char *argv[])
 #ifdef WITH_SSH_FINGERPRINT
                                               NULL, NULL,
 #endif
-                                              NULL, NO, real_hostname, NULL, NULL,
-                                              NULL, NULL, NULL,
-                                              NULL, NULL)) < 4)
+                                              NULL, NO, real_hostname, NULL,
+                                              NULL, NULL, NULL, NULL, NULL,
+                                              NULL, NULL, NULL, NULL)) < 4)
                {
                   int mask = 0;
 

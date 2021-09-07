@@ -56,11 +56,13 @@ else
                                    src/protocols/encode_base64.c
 endif
 if WITH_HTTP_SUPPORT
-   HTTPCMD                       = src/protocols/httpcmd.c
+   HTTPCMD                       = src/protocols/authcmd.c\
+                                   src/protocols/httpcmd.c
    EXTRA_HTTPCMD                 =
 else
    HTTPCMD                       =
-   EXTRA_HTTPCMD                 = src/protocols/httpcmd.c
+   EXTRA_HTTPCMD                 = src/protocols/authcmd.c\
+                                   src/protocols/httpcmd.c
 endif
 
 EXTRA_DIST                      += $(EXTRA_WMOCMD)\
@@ -84,6 +86,7 @@ noinst_LIBRARIES                += lib/libprotocols.a\
 lib_libprotocols_a_SOURCES       = src/protocols/common.c\
                                    src/protocols/connect_with_timeout.c\
                                    $(FTPCMD)\
+                                   src/protocols/get_content_type.c\
                                    $(HTTPCMD)\
                                    src/protocols/pop3cmd.c\
                                    $(SCPCMD)\

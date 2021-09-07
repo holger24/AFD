@@ -1103,7 +1103,8 @@ write_fsa(int add, int files_to_send, off_t file_size_to_send)
                                      NULL, NULL,
 #endif
                                      NULL, NO, real_hostname, NULL, NULL, NULL,
-                                     NULL, NULL, NULL, smtp_server)) < 4)
+                                     NULL, NULL, NULL, NULL, NULL, NULL,
+                                     smtp_server)) < 4)
       {
          int position;
 

@@ -351,7 +351,7 @@ do_scan(int   *files_to_retrieve,
     * what files are there.
     */
 #ifdef WITH_SSL
-   if (db.auth == BOTH)
+   if (db.tls_auth == BOTH)
    {
       type = MLSD_CMD | BUFFERED_LIST | ENCRYPT_DATA;
    }

@@ -70,7 +70,8 @@ DESCR__E_M1
 /* #define WITH_DEBUG_HTTP_READ */
 
 /* Global variables. */
-unsigned int               special_flag = 0;
+unsigned int               fra_options,
+                           special_flag = 0;
 int                        *current_no_of_listed_files = NULL,
                            event_log_fd = STDERR_FILENO,
                            exitflag = IS_FAULTY_VAR,
@@ -174,6 +175,7 @@ main(int argc, char *argv[])
                     blocksize,
                     chunksize,
                     exit_status = TRANSFER_SUCCESS,
+                    features,
                     fd,
                     files_retrieved = 0,
                     files_to_retrieve = 0,
@@ -321,11 +323,34 @@ main(int argc, char *argv[])
 #ifdef WITH_IP_DB
    set_store_ip((fsa->host_status & STORE_IP) ? YES : NO);
 #endif
-   status = http_connect(db.hostname, db.http_proxy,
-                         db.port, db.user, db.password,
+   features = 0;
 #ifdef WITH_SSL
-                         db.auth,
-                         (fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO,
+   if (fsa->protocol_options & TLS_STRICT_VERIFY)
+   {
+      features |= PROT_OPT_TLS_STRICT_VERIFY;
+   }
+#endif
+   if (fsa->protocol_options & NO_EXPECT)
+   {
+      features |= PROT_OPT_NO_EXPECT;
+   }
+   fra_options = 0;
+   if (fra->dir_flag & BUCKETNAME_IN_PATH)
+   {
+      fra_options |= BUCKETNAME_IN_PATH;
+   }
+   if (fra->dir_flag & NO_DELIMITER)
+   {
+      fra_options |= NO_DELIMITER;
+   }
+   if (fra->dir_flag & KEEP_PATH)
+   {
+      fra_options |= KEEP_PATH;
+   }
+   status = http_connect(db.hostname, db.http_proxy, db.port, db.user,
+                         db.password, db.auth, fra_options, features,
+#ifdef WITH_SSL
+                         db.ssh_protocol, db.service, db.region, db.tls_auth,
 #endif
                          db.sndbuf_size, db.rcvbuf_size);
 #ifdef WITH_IP_DB
@@ -357,7 +382,7 @@ main(int argc, char *argv[])
 #ifdef WITH_SSL
          char *p_msg_str;
 
-         if ((db.auth == YES) || (db.auth == BOTH))
+         if ((db.tls_auth == YES) || (db.tls_auth == BOTH))
          {
             p_msg_str = msg_str;
          }
@@ -398,7 +423,7 @@ main(int argc, char *argv[])
          {
             trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
 # ifdef WITH_SSL
-                         "%s Bursting. [values_changed=%u]", (db.auth == NO) ? "HTTP" : "HTTPS",
+                         "%s Bursting. [values_changed=%u]", (db.tls_auth == NO) ? "HTTP" : "HTTPS",
 # else
                          "HTTP Bursting. [values_changed=%u]",
 # endif
@@ -410,7 +435,7 @@ main(int argc, char *argv[])
       {
 #endif /* _WITH_BURST_2 */
 #ifdef WITH_OPTIONS_CALL
-         if ((status = http_options(db.hostname, db.target_dir)) != SUCCESS)
+         if ((status = http_options(db.target_dir)) != SUCCESS)
          {
             trans_log((timeout_flag == ON) ? ERROR_SIGN : DEBUG_SIGN,
                       __FILE__, __LINE__, NULL, msg_str,
@@ -437,10 +462,10 @@ main(int argc, char *argv[])
 #ifdef _WITH_BURST_2
       if ((in_burst_loop == NO) || (values_changed & USER_CHANGED))
       {
-         if (http_init_basic_authentication(db.user, db.password) != SUCCESS)
+         if (http_init_authentication(db.user, db.password) != SUCCESS)
          {
-            /* Note, http_init_basic_authentication() writes a message    */
-            /* to trans_log() why it was not able to generate the string. */
+            /* Note, http_init_authentication() writes a message to    */
+            /* trans_log() why it was not able to generate the string. */
             http_quit();
             exit(INCORRECT);
          }
@@ -699,14 +724,21 @@ main(int argc, char *argv[])
                      }
                      else
                      {
-                        if (tmp_rl.file_name[0] != '.')
+                        fd = 0;
+                        while ((fd < MAX_FILENAME_LENGTH) &&
+                               (tmp_rl.file_name[fd] != '\0'))
                         {
-                           (void)strcpy(p_local_tmp_file, tmp_rl.file_name);
+                           if (tmp_rl.file_name[fd] == '/')
+                           {
+                              *(p_local_tmp_file + fd) = '\\';
+                           }
+                           else
+                           {
+                              *(p_local_tmp_file + fd) = tmp_rl.file_name[fd];
+                           }
+                           fd++;
                         }
-                        else
-                        {
-                           (void)strcpy(p_local_file, tmp_rl.file_name);
-                        }
+                        *(p_local_tmp_file + fd) = '\0';
                         if (fsa->file_size_offset != -1)
                         {
                            if (stat(local_tmp_file, &stat_buf) == -1)
@@ -762,7 +794,7 @@ main(int argc, char *argv[])
                         tmp_rl.extra_data[0] = '\0';
                      }
 #endif
-                     if (((status = http_get(db.hostname, db.target_dir,
+                     if (((status = http_get(db.target_dir,
                                              tmp_rl.file_name,
                                              (fra->dir_flag & URL_CREATES_FILE_NAME) ? tmp_rl.file_name : NULL,
 #ifdef _WITH_EXTRA_CHECK
@@ -941,24 +973,17 @@ main(int argc, char *argv[])
                                         "Opened HTTP connection for file %s.",
                                         tmp_rl.file_name);
                         }
-                        if (fra->dir_flag & URL_CREATES_FILE_NAME)
+                        if ((fra->dir_flag & URL_CREATES_FILE_NAME) &&
+                            (tmp_rl.file_name[0] == '\0'))
                         {
-                           if (tmp_rl.file_name[0] == '\0')
-                           {
-                              *p_local_tmp_file = 'N';
-                              *(p_local_tmp_file + 1) = 'O';
-                              *(p_local_tmp_file + 2) = '_';
-                              *(p_local_tmp_file + 3) = 'N';
-                              *(p_local_tmp_file + 4) = 'A';
-                              *(p_local_tmp_file + 5) = 'M';
-                              *(p_local_tmp_file + 6) = 'E';
-                              *(p_local_tmp_file + 7) = '\0';
-                           }
-                           else
-                           {
-                              (void)strcpy(p_local_tmp_file,
-                                           tmp_rl.file_name);
-                           }
+                           *p_local_tmp_file = 'N';
+                           *(p_local_tmp_file + 1) = 'O';
+                           *(p_local_tmp_file + 2) = '_';
+                           *(p_local_tmp_file + 3) = 'N';
+                           *(p_local_tmp_file + 4) = 'A';
+                           *(p_local_tmp_file + 5) = 'M';
+                           *(p_local_tmp_file + 6) = 'E';
+                           *(p_local_tmp_file + 7) = '\0';
                         }
 
                         if (prev_download_exists == YES)
@@ -1455,7 +1480,7 @@ main(int argc, char *argv[])
                         /* Check if remote file is to be deleted. */
                         if (fra->remove == YES)
                         {
-                           if ((status = http_del(db.hostname, db.target_dir,
+                           if ((status = http_del(db.target_dir,
                                                   tmp_rl.file_name)) != SUCCESS)
                            {
                               if (fra->stupid_mode != YES)
@@ -1682,14 +1707,89 @@ main(int argc, char *argv[])
                               }
                            }
                         }
-                        if (tmp_rl.file_name[0] == '.')
+                        fd = 0;
+                        if (fra->dir_flag & KEEP_PATH)
                         {
-                           (void)strcpy(p_local_file, &tmp_rl.file_name[1]);
+                           if (tmp_rl.file_name[0] == '.')
+                           {
+                              while (((fd + 1) < MAX_FILENAME_LENGTH) &&
+                                     (tmp_rl.file_name[fd + 1] != '\0'))
+                              {
+                                 if (tmp_rl.file_name[fd + 1] == '/')
+                                 {
+                                    *(p_local_file + fd) = '\\';
+                                 }
+                                 else
+                                 {
+                                    *(p_local_file + fd) = tmp_rl.file_name[fd + 1];
+                                 }
+                                 fd++;
+                              }
+                           }
+                           else
+                           {
+                              while ((fd < MAX_FILENAME_LENGTH) &&
+                                     (tmp_rl.file_name[fd] != '\0'))
+                              {
+                                 if (tmp_rl.file_name[fd] == '/')
+                                 {
+                                    *(p_local_file + fd) = '\\';
+                                 }
+                                 else
+                                 {
+                                    *(p_local_file + fd) = tmp_rl.file_name[fd];
+                                 }
+                                 fd++;
+                              }
+                           }
                         }
                         else
                         {
-                           (void)strcpy(p_local_file, tmp_rl.file_name);
+                           int last_delimiter = -1;
+
+                           /* Check if there are any directory */
+                           /* delimiter characters. If that is */
+                           /* case, keep only the filename.    */
+                           while ((fd < MAX_FILENAME_LENGTH) &&
+                                  (tmp_rl.file_name[fd] != '\0'))
+                           {
+                              if ((tmp_rl.file_name[fd] == '/') &&
+                                  (tmp_rl.file_name[fd + 1] != '\0'))
+                              {
+                                 last_delimiter = fd;
+                              }
+                              fd++;
+                           }
+                           fd = 0;
+                           if (last_delimiter == -1)
+                           {
+                              while (tmp_rl.file_name[fd] == '.')
+                              {
+                                 fd++;
+                              }
+                              while ((fd < MAX_FILENAME_LENGTH) &&
+                                     (tmp_rl.file_name[fd] != '\0'))
+                              {
+                                 *(p_local_file + fd) = tmp_rl.file_name[fd];
+                                 fd++;
+                              }
+                           }
+                           else
+                           {
+                              last_delimiter++;
+                              while (tmp_rl.file_name[last_delimiter] == '.')
+                              {
+                                 last_delimiter++;
+                              }
+                              while ((last_delimiter < MAX_FILENAME_LENGTH) &&
+                                     (tmp_rl.file_name[last_delimiter] != '\0'))
+                              {
+                                 *(p_local_file + fd) =  tmp_rl.file_name[last_delimiter];
+                                 fd++; last_delimiter++;
+                              }
+                           }
                         }
+                        *(p_local_file + fd) = '\0';
                         if (rename(local_tmp_file, local_file) == -1)
                         {
                            rename_pending = -1;
@@ -1737,7 +1837,7 @@ main(int argc, char *argv[])
                                                  db.host_alias,
                                                  (current_toggle - 1),
 # ifdef WITH_SSL
-                                                 (db.auth == NO) ? HTTP : HTTPS,
+                                                 (db.tls_auth == NO) ? HTTP : HTTPS,
 # else
                                                  HTTP,
 # endif
@@ -1960,14 +2060,91 @@ gf_http_exit(void)
       if ((rl_fd != -1) && (rl != NULL) &&
           (rename_pending < no_of_listed_files))
       {
-         if (rl[rename_pending].file_name[0] == '.')
+         int i = 0;
+
+         if (fra_options & KEEP_PATH)
          {
-            (void)strcpy(p_local_file, &rl[rename_pending].file_name[1]);
+            if (rl[rename_pending].file_name[0] == '.')
+            {
+               while (((i + 1) < MAX_FILENAME_LENGTH) &&
+                      (rl[rename_pending].file_name[i + 1] != '\0'))
+               {
+                  if (rl[rename_pending].file_name[i + 1] == '/')
+                  {
+                     *(p_local_file + i) = '\\';
+                  }
+                  else
+                  {
+                     *(p_local_file + i) = rl[rename_pending].file_name[i + 1];
+                  }
+                  i++;
+               }
+            }
+            else
+            {
+               while ((i < MAX_FILENAME_LENGTH) &&
+                      (rl[rename_pending].file_name[i] != '\0'))
+               {
+                  if (rl[rename_pending].file_name[i] == '/')
+                  {
+                     *(p_local_file + i) = '\\';
+                  }
+                  else
+                  {
+                     *(p_local_file + i) = rl[rename_pending].file_name[i];
+                  }
+                  i++;
+               }
+            }
          }
          else
          {
-            (void)strcpy(p_local_file, rl[rename_pending].file_name);
+            int last_delimiter = -1;
+
+            /* Check if there are any directory */
+            /* delimiter characters. If that is */
+            /* case, keep only the filename.    */
+            while ((i < MAX_FILENAME_LENGTH) &&
+                   (rl[rename_pending].file_name[i] != '\0'))
+            {
+               if ((rl[rename_pending].file_name[i] == '/') &&
+                   (rl[rename_pending].file_name[i + 1] != '\0'))
+               {
+                  last_delimiter = i;
+               }
+               i++;
+            }
+            i = 0;
+            if (last_delimiter == -1)
+            {
+               while (rl[rename_pending].file_name[i] == '.')
+               {
+                  i++;
+               }
+               while ((i < MAX_FILENAME_LENGTH) &&
+                      (rl[rename_pending].file_name[i] != '\0'))
+               {
+                  *(p_local_file + i) = rl[rename_pending].file_name[i];
+                  i++;
+               }
+            }
+            else
+            {
+               last_delimiter++;
+               while (rl[rename_pending].file_name[last_delimiter] == '.')
+               {
+                  last_delimiter++;
+               }
+               while ((last_delimiter < MAX_FILENAME_LENGTH) &&
+                      (rl[rename_pending].file_name[last_delimiter] != '\0'))
+               {
+                  *(p_local_file + i) =  rl[rename_pending].file_name[last_delimiter];
+                  i++; last_delimiter++;
+               }
+            }
          }
+         *(p_local_file + i) = '\0';
+
          if (rename(local_tmp_file, local_file) == -1)
          {
             trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
@@ -2005,13 +2182,13 @@ gf_http_exit(void)
                                   db.host_alias,
                                   (current_toggle - 1),
 # ifdef WITH_SSL
-                                  (db.auth == NO) ? HTTP : HTTPS,
+                                  (db.tls_auth == NO) ? HTTP : HTTPS,
 # else
                                   HTTP,
 # endif
                                   &db.output_log);
                }
-               (void)strcpy(ol_file_name, rl[rename_pending].file_name);
+               (void)strcpy(ol_file_name, p_local_file);
                *ol_file_name_length = (unsigned short)strlen(ol_file_name);
                ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
                ol_file_name[*ol_file_name_length + 1] = '\0';

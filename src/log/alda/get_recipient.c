@@ -1,6 +1,6 @@
 /*
  *  get_recipient.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2010 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2010 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -158,7 +158,7 @@ get_recipient_alias(unsigned int job_id)
                                NULL, NULL,
 # endif
                                NULL, NO, olog.alias_name, NULL, NULL, NULL,
-                               NULL, NULL, NULL, NULL) < 4)
+                               NULL, NULL, NULL, NULL, NULL, NULL, NULL) < 4)
               {
                  register int j = 0;
 
@@ -191,7 +191,8 @@ get_recipient_alias(unsigned int job_id)
                                      NULL, NULL,
 # endif
                                      NULL, NO, olog.alias_name, NULL, NULL,
-                                     NULL, NULL, NULL, NULL, NULL) < 4)
+                                     NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                                     NULL) < 4)
                     {
                        register int j = 0;
 

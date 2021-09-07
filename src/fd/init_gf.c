@@ -127,7 +127,7 @@ init_gf(int argc, char *argv[], int protocol)
 /* db.key_type = 0; */
 #endif
 #ifdef WITH_SSL
-   db.auth = NO;
+   db.tls_auth = NO;
 #endif
 #ifdef _OUTPUT_LOG
    db.output_log = YES;
@@ -378,7 +378,7 @@ init_gf(int argc, char *argv[], int protocol)
    (void)strcpy(db.active_target_dir, db.target_dir);
    db.active_transfer_mode = db.transfer_mode;
 #ifdef WITH_SSL
-   db.active_auth = db.auth;
+   db.active_auth = db.tls_auth;
 #endif
 
    /* Set the transfer timeout value. */

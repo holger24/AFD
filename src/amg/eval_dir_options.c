@@ -183,6 +183,9 @@ extern struct dir_data *dd;
 #define LOCAL_REMOTE_DIR_FLAG            16
 #define ONE_PROCESS_JUST_SCANNING_FLAG   32
 #define URL_CREATES_FILE_NAME_FLAG       64
+#define BUCKETNAME_IN_PATH_FLAG          128
+#define NO_DELIMITER_FLAG                256
+#define KEEP_PATH_FLAG                   512
 
 
 /*########################## eval_dir_options() #########################*/
@@ -975,6 +978,39 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
                  ptr++;
               }
               dd[dir_pos].url_creates_file_name = YES;
+           }
+      else if (((used2 & BUCKETNAME_IN_PATH_FLAG) == 0) &&
+               (strncmp(ptr, BUCKETNAME_IN_PATH_ID, BUCKETNAME_IN_PATH_ID_LENGTH) == 0))
+           {
+              used2 |= BUCKETNAME_IN_PATH_FLAG;
+              ptr += BUCKETNAME_IN_PATH_ID_LENGTH;
+              while ((*ptr != '\n') && (*ptr != '\0'))
+              {
+                 ptr++;
+              }
+              dd[dir_pos].bucketname_in_path = YES;
+           }
+      else if (((used2 & NO_DELIMITER_FLAG) == 0) &&
+               (strncmp(ptr, NO_DELIMITER_ID, NO_DELIMITER_ID_LENGTH) == 0))
+           {
+              used2 |= NO_DELIMITER_FLAG;
+              ptr += NO_DELIMITER_ID_LENGTH;
+              while ((*ptr != '\n') && (*ptr != '\0'))
+              {
+                 ptr++;
+              }
+              dd[dir_pos].no_delimiter = YES;
+           }
+      else if (((used2 & KEEP_PATH_FLAG) == 0) &&
+               (strncmp(ptr, KEEP_PATH_ID, KEEP_PATH_ID_LENGTH) == 0))
+           {
+              used2 |= KEEP_PATH_FLAG;
+              ptr += KEEP_PATH_ID_LENGTH;
+              while ((*ptr != '\n') && (*ptr != '\0'))
+              {
+                 ptr++;
+              }
+              dd[dir_pos].keep_path = YES;
            }
       else if (((used & DONT_CREATE_SOURCE_DIR_FLAG) == 0) &&
                (strncmp(ptr, DONT_CREATE_SOURCE_DIR_ID, DONT_CREATE_SOURCE_DIR_ID_LENGTH) == 0))

@@ -1,6 +1,6 @@
 /*
  *  convert_fsa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ DESCR__S_M1
  **   26.09.2002 H.Kiehl Created
  **   16.02.2006 H.Kiehl Added Version 2.
  **   31.12.2007 H.Kiehl Added Version 3.
+ **   08.08.2021 H.Kiehl Added Version 4.
  **
  */
 DESCR__E_M1
@@ -413,7 +414,7 @@ struct filetransfer_status_3
 
 #ifdef NEW_FSA
 /* Version 4 */
-#define MAX_REAL_HOSTNAME_LENGTH_4 MAX_REAL_HOSTNAME_LENGTH
+#define MAX_REAL_HOSTNAME_LENGTH_4 MAX_REAL_HOSTNAME_LENGTH /* Changed. */
 #define MAX_PROXY_NAME_LENGTH_4    MAX_PROXY_NAME_LENGTH
 #define MAX_TOGGLE_STR_LENGTH_4    MAX_TOGGLE_STR_LENGTH
 #define MAX_HOSTNAME_LENGTH_4      MAX_HOSTNAME_LENGTH
@@ -464,6 +465,7 @@ struct filetransfer_status_4
           unsigned char   special_flag;
           unsigned int    protocol;
           unsigned int    protocol_options;
+          unsigned int    protocol_options2;    /* New. */
           unsigned int    socksnd_bufsize;
           unsigned int    sockrcv_bufsize;
           unsigned int    keep_connected;
@@ -1905,6 +1907,7 @@ convert_fsa(int           old_fsa_fd,
               new_fsa[i].special_flag           = old_fsa[i].special_flag;
               new_fsa[i].protocol               = old_fsa[i].protocol;
               new_fsa[i].protocol_options       = old_fsa[i].protocol_options;
+              new_fsa[i].protocol_options2      = 0;
               new_fsa[i].socksnd_bufsize        = old_fsa[i].socksnd_bufsize;
               new_fsa[i].sockrcv_bufsize        = old_fsa[i].sockrcv_bufsize;
               new_fsa[i].keep_connected         = old_fsa[i].keep_connected;

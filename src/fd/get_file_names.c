@@ -1,6 +1,6 @@
 /*
  *  get_file_names.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -911,7 +911,7 @@ log_data(char        *d_name,
             if (db.protocol & FTP_FLAG)
             {
 #  ifdef WITH_SSL
-               if (db.auth == NO)
+               if (db.tls_auth == NO)
                {
                   protocol = FTP;
                }
@@ -934,7 +934,7 @@ log_data(char        *d_name,
             else if (db.protocol & HTTP_FLAG)
                  {
 #  ifdef WITH_SSL
-                    if (db.auth == NO)
+                    if (db.tls_auth == NO)
                     {
                        protocol = HTTP;
                     }

@@ -253,7 +253,7 @@ main(int argc, char *argv[])
 #endif
    if ((status = sql_connect(db.hostname, db.port,
 #ifdef WITH_SSL
-                             db.user, db.password, db.auth, db.sndbuf_size, db.rcvbuf_size)) != SUCCESS)
+                             db.user, db.password, db.tls_auth, db.sndbuf_size, db.rcvbuf_size)) != SUCCESS)
 #else
                              db.user, db.password, db.sndbuf_size, db.rcvbuf_size)) != SUCCESS)
 #endif
@@ -270,7 +270,7 @@ main(int argc, char *argv[])
 #ifdef WITH_SSL
          char *p_msg_str;
 
-         if ((db.auth == YES) || (db.auth == BOTH))
+         if ((db.tls_auth == YES) || (db.tls_auth == BOTH))
          {
             p_msg_str = msg_str;
          }

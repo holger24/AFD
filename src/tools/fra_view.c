@@ -471,6 +471,18 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "URL_CREATES_FILE_NAME ");
             }
+            if (fra[i].dir_flag & BUCKETNAME_IN_PATH)
+            {
+               (void)fprintf(stdout, "BUCKETNAME_IN_PATH ");
+            }
+            if (fra[i].dir_flag & NO_DELIMITER)
+            {
+               (void)fprintf(stdout, "NO_DELIMITER ");
+            }
+            if (fra[i].dir_flag & KEEP_PATH)
+            {
+               (void)fprintf(stdout, "KEEP_PATH ");
+            }
             if (fra[i].dir_flag & DIR_ERROR_SET)
             {
                (void)fprintf(stdout, "DIR_ERROR_SET ");

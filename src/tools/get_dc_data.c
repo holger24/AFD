@@ -1389,7 +1389,7 @@ show_target_dir_only(char *recipient)
                     NULL, NULL,
 #endif
                     NULL, NO, NULL, NULL, directory, NULL, NULL,
-                    NULL, NULL, NULL) < 4)
+                    NULL, NULL, NULL, NULL, NULL, NULL) < 4)
    {
       if ((scheme & FTP_FLAG) || (scheme & LOC_FLAG) || (scheme & HTTP_FLAG) ||
           (scheme & SFTP_FLAG) || (scheme & SCP_FLAG))

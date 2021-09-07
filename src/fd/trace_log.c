@@ -1,6 +1,6 @@
 /*
  *  trace_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ DESCR__S_M3
  **     C_TRACE         - ASCII command trace
  **     LIST_R_TRACE    - ASCII listing read trace
  **     CRLF_R_TRACE    - ASCII but does not show CRLF
+ **     CRLF_C_TRACE    - ASCII but does not show CRLF
  **     BIN_CMD_W_TRACE - binary command write trace (hex)
  **     BIN_CMD_R_TRACE - binary command read trace (hex)
  **     BIN_W_TRACE     - binary write trace (hex)
@@ -108,7 +109,8 @@ trace_log(char *file,
         (fsa->debug == FULL_TRACE_MODE)) ||
        (((type == R_TRACE) || (type == W_TRACE) || (type == C_TRACE) ||
          (type == BIN_CMD_R_TRACE) || (type == BIN_CMD_W_TRACE) ||
-         (type == LIST_R_TRACE) || (type == CRLF_R_TRACE)) &&
+         (type == LIST_R_TRACE) || (type == CRLF_R_TRACE) ||
+         (type == CRLF_C_TRACE)) &&
         (fsa->debug > DEBUG_MODE)))
    {
       if ((trans_db_log_fd == STDERR_FILENO) && (p_work_dir != NULL))
@@ -229,6 +231,7 @@ trace_log(char *file,
                break;
 
             case C_TRACE :
+            case CRLF_C_TRACE    :
                buf[length] = '#';
                buf[length + 1] = 'C';
                buf[length + 2] = '#';
@@ -336,7 +339,7 @@ trace_log(char *file,
                      }
                   }
                }
-               else if (type == CRLF_R_TRACE)
+               else if ((type == CRLF_R_TRACE) || (type == CRLF_C_TRACE))
                     {
                        while ((bytes_done < buffer_length) &&
                               (wpos < (MAX_LINE_LENGTH + MAX_LINE_LENGTH + 1 - 5)))

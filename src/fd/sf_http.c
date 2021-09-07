@@ -188,6 +188,7 @@ main(int argc, char *argv[])
                     end_length,
                     exit_status = TRANSFER_SUCCESS,
                     fd,
+                    features,
                     header_length,
                     j,
                     length_type_indicator,
@@ -218,9 +219,11 @@ main(int argc, char *argv[])
                     last_update_time,
                     now;
    char             *p_file_name_buffer,
+                    *p_remote_filename,
                     *buffer,
                     fullname[MAX_PATH_LENGTH + 1],
-                    file_path[MAX_PATH_LENGTH];
+                    file_path[MAX_PATH_LENGTH],
+                    remote_filename[MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH];
    struct stat      stat_buf;
    struct job       *p_db;
 #ifdef SA_FULLDUMP
@@ -344,11 +347,21 @@ main(int argc, char *argv[])
 #ifdef WITH_IP_DB
    set_store_ip((fsa->host_status & STORE_IP) ? YES : NO);
 #endif
-   status = http_connect(db.hostname, db.http_proxy,
-                         db.port, db.user, db.password,
+   features = 0;
 #ifdef WITH_SSL
-                         db.auth,
-                         (fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO,
+   if (fsa->protocol_options & TLS_STRICT_VERIFY)
+   {
+      features |= PROT_OPT_TLS_STRICT_VERIFY;
+   }
+#endif
+   if (fsa->protocol_options & NO_EXPECT)
+   {
+      features |= PROT_OPT_NO_EXPECT;
+   }
+   status = http_connect(db.hostname, db.http_proxy, db.port, db.user,
+                         db.password, db.auth, 0, features,
+#ifdef WITH_SSL
+                         db.ssh_protocol, db.service, db.region, db.tls_auth,
 #endif
                          db.sndbuf_size, db.rcvbuf_size);
 #ifdef WITH_IP_DB
@@ -380,7 +393,7 @@ main(int argc, char *argv[])
 #ifdef WITH_SSL
          char *p_msg_str;
 
-         if ((db.auth == YES) || (db.auth == BOTH))
+         if ((db.tls_auth == YES) || (db.tls_auth == BOTH))
          {
             p_msg_str = msg_str;
          }
@@ -446,7 +459,7 @@ main(int argc, char *argv[])
          {
             trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
 # ifdef WITH_SSL
-                         "%s Bursting. [values_changed=%u]", (db.auth == NO) ? "HTTP" : "HTTPS",
+                         "%s Bursting. [values_changed=%u]", (db.tls_auth == NO) ? "HTTP" : "HTTPS",
 # else
                          "HTTP Bursting. [values_changed=%u]",
 # endif
@@ -456,10 +469,10 @@ main(int argc, char *argv[])
 
       if ((burst_2_counter == 0) || (values_changed & USER_CHANGED))
       {
-         if (http_init_basic_authentication(db.user, db.password) != SUCCESS)
+         if (http_init_authentication(db.user, db.password) != SUCCESS)
          {
-            /* Note, http_init_basic_authentication() writes a message    */
-            /* to trans_log() why it was not able to generate the string. */
+            /* Note, http_init_authentication() writes a message to    */
+            /* trans_log() why it was not able to generate the string. */
             http_quit();
             exit(INCORRECT);
          }
@@ -527,13 +540,57 @@ main(int argc, char *argv[])
             {
                file_size = 4 + header_length + *p_file_size_buffer + 4;
             }
+
+            if (db.auth == AUTH_AWS4_HMAC_SHA256)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "FILE_NAME_IS_HEADER is not yet implemented for AUTH_AWS4_HMAC_SHA256.");
+               http_quit();
+               exit(INCORRECT);
+            }
          }
          else
          {
             file_size = *p_file_size_buffer;
          }
-         if ((status = http_put(db.hostname, db.target_dir,
-                                p_file_name_buffer, file_size,
+         p_remote_filename = NULL;
+         if (db.trans_rename_rule[0] != '\0')
+         {
+            register int k;
+
+            for (k = 0; k < rule[db.trans_rule_pos].no_of_rules; k++)
+            {
+               if (pmatch(rule[db.trans_rule_pos].filter[k],
+                          p_file_name_buffer, NULL) == 0)
+               {
+                  p_remote_filename = remote_filename;
+                  change_name(p_file_name_buffer,
+                              rule[db.trans_rule_pos].filter[k],
+                              rule[db.trans_rule_pos].rename_to[k],
+                              p_remote_filename,
+                              (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) - (p_remote_filename - remote_filename),
+                              &counter_fd, &unique_counter, db.id.job);
+                  break;
+               }
+            }
+         }
+         else if (db.cn_filter != NULL)
+              {
+                 if (pmatch(db.cn_filter, p_file_name_buffer, NULL) == 0)
+                 {
+                    p_remote_filename = remote_filename;
+                    change_name(p_file_name_buffer, db.cn_filter,
+                                db.cn_rename_to, p_remote_filename,
+                                (MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH) - (p_remote_filename - remote_filename),
+                                &counter_fd, &unique_counter, db.id.job);
+                 }
+              }
+         if (p_remote_filename == NULL)
+         {
+            p_remote_filename = p_file_name_buffer;
+         }
+         if ((status = http_put(db.target_dir, p_remote_filename, fullname,
+                                file_size, NULL,
 #ifdef _WITH_BURST_2
                                 ((files_send == 0) && (burst_2_counter == 0)) ? YES : NO)) != SUCCESS)
 #else
@@ -542,7 +599,7 @@ main(int argc, char *argv[])
          {
             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                       "Failed to open remote file `%s' (%d).",
-                      p_file_name_buffer, status);
+                      p_remote_filename, status);
             http_quit();
             exit(eval_timeout(OPEN_REMOTE_ERROR));
          }
@@ -551,7 +608,7 @@ main(int argc, char *argv[])
             if (fsa->debug > NORMAL_MODE)
             {
                trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                            "Open remote file `%s'.", p_file_name_buffer);
+                            "Open remote file `%s'.", p_remote_filename);
             }
          }
 
@@ -923,7 +980,7 @@ main(int argc, char *argv[])
          {
             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                       "Failed to PUT remote file `%s' (%d).",
-                      p_file_name_buffer, status);
+                      p_remote_filename, status);
             http_quit();
             exit(eval_timeout(OPEN_REMOTE_ERROR));
          }
@@ -984,7 +1041,7 @@ main(int argc, char *argv[])
                                db.host_alias,
                                (current_toggle - 1),
 # ifdef WITH_SSL
-                               (db.auth == NO) ? HTTP : HTTPS,
+                               (db.tls_auth == NO) ? HTTP : HTTPS,
 # else
                                HTTP,
 # endif
@@ -1037,11 +1094,28 @@ main(int argc, char *argv[])
                if (db.output_log == YES)
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-                  (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-                  *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                  ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                  ol_file_name[*ol_file_name_length + 1] = '\0';
-                  (*ol_file_name_length)++;
+                  if ((db.trans_rename_rule[0] != '\0') ||
+                      (db.cn_filter != NULL))
+                  {
+                     *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
+                                                                     MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
+                                                                     "%s%c%s",
+                                                                     p_file_name_buffer,
+                                                                     SEPARATOR_CHAR,
+                                                                     p_remote_filename) + db.unl;
+                     if (*ol_file_name_length >= (MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl))
+                     {
+                        *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
+                     }
+                  }
+                  else
+                  {
+                     (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
+                     *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+                     ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+                     ol_file_name[*ol_file_name_length + 1] = '\0';
+                     (*ol_file_name_length)++;
+                  }
                   *ol_file_size = *p_file_size_buffer;
                   *ol_job_number = fsa->job_status[(int)db.job_no].job_id;
                   *ol_retries = db.retries;
@@ -1076,11 +1150,28 @@ main(int argc, char *argv[])
                if (db.output_log == YES)
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-                  (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-                  *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                  ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                  ol_file_name[*ol_file_name_length + 1] = '\0';
-                  (*ol_file_name_length)++;
+                  if ((db.trans_rename_rule[0] != '\0') ||
+                      (db.cn_filter != NULL))
+                  {
+                     *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
+                                                                     MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
+                                                                     "%s%c%s",
+                                                                     p_file_name_buffer,
+                                                                     SEPARATOR_CHAR,
+                                                                     p_remote_filename) + db.unl;
+                     if (*ol_file_name_length >= (MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl))
+                     {
+                        *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
+                     }
+                  }
+                  else
+                  {
+                     (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
+                     *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+                     ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+                     ol_file_name[*ol_file_name_length + 1] = '\0';
+                     (*ol_file_name_length)++;
+                  }
                   (void)strcpy(&ol_file_name[*ol_file_name_length + 1],
                                &db.archive_dir[db.archive_offset]);
                   *ol_file_size = *p_file_size_buffer;
@@ -1128,11 +1219,28 @@ try_again_unlink:
             if (db.output_log == YES)
             {
                (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-               (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-               *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-               ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-               ol_file_name[*ol_file_name_length + 1] = '\0';
-               (*ol_file_name_length)++;
+               if ((db.trans_rename_rule[0] != '\0') ||
+                   (db.cn_filter != NULL))
+               {
+                  *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
+                                                                  MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
+                                                                  "%s%c%s",
+                                                                  p_file_name_buffer,
+                                                                  SEPARATOR_CHAR,
+                                                                  p_remote_filename) + db.unl;
+                  if (*ol_file_name_length >= (MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl))
+                  {
+                     *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
+                  }
+               }
+               else
+               {
+                  (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
+                  *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+                  ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+                  ol_file_name[*ol_file_name_length + 1] = '\0';
+                  (*ol_file_name_length)++;
+               }
                *ol_file_size = *p_file_size_buffer;
                *ol_job_number = fsa->job_status[(int)db.job_no].job_id;
                *ol_retries = db.retries;

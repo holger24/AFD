@@ -1,6 +1,6 @@
 /*
  *  init_aftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -133,7 +133,7 @@ init_aftp(int argc, char *argv[], struct data *p_db)
    p_db->append            = NO;
 #ifdef WITH_SSL
    p_db->implicit_ftps     = NO;
-   p_db->auth              = NO;
+   p_db->tls_auth          = NO;
    p_db->strict            = NO;
 #endif
    p_db->create_target_dir = NO;
@@ -622,11 +622,11 @@ init_aftp(int argc, char *argv[], struct data *p_db)
             break;
 
          case 'z' : /* SSL/TLS authentification for control connection only. */
-            p_db->auth = YES;
+            p_db->tls_auth = YES;
             break;
 
          case 'Z' : /* SSL/TLS authentification for control and data connection. */
-            p_db->auth = BOTH;
+            p_db->tls_auth = BOTH;
             break;
 #endif
 

@@ -1,6 +1,6 @@
 /*
  *  aftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -221,7 +221,8 @@ main(int argc, char *argv[])
 
    /* Connect to remote FTP-server. */
 #ifdef WITH_SSL
-   if (((db.auth == YES) || (db.auth == BOTH)) && (db.implicit_ftps == YES))
+   if (((db.tls_auth == YES) || (db.tls_auth == BOTH)) &&
+       (db.implicit_ftps == YES))
    {
       status = ftp_connect(db.hostname, db.port, YES, db.strict);
    }
@@ -271,7 +272,8 @@ main(int argc, char *argv[])
    }
 
 #ifdef WITH_SSL
-   if (((db.auth == YES) || (db.auth == BOTH))  && (db.implicit_ftps != YES))
+   if (((db.tls_auth == YES) || (db.tls_auth == BOTH)) &&
+       (db.implicit_ftps != YES))
    {
       if (ftp_ssl_auth(db.strict) == INCORRECT)
       {
@@ -529,9 +531,9 @@ main(int argc, char *argv[])
    } /* if (status != 230) */
 
 #ifdef WITH_SSL
-   if (db.auth > NO)
+   if (db.tls_auth > NO)
    {
-      if (ftp_ssl_init(db.auth) == INCORRECT)
+      if (ftp_ssl_init(db.tls_auth) == INCORRECT)
       {
          trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                    _("SSL/TSL initialisation failed."));
@@ -695,7 +697,7 @@ main(int argc, char *argv[])
                   created_path[0] = '\0';
                }
 #ifdef WITH_SSL
-               if (db.auth == BOTH)         
+               if (db.tls_auth == BOTH)         
                {
                   if (ftp_auth_data() == INCORRECT)
                   {
@@ -1060,7 +1062,7 @@ main(int argc, char *argv[])
                   char line_buffer[MAX_RET_MSG_LENGTH];
 
 #ifdef WITH_SSL
-                  if (db.auth == BOTH)
+                  if (db.tls_auth == BOTH)
                   {
                      type = LIST_CMD | ENCRYPT_DATA;
                   }
@@ -1196,7 +1198,7 @@ main(int argc, char *argv[])
             }
          }
 #ifdef WITH_SSL
-         if (db.auth == BOTH)
+         if (db.tls_auth == BOTH)
          {
             if (ftp_auth_data() == INCORRECT)
             {
@@ -1568,7 +1570,7 @@ main(int argc, char *argv[])
             char line_buffer[MAX_RET_MSG_LENGTH];
 
 #ifdef WITH_SSL
-            if (db.auth == BOTH)
+            if (db.tls_auth == BOTH)
             {
                type = LIST_CMD | ENCRYPT_DATA;
             }
@@ -1671,7 +1673,7 @@ main(int argc, char *argv[])
                }
             }
 #ifdef WITH_SSL
-            if (db.auth == BOTH)
+            if (db.tls_auth == BOTH)
             {
                if (ftp_auth_data() == INCORRECT)
                {

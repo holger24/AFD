@@ -502,6 +502,35 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
+         if (fra[i].dir_flag & BUCKETNAME_IN_PATH)
+         {
+            (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
+                         BUCKETNAME_IN_PATH_ID);
+            d_o->no_of_dir_options++;
+            if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
+            {
+               goto done;
+            }
+         }
+         if (fra[i].dir_flag & NO_DELIMITER)
+         {
+            (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
+                         NO_DELIMITER_ID);
+            d_o->no_of_dir_options++;
+            if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
+            {
+               goto done;
+            }
+         }
+         if (fra[i].dir_flag & KEEP_PATH)
+         {
+            (void)strcpy(d_o->aoptions[d_o->no_of_dir_options], KEEP_PATH_ID);
+            d_o->no_of_dir_options++;
+            if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
+            {
+               goto done;
+            }
+         }
          if (fra[i].dir_flag & ONE_PROCESS_JUST_SCANNING)
          {
             (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],

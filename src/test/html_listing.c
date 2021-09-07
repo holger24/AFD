@@ -330,7 +330,7 @@ eval_html_dir_list(char *html_buffer)
 
                      /* Store date string. */
                      STORE_HTML_DATE();
-                     file_mtime = datestr2unixtime(date_str);
+                     file_mtime = datestr2unixtime(date_str, NULL);
 
                      if (*ptr == '<')
                      {
@@ -610,7 +610,7 @@ eval_html_dir_list(char *html_buffer)
                            /* Store date string. */
                            STORE_HTML_STRING(date_str, str_len,
                                              MAX_FILENAME_LENGTH, '<');
-                           file_mtime = datestr2unixtime(date_str);
+                           file_mtime = datestr2unixtime(date_str, NULL);
 
                            while (*ptr == '<')
                            {
@@ -809,7 +809,7 @@ eval_html_dir_list(char *html_buffer)
 
                           /* Store date string. */
                           STORE_HTML_DATE();
-                          file_mtime = datestr2unixtime(date_str);
+                          file_mtime = datestr2unixtime(date_str, NULL);
 
                           if (*ptr == '<')
                           {

@@ -1,6 +1,6 @@
 /*
  *  datestr2unixtime.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ DESCR__S_M3
  **   datestr2unixtime - converts a date string to unix time
  **
  ** SYNOPSIS
- **   time_t datestr2unixtime(char *date_str)
+ **   time_t datestr2unixtime(char *date_str, int *accuracy)
  **
  ** DESCRIPTION
  **   The function datestr2unixtime() converts the string 'date_str'
@@ -36,6 +36,7 @@ DESCR__S_M3
  **     3) asctime()             Fri Oct  3 02:15:31 1997
  **     4) HTML directory list   03-Oct-1997 02:15
  **     5) HTML directory list   2019-07-28 00:03
+ **     6) AWS ISO 8601          2019-07-28T00:03:29.429Z
  **
  **   Note that in format 2) we do NOT evaluate the year, instead we
  **   just take the current year.
@@ -45,13 +46,20 @@ DESCR__S_M3
  **
  ** RETURN VALUES
  **   Returns the unix time when it finds one of the mentioned
- **   patterns, otherwise -1 is returned.
+ **   patterns, otherwise -1 is returned. If the caller provides
+ **   the space for accuracy, it returns the accuracy of the time:
+ **        DS2UT_SECOND for seconds
+ **        DS2UT_MINUTE for minutes
+ **        DS2UT_DAY    for day
+ **        DS2UT_NONE   no date found
  **
  ** AUTHOR
  **   H.Kiehl
  **
  ** HISTORY
  **   16.08.2006 H.Kiehl Created
+ **   12.08.2021 H.Kiehl Add AWS ISO 8601.
+ **   13.08.2021 H.Kiehl Added parameter accuracy.
  */
 DESCR__E_M3
 
@@ -119,7 +127,7 @@ DESCR__E_M3
 
 /*######################### datestr2unixtime() ##########################*/
 time_t
-datestr2unixtime(char *date_str)
+datestr2unixtime(char *date_str, int *accuracy)
 {
    time_t    current_time;
    char      *ptr;
@@ -186,10 +194,18 @@ datestr2unixtime(char *date_str)
                      {
                         tp->tm_sec = ((*(ptr + 1) - '0') * 10) +
                                      *(ptr + 2) - '0';
+                        if (accuracy != NULL)
+                        {
+                           *accuracy = DS2UT_SECOND;
+                        }
                      }
                      else
                      {
                         tp->tm_sec = 0;
+                        if (accuracy != NULL)
+                        {
+                           *accuracy = DS2UT_MINUTE;
+                        }
                      }
 
                      /*
@@ -253,10 +269,18 @@ datestr2unixtime(char *date_str)
                           tp->tm_sec = ((*(ptr + 1) - '0') * 10) +
                                        *(ptr + 2) - '0';
                           ptr += 3;
+                          if (accuracy != NULL)
+                          {
+                             *accuracy = DS2UT_SECOND;
+                          }
                        }
                        else
                        {
                           tp->tm_sec = 0;
+                          if (accuracy != NULL)
+                          {
+                             *accuracy = DS2UT_MINUTE;
+                          }
                        }
                        if ((*ptr == ' ') && (isdigit((int)(*(ptr + 1)))) &&
                            (isdigit((int)(*(ptr + 2)))) &&
@@ -312,15 +336,55 @@ datestr2unixtime(char *date_str)
                     {
                        tp->tm_sec = ((*(ptr + 1) - '0') * 10) +
                                     *(ptr + 2) - '0';
+                       if (accuracy != NULL)
+                       {
+                          *accuracy = DS2UT_SECOND;
+                       }
                     }
                     else
                     {
                        tp->tm_sec = 0;
+                       if (accuracy != NULL)
+                       {
+                          *accuracy = DS2UT_MINUTE;
+                       }
                     }
                     return(mktime(tp));
                  }
               }
            }
+        }
+        /* AWS ISO 8601: 2019-07-28T00:03:29.429Z */
+        /*               2019-07-28T00:03:29Z     */
+   else if ((isdigit((int)(*ptr))) && (isdigit((int)(*(ptr + 1)))) &&
+            (isdigit((int)(*(ptr + 2)))) && (isdigit((int)(*(ptr + 3)))) &&
+            (*(ptr + 4) == '-') && (isdigit((int)(*(ptr + 5)))) &&
+            (isdigit((int)(*(ptr + 6)))) && (*(ptr + 7) == '-') &&
+            (isdigit((int)(*(ptr + 8)))) && (isdigit((int)(*(ptr + 9)))) &&
+            (*(ptr + 10) == 'T') && (isdigit((int)(*(ptr + 11)))) &&
+            (isdigit((int)(*(ptr + 12)))) && (*(ptr + 13) == ':') &&
+            (isdigit((int)(*(ptr + 14)))) && (isdigit((int)(*(ptr + 15)))) &&
+            (*(ptr + 16) == ':') && (isdigit((int)(*(ptr + 17)))) &&
+            (isdigit((int)(*(ptr + 18)))) &&
+            (((*(ptr + 19) == '.') &&
+              (isdigit((int)(*(ptr + 20)))) && (isdigit((int)(*(ptr + 21)))) &&
+              (isdigit((int)(*(ptr + 22)))) && (*(ptr + 23) == 'Z')) ||
+             (*(ptr + 19) == 'Z')))
+        {
+           tp->tm_year = (((*ptr - '0') * 1000) +
+                          ((*(ptr + 1) - '0') * 100) +
+                          ((*(ptr + 2) - '0') * 10) +
+                          (*(ptr + 3) - '0')) - 1900;
+           tp->tm_mon = ((*(ptr + 5) - '0') * 10) + *(ptr + 6) - '0' - 1;
+           tp->tm_mday = ((*(ptr + 8) - '0') * 10) + *(ptr + 9) - '0';
+           tp->tm_hour = ((*(ptr + 11) - '0') * 10) + *(ptr + 12) - '0';
+           tp->tm_min = ((*(ptr + 14) - '0') * 10) + *(ptr + 15) - '0';
+           tp->tm_sec = ((*(ptr + 17) - '0') * 10) + *(ptr + 18) - '0';
+           if (accuracy != NULL)
+           {
+              *accuracy = DS2UT_SECOND;
+           }
+           return(mktime(tp));
         }
         /* HTML directory list: 2019-07-28 00:03 */
    else if ((isdigit((int)(*ptr))) && (isdigit((int)(*(ptr + 1)))) &&
@@ -333,7 +397,7 @@ datestr2unixtime(char *date_str)
                           (*(ptr + 3) - '0')) - 1900;
            if (*(ptr + 4) == '-')
            {
-              tp->tm_mon = ((*(ptr + 5) - '0') * 10) + *(ptr + 6) - '0';
+              tp->tm_mon = ((*(ptr + 5) - '0') * 10) + *(ptr + 6) - '0' - 1;
               if (*(ptr + 7) == '-')
               {
                  tp->tm_mday = ((*(ptr + 8) - '0') * 10) + *(ptr + 9) - '0';
@@ -354,10 +418,18 @@ datestr2unixtime(char *date_str)
                           {
                              tp->tm_sec = ((*(ptr + 1) - '0') * 10) +
                                           *(ptr + 2) - '0';
+                             if (accuracy != NULL)
+                             {
+                                *accuracy = DS2UT_SECOND;
+                             }
                           }
                           else
                           {
                              tp->tm_sec = 0;
+                             if (accuracy != NULL)
+                             {
+                                *accuracy = DS2UT_MINUTE;
+                             }
                           }
                           return(mktime(tp));
                        }
@@ -366,6 +438,10 @@ datestr2unixtime(char *date_str)
                  else
                  {
                     tp->tm_hour = tp->tm_min = tp->tm_sec = 0;
+                    if (accuracy != NULL)
+                    {
+                       *accuracy = DS2UT_DAY;
+                    }
                     return(mktime(tp));
                  }
               }
@@ -418,10 +494,18 @@ datestr2unixtime(char *date_str)
                           {
                              tp->tm_sec = ((*(ptr + 1) - '0') * 10) +
                                           *(ptr + 2) - '0';
+                             if (accuracy != NULL)
+                             {
+                                *accuracy = DS2UT_SECOND;
+                             }
                           }
                           else
                           {
                              tp->tm_sec = 0;
+                             if (accuracy != NULL)
+                             {
+                                *accuracy = DS2UT_MINUTE;
+                             }
                           }
 
                           /*
@@ -437,5 +521,9 @@ datestr2unixtime(char *date_str)
            }
         }
 
+   if (accuracy != NULL)
+   {
+      *accuracy = DS2UT_NONE;
+   }
    return(-1);
 }

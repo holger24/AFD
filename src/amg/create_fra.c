@@ -457,6 +457,18 @@ create_fra(int no_of_dirs)
          {
             fra[i].dir_flag |= URL_CREATES_FILE_NAME;
          }
+         if (dd[i].bucketname_in_path == YES)
+         {
+            fra[i].dir_flag |= BUCKETNAME_IN_PATH;
+         }
+         if (dd[i].no_delimiter == YES)
+         {
+            fra[i].dir_flag |= NO_DELIMITER;
+         }
+         if (dd[i].keep_path == YES)
+         {
+            fra[i].dir_flag |= KEEP_PATH;
+         }
          if (dd[i].one_process_just_scaning == YES)
          {
             fra[i].dir_flag |= ONE_PROCESS_JUST_SCANNING;
@@ -646,6 +658,27 @@ create_fra(int no_of_dirs)
             {
                fra[i].dir_flag ^= URL_CREATES_FILE_NAME;
             }
+            if (((fra[i].dir_flag & BUCKETNAME_IN_PATH) &&
+                 (dd[i].bucketname_in_path == NO)) ||
+                (((fra[i].dir_flag & BUCKETNAME_IN_PATH) == 0) &&
+                 (dd[i].bucketname_in_path == YES)))
+            {
+               fra[i].dir_flag ^= BUCKETNAME_IN_PATH;
+            }
+            if (((fra[i].dir_flag & NO_DELIMITER) &&
+                 (dd[i].no_delimiter == NO)) ||
+                (((fra[i].dir_flag & NO_DELIMITER) == 0) &&
+                 (dd[i].no_delimiter == YES)))
+            {
+               fra[i].dir_flag ^= NO_DELIMITER;
+            }
+            if (((fra[i].dir_flag & KEEP_PATH) &&
+                 (dd[i].keep_path == NO)) ||
+                (((fra[i].dir_flag & KEEP_PATH) == 0) &&
+                 (dd[i].keep_path == YES)))
+            {
+               fra[i].dir_flag ^= KEEP_PATH;
+            }
             if (((fra[i].dir_flag & ONE_PROCESS_JUST_SCANNING) &&
                  (dd[i].one_process_just_scaning == NO)) ||
                 (((fra[i].dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) &&
@@ -774,6 +807,18 @@ create_fra(int no_of_dirs)
             if (dd[i].url_creates_file_name == YES)
             {
                fra[i].dir_flag |= URL_CREATES_FILE_NAME;
+            }
+            if (dd[i].bucketname_in_path == YES)
+            {
+               fra[i].dir_flag |= BUCKETNAME_IN_PATH;
+            }
+            if (dd[i].no_delimiter == YES)
+            {
+               fra[i].dir_flag |= NO_DELIMITER;
+            }
+            if (dd[i].keep_path == YES)
+            {
+               fra[i].dir_flag |= KEEP_PATH;
             }
             if (dd[i].one_process_just_scaning == YES)
             {

@@ -473,6 +473,16 @@ struct dir_data
                                             /* request is issued. This   */
                                             /* is currently only usefull */
                                             /* for HTTP.                 */
+          unsigned char bucketname_in_path; /* The bucketname is at the  */
+                                            /* begining of the path.     */
+          unsigned char no_delimiter;       /* For AWS listing do not add*/
+                                            /* a delimiter. Thus showing */
+                                            /* the content of all sub    */
+                                            /* directories.              */
+          unsigned char keep_path;          /* When storing the filename */
+                                            /* from an AWS listing do not*/
+                                            /* remove the path from the  */
+                                            /* filename.                 */
           unsigned char dont_create_source_dir;
           unsigned char create_source_dir;  /* Create the source         */
                                             /* directory if it does not  */

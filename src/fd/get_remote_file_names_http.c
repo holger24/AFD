@@ -45,6 +45,11 @@ DESCR__S_M3
  **   10.09.2017 H.Kiehl Added support for nginx HTML listing.
  **   29.07.2019 H.Kiehl Added check if ls_data file is changed while we
  **                      work with it.
+ **   13.08.2021 H.Kiehl Introduce parameter exact_date. Note, it
+ **                      can be that this is not usefull since we
+ **                      assume http_head() will always return the
+ **                      seconds. Lets, see how this works and if
+ **                      it increases the HEAD calls, remove it.
  **
  */
 DESCR__E_M3
@@ -262,14 +267,15 @@ static time_t                     current_time;
 static struct file_mask           *fml = NULL;
 
 /* Local function prototypes. */
-static int                        check_list(char *, int, time_t, off_t, off_t,
-                                             int *, off_t *, int *),
+static int                        check_list(char *, int, time_t, int, off_t,
+                                             off_t, int *, off_t *, int *),
                                   check_name(char *, int, off_t, time_t,
                                              unsigned int *, off_t *),
                                   eval_html_dir_list(char *, off_t, int *,
                                                      off_t *, int *,
                                                      unsigned int *, off_t *,
-                                                     unsigned int *, off_t *);
+                                                     unsigned int *, off_t *,
+                                                     int *);
 static off_t                      convert_size(char *, off_t *);
 #ifdef WITH_ATOM_FEED_SUPPORT
 static time_t                     extract_feed_date(char *);
@@ -461,7 +467,7 @@ try_attach_again:
                   {
                      int status;
 
-                     if ((status = http_head(db.hostname, db.target_dir,
+                     if ((status = http_head(db.target_dir,
                                              rl[i].file_name, &rl[i].size,
                                              &rl[i].file_mtime)) == SUCCESS)
                      {
@@ -718,10 +724,11 @@ try_attach_again:
        */
       if ((fra->dir_flag & DONT_GET_DIR_LIST) == 0)
       {
+         int          listing_complete = YES;
          unsigned int files_deleted = 0,
                       list_length = 0;
-         off_t        bytes_buffered = 0,
-                      content_length = 0,
+         off_t        bytes_buffered,
+                      content_length,
                       file_size_deleted = 0,
                       list_size = 0;
 #ifdef _WITH_EXTRA_CHECK
@@ -729,249 +736,266 @@ try_attach_again:
 #endif
          char         *listbuffer = NULL;
 
-#ifdef _WITH_EXTRA_CHECK
-         etag[0] = '\0';
-#endif
-         if (((status = http_get(db.hostname, db.target_dir, "", NULL,
-#ifdef _WITH_EXTRA_CHECK
-                                 etag,
-#endif
-                                 &content_length, 0)) != SUCCESS) &&
-             (status != CHUNKED))
+         do
          {
+            bytes_buffered = 0;
+            content_length = 0;
+#ifdef _WITH_EXTRA_CHECK
+            etag[0] = '\0';
+#endif
+            if (((status = http_get(db.target_dir, "", NULL,
+#ifdef _WITH_EXTRA_CHECK
+                                    etag,
+#endif
+                                    &content_length, 0)) != SUCCESS) &&
+                (status != CHUNKED))
+            {
 #ifdef RESET_LS_DATA_ON_ERROR
-            if (!((timeout_flag == ON) || (timeout_flag == CON_RESET) ||
-                  (timeout_flag == CON_REFUSED)))
-            {
-               if (reset_ls_data() != SUCCESS)
+               if (!((timeout_flag == ON) || (timeout_flag == CON_RESET) ||
+                     (timeout_flag == CON_REFUSED)))
                {
-                  http_quit();
-                  exit(INCORRECT);
+                  if (reset_ls_data() != SUCCESS)
+                  {
+                     http_quit();
+                     exit(INCORRECT);
+                  }
                }
-            }
 #endif
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                      "Failed to open remote directory %s (%d).",
-                      db.target_dir, status);
-            http_quit();
-            exit(eval_timeout(OPEN_REMOTE_ERROR));
-         }
-         if (fsa->debug > NORMAL_MODE)
-         {
-            trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                         "Opened HTTP connection for directory %s.",
-                         db.target_dir);
-         }
-
-         if (status == SUCCESS)
-         {
-            int read_length;
-
-            if (content_length > MAX_HTTP_DIR_BUFFER)
-            {
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-#if SIZEOF_OFF_T == 4
-                          "Directory buffer length is only for %d bytes, remote system wants to send %ld bytes. If needed increase MAX_HTTP_DIR_BUFFER.",
-#else
-                          "Directory buffer length is only for %d bytes, remote system wants to send %lld bytes. If needed increase MAX_HTTP_DIR_BUFFER.",
-#endif
-                          MAX_HTTP_DIR_BUFFER, (pri_off_t)content_length);
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                         "Failed to open remote directory %s (%d).",
+                         db.target_dir, status);
                http_quit();
-               exit(ALLOC_ERROR);
-            } else if (content_length == 0)
-                   {
-                      content_length = MAX_HTTP_DIR_BUFFER;
-                   }
-
-            if ((listbuffer = malloc(content_length + 1)) == NULL)
-            {
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-#if SIZEOF_OFF_T == 4
-                          "Failed to malloc() %ld bytes : %s",
-#else
-                          "Failed to malloc() %lld bytes : %s",
-#endif
-                          (pri_off_t)(content_length + 1), strerror(errno));
-               http_quit();
-               exit(ALLOC_ERROR);
+               exit(eval_timeout(OPEN_REMOTE_ERROR));
             }
-            do
+            if (fsa->debug > NORMAL_MODE)
             {
-               if ((content_length - (bytes_buffered + fsa->block_size)) >= 0)
+               trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                            "Opened HTTP connection for directory %s%s.",
+                            db.target_dir,
+                            (listing_complete == YES) ? "" : " (continue reading list)");
+            }
+            listing_complete = YES;
+
+            if (status == SUCCESS)
+            {
+               int read_length;
+
+               if (content_length > MAX_HTTP_DIR_BUFFER)
                {
-                  read_length = fsa->block_size;
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+#if SIZEOF_OFF_T == 4
+                             "Directory buffer length is only for %d bytes, remote system wants to send %ld bytes. If needed increase MAX_HTTP_DIR_BUFFER.",
+#else
+                             "Directory buffer length is only for %d bytes, remote system wants to send %lld bytes. If needed increase MAX_HTTP_DIR_BUFFER.",
+#endif
+                             MAX_HTTP_DIR_BUFFER, (pri_off_t)content_length);
+                  http_quit();
+                  exit(ALLOC_ERROR);
+               } else if (content_length == 0)
+                      {
+                         content_length = MAX_HTTP_DIR_BUFFER;
+                      }
+
+               if ((listbuffer = malloc(content_length + 1)) == NULL)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+#if SIZEOF_OFF_T == 4
+                             "Failed to malloc() %ld bytes : %s",
+#else
+                             "Failed to malloc() %lld bytes : %s",
+#endif
+                             (pri_off_t)(content_length + 1), strerror(errno));
+                  http_quit();
+                  exit(ALLOC_ERROR);
+               }
+               do
+               {
+                  if ((content_length - (bytes_buffered + fsa->block_size)) >= 0)
+                  {
+                     read_length = fsa->block_size;
+                  }
+                  else
+                  {
+                     read_length = content_length - bytes_buffered;
+                  }
+                  if ((status = http_read(&listbuffer[bytes_buffered],
+                                          read_length)) == INCORRECT)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                               "Failed to read from remote directory listing for %s (%d)",
+                               db.target_dir, status);
+                     free(listbuffer);
+                     http_quit();
+                     exit(eval_timeout(READ_REMOTE_ERROR));
+                  }
+                  else if (status > 0)
+                       {
+                          bytes_buffered += status;
+                          if (bytes_buffered == content_length)
+                          {
+                             status = 0;
+                          }
+                          else if (bytes_buffered > content_length)
+                               {
+                                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+#if SIZEOF_OFF_T == 4
+                                             "Maximum directory buffer length (%ld bytes) reached.",
+#else
+                                             "Maximum directory buffer length (%lld bytes) reached.",
+#endif
+                                             (pri_off_t)content_length);
+                                  status = 0;
+                               }
+                       }
+               } while (status != 0);
+            }
+            else /* status == CHUNKED */
+            {
+               int  chunksize;
+               char *chunkbuffer = NULL;
+
+               chunksize = fsa->block_size + 4;
+               if ((chunkbuffer = malloc(chunksize)) == NULL)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "Failed to malloc() %d bytes : %s",
+                             chunksize, strerror(errno));
+                  http_quit();
+                  exit(ALLOC_ERROR);
+               }
+               do
+               {
+                  if ((status = http_chunk_read(&chunkbuffer,
+                                                &chunksize)) == INCORRECT)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                               "Failed to read from remote directory listing for %s",
+                               db.target_dir);
+                     free(chunkbuffer);
+                     http_quit();
+                     exit(eval_timeout(READ_REMOTE_ERROR));
+                  }
+                  else if (status > 0)
+                       {
+                          if (listbuffer == NULL)
+                          {
+                             if ((listbuffer = malloc(status)) == NULL)
+                             {
+                                system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                           "Failed to malloc() %d bytes : %s",
+                                           status, strerror(errno));
+                                free(chunkbuffer);
+                                http_quit();
+                                exit(ALLOC_ERROR);
+                             }
+                          }
+                          else
+                          {
+                             if (bytes_buffered > MAX_HTTP_DIR_BUFFER)
+                             {
+                                system_log(ERROR_SIGN, __FILE__, __LINE__,
+#if SIZEOF_OFF_T == 4
+                                           "Directory length buffer is only for %d bytes, remote system wants to send %ld bytes. If needed increase MAX_HTTP_DIR_BUFFER.",
+#else
+                                           "Directory length buffer is only for %d bytes, remote system wants to send %lld bytes. If needed increase MAX_HTTP_DIR_BUFFER.",
+#endif
+                                           MAX_HTTP_DIR_BUFFER,
+                                           (pri_off_t)content_length);
+                                http_quit();
+                                free(listbuffer);
+                                free(chunkbuffer);
+                                exit(ALLOC_ERROR);
+                             }
+                             if ((listbuffer = realloc(listbuffer,
+                                                       bytes_buffered + status)) == NULL)
+                             {
+                                system_log(ERROR_SIGN, __FILE__, __LINE__,
+#if SIZEOF_OFF_T == 4
+                                           "Failed to realloc() %ld bytes : %s",
+#else
+                                           "Failed to realloc() %lld bytes : %s",
+#endif
+                                           (pri_off_t)(bytes_buffered + status),
+                                           strerror(errno));
+                                free(chunkbuffer);
+                                http_quit();
+                                exit(ALLOC_ERROR);
+                             }
+                          }
+                          (void)memcpy(&listbuffer[bytes_buffered], chunkbuffer,
+                                       status);
+                          bytes_buffered += status;
+                       }
+               } while (status != HTTP_LAST_CHUNK);
+
+               if ((listbuffer = realloc(listbuffer, bytes_buffered + 1)) == NULL)
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+#if SIZEOF_OFF_T == 4
+                             "Failed to realloc() %ld bytes : %s",
+#else
+                             "Failed to realloc() %lld bytes : %s",
+#endif
+                             (pri_off_t)(bytes_buffered + 1), strerror(errno));
+                  free(chunkbuffer);
+                  http_quit();
+                  exit(ALLOC_ERROR);
+               }
+
+               free(chunkbuffer);
+            }
+
+            if (bytes_buffered > 0)
+            {
+#ifdef DUMP_DIR_LIST_TO_DISK
+               int  fd;
+               char dump_file_name[4 + 1 + 10 + MAX_REAL_HOSTNAME_LENGTH + 5 + 1];
+
+               (void)snprintf(dump_file_name,
+                              4 + 1 + 10 + MAX_REAL_HOSTNAME_LENGTH + 5 + 1,
+                              "/tmp/http_list.%s.dump", fsa->host_dsp_name);
+               if ((fd = open(dump_file_name, (O_WRONLY | O_CREAT | O_TRUNC),
+                              FILE_MODE)) == -1)
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Failed to open() `%s' : %s",
+                             dump_file_name, strerror(errno));
                }
                else
                {
-                  read_length = content_length - bytes_buffered;
+                  if (write(fd, listbuffer, bytes_buffered) != bytes_buffered)
+                  {
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "Failed to write() to `%s' : %s",
+                                dump_file_name, strerror(errno));
+                  }
+                  if (close(fd) == -1)
+                  {
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "Failed to close() `%s' : %s",
+                                dump_file_name, strerror(errno));
+                  }
                }
-               if ((status = http_read(&listbuffer[bytes_buffered],
-                                       read_length)) == INCORRECT)
+#endif
+               listbuffer[bytes_buffered] = '\0';
+               if (eval_html_dir_list(listbuffer, bytes_buffered,
+                                      &files_to_retrieve, file_size_to_retrieve,
+                                      more_files_in_list, &list_length,
+                                      &list_size, &files_deleted,
+                                      &file_size_deleted,
+                                      &listing_complete) == INCORRECT)
                {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                            "Failed to read from remote directory listing for %s (%d)",
-                            db.target_dir, status);
-                  free(listbuffer);
-                  http_quit();
-                  exit(eval_timeout(READ_REMOTE_ERROR));
-               }
-               else if (status > 0)
-                    {
-                       bytes_buffered += status;
-                       if (bytes_buffered == content_length)
-                       {
-                          status = 0;
-                       }
-                       else if (bytes_buffered > content_length)
-                            {
-                               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-#if SIZEOF_OFF_T == 4
-                                          "Maximum directory buffer length (%ld bytes) reached.",
-#else
-                                          "Maximum directory buffer length (%lld bytes) reached.",
-#endif
-                                          (pri_off_t)content_length);
-                               status = 0;
-                            }
-                    }
-            } while (status != 0);
-         }
-         else /* status == CHUNKED */
-         {
-            int  chunksize;
-            char *chunkbuffer = NULL;
-
-            chunksize = fsa->block_size + 4;
-            if ((chunkbuffer = malloc(chunksize)) == NULL)
-            {
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          "Failed to malloc() %d bytes : %s",
-                          chunksize, strerror(errno));
-               http_quit();
-               exit(ALLOC_ERROR);
-            }
-            do
-            {
-               if ((status = http_chunk_read(&chunkbuffer,
-                                             &chunksize)) == INCORRECT)
-               {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                            "Failed to read from remote directory listing for %s",
-                            db.target_dir);
-                  free(chunkbuffer);
-                  http_quit();
-                  exit(eval_timeout(READ_REMOTE_ERROR));
-               }
-               else if (status > 0)
-                    {
-                       if (listbuffer == NULL)
-                       {
-                          if ((listbuffer = malloc(status)) == NULL)
-                          {
-                             system_log(ERROR_SIGN, __FILE__, __LINE__,
-                                        "Failed to malloc() %d bytes : %s",
-                                        status, strerror(errno));
-                             free(chunkbuffer);
-                             http_quit();
-                             exit(ALLOC_ERROR);
-                          }
-                       }
-                       else
-                       {
-                          if (bytes_buffered > MAX_HTTP_DIR_BUFFER)
-                          {
-                             system_log(ERROR_SIGN, __FILE__, __LINE__,
-#if SIZEOF_OFF_T == 4
-                                        "Directory length buffer is only for %d bytes, remote system wants to send %ld bytes. If needed increase MAX_HTTP_DIR_BUFFER.",
-#else
-                                        "Directory length buffer is only for %d bytes, remote system wants to send %lld bytes. If needed increase MAX_HTTP_DIR_BUFFER.",
-#endif
-                                        MAX_HTTP_DIR_BUFFER,
-                                        (pri_off_t)content_length);
-                             http_quit();
-                             free(listbuffer);
-                             free(chunkbuffer);
-                             exit(ALLOC_ERROR);
-                          }
-                          if ((listbuffer = realloc(listbuffer,
-                                                    bytes_buffered + status)) == NULL)
-                          {
-                             system_log(ERROR_SIGN, __FILE__, __LINE__,
-#if SIZEOF_OFF_T == 4
-                                        "Failed to realloc() %ld bytes : %s",
-#else
-                                        "Failed to realloc() %lld bytes : %s",
-#endif
-                                        (pri_off_t)(bytes_buffered + status),
-                                        strerror(errno));
-                             free(chunkbuffer);
-                             http_quit();
-                             exit(ALLOC_ERROR);
-                          }
-                       }
-                       (void)memcpy(&listbuffer[bytes_buffered], chunkbuffer,
-                                    status);
-                       bytes_buffered += status;
-                    }
-            } while (status != HTTP_LAST_CHUNK);
-
-            if ((listbuffer = realloc(listbuffer, bytes_buffered + 1)) == NULL)
-            {
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-#if SIZEOF_OFF_T == 4
-                          "Failed to realloc() %ld bytes : %s",
-#else
-                          "Failed to realloc() %lld bytes : %s",
-#endif
-                          (pri_off_t)(bytes_buffered + 1), strerror(errno));
-               free(chunkbuffer);
-               http_quit();
-               exit(ALLOC_ERROR);
-            }
-
-            free(chunkbuffer);
-         }
-
-         if (bytes_buffered > 0)
-         {
-#ifdef DUMP_DIR_LIST_TO_DISK
-            int fd;
-
-            if ((fd = open("http_list.dump", (O_WRONLY | O_CREAT | O_TRUNC),
-                           FILE_MODE)) == -1)
-            {
-               system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                          "Failed to open() `http_list.dump' : %s",
-                          strerror(errno));
-            }
-            else
-            {
-               if (write(fd, listbuffer, bytes_buffered) != bytes_buffered)
-               {
-                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                             "Failed to write() to `http_list.dump' : %s",
-                             strerror(errno));
-               }
-               if (close(fd) == -1)
-               {
-                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                             "Failed to close() `http_list.dump' : %s",
-                             strerror(errno));
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "Failed to evaluate HTML directory listing.");
                }
             }
+            free(listbuffer);
+            listbuffer = NULL;
+         } while (listing_complete == NO);
+
+#ifdef WITH_SSL
+         http_set_marker("", 0);
 #endif
-            listbuffer[bytes_buffered] = '\0';
-            if (eval_html_dir_list(listbuffer, bytes_buffered,
-                                   &files_to_retrieve, file_size_to_retrieve,
-                                   more_files_in_list, &list_length,
-                                   &list_size, &files_deleted,
-                                   &file_size_deleted) == INCORRECT)
-            {
-               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                         "Failed to evaluate HTML directory listing.");
-            }
-         }
-         free(listbuffer);
 
          if ((files_to_retrieve > 0) || (fsa->debug > NORMAL_MODE))
          {
@@ -1026,8 +1050,9 @@ try_attach_again:
                 * need to expand the mask and then use the expansion.
                 */
                (void)expand_filter(p_mask, tmp_mask, now);
-               check_list(tmp_mask, strlen(tmp_mask), -1, 0, -1, &files_to_retrieve,
-                          file_size_to_retrieve, more_files_in_list);
+               check_list(tmp_mask, strlen(tmp_mask), DS2UT_NONE, -1, 0, -1,
+                          &files_to_retrieve, file_size_to_retrieve,
+                          more_files_in_list);
                NEXT(p_mask);
             }
          }
@@ -1170,10 +1195,12 @@ eval_html_dir_list(char         *html_buffer,
                    unsigned int *list_length,
                    off_t        *list_size,
                    unsigned int *files_deleted,
-                   off_t        *file_size_deleted)
+                   off_t        *file_size_deleted,
+                   int          *listing_complete)
 {
    char *ptr;
 
+   *listing_complete = YES;
 #ifdef WITH_ATOM_FEED_SUPPORT
    /*
     * First test if we have an atom or rss feed. If that is not the case
@@ -1209,9 +1236,318 @@ eval_html_dir_list(char         *html_buffer,
       {
          if ((ptr = llposi(html_buffer, (size_t)bytes_buffered, "<PRE>", 5)) == NULL)
          {
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                      "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
-            return(INCORRECT);
+            if ((ptr = llposi(html_buffer, (size_t)bytes_buffered,
+                              "<?xml version=\"", 15)) == NULL)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                         "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
+               return(INCORRECT);
+            }
+            else
+            {
+               if ((ptr = llposi(ptr, (size_t)bytes_buffered,
+                                 "<IsTruncated>", 13)) == NULL)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
+                  return(INCORRECT);
+               }
+               else
+               {
+                  int    date_str_length,
+                         exact_date = DS2UT_NONE,
+                         file_name_length = -1;
+                  off_t  bytes_buffered_original = bytes_buffered,
+                         exact_size,
+                         file_size;
+                  time_t file_mtime;
+                  char   date_str[MAX_FILENAME_LENGTH],
+                         *end_ptr = html_buffer + bytes_buffered,
+#ifdef _WITH_EXTRA_CHECK
+                         etag[MAX_EXTRA_LS_DATA_LENGTH],
+#endif
+                         file_name[MAX_FILENAME_LENGTH],
+                         size_str[MAX_FILENAME_LENGTH];
+
+                  /* true */
+                  if ((*(ptr - 1) == 't') && (*ptr == 'r') &&
+                      (*(ptr + 1) == 'u') && (*(ptr + 2) == 'e') &&
+                      (*(ptr + 3) == '<'))
+                  {
+                     *listing_complete = NO;
+                     ptr += 2;
+                  }
+
+                  ptr = html_buffer;
+                  while ((ptr = llposi(ptr, (size_t)bytes_buffered,
+                                       "<Contents><Key>", 15)) != NULL)
+                  {
+                     ptr--;
+                     file_name_length = 0;
+                     while ((file_name_length < MAX_FILENAME_LENGTH) &&
+                            (*ptr != '<') && (*ptr != '\r') && (*ptr != '\0'))
+                     {
+                        file_name[file_name_length] = *ptr;
+                        file_name_length++; ptr++;
+                     }
+                     if (*ptr == '<')
+                     {
+                        file_name[file_name_length] = '\0';
+                        ptr++;
+                        /* /Key><LastModified> */
+                        if ((*ptr == '/') && (*(ptr + 1) == 'K') &&
+                            (*(ptr + 2) == 'e') && (*(ptr + 3) == 'y') &&
+                            (*(ptr + 4) == '>') && (*(ptr + 5) == '<') &&
+                            (*(ptr + 6) == 'L') && (*(ptr + 7) == 'a') &&
+                            (*(ptr + 8) == 's') && (*(ptr + 9) == 't') &&
+                            (*(ptr + 10) == 'M') && (*(ptr + 11) == 'o') &&
+                            (*(ptr + 12) == 'd') && (*(ptr + 13) == 'i') &&
+                            (*(ptr + 14) == 'f') && (*(ptr + 15) == 'i') &&
+                            (*(ptr + 16) == 'e') && (*(ptr + 17) == 'd') &&
+                            (*(ptr + 18) == '>'))
+                        {
+                           ptr += 19;
+                           date_str_length = 0;
+                           while ((date_str_length < MAX_FILENAME_LENGTH) &&
+                                  (*ptr != '<') && (*ptr != '\r') &&
+                                  (*ptr != '\0'))
+                           {
+                              date_str[date_str_length] = *ptr;
+                              date_str_length++; ptr++;
+                           }
+                           if (*ptr == '<')
+                           {
+                              date_str[date_str_length] = '\0';
+                              file_mtime = datestr2unixtime(date_str,
+                                                            &exact_date);
+                              ptr++;
+                              /* /LastModified><ETag> */
+                              if ((*ptr == '/') && (*(ptr + 1) == 'L') &&
+                                  (*(ptr + 2) == 'a') && (*(ptr + 3) == 's') &&
+                                  (*(ptr + 4) == 't') && (*(ptr + 5) == 'M') &&
+                                  (*(ptr + 6) == 'o') && (*(ptr + 7) == 'd') &&
+                                  (*(ptr + 8) == 'i') && (*(ptr + 9) == 'f') &&
+                                  (*(ptr + 10) == 'i') &&
+                                  (*(ptr + 11) == 'e') &&
+                                  (*(ptr + 12) == 'd') &&
+                                  (*(ptr + 13) == '>') &&
+                                  (*(ptr + 14) == '<') &&
+                                  (*(ptr + 15) == 'E') &&
+                                  (*(ptr + 16) == 'T') &&
+                                  (*(ptr + 17) == 'a') &&
+                                  (*(ptr + 18) == 'g') && (*(ptr + 19) == '>'))
+                              {
+                                 ptr += 20;
+                                 date_str_length = 0;
+#ifdef _WITH_EXTRA_CHECK
+                                 while ((date_str_length < MAX_EXTRA_LS_DATA_LENGTH) &&
+                                        (*ptr != '<') && (*ptr != '\r') &&
+                                        (*ptr != '\0'))
+                                 {
+                                    etag[date_str_length] = *ptr;
+                                    date_str_length++; ptr++;
+                                 }
+#else
+                                 while ((*ptr != '<') && (*ptr != '\r') &&
+                                        (*ptr != '\0'))
+                                 {
+                                    ptr++;
+                                 }
+#endif
+                                 if (*ptr == '<')
+                                 {
+#ifdef _WITH_EXTRA_CHECK
+                                    etag[date_str_length] = '\0';
+#endif
+                                    ptr++;
+                                    /* /ETag><Size> */
+                                    if ((*ptr == '/') && (*(ptr + 1) == 'E') &&
+                                        (*(ptr + 2) == 'T') &&
+                                        (*(ptr + 3) == 'a') &&
+                                        (*(ptr + 4) == 'g') &&
+                                        (*(ptr + 5) == '>') &&
+                                        (*(ptr + 6) == '<') &&
+                                        (*(ptr + 7) == 'S') &&
+                                        (*(ptr + 8) == 'i') &&
+                                        (*(ptr + 9) == 'z') &&
+                                        (*(ptr + 10) == 'e') &&
+                                        (*(ptr + 11) == '>'))
+                                    {
+                                       ptr += 12;
+                                       date_str_length = 0;
+
+                                       while ((date_str_length < MAX_FILENAME_LENGTH) &&
+                                              (*ptr != '<') && (*ptr != '\r') &&
+                                              (*ptr != '\0'))
+                                       {
+                                          size_str[date_str_length] = *ptr;
+                                          date_str_length++; ptr++;
+                                       }
+                                       if (*ptr == '<')
+                                       {
+                                          size_str[date_str_length] = '\0';
+                                          exact_size = convert_size(size_str,
+                                                                    &file_size);
+                                          if (fsa->debug > DEBUG_MODE)
+                                          {
+                                             trans_db_log(DEBUG_SIGN, NULL, 0,
+                                                          NULL,
+#if SIZEOF_OFF_T == 4
+                                                          "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+#else
+                                                          "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+#endif
+                                                          file_name,
+                                                          file_name_length,
+                                                          file_mtime, exact_date,
+                                                          (pri_off_t)file_size,
+                                                          (pri_off_t)exact_size);
+                                          }
+                                          (*list_length)++;
+                                          if (file_size > 0)
+                                          {
+                                             (*list_size) += file_size;
+                                          }
+                                          if (check_name(file_name,
+                                                         file_name_length,
+                                                         file_size, file_mtime,
+                                                         files_deleted,
+                                                         file_size_deleted) == YES)
+                                          {
+                                             (void)check_list(file_name,
+                                                              file_name_length,
+                                                              file_mtime,
+                                                              exact_date,
+                                                              exact_size,
+                                                              file_size,
+                                                              files_to_retrieve,
+                                                              file_size_to_retrieve,
+                                                              more_files_in_list);
+                                          }
+                                       }
+                                       else
+                                       {
+                                          trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                                    "eval_html_dir_list", NULL,
+                                                    "Unable to store size (length=%d char=%d).",
+                                                    file_name_length, (int)*ptr);
+                                          *listing_complete = YES;
+                                          return(INCORRECT);
+                                       }
+                                    }
+                                    else
+                                    {
+                                       trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                                 "eval_html_dir_list", NULL,
+                                                 "No matching /ETag><Size> found.");
+                                       *listing_complete = YES;
+                                       return(INCORRECT);
+                                    }
+                                 }
+                                 else
+                                 {
+                                    trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                              "eval_html_dir_list", NULL,
+                                              "Unable to store etag (length=%d char=%d).",
+                                              file_name_length, (int)*ptr);
+                                    *listing_complete = YES;
+                                    return(INCORRECT);
+                                 }
+                              }
+                              else
+                              {
+                                 trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                           "eval_html_dir_list", NULL,
+                                           "No matching /LastModified><ETag> found.");
+                                 *listing_complete = YES;
+                                 return(INCORRECT);
+                              }
+                           }
+                           else
+                           {
+                              trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                        "eval_html_dir_list", NULL,
+                                        "Unable to store date (length=%d char=%d).",
+                                        file_name_length, (int)*ptr);
+                              *listing_complete = YES;
+                              return(INCORRECT);
+                           }
+                        }
+                        else
+                        {
+                           trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                     "eval_html_dir_list", NULL,
+                                     "No matching /Key><LastModified> found.");
+                           *listing_complete = YES;
+                           return(INCORRECT);
+                        }
+                     }
+                     else
+                     {
+                        trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                  "eval_html_dir_list", NULL,
+                                  "Unable to store file name (length=%d char=%d).",
+                                  file_name_length, (int)*ptr);
+                        *listing_complete = YES;
+                        return(INCORRECT);
+                     }
+                     bytes_buffered = end_ptr - ptr;
+                  } /* while <Contents><Key> */
+
+                  if (file_name_length == -1)
+                  {
+                     /* No <Contents><Key> found! */
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
+                     *listing_complete = YES;
+                     return(INCORRECT);
+                  }
+
+                  if (*listing_complete == NO)
+                  {
+                     int  marker_name_length;
+                     char marker_name[24];
+
+                     if (db.ssh_protocol == '1')
+                     {
+                        (void)strcpy(marker_name, "<NextMarker>");
+                        marker_name_length = 12;
+                     }
+                     else
+                     {
+                        (void)strcpy(marker_name, "<NextContinuationToken>");
+                        marker_name_length = 23;
+                     }
+                     if ((ptr = llposi(html_buffer,
+                                       (size_t)bytes_buffered_original,
+                                       marker_name,
+                                       marker_name_length)) != NULL)
+                     {
+                        ptr--;
+                        file_name_length = 0;
+                        while ((file_name_length < MAX_FILENAME_LENGTH) &&
+                               (*ptr != '<'))
+                        {
+                           file_name[file_name_length] = *ptr;
+                           ptr++; file_name_length++;
+                        }
+                        file_name[file_name_length] = '\0';
+                     }
+                     else
+                     {
+                        if (db.ssh_protocol != '1')
+                        {
+                           trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                     NULL, html_buffer,
+                                     "<IsTruncated> is true, but could not locate a <NextContinuationToken>!");
+                           *listing_complete = YES;
+                           return(INCORRECT);
+                        }
+                     }
+                     http_set_marker(file_name, file_name_length);
+                  }
+               }
+            }
          }
          else
          {
@@ -1225,7 +1561,8 @@ eval_html_dir_list(char         *html_buffer,
             }
             if ((*ptr == '<') && (*(ptr + 1) == 'H') && (*(ptr + 2) == 'R'))
             {
-               int    file_name_length;
+               int    exact_date = DS2UT_NONE,
+                      file_name_length;
                time_t file_mtime;
                off_t  exact_size,
                       file_size;
@@ -1317,7 +1654,7 @@ eval_html_dir_list(char         *html_buffer,
 
                         /* Store date string. */
                         STORE_HTML_DATE();
-                        file_mtime = datestr2unixtime(date_str);
+                        file_mtime = datestr2unixtime(date_str, &exact_date);
 
                         if (*ptr == '<')
                         {
@@ -1362,6 +1699,18 @@ eval_html_dir_list(char         *html_buffer,
                         exact_size = -1;
                         file_size = -1;
                      }
+                     if (fsa->debug > DEBUG_MODE)
+                     {
+                        trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
+#if SIZEOF_OFF_T == 4
+                                     "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+#else
+                                     "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+#endif
+                                     file_name, file_name_length, file_mtime,
+                                     exact_date, (pri_off_t)file_size,
+                                     (pri_off_t)exact_size);
+                     }
 
                      (*list_length)++;
                      if (file_size > 0)
@@ -1387,7 +1736,7 @@ eval_html_dir_list(char         *html_buffer,
                   if (file_name[0] != '\0')
                   {
                      (void)check_list(file_name, file_name_length,
-                                      file_mtime, exact_size,
+                                      file_mtime, exact_date, exact_size,
                                       file_size, files_to_retrieve,
                                       file_size_to_retrieve,
                                       more_files_in_list);
@@ -1415,7 +1764,8 @@ eval_html_dir_list(char         *html_buffer,
       }
       else
       {
-         int    file_name_length;
+         int    exact_date = DS2UT_NONE,
+                file_name_length;
          time_t file_mtime;
          off_t  exact_size,
                 file_size;
@@ -1614,7 +1964,8 @@ eval_html_dir_list(char         *html_buffer,
                               /* Store date string. */
                               STORE_HTML_STRING(date_str, str_len,
                                                 MAX_FILENAME_LENGTH, '<');
-                              file_mtime = datestr2unixtime(date_str);
+                              file_mtime = datestr2unixtime(date_str,
+                                                             &exact_date);
 
                               while (*ptr == '<')
                               {
@@ -1650,6 +2001,19 @@ eval_html_dir_list(char         *html_buffer,
                               exact_size = -1;
                               file_size = -1;
                            }
+                           if (fsa->debug > DEBUG_MODE)
+                           {
+                              trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
+#if SIZEOF_OFF_T == 4
+                                           "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+#else
+                                           "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+#endif
+                                           file_name, file_name_length,
+                                           file_mtime, exact_date,
+                                           (pri_off_t)file_size,
+                                           (pri_off_t)exact_size);
+                           }
 
                            (*list_length)++;
                            if (file_size > 0)
@@ -1675,7 +2039,7 @@ eval_html_dir_list(char         *html_buffer,
                         if (file_name[0] != '\0')
                         {
                            (void)check_list(file_name, file_name_length,
-                                            file_mtime, exact_size,
+                                            file_mtime, exact_date, exact_size,
                                             file_size, files_to_retrieve,
                                             file_size_to_retrieve,
                                             more_files_in_list);
@@ -1832,7 +2196,8 @@ eval_html_dir_list(char         *html_buffer,
 
                              /* Store date string. */
                              STORE_HTML_DATE();
-                             file_mtime = datestr2unixtime(date_str);
+                             file_mtime = datestr2unixtime(date_str,
+                                                           &exact_date);
 
                              if (*ptr == '<')
                              {
@@ -1877,6 +2242,19 @@ eval_html_dir_list(char         *html_buffer,
                              exact_size = -1;
                              file_size = -1;
                           }
+                          if (fsa->debug > DEBUG_MODE)
+                          {
+                             trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
+#if SIZEOF_OFF_T == 4
+                                          "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+#else
+                                          "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+#endif
+                                          file_name, file_name_length,
+                                          file_mtime, exact_date,
+                                          (pri_off_t)file_size,
+                                          (pri_off_t)exact_size);
+                          }
 
                           (*list_length)++;
                           if (file_size > 0)
@@ -1903,7 +2281,7 @@ eval_html_dir_list(char         *html_buffer,
                        if (file_name[0] != '\0')
                        {
                           (void)check_list(file_name, file_name_length,
-                                           file_mtime, exact_size,
+                                           file_mtime, exact_date, exact_size,
                                            file_size, files_to_retrieve,
                                            file_size_to_retrieve,
                                            more_files_in_list);
@@ -1967,6 +2345,19 @@ eval_html_dir_list(char         *html_buffer,
                              file_mtime = -1;
                              exact_size = -1;
                              file_size = -1;
+                             if (fsa->debug > DEBUG_MODE)
+                             {
+                                trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
+#if SIZEOF_OFF_T == 4
+                                             "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%ld exact=%ld",
+#else
+                                             "eval_html_dir_list(): filename=%s length=%d mtime=%lld exact=%d size=%lld exact=%lld",
+#endif
+                                             file_name, file_name_length,
+                                             file_mtime, exact_date,
+                                             (pri_off_t)file_size,
+                                             (pri_off_t)exact_size);
+                             }
                           }
                           else
                           {
@@ -1991,7 +2382,7 @@ eval_html_dir_list(char         *html_buffer,
                        if (file_name[0] != '\0')
                        {
                           (void)check_list(file_name, file_name_length,
-                                           file_mtime, exact_size,
+                                           file_mtime, exact_date, exact_size,
                                            file_size, files_to_retrieve,
                                            file_size_to_retrieve,
                                            more_files_in_list);
@@ -2036,6 +2427,7 @@ static int
 check_list(char   *file,
            int    file_name_length,
            time_t file_mtime,
+           int    exact_date,
            off_t  exact_size,
            off_t  file_size,
            int    *files_to_retrieve,
@@ -2083,12 +2475,13 @@ check_list(char   *file,
             {
                int ret;
 
-               if ((file_mtime == -1) && (fra->ignore_file_time != 0) &&
+               if (((file_mtime == -1) || (exact_date != DS2UT_SECOND)) &&
+                   (fra->ignore_file_time != 0) &&
                    ((fra->dir_flag & DONT_GET_DIR_LIST) == 0))
                {
                   int status;
 
-                  if ((status = http_head(db.hostname, db.target_dir, file,
+                  if ((status = http_head(db.target_dir, file,
                                           &file_size, &file_mtime)) == SUCCESS)
                   {
                      exact_size = 1;
@@ -2317,9 +2710,10 @@ check_list(char   *file,
 
                /* Try to get remote date and size. */
                if (((fra->dir_flag & DONT_GET_DIR_LIST) == 0) &&
-                   ((file_mtime == -1) || (file_size == -1) || (exact_size != 1)))
+                   ((file_mtime == -1) || (exact_date != DS2UT_SECOND) ||
+                    (file_size == -1) || (exact_size != 1)))
                {
-                  if ((status = http_head(db.hostname, db.target_dir, file,
+                  if ((status = http_head(db.target_dir, file,
                                           &file_size, &file_mtime)) == SUCCESS)
                   {
                      exact_size = 1;
@@ -2612,11 +3006,12 @@ check_list(char   *file,
    rl[no_of_listed_files].special_flag = 0;
 
    if (((fra->dir_flag & DONT_GET_DIR_LIST) == 0) &&
-       ((file_mtime == -1) || (file_size == -1) || (exact_size != 1)))
+       ((file_mtime == -1) || (exact_date != DS2UT_SECOND) ||
+        (file_size == -1) || (exact_size != 1)))
    {
       int status;
 
-      if ((status = http_head(db.hostname, db.target_dir, file,
+      if ((status = http_head(db.target_dir, file,
                               &file_size, &file_mtime)) == SUCCESS)
       {
          if (fsa->debug > NORMAL_MODE)

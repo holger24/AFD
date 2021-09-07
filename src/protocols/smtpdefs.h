@@ -1,6 +1,6 @@
 /*
  *  smtpdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,13 +20,14 @@
 #ifndef __smtpdefs_h
 #define __smtpdefs_h
 
+#include "commondefs.h"
+
 #define SMTP_HOST_NAME          "localhost"
 #define DEFAULT_SMTP_PORT       25
 
 #ifndef MAX_RET_MSG_LENGTH
 # define MAX_RET_MSG_LENGTH     4096
 #endif
-#define MAX_CONTENT_TYPE_LENGTH 25
 #define MAX_SMTP_SUBJECT_LENGTH 512
 
 /* Most newer SMTP servers report there capabilities when issung EHLO. */
@@ -39,23 +40,22 @@ struct smtp_server_capabilities
        };
 
 /* Function prototypes. */
-extern int  encode_base64(unsigned char *, int, unsigned char *),
-            smtp_auth(unsigned char, char *, char *),
-            smtp_connect(char *, int, int),
-            smtp_helo(char *),
-            smtp_ehlo(char *),
-            smtp_noop(void),
-            smtp_user(char *),
-            smtp_rcpt(char *),
+extern int encode_base64(unsigned char *, int, unsigned char *),
+           smtp_auth(unsigned char, char *, char *),
+           smtp_connect(char *, int, int),
+           smtp_helo(char *),
+           smtp_ehlo(char *),
+           smtp_noop(void),
+           smtp_user(char *),
+           smtp_rcpt(char *),
 #ifdef WITH_SSL
-            smtp_smarttls(int),
+           smtp_smarttls(int),
 #endif
-            smtp_open(void),
-            smtp_write(char *, char *, size_t),
-            smtp_write_iso8859(char *, char *, int),
-            smtp_write_subject(char *, size_t *, char *),
-            smtp_close(void),
-            smtp_quit(void);
-extern void get_content_type(char *, char *, int);
+           smtp_open(void),
+           smtp_write(char *, char *, size_t),
+           smtp_write_iso8859(char *, char *, int),
+           smtp_write_subject(char *, size_t *, char *),
+           smtp_close(void),
+           smtp_quit(void);
 
 #endif /* __smtpdefs_h */

@@ -1,6 +1,6 @@
 /*
  *  cmdline.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -215,7 +215,7 @@ struct data
           char         acknowledge;      /* Acknowledge each message.[awmo]*/
 #ifdef WITH_SSL
           char         implicit_ftps;
-          char         auth;             /* TLS/SSL authentification.      */
+          char         tls_auth;         /* TLS/SSL authentification.      */
                                          /*  NO   - NO authentification.   */
                                          /*  YES  - Only control           */
                                          /*         connection.            */

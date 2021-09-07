@@ -335,7 +335,7 @@ main(int argc, char *argv[])
    set_store_ip((fsa->host_status & STORE_IP) ? YES : NO);
 #endif
 #ifdef WITH_SSL
-   if (((db.auth == YES) || (db.auth == BOTH)) &&
+   if (((db.tls_auth == YES) || (db.tls_auth == BOTH)) &&
        (fsa->protocol_options & IMPLICIT_FTPS))
    {
       status = ftp_connect(db.hostname, db.port, YES,
@@ -413,7 +413,7 @@ main(int argc, char *argv[])
          {
             trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
 # ifdef WITH_SSL
-                         "%s Bursting. [values_changed=%u]", (db.auth == NO) ? "FTP" : "FTPS",
+                         "%s Bursting. [values_changed=%u]", (db.tls_auth == NO) ? "FTP" : "FTPS",
 # else
                          "FTP Bursting. [values_changed=%u]",
 # endif
@@ -427,7 +427,7 @@ main(int argc, char *argv[])
       if ((in_burst_loop == NO) || (values_changed & AUTH_CHANGED))
       {
 # endif
-         if (((db.auth == YES) || (db.auth == BOTH)) &&
+         if (((db.tls_auth == YES) || (db.tls_auth == BOTH)) &&
              (implicit_ssl_connect == NO))
          {
             if (ftp_ssl_auth((fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO) == INCORRECT)
@@ -495,7 +495,7 @@ main(int argc, char *argv[])
                   /* Connect to remote FTP-server. */
                   msg_str[0] = '\0';
 #ifdef WITH_SSL
-                  if (((db.auth == YES) || (db.auth == BOTH)) &&
+                  if (((db.tls_auth == YES) || (db.tls_auth == BOTH)) &&
                       (fsa->protocol_options & IMPLICIT_FTPS))
                   {
                      status = ftp_connect(db.hostname, db.port, YES,
@@ -639,9 +639,9 @@ main(int argc, char *argv[])
       } /* if (status != 230) */
 
 #ifdef WITH_SSL
-      if (db.auth > NO)
+      if (db.tls_auth > NO)
       {
-         if (ftp_ssl_init(db.auth) == INCORRECT)
+         if (ftp_ssl_init(db.tls_auth) == INCORRECT)
          {
             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                       "SSL/TSL initialisation failed.");
@@ -1381,7 +1381,7 @@ main(int argc, char *argv[])
                            created_path[0] = '\0';
                         }
 #ifdef WITH_SSL
-                        if (db.auth == BOTH)
+                        if (db.tls_auth == BOTH)
                         {
                            if (ftp_auth_data() == INCORRECT)
                            {
@@ -1898,7 +1898,7 @@ main(int argc, char *argv[])
                                                  db.host_alias,
                                                  (current_toggle - 1),
 # ifdef WITH_SSL                                    
-                                                 (db.auth == NO) ? FTP : FTPS,
+                                                 (db.tls_auth == NO) ? FTP : FTPS,
 # else
                                                  FTP,
 # endif
@@ -2387,7 +2387,7 @@ gf_ftp_exit(void)
                                   db.host_alias,
                                   (current_toggle - 1),
 # ifdef WITH_SSL                                    
-                                  (db.auth == NO) ? FTP : FTPS,
+                                  (db.tls_auth == NO) ? FTP : FTPS,
 # else
                                   FTP,
 # endif

@@ -1,6 +1,6 @@
 /*
  *  delete_wrapper_http.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ delete_wrapper(char *file_name)
 {
    int ret;
 
-   ret = http_del(db.hostname, db.target_dir, file_name);
+   ret = http_del(db.target_dir, file_name);
    if (ret != SUCCESS)
    {
       trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,

@@ -34,7 +34,7 @@ give the directory an alias name you can do so by putting the name
 directly behind the directory entry: [directory] &lt;dir alias&gt;.
 AFD is also able to fetch files from a remote host, the directory must
 then be specified in URL format as follows:
-<code>&lt;scheme&gt;://[[&lt;user&gt;][;fingerprint=&lt;SSH fingerprint&gt;][:&lt;password&gt;]@]&lt;host&gt;[:&lt;port&gt;][/&lt;url-path&gt;][;type=&lt;i|a|d|f|n&gt;][;protocol=&lt;protocol number&gt;]</code>
+<code>&lt;scheme&gt;://[[&lt;user&gt;][;fingerprint=&lt;SSH fingerprint&gt;][:&lt;password&gt;]@]&lt;host&gt;[:&lt;port&gt;][/&lt;url-path&gt;][;type=&lt;i|a|d|f|n&gt;][;protocol=&lt;protocol number&gt;][;auth=&lt;basic|aws4-hmac-sha256&gt;][;region=&lt;region name&gt;][;service=s3]</code>
 </p>
 <p>
 The items are separated by special characters :, /, @ and ;. If these
@@ -842,6 +842,42 @@ defaults is shown in the table below:
    <td align=center>X</td>
    <td align=center>0 (disabled)</td>
 </tr>
+<tr>
+   <td width="30%"><a name="bucketname_in_path">bucketname in path</a></td>
+   <td>For AWS4 HTTP retrieves one needs to set this if the bucketname
+       is at the first element of the path entry. If the bucketname is
+       in the hostname one does not need to set this option.</td>
+   <td align=center>&nbsp;</td>
+   <td align=center>X</td>
+   <td align=center>not set</td>
+</tr>
+<tr>
+   <td width="30%"><a name="no_delimiter">no delimiter</a></td>
+   <td>In AWS4 HTTP retrieve it is possible to set a delimiter for
+       listing directories which helps to reduce the volume of
+       the listing to just the specified directory. If no delimiter
+       and no path is set one will get the complete content of the
+       bucket because AWS4 has a flat structure and does not know
+       about directories. If a path is set everything in this path
+       an all subdirectories will be listed. If this option is not
+       set, AFD will set as default the / as delimiter.</td>
+   <td align=center>&nbsp;</td>
+   <td align=center>X</td>
+   <td align=center>/</td>
+</tr>
+<tr>
+   <td width="30%"><a name="keep_path">keep path</a></td>
+   <td>If the above option <a href="dir_config.html#no_delimiter">no
+       delimiter</a> is set, it can be useful to set 'keep path' so
+       that files in different directories but with the same name
+       will not be overwritten. The directory delimiter / will be
+       changed to \. With <a href="dir_config.html#srename">srename
+       </a> you can change the filename to a more meaningful one, if
+       required.</td>
+   <td align=center>&nbsp;</td>
+   <td align=center>X</td>
+   <td align=center>not set</td>
+</tr>
 </table></center>
 <h3 align=center><u><a name="files_entry">The files entry [files]</a></u></h3>
 <p>
@@ -930,7 +966,7 @@ In the recipient section you specify the user name, password,
 remote host and remote directory in the following URL format:
 </p>
 <p>
-<code>&lt;scheme&gt;://[[&lt;user&gt;][;fingerprint=&lt;SSH fingerprint&gt;][;auth=login|plain;user=&lt;user name&gt;][:&lt;password&gt;]@]&lt;host&gt;[:&lt;port&gt;][/&lt;url-path&gt;][;type=&lt;i|a|d|f|n&gt;][;server=&lt;server name&gt;][;protocol=&lt;protocol number&gt;]</code>
+<code>&lt;scheme&gt;://[[&lt;user&gt;][;fingerprint=&lt;SSH fingerprint&gt;][;auth=login|plain;user=&lt;user name&gt;][:&lt;password&gt;]@]&lt;host&gt;[:&lt;port&gt;][/&lt;url-path&gt;][;type=&lt;i|a|d|f|n&gt;][;server=&lt;server name&gt;][;protocol=&lt;protocol number&gt;][;auth=&lt;basic|aws4-hmac-sha256&gt;][;region=&lt;region name&gt;][;service=s3]</code>
 </p>
 <p>
 The items are separated by special characters :, /, @ and ;. If these
@@ -987,7 +1023,9 @@ HOST_CONFIG</a> file. However, the host must always be supplied.
 </p>
 <p>
 When scheme is sftp or scp one can use the option protocol= to specify the
-SSH protocol version.
+SSH protocol version. For scheme https with AWS4 (auth=aws4-hmac-sha256)
+this can be used to set the list object version to either 1 or 2. 2 is
+the default.
 </p>
 <p>
 The server= option is only useful for the mailto scheme. With this option
@@ -1051,6 +1089,18 @@ The type= option has the following meaning:
        data representation TYPE.</td>
 </tr>
 </table>
+<p>
+The auth= at the end can be used to specify what authentification
+method to use. It is only valid for scheme http and https and
+can be set to basic or aws4-hmac-sha256. basic is the most
+common used by HTTP servers and is the default when no
+value is set. This is only useful if you need to authenticate
+to the server. aws4-hmac-sha256 can be used to connect to a
+S3 storage server. Via service= you can specify the service.
+The only service currently implemented is s3 which will be
+the default. A specific region for the storage can be set
+via region=. If none is set the default is eu-central-1.
+</p>
 <p>
 <a name="group_list">Another useful feature</a> for the mailto scheme is
 the possibility to group several mail addresses into one group. Under
@@ -2987,7 +3037,7 @@ section. Valid options can be taken from the following table:
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2021 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 07.06.2021
+   Last updated: 06.09.2021
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

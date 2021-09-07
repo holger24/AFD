@@ -1,7 +1,7 @@
 /*
  *  get_alias_name.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2017 Deutscher Wetterdienst (DWD),
- *                     Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2017 - 2021 Deutscher Wetterdienst (DWD),
+ *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -96,7 +96,7 @@ get_alias_name(unsigned int job_id, char *alias_name, int *alias_name_length)
                                NULL, NULL,
 # endif
                                NULL, NO, alias_name, NULL, NULL, NULL,
-                               NULL, NULL, NULL, NULL) < 4)
+                               NULL, NULL, NULL, NULL, NULL, NULL, NULL) < 4)
               {
                  register int j = 0;
 
@@ -128,7 +128,8 @@ get_alias_name(unsigned int job_id, char *alias_name, int *alias_name_length)
                                      NULL, NULL,
 # endif
                                      NULL, NO, alias_name, NULL, NULL,
-                                     NULL, NULL, NULL, NULL, NULL) < 4)
+                                     NULL, NULL, NULL, NULL, NULL, NULL,
+                                     NULL, NULL) < 4)
                     {
                        register int j = 0;
 

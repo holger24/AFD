@@ -498,12 +498,46 @@ do_scan(int   *files_to_retrieve,
             {
                if (fra->remove == YES)
                {
-                  delete_remote_file(SFTP, filename, namelen,
+                  if (fra->delete_files_flag & UNKNOWN_FILES)
+                  {
+                     delete_remote_file(SFTP, filename, namelen,
 #ifdef _DELETE_LOG
-                                     DELETE_HOST_DISABLED, 0, 0, 0,
+                                        DELETE_HOST_DISABLED, 0, 0, 0,
 #endif
-                                     &files_deleted, &file_size_deleted,
-                                     stat_buf.st_size);
+                                        &files_deleted, &file_size_deleted,
+                                        stat_buf.st_size);
+                  }
+                  else
+                  {
+                     gotcha = NO;
+                     for (i = 0; i < nfg; i++)
+                     {
+                        p_mask = fml[i].file_list;
+                        for (j = 0; j < fml[i].fc; j++)
+                        {
+                           if ((status = pmatch(p_mask, filename, NULL)) == 0)
+                           {
+                              gotcha = YES;
+                              break;
+                           }
+                           else if (status == 1)
+                                {
+                                   break;
+                                }
+                           NEXT(p_mask);
+                        }
+                        if (gotcha == YES)
+                        {
+                           delete_remote_file(SFTP, filename, namelen,
+#ifdef _DELETE_LOG
+                                              DELETE_HOST_DISABLED, 0, 0, 0,
+#endif
+                                              &files_deleted, &file_size_deleted,
+                                              stat_buf.st_size);
+                           break;
+                        }
+                     }
+                  }
                }
             }
             else

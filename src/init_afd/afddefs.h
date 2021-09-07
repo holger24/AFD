@@ -28,7 +28,7 @@
 #define DESCR__E_M3             /* End for Subroutines Man Page.    */
 
 /* #define NEW_FRA */    /* Nothing new yet! */
-/* #define NEW_FSA */    /* Nothing new yet! */
+/* #define NEW_FSA */
 /* #define NEW_PWB */    /* Nothing new yet! */
 
 #define WITH_TIMEZONE 1
@@ -855,6 +855,15 @@ typedef unsigned long       u_long_64;
 #define SMTP_AUTH_LOGIN            1
 #define SMTP_AUTH_PLAIN            2
 
+/* Different URL auth= options. */
+#define AUTH_NONE                  0
+#define AUTH_BASIC                 1
+#define AUTH_AWS4_HMAC_SHA256      2
+
+/* Different URL service= options. */
+#define SERVICE_NONE               0
+#define SERVICE_S3                 1
+
 #define MIN_KEEP_ALIVE_INTERVAL    45L
 
 /* Bitmap containing errors in a given URL. */
@@ -888,6 +897,7 @@ typedef unsigned long       u_long_64;
 #define EXEC_NOT_TERMINATED        4194304
 #define EXEC_CMD_TO_LONG           8388608
 #define BUFFER_TO_SHORT            16777216
+#define REGION_NAME_TO_LONG        33554432
 
 /* When looking at difference in two URL's, flags for which parts differ. */
 #define URL_SCHEME_DIFS            1
@@ -905,6 +915,9 @@ typedef unsigned long       u_long_64;
 #ifdef WITH_SSH_FINGERPRINT
 # define URL_FINGERPRINT_DIFS      4096
 #endif
+#define URL_REGION_DIFS            8192
+#define URL_AUTH_DIFS              16384
+#define URL_SERVICE_DIFS           32768
 
 /* Definitions for protocol_options in FSA. */
 #define FTP_PASSIVE_MODE           1
@@ -943,6 +956,13 @@ typedef unsigned long       u_long_64;
 #define IMPLICIT_FTPS              134217728
 #ifdef _WITH_EXTRA_CHECK
 # define USE_EXTRA_CHECK           268435456
+#endif
+#define NO_EXPECT                  536870912
+
+/* Definitions for protocol_options in sf_xxx + gf_xxx functions. */
+#define PROT_OPT_NO_EXPECT          1
+#ifdef WITH_SSL
+# define PROT_OPT_TLS_STRICT_VERIFY 2
 #endif
 
 #define FTP_SHEME                  "ftp"
@@ -1078,6 +1098,12 @@ typedef unsigned long       u_long_64;
 #define LOCAL_REMOTE_DIR_ID_LENGTH       (sizeof(LOCAL_REMOTE_DIR_ID) - 1)
 #define ONE_PROCESS_JUST_SCANNING_ID     "one process just scanning"
 #define ONE_PROCESS_JUST_SCANNING_ID_LENGTH (sizeof(ONE_PROCESS_JUST_SCANNING_ID) - 1)
+#define BUCKETNAME_IN_PATH_ID            "bucketname in path"
+#define BUCKETNAME_IN_PATH_ID_LENGTH     (sizeof(BUCKETNAME_IN_PATH_ID) - 1)
+#define NO_DELIMITER_ID                  "no delimiter"
+#define NO_DELIMITER_ID_LENGTH           (sizeof(NO_DELIMITER_ID) - 1)
+#define KEEP_PATH_ID                     "keep path"
+#define KEEP_PATH_ID_LENGTH              (sizeof(KEEP_PATH_ID) - 1)
 #define UNKNOWN_FILES                    1
 #define QUEUED_FILES                     2
 #define OLD_LOCKED_FILES                 4
@@ -2047,6 +2073,9 @@ typedef unsigned long       u_long_64;
 #define DIR_DISABLED_STATIC        16777216
 #define ONE_PROCESS_JUST_SCANNING  33554432
 #define URL_CREATES_FILE_NAME      67108864
+#define BUCKETNAME_IN_PATH         134217728
+#define NO_DELIMITER               268435456
+#define KEEP_PATH                  536870912
 
 #ifdef WITH_INOTIFY
 /*
@@ -2121,6 +2150,12 @@ typedef unsigned long       u_long_64;
 #define FD_ID                      3
 
 #define NO_ID                      0
+
+/* Possible return values for parameter accuracy in datestr2unixtime() */
+#define DS2UT_NONE                 0
+#define DS2UT_DAY                  1
+#define DS2UT_MINUTE               2
+#define DS2UT_SECOND               3
 
 /* Definitions for event classes. */
 #define EC_GLOB                    1  /* Global event. */
@@ -2400,7 +2435,11 @@ typedef unsigned long       u_long_64;
 #define AFD_START_ERROR_OFFSET_END    10 /* From end   */
 
 /* Structure that holds status of the file transfer for each host. */
-#define CURRENT_FSA_VERSION 3
+#ifdef NEW_FSA
+# define CURRENT_FSA_VERSION 4
+#else
+# define CURRENT_FSA_VERSION 3
+#endif
 struct status
        {
           pid_t         proc_id;                /* Process ID of trans-  */
@@ -2534,7 +2573,8 @@ struct filetransfer_status
                                             /*+------+------------------+*/
                                             /*|Bit(s)|     Meaning      |*/
                                             /*+------+------------------+*/
-                                            /*| 31-32| Not used.        |*/
+                                            /*| 32   | Not used.        |*/
+                                            /*| 31   | NO_EXPECT        |*/
 #ifdef _WITH_EXTRA_CHECK
                                             /*| 30   | USE_EXTRA_CHECK  |*/
 #endif
@@ -2567,6 +2607,15 @@ struct filetransfer_status
                                             /*| 2    | SET_IDLE_TIME    |*/
                                             /*| 1    | FTP_PASSIVE_MODE |*/
                                             /*+------+------------------+*/
+#ifdef NEW_FSA
+          unsigned int   protocol_options2; /* More special options for  */
+                                            /* the protocols:            */
+                                            /*+------+------------------+*/
+                                            /*|Bit(s)|     Meaning      |*/
+                                            /*+------+------------------+*/
+                                            /*|  0-32| Not used.        |*/
+                                            /*+------+------------------+*/
+#endif
           unsigned int   socksnd_bufsize;   /* Socket buffer size for    */
                                             /* sending data. 0 is default*/
                                             /* which is the socket buffer*/
@@ -2945,13 +2994,19 @@ struct fileretrieve_status
                                             /* is being used.            */
           unsigned int  files_received;     /* No. of files received so  */
                                             /* far.                      */
+#ifdef NEW_FRA
+          unsigned int  dir_options;
+#endif
           unsigned int  dir_flag;           /* Flag for this directory   */
                                             /* informing about the       */
                                             /* following status:         */
                                             /*+------+------------------+*/
                                             /*|Bit(s)|     Meaning      |*/
                                             /*+------+------------------+*/
-                                            /*|28-32 | Not used.        |*/
+                                            /*|31-32 | Not used.        |*/
+                                            /*|   30 | KEEP_PATH        |*/
+                                            /*|   29 | NO_DELIMITER     |*/
+                                            /*|   28 | BUCKETNAME_IN_PATH|*/
                                             /*|   27 | URL_CREATES_FILE_NAME|*/
                                             /*|   26 | ONE_PROCESS_JUST_SCANNING|*/
                                             /*|   25 | DIR_DISABLED_STATIC|*/
@@ -2990,6 +3045,7 @@ struct fileretrieve_status
                                             /*+---+---------------------+*/
                                             /*|Bit|        Meaning      |*/
                                             /*+---+---------------------+*/
+                                            /*|18-32|Not used.          |*/
                                             /*|17 |LOCAL_REMOTE_DIR_IDC |*/
                                             /*|16 |UNREADABLE_FILES_IDC |*/
                                             /*|15 |MAX_ERRORS_IDC       |*/
@@ -4065,7 +4121,9 @@ extern unsigned int get_afd_status_struct_size(void),
                                  char *, char *,
 #endif
                                  char *, int, char*, int *, char *, char **,
-                                 time_t *, char *, unsigned char *, char *);
+                                 time_t *, char *, unsigned char *,
+                                 unsigned char *, char *, unsigned char *,
+                                 char *);
 extern int          assemble(char *, char *, int, char *, int, unsigned int,
                              int, unsigned int, int *, off_t *),
                     attach_afd_status(int *, int),
@@ -4278,7 +4336,7 @@ extern time_t       calc_next_time(struct bd_time_entry *, time_t, char *, int),
                                          char *,
 #endif
                                          time_t, char *, int),
-                    datestr2unixtime(char *),
+                    datestr2unixtime(char *, int *),
                     write_host_config(int, char *, struct host_list *);
 #ifdef WITH_ERROR_QUEUE
 extern void         add_to_error_queue(unsigned int,
@@ -4410,6 +4468,8 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
                     unmap_data(int, void **),
                     update_db_log(char *, char *, int, FILE *, unsigned int *,
                                   char *, ...),
+                    url_decode(char *, char *),
+                    url_encode(char *, char *),
                     url_get_error(int, char *, int),
                     url_insert_password(char *, char *),
 #ifdef WITH_ERROR_QUEUE

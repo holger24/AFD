@@ -251,6 +251,7 @@
 #define C_TRACE                  7
 #define LIST_R_TRACE             8
 #define CRLF_R_TRACE             9
+#define CRLF_C_TRACE             10
 
 /* Default definitions. */
 #define DEFAULT_ERROR_REPEAT     1
@@ -417,6 +418,7 @@ struct job
           unsigned int  split_job_counter;
           unsigned int  unique_number;
           char          hostname[MAX_REAL_HOSTNAME_LENGTH];
+          char          region[MAX_REAL_HOSTNAME_LENGTH];
           char          host_alias[MAX_HOSTNAME_LENGTH + 1];
           char          smtp_user[MAX_USER_NAME_LENGTH];
           char          user[MAX_USER_NAME_LENGTH];
@@ -489,7 +491,7 @@ struct job
                                          /* FTP_FLAG, SMTP_FLAG,         */
                                          /* LOC_FLAG, WMO_FLAG, etc.     */
 #ifdef WITH_SSL
-          char          auth;            /* TLS/SSL authentification.    */
+          char          tls_auth;        /* TLS/SSL authentification.    */
                                          /*  NO   - NO authentification. */
                                          /*  YES  - Only control         */
                                          /*         connection.          */
@@ -722,6 +724,15 @@ struct job
                                          /*      authentication set.     */
                                          /*  1 - SMTP_AUTH_LOGIN         */
                                          /*  2 - SMTP_AUTH_PLAIN         */
+          unsigned char auth;            /* HTTP authentication methode. */
+                                         /* Current possible methodes:   */
+                                         /*  0 - AUTH_NONE               */
+                                         /*  1 - AUTH_BASIC              */
+                                         /*  2 - AUTH_AWS4-HMAC-SHA256   */
+          unsigned char service;         /* HTTP service type.           */
+                                         /* Current possible types:      */
+                                         /*  0 - SERVICE_NONE            */
+                                         /*  1 - SERVICE_S3              */
        };
 
 /* Structure that holds all the informations of current connections. */

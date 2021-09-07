@@ -426,7 +426,7 @@ main(int argc, char *argv[])
    set_store_ip((fsa->host_status & STORE_IP) ? YES : NO);
 #endif
 #ifdef WITH_SSL
-   if (((db.auth == YES) || (db.auth == BOTH)) &&
+   if (((db.tls_auth == YES) || (db.tls_auth == BOTH)) &&
        (fsa->protocol_options & IMPLICIT_FTPS))
    {
       status = ftp_connect(db.hostname, db.port, YES,
@@ -506,7 +506,7 @@ main(int argc, char *argv[])
          {
             trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
 # ifdef WITH_SSL
-                         "%s Bursting. [values_changed=%u]", (db.auth == NO) ? "FTP" : "FTPS",
+                         "%s Bursting. [values_changed=%u]", (db.tls_auth == NO) ? "FTP" : "FTPS",
 # else
                          "FTP Bursting. [values_changed=%u]",
 # endif
@@ -527,7 +527,7 @@ main(int argc, char *argv[])
       if ((burst_2_counter == 0) || (values_changed & AUTH_CHANGED))
       {
 # endif
-         if (((db.auth == YES) || (db.auth == BOTH)) &&
+         if (((db.tls_auth == YES) || (db.tls_auth == BOTH)) &&
              (implicit_ssl_connect == NO))
          {
             if (ftp_ssl_auth((fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO) == INCORRECT)
@@ -595,7 +595,7 @@ main(int argc, char *argv[])
                   /* Connect to remote FTP-server. */
                   msg_str[0] = '\0';
 #ifdef WITH_SSL
-                  if (((db.auth == YES) || (db.auth == BOTH)) &&
+                  if (((db.tls_auth == YES) || (db.tls_auth == BOTH)) &&
                       (fsa->protocol_options & IMPLICIT_FTPS))
                   {
                      status = ftp_connect(db.hostname, db.port, YES,
@@ -744,9 +744,9 @@ main(int argc, char *argv[])
       } /* if (status != 230) */
 
 #ifdef WITH_SSL
-      if (db.auth > NO)
+      if (db.tls_auth > NO)
       {
-         if (ftp_ssl_init(db.auth) == INCORRECT)
+         if (ftp_ssl_init(db.tls_auth) == INCORRECT)
          {
             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                       "SSL/TSL initialisation failed.");
@@ -1076,7 +1076,7 @@ main(int argc, char *argv[])
             }
          }
 #ifdef WITH_SSL
-         if (db.auth == BOTH)
+         if (db.tls_auth == BOTH)
          {
             if (ftp_auth_data() == INCORRECT)
             {
@@ -1242,7 +1242,7 @@ main(int argc, char *argv[])
                                               db.host_alias,
                                               (current_toggle - 1),
 # ifdef WITH_SSL
-                                              (db.auth == NO) ? FTP : FTPS,
+                                              (db.tls_auth == NO) ? FTP : FTPS,
 # else
                                               FTP,
 # endif
@@ -1679,7 +1679,7 @@ main(int argc, char *argv[])
                   char line_buffer[MAX_RET_MSG_LENGTH];
 
 #ifdef WITH_SSL
-                  if (db.auth == BOTH)
+                  if (db.tls_auth == BOTH)
                   {
                      if (fsa->protocol_options & USE_STAT_LIST)
                      {
@@ -1901,7 +1901,7 @@ main(int argc, char *argv[])
                }
             }
 #ifdef WITH_SSL
-            if (db.auth == BOTH)
+            if (db.tls_auth == BOTH)
             {
                if (ftp_auth_data() == INCORRECT)
                {
@@ -2158,9 +2158,9 @@ main(int argc, char *argv[])
             if (((db.special_flag & FILE_NAME_IS_HEADER) == 0) &&
 #  ifdef WITH_SSL
 #   ifdef WITH_EUMETSAT_HEADERS
-                (db.auth == NO) &&
+                (db.tls_auth == NO) &&
 #   else
-                (db.auth == NO))
+                (db.tls_auth == NO))
 #   endif
 #  endif
 #  ifdef WITH_EUMETSAT_HEADERS
@@ -2619,7 +2619,7 @@ main(int argc, char *argv[])
                char line_buffer[MAX_RET_MSG_LENGTH];
 
 #ifdef WITH_SSL
-               if (db.auth == BOTH)
+               if (db.tls_auth == BOTH)
                {
                   if (fsa->protocol_options & USE_STAT_LIST)
                   {
@@ -2725,7 +2725,7 @@ main(int argc, char *argv[])
                   char line_buffer[MAX_RET_MSG_LENGTH];
 
 #ifdef WITH_SSL
-                  if (db.auth == BOTH)
+                  if (db.tls_auth == BOTH)
                   {
                      if (fsa->protocol_options & USE_STAT_LIST)
                      {
@@ -2956,7 +2956,7 @@ main(int argc, char *argv[])
                }
             }
 # ifdef WITH_SSL
-            if (db.auth == BOTH)
+            if (db.tls_auth == BOTH)
             {
                if (ftp_auth_data() == INCORRECT)
                {
@@ -3143,7 +3143,7 @@ main(int argc, char *argv[])
                                db.host_alias,
                                (current_toggle - 1),
 # ifdef WITH_SSL
-                               (db.auth == NO) ? FTP : FTPS,
+                               (db.tls_auth == NO) ? FTP : FTPS,
 # else
                                FTP,
 # endif
@@ -3196,15 +3196,8 @@ main(int argc, char *argv[])
                if (db.output_log == YES)
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-                  if (db.trans_rename_rule[0] == '\0')
-                  {
-                     (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-                     *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                     ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                     ol_file_name[*ol_file_name_length + 1] = '\0';
-                     (*ol_file_name_length)++;
-                  }
-                  else
+                  if ((db.trans_rename_rule[0] != '\0') ||
+                      (db.cn_filter != NULL))
                   {
                      *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                      MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
@@ -3216,6 +3209,14 @@ main(int argc, char *argv[])
                      {
                         *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                      }
+                  }
+                  else
+                  {
+                     (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
+                     *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+                     ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+                     ol_file_name[*ol_file_name_length + 1] = '\0';
+                     (*ol_file_name_length)++;
                   }
                   *ol_file_size = no_of_bytes + append_offset + additional_length;
                   *ol_job_number = db.id.job;
@@ -3251,15 +3252,8 @@ main(int argc, char *argv[])
                if (db.output_log == YES)
                {
                   (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-                  if (db.trans_rename_rule[0] == '\0')
-                  {
-                     (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-                     *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                     ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                     ol_file_name[*ol_file_name_length + 1] = '\0';
-                     (*ol_file_name_length)++;
-                  }
-                  else
+                  if ((db.trans_rename_rule[0] != '\0') ||
+                      (db.cn_filter != NULL))
                   {
                      *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                      MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
@@ -3271,6 +3265,14 @@ main(int argc, char *argv[])
                      {
                         *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                      }
+                  }
+                  else
+                  {
+                     (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
+                     *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+                     ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+                     ol_file_name[*ol_file_name_length + 1] = '\0';
+                     (*ol_file_name_length)++;
                   }
                   (void)strcpy(&ol_file_name[*ol_file_name_length + 1],
                                &db.archive_dir[db.archive_offset]);
@@ -3319,15 +3321,8 @@ try_again_unlink:
             if (db.output_log == YES)
             {
                (void)memcpy(ol_file_name, db.p_unique_name, db.unl);
-               if (db.trans_rename_rule[0] == '\0')
-               {
-                  (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
-                  *ol_file_name_length = (unsigned short)strlen(ol_file_name);
-                  ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
-                  ol_file_name[*ol_file_name_length + 1] = '\0';
-                  (*ol_file_name_length)++;
-               }
-               else
+               if ((db.trans_rename_rule[0] != '\0') ||
+                   (db.cn_filter != NULL))
                {
                   *ol_file_name_length = (unsigned short)snprintf(ol_file_name + db.unl,
                                                                   MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2,
@@ -3339,6 +3334,14 @@ try_again_unlink:
                   {
                      *ol_file_name_length = MAX_FILENAME_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + db.unl;
                   }
+               }
+               else
+               {
+                  (void)strcpy(ol_file_name + db.unl, p_file_name_buffer);
+                  *ol_file_name_length = (unsigned short)strlen(ol_file_name);
+                  ol_file_name[*ol_file_name_length] = SEPARATOR_CHAR;
+                  ol_file_name[*ol_file_name_length + 1] = '\0';
+                  (*ol_file_name_length)++;
                }
                *ol_file_size = no_of_bytes + append_offset + additional_length;
                *ol_job_number = db.id.job;

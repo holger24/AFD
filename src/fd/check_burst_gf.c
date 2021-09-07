@@ -466,7 +466,7 @@ check_burst_gf(unsigned int *values_changed)
                p_new_db->user_id                = -1;
                p_new_db->group_id               = -1;
 #ifdef WITH_SSL
-               p_new_db->auth                   = NO;
+               p_new_db->tls_auth               = NO;
 #endif
                p_new_db->ssh_protocol           = 0;
                if (db.protocol & FTP_FLAG)
@@ -522,8 +522,8 @@ check_burst_gf(unsigned int *values_changed)
                 */
                if ((p_new_db->port != db.port) ||
 #ifdef WITH_SSL
-                   ((db.auth == NO) && (p_new_db->auth != NO)) ||
-                   ((db.auth != NO) && (p_new_db->auth == NO)) ||
+                   ((db.tls_auth == NO) && (p_new_db->tls_auth != NO)) ||
+                   ((db.tls_auth != NO) && (p_new_db->tls_auth == NO)) ||
 #endif
                    ((db.protocol & SFTP_FLAG) &&
                     (CHECK_STRCMP(p_new_db->user, db.user) != 0)))
@@ -583,12 +583,14 @@ check_burst_gf(unsigned int *values_changed)
                   unsigned int error_mask;
                   time_t       now = time(NULL);
 
-                  if ((error_mask = url_evaluate(fra->url, NULL, NULL, NULL, NULL,
+                  if ((error_mask = url_evaluate(fra->url, NULL, NULL, NULL,
+                                                 NULL,
 #ifdef WITH_SSH_FINGERPRINT
                                                  NULL, NULL,
 #endif
                                                  NULL, NO, NULL, NULL,
-                                                 db.target_dir, NULL, &now, NULL,
+                                                 db.target_dir, NULL, &now,
+                                                 NULL, NULL, NULL, NULL,
                                                  NULL, NULL)) > 3)
                   {
                      char error_msg[MAX_URL_ERROR_MSG];
@@ -828,6 +830,7 @@ check_burst_gf(unsigned int *values_changed)
                                                       NULL, NO, NULL, NULL,
                                                       db.target_dir, NULL,
                                                       &start_time, NULL,
+                                                      NULL, NULL, NULL,
                                                       NULL, NULL)) > 3)
                        {
                           char error_msg[MAX_URL_ERROR_MSG];

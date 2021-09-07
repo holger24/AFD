@@ -1,6 +1,6 @@
 /*
  *  init_msg_buffer.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1463,7 +1463,8 @@ remove_jobs(int jd_fd, off_t *jid_struct_size, char *job_id_data_file)
                                         NULL, NULL,
 #endif
                                         NULL, NO, real_hostname, NULL, NULL,
-                                        NULL, NULL, NULL, NULL, NULL)) < 4)
+                                        NULL, NULL, NULL, NULL, NULL, NULL,
+                                        NULL, NULL)) < 4)
          {
             if ((scheme & LOC_FLAG) ||
 #ifdef _WITH_DE_MAIL_SUPPORT
@@ -1606,7 +1607,8 @@ remove_jobs(int jd_fd, off_t *jid_struct_size, char *job_id_data_file)
                                         NULL, NULL,
 #endif
                                         NULL, NO, real_hostname, NULL, NULL,
-                                        NULL, NULL, NULL, NULL, NULL)) < 4)
+                                        NULL, NULL, NULL, NULL, NULL, NULL,
+                                        NULL, NULL)) < 4)
          {
             if ((scheme & LOC_FLAG) ||
 #ifdef _WITH_DE_MAIL_SUPPORT

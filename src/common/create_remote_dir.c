@@ -1,7 +1,7 @@
 /*
  *  create_remote_dir.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 2000 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -141,7 +141,8 @@ create_remote_dir(char *url,
                                      NULL, NULL,
 #endif
                                      NULL, NO, host_alias, NULL, directory,
-                                     NULL, NULL, NULL, NULL, NULL)) > 3)
+                                     NULL, NULL, NULL, NULL, NULL, NULL,
+                                     NULL, NULL)) > 3)
       {
          url_get_error(error_mask, remote_dir, MAX_PATH_LENGTH);
          system_log(WARN_SIGN, __FILE__, __LINE__,

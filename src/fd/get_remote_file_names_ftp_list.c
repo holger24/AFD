@@ -347,7 +347,7 @@ do_scan(int   *files_to_retrieve,
     * what files are there.
     */
 #ifdef WITH_SSL
-   if (db.auth == BOTH)
+   if (db.tls_auth == BOTH)
    {
       if ((fra->delete_files_flag & OLD_RLOCKED_FILES) &&
           (fra->locked_file_time != -1))

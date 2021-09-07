@@ -118,7 +118,7 @@ init_sf_burst2(struct job   *p_new_db,
             *values_changed |= TYPE_CHANGED;
          }
 # ifdef WITH_SSL
-         if (db.active_auth != p_new_db->auth)
+         if (db.active_auth != p_new_db->tls_auth)
          {
             *values_changed |= AUTH_CHANGED;
          }
@@ -152,7 +152,7 @@ init_sf_burst2(struct job   *p_new_db,
          db.transfer_mode = p_new_db->transfer_mode;
       }
 # ifdef WITH_SSL
-      db.auth = p_new_db->auth;
+      db.tls_auth = p_new_db->tls_auth;
 # endif
       (void)strcpy(db.password, p_new_db->password);
       if (p_new_db->smtp_server[0] == '\0')
@@ -464,7 +464,7 @@ init_sf_burst2(struct job   *p_new_db,
       (void)strcpy(db.active_target_dir, db.target_dir);
       db.active_transfer_mode = db.transfer_mode;
 # ifdef WITH_SSL
-      db.active_auth = db.auth;
+      db.active_auth = db.tls_auth;
 # endif
    }
 #endif /* _WITH_BURST_2 */

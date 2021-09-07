@@ -1,6 +1,6 @@
 /*
  *  create_message.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -103,7 +103,7 @@ create_message(unsigned int job_id, char *recipient, char *options)
                         NULL, NULL,
 # endif
                         NULL, NO, NULL, NULL, NULL, &p_directory,
-                        NULL, NULL, NULL, NULL) < 4) &&
+                        NULL, NULL, NULL, NULL, NULL, NULL, NULL) < 4) &&
           (*p_directory != '/'))
       {
          if (expand_path(user, p_directory) == INCORRECT)

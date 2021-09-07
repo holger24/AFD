@@ -1,6 +1,6 @@
 /*
  *  url.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2008 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -42,17 +42,22 @@ DESCR__S_M3
  **                             time_t        *time_val,
  **                             char          *transfer_type,
  **                             unsigned char *protocol_version,
+ **                             unsigned char *auth,
+ **                             char          *region,
+ **                             unsigned char *service,
  **                             char          *server)
  **   void url_insert_password(char *url, char *password)
  **   int url_compare(char *url1, char *url2)
  **   void url_get_error(int error_mask, char *error_str, int error_str_length)
+ **   void url_encode(char *src, char *dst)
+ **   void url_decode(char *src, char *dst)
  **
  ** DESCRIPTION
  **   The function url_evaluate() extracts individual elements of a
  **   URL and stores them in the given buffer if aupplied. The url must
  **   have the following format:
  **
- **   <scheme>://[[<user>][;fingerprint=<SSH fingerprint>][;auth=<login|plain>;user=<user name>;][:<password>]@]<host>[:<port>][/<url-path>][;type=<i|a|d|n>][;server=<server name>][;protocol=<protocol number>]
+ **   <scheme>://[[<user>][;fingerprint=<SSH fingerprint>][;auth=<login|plain>;user=<user name>;][:<password>]@]<host>[:<port>][/<url-path>][;type=<i|a|d|n>][;server=<server name>][;protocol=<protocol number>][;auth=<basic|aws4-hmac-sha256>][;region=<region name>][;service=s3]
  **
  **   Special characters may be masked with a \ or with a % sign plus two
  **   hexa digits representing the ASCII character. A plus behind the @
@@ -71,6 +76,11 @@ DESCR__S_M3
  **
  **   url_get_error() returns the error message in error_str.
  **
+ **   url_encode() returns encoded string in dst. Note the size
+ **   of dst should always be 3 times + 1 the size of src.
+ **
+ **   url_decode() returns decoded string in dst.
+ **
  ** AUTHOR
  **   H.Kiehl
  **
@@ -86,6 +96,11 @@ DESCR__S_M3
  **   07.02.2013 H.Kiehl Added %e configuration parameter to allow one
  **                      to execute a command to determine part or the
  **                      full directory name.
+ **   06.08.2021 H.Kiehl Added parameter auth=, region= and service=.
+ **   24.08.2021 H.Kiehl Added functions url_encode() and url_decode.
+ **                      These where taken from Fred Bulback at:
+ **                      http://geekhideout.com/urlcode.shtml and
+ **                      modified.
  **
  */
 DESCR__E_M3
@@ -114,7 +129,10 @@ DESCR__E_M3
 #define URL_GET_POINTER_PATH     1024
 #define URL_GET_TRANSFER_TYPE    2048
 #define URL_GET_PROTOCOL_VERSION 4096
-#define URL_GET_SERVER           8192
+#define URL_GET_AUTH             8192
+#define URL_GET_REGION           16384
+#define URL_GET_SERVICE          32768
+#define URL_GET_SERVER           65536
 
 /* Local function prototypes. */
 static int insert_alias_name(char *, int *, char *, int *);
@@ -140,6 +158,9 @@ url_evaluate(char          *url,
              time_t        *time_val,
              char          *transfer_type,
              unsigned char *protocol_version,
+             unsigned char *auth,
+             char          *region,
+             unsigned char *service,
              char          *server)
 {
    unsigned int todo;
@@ -214,6 +235,21 @@ url_evaluate(char          *url,
       todo |= URL_GET_PROTOCOL_VERSION;
       *protocol_version = 0;
    }
+   if (auth != NULL)
+   {
+      todo |= URL_GET_AUTH;
+      *auth = AUTH_NONE;
+   }
+   if (region != NULL)
+   {
+      todo |= URL_GET_REGION;
+      region[0] = '\0';
+   }
+   if (service != NULL)
+   {
+      todo |= URL_GET_SERVICE;
+      *service = SERVICE_NONE;
+   }
    if (server != NULL)
    {
       todo |= URL_GET_SERVER;
@@ -276,6 +312,7 @@ url_evaluate(char          *url,
               *scheme = HTTP_FLAG | SSL_FLAG;
               ptr += 5;
            }
+           /* FTPS_SHEME : ftps | ftpS */
       else if ((*ptr == 'f') && (*(ptr + 1) == 't') && (*(ptr + 2) == 'p') &&
                ((*(ptr + 3) == 's') || (*(ptr + 3) == 'S')) &&
                (*(ptr + 4) == ':'))
@@ -1842,6 +1879,7 @@ url_evaluate(char          *url,
                               }
                               todo &= ~URL_GET_TRANSFER_TYPE;
                            }
+                                /* server= */
                            else if ((server != NULL) && (i == 6) &&
                                     (*(ptr - 1) == 'r') &&
                                     (*(ptr - 2) == 'e') &&
@@ -1879,6 +1917,114 @@ url_evaluate(char          *url,
 
                                    todo &= ~URL_GET_SERVER;
                                 }
+                                /* auth= */
+                           else if ((auth != NULL) && (i == 4) &&
+                                    (*(ptr - 1) == 'h') &&
+                                    (*(ptr - 2) == 't') &&
+                                    (*(ptr - 3) == 'u') &&
+                                    (*(ptr - 4) == 'a'))
+                                {
+                                   ptr++;
+                                   /* basic */
+                                   if ((*ptr == 'b') && (*(ptr + 1) == 'a') &&
+                                       (*(ptr + 2) == 's') &&
+                                       (*(ptr + 3) == 'i') &&
+                                       (*(ptr + 4) == 'c') &&
+                                       ((*(ptr + 5) == '\0') ||
+                                        (*(ptr + 5) == ';') ||
+                                        (*(ptr + 5) == ' ') ||
+                                        (*(ptr + 5) == '\0')))
+                                   {
+                                      *auth = AUTH_BASIC;
+                                   }
+                                        /* aws4-hmac-sha256 */
+                                   else if ((*ptr == 'a') &&
+                                            (*(ptr + 1) == 'w') &&
+                                            (*(ptr + 2) == 's') &&
+                                            (*(ptr + 3) == '4') &&
+                                            (*(ptr + 4) == '-') &&
+                                            (*(ptr + 5) == 'h') &&
+                                            (*(ptr + 6) == 'm') &&
+                                            (*(ptr + 7) == 'a') &&
+                                            (*(ptr + 8) == 'c') &&
+                                            (*(ptr + 9) == '-') &&
+                                            (*(ptr + 10) == 's') &&
+                                            (*(ptr + 11) == 'h') &&
+                                            (*(ptr + 12) == 'a') &&
+                                            (*(ptr + 13) == '2') &&
+                                            (*(ptr + 14) == '5') &&
+                                            (*(ptr + 15) == '6') &&
+                                            ((*(ptr + 16) == '\0') ||
+                                             (*(ptr + 16) == ';') ||
+                                             (*(ptr + 16) == ' ') ||
+                                             (*(ptr + 16) == '\0')))
+                                        {
+                                           *auth = AUTH_AWS4_HMAC_SHA256;
+                                        }
+
+                                   todo &= ~URL_GET_AUTH;
+                                }
+                                /* region= */
+                           else if ((region != NULL) && (i == 6) &&
+                                    (*(ptr - 1) == 'n') &&
+                                    (*(ptr - 2) == 'o') &&
+                                    (*(ptr - 3) == 'i') &&
+                                    (*(ptr - 4) == 'g') &&
+                                    (*(ptr - 5) == 'e') && (*(ptr - 6) == 'r'))
+                                {
+                                   ptr++;
+                                   i = 0;
+                                   while ((*ptr != '\0') && (*ptr != ' ') &&
+                                          (*ptr != '\t') && (*ptr != ';') &&
+                                          (i < MAX_REAL_HOSTNAME_LENGTH))
+                                   {
+                                      region[i] = *ptr;
+                                      i++; ptr++;
+                                   }
+                                   if (i >= MAX_REAL_HOSTNAME_LENGTH)
+                                   {
+                                      url_error |= REGION_NAME_TO_LONG;
+                                      region[0] = '\0';
+                                      while ((*ptr != '\0') && (*ptr != ' ') &&
+                                             (*ptr != '\t') && (*ptr != ';'))
+                                      {
+                                         if (*ptr == '\\')
+                                         {
+                                            ptr++;
+                                         }
+                                         ptr++;
+                                      }
+                                   }
+                                   else
+                                   {
+                                      region[i] = '\0';
+                                   }
+
+                                   todo &= ~URL_GET_REGION;
+                                }
+                                /* service= */
+                           else if ((service != NULL) && (i == 7) &&
+                                    (*(ptr - 1) == 's') &&
+                                    (*(ptr - 2) == 'e') &&
+                                    (*(ptr - 3) == 'r') &&
+                                    (*(ptr - 4) == 'v') &&
+                                    (*(ptr - 5) == 'i') &&
+                                    (*(ptr - 6) == 'c') && (*(ptr - 7) == 'e'))
+                                {
+                                   ptr++;
+                                   /* s3 */
+                                   if ((*ptr == 's') && (*(ptr + 1) == '3') &&
+                                       ((*(ptr + 2) == '\0') ||
+                                        (*(ptr + 2) == ';') ||
+                                        (*(ptr + 2) == ' ') ||
+                                        (*(ptr + 2) == '\0')))
+                                   {
+                                      *service = SERVICE_S3;
+                                   }
+
+                                   todo &= ~URL_GET_SERVICE;
+                                }
+                                /* protocol= */
                            else if ((protocol_version != NULL) && (i == 8) &&
                                     (*(ptr - 1) == 'l') &&
                                     (*(ptr - 2) == 'o') &&
@@ -2424,12 +2570,18 @@ url_compare(char *url1, char *url2)
                  path2[MAX_RECIPIENT_LENGTH + 1],
                  transfer_type1,
                  transfer_type2,
+                 region1[MAX_REAL_HOSTNAME_LENGTH + 1],
+                 region2[MAX_REAL_HOSTNAME_LENGTH + 1],
                  server1[MAX_REAL_HOSTNAME_LENGTH + 1],
                  server2[MAX_REAL_HOSTNAME_LENGTH + 1];
    unsigned char protocol_version1,
                  protocol_version2,
                  smtp_auth1,
-                 smtp_auth2;
+                 smtp_auth2,
+                 auth1,
+                 auth2,
+                 service1,
+                 service2;
 
    if ((url_evaluate(url1, &scheme1, user1,
                      &smtp_auth1, smtp_user1,
@@ -2437,14 +2589,16 @@ url_compare(char *url1, char *url2)
                      fingerprint1, &key_type1,
 #endif
                      password1, NO, hostname1, &port1, path1, NULL, NULL,
-                     &transfer_type1, &protocol_version1, server1) == 0) &&
+                     &transfer_type1, &protocol_version1, &auth1,
+                     region1, &service1, server1) == 0) &&
        (url_evaluate(url2, &scheme2, user2,
                      &smtp_auth2, smtp_user2,
 #ifdef WITH_SSH_FINGERPRINT
                      fingerprint2, &key_type2,
 #endif
                      password2, NO, hostname2, &port2, path2, NULL, NULL,
-                     &transfer_type2, &protocol_version2, server2) < 4))
+                     &transfer_type2, &protocol_version2, &auth2,
+                     region2, &service2, server2) < 4))
    {
       ret = 0;
 
@@ -2468,6 +2622,14 @@ url_compare(char *url1, char *url2)
       {
          ret |= URL_SMTP_AUTH_DIFS;
       }
+      if (auth1 != auth2)
+      {
+         ret |= URL_AUTH_DIFS;
+      }
+      if (service1 != service2)
+      {
+         ret |= URL_SERVICE_DIFS;
+      }
       if (CHECK_STRCMP(user1, user2))
       {
          ret |= URL_USER_DIFS;
@@ -2487,6 +2649,10 @@ url_compare(char *url1, char *url2)
       if (CHECK_STRCMP(path1, path2))
       {
          ret |= URL_PATH_DIFS;
+      }
+      if (CHECK_STRCMP(region1, region2))
+      {
+         ret |= URL_REGION_DIFS;
       }
       if (CHECK_STRCMP(server1, server2))
       {
@@ -2962,6 +3128,35 @@ url_get_error(int error_mask, char *error_str, int error_str_length)
             }
             error_str_length -= length;
          }
+         if ((error_str_length > (37 + MAX_INT_LENGTH)) &&
+             (error_mask & REGION_NAME_TO_LONG))
+         {
+            if (length)
+            {
+               tlen = snprintf(&error_str[length], error_str_length - length,
+                               ", region name may only be %d bytes long",
+                               MAX_REAL_HOSTNAME_LENGTH);
+               if (tlen > (error_str_length - length))
+               {
+                  length = error_str_length - length;
+               }
+               else
+               {
+                  length += tlen;
+               }
+            }
+            else
+            {
+               length = snprintf(error_str, error_str_length,
+                                 "region name may only be %d bytes long",
+                                 MAX_REAL_HOSTNAME_LENGTH);
+               if (length > error_str_length)
+               {
+                  length = error_str_length;
+               }
+            }
+            error_str_length -= length;
+         }
          if ((error_str_length > 17) && (error_mask & BUFFER_TO_SHORT))
          {
             if (length)
@@ -2977,6 +3172,81 @@ url_get_error(int error_mask, char *error_str, int error_str_length)
          }
       }
    }
+
+   return;
+}
+
+
+/*$$$$$$$$$$$$$$$$$$$$$$$$$$$$ url_encode() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
+void
+url_encode(char *src, char *dst)
+{
+   char *hex = "0123456789ABCDEF",
+        *p_dst = dst,
+        *p_src = src;
+
+   while (*p_src != '\0')
+   {
+      if ((isalnum(*p_src)) || (*p_src == '-') || (*p_src == '_') ||
+          (*p_src == '.') || (*p_src == '~'))
+      {
+         *p_dst++ = *p_src;
+      }
+      else if (*p_src == ' ')
+           {
+              *p_dst++ = '+';
+           }
+           else
+           {
+              *p_dst = '%';
+              if ((unsigned char)*p_src > 15)
+              {
+                 *(p_dst + 1) = hex[((unsigned char)*p_src) >> 4];
+                 *(p_dst + 2) = hex[((unsigned char)*p_src) & 0x0F];
+              }
+              else
+              {
+                 *(p_dst + 1) = '0';
+                 *(p_dst + 2) = hex[(unsigned char)*p_src];
+              }
+              p_dst += 3;
+           }
+      p_src++;
+   }
+   *p_dst = '\0';
+
+   return;
+}
+
+
+/*$$$$$$$$$$$$$$$$$$$$$$$$$$$$ url_decode() $$$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
+void
+url_decode(char *src, char *dst)
+{
+   char *p_src = src,
+        *p_dst = dst;
+
+   while (*p_src != '\0')
+   {
+      if (*p_src == '%')
+      {
+         if ((p_src[1] != '\0') && (p_src[2] != '\0'))
+         {
+            *p_dst++ = (isdigit(p_src[1]) ? (p_src[1] - '0') : (tolower(p_src[1]) - 'a' + 10)) << 4 | (isdigit(p_src[2]) ? (p_src[2] - '0') : (tolower(p_src[2]) - 'a' + 10));
+            p_src += 2;
+         }
+      }
+      else if (*p_src == '+')
+           {
+              *p_dst++ = ' ';
+           }
+           else
+           {
+              *p_dst++ = *p_src;
+           }
+      p_src++;
+   }
+   *p_dst = '\0';
 
    return;
 }

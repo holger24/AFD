@@ -1,6 +1,6 @@
 /*
  *  eval_dir_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -351,8 +351,11 @@ eval_dir_config(off_t        db_size,
                          password[MAX_USER_NAME_LENGTH],
                          directory[MAX_RECIPIENT_LENGTH],
                          dummy_directory[MAX_RECIPIENT_LENGTH],
+                         dummy_region[MAX_REAL_HOSTNAME_LENGTH],
                          smtp_server[MAX_REAL_HOSTNAME_LENGTH];
-   unsigned char         dummy_ssh_protocol,
+   unsigned char         dummy_auth,
+                         dummy_service,
+                         dummy_ssh_protocol,
                          smtp_auth;
    struct dir_group      *dir;
    struct dir_config_buf *dcl;
@@ -794,7 +797,10 @@ eval_dir_config(off_t        db_size,
                                                 dir->real_hostname,
                                                 &dummy_port, directory, NULL,
                                                 NULL, &dummy_transfer_mode,
-                                                &dummy_ssh_protocol, NULL)) < 4)
+                                                &dummy_ssh_protocol,
+                                                &dummy_auth,
+                                                dummy_region,
+                                                &dummy_service, NULL)) < 4)
                  {
                     if (dir->scheme & FTP_FLAG)
                     {
@@ -1656,6 +1662,9 @@ eval_dir_config(off_t        db_size,
                                                           NULL,
                                                           &dummy_transfer_mode,
                                                           &dummy_ssh_protocol,
+                                                          &dummy_auth,
+                                                          dummy_region,
+                                                          &dummy_service,
                                                           smtp_server)) < 4)
                               {
                                  if (user[0] == '\0')

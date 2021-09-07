@@ -1,6 +1,6 @@
 /*
  *  get_job_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -188,8 +188,8 @@ retry:
 #ifdef WITH_SSH_FINGERPRINT
                                   NULL, NULL,
 #endif
-                                  NULL, NO, real_hostname, &port,
-                                  NULL, NULL, NULL, NULL, NULL,
+                                  NULL, NO, real_hostname, &port, NULL, NULL,
+                                  NULL, NULL, NULL, NULL, NULL, NULL,
                                   smtp_server)) > 3)
    {
       char error_msg[MAX_URL_ERROR_MSG];

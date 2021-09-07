@@ -29,10 +29,13 @@ main(int argc, char *argv[])
                  hostname[MAX_REAL_HOSTNAME_LENGTH + 1],
                  path[MAX_RECIPIENT_LENGTH + 1],
                  transfer_type,
+                 region[MAX_REAL_HOSTNAME_LENGTH + 1],
                  server[MAX_REAL_HOSTNAME_LENGTH + 1],
                  work_dir[MAX_PATH_LENGTH];
    unsigned char protocol_version,
-                 smtp_auth;
+                 smtp_auth
+                 auth,
+                 service;
 
    p_work_dir = work_dir;
    if (argc == 1)
@@ -49,7 +52,8 @@ main(int argc, char *argv[])
                       fingerprint, &key_type,
 #endif
                       password, YES, hostname, &port, path, NULL, NULL,
-                      &transfer_type, &protocol_version, server);
+                      &transfer_type, &protocol_version, &auth, region,
+                      &service, server);
 
    (void)printf("url: %s\n", p_url);
    (void)printf("\nscheme           = %u\n", scheme);
@@ -70,6 +74,34 @@ main(int argc, char *argv[])
         {
            (void)printf("SMTP auth        = Unknown\n");
         }
+   if (service == SERVICE_NONE)
+   {
+      (void)printf("service          = None\n");
+   }
+   else if (service == SERVICE_S3)
+        {
+           (void)printf("service          = s3\n");
+        }
+        else
+        {
+           (void)printf("service          = Unknown\n");
+        }
+   if (auth == AUTH_NONE)
+   {
+      (void)printf("auth             = None\n");
+   }
+   else if (auth == AUTH_BASIC)
+        {
+           (void)printf("auth             = basic\n");
+        }
+   else if (auth == AUTH_AWS4_HMAC_SHA256)
+        {
+           (void)printf("auth             = aws4-hmac-sha256\n");
+        }
+        else
+        {
+           (void)printf("auth             = Unknown\n");
+        }
    (void)printf("SMTP user        = %s\n", smtp_user);
 #ifdef WITH_SSH_FINGERPRINT
    if (fingerprint[0] != '\0')
@@ -89,6 +121,10 @@ main(int argc, char *argv[])
    if (protocol_version != 0)
    {
       (void)printf("protocol version = %d\n", (int)protocol_version);
+   }
+   if (region[0] != '\0')
+   {
+      (void)printf("region           = %s\n", region);
    }
    if (server[0] != '\0')
    {
