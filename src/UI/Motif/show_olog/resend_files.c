@@ -1191,6 +1191,7 @@ write_fsa(int add, int files_to_send, off_t file_size_to_send)
 
       /* Free all memory that was allocated in get_info(). */
       free(id.files);
+      id.files = NULL;
 #ifdef _WITH_DYNAMIC_MEMORY
       if (id.loptions != NULL)
       {

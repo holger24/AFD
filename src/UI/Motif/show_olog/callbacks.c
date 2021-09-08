@@ -555,6 +555,7 @@ info_click(Widget w, XtPointer client_data, XEvent *event)
       XtVaGetValues(w, XmNitemCount, &max_pos, NULL);
       if ((max_pos > 0) && (pos <= max_pos))
       {
+         int  i;
          char *text = NULL;
 
          /* Initialize text an data area. */
@@ -589,6 +590,22 @@ info_click(Widget w, XtPointer client_data, XEvent *event)
          /* Free all memory that was allocated in get_info(). */
          free(text);
          free(id.files);
+         id.files = NULL;
+         for (i = 0; i < id.count; i++)
+         {
+            free((void *)id.dbe[i].files);
+            if (id.dbe[i].soptions != NULL)
+            {
+               free((void *)id.dbe[i].files);
+               id.dbe[i].soptions = NULL;
+            }
+         }
+         if (id.count > 0)
+         {
+            free((void *)id.dbe);
+            id.dbe = NULL;
+            id.count = 0;
+         }
 #ifdef _WITH_DYNAMIC_MEMORY
          if (id.loptions != NULL)
          {

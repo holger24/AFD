@@ -1106,6 +1106,7 @@ get_dir_data(int dir_pos)
                   else
                   {
                      free(id.dbe[id.count].files);
+                     id.dbe[id.count].files = NULL;
                   }
                }
             } /* if (current_jid_list[j] == jd[i].job_id) */
