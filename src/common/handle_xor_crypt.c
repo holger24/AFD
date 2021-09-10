@@ -1,6 +1,6 @@
 /*
  *  handle_xor_crypt.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -231,46 +231,57 @@ init_xor_key(void)
          if (fstat(fd, &stat_buf) == -1)
          {
             system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       "Failed to fstat() %s : %s", key_file, strerror(errno));
+                       "Failed to fstat() %s : %s",
+                       key_file, strerror(errno));
             ret = INCORRECT;
          }
          else
          {
-            if ((xor_key = malloc(stat_buf.st_size + 1)) == NULL)
+            if (stat_buf.st_size == 0)
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          "malloc() error : %s", strerror(errno));
+                          "File %s is empty", key_file);
                ret = INCORRECT;
             }
             else
             {
-               if (read(fd, xor_key, stat_buf.st_size) != stat_buf.st_size)
+               if ((xor_key = malloc(stat_buf.st_size + 1)) == NULL)
                {
                   system_log(ERROR_SIGN, __FILE__, __LINE__,
-                             "read() error : %s", strerror(errno));
+                             "malloc() error : %s", strerror(errno));
                   ret = INCORRECT;
                }
                else
                {
-                  if (xor_key[stat_buf.st_size - 1] == 10)
+                  if (read(fd, xor_key,
+                           stat_buf.st_size) != stat_buf.st_size)
                   {
-                     if (xor_key[stat_buf.st_size - 2] == 13)
-                     {
-                        xor_key[stat_buf.st_size - 2] = '\0';
-                        xor_key_length = stat_buf.st_size - 3;
-                     }
-                     else
-                     {
-                        xor_key[stat_buf.st_size - 1] = '\0';
-                        xor_key_length = stat_buf.st_size - 2;
-                     }
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                "read() error : %s", strerror(errno));
+                     ret = INCORRECT;
                   }
                   else
                   {
-                     xor_key[stat_buf.st_size] = '\0';
-                     xor_key_length = stat_buf.st_size - 1;
+                     if (xor_key[stat_buf.st_size - 1] == 10)
+                     {
+                        if (xor_key[stat_buf.st_size - 2] == 13)
+                        {
+                           xor_key[stat_buf.st_size - 2] = '\0';
+                           xor_key_length = stat_buf.st_size - 3;
+                        }
+                        else
+                        {
+                           xor_key[stat_buf.st_size - 1] = '\0';
+                           xor_key_length = stat_buf.st_size - 2;
+                        }
+                     }
+                     else
+                     {
+                        xor_key[stat_buf.st_size] = '\0';
+                        xor_key_length = stat_buf.st_size - 1;
+                     }
+                     ret = SUCCESS;
                   }
-                  ret = SUCCESS;
                }
             }
          }
@@ -278,7 +289,8 @@ init_xor_key(void)
          if (close(fd) == -1)
          {
             system_log(DEBUG_SIGN, __FILE__, __LINE__,
-                       "Failed to close() %s : %s", key_file, strerror(errno));
+                       "Failed to close() %s : %s",
+                       key_file, strerror(errno));
          }
       }
    }

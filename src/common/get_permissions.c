@@ -1,6 +1,6 @@
 /*
  *  get_permissions.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -158,7 +158,7 @@ get_permissions(char **perm_buffer, char *fake_user, char *profile)
    {
       if (fstat(fd, &stat_buf) != -1)
       {
-         if (stat_buf.st_size < 1048576)
+         if ((stat_buf.st_size > 0) && (stat_buf.st_size < 1048576))
          {
             /* Create two buffers, one to scribble around 'buffer' the other */
             /* is returned to the calling process.                           */
@@ -235,8 +235,11 @@ get_permissions(char **perm_buffer, char *fake_user, char *profile)
          }
          else
          {
-            system_log(ERROR_SIGN, __FILE__, __LINE__,
-                       _("The function get_permissions() was not made to handle large file."));
+            if (stat_buf.st_size != 0)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          _("The function get_permissions() was not made to handle large file."));
+            }
             ret = NONE;
 
             if (close(fd) == -1)

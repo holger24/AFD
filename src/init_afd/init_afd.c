@@ -3069,17 +3069,27 @@ stop_afd(void)
                        afd_active_file, strerror(errno));
             _exit(INCORRECT);
          }
-         if ((buffer = malloc(stat_buf.st_size)) == NULL)
+         if (stat_buf.st_size == 0)
          {
             system_log(FATAL_SIGN, __FILE__, __LINE__,
-                       _("malloc() error : %s"), strerror(errno));
-            _exit(INCORRECT);
+                       "`%s' is empty! Unable to kill remaining process.",
+                       afd_active_file);
+            buffer = NULL;
          }
-         if (read(read_fd, buffer, stat_buf.st_size) != stat_buf.st_size)
+         else
          {
-            system_log(FATAL_SIGN, __FILE__, __LINE__,
-                       _("read() error : %s"), strerror(errno));
-            _exit(INCORRECT);
+            if ((buffer = malloc(stat_buf.st_size)) == NULL)
+            {
+               system_log(FATAL_SIGN, __FILE__, __LINE__,
+                          _("malloc() error : %s"), strerror(errno));
+               _exit(INCORRECT);
+            }
+            if (read(read_fd, buffer, stat_buf.st_size) != stat_buf.st_size)
+            {
+               system_log(FATAL_SIGN, __FILE__, __LINE__,
+                          _("read() error : %s"), strerror(errno));
+               _exit(INCORRECT);
+            }
          }
          (void)close(read_fd);
          ptr = buffer;
@@ -3111,58 +3121,74 @@ stop_afd(void)
 #endif
 
       /* Try to send kill signal to all running process */
-      ptr += sizeof(pid_t);
-      for (i = 1; i <= NO_OF_PROCESS; i++)
+      if (ptr == NULL)
       {
-         if (i == (SLOG_NO + 1))
+         for (i = 1; i <= NO_OF_PROCESS; i++)
          {
-            syslog = *(pid_t *)ptr;
+            *proc_table[i - 1].status = STOPPED;
          }
-         else
+      }
+      else
+      {
+         ptr += sizeof(pid_t);
+         for (i = 1; i <= NO_OF_PROCESS; i++)
          {
-            if ((*(pid_t *)ptr > 0) && ((i - 1) != DC_NO))
+            if (i == (SLOG_NO + 1))
             {
-#ifdef _DEBUG
-               system_log(DEBUG_SIGN, __FILE__, __LINE__, _("Killing %d - %s (%d)"),
-                          *(pid_t *)ptr, proc_table[i - 1].proc_name, i - 1);
-#endif
-               if (kill(*(pid_t *)ptr, SIGINT) == -1)
+               syslog = *(pid_t *)ptr;
+            }
+            else
+            {
+               if ((*(pid_t *)ptr > 0) && ((i - 1) != DC_NO))
                {
-                  if (errno != ESRCH)
-                  {
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-#if SIZEOF_PID_T == 4
-                                _("Failed to kill() %d %s : %s"),
-#else
-                                _("Failed to kill() %lld %s : %s"),
+#ifdef _DEBUG
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             _("Killing %d - %s (%d)"),
+                             *(pid_t *)ptr, proc_table[i - 1].proc_name,
+                             i - 1);
 #endif
-                                (pri_pid_t)*(pid_t *)ptr,
-                                proc_table[i - 1].proc_name, strerror(errno));
+                  if (kill(*(pid_t *)ptr, SIGINT) == -1)
+                  {
+                     if (errno != ESRCH)
+                     {
+                        system_log(WARN_SIGN, __FILE__, __LINE__,
+#if SIZEOF_PID_T == 4
+                                   _("Failed to kill() %d %s : %s"),
+#else
+                                   _("Failed to kill() %lld %s : %s"),
+#endif
+                                   (pri_pid_t)*(pid_t *)ptr,
+                                   proc_table[i - 1].proc_name, strerror(errno));
+                     }
+                  }
+                  else
+                  {
+                     if (((i - 1) != DC_NO) &&
+                         (proc_table[i - 1].status != NULL) &&
+                         (((i - 1) != AFDD_NO) ||
+                          (*proc_table[i - 1].status != NEITHER)))
+                     {
+                        kill_list[kill_counter] = *(pid_t *)ptr;
+                        *(pid_t *)ptr = -1;
+                        kill_pos_list[kill_counter] = i;
+                        kill_counter++;
+                        *proc_table[i - 1].status = STOPPED;
+                     }
                   }
                }
                else
                {
-                  if (((i - 1) != DC_NO) && (proc_table[i - 1].status != NULL) &&
-                      (((i - 1) != AFDD_NO) || (*proc_table[i - 1].status != NEITHER)))
+                  if (((i - 1) != DC_NO) &&
+                      (proc_table[i - 1].status != NULL) &&
+                      (((i - 1) != AFDD_NO) ||
+                       (*proc_table[i - 1].status != NEITHER)))
                   {
-                     kill_list[kill_counter] = *(pid_t *)ptr;
-                     *(pid_t *)ptr = -1;
-                     kill_pos_list[kill_counter] = i;
-                     kill_counter++;
                      *proc_table[i - 1].status = STOPPED;
                   }
                }
             }
-            else
-            {
-               if (((i - 1) != DC_NO) && (proc_table[i - 1].status != NULL) &&
-                   (((i - 1) != AFDD_NO) || (*proc_table[i - 1].status != NEITHER)))
-               {
-                  *proc_table[i - 1].status = STOPPED;
-               }
-            }
+            ptr += sizeof(pid_t);
          }
-         ptr += sizeof(pid_t);
       }
       *proc_table[SLOG_NO].status = STOPPED;
 
@@ -3243,7 +3269,8 @@ stop_afd(void)
          now = time(NULL);
          strftime(date_str, 26, "%a %h %d %H:%M:%S %Y", localtime(&now));
          system_log(CONFIG_SIGN, NULL, 0,
-                    _("Shutdown on <%s> %s"), p_afd_status->hostname, date_str);
+                    _("Shutdown on <%s> %s"),
+                    p_afd_status->hostname, date_str);
       }
 
       /* Unset hostname so no one thinks AFD is still up. */

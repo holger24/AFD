@@ -1,7 +1,7 @@
 /*
  *  read_file_mask.c - Part of AFD, an automatic file distribution
  *                     program.
- *  Copyright (c) 2000 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ DESCR__S_M3
  ** DESCRIPTION
  **   The function read_file_mask reads all file masks from the
  **   file:
- **       $AFD_WORK_DIR/files/incoming/filters/<fra_pos>
+ **       $AFD_WORK_DIR/files/incoming/file_mask/<dir_alias>
  **   It reads the data into a buffer that this function will
  **   create.
  **
@@ -77,9 +77,15 @@ read_file_mask(char *dir_alias, int *nfg, struct file_mask **fml)
                *ptr;
    struct stat stat_buf;
 
-   (void)snprintf(file_mask_file, MAX_PATH_LENGTH, "%s%s%s%s/%s",
-                  p_work_dir, AFD_FILE_DIR, INCOMING_DIR, FILE_MASK_DIR,
-                  dir_alias);
+   if (snprintf(file_mask_file, MAX_PATH_LENGTH, "%s%s%s%s/%s",
+                p_work_dir, AFD_FILE_DIR, INCOMING_DIR, FILE_MASK_DIR,
+                dir_alias) >= MAX_PATH_LENGTH)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "Storage for file_mask_file not large (%d bytes) enough!",
+                 MAX_PATH_LENGTH);
+      return(INCORRECT);
+   }
 
    if ((fd = lock_file(file_mask_file, ON)) < 0)
    {
@@ -90,21 +96,37 @@ read_file_mask(char *dir_alias, int *nfg, struct file_mask **fml)
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "Failed to fstat() `%s' : %s",
                  file_mask_file, strerror(errno));
+      (void)close(fd);
+      return(INCORRECT);
+   }
+   if (stat_buf.st_size == 0)
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "File mask file `%s' is empty!", file_mask_file);
+      (void)close(fd);
       return(INCORRECT);
    }
    if ((buffer = malloc(stat_buf.st_size)) == NULL)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to malloc() %d bytes : %s",
-                 stat_buf.st_size, strerror(errno));
+#if SIZEOF_OFF_T == 4
+                 "Failed to malloc() %ld bytes : %s",
+#else
+                 "Failed to malloc() %lld bytes : %s",
+#endif
+                 (pri_off_t)stat_buf.st_size, strerror(errno));
       (void)close(fd);
       return(INCORRECT);
    }
    if (read(fd, buffer, stat_buf.st_size) != stat_buf.st_size)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Failed to read() %d bytes from `%s' : %s",
-                 stat_buf.st_size, file_mask_file, strerror(errno));
+#if SIZEOF_OFF_T == 4
+                 "Failed to read() %ld bytes from `%s' : %s",
+#else
+                 "Failed to read() %lld bytes from `%s' : %s",
+#endif
+                 (pri_off_t)stat_buf.st_size, file_mask_file, strerror(errno));
       free(buffer);
       (void)close(fd);
       return(INCORRECT);

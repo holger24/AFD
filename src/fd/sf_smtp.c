@@ -933,64 +933,75 @@ main(int argc, char *argv[])
             }
             else
             {
-               if (stat_buf.st_size <= 204800)
+               if (stat_buf.st_size == 0)
                {
-                  if ((mail_header_buffer = malloc(stat_buf.st_size + 1)) == NULL)
+                  trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "mail header file %s is empty.");
+               }
+               else
+               {
+                  if (stat_buf.st_size <= 204800)
                   {
-                     system_log(WARN_SIGN, __FILE__, __LINE__,
-                                "Failed to malloc() buffer for mail header file : %s",
-                                strerror(errno));
-                  }
-                  else
-                  {
-                     if ((extra_mail_header_buffer = malloc(((2 * stat_buf.st_size) + 1))) == NULL)
+                     if ((mail_header_buffer = malloc(stat_buf.st_size + 1)) == NULL)
                      {
                         system_log(WARN_SIGN, __FILE__, __LINE__,
                                    "Failed to malloc() buffer for mail header file : %s",
                                    strerror(errno));
-                        free(mail_header_buffer);
-                        mail_header_buffer = NULL;
                      }
                      else
                      {
-                        mail_header_size = stat_buf.st_size;
-                        if (read(mail_fd, mail_header_buffer, mail_header_size) != stat_buf.st_size)
+                        if ((extra_mail_header_buffer = malloc(((2 * stat_buf.st_size) + 1))) == NULL)
                         {
                            system_log(WARN_SIGN, __FILE__, __LINE__,
-                                      "Failed to read() mail header file %s : %s",
-                                      mail_header_file, strerror(errno));
+                                      "Failed to malloc() buffer for mail header file : %s",
+                                      strerror(errno));
                            free(mail_header_buffer);
                            mail_header_buffer = NULL;
                         }
                         else
                         {
-                           mail_header_buffer[mail_header_size] = '\0';
-
-                           /* If we are attaching a file we have to */
-                           /* do a multipart mail.                  */
-                           if (db.special_flag & ATTACH_FILE)
+                           mail_header_size = stat_buf.st_size;
+                           if (read(mail_fd, mail_header_buffer,
+                                    mail_header_size) != stat_buf.st_size)
                            {
-                              if (snprintf(multipart_boundary, MAX_FILENAME_LENGTH, "----%s", db.msg_name) >= MAX_FILENAME_LENGTH)
+                              system_log(WARN_SIGN, __FILE__, __LINE__,
+                                         "Failed to read() mail header file %s : %s",
+                                         mail_header_file, strerror(errno));
+                              free(mail_header_buffer);
+                              mail_header_buffer = NULL;
+                           }
+                           else
+                           {
+                              mail_header_buffer[mail_header_size] = '\0';
+
+                              /* If we are attaching a file we have to */
+                              /* do a multipart mail.                  */
+                              if (db.special_flag & ATTACH_FILE)
                               {
-                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                                           "Failed to store multipart boundary because buffer is to small!");
-                                 (void)smtp_quit();
-                                 exit(ALLOC_ERROR);
+                                 if (snprintf(multipart_boundary,
+                                              MAX_FILENAME_LENGTH, "----%s", db.msg_name) >= MAX_FILENAME_LENGTH)
+                                 {
+                                    trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                              "Failed to store multipart boundary because buffer is to small!");
+                                    (void)smtp_quit();
+                                    exit(ALLOC_ERROR);
+                                 }
                               }
                            }
                         }
                      }
                   }
-               }
-               else
-               {
-                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                  else
+                  {
+                     system_log(WARN_SIGN, __FILE__, __LINE__,
 #if SIZEOF_OFF_T == 4
-                             "Mail header file %s to large (%ld bytes). Allowed are 204800 bytes.",
+                                "Mail header file %s to large (%ld bytes). Allowed are 204800 bytes.",
 #else
-                             "Mail header file %s to large (%lld bytes). Allowed are 204800 bytes.",
+                                "Mail header file %s to large (%lld bytes). Allowed are 204800 bytes.",
 #endif
-                             mail_header_file, (pri_off_t)stat_buf.st_size);
+                                mail_header_file,
+                                (pri_off_t)stat_buf.st_size);
+                  }
                }
             }
             if (close(mail_fd) == -1)
@@ -1006,7 +1017,7 @@ main(int argc, char *argv[])
       {
          if (snprintf(multipart_boundary, MAX_FILENAME_LENGTH, "----%s", db.msg_name) >= MAX_FILENAME_LENGTH)
          {
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                       "Failed to store multipart boundary because buffer is to small!");
             (void)smtp_quit();
             exit(ALLOC_ERROR);

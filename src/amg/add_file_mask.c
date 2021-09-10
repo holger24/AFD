@@ -1,7 +1,7 @@
 /*
  *  add_file_mask.c - Part of AFD, an automatic file distribution
  *                    program.
- *  Copyright (c) 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,11 +43,18 @@ DESCR__S_M3
  **
  ** HISTORY
  **   02.11.2015 H.Kiehl Created
+ **   10.09.2021 H.Kiehl When creating the file create it with
+ **                      a leading dot. After we finished writing
+ **                      rename without the dot. Turns out that
+ **                      creating + setting a lock was not atomic
+ **                      enough and some gf_xxx process where
+ **                      quicker in setting the lock on an empty
+ **                      file.
  **
  */
 DESCR__E_M3
 
-#include <stdio.h>            /* sprintf()                               */
+#include <stdio.h>            /* sprintf(), rename()                     */
 #include <string.h>           /* strerror(), memcpy()                    */
 #include <stdlib.h>           /* malloc(), free()                        */
 #include <sys/types.h>
@@ -78,16 +85,43 @@ add_file_mask(char *dir_alias, struct dir_group *dir)
                mod;
    size_t      length;
    char        *buffer,
-               file_mask_file[MAX_PATH_LENGTH];
+               file_mask_file[MAX_PATH_LENGTH],
+               *p_file_mask_file,
+               tmp_file_mask_file[MAX_PATH_LENGTH];
    struct stat stat_buf;
 
-   (void)snprintf(file_mask_file, MAX_PATH_LENGTH, "%s%s%s%s/%s",
-                  p_work_dir, AFD_FILE_DIR,
-                  INCOMING_DIR, FILE_MASK_DIR, dir_alias);
+   if ((i = snprintf(file_mask_file,
+                     (MAX_PATH_LENGTH - MAX_DIR_ALIAS_LENGTH - 1),
+                     "%s%s%s%s/", p_work_dir, AFD_FILE_DIR, INCOMING_DIR,
+                     FILE_MASK_DIR)) >= (MAX_PATH_LENGTH - MAX_DIR_ALIAS_LENGTH - 1))
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "Storage for file_mask_file not large (%d bytes) enough!",
+                 (MAX_PATH_LENGTH - MAX_DIR_ALIAS_LENGTH - 1));
+      return;
+   }
+   (void)memcpy(tmp_file_mask_file, file_mask_file, i);
+   if (my_strlcpy(&file_mask_file[i], dir_alias,
+                  (MAX_PATH_LENGTH - i)) >= (MAX_PATH_LENGTH - i))
+   {
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "Storage for file_mask_file not large (%d bytes) enough!",
+                 (MAX_PATH_LENGTH - i));
+      return;
+   }
 
    if ((stat(file_mask_file, &stat_buf) == -1) && (errno == ENOENT))
    {
-      if ((fd = coe_open(file_mask_file, (O_RDWR | O_CREAT | O_TRUNC),
+      p_file_mask_file = tmp_file_mask_file;
+      if (my_strlcpy(&tmp_file_mask_file[i + 1], dir_alias,
+                  (MAX_PATH_LENGTH - i - 1)) >= (MAX_PATH_LENGTH - i - 1))
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Storage for tmp_file_mask_file not large (%d bytes) enough!",
+                    (MAX_PATH_LENGTH - i - 1));
+         return;
+      }
+      if ((fd = coe_open(tmp_file_mask_file, (O_RDWR | O_CREAT | O_TRUNC),
 #ifdef GROUP_CAN_WRITE
                          (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP))) == -1)
 #else
@@ -96,18 +130,15 @@ add_file_mask(char *dir_alias, struct dir_group *dir)
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "Failed to coe_open() `%s' : %s",
-                    file_mask_file, strerror(errno));
+                    tmp_file_mask_file, strerror(errno));
          return;
       }
-#ifdef LOCK_DEBUG
-      lock_region_w(fd, (off_t)0, __FILE__, __LINE__);
-#else
-      lock_region_w(fd, (off_t)0);
-#endif
       i = 0;
    }
    else
    {
+      p_file_mask_file = file_mask_file;
+      tmp_file_mask_file[0] = '\0';
       if ((fd = lock_file(file_mask_file, ON)) < 0)
       {
          return;
@@ -137,7 +168,7 @@ add_file_mask(char *dir_alias, struct dir_group *dir)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "Failed to write() %d bytes to `%s' : %s",
-                 sizeof(int), file_mask_file, strerror(errno));
+                 sizeof(int), p_file_mask_file, strerror(errno));
       (void)close(fd);
       return;
    }
@@ -145,7 +176,7 @@ add_file_mask(char *dir_alias, struct dir_group *dir)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  "Failed to lseek() to begining of `%s' : %s",
-                 file_mask_file, strerror(errno));
+                 p_file_mask_file, strerror(errno));
       (void)close(fd);
       return;
    }
@@ -180,7 +211,7 @@ add_file_mask(char *dir_alias, struct dir_group *dir)
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "Failed to write() %d bytes to `%s' : %s",
-                    length, file_mask_file, strerror(errno));
+                    length, p_file_mask_file, strerror(errno));
          free(buffer);
          break;
       }
@@ -189,7 +220,16 @@ add_file_mask(char *dir_alias, struct dir_group *dir)
    if (close(fd) == -1)
    {
       system_log(WARN_SIGN, __FILE__, __LINE__, "Failed to close() `%s' : %s",
-                file_mask_file, strerror(errno));
+                 p_file_mask_file, strerror(errno));
+   }
+   if (tmp_file_mask_file[0] != '\0')
+   {
+      if (rename(tmp_file_mask_file, file_mask_file) == -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to rename() `%s' to `%s' : %s",
+                    tmp_file_mask_file, file_mask_file, strerror(errno));
+      }
    }
 
    return;
