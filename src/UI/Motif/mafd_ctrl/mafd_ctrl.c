@@ -147,11 +147,13 @@ Widget                     mw[5],          /* Main menu */
                            oow[3],         /* Other options */
                            pw[13],         /* Popup menu */
                            dprw[3],        /* Debug pull right */
+                           dprwpp[3],      /* Debug pull right in popup */
                            appshell,
                            button_window_w,
                            detailed_window_w,
                            label_window_w,
                            line_window_w,
+                           pullright_debug_popup,
                            transviewshell = NULL,
                            tv_label_window_w;
 Window                     button_window,
@@ -2169,8 +2171,6 @@ init_popup_menu(Widget w)
       }
       if (acp.debug != NO_PERMISSION)
       {
-         Widget pullright_debug_popup;
-
          pullright_debug_popup = XmCreateSimplePulldownMenu(popupmenu,
                                                             "pullright_debug_popup",
                                                             NULL, 0);
@@ -2636,7 +2636,7 @@ create_pullright_debug(Widget pullright_debug)
 {
    XmString x_string;
    Arg      args[5];
-   Cardinal argcount;     
+   Cardinal argcount;
 
    /* Create pullright for "Debug". */
    if (acp.debug != NO_PERMISSION)
@@ -2653,11 +2653,22 @@ create_pullright_debug(Widget pullright_debug)
 #else
       XtSetArg(args[argcount], XmNaccelerator, "Alt<Key>D"); argcount++;
 #endif
-      dprw[DEBUG_STYLE_W] = XmCreatePushButton(pullright_debug, "debug_0",
-                                               args, argcount);           
-      XtAddCallback(dprw[DEBUG_STYLE_W], XmNactivateCallback,
-                    popup_cb, (XtPointer)DEBUG_SEL);
-      XtManageChild(dprw[DEBUG_STYLE_W]);           
+      if (pullright_debug == pullright_debug_popup)
+      {
+         dprwpp[DEBUG_STYLE_W] = XmCreatePushButton(pullright_debug,
+                                                    "debug_0", args, argcount);           
+         XtAddCallback(dprwpp[DEBUG_STYLE_W], XmNactivateCallback,
+                       popup_cb, (XtPointer)DEBUG_SEL);
+         XtManageChild(dprwpp[DEBUG_STYLE_W]);           
+      }
+      else
+      {
+         dprw[DEBUG_STYLE_W] = XmCreatePushButton(pullright_debug,
+                                                  "debug_0", args, argcount);           
+         XtAddCallback(dprw[DEBUG_STYLE_W], XmNactivateCallback,
+                       popup_cb, (XtPointer)DEBUG_SEL);
+         XtManageChild(dprw[DEBUG_STYLE_W]);           
+      }
       XmStringFree(x_string);
    }
    if (acp.trace != NO_PERMISSION)
@@ -2666,11 +2677,22 @@ create_pullright_debug(Widget pullright_debug)
       x_string = XmStringCreateLocalized("Trace");
       XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
       XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
-      dprw[TRACE_STYLE_W] = XmCreatePushButton(pullright_debug, "debug_1",
-                                               args, argcount);
-      XtAddCallback(dprw[TRACE_STYLE_W], XmNactivateCallback,
-                    popup_cb, (XtPointer)TRACE_SEL);
-      XtManageChild(dprw[TRACE_STYLE_W]);
+      if (pullright_debug == pullright_debug_popup)
+      {
+         dprwpp[TRACE_STYLE_W] = XmCreatePushButton(pullright_debug,
+                                                    "debug_1", args, argcount);
+         XtAddCallback(dprwpp[TRACE_STYLE_W], XmNactivateCallback,
+                       popup_cb, (XtPointer)TRACE_SEL);
+         XtManageChild(dprwpp[TRACE_STYLE_W]);
+      }
+      else
+      {
+         dprw[TRACE_STYLE_W] = XmCreatePushButton(pullright_debug,
+                                                  "debug_1", args, argcount);
+         XtAddCallback(dprw[TRACE_STYLE_W], XmNactivateCallback,
+                       popup_cb, (XtPointer)TRACE_SEL);
+         XtManageChild(dprw[TRACE_STYLE_W]);
+      }
       XmStringFree(x_string);
    }
    if (acp.full_trace != NO_PERMISSION)
@@ -2679,11 +2701,24 @@ create_pullright_debug(Widget pullright_debug)
       x_string = XmStringCreateLocalized("Full Trace");
       XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
       XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
-      dprw[FULL_TRACE_STYLE_W] = XmCreatePushButton(pullright_debug,
-                                                    "debug_2", args, argcount);
-      XtAddCallback(dprw[FULL_TRACE_STYLE_W], XmNactivateCallback,
-                    popup_cb, (XtPointer)FULL_TRACE_SEL);
-      XtManageChild(dprw[FULL_TRACE_STYLE_W]);
+      if (pullright_debug == pullright_debug_popup)
+      {
+         dprwpp[FULL_TRACE_STYLE_W] = XmCreatePushButton(pullright_debug,
+                                                         "debug_2",
+                                                         args, argcount);
+         XtAddCallback(dprwpp[FULL_TRACE_STYLE_W], XmNactivateCallback,
+                       popup_cb, (XtPointer)FULL_TRACE_SEL);
+         XtManageChild(dprwpp[FULL_TRACE_STYLE_W]);
+      }
+      else
+      {
+         dprw[FULL_TRACE_STYLE_W] = XmCreatePushButton(pullright_debug,
+                                                       "debug_2",
+                                                       args, argcount);
+         XtAddCallback(dprw[FULL_TRACE_STYLE_W], XmNactivateCallback,
+                       popup_cb, (XtPointer)FULL_TRACE_SEL);
+         XtManageChild(dprw[FULL_TRACE_STYLE_W]);
+      }
       XmStringFree(x_string);
    }
 

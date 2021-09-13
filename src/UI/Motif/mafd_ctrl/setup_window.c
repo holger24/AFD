@@ -1,6 +1,6 @@
 /*
  *  setup_window.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -72,7 +72,9 @@ extern Widget                     mw[],
                                   lsw[],
                                   ptw[],
                                   oow[],
-                                  pw[];
+                                  pw[],
+                                  dprw[],
+                                  dprwpp[];
 extern GC                         letter_gc,
                                   normal_letter_gc,
                                   locked_letter_gc,
@@ -216,10 +218,33 @@ setup_window(char *font_name, int redraw_mainmenu)
                XtVaSetValues(ow[RETRY_W], XmNfontList, fontlist, NULL);
                XtVaSetValues(pw[6], XmNfontList, fontlist, NULL);
             }
-            if (acp.debug != NO_PERMISSION)
+            if ((acp.debug != NO_PERMISSION) ||
+                (acp.trace != NO_PERMISSION) ||
+                (acp.full_trace != NO_PERMISSION))
             {
                XtVaSetValues(ow[DEBUG_W], XmNfontList, fontlist, NULL);
                XtVaSetValues(pw[7], XmNfontList, fontlist, NULL);
+               if (acp.debug != NO_PERMISSION)
+               {
+                  XtVaSetValues(dprw[DEBUG_STYLE_W], XmNfontList, fontlist,
+                                NULL);
+                  XtVaSetValues(dprwpp[DEBUG_STYLE_W], XmNfontList, fontlist,
+                                NULL);
+               }
+               if (acp.trace != NO_PERMISSION)
+               {
+                  XtVaSetValues(dprw[TRACE_STYLE_W], XmNfontList, fontlist,
+                                NULL);
+                  XtVaSetValues(dprwpp[TRACE_STYLE_W], XmNfontList, fontlist,
+                                NULL);
+               }
+               if (acp.full_trace != NO_PERMISSION)
+               {
+                  XtVaSetValues(dprw[FULL_TRACE_STYLE_W], XmNfontList,
+                                fontlist, NULL);
+                  XtVaSetValues(dprwpp[FULL_TRACE_STYLE_W], XmNfontList,
+                                fontlist, NULL);
+               }
             }
             if (acp.simulation != NO_PERMISSION)
             {
@@ -323,6 +348,10 @@ setup_window(char *font_name, int redraw_mainmenu)
             {
                XtVaSetValues(vw[VIEW_DC_W], XmNfontList, fontlist, NULL);
                XtVaSetValues(pw[9], XmNfontList, fontlist, NULL);
+            }
+            if (acp.view_rr != NO_PERMISSION)
+            {
+               XtVaSetValues(vw[VIEW_RR_W], XmNfontList, fontlist, NULL);
             }
             if (acp.view_jobs != NO_PERMISSION)
             {

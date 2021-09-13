@@ -1,7 +1,7 @@
 /*
  *  setup_dir_window.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 2000 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2000 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -238,6 +238,10 @@ setup_dir_window(char *font_name)
          {
             XtVaSetValues(vw[DIR_VIEW_DC_W], XmNfontList, fontlist, NULL);
             XtVaSetValues(pw[5], XmNfontList, fontlist, NULL);
+         }
+         if (dcp.view_rr != NO_PERMISSION)
+         {
+            XtVaSetValues(vw[DIR_VIEW_RR_W], XmNfontList, fontlist, NULL);
          }
       }
 
