@@ -160,7 +160,7 @@ main(int argc, char *argv[])
          }
          else
          {
-            (void)strcpy(dir_alias, argv[1]);
+            (void)my_strlcpy(dir_alias, argv[1], MAX_DIR_ALIAS_LENGTH);
          }
       }
    }
