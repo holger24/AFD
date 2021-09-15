@@ -1496,11 +1496,20 @@ eval_html_dir_list(char         *html_buffer,
 
                   if (file_name_length == -1)
                   {
-                     /* No <Contents><Key> found! */
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                               "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
                      *listing_complete = YES;
-                     return(INCORRECT);
+
+                     /* Bucket is empty or we have some new */
+                     /* listing type. So check if KeyCount  */
+                     /* is zero.                            */
+                     if ((ptr = llposi(html_buffer,
+                                       (size_t)bytes_buffered_original,
+                                       "<KeyCount>0</KeyCount>", 22)) == NULL)
+                     {
+                        /* No <Contents><Key> found! */
+                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                                  "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
+                        return(INCORRECT);
+                     }
                   }
 
                   if (*listing_complete == NO)
