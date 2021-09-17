@@ -1,6 +1,6 @@
 /*
  *  draw_line.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -117,6 +117,8 @@ extern int                        *line_length,
                                   hostname_display_length,
                                   led_width,
                                   no_of_his_log,
+                                  no_of_hosts,
+                                  no_of_hosts_visible,
                                   *vpl,
                                   window_width,
                                   x_offset_debug_led,
@@ -298,6 +300,21 @@ draw_line_status(int pos, signed char delta)
    int column,
        x, y;
    GC  tmp_gc;
+
+   if ((pos > no_of_hosts_visible) || (pos < 0))
+   {
+      (void)fprintf(stderr,
+                    "Invalid position (pos=%d no_of_hosts_visible=%d)\n",
+                    pos, no_of_hosts_visible);
+      return;
+   }
+   if ((vpl[pos] > no_of_hosts) || (vpl[pos] < 0))
+   {
+      (void)fprintf(stderr,
+                    "Invalid vpl position (vpl[%d]=%d no_of_hosts=%d)\n",
+                    pos, vpl[pos], no_of_hosts);
+      return;
+   }
 
    /* First locate position of x and y. */
    locate_xy_column(pos, -1, &x, &y, &column);
