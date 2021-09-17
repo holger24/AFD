@@ -44,6 +44,8 @@ DESCR__S_M3
  **   27.05.1997 H.Kiehl Created
  **   15.02.1999 H.Kiehl Multiple recipients.
  **   13.04.2002 Separator definable via SEPARATOR_CHAR.
+ **   15.09.2021 H.Kiehl If we use log_fd in check_log_updates() we never
+ **                      detect that the inode changes when logs are rotated.
  **
  */
 DESCR__E_M3
@@ -135,7 +137,7 @@ static char             *p_file_name,
                         log_file[MAX_PATH_LENGTH],
                         *p_log_file,
                         line[MAX_OUTPUT_LINE_LENGTH + SHOW_LONG_FORMAT + 1];
-static XmStringTable    str_list;
+static XmStringTable    str_list = NULL;
 static XtIntervalId     interval_id_log;
 
 /* Local function prototypes. */
@@ -368,11 +370,14 @@ get_data(void)
    }
    no_of_log_files = start_file_no - end_file_no + 1;
 
-   if ((str_list = (XmStringTable)XtMalloc(LINES_BUFFERED * sizeof(XmString))) == NULL)
+   if (str_list == NULL)
    {
-      (void)xrec(FATAL_DIALOG, "XtMalloc() error : %s (%s %d)",
-                 strerror(errno), __FILE__, __LINE__);
-      return;
+      if ((str_list = (XmStringTable)XtMalloc(LINES_BUFFERED * sizeof(XmString))) == NULL)
+      {
+         (void)xrec(FATAL_DIALOG, "XtMalloc() error : %s (%s %d)",
+                    strerror(errno), __FILE__, __LINE__);
+         return;
+      }
    }
 
    /* Allocate memory for item list. */
@@ -488,6 +493,7 @@ get_data(void)
       XtVaSetValues(special_button_w, XmNlabelString, xstr, NULL);
       XmStringFree(xstr);
       XtFree((char *)str_list);
+      str_list = NULL;
    }
    else
    {
@@ -532,12 +538,6 @@ extract_data(char *current_log_file, int file_no, int log_no)
       }
    }
 
-   /* Make sure there is data in the log file. */
-   if (stat_buf.st_size == 0)
-   {
-      return;
-   }
-
    if ((fd = open(current_log_file, O_RDONLY)) == -1)
    {
       (void)xrec(FATAL_DIALOG, "Failed to open() %s : %s (%s %d)",
@@ -548,6 +548,36 @@ extract_data(char *current_log_file, int file_no, int log_no)
    {
       (void)xrec(FATAL_DIALOG, "fdopen() error : %s (%s %d)",
                  strerror(errno), __FILE__, __LINE__);
+      return;
+   }
+
+   if ((log_no == 0) && ((end_time_val == -1) || (time(NULL) < end_time_val)))
+   {
+      /*
+       * NOTE: We need to have this opened twice so that the function
+       *       called with XtAppAddTimeOut() has its own file descriptor
+       *       position within this file.
+       */
+      if ((log_fd = open(current_log_file, O_RDONLY)) == -1)
+      {
+         (void)xrec(FATAL_DIALOG, "Failed to open() %s : %s (%s %d)",
+                    current_log_file, strerror(errno), __FILE__, __LINE__);
+         return;
+      }
+      if (lseek(log_fd, stat_buf.st_size, SEEK_SET) == (off_t)-1)
+      {
+         (void)xrec(FATAL_DIALOG, "Failed to lssek() in %s : %s (%s %d)",
+                    current_log_file, strerror(errno), __FILE__, __LINE__);
+         return;
+      }
+      log_offset = stat_buf.st_size;
+      log_inode = stat_buf.st_ino;
+      last_file_no = file_no;
+   }
+
+   /* Make sure there is data in the log file. */
+   if (stat_buf.st_size == 0)
+   {
       return;
    }
 #ifdef HAVE_MMAP
@@ -709,30 +739,6 @@ extract_data(char *current_log_file, int file_no, int log_no)
       return;
    }
 
-   if ((log_no == 0) && ((end_time_val == -1) || (time(NULL) < end_time_val)))
-   {
-      /*
-       * NOTE: We need to have this opened twice so that the function
-       *       called with XtAppAddTimeOut() has its own file descriptor
-       *       position within this file.
-       */
-      if ((log_fd = open(current_log_file, O_RDONLY)) == -1)
-      {
-         (void)xrec(FATAL_DIALOG, "Failed to open() %s : %s (%s %d)",
-                    current_log_file, strerror(errno), __FILE__, __LINE__);
-         return;
-      }
-      if (lseek(log_fd, stat_buf.st_size, SEEK_SET) == (off_t)-1)
-      {
-         (void)xrec(FATAL_DIALOG, "Failed to lssek() in %s : %s (%s %d)",
-                    current_log_file, strerror(errno), __FILE__, __LINE__);
-         return;
-      }
-      log_offset = stat_buf.st_size;
-      log_inode = stat_buf.st_ino;
-      last_file_no = file_no;
-   }
-
    /*
     * So, start and end are found. Now lets do the real search,
     * ie search for specific file names, recipient, etc.
@@ -818,22 +824,35 @@ check_log_updates(Widget w)
    {
       struct stat stat_buf;
 
-      if (fstat(log_fd, &stat_buf) == -1)
+      if (stat(log_file, &stat_buf) == -1)
       {
-         (void)xrec(FATAL_DIALOG, "fstat() error: %s (%s %d)\n",
-                    strerror(errno), __FILE__, __LINE__);
+         (void)xrec(FATAL_DIALOG, "Failed to stat() `%s' : %s (%s %d)\n",
+                    log_file, strerror(errno), __FILE__, __LINE__);
       }
       if (log_inode != stat_buf.st_ino)
       {
-         /*
-          * This seems from the point of programming the simplest. It
-          * is not efficient, but since the logs are rotated daily once
-          * seems an acceptable solution.
-          */
-         XmListDeleteAllItems(listbox_w);
-         get_data();
-         XmListSetBottomPos(listbox_w, 0);
-         return;
+         struct stat old_stat_buf;
+
+         /* Don't switch log to early. There might be some last data */
+         /* in the old file.                                         */
+         if (fstat(log_fd, &old_stat_buf) == -1)
+         {
+            (void)xrec(FATAL_DIALOG, "fstat() error : %s (%s %d)\n",
+                       strerror(errno), __FILE__, __LINE__);
+         }
+         if (old_stat_buf.st_size > log_offset)
+         {
+            stat_buf.st_size = old_stat_buf.st_size;
+         }
+         else
+         {
+            XtUnmanageChild(listbox_w);
+            XmListDeleteAllItems(listbox_w);
+            get_data();
+            XtManageChild(listbox_w);
+            XmListSetBottomPos(listbox_w, 0);
+            return;
+         }
       }
       if (stat_buf.st_size > log_offset)
       {
@@ -1005,6 +1024,7 @@ end_log_updates(void)
    XtVaSetValues(special_button_w, XmNlabelString, xstr, NULL);
    XmStringFree(xstr);
    XtFree((char *)str_list);
+   str_list = NULL;
 
    return;
 }
