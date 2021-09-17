@@ -594,9 +594,10 @@ info_click(Widget w, XtPointer client_data, XEvent *event)
          for (i = 0; i < id.count; i++)
          {
             free((void *)id.dbe[i].files);
+            id.dbe[i].files = NULL;
             if (id.dbe[i].soptions != NULL)
             {
-               free((void *)id.dbe[i].files);
+               free((void *)id.dbe[i].soptions);
                id.dbe[i].soptions = NULL;
             }
          }
