@@ -1,6 +1,6 @@
 /*
  *  fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -69,6 +69,8 @@ DESCR__S_M1
  **   07.03.2006 H.Kiehl Added group transfer limits.
  **   31.03.2008 H.Kiehl Check if qb->pos is still pointing to the correct
  **                      position in mdb.
+ **   15.09.2021 H.Kiehl Try be more aggressive when restarting jobs in
+ **                      error situation.
  **
  */
 DESCR__E_M1
@@ -1492,17 +1494,17 @@ system_log(DEBUG_SIGN, NULL, 0,
        * sf_xxx or gf_xxx PROCESS TERMINATED
        * ===================================
        *
-       * Everytime any child terminates it sends its PID via a well
+       * Every time any child terminates it sends its PID via a well
        * known FIFO to this process. If the PID is negative the child
        * asks the parent for more data to process.
        *
-       * This communication could be down more effectifly by catching
-       * the SIGCHLD signal everytime a child terminates. This was
+       * This communication could be down more effectively by catching
+       * the SIGCHLD signal every time a child terminates. This was
        * implemented in version 1.2.12-pre4. It just turned out that
        * this was not very portable since the behaviour differed
        * in combination with the select() system call. When using
        * SA_RESTART both Linux and Solaris would cause select() to
-       * EINTR, which is very usfull, but FTX and Irix did not
+       * EINTR, which is very useful, but FTX and Irix did not
        * do this. Then it could take up to 10 seconds before FD
        * caught its children. For this reason this was dropped. :-(
        */
@@ -2256,8 +2258,8 @@ system_log(DEBUG_SIGN, NULL, 0,
       }
 
       /*
-       * RECALCULTE TRANSFER RATE LIMIT
-       * ==============================
+       * RECALCULATE TRANSFER RATE LIMIT
+       * ===============================
        */
       if (((status - status_done) > 0) && (FD_ISSET(trl_calc_fd, &rset)))
       {
@@ -2624,12 +2626,12 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
             ((in_error_queue == NO) ||
              ((in_error_queue == NEITHER) &&
               (check_error_queue((qb[qb_pos].special_flag & FETCH_JOB) ? fra[qb[qb_pos].pos].dir_id : mdb[qb[qb_pos].pos].job_id, -1, current_time, fsa[fsa_pos].retry_interval) == NO)))) ||
-           ((fsa[fsa_pos].active_transfers == 0) && ((current_time - (fsa[fsa_pos].last_retry_time + fsa[fsa_pos].retry_interval)) >= 0))))
+           ((current_time - (fsa[fsa_pos].last_retry_time + fsa[fsa_pos].retry_interval)) >= 0)))
 #else
       if (((fsa[fsa_pos].host_status & STOP_TRANSFER_STAT) == 0) &&
           ((fsa[fsa_pos].error_counter == 0) ||
            (retry == YES) ||
-           ((fsa[fsa_pos].active_transfers == 0) && ((current_time - (fsa[fsa_pos].last_retry_time + fsa[fsa_pos].retry_interval)) >= 0))))
+           ((current_time - (fsa[fsa_pos].last_retry_time + fsa[fsa_pos].retry_interval)) >= 0)))
 #endif
       {
          /*
@@ -4000,7 +4002,7 @@ zombie_check(struct connection *p_con,
                case CONNECT_ERROR         : /* Failed to connect to remote host. */
                case CONNECTION_REFUSED_ERROR: /* Connection refused. */
 #ifdef WITH_SSL
-               case AUTH_ERROR            : /* SSL/TLS authentification error. */
+               case AUTH_ERROR            : /* SSL/TLS authentication error. */
 #endif
                case TYPE_ERROR            : /* Setting transfer type failed. */
                case DATA_ERROR            : /* Failed to send data command. */
@@ -5583,7 +5585,7 @@ get_free_disp_pos(int pos)
    }
 
    /*
-    * This is a good opertunity to check if the process for this
+    * This is a good opportunity to check if the process for this
     * host still exist. If not lets simply reset all relevant
     * parameters of the job_status structure.
     */
