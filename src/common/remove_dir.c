@@ -1,6 +1,6 @@
 /*
  *  remove_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -97,6 +97,21 @@ try_again2:
       {
          continue;
       }
+#ifdef LINUX
+      if (dirp->d_type == DT_DIR)
+      {
+         (void)closedir(dp);
+         if (addchar == YES)
+         {
+            ptr[-1] = 0;
+         }
+         else
+         {
+            *ptr = '\0';
+         }
+         return(FILE_IS_DIR);
+      }
+#endif
       (void)strcpy(ptr, dirp->d_name);
 #ifdef WITH_UNLINK_DELAY
 try_again:
