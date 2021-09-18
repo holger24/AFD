@@ -110,6 +110,7 @@ DESCR__E_M1
 #define ABNORMAL_TERM_CHECK_INTERVAL 45  /* seconds */
 #define FRA_QUEUE_CHECK_TIME         900 /* 15 minutes. */
 
+#define SHOW_MESSAGES_ARRIVING
 /* #define WITH_MULTI_FSA_CHECKS */
 /* #define _MACRO_DEBUG */
 /* #define _FDQUEUE_ */
@@ -1537,7 +1538,7 @@ system_log(DEBUG_SIGN, NULL, 0,
                pid = *(pid_t *)&fifo_buffer[bytes_done];
 
 #if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
-               maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+               maintainer_log(DEBUG_SIGN, NULL, 0,
 # if SIZEOF_PID_T == 4
                               "Termination/DATA pid=%d bytes_done=%d n=%d no_msg_queued=%d",
 # else
@@ -1588,7 +1589,7 @@ system_log(DEBUG_SIGN, NULL, 0,
                      {
                         start_new_process = NO;
 # if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
-                        maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+                        maintainer_log(DEBUG_SIGN, NULL, 0,
 #  if SIZEOF_PID_T == 4
                                        "Want's more data! pid=%d bytes_done=%d n=%d no_msg_queued=%d",
 #  else
@@ -1994,7 +1995,43 @@ system_log(DEBUG_SIGN, NULL, 0,
 #endif
                (void)memcpy(msg_buffer, &nmsg_fifo_buffer[bytes_done],
                             MAX_BIN_MSG_LENGTH);
-
+#if defined (_MAINTAINER_LOG) && defined (SHOW_MESSAGES_ARRIVING)
+               maintainer_log(DEBUG_SIGN, NULL, 0,
+# ifdef MULTI_FS_SUPPORT
+#  if SIZEOF_TIME_T == 4
+#   if SIZEOF_OFF_T == 4
+                              "FD msg: %x %x/%x/%lx_%x_%x %c %d %d %ld",
+#   else
+                              "FD msg: %x %x/%x/%lx_%x_%x %c %d %d %lld",
+#   endif
+#  else
+#   if SIZEOF_OFF_T == 4
+                              "FD msg: %x %x/%x/%llx_%x_%x %c %d %d %ld",
+#   else
+                              "FD msg: %x %x/%x/%llx_%x_%x %c %d %d %lld",
+#   endif
+#  endif
+                              (unsigned int)*dev,
+# else
+#  if SIZEOF_TIME_T == 4
+#   if SIZEOF_OFF_T == 4
+                              "FD msg: %x/%x/%lx_%x_%x %c %d %d %ld",
+#   else
+                              "FD msg: %x/%x/%lx_%x_%x %c %d %d %lld",
+#   endif
+#  else
+#   if SIZEOF_OFF_T == 4
+                              "FD msg: %x/%x/%llx_%x_%x %c %d %d %ld",
+#   else
+                              "FD msg: %x/%x/%llx_%x_%x %c %d %d %lld",
+#   endif
+#  endif
+# endif
+                              *job_id, *dir_no, (pri_time_t)*creation_time,
+                              *unique_number, *split_job_counter,
+                              *msg_priority, (int)*originator, *files_to_send,
+                              (pri_off_t)*file_size_to_send);
+#endif
                /* Queue the job order. */
                if (*msg_priority != 0)
                {
@@ -2147,7 +2184,7 @@ system_log(DEBUG_SIGN, NULL, 0,
                                     (pri_time_t)*creation_time,
                                     *unique_number, *split_job_counter);
 #if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
-                     maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+                     maintainer_log(DEBUG_SIGN, NULL, 0,
 # if SIZEOF_OFF_T == 4
                                     "%d: job_id= #%x  creation_time=%x  unique_number=%x  sjc=%x  files_to_send=%d  file_size_to_send=%ld [pos=%d no_msg_queued=%d]",
 # else
@@ -2738,7 +2775,7 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
                                      qb[qb_pos].msg_name, MAX_MSG_NAME_LENGTH);
 
 #if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
-                        maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+                        maintainer_log(DEBUG_SIGN, NULL, 0,
 # if SIZEOF_PID_T == 4
                                        "FD trying BURST: pid=%d job_id=%x msg_name=%s",
 # else
@@ -3015,7 +3052,7 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
                                                           qb_pos)) > 0)
                   {
 #if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
-                     maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+                     maintainer_log(DEBUG_SIGN, NULL, 0,
 # if SIZEOF_PID_T == 4
                                     "FD started process: pid=%d fsa_pos=%d fra_pos=%d protocol=%d msg_name=%s qb_pos=%d special_flag=%d connect_pos=%d pos=%d",
 # else
@@ -3654,7 +3691,7 @@ check_zombie_queue(time_t now, int qb_pos)
                                  &qb_pos, WNOHANG)) == NO)
       {
 #if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
-         maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+         maintainer_log(DEBUG_SIGN, NULL, 0,
 # if SIZEOF_PID_T == 4
                         "removing msg: pid=%d msg_name=%s faulty=%d",
 # else
@@ -3803,7 +3840,7 @@ zombie_check(struct connection *p_con,
 #endif
 
 #if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
-            maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+            maintainer_log(DEBUG_SIGN, NULL, 0,
 # if SIZEOF_PID_T == 4
                            "got zombie: pid=%d msg_name=%s exit_status=%d un2=%d",
 # else
@@ -4540,13 +4577,14 @@ zombie_check(struct connection *p_con,
          else
          {
 #if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
-            maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+            maintainer_log(DEBUG_SIGN, NULL, 0,
 # if SIZEOF_PID_T == 4
                            "got nothing: pid=%d msg_name=%s ret=%d",
 # else
                            "got nothing: pid=%lld msg_name=%s ret=%lld",
 # endif
-                           (pri_pid_t)p_con->pid, p_con->msg_name, (pri_pid_t)ret);
+                           (pri_pid_t)p_con->pid, p_con->msg_name,
+                           (pri_pid_t)ret);
 #endif
             faulty = NEITHER;
          }

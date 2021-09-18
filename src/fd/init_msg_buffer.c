@@ -74,6 +74,7 @@ DESCR__E_M3
 #include "fddefs.h"
 
 #define REMOVE_STEP_SIZE 50
+/* #define SHOW_MSG_CACHE */
 
 
 /* External global variables. */
@@ -133,7 +134,7 @@ init_msg_buffer(void)
    off_t        jid_struct_size;
    char         *ptr,
                 job_id_data_file[MAX_PATH_LENGTH];
-#ifdef _MAINTAINER_LOG
+#if defined (_MAINTAINER_LOG) && defined (SHOW_MSG_CACHE)
    char         tbuf1[20],
                 tbuf2[20];
 #endif
@@ -186,7 +187,7 @@ init_msg_buffer(void)
       qb = (struct queue_buf *)ptr;
    }
 
-#ifdef _MAINTAINER_LOG
+#if defined (_MAINTAINER_LOG) && defined (SHOW_MSG_CACHE)
    maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
                   "%s with %d elements before any modifications.",
                   MSG_CACHE_FILE, *no_msg_cached);
@@ -762,7 +763,7 @@ stat_again:
       free(rml);
    }
 
-#ifdef _MAINTAINER_LOG
+#if defined (_MAINTAINER_LOG) && defined (SHOW_MSG_CACHE)
    maintainer_log(INFO_SIGN, __FILE__, __LINE__,
                   "%s with %d elements after modifying it.",
                   MSG_CACHE_FILE, *no_msg_cached);
