@@ -247,6 +247,7 @@ struct sftp_connect_data
           struct stat            stat_buf;
           struct stored_messages sm[MAX_SFTP_REPLY_BUFFER];
           char                   debug;
+          char                   pipe_broken;
           unsigned char          posix_rename;  /* Used   */
           unsigned char          statvfs;       /* Unused */
           unsigned char          fstatvfs;      /* Unused */

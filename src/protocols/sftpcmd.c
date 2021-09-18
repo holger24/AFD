@@ -291,6 +291,7 @@ retry_connect:
       scd.file_handle        = NULL;
       scd.dir_handle         = NULL;
       scd.debug              = debug;
+      scd.pipe_broken        = NO;
 
       return(SUCCESS);
    }
@@ -349,6 +350,7 @@ retry_connect:
       }
       msg[4] = SSH_FXP_INIT;
       scd.debug = debug;
+      scd.pipe_broken = NO;
 
       if ((status = write_msg(msg, 9, __LINE__)) == SUCCESS)
       {
@@ -368,7 +370,8 @@ retry_connect:
                ui_var = get_xfer_uint(msg);
                if (ui_var <= MAX_SFTP_MSG_LENGTH)
                {
-                  if ((status = read_msg(msg, (int)ui_var, __LINE__)) == SUCCESS)
+                  if ((status = read_msg(msg, (int)ui_var,
+                                         __LINE__)) == SUCCESS)
                   {
 #ifdef WITH_TRACE
                      if (scd.debug == TRACE_MODE)
@@ -384,7 +387,8 @@ retry_connect:
                         scd.version = get_xfer_uint(&msg[1]);
                         if (scd.version > SSH_FILEXFER_VERSION)
                         {
-                           trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_connect", NULL,
+                           trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                     "sftp_connect", NULL,
                                      _("Server version (%u) is higher, downgrading to version we can handle (%d)."),
                                      scd.version, SSH_FILEXFER_VERSION);
                            scd.version = SSH_FILEXFER_VERSION;
@@ -406,7 +410,8 @@ retry_connect:
                            ptr = &msg[5];
                            while (ui_var > 0)
                            {
-                              if (((str_len = get_xfer_str(ptr, &p_xfer_str)) == 0) ||
+                              if (((str_len = get_xfer_str(ptr,
+                                                           &p_xfer_str)) == 0) ||
                                   (str_len > ui_var))
                               {
                                  break;
@@ -536,14 +541,16 @@ retry_connect:
                         {
                            /* Some error has occured. */
                            get_msg_str(&msg[9]);
-                           trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_connect", error_2_str(&msg[5]),
+                           trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                     "sftp_connect", error_2_str(&msg[5]),
                                      _("Received invalid reply (%d = %s) from SSH_FXP_INIT."),
                                      (int)msg[0], response_2_str(msg[0]));
                            status = get_xfer_uint(&msg[5]);
                         }
                         else
                         {
-                           trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_connect", NULL,
+                           trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                     "sftp_connect", NULL,
                                      _("Received invalid reply (%d = %s) from SSH_FXP_INIT."),
                                      (int)msg[0], response_2_str(msg[0]));
                            status = INCORRECT;
@@ -553,7 +560,8 @@ retry_connect:
                }
                else
                {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_connect", NULL,
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                            "sftp_connect", NULL,
                             _("Received message is %u bytes, can only handle %d bytes."),
                             ui_var, MAX_SFTP_MSG_LENGTH);
                   status = INCORRECT;
@@ -571,6 +579,11 @@ retry_connect:
                  }
               }
       }
+      else if (status == EPIPE)
+           {
+              msg_str[0] = '\0';
+              scd.pipe_broken = YES;
+           }
    }
 
    return(status);
@@ -694,6 +707,11 @@ sftp_pwd(void)
               status = SUCCESS;
            }
    }
+   else if (status == EPIPE)
+        {
+           msg_str[0] = '\0';
+           scd.pipe_broken = YES;
+        }
 
    return(status);
 }
@@ -902,6 +920,11 @@ retry_cd:
               status = SUCCESS;
            }
    }
+   else if (status == EPIPE)
+        {
+           msg_str[0] = '\0';
+           scd.pipe_broken = YES;
+        }
 
    return(status);
 }
@@ -1091,6 +1114,11 @@ sftp_stat(char *filename, struct stat *p_stat_buf)
               status = SUCCESS;
            }
    }
+   else if (status == EPIPE)
+        {
+           msg_str[0] = '\0';
+           scd.pipe_broken = YES;
+        }
 
    return(status);
 }
@@ -1254,14 +1282,16 @@ sftp_set_file_time(char *filename, time_t mtime, time_t atime)
             {
                /* Some error has occured. */
                get_msg_str(&msg[9]);
-               trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_set_file_time", NULL,
+               trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                         "sftp_set_file_time", NULL,
                          "%s", error_2_str(&msg[5]));
                status = get_xfer_uint(&msg[5]);
             }
          }
          else
          {
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_set_file_time", NULL,
+            trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                      "sftp_set_file_time", NULL,
                       _("Expecting %d (SSH_FXP_STATUS) but got %d (%s) as reply."),
                       SSH_FXP_STATUS, (int)msg[0], response_2_str(msg[0]));
             msg_str[0] = '\0';
@@ -1273,6 +1303,11 @@ sftp_set_file_time(char *filename, time_t mtime, time_t atime)
               status = SUCCESS;
            }
    }
+   else if (status == EPIPE)
+        {
+           msg_str[0] = '\0';
+           scd.pipe_broken = YES;
+        }
 
    return(status);
 }
@@ -1539,13 +1574,14 @@ sftp_open_file(int    openmode,
               {
                  /* Some error has occured. */
                  get_msg_str(&msg[9]);
-                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_open_file", NULL,
-                           "%s", error_2_str(&msg[5]));
+                 trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                           "sftp_open_file", NULL, "%s", error_2_str(&msg[5]));
                  status = get_xfer_uint(&msg[5]);
               }
               else
               {
-                 trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_open_file", NULL,
+                 trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                           "sftp_open_file", NULL,
                            _("Expecting %d (SSH_FXP_HANDLE) but got %d (%s) as reply."),
                            SSH_FXP_HANDLE, (int)msg[0], response_2_str(msg[0]));
                  msg_str[0] = '\0';
@@ -1556,7 +1592,8 @@ sftp_open_file(int    openmode,
            {
               if ((scd.file_handle = malloc(5)) == NULL)
               {
-                 trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_open_file", NULL,
+                 trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                           "sftp_open_file", NULL,
                            _("Failed to malloc() 5 bytes : %s"),
                            strerror(errno));
                  msg_str[0] = '\0';
@@ -1584,6 +1621,11 @@ sftp_open_file(int    openmode,
               status = SUCCESS;
            }
    }
+   else if (status == EPIPE)
+        {
+           msg_str[0] = '\0';
+           scd.pipe_broken = YES;
+        }
 
    return(status);
 }
@@ -1700,13 +1742,14 @@ sftp_open_dir(char *dirname)
               {
                  /* Some error has occured. */
                  get_msg_str(&msg[9]);
-                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_open_dir", NULL,
-                           "%s", error_2_str(&msg[5]));
+                 trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                           "sftp_open_dir", NULL, "%s", error_2_str(&msg[5]));
                  status = get_xfer_uint(&msg[5]);
               }
               else
               {
-                 trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_open_dir", NULL,
+                 trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                           "sftp_open_dir", NULL,
                            _("Expecting %d (SSH_FXP_HANDLE) but got %d (%s) as reply."),
                            SSH_FXP_HANDLE, (int)msg[0], response_2_str(msg[0]));
                  msg_str[0] = '\0';
@@ -1719,6 +1762,11 @@ sftp_open_dir(char *dirname)
               status = SUCCESS;
            }
    }
+   else if (status == EPIPE)
+        {
+           msg_str[0] = '\0';
+           scd.pipe_broken = YES;
+        }
 
    return(status);
 }
@@ -1758,7 +1806,8 @@ sftp_close_file(void)
                            __FILE__, __LINE__, NO);
       }
 #endif
-      if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.file_handle_length), __LINE__)) == SUCCESS)
+      if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.file_handle_length),
+                              __LINE__)) == SUCCESS)
       {
          if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
          {
@@ -1768,14 +1817,16 @@ sftp_close_file(void)
                {
                   /* Some error has occured. */
                   get_msg_str(&msg[9]);
-                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_close_file", NULL,
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                            "sftp_close_file", NULL,
                             "%s", error_2_str(&msg[5]));
                   status = get_xfer_uint(&msg[5]);
                }
             }
             else
             {
-               trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_close_file", NULL,
+               trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "sftp_close_file", NULL,
                          _("Expecting %d (SSH_FXP_STATUS) but got %d (%s) as reply."),
                          SSH_FXP_STATUS, (int)msg[0], response_2_str(msg[0]));
                msg_str[0] = '\0';
@@ -1787,6 +1838,11 @@ sftp_close_file(void)
                  status = SUCCESS;
               }
       }
+      else if (status == EPIPE)
+           {
+              msg_str[0] = '\0';
+              scd.pipe_broken = YES;
+           }
    }
 
    /*
@@ -1807,6 +1863,11 @@ sftp_close_dir(void)
 {
    int status;
 
+   if (scd.pipe_broken == YES)
+   {
+      return(EPIPE);
+   }
+
    /*
     * byte   SSH_FXP_CLOSE
     * uint32 request_id
@@ -1825,7 +1886,8 @@ sftp_close_dir(void)
                         __FILE__, __LINE__, NO);
    }
 #endif
-   if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.dir_handle_length), __LINE__)) == SUCCESS)
+   if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.dir_handle_length),
+                           __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
       {
@@ -1854,6 +1916,11 @@ sftp_close_dir(void)
               status = SUCCESS;
            }
    }
+   else if (status == EPIPE)
+        {
+           msg_str[0] = '\0';
+           scd.pipe_broken = YES;
+        }
 
    /*
     * Regardless if an error has occurred, we may not try to reuse
@@ -1954,7 +2021,8 @@ sftp_mkdir(char *directory, mode_t dir_mode)
       msg_str[0] = '\0';
    }
 #endif
-   if ((status = write_msg(msg, (4 + 1 + 4 + 4 + status + 4 + attr_len), __LINE__)) == SUCCESS)
+   if ((status = write_msg(msg, (4 + 1 + 4 + 4 + status + 4 + attr_len),
+                           __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
       {
@@ -1966,7 +2034,8 @@ sftp_mkdir(char *directory, mode_t dir_mode)
                {
                   if ((status = sftp_chmod(directory, dir_mode)) != SUCCESS)
                   {
-                     trans_log(WARN_SIGN, __FILE__, __LINE__, "sftp_mkdir", NULL,
+                     trans_log(WARN_SIGN, __FILE__, __LINE__,
+                               "sftp_mkdir", NULL,
                                _("Failed to change mode of directory `%s' to %d (%d)"),
                                directory, dir_mode, status);
 
@@ -1998,6 +2067,11 @@ sftp_mkdir(char *directory, mode_t dir_mode)
               status = SUCCESS;
            }
    }
+   else if (status == EPIPE)
+        {
+           msg_str[0] = '\0';
+           scd.pipe_broken = YES;
+        }
 
    return(status);
 }
@@ -2176,7 +2250,8 @@ retry_move:
                      }
                      else
                      {
-                        trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_move", NULL,
+                        trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                  "sftp_move", NULL,
                                   _("Hmm, something wrong here bailing out."));
                         msg_str[0] = '\0';
                         status = INCORRECT;
@@ -2216,6 +2291,11 @@ retry_move:
               status = SUCCESS;
            }
    }
+   else if (status == EPIPE)
+        {
+           msg_str[0] = '\0';
+           scd.pipe_broken = YES;
+        }
 
    return(status);
 }
@@ -2250,7 +2330,8 @@ sftp_write(char *block, int size)
                         __FILE__, __LINE__, YES);
    }
 #endif
-   if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.file_handle_length + 8 + 4 + size), __LINE__)) == SUCCESS)
+   if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.file_handle_length +
+                                 8 + 4 + size), __LINE__)) == SUCCESS)
    {
       if ((scd.pending_write_counter != -1) &&
           (scd.pending_write_counter < scd.max_pending_writes))
@@ -2294,6 +2375,11 @@ sftp_write(char *block, int size)
               }
       }
    }
+   else if (status == EPIPE)
+        {
+           msg_str[0] = '\0';
+           scd.pipe_broken = YES;
+        }
 
    return(status);
 }
@@ -2328,7 +2414,8 @@ sftp_read(char *block, int size)
                         __FILE__, __LINE__, YES);
    }
 #endif
-   if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.file_handle_length + 8 + 4), __LINE__)) == SUCCESS)
+   if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.file_handle_length +
+                                 8 + 4), __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
       {
@@ -2373,8 +2460,8 @@ sftp_read(char *block, int size)
                  {
                     /* Some error has occured. */
                     get_msg_str(&msg[9]);
-                    trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_read", NULL,
-                              "%s", error_2_str(&msg[5]));
+                    trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                              "sftp_read", NULL, "%s", error_2_str(&msg[5]));
                     status = INCORRECT;
                  }
               }
@@ -2392,6 +2479,11 @@ sftp_read(char *block, int size)
               status = SUCCESS;
            }
    }
+   else if (status == EPIPE)
+        {
+           msg_str[0] = '\0';
+           scd.pipe_broken = YES;
+        }
 
    return(status);
 }
@@ -2515,10 +2607,15 @@ sftp_multi_read_dispatch(void)
          }
          else
          {
+            if (status == EPIPE)
+            {
+               msg_str[0] = '\0';
+               scd.pipe_broken = YES;
+            }
             break;
          }
       }
-      if (rest > 0)
+      if ((rest > 0) && (scd.pipe_broken == NO))
       {
          scd.pending_id_end_pos = 0;
          for (i = 0; i < rest; i++)
@@ -2548,8 +2645,9 @@ sftp_multi_read_dispatch(void)
                                  scd.blocksize, __FILE__, __LINE__, YES);
             }
 #endif
-            if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.file_handle_length +
-                                          8 + 4), __LINE__)) == SUCCESS)
+            if ((status = write_msg(msg,
+                                    (4 + 1 + 4 + 4 + scd.file_handle_length +
+                                     8 + 4), __LINE__)) == SUCCESS)
             {
                scd.pending_read_id[i] = scd.request_id;
                scd.file_offset += scd.blocksize;
@@ -2558,6 +2656,11 @@ sftp_multi_read_dispatch(void)
             }
             else
             {
+               if (status == EPIPE)
+               {
+                  msg_str[0] = '\0';
+                  scd.pipe_broken = YES;
+               }
                break;
             }
          }
@@ -2618,7 +2721,8 @@ sftp_multi_read_catch(char *buffer)
              ((ui_var < scd.blocksize) &&
               (scd.reads_todo != (scd.reads_done + 1))))
          {
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_multi_read_catch", NULL,
+            trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                      "sftp_multi_read_catch", NULL,
                       _("Expecting %d bytes, but received %u bytes. (reads_todo=%d reads_done=%d)"),
                       scd.blocksize, ui_var, scd.reads_todo, scd.reads_done);
             scd.file_offset -= scd.blocksize;
@@ -2666,14 +2770,16 @@ sftp_multi_read_catch(char *buffer)
               {
                  /* Some error has occured. */
                  get_msg_str(&msg[9]);
-                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_multi_read_catch", NULL,
+                 trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                           "sftp_multi_read_catch", NULL,
                            "%s", error_2_str(&msg[5]));
                  status = INCORRECT;
               }
            }
            else
            {
-              trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_multi_read_catch", NULL,
+              trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                        "sftp_multi_read_catch", NULL,
                         _("Expecting %d (SSH_FXP_DATA) but got %d (%s) as reply."),
                         SSH_FXP_DATA, (int)msg[0], response_2_str(msg[0]));
               msg_str[0] = '\0';
@@ -2759,9 +2865,9 @@ sftp_multi_read_discard(int report_pending_reads)
 
       if (report_pending_reads == YES)
       {
-         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_multi_read_discard", NULL,
-                   "Pending read counter is still %d!?",
-                   scd.reads_queued);
+         trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                   "sftp_multi_read_discard", NULL,
+                   "Pending read counter is still %d!?", scd.reads_queued);
       }
 
      if ((scd.pending_id_read_pos + scd.reads_queued) >= MAX_PENDING_READS)
@@ -2839,7 +2945,8 @@ sftp_readdir(char *name, struct stat *p_stat_buf)
                            __FILE__, __LINE__, NO);
       }
 #endif
-      if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.dir_handle_length), __LINE__)) == SUCCESS)
+      if ((status = write_msg(msg, (4 + 1 + 4 + 4 + scd.dir_handle_length),
+                              __LINE__)) == SUCCESS)
       {
          if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
          {
@@ -2863,14 +2970,16 @@ sftp_readdir(char *name, struct stat *p_stat_buf)
                   {
                      /* Some error has occured. */
                      get_msg_str(&msg[9]);
-                     trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_readdir", NULL,
+                     trans_log(DEBUG_SIGN, __FILE__, __LINE__,
+                               "sftp_readdir", NULL,
                                "%s", error_2_str(&msg[5]));
                      status = get_xfer_uint(&msg[5]);
                   }
                }
                else
                {
-                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "sftp_readdir", NULL,
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                            "sftp_readdir", NULL,
                             _("Expecting %d (SSH_FXP_NAME) but got %d (%s) as reply."),
                             SSH_FXP_NAME, (int)msg[0], response_2_str(msg[0]));
                   msg_str[0] = '\0';
@@ -2883,6 +2992,11 @@ sftp_readdir(char *name, struct stat *p_stat_buf)
                  return(SUCCESS);
               }
       }
+      else if (status == EPIPE)
+           {
+              msg_str[0] = '\0';
+              scd.pipe_broken = YES;
+           }
       if (status != SUCCESS)
       {
          return(status);
@@ -3051,6 +3165,11 @@ sftp_dele(char *filename)
               status = SUCCESS;
            }
    }
+   else if (status == EPIPE)
+        {
+           msg_str[0] = '\0';
+           scd.pipe_broken = YES;
+        }
 
    return(status);
 }
@@ -3161,7 +3280,8 @@ sftp_chmod(char *filename, mode_t mode)
       msg_str[0] = '\0';
    }
 #endif
-   if ((status = write_msg(msg, 4 + 1 + 4 + 4 + status + 4 + 4, __LINE__)) == SUCCESS)
+   if ((status = write_msg(msg, 4 + 1 + 4 + 4 + status + 4 + 4,
+                           __LINE__)) == SUCCESS)
    {
       if ((status = get_reply(scd.request_id, __LINE__)) == SUCCESS)
       {
@@ -3190,6 +3310,11 @@ sftp_chmod(char *filename, mode_t mode)
               status = SUCCESS;
            }
    }
+   else if (status == EPIPE)
+        {
+           msg_str[0] = '\0';
+           scd.pipe_broken = YES;
+        }
 
    return(status);
 }
@@ -3242,7 +3367,7 @@ sftp_quit(void)
       free(scd.file_handle);
       scd.file_handle = NULL;
    }
-   if (scd.dir_handle != NULL)
+   if ((scd.dir_handle != NULL) && (scd.pipe_broken == NO))
    {
       (void)sftp_close_dir();
    }
@@ -3407,7 +3532,8 @@ retry:
                {
                   if ((scd.sm[scd.stored_replies].sm_buffer = malloc(msg_length)) == NULL)
                   {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_reply", NULL,
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                               "get_reply", NULL,
                                _("Unable to malloc() %u bytes [%d] : %s"),
                                msg_length, line, strerror(errno));
                      reply = INCORRECT;
@@ -3528,7 +3654,8 @@ get_write_reply(unsigned int id, int line)
                      {
                         if (scd.stored_replies == MAX_SFTP_REPLY_BUFFER)
                         {
-                           trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_write_reply", NULL,
+                           trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                     "get_write_reply", NULL,
                                      _("Only able to queue %d replies, try increase MAX_SFTP_REPLY_BUFFER and recompile. [%d]"),
                                      MAX_SFTP_REPLY_BUFFER, line);
                            reply = INCORRECT;
@@ -3537,7 +3664,8 @@ get_write_reply(unsigned int id, int line)
                         {
                            if ((scd.sm[scd.stored_replies].sm_buffer = malloc(msg_length)) == NULL)
                            {
-                              trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_write_reply", NULL,
+                              trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                                        "get_write_reply", NULL,
                                         _("Unable to malloc() %u bytes [%d] : %s"),
                                         msg_length, line, strerror(errno));
                               reply = INCORRECT;
@@ -3567,7 +3695,8 @@ get_write_reply(unsigned int id, int line)
             }
             else
             {
-               trans_log(ERROR_SIGN, __FILE__, __LINE__, "get_write_reply", NULL,
+               trans_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "get_write_reply", NULL,
                          _("Received message is %u bytes, can only handle %d bytes. [%d]"),
                          msg_length, MAX_SFTP_MSG_LENGTH, line);
                reply = INCORRECT;
