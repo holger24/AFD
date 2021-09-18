@@ -1,6 +1,6 @@
 /*
  *  check_file_dir.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -46,6 +46,9 @@ DESCR__S_M3
  **   08.04.1998 H.Kiehl Created
  **   16.04.2002 H.Kiehl Improve speed when inserting new jobs in queue.
  **   01.03.2008 H.Kiehl Moved from fd to dir_check.
+ **   18.09.2021 H.Kiehl Tell user when we omit directories due to too many
+ **                      links.
+ **                      Make use of linux readdir() d_type to avoid stat().
  **
  */
 DESCR__E_M3
@@ -246,7 +249,10 @@ check_jobs(void)
 {
    int           i,
                  jd_pos;
-   unsigned int  job_id;
+   unsigned int  job_id,
+                 max_nlinks_job_id,
+                 max_nlinks_reached = 0;
+   nlink_t       max_nlinks = 0;
    char          *p_dir_no,
                  *p_job_id,
                  *ptr;
@@ -285,7 +291,11 @@ check_jobs(void)
    errno = 0;
    while ((dirp = readdir(dp)) != NULL)
    {
+#ifdef LINUX
+      if ((dirp->d_name[0] != '.') && (dirp->d_type == DT_DIR))
+#else
       if (dirp->d_name[0] != '.')
+#endif
       {
          (void)strcpy(ptr, dirp->d_name);
          job_id = (unsigned int)strtoul(ptr, (char **)NULL, 16);
@@ -406,9 +416,15 @@ check_jobs(void)
                                           errno = 0;
                                           while ((dir_no_dirp = readdir(dir_no_dp)) != NULL)
                                           {
+#ifdef LINUX
+                                             if ((dir_no_dirp->d_name[0] != '.') &&
+                                                 (dir_no_dirp->d_type == DT_DIR))
+#else
                                              if (dir_no_dirp->d_name[0] != '.')
+#endif
                                              {
                                                 (void)strcpy(p_dir_no, dir_no_dirp->d_name);
+#ifndef LINUX
                                                 if (stat(file_dir, &stat_buf) == -1)
                                                 {
                                                    if (errno != ENOENT)
@@ -424,6 +440,7 @@ check_jobs(void)
                                                 {
                                                    if (S_ISDIR(stat_buf.st_mode))
                                                    {
+#endif
 #ifdef MULTI_FS_SUPPORT
                                                       if (message_in_queue(str_dev, str_dev_length, ptr) == NO)
 #else
@@ -541,8 +558,10 @@ check_jobs(void)
                                                             }
                                                          }
                                                       }
+#ifndef LINUX
                                                    }
                                                 }
+#endif
                                              }
                                              errno = 0;
                                           }
@@ -562,6 +581,15 @@ check_jobs(void)
                                                         job_id);
                                           }
                                        }
+                                    }
+                                    else
+                                    {
+                                       if (stat_buf.st_nlink > max_nlinks)
+                                       {
+                                          max_nlinks = stat_buf.st_nlink;
+                                          max_nlinks_job_id = job_id;
+                                       }
+                                       max_nlinks_reached++;
                                     }
                                  }
                               }
@@ -602,6 +630,18 @@ check_jobs(void)
       system_log(ERROR_SIGN, __FILE__, __LINE__,
                  _("Failed to closedir() `%s' : %s"),
                  file_dir, strerror(errno));
+   }
+
+   if (max_nlinks_reached > 0)
+   {
+      system_log(DEBUG_SIGN, __FILE__, __LINE__,
+#if SIZEOF_NLINK_T > 4
+                 _("Did not check %u job directories because of more then %d links (max=%lld #%x)"),
+#else
+                 _("Did not check %u job directories because of more then %d links (max=%lld #%x)"),
+#endif
+                 max_nlinks_reached, MAX_CHECK_FILE_DIRS,
+                 (pri_nlink_t)max_nlinks, max_nlinks_job_id);
    }
 
    return;

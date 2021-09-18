@@ -43,7 +43,7 @@
                                         /* specified, assume this value. */
 
 /* Definitions of maximum values. */
-#define MAX_CHECK_FILE_DIRS        152  /* FD should only check the file */
+#define MAX_CHECK_FILE_DIRS        152  /* AMG should only check the file*/
                                         /* directory if it is less then  */
                                         /* this value. Don't forget to   */
                                         /* add 2 for "." and "..".       */
@@ -464,14 +464,14 @@ struct dir_data
                                             /* be scanned, instead look  */
                                             /* for the exact files from  */
                                             /* [files] entry. This is    */
-                                            /* currently only usefull for*/
+                                            /* currently only useful for */
                                             /* HTTP, where directory     */
                                             /* listing is not supported  */
                                             /* or wanted.                */
           unsigned char url_creates_file_name;/* The given URL creates   */
                                             /* the file name when the    */
                                             /* request is issued. This   */
-                                            /* is currently only usefull */
+                                            /* is currently only useful  */
                                             /* for HTTP.                 */
           unsigned char bucketname_in_path; /* The bucketname is at the  */
                                             /* begining of the path.     */
@@ -510,7 +510,7 @@ struct dir_data
           unsigned int  in_dc_flag;         /* Flag to indicate which of */
                                             /* the options have been     */
                                             /* stored in DIR_CONFIG. This*/
-                                            /* is usefull for restoring  */
+                                            /* is useful for restoring   */
                                             /* the DIR_CONFIG from       */
                                             /* scratch.                  */
           unsigned int  accumulate;         /* How many files need to    */
