@@ -1,6 +1,6 @@
 /*
  *  log_callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ DESCR__E_M3
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>                 /* exit()                            */
+#include <ctype.h>                  /* isxdigit()                        */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -149,45 +150,68 @@ check_selection(Widget w, XtPointer client_data, XtPointer call_data)
       if (((selected_str[0] == '#') || (selected_str[0] == '@')) &&
           (selected_str[1] != '\0'))
       {
-         int  offset;
-         char *args[12],
-              progname[MAX_PROCNAME_LENGTH + 1];
+         int gotcha = YES,
+             i = 1;
 
-         args[0] = progname;
-         args[1] = "-f";
-         args[2] = font_name;
-         args[3] = WORK_DIR_ID;
-         args[4] = p_work_dir;
-         args[6] = &selected_str[1];
-         if (fake_user[0] != '\0')
+         while ((i < (MAX_INT_HEX_LENGTH + 1)) && (selected_str[i] != '\0'))
          {
-            args[7] = "-u";
-            args[8] = fake_user;
-            offset = 9;
+            if (isxdigit((int)selected_str[i]) == 0)
+            {
+               if (!((selected_str[i] == ')') && (i > 2)))
+               {
+                  gotcha = NO;
+                  break;
+               }
+            }
+            i++;
          }
-         else
+         if ((i < 2) || (i > MAX_INT_HEX_LENGTH))
          {
-            offset = 7;
+            gotcha = NO;
          }
-         if (profile[0] != '\0')
+
+         if (gotcha == YES)
          {
-            args[offset] = "-p";
-            args[offset + 1] = profile;
-            offset += 2;
+            int  offset;
+            char *args[12],
+                 progname[MAX_PROCNAME_LENGTH + 1];
+
+            args[0] = progname;
+            args[1] = "-f";
+            args[2] = font_name;
+            args[3] = WORK_DIR_ID;
+            args[4] = p_work_dir;
+            args[6] = &selected_str[1];
+            if (fake_user[0] != '\0')
+            {
+               args[7] = "-u";
+               args[8] = fake_user;
+               offset = 9;
+            }
+            else
+            {
+               offset = 7;
+            }
+            if (profile[0] != '\0')
+            {
+               args[offset] = "-p";
+               args[offset + 1] = profile;
+               offset += 2;
+            }
+            args[offset] = NULL;
+            (void)strcpy(progname, VIEW_DC);
+            if (selected_str[0] == '#')
+            {
+               /* Job ID */
+               args[5] = "-j";
+            }
+            else /* (selected_str[0] == '@') */
+            {
+               /* Directory ID */
+               args[5] = "-D";
+            }
+            make_xprocess(progname, progname, args, -1);
          }
-         args[offset] = NULL;
-         (void)strcpy(progname, VIEW_DC);
-         if (selected_str[0] == '#')
-         {
-            /* Job ID */
-            args[5] = "-j";
-         }
-         else /* (selected_str[0] == '@') */
-         {
-            /* Directory ID */
-            args[5] = "-D";
-         }
-         make_xprocess(progname, progname, args, -1);
       }
 
       XtFree(selected_str);
