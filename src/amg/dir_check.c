@@ -2888,6 +2888,14 @@ handle_dir(int                       dir_pos,
                                                               "Failed to rmdir() %s : %s",
                                                               fullname, strerror(errno));
                                                 }
+# ifdef _MAINTAINER_LOG
+                                                else
+                                                {
+                                                   maintainer_log(WARN_SIGN, __FILE__, __LINE__,
+                                                                  "Failed to rmdir() %s : %s",
+                                                                  fullname, strerror(errno));
+                                                }
+# endif
                                              }
                                           }
                                           free(tmp_file_name_buffer);
@@ -3275,6 +3283,14 @@ handle_dir(int                       dir_pos,
                           "Failed to rmdir() %s : %s",
                           src_file_dir, strerror(errno));
             }
+#ifdef _MAINTAINER_LOG
+            else
+            {
+               maintainer_log(WARN_SIGN, __FILE__, __LINE__,
+                              "Failed to rmdir() %s : %s",
+                              src_file_dir, strerror(errno));
+            }
+#endif
          }
          else
          {
