@@ -44,7 +44,7 @@ DESCR__S_M3
  **
  ** RETURN VALUES
  **   Returns NO if FD does not have any job in queue or if an error
- **   has occured. If there is a job in queue YES will be returned
+ **   has occurred. If there is a job in queue YES will be returned
  **   and if the job_id of the current job is not the same it will
  **   fill up the structure job db with the new data.
  **
@@ -181,7 +181,7 @@ check_burst_sf(char         *file_path,
             int diff_no_of_files_done;
 #endif
 
-            signal_caught = 0;
+            signal_caught = NO;
             newact.sa_handler = sig_alarm;
             sigemptyset(&newact.sa_mask);
             newact.sa_flags = 0;
@@ -354,12 +354,21 @@ check_burst_sf(char         *file_path,
             (void)alarm(0);
             if (gsf_check_fsa((struct job *)&db) != NEITHER)
             {
-               if (signal_caught != 2)
+               if (signal_caught == NO)
                {
                   if (fsa->job_status[(int)db.job_no].unique_name[2] == 5)
                   {
                      fsa->job_status[(int)db.job_no].unique_name[2] = 0;
                   }
+#ifdef _MAINTAINER_LOG
+                  else
+                  {
+                     maintainer_log(WARN_SIGN, __FILE__, __LINE__,
+                                    "unique_name unexpectedly modified to %s [%s]",
+                                    fsa->job_status[(int)db.job_no].unique_name,
+                                    db.msg_name);
+                  }
+#endif
                }
 
                /* Indicate FD we no longer want any signals. */
@@ -416,7 +425,7 @@ check_burst_sf(char         *file_path,
                return(NO);
             }
          }
-         else
+         else /* Not in keep connected loop. */
          {
             if ((fsa->jobs_queued > 0) &&
                 (fsa->active_transfers == fsa->allowed_transfers))
@@ -443,7 +452,7 @@ check_burst_sf(char         *file_path,
                              generic_fifo, strerror(errno));
                   return(NO);
                }
-               signal_caught = 0;
+               signal_caught = NO;
                pid = -db.my_pid;
 
                newact.sa_handler = sig_alarm;
@@ -518,12 +527,21 @@ check_burst_sf(char         *file_path,
                (void)alarm(0);
                if (gsf_check_fsa((struct job *)&db) != NEITHER)
                {
-                  if (signal_caught != 2)
+                  if (signal_caught == NO)
                   {
                      if (fsa->job_status[(int)db.job_no].unique_name[2] == 4)
                      {
                         fsa->job_status[(int)db.job_no].unique_name[2] = 0;
                      }
+#ifdef _MAINTAINER_LOG
+                     else
+                     {
+                        maintainer_log(WARN_SIGN, __FILE__, __LINE__,
+                                       "unique_name unexpectedly modified to %s [%s]",
+                                       fsa->job_status[(int)db.job_no].unique_name,
+                                       db.msg_name);
+                     }
+#endif
                   }
 
                   /* Indicate FD we no longer want any signals. */
@@ -557,7 +575,7 @@ check_burst_sf(char         *file_path,
                    (sigaction(SIGALRM, &oldact_alrm, NULL) < 0))
                {
                   system_log(WARN_SIGN, __FILE__, __LINE__,
-                             "Failed to reastablish a signal handler for SIGUSR1 and/or SIGALRM : %s",
+                             "Failed to reestablish a signal handler for SIGUSR1 and/or SIGALRM : %s",
                              strerror(errno));
                }
                if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0)
@@ -576,7 +594,7 @@ check_burst_sf(char         *file_path,
                              "close() error : %s", strerror(errno));
                }
 
-               if ((signal_caught == 1) &&
+               if ((signal_caught == NO) &&
                    (fsa->job_status[(int)db.job_no].unique_name[1] == '\0'))
                {
                   if (gsf_check_fsa((struct job *)&db) != NEITHER)
@@ -1060,14 +1078,10 @@ check_burst_sf(char         *file_path,
 static void                                                                
 sig_alarm(int signo)
 {
-   if (signo == SIGALRM)
+   if (signo == SIGUSR1)
    {
-      signal_caught = 1;
+      signal_caught = YES;
    }
-   else if (signo == SIGUSR1)
-        {
-           signal_caught = 2;
-        }
 
    return; /* Return to wakeup sigsuspend(). */
 }
