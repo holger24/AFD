@@ -442,7 +442,7 @@ main(int argc, char *argv[])
                if (fsa->debug > NORMAL_MODE)
                {
                   trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                               "Authentification successful.");
+                               "Authentication successful.");
                }
             }
          }
@@ -1396,7 +1396,7 @@ main(int argc, char *argv[])
                               if (fsa->debug > NORMAL_MODE)
                               {
                                  trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                                              "Authentification successful.");
+                                              "Authentication successful.");
                               }
                            }
                         }

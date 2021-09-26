@@ -685,7 +685,7 @@ main(int argc, char *argv[])
 #endif
 
             /*
-             * Check if this file is not currently being transfered!
+             * Check if this file is not currently being transferred!
              */
             for (j = 0; j < fsa->allowed_transfers; j++)
             {
@@ -1114,7 +1114,7 @@ main(int argc, char *argv[])
                      if (status == EPIPE)
                      {
                         /*
-                         * When pipe is broken no nead to send a QUIT
+                         * When pipe is broken no need to send a QUIT
                          * to the remote side since the connection has
                          * already been closed by the remote side.
                          */

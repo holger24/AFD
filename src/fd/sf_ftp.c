@@ -542,7 +542,7 @@ main(int argc, char *argv[])
                if (fsa->debug > NORMAL_MODE)
                {
                   trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                               "Authentification successful.");
+                               "Authentication successful.");
                }
             }
          }
@@ -1091,7 +1091,7 @@ main(int argc, char *argv[])
                if (fsa->debug > NORMAL_MODE)
                {
                   trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                               "Authentification successful.");
+                               "Authentication successful.");
                }
             }
          }
@@ -1184,7 +1184,7 @@ main(int argc, char *argv[])
 #endif
 
             /*
-             * Check if this file is not currently being transfered!
+             * Check if this file is not currently being transferred!
              */
             for (j = 0; j < fsa->allowed_transfers; j++)
             {
@@ -1867,7 +1867,7 @@ main(int argc, char *argv[])
                        (lposi(&msg_str[3], "closing control connection", 26) != NULL)))
                   {
                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                               "Failed to open remote file `%s' (stutus=%d data port=%d %s).",
+                               "Failed to open remote file `%s' (status=%d data port=%d %s).",
                                initial_filename, status, ftp_data_port(),
                                (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
                      exitflag = 0;
@@ -1876,7 +1876,7 @@ main(int argc, char *argv[])
                   else
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                               "Failed to open remote file `%s' (stutus=%d data port=%d %s).",
+                               "Failed to open remote file `%s' (status=%d data port=%d %s).",
                                initial_filename, status, ftp_data_port(),
                                (db.mode_flag & PASSIVE_MODE) ? "passive" : "active");
                      (void)ftp_quit();
@@ -1916,7 +1916,7 @@ main(int argc, char *argv[])
                   if (fsa->debug > NORMAL_MODE)
                   {
                      trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                                  "Authentification successful.");
+                                  "Authentication successful.");
                   }
                }
             }
@@ -2021,7 +2021,7 @@ main(int argc, char *argv[])
                      if (status == EPIPE)
                      {
                         /*
-                         * When pipe is broken no nead to send a QUIT
+                         * When pipe is broken no need to send a QUIT
                          * to the remote side since the connection has
                          * already been closed by the remote side.
                          */
@@ -2123,7 +2123,7 @@ main(int argc, char *argv[])
                   if (status == EPIPE)
                   {
                      /*
-                      * When pipe is broken no nead to send a QUIT
+                      * When pipe is broken no need to send a QUIT
                       * to the remote side since the connection has
                       * already been closed by the remote side.
                       */
@@ -2337,7 +2337,7 @@ main(int argc, char *argv[])
                         if (status == EPIPE)
                         {
                            /*
-                            * When pipe is broken no nead to send a QUIT
+                            * When pipe is broken no need to send a QUIT
                             * to the remote side since the connection has
                             * already been closed by the remote side.
                             */
@@ -2526,7 +2526,7 @@ main(int argc, char *argv[])
                   if (status == EPIPE)
                   {
                      /*
-                      * When pipe is broken no nead to send a QUIT
+                      * When pipe is broken no need to send a QUIT
                       * to the remote side since the connection has
                       * already been closed by the remote side.
                       */
@@ -2971,7 +2971,7 @@ main(int argc, char *argv[])
                   if (fsa->debug > NORMAL_MODE)
                   {
                      trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                                  "Authentification successful.");
+                                  "Authentication successful.");
                   }
                }
             }
@@ -3016,7 +3016,7 @@ main(int argc, char *argv[])
                if (status == EPIPE)
                {
                   /*
-                   * When pipe is broken no nead to send a QUIT
+                   * When pipe is broken no need to send a QUIT
                    * to the remote side since the connection has
                    * already been closed by the remote side.
                    */
@@ -3517,7 +3517,7 @@ try_again_unlink:
                 "Failed to disconnect from remote host (%d).", status);
 
       /*
-       * Since all files have been transfered successful it is
+       * Since all files have been transferred successful it is
        * not necessary to indicate an error in the status display.
        * It's enough when we say in the Transfer log that we failed
        * to log out.

@@ -628,7 +628,7 @@ main(int argc, char *argv[])
             if (fsa->debug > NORMAL_MODE)
             {
                trans_db_log(INFO_SIGN, __FILE__, __LINE__, msg_str,
-                            "SSL/TSL connection to server `%s' succesful.",
+                            "SSL/TSL connection to server `%s' successful.",
                             db.smtp_server);
             }
 
@@ -2585,7 +2585,7 @@ main(int argc, char *argv[])
             }
          } /* for (;;) */
 
-         /* Write boundary end if neccessary. */
+         /* Write boundary end if necessary. */
          if (((db.special_flag & ATTACH_ALL_FILES) == 0) ||
              (files_send == (files_to_send - 1)))
          {
@@ -3124,7 +3124,7 @@ try_again_unlink:
                 "Failed to disconnect from SMTP-server (%d).", status);
 
       /*
-       * Since all files have been transfered successful it is
+       * Since all files have been transferred successful it is
        * not necessary to indicate an error in the status display.
        * It's enough when we say in the Transfer log that we failed
        * to log out.
