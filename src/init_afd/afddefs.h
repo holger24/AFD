@@ -4506,6 +4506,7 @@ extern void         *attach_buf(char *, int *, size_t *, char *, mode_t, int),
                                   char *, ...),
                     url_decode(char *, char *),
                     url_encode(char *, char *),
+                    url_path_encode(char *, char *),
                     url_get_error(int, char *, int),
                     url_insert_password(char *, char *),
 #ifdef WITH_ERROR_QUEUE

@@ -50,11 +50,12 @@ DESCR__S_M3
  **   int url_compare(char *url1, char *url2)
  **   void url_get_error(int error_mask, char *error_str, int error_str_length)
  **   void url_encode(char *src, char *dst)
+ **   void url_path_encode(char *src, char *dst)
  **   void url_decode(char *src, char *dst)
  **
  ** DESCRIPTION
  **   The function url_evaluate() extracts individual elements of a
- **   URL and stores them in the given buffer if aupplied. The url must
+ **   URL and stores them in the given buffer if supplied. The url must
  **   have the following format:
  **
  **   <scheme>://[[<user>][;fingerprint=<SSH fingerprint>][;auth=<login|plain>;user=<user name>;][:<password>]@]<host>[:<port>][/<url-path>][;type=<i|a|d|n>][;server=<server name>][;protocol=<protocol number>][;auth=<basic|aws4-hmac-sha256>][;region=<region name>][;service=s3]
@@ -79,6 +80,9 @@ DESCR__S_M3
  **   url_encode() returns encoded string in dst. Note the size
  **   of dst should always be 3 times + 1 the size of src.
  **
+ **   url_path_encode() is similar to url_encode() and differs only
+ **   in allowing the path sign /.
+ **
  **   url_decode() returns decoded string in dst.
  **
  ** AUTHOR
@@ -101,6 +105,9 @@ DESCR__S_M3
  **                      These where taken from Fred Bulback at:
  **                      http://geekhideout.com/urlcode.shtml and
  **                      modified.
+ **   13.10.2021 H.Kiehl Added function url_path_encode(). This is
+ **                      similar to url_encode() and differs only in
+ **                      allowing the path sign /.
  **
  */
 DESCR__E_M3
@@ -3189,6 +3196,48 @@ url_encode(char *src, char *dst)
    {
       if ((isalnum(*p_src)) || (*p_src == '-') || (*p_src == '_') ||
           (*p_src == '.') || (*p_src == '~'))
+      {
+         *p_dst++ = *p_src;
+      }
+      else if (*p_src == ' ')
+           {
+              *p_dst++ = '+';
+           }
+           else
+           {
+              *p_dst = '%';
+              if ((unsigned char)*p_src > 15)
+              {
+                 *(p_dst + 1) = hex[((unsigned char)*p_src) >> 4];
+                 *(p_dst + 2) = hex[((unsigned char)*p_src) & 0x0F];
+              }
+              else
+              {
+                 *(p_dst + 1) = '0';
+                 *(p_dst + 2) = hex[(unsigned char)*p_src];
+              }
+              p_dst += 3;
+           }
+      p_src++;
+   }
+   *p_dst = '\0';
+
+   return;
+}
+
+
+/*$$$$$$$$$$$$$$$$$$$$$$$$$$ url_path_encode() $$$$$$$$$$$$$$$$$$$$$$$$$$*/
+void
+url_path_encode(char *src, char *dst)
+{
+   char *hex = "0123456789ABCDEF",
+        *p_dst = dst,
+        *p_src = src;
+
+   while (*p_src != '\0')
+   {
+      if ((isalnum(*p_src)) || (*p_src == '-') || (*p_src == '_') ||
+          (*p_src == '/') || (*p_src == '.') || (*p_src == '~'))
       {
          *p_dst++ = *p_src;
       }
