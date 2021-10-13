@@ -149,8 +149,8 @@ basic_authentication(struct http_message_reply *p_hmr)
 
 
 #ifdef WITH_SSL
-/*                                    cmd     target_dir                 filename                  parameter                                                             host:                              x-amz-content-sha256:                                  host;x-amz-content-sha256;x-amz-date */
-#define CANONICAL_REQUEST_CMD_LENGTH (8 + 1 + MAX_RECIPIENT_LENGTH + 1 + MAX_FILENAME_LENGTH + 1 + MAX_AWS4_PARAMETER_LENGTH + MAX_INT_LENGTH + MAX_FILENAME_LENGTH + 1 + 5 + MAX_REAL_HOSTNAME_LENGTH + 1 + 21 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1 + 11 + 16 + 2 + 52 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1 + 1)
+/*                                    cmd     target_dir                 filename                        parameter                                                             host:                              x-amz-content-sha256:                                  host;x-amz-content-sha256;x-amz-date */
+#define CANONICAL_REQUEST_CMD_LENGTH (8 + 1 + MAX_RECIPIENT_LENGTH + 1 + (3 * MAX_FILENAME_LENGTH) + 1 + MAX_AWS4_PARAMETER_LENGTH + MAX_INT_LENGTH + MAX_FILENAME_LENGTH + 1 + 5 + MAX_REAL_HOSTNAME_LENGTH + 1 + 21 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1 + 11 + 16 + 2 + 52 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1 + 1)
 #define STRING_2_SIGN_CMD_LENGTH     (16 + 1 + 16 + 1 + 8 + 1 + MAX_REAL_HOSTNAME_LENGTH + 1 + 15 + 1 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1)
 /*##################### aws4_cmd_authentication() #######################*/
 int
@@ -201,10 +201,14 @@ aws4_cmd_authentication(char                      *cmd,
       }
       else
       {
+         char file_name_encoded[(3 * MAX_FILENAME_LENGTH)];
+
+         url_encode(file_name, file_name_encoded);
          ret = snprintf(canonical_request, CANONICAL_REQUEST_CMD_LENGTH,
                         "%s\n/%s%s\n%s\nhost:%s\nx-amz-content-sha256:%s\nx-amz-date:%s\n\nhost;x-amz-content-sha256;x-amz-date\n%s",
-                        cmd, target_dir, file_name, parameter, p_hmr->hostname,
-                        SHA256_EMPTY_PAYLOAD, date_long, SHA256_EMPTY_PAYLOAD);
+                        cmd, target_dir, file_name_encoded, parameter,
+                        p_hmr->hostname, SHA256_EMPTY_PAYLOAD, date_long,
+                        SHA256_EMPTY_PAYLOAD);
       }
       if (ret >= CANONICAL_REQUEST_CMD_LENGTH)
       {
@@ -465,7 +469,7 @@ aws4_put_authentication(char                      *file_name,
                     string_2_sign_length;
       char          canonical_request[4 + 1 +                     /* PUT */
                                       MAX_RECIPIENT_LENGTH + 1 +  /* target_dir */
-                                      MAX_FILENAME_LENGTH + 2 +   /* file_name */
+                                      (3 * MAX_FILENAME_LENGTH) + 2 +   /* file_name */
                                       15 + MAX_OFF_T_LENGTH + 1 + /* content-length: */
                                       5 + MAX_REAL_HOSTNAME_LENGTH + 1 +  /* host: */
                                       21 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1 + /* x-amz-content-sha256: */
@@ -474,6 +478,7 @@ aws4_put_authentication(char                      *file_name,
                                       1],                         /* \0 */
                     canonical_request_hash_hex[SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1],
                     date_short[9],
+                    file_name_encoded[(3 * MAX_FILENAME_LENGTH)],
                     key[4 + MAX_USER_NAME_LENGTH + 1],
                     string_2_sign[16 + 1 + 16 + 1 + 8 + 1 + MAX_REAL_HOSTNAME_LENGTH + 1 + 15 + 1 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1];
       unsigned char result[SHA256_DIGEST_LENGTH];
@@ -481,14 +486,15 @@ aws4_put_authentication(char                      *file_name,
 
       (void)memcpy(date_short, date_long, 8);
       date_short[8] = '\0';
+      url_encode(file_name, file_name_encoded);
       (void)snprintf(canonical_request,
-                     4 + 1 + MAX_RECIPIENT_LENGTH + 1 + MAX_FILENAME_LENGTH + 2 + 15 + MAX_OFF_T_LENGTH + 1 + 5 + MAX_REAL_HOSTNAME_LENGTH + 1 + 21 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1 + 11 + 16 + 2 + 52 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1,
+                     4 + 1 + MAX_RECIPIENT_LENGTH + 1 + (3 * MAX_FILENAME_LENGTH) + 2 + 15 + MAX_OFF_T_LENGTH + 1 + 5 + MAX_REAL_HOSTNAME_LENGTH + 1 + 21 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1 + 11 + 16 + 2 + 52 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1,
 # if SIZEOF_OFF_T == 4
                      "PUT\n/%s%s\n\ncontent-length:%ld\nhost:%s\nx-amz-content-sha256:%s\nx-amz-date:%s\n\ncontent-length;host;x-amz-content-sha256;x-amz-date\n%s",
 # else
                      "PUT\n/%s%s\n\ncontent-length:%lld\nhost:%s\nx-amz-content-sha256:%s\nx-amz-date:%s\n\ncontent-length;host;x-amz-content-sha256;x-amz-date\n%s",
 # endif
-                     target_dir, file_name, (pri_off_t)file_size,
+                     target_dir, file_name_encoded, (pri_off_t)file_size,
                      p_hmr->hostname, file_content_hash_hex, date_long,
                      file_content_hash_hex);
 
