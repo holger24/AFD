@@ -3730,8 +3730,7 @@ clear_msg_str(void)
       {
          if (extra_msg[0] == '\0')
          {
-            (void)memcpy(msg_str, hmr.msg_header,
-                         hmr.header_length);
+            (void)memcpy(msg_str, hmr.msg_header, hmr.header_length);
          }
          else
          {
@@ -3742,8 +3741,14 @@ clear_msg_str(void)
       else
       {
          /* So we do not show any garbage. */
-         (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1,
-                        "%s", extra_msg);
+         (void)snprintf(msg_str, MAX_RET_MSG_LENGTH - 1, "%s", extra_msg);
+      }
+   }
+   else
+   {
+      if ((msg_str[0] == '\0') && (hmr.header_length > 0))
+      {
+         (void)memcpy(msg_str, hmr.msg_header, hmr.header_length);
       }
    }
 
