@@ -886,6 +886,7 @@ main(int argc, char *argv[])
                               files_to_retrieve_shown = tmp_val;
                            }
 #endif
+                           files_to_retrieve -= 1;
 
                            /* Total file size. */
                            if (tmp_rl.size > 0)
@@ -925,6 +926,7 @@ main(int argc, char *argv[])
                                       file_size_to_retrieve_shown = 0;
                                    }
 #endif
+                              file_size_to_retrieve -= tmp_rl.size;
                            }
                            else
                            {
