@@ -1,6 +1,6 @@
 /*
  *  remove_msg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -64,7 +64,11 @@ extern struct fileretrieve_status *fra;
 
 /*############################ remove_msg() #############################*/
 void
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+remove_msg(int qb_pos, int remove_only, char *file, int line)
+#else
 remove_msg(int qb_pos, int remove_only)
+#endif
 {
    if ((fra != NULL) && (qb[qb_pos].special_flag & FETCH_JOB) &&
        (qb[qb_pos].pos < no_of_dirs))
@@ -168,6 +172,23 @@ remove_msg(int qb_pos, int remove_only)
    }
    if (*no_msg_queued > 0)
    {
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+      if ((qb[qb_pos].special_flag & FETCH_JOB) == 0)
+      {
+         maintainer_log(DEBUG_SIGN, NULL, 0,
+# if SIZEOF_OFF_T == 4
+                        "del msg: %d %s %u %ld %d %u %d %d %d %.0f [%d] %s:%d",
+# else
+                        "del msg: %d %s %u %lld %d %u %d %d %d %.0f [%d] %s:%d",
+# endif
+                        qb_pos, qb[qb_pos].msg_name, qb[qb_pos].files_to_send,
+                        qb[qb_pos].file_size_to_send,
+                        (int)qb[qb_pos].msg_name[MAX_MSG_NAME_LENGTH - 1],
+                        qb[qb_pos].retries, qb[qb_pos].pos,
+                        qb[qb_pos].connect_pos, (int)qb[qb_pos].special_flag,
+                        qb[qb_pos].msg_number, *no_msg_queued, file, line);
+      }
+#endif
       if (qb_pos <= (*no_msg_queued - 1))
       {
          (void)memmove(&qb[qb_pos], &qb[qb_pos + 1],

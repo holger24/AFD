@@ -1,0 +1,40 @@
+
+
+
+
+fd.c
+
+if fsa[fsa_pos].job_status[i].unique_name[2] == 5
+   fsa[fsa_pos].job_status[i].file_name_in_use[MAX_FILENAME_LENGTH - 1] == 1
+   fsa[fsa_pos].job_status[i].unique_name[MAX_INT_HEX_LENGTH + 1] != 7
+
+   fsa[fsa_pos].job_status[i].unique_name = qb[qb_pos].msg_name
+
+   if fsa[fsa_pos].job_status[i].file_name_in_use[MAX_FILENAME_LENGTH - 1] == 1
+
+      kill(qb[exec_qb_pos].pid, SIGUSR1)
+
+
+
+sf_xxx.c
+
+fsa->job_status[(int)db.job_no].unique_name[1] = '\0';
+setup signal handler
+fsa->job_status[(int)db.job_no].unique_name[2] = 5;
+fsa->job_status[(int)db.job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] = 1;
+
+wait SIGUSR1 or SIGALRM
+if signal_caught == NO
+   if fsa->job_status[(int)db.job_no].unique_name[2] == 5
+      fsa->job_status[(int)db.job_no].unique_name[2] = 0
+
+fsa->job_status[(int)db.job_no].file_name_in_use[MAX_FILENAME_LENGTH - 1] = 2;
+
+if fsa->job_status[(int)db.job_no].unique_name[2] == 6
+   fsa->job_status[(int)db.job_no].unique_name[2] = 0
+
+
+if fsa->job_status[(int)db.job_no].unique_name[1] != '\0'
+   fsa->job_status[(int)db.job_no].unique_name[0] != '\0'
+   fsa->job_status[(int)db.job_no].unique_name[2] != '\0'
+   db.msg_name = fsa->job_status[(int)db.job_no].unique_name

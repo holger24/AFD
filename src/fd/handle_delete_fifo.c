@@ -1,6 +1,6 @@
 /*
  *  handle_delete_fifo.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -275,7 +275,11 @@ handle_delete_fifo(int delete_jobs_fd, size_t fifo_size, char *file_dir)
                      {
                         ABS_REDUCE(fsa_pos);
                      }
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+                     remove_msg(i, NO, "handle_delete_fifo.c", __LINE__);
+#else
                      remove_msg(i, NO);
+#endif
                      if (i < *no_msg_queued)
                      {
                         i--;
@@ -395,7 +399,11 @@ handle_delete_fifo(int delete_jobs_fd, size_t fifo_size, char *file_dir)
                           {
                              ABS_REDUCE(mdb[qb[i].pos].fsa_pos);
                           }
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+                          remove_msg(i, NO, "handle_delete_fifo.c", __LINE__);
+#else
                           remove_msg(i, NO);
+#endif
                           break;
                        }
                     } /* for (i = 0; i < *no_msg_queued; i++) */

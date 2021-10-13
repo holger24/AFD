@@ -124,18 +124,18 @@ static void                       log_data(char *,
 int
 get_file_names(char *file_path, off_t *file_size_to_send)
 {
-   int           files_not_send = 0;
-   off_t         file_size_not_send = 0;
 #ifdef WITH_DUP_CHECK
    int           dup_counter = 0;
    off_t         dup_counter_size = 0;
 #endif
    time_t        diff_time,
                  now;
-   int           files_to_send = 0,
+   int           files_not_send = 0,
+                 files_to_send = 0,
                  new_size,
                  offset;
-   off_t         *p_file_size;
+   off_t         file_size_not_send = 0,
+                 *p_file_size;
    time_t        *p_file_mtime;
    char          fullname[MAX_PATH_LENGTH],
                  *p_del_file_name,
@@ -177,13 +177,13 @@ get_file_names(char *file_path, off_t *file_size_to_send)
          if (*db.p_unique_name == '/')
          {
             int  i;
-            char str_num[MAX_INT_HEX_LENGTH + 1];
+            char str_num[MAX_TIME_T_HEX_LENGTH + 1];
 
             db.p_unique_name++;
             i = 0;
-            while ((*(db.p_unique_name + i) != '_') &&
-                   (*(db.p_unique_name + i) != '\0') &&
-                   (i < MAX_INT_HEX_LENGTH))
+            while ((i < MAX_TIME_T_HEX_LENGTH) &&
+                   (*(db.p_unique_name + i) != '_') &&
+                   (*(db.p_unique_name + i) != '\0'))
             {
                str_num[i] = *(db.p_unique_name + i);
                i++;
@@ -199,9 +199,9 @@ get_file_names(char *file_path, off_t *file_size_to_send)
             db.creation_time = (time_t)str2timet(str_num, NULL, 16);
             db.unl = i + 1;
             i = 0;
-            while ((*(db.p_unique_name + db.unl + i) != '_') &&
-                   (*(db.p_unique_name + db.unl + i) != '\0') &&
-                   (i < MAX_INT_HEX_LENGTH))
+            while ((i < MAX_INT_HEX_LENGTH) &&
+                   (*(db.p_unique_name + db.unl + i) != '_') &&
+                   (*(db.p_unique_name + db.unl + i) != '\0'))
             {
                str_num[i] = *(db.p_unique_name + db.unl + i);
                i++;
@@ -217,8 +217,8 @@ get_file_names(char *file_path, off_t *file_size_to_send)
             db.unique_number = (unsigned int)strtoul(str_num, NULL, 16);
             db.unl = db.unl + i + 1;
             i = 0;
-            while ((*(db.p_unique_name + db.unl + i) != '\0') &&
-                   (i < MAX_INT_HEX_LENGTH))
+            while ((i < MAX_INT_HEX_LENGTH) &&
+                   (*(db.p_unique_name + db.unl + i) != '\0'))
             {
                str_num[i] = *(db.p_unique_name + db.unl + i);
                i++;

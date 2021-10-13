@@ -32,6 +32,15 @@
 /* #define NEW_PWB */    /* Nothing new yet! */
 
 #define WITH_TIMEZONE 1
+#define _WITH_BURST_MISS_CHECK 1
+
+/*
+ * SF_BURST_ACK is not working because when in fd.c queue_burst_ack()
+ * msg_name is not updated during a burst. So with multiple burst the
+ * same msg_name gets stored to the ack_queue. Have not found a solution
+ * for this.
+ */
+/* #define SF_BURST_ACK 1 */
 
 /*
  * This enables extra checks when retrieving data. The only protocol
@@ -142,6 +151,11 @@ typedef long long           pri_time_t;
 typedef long                pri_ino_t;
 #else
 typedef long long           pri_ino_t;
+#endif
+#if SIZEOF_DEV_T == 4
+typedef long                pri_dev_t;
+#else
+typedef long long           pri_dev_t;
 #endif
 #if SIZEOF_PID_T == 4
 typedef int                 pri_pid_t;
@@ -1881,6 +1895,10 @@ typedef unsigned long       u_long_64;
 #define MSG_CACHE_FILE_LENGTH        (sizeof(MSG_CACHE_FILE) - 1)
 #define MSG_QUEUE_FILE               "/fd_msg_queue"
 #define MSG_QUEUE_FILE_LENGTH        (sizeof(MSG_QUEUE_FILE) - 1)
+#ifdef SF_BURST_ACK
+# define ACK_QUEUE_FILE              "/fd_ack_queue"
+# define ACK_QUEUE_FILE_LENGTH       (sizeof(ACK_QUEUE_FILE) - 1)
+#endif
 #ifdef WITH_ERROR_QUEUE
 # define ERROR_QUEUE_FILE            "/error_queue"
 #endif
@@ -1947,6 +1965,9 @@ typedef unsigned long       u_long_64;
 # define OT_FIN_FIFO                 "/ot_fin.fifo"
 #endif
 #define SF_FIN_FIFO                  "/sf_fin.fifo"
+#ifdef SF_BURST_ACK
+# define SF_BURST_ACK_FIFO           "/sf_burst_ack.fifo"
+#endif
 #define RETRY_FD_FIFO                "/retry_fd.fifo"
 #define FD_DELETE_FIFO               "/fd_delete.fifo"
 #define FD_WAKE_UP_FIFO              "/fd_wake_up.fifo"
@@ -3457,10 +3478,13 @@ struct job_id_stat
 #endif /* WHEN_WE_KNOW */
 
 /* Structure to hold a message of process FD. */
-#define MSG_QUE_BUF_SIZE 10000
-#define RESEND_JOB       2
-#define HELPER_JOB       4
-#define FETCH_JOB        8
+#define MSG_QUE_BUF_SIZE  10000
+#define RESEND_JOB        2
+#define HELPER_JOB        4
+#define FETCH_JOB         8
+#ifdef _WITH_BURST_MISS_CHECK
+# define QUEUED_FOR_BURST 16
+#endif
 struct queue_buf
        {
           double        msg_number;
@@ -3478,6 +3502,9 @@ struct queue_buf
           unsigned char special_flag;       /*+------+------------------+*/
                                             /*|Bit(s)|     Meaning      |*/
                                             /*+------+------------------+*/
+#ifdef _WITH_BURST_MISS_CHECK
+                                            /*| 5    | QUEUED_FOR_BURST |*/
+#endif
                                             /*| 4    | FETCH_JOB        |*/
                                             /*| 3    | HELPER_JOB       |*/
                                             /*| 2    | RESEND_JOB       |*/
@@ -3495,6 +3522,15 @@ struct queue_buf
                                             /* reach 0xffffffff.         */
 #endif
        };
+#ifdef SF_BURST_ACK
+#define ACK_QUE_BUF_SIZE  4000
+#define ACK_QUE_TIMEOUT   60                /* in seconds                */
+struct ack_queue_buf
+       {
+          time_t        insert_time;
+          char          msg_name[MAX_MSG_NAME_LENGTH];
+       };
+#endif
 
 /* The file mask structure is not a structure but a collection of */
 /* ints, unsigned ints and chars. See amg/lookup_file_mask_id.c   */

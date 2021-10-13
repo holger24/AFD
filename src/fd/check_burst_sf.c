@@ -98,6 +98,9 @@ static sig_atomic_t               signal_caught;
 
 /* Local function prototypes. */
 static void                       sig_alarm(int);
+#ifdef SF_BURST_ACK
+static void                       ack_burst(char *);
+#endif
 
 
 /*########################## check_burst_sf() ###########################*/
@@ -130,12 +133,18 @@ check_burst_sf(char         *file_path,
       struct sigaction newact,
                        oldact_alrm,
                        oldact_usr1;
+#ifdef SF_BURST_ACK
+      char             ack_msg_name[MAX_MSG_NAME_LENGTH];
+#endif
       struct job       *p_new_db;
 
       /*
        * First check if there are any jobs queued for this host.
        */
       in_keep_connected_loop = NO;
+#ifdef SF_BURST_ACK
+      ack_msg_name[0] = '\0';
+#endif
       if ((fsa->keep_connected > 0) &&
           ((fsa->special_flag & KEEP_CON_NO_SEND) == 0))
       {
@@ -360,15 +369,19 @@ check_burst_sf(char         *file_path,
                   {
                      fsa->job_status[(int)db.job_no].unique_name[2] = 0;
                   }
-#ifdef _MAINTAINER_LOG
                   else
                   {
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "unique_name unexpectedly modified to %s [%s]",
+                                fsa->job_status[(int)db.job_no].unique_name,
+                                db.msg_name);
+#ifdef _MAINTAINER_LOG
                      maintainer_log(WARN_SIGN, __FILE__, __LINE__,
                                     "unique_name unexpectedly modified to %s [%s]",
                                     fsa->job_status[(int)db.job_no].unique_name,
                                     db.msg_name);
-                  }
 #endif
+                  }
                }
 
                /* Indicate FD we no longer want any signals. */
@@ -402,7 +415,7 @@ check_burst_sf(char         *file_path,
                 (sigaction(SIGALRM, &oldact_alrm, NULL) < 0))
             {
                system_log(WARN_SIGN, __FILE__, __LINE__,
-                          "Failed to reastablish a signal handler for SIGUSR1 and/or SIGALRM : %s",
+                          "Failed to reestablish a signal handler for SIGUSR1 and/or SIGALRM : %s",
                           strerror(errno));
             }
             if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0)
@@ -498,7 +511,7 @@ check_burst_sf(char         *file_path,
                       (sigaction(SIGALRM, &oldact_alrm, NULL) < 0))
                   {
                      system_log(WARN_SIGN, __FILE__, __LINE__,
-                                "Failed to reastablish a signal handler for SIGUSR1 and/or SIGALRM : %s",
+                                "Failed to reestablish a signal handler for SIGUSR1 and/or SIGALRM : %s",
                                 strerror(errno));
                   }
                   if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0)
@@ -533,15 +546,19 @@ check_burst_sf(char         *file_path,
                      {
                         fsa->job_status[(int)db.job_no].unique_name[2] = 0;
                      }
-#ifdef _MAINTAINER_LOG
                      else
                      {
+                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                   "unique_name unexpectedly modified to %s [%s]",
+                                   fsa->job_status[(int)db.job_no].unique_name,
+                                   db.msg_name);
+#ifdef _MAINTAINER_LOG
                         maintainer_log(WARN_SIGN, __FILE__, __LINE__,
                                        "unique_name unexpectedly modified to %s [%s]",
                                        fsa->job_status[(int)db.job_no].unique_name,
                                        db.msg_name);
-                     }
 #endif
+                     }
                   }
 
                   /* Indicate FD we no longer want any signals. */
@@ -629,6 +646,13 @@ check_burst_sf(char         *file_path,
          if ((gsf_check_fsa((struct job *)&db) == YES) &&
              (db.fsa_pos == INCORRECT))
          {
+#ifdef SF_BURST_ACK
+            if (ret == YES)
+            {
+               ack_burst(db.msg_name);
+            }
+#endif
+
             /*
              * Host is no longer in FSA, so there is
              * no way we can communicate with FD.
@@ -669,6 +693,9 @@ check_burst_sf(char         *file_path,
              */
 #endif /* RETRIEVE_JOB_HACK */
 
+#ifdef SF_BURST_ACK
+            (void)memcpy(ack_msg_name, db.msg_name, MAX_MSG_NAME_LENGTH);
+#endif
             (void)memcpy(db.msg_name, 
                          fsa->job_status[(int)db.job_no].unique_name,
                          MAX_MSG_NAME_LENGTH);
@@ -681,6 +708,12 @@ check_burst_sf(char         *file_path,
                {
                   system_log(ERROR_SIGN, __FILE__, __LINE__,
                              "malloc() error : %s", strerror(errno));
+#ifdef SF_BURST_ACK
+                  if (ret == YES)
+                  {
+                     ack_burst(ack_msg_name);
+                  }
+#endif
                   return(NO);
                }
 
@@ -828,6 +861,12 @@ check_burst_sf(char         *file_path,
                if (eval_message(msg_name, p_new_db) < 0)
                {
                   free(p_new_db);
+#ifdef SF_BURST_ACK
+                  if (ret == YES)
+                  {
+                     ack_burst(ack_msg_name);
+                  }
+#endif
 
                   return(NO);
                }
@@ -952,6 +991,9 @@ check_burst_sf(char         *file_path,
             *files_to_send = init_sf_burst2(p_new_db, file_path, values_changed);
             if (*files_to_send < 1)
             {
+#ifdef SF_BURST_ACK
+               ack_burst(ack_msg_name);
+#endif
                ret = RETRY;
             }
          }
@@ -1064,6 +1106,12 @@ check_burst_sf(char         *file_path,
                  }
               }
       } while (ret == RETRY);
+#ifdef SF_BURST_ACK
+      if (ret == YES)
+      {
+         ack_burst(ack_msg_name);
+      }
+#endif
    }
    else
    {
@@ -1072,6 +1120,215 @@ check_burst_sf(char         *file_path,
 
    return(ret);
 }
+
+
+#ifdef SF_BURST_ACK
+/*+++++++++++++++++++++++++++++++ ack_burst() +++++++++++++++++++++++++++*/
+static void
+ack_burst(char *ack_msg_name)
+{
+   if (ack_msg_name[0] != '\0')
+   {
+      int            fd,
+                     i;
+# ifdef WITHOUT_FIFO_RW_SUPPORT
+      int            readfd;
+# endif
+      unsigned int   job_id,
+                     unique_number,
+                     split_job_counter;
+      unsigned short dir_no;
+      time_t         creation_time;
+# ifdef MULTI_FS_SUPPORT
+      dev_t          dev;
+# endif
+      char           ack_fifo[MAX_PATH_LENGTH],
+                     fifo_buffer[SF_BURST_ACK_MSG_LENGTH],
+                     str_num[MAX_TIME_T_HEX_LENGTH + 1],
+                     *p_unique_name = ack_msg_name;
+
+      /* Extract numbers from ack_msg_name. */
+# ifdef MULTI_FS_SUPPORT
+      /* Device number. */
+      i = 0;
+      while ((i < MAX_TIME_T_HEX_LENGTH) && (*(p_unique_name + i) != '/') &&
+             (*(p_unique_name + i) != '\0'))
+      {
+         str_num[i] = *(p_unique_name + i);
+         i++;
+      }
+      if ((*(p_unique_name + i) != '/') || (i == 0))
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Could not determine message name from `%s'.",
+                    ack_msg_name);
+         return;
+      }
+      str_num[i] = '\0';
+      dev = (dev_t)str2devt(str_num, NULL, 16);
+      p_unique_name += (i + 1);
+# endif
+
+      /* Job ID. */
+      i = 0;
+      while ((i < MAX_INT_HEX_LENGTH) &&
+             (*(p_unique_name + i) != '/') && (*(p_unique_name + i) != '\0'))
+      {
+         str_num[i] = *(p_unique_name + i);
+         i++;
+      }
+      if ((*(p_unique_name + i) != '/') || (i == 0))
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Could not determine message name from `%s' (i=%d).",
+                    ack_msg_name, i);
+         return;
+      }
+      str_num[i] = '\0';
+      job_id = (unsigned int)strtoul(str_num, NULL, 16);
+      p_unique_name += (i + 1);
+
+      /* Directory number. */
+      i = 0;
+      while ((i < MAX_INT_HEX_LENGTH) &&
+             (*(p_unique_name + i) != '/') && (*(p_unique_name + i) != '\0'))
+      {
+         str_num[i] = *(p_unique_name + i);
+         i++;
+      }
+      if ((*(p_unique_name + i) != '/') || (i == 0))
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Could not determine message name from `%s' (i=%d).",
+                    ack_msg_name, i);
+         return;
+      }
+      str_num[i] = '\0';
+      dir_no = (unsigned short)strtoul(str_num, NULL, 16);
+      p_unique_name += (i + 1);
+
+      /* Creation time. */
+      i = 0;
+      while ((i < MAX_TIME_T_HEX_LENGTH) &&
+             (*(p_unique_name + i) != '_') && (*(p_unique_name + i) != '\0'))
+      {
+         str_num[i] = *(p_unique_name + i);
+         i++;
+      }
+      if ((*(p_unique_name + i) != '_') || (i == 0))
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Could not determine message name from `%s' (i=%d).",
+                    ack_msg_name, i);
+         return;
+      }
+      str_num[i] = '\0';
+      creation_time = (time_t)str2timet(str_num, NULL, 16);
+      p_unique_name += (i + 1);
+
+      /* Unique number. */
+      i = 0;
+      while ((i < MAX_INT_HEX_LENGTH) &&
+             (*(p_unique_name + i) != '_') && (*(p_unique_name + i) != '\0'))
+      {
+         str_num[i] = *(p_unique_name + i);
+         i++;
+      }
+      if ((*(p_unique_name + i) != '_') || (i == 0))
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Could not determine message name from `%s' (i=%d).",
+                    ack_msg_name, i);
+         return;
+      }
+      str_num[i] = '\0';
+      unique_number = (unsigned int)strtoul(str_num, NULL, 16);
+      p_unique_name += (i + 1);
+
+      /* Split job number. */
+      i = 0;
+      while ((i <= MAX_INT_HEX_LENGTH) && (*(p_unique_name + i) != '\0'))
+      {
+         str_num[i] = *(p_unique_name + i);
+         i++;
+      }
+      if (i == 0)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Could not determine message name from `%s' (i=%d).",
+                    ack_msg_name, i);
+         return;
+      }
+      str_num[i] = '\0';
+      split_job_counter = (unsigned int)strtoul(str_num, NULL, 16);
+
+      *(time_t *)(fifo_buffer) = creation_time;
+# ifdef MULTI_FS_SUPPORT
+      *(dev_t *)(fifo_buffer + sizeof(time_t)) = dev;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) +
+                        sizeof(dev_t)) = job_id;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                        sizeof(unsigned int)) = split_job_counter;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                        sizeof(unsigned int) +
+                        sizeof(unsigned int)) = unique_number;
+      *(unsigned short *)(fifo_buffer + sizeof(time_t) + sizeof(dev_t) +
+                          sizeof(unsigned int) + sizeof(unsigned int) +
+                          sizeof(unsigned int)) = dir_no;
+# else
+      *(unsigned int *)(fifo_buffer + sizeof(time_t)) = job_id;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) +
+                        sizeof(unsigned int)) = split_job_counter;
+      *(unsigned int *)(fifo_buffer + sizeof(time_t) + sizeof(unsigned int) +
+                        sizeof(unsigned int)) = unique_number;
+      *(unsigned short *)(fifo_buffer + sizeof(time_t) + sizeof(unsigned int) +
+                          sizeof(unsigned int) + sizeof(unsigned int)) = dir_no;
+# endif /* MULTI_FS_SUPPORT */
+
+      (void)strcpy(ack_fifo, p_work_dir);
+      (void)strcat(ack_fifo, FIFO_DIR);
+      (void)strcat(ack_fifo, SF_BURST_ACK_FIFO);
+# ifdef WITHOUT_FIFO_RW_SUPPORT
+      if (open_fifo_rw(ack_fifo, &readfd, &fd) == -1)
+# else
+      if ((fd = open(ack_fifo, O_RDWR)) == -1)
+# endif
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to open() %s : %s",
+                    ack_fifo, strerror(errno));
+      }
+      else
+      {
+         if (write(fd, fifo_buffer,
+                   SF_BURST_ACK_MSG_LENGTH) != SF_BURST_ACK_MSG_LENGTH)
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "Failed to write() to FIFO `%s' : %s",
+                       ack_fifo, strerror(errno));
+         }
+# ifdef WITHOUT_FIFO_RW_SUPPORT
+         if ((close(readfd) == -1) || (close(fd) == -1))
+# else
+         if (close(fd) == -1)
+# endif
+         {
+            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       "Failed to close() `%s' : %s", ack_fifo, strerror(errno));
+         }
+      }
+   }
+#ifdef _MAINTAINER_LOG
+   else
+   {
+      maintainer_log(WARN_SIGN, __FILE__, __LINE__,
+                     "No ack_msg_name! (%s)", db.msg_name);
+   }
+#endif
+
+   return;
+}
+#endif
 
 
 /*+++++++++++++++++++++++++++++++ sig_alarm() +++++++++++++++++++++++++++*/

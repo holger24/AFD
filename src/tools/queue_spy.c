@@ -1,6 +1,6 @@
 /*
  *  queue_spy.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2019 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2021 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -109,8 +109,13 @@ main(int argc, char *argv[])
    {
       int i;
 
+#ifdef _WITH_BURST_MISS_CHECK
+      (void)fprintf(stdout,
+                    "Message number    Pid    time        Pos    FC  FS         Retr CP RHFB Message name\n");
+#else
       (void)fprintf(stdout,
                     "Message number    Pid    time        Pos    FC  FS         Retr CP RHF Message name\n");
+#endif
       for (i = 0; i < *no_msg_queued; i++)
       {
 #if SIZEOF_PID_T == 4
@@ -126,9 +131,9 @@ main(int argc, char *argv[])
          (void)fprintf(stdout, "%-11lld ", (pri_time_t)qb[i].creation_time);
 #endif
 #if SIZEOF_OFF_T == 4
-         (void)fprintf(stdout, "%-6d %-3u %-10ld %-4u %-3d%c%c%c %s\n",
+         (void)fprintf(stdout, "%-6d %-3u %-10ld %-4u %-3d%c%c%c%c %s\n",
 #else
-         (void)fprintf(stdout, "%-6d %-3u %-10lld %-4u %-3d%c%c%c %s\n",
+         (void)fprintf(stdout, "%-6d %-3u %-10lld %-4u %-3d%c%c%c%c %s\n",
 #endif
                        qb[i].pos, qb[i].files_to_send,
                        (pri_off_t)qb[i].file_size_to_send,
@@ -136,6 +141,11 @@ main(int argc, char *argv[])
                        (qb[i].special_flag & RESEND_JOB) ? 'R' : ' ',
                        (qb[i].special_flag & HELPER_JOB) ? 'H' : ' ',
                        (qb[i].special_flag & FETCH_JOB) ? 'F' : ' ',
+#ifdef _WITH_BURST_MISS_CHECK
+                       (qb[i].special_flag & QUEUED_FOR_BURST) ? 'B' : ' ',
+#else
+                       '\0',
+#endif
                        qb[i].msg_name);
       }
    }

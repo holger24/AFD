@@ -193,6 +193,7 @@ bin_fd_DEPENDENCIES        = $(bin_fd_LDADD)\
 bin_sf_ftp_SOURCES         = src/fd/append.c\
                              src/fd/archive_file.c\
                              src/fd/check_burst_sf.c\
+                             src/fd/check_job_dir_empty.c\
                              src/fd/check_exec_type.c\
                              src/fd/eval_input_sf.c\
                              src/fd/eval_message.c\
@@ -231,6 +232,7 @@ bin_sf_http_SOURCES        = src/fd/append.c\
                              src/fd/archive_file.c\
                              src/fd/check_burst_sf.c\
                              src/fd/check_exec_type.c\
+                             src/fd/check_job_dir_empty.c\
                              src/fd/eval_input_sf.c\
                              src/fd/eval_message.c\
                              src/fd/eval_recipient.c\
@@ -268,6 +270,7 @@ bin_sf_sftp_SOURCES        = src/fd/append.c\
                              src/fd/archive_file.c\
                              src/fd/check_burst_sf.c\
                              src/fd/check_exec_type.c\
+                             src/fd/check_job_dir_empty.c\
                              src/fd/eval_input_sf.c\
                              src/fd/eval_message.c\
                              src/fd/eval_recipient.c\
@@ -304,6 +307,7 @@ bin_sf_smtp_SOURCES        = src/fd/append.c\
                              src/fd/archive_file.c\
                              src/fd/check_burst_sf.c\
                              src/fd/check_exec_type.c\
+                             src/fd/check_job_dir_empty.c\
                              $(DEMCD_LOG_FD)\
                              $(DEMCD_LOG_PTRS)\
                              src/fd/eval_input_sf.c\
@@ -340,6 +344,7 @@ bin_sf_scp_SOURCES         = src/fd/append.c\
                              src/fd/archive_file.c\
                              src/fd/check_burst_sf.c\
                              src/fd/check_exec_type.c\
+                             src/fd/check_job_dir_empty.c\
                              src/fd/eval_input_sf.c\
                              src/fd/eval_message.c\
                              src/fd/eval_recipient.c\
@@ -374,6 +379,7 @@ bin_sf_wmo_SOURCES         = src/fd/append.c\
                              src/fd/archive_file.c\
                              src/fd/check_burst_sf.c\
                              src/fd/check_exec_type.c\
+                             src/fd/check_job_dir_empty.c\
                              src/fd/eval_input_sf.c\
                              src/fd/eval_message.c\
                              src/fd/eval_recipient.c\
@@ -453,6 +459,7 @@ bin_sf_loc_SOURCES         = src/fd/append.c\
                              src/fd/handle_ls_data.c\
                              src/fd/check_burst_sf.c\
                              src/fd/check_exec_type.c\
+                             src/fd/check_job_dir_empty.c\
                              src/fd/compare_dir_local.c\
                              src/fd/eval_input_sf.c\
                              src/fd/eval_message.c\
@@ -480,6 +487,7 @@ bin_sf_exec_SOURCES        = src/fd/append.c\
                              src/fd/handle_ls_data.c\
                              src/fd/check_burst_sf.c\
                              src/fd/check_exec_type.c\
+                             src/fd/check_job_dir_empty.c\
                              src/fd/eval_input_sf.c\
                              src/fd/eval_message.c\
                              src/fd/eval_recipient.c\

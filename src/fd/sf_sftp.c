@@ -1607,6 +1607,7 @@ main(int argc, char *argv[])
                {
                   /* Lets assume some other process has removed it. */
                   /* Treat this differently, not as a hard error.   */
+                  exitflag = 0;
                   ret = STILL_FILES_TO_SEND;
                   sign = WARN_SIGN;
                }
@@ -2052,14 +2053,26 @@ try_again_unlink:
    }
    free(buffer);
 
-#ifdef _CHECK_BEFORE_EXIT
-#endif
-
    /* Logout again. */
    sftp_quit();
    if ((fsa != NULL) && (fsa_pos_save == YES) && (fsa->debug > NORMAL_MODE))
    {
       trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL, "Logged out.");
+   }
+
+   if ((exit_status != STILL_FILES_TO_SEND) &&
+       (fsa->job_status[(int)db.job_no].unique_name[1] != '\0') &&
+       (fsa->job_status[(int)db.job_no].unique_name[0] != '\0') &&
+       (fsa->job_status[(int)db.job_no].unique_name[2] > 7) &&
+       (strncmp(fsa->job_status[(int)db.job_no].unique_name,
+                db.msg_name, MAX_MSG_NAME_LENGTH) != 0))
+   {
+      /* Check for a burst miss. */
+      if (check_job_dir_empty(fsa->job_status[(int)db.job_no].unique_name,
+                              file_path) == NO)
+      {
+         exit_status = STILL_FILES_TO_SEND;
+      }
    }
 
    exitflag = 0;

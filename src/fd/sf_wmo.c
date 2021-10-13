@@ -1125,6 +1125,21 @@ try_again_unlink:
       close_counter_file(wmo_counter_fd, &wmo_counter);
    }
 
+   if ((exit_status != STILL_FILES_TO_SEND) &&
+       (fsa->job_status[(int)db.job_no].unique_name[1] != '\0') &&
+       (fsa->job_status[(int)db.job_no].unique_name[0] != '\0') &&
+       (fsa->job_status[(int)db.job_no].unique_name[2] > 7) &&
+       (strncmp(fsa->job_status[(int)db.job_no].unique_name,
+                db.msg_name, MAX_MSG_NAME_LENGTH) != 0))
+   {
+      /* Check for a burst miss. */
+      if (check_job_dir_empty(fsa->job_status[(int)db.job_no].unique_name,
+                              file_path) == NO)
+      {
+         exit_status = STILL_FILES_TO_SEND;
+      }
+   }
+
    exitflag = 0;
    exit(exit_status);
 }

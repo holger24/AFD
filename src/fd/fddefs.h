@@ -22,6 +22,7 @@
 
 /* #define DO_NOT_PARALLELIZE_ALL_FETCH 1 */
 /* #define DEBUG_ASSIGNMENT 1 */
+/* #define _RMQUEUE_ 1 */
 
 #include <time.h>                /* clock_t                              */
 
@@ -35,6 +36,21 @@
 /* Flag to indicate how file was distributed. */
 #define FILES_COPIED             1
 #define FILES_MOVED              2
+
+/* Message length of acknowledge send by sf_xxx when accepting burst. */
+#ifdef MULTI_FS_SUPPORT
+# define SF_BURST_ACK_MSG_LENGTH (sizeof(time_t) + sizeof(dev_t) + \
+                                  sizeof(unsigned int) +           \
+                                  sizeof(unsigned int) +           \
+                                  sizeof(unsigned int) +           \
+                                  sizeof(unsigned short))
+#else
+# define SF_BURST_ACK_MSG_LENGTH (sizeof(time_t) +       \
+                                  sizeof(unsigned int) + \
+                                  sizeof(unsigned int) + \
+                                  sizeof(unsigned int) + \
+                                  sizeof(unsigned short))
+#endif
 
 /* Different lock positions in ls_data file. */
 #define LOCK_RETR_PROC           0   /* Lock retrieve jobs so that the  */
@@ -357,41 +373,41 @@ union uiid
       };
 struct job
        {
-          int           fsa_pos;         /* Position of host in FSA      */
+          int            fsa_pos;        /* Position of host in FSA      */
                                          /* structure.                   */
-          off_t         lock_offset;     /* Position in FSA where to do  */
+          off_t          lock_offset;    /* Position in FSA where to do  */
                                          /* the locking for this job.    */
-          off_t         fra_lock_offset; /* Position in FRA where to do  */
+          off_t          fra_lock_offset;/* Position in FRA where to do  */
                                          /* the locking for this job.    */
-          int           fra_pos;         /* Position of host in FRA      */
+          int            fra_pos;        /* Position of host in FRA      */
                                          /* structure.                   */
-          int           archive_time;    /* The time how long the files  */
+          int            archive_time;   /* The time how long the files  */
                                          /* should be held in the        */
                                          /* archive before they are      */
                                          /* deleted.                     */
-          int           port;            /* TCP port.                    */
-          int           sndbuf_size;     /* Socket send buffer size.     */
-          int           rcvbuf_size;     /* Socket receive buffer size.  */
-          unsigned int  disconnect;      /* Disconnect after given time. */
-          unsigned int  unl;             /* Unique name length.          */
-          union uiid    id;              /* Since each host can have     */
+          int            port;           /* TCP port.                    */
+          int            sndbuf_size;    /* Socket send buffer size.     */
+          int            rcvbuf_size;    /* Socket receive buffer size.  */
+          unsigned int   disconnect;     /* Disconnect after given time. */
+          unsigned int   unl;            /* Unique name length.          */
+          union uiid     id;             /* Since each host can have     */
                                          /* different type of jobs (other*/
                                          /* user, different directory,   */
                                          /* other options, etc), each of */
                                          /* these is identified by this  */
                                          /* number.                      */
 #ifdef WITH_DUP_CHECK
-          unsigned int  crc_id;          /* Which CRC ID file to use     */
+          unsigned int   crc_id;         /* Which CRC ID file to use     */
                                          /* when dupcheck is enabled.    */
 #endif
-          pid_t         my_pid;          /* The process id of this       */
+          pid_t          my_pid;         /* The process id of this       */
                                          /* process.                     */
-          unsigned int  age_limit;       /* If date of file is older     */
+          unsigned int   age_limit;      /* If date of file is older     */
                                          /* then age limit, file gets    */
                                          /* removed.                     */
-          unsigned int  retries;         /* The number times we tried to */
+          unsigned int   retries;        /* The number times we tried to */
                                          /* send this job.               */
-          int           archive_offset;  /* When writting the archive    */
+          int            archive_offset; /* When writting the archive    */
                                          /* directory to the output log, */
                                          /* only part of the path is     */
                                          /* used. This is the offset to  */
@@ -400,53 +416,53 @@ struct job
                                          /*       this to tell which     */
                                          /*       ls_data file we need   */
                                          /*       to use.                */
-          mode_t        chmod;           /* The permissions that the     */
+          mode_t         chmod;          /* The permissions that the     */
                                          /* file should have.            */
-          mode_t        dir_mode;        /* The permissions that the     */
+          mode_t         dir_mode;       /* The permissions that the     */
                                          /* directory should have.       */
-          char          chmod_str[5];    /* String mode value for FTP.   */
-          char          dir_mode_str[5]; /* String mode value when       */
+          char           chmod_str[5];   /* String mode value for FTP.   */
+          char           dir_mode_str[5];/* String mode value when       */
                                          /* creating directories for FTP.*/
-          uid_t         user_id;         /* The user ID that the file    */
+          uid_t          user_id;        /* The user ID that the file    */
                                          /* should have. (sf_loc only)   */
-          gid_t         group_id;        /* The group ID that the file   */
+          gid_t          group_id;       /* The group ID that the file   */
                                          /* should have. (sf_loc only)   */
-          time_t        creation_time;
-          unsigned int  keep_connected;  /* How long the connection      */
+          time_t         creation_time;
+          unsigned int   keep_connected; /* How long the connection      */
                                          /* should be left open and wait */
                                          /* for new data.                */
-          unsigned int  split_job_counter;
-          unsigned int  unique_number;
-          char          hostname[MAX_REAL_HOSTNAME_LENGTH];
-          char          region[MAX_REAL_HOSTNAME_LENGTH];
-          char          host_alias[MAX_HOSTNAME_LENGTH + 1];
-          char          smtp_user[MAX_USER_NAME_LENGTH];
-          char          user[MAX_USER_NAME_LENGTH];
-          char          active_user[MAX_USER_NAME_LENGTH];
+          unsigned int   split_job_counter;
+          unsigned int   unique_number;
+          char           hostname[MAX_REAL_HOSTNAME_LENGTH];
+          char           region[MAX_REAL_HOSTNAME_LENGTH];
+          char           host_alias[MAX_HOSTNAME_LENGTH + 1];
+          char           smtp_user[MAX_USER_NAME_LENGTH];
+          char           user[MAX_USER_NAME_LENGTH];
+          char           active_user[MAX_USER_NAME_LENGTH];
 #ifdef WITH_SSH_FINGERPRINT
-          char          ssh_fingerprint[MAX_FINGERPRINT_LENGTH + 1];
-          char          key_type;
+          char           ssh_fingerprint[MAX_FINGERPRINT_LENGTH + 1];
+          char           key_type;
 #endif
-          char          password[MAX_USER_NAME_LENGTH];
-          char          *user_home_dir;  /* Users home directory.        */
-          char          *recipient;
-          char          target_dir[MAX_RECIPIENT_LENGTH];
+          char           password[MAX_USER_NAME_LENGTH];
+          char           *user_home_dir; /* Users home directory.        */
+          char           *recipient;
+          char           target_dir[MAX_RECIPIENT_LENGTH];
                                          /* Target directory on the      */
                                          /* remote side.                 */
-          char          active_target_dir[MAX_RECIPIENT_LENGTH];
-          char          msg_name[MAX_MSG_NAME_LENGTH];
-          char          http_proxy[MAX_REAL_HOSTNAME_LENGTH];
+          char           active_target_dir[MAX_RECIPIENT_LENGTH];
+          char           msg_name[MAX_MSG_NAME_LENGTH];
+          char           http_proxy[MAX_REAL_HOSTNAME_LENGTH];
                                          /* HTTP proxy.                  */
-          char          smtp_server[MAX_REAL_HOSTNAME_LENGTH];
+          char           smtp_server[MAX_REAL_HOSTNAME_LENGTH];
                                          /* SMTP server name.            */
-          char          timezone[MAX_TIMEZONE_LENGTH + 1];
-          char          *group_mail_domain;
-          int           no_of_restart_files;
-          int           subject_rule_pos;
-          int           trans_rule_pos;
-          int           user_rule_pos;
-          int           mail_header_rule_pos;
-          char          **restart_file;
+          char           timezone[MAX_TIMEZONE_LENGTH + 1];
+          char           *group_mail_domain;
+          int            no_of_restart_files;
+          int            subject_rule_pos;
+          int            trans_rule_pos;
+          int            user_rule_pos;
+          int            mail_header_rule_pos;
+          char           **restart_file;
                                          /* When a transmission fails    */
                                          /* while it was transmitting a  */
                                          /* file, it writes the name of  */
@@ -455,9 +471,9 @@ struct job
                                          /* it we just append the file.  */
                                          /* This is useful for large     */
                                          /* files.                       */
-          char          *cn_filter;      /* Change name filter part.     */
-          char          *cn_rename_to;   /* Change name rename to part.  */
-          char          trans_rename_rule[MAX_RULE_HEADER_LENGTH + 1];
+          char           *cn_filter;     /* Change name filter part.     */
+          char           *cn_rename_to;  /* Change name rename to part.  */
+          char           trans_rename_rule[MAX_RULE_HEADER_LENGTH + 1];
                                          /* FTP : Renaming files on      */
                                          /*       remote site. This is   */
                                          /*       useful when building   */
@@ -465,51 +481,51 @@ struct job
                                          /* SMTP: When attaching files   */
                                          /*       the rename rule will   */
                                          /*       be stored here.        */
-          char          user_rename_rule[MAX_RULE_HEADER_LENGTH + 1];
+          char           user_rename_rule[MAX_RULE_HEADER_LENGTH + 1];
                                          /* Used in conjunction with     */
                                          /* option 'file name is user'.  */
                                          /* The rename rule option       */
                                          /* allows the user to select    */
                                          /* only parts of the file name  */
                                          /* as the user name.            */
-          char          subject_rename_rule[MAX_RULE_HEADER_LENGTH + 1];
+          char           subject_rename_rule[MAX_RULE_HEADER_LENGTH + 1];
                                          /* In option subject it is      */
                                          /* possible to add the filename */
                                          /* or part of it.               */
-          char          lock_notation[LOCK_NOTATION_LENGTH];
+          char           lock_notation[LOCK_NOTATION_LENGTH];
                                          /* Here the user can specify    */
                                          /* the notation of the locking  */
                                          /* on the remote side.          */
-          char          *lock_file_name; /* The file name to use to lock */
+          char           *lock_file_name;/* The file name to use to lock */
                                          /* on the remote host.          */
-          char          archive_dir[MAX_PATH_LENGTH];
-          char          mode_str[24];    /* Can be either: active,       */
+          char           archive_dir[MAX_PATH_LENGTH];
+          char           mode_str[24];   /* Can be either: active,       */
                                          /* passive, extended active,    */
                                          /* extended passive or passive  */
                                          /* (with redirect).             */
-          unsigned int  protocol;        /* Transmission protocol, eg:   */
+          unsigned int   protocol;       /* Transmission protocol, eg:   */
                                          /* FTP_FLAG, SMTP_FLAG,         */
                                          /* LOC_FLAG, WMO_FLAG, etc.     */
 #ifdef WITH_SSL
-          char          tls_auth;        /* TLS/SSL authentification.    */
+          char           tls_auth;       /* TLS/SSL authentification.    */
                                          /*  NO   - NO authentification. */
                                          /*  YES  - Only control         */
                                          /*         connection.          */
                                          /*  BOTH - Control and data     */
                                          /*         connection.          */
-          char          active_auth;     /* The current set auth value.  */
+          char           active_auth;    /* The current set auth value.  */
 #endif
-          unsigned char ssh_protocol;    /* SSH protocol version to use. */
-          char          toggle_host;     /* Take the host that is        */
+          unsigned char  ssh_protocol;   /* SSH protocol version to use. */
+          char           toggle_host;    /* Take the host that is        */
                                          /* currently not the active     */
                                          /* host.                        */
-          char          resend;          /* Is this job resend, ie. does */
+          char           resend;         /* Is this job resend, ie. does */
                                          /* it come from show_olog?      */
-          char          transfer_mode;   /* Transfer mode, A (ASCII) or  */
+          char           transfer_mode;  /* Transfer mode, A (ASCII) or  */
                                          /* I (Image, binary).           */
                                          /* (Default I)                  */
-          char          active_transfer_mode;
-          char          lock;            /* The type of lock on the      */
+          char           active_transfer_mode;
+          char           lock;           /* The type of lock on the      */
                                          /* remote site. Their are so    */
                                          /* far two possibilities:       */
                                          /*  DOT      - send file name   */
@@ -527,56 +543,56 @@ struct job
                                          /*             file and after   */
                                          /*             transfer delete  */
                                          /*             lock file.       */
-          char          rename_file_busy;/* Character to append to file  */
+          char           rename_file_busy;/* Character to append to file */
                                          /* name when we get file busy   */
                                          /* error when trying to open    */
                                          /* remote file.                 */
-          unsigned char no_of_time_entries;
-          int           remote_file_check_interval;
-          int           no_listed;       /* No. of elements in a group.  */
-          char          **group_list;    /* List of elements found in    */
+          unsigned char  no_of_time_entries;
+          int            remote_file_check_interval;
+          int            no_listed;      /* No. of elements in a group.  */
+          char           **group_list;   /* List of elements found in    */
                                          /* the group file.              */
-          char          *default_charset;/* Default charset for mail.    */
-          char          *charset;        /* Mail charset.                */
-          char          *subject;        /* Subject for mail.            */
-          char          *reply_to;       /* The address where the        */
+          char           *default_charset;/* Default charset for mail.   */
+          char           *charset;       /* Mail charset.                */
+          char           *subject;       /* Subject for mail.            */
+          char           *reply_to;      /* The address where the        */
                                          /* recipient sends the reply.   */
-          char          *group_to;       /* The address for the To line  */
+          char           *group_to;      /* The address for the To line  */
                                          /* when using groups.           */
-          char          *default_from;   /* If DEFAULT_SMTP_FROM is set  */
+          char           *default_from;  /* If DEFAULT_SMTP_FROM is set  */
                                          /* in AFD_CONFIG its value will */
                                          /* be stored here.              */
-          char          *from;           /* The address who send this    */
+          char           *from;          /* The address who send this    */
                                          /* mail.                        */
-          char          *exec_cmd;       /* For scheme exec, the command */
+          char           *exec_cmd;      /* For scheme exec, the command */
                                          /* to execute. When used, this  */
                                          /* points to target_dir.        */
 #ifdef _WITH_TRANS_EXEC
-          char          *trans_exec_cmd; /* String holding the exec cmd. */
-          time_t        trans_exec_timeout;/* When exec command should   */
+          char           *trans_exec_cmd; /* String holding the exec cmd.*/
+          time_t         trans_exec_timeout;/* When exec command should  */
                                          /* be timed out.                */
-          char          set_trans_exec_lock;/* When exec command should  */
+          char           set_trans_exec_lock;/* When exec command should */
                                          /* be locked, so only one can   */
                                          /* be active for this host.     */
 # ifdef HAVE_SETPRIORITY
-          time_t        afd_config_mtime;/* Modification time of         */
+          time_t         afd_config_mtime;/* Modification time of        */
                                          /* AFD_CONFIG file.             */
-          int           add_afd_priority;
-          int           current_priority;
-          int           exec_base_priority;
-          int           max_sched_priority;
-          int           min_sched_priority;
+          int            add_afd_priority;
+          int            current_priority;
+          int            exec_base_priority;
+          int            max_sched_priority;
+          int            min_sched_priority;
 # endif
 #endif
-          char          *p_unique_name;  /* Pointer to the unique name   */
+          char           *p_unique_name; /* Pointer to the unique name   */
                                          /* of this job.                 */
-          char          *special_ptr;    /* Used to point to allocated   */
+          char           *special_ptr;   /* Used to point to allocated   */
                                          /* memory, eg for option        */
                                          /* ADD_MAIL_HEADER_ID,          */
                                          /* EUMETSAT_HEADER_ID,          */
                                          /* FTP_EXEC_CMD.                */
           struct bd_time_entry *te;
-          unsigned int  special_flag;    /* Special flag with the        */
+          unsigned int   special_flag;   /* Special flag with the        */
                                          /* following meaning:           */
                                          /*+---+------------------------+*/
                                          /*|Bit|      Meaning           |*/
@@ -650,11 +666,11 @@ struct job
                                          /*|29 | Silent not locked file.|*/
                                          /*+---+------------------------+*/
 #ifdef _WITH_DE_MAIL_SUPPORT
-          char          *message_id;
-          char          *de_mail_privat_id;
-          char          *de_mail_sender;
-          int           de_mail_privat_id_length;
-          unsigned char de_mail_options; /* Flag storing the different   */
+          char           *message_id;
+          char           *de_mail_privat_id;
+          char           *de_mail_sender;
+          int            de_mail_privat_id_length;
+          unsigned char  de_mail_options;/* Flag storing the different   */
                                          /* options for DE-mail, which   */
                                          /* are:                         */
                                          /*+------+---------------------+*/
@@ -664,12 +680,12 @@ struct job
                                          /*|    2 | CONF_OF_RECEIPT     |*/
                                          /*|    1 | CONF_OF_DISPATCH    |*/
                                          /*+------+---------------------+*/
-          char          demcd_log;       /* When the file name           */
+          char           demcd_log;      /* When the file name           */
                                          /* confirmation is to be logged,*/
                                          /* this variable is set YES.    */
 #endif
 #ifdef WITH_DUP_CHECK
-          unsigned int  dup_check_flag;  /* Flag storing the type of     */
+          unsigned int   dup_check_flag; /* Flag storing the type of     */
                                          /* check that is to be done and */
                                          /* what type of CRC to use:     */
                                          /*+------+---------------------+*/
@@ -689,24 +705,24 @@ struct job
                                          /*|    2 | DC_FILE_CONTENT     |*/
                                          /*|    1 | DC_FILENAME_ONLY    |*/
                                          /*+------+---------------------+*/
-          time_t        dup_check_timeout;/* When the stored CRC for     */
+          time_t         dup_check_timeout;/* When the stored CRC for    */
                                          /* duplicate checks are no      */
                                          /* longer valid. Value is in    */
                                          /* seconds.                     */
-          unsigned int  trans_dup_check_flag;
-          time_t        trans_dup_check_timeout;
+          unsigned int   trans_dup_check_flag;
+          time_t         trans_dup_check_timeout;
 #endif
-          int           filename_pos_subject;
+          int            filename_pos_subject;
                                          /* Where in subject the file-   */
                                          /* name is to be positioned.    */
-          unsigned char job_no;          /* The job number of current    */
+          unsigned char  job_no;         /* The job number of current    */
                                          /* transfer process.            */
 #ifdef _OUTPUT_LOG
-          char          output_log;      /* When the file name is to be  */
+          char           output_log;     /* When the file name is to be  */
                                          /* logged, this variable is set */
                                          /* YES.                         */
 #endif
-          char          mode_flag;       /* Currently only used for FTP  */
+          char           mode_flag;      /* Currently only used for FTP  */
                                          /* to indicate either active,   */
                                          /* passive and extended mode.   */
                                          /*+------+---------------------+*/
@@ -718,18 +734,18 @@ struct job
                                          /*|    2 | ACTIVE_MODE         |*/
                                          /*|    1 | PASSIVE_MODE        |*/
                                          /*+------+---------------------+*/
-          unsigned char smtp_auth;       /* SMTP authentication modes.   */
+          unsigned char  smtp_auth;      /* SMTP authentication modes.   */
                                          /* Current possible modes:      */
                                          /*  0 - SMTP_AUTH_NONE, no SMTP */
                                          /*      authentication set.     */
                                          /*  1 - SMTP_AUTH_LOGIN         */
                                          /*  2 - SMTP_AUTH_PLAIN         */
-          unsigned char auth;            /* HTTP authentication methode. */
+          unsigned char  auth;           /* HTTP authentication methode. */
                                          /* Current possible methodes:   */
                                          /*  0 - AUTH_NONE               */
                                          /*  1 - AUTH_BASIC              */
                                          /*  2 - AUTH_AWS4-HMAC-SHA256   */
-          unsigned char service;         /* HTTP service type.           */
+          unsigned char  service;        /* HTTP service type.           */
                                          /* Current possible types:      */
                                          /*  0 - SERVICE_NONE            */
                                          /*  1 - SERVICE_S3              */
@@ -851,6 +867,7 @@ extern int   append_compare(char *, char *),
 #endif
                             unsigned int *),
              check_exec_type(char *),
+             check_job_dir_empty(char *, char *),
              check_fra_fd(void),
              delete_wrapper(char *),
              eval_input_gf(int, char **, struct job *),
@@ -914,6 +931,13 @@ extern void  calc_trl_per_process(int),
              init_limit_transfer_rate(void),
              init_ls_data(void),
              init_msg_buffer(void),
+#ifdef SF_BURST_ACK
+             init_ack_ptrs(time_t **, unsigned int **, unsigned int **,
+# ifdef MULTI_FS_SUPPORT
+                           dev_t **,
+# endif
+                           unsigned short **, unsigned int **, char **),
+#endif
              init_msg_ptrs(time_t **, unsigned int **, unsigned int **,
                            unsigned int **, off_t **,
 #ifdef MULTI_FS_SUPPORT
@@ -929,7 +953,11 @@ extern void  calc_trl_per_process(int),
              remove_append(unsigned int, char *),
              remove_connection(struct connection *, int, time_t),
              remove_ls_data(int),
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+             remove_msg(int, int, char *, int),
+#else
              remove_msg(int, int),
+#endif
              reset_fsa(struct job *, int, int, off_t),
              reset_values(int, off_t, int, off_t, struct job *),
              send_proc_fin(int),

@@ -91,6 +91,11 @@ extern char                       file_dir[],
                                   *p_file_dir,
                                   *p_msg_dir,
                                   *p_work_dir;
+#ifdef SF_BURST_ACK
+extern int                        ab_fd,
+                                  *no_of_acks_queued;
+extern struct ack_queue_buf       *ab;
+#endif
 extern struct queue_buf           *qb;
 extern struct msg_cache_buf       *mdb;
 extern struct afd_status          *p_afd_status;
@@ -186,6 +191,28 @@ init_msg_buffer(void)
       ptr += AFD_WORD_OFFSET;
       qb = (struct queue_buf *)ptr;
    }
+
+#ifdef SF_BURST_ACK
+   if (ab_fd == -1)
+   {
+      size_t new_size = (ACK_QUE_BUF_SIZE * sizeof(struct ack_queue_buf)) +
+                        AFD_WORD_OFFSET;
+      char   fullname[MAX_PATH_LENGTH];
+
+      (void)snprintf(fullname, MAX_PATH_LENGTH, "%s%s%s",
+                     p_work_dir, FIFO_DIR, ACK_QUEUE_FILE);
+      if ((ptr = attach_buf(fullname, &ab_fd, &new_size, "FD",
+                            FILE_MODE, NO)) == (caddr_t) -1)
+      {
+         system_log(FATAL_SIGN, __FILE__, __LINE__,
+                    "Failed to mmap() `%s' : %s", fullname, strerror(errno));
+         exit(INCORRECT);
+      }
+      no_of_acks_queued = (int *)ptr;
+      ptr += AFD_WORD_OFFSET;
+      ab = (struct ack_queue_buf *)ptr;
+   }
+#endif
 
 #if defined (_MAINTAINER_LOG) && defined (SHOW_MSG_CACHE)
    maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
@@ -290,7 +317,7 @@ stat_again:
       if (sleep_counter > 110)
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
-                    "Timeout arrived for waiting for AMG to finish writting to JID structure.");
+                    "Timeout arrived for waiting for AMG to finish writing to JID structure.");
          exit(INCORRECT);
       }
    }
@@ -560,7 +587,7 @@ stat_again:
                               (mdb[i].last_transfer_time + (SWITCH_FILE_TIME * max_output_log_files)))
                           {
                              /*
-                              * Hmmm. Files have been transfered. Lets
+                              * Hmmm. Files have been transferred. Lets
                               * set gotcha so it does not delete this
                               * job, so show_olog can still resend files.
                               */
@@ -921,6 +948,26 @@ list_job_to_remove(int                cache_pos,
             }
          }
 
+#ifdef SF_BURST_ACK
+         /* There may not be any pending acks. */
+         for (k = 0; k < *no_of_acks_queued; k++)
+         {
+            if (strncmp(qb[j].msg_name, ab[k].msg_name,
+                        MAX_MSG_NAME_LENGTH) == 0)
+            {
+               if (k <= (*no_of_acks_queued - 1))
+               {
+                  (void)memmove(&ab[k], &ab[k + 1],
+                                ((*no_of_acks_queued - 1 - k) *
+                                 sizeof(struct ack_queue_buf)));
+               }
+               (*no_of_acks_queued)--;
+
+               break;
+            }
+         }
+#endif
+
          /*
           * NOOOO. There may not be any message in the queue.
           * Remove it if there is one.
@@ -936,7 +983,11 @@ list_job_to_remove(int                cache_pos,
          remove_job_files(file_dir, -1, -1, __FILE__, __LINE__);
 #endif
          *p_file_dir = '\0';
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+         remove_msg(j, NO, "init_msg_buffer.c", __LINE__);
+#else
          remove_msg(j, NO);
+#endif
          if (j < *no_msg_queued)
          {
             j--;

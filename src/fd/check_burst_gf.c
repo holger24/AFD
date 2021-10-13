@@ -287,7 +287,7 @@ check_burst_gf(unsigned int *values_changed)
                 (sigaction(SIGALRM, &oldact_alrm, NULL) < 0))
             {
                system_log(WARN_SIGN, __FILE__, __LINE__,
-                          "Failed to reastablish a signal handler for SIGUSR1 and/or SIGALRM : %s",
+                          "Failed to reestablish a signal handler for SIGUSR1 and/or SIGALRM : %s",
                           strerror(errno));
             }
             if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0)

@@ -1,6 +1,6 @@
 /*
  *  init_msg_ptrs.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,6 +37,13 @@ DESCR__S_M3
  **                      char           **msg_priority,
  **                      char           **originator,
  **                      char           **msg_buffer)
+ **   void init_ack_ptrs(time_t         **creation_time,
+ **                      unsigned int   **job_id,
+ **                      unsigned int   **split_job_counter,
+ **                      dev_t          **dev,
+ **                      unsigned short **dir_no,
+ **                      unsigned int   **unique_number,
+ **                      char           **ack_buffer)
  **
  ** DESCRIPTION
  **
@@ -50,6 +57,7 @@ DESCR__S_M3
  **   18.04.1998 H.Kiehl Created
  **   30.10.2002 H.Kiehl Added originator.
  **   24.09.2004 H.Kiehl Added split job counter.
+ **   03.10.2021 H.Kiehl Added function init_ack_ptrs().
  **
  */
 DESCR__E_M3
@@ -178,3 +186,56 @@ init_msg_ptrs(time_t         **creation_time,
 
    return;
 }
+
+
+#ifdef SF_BURST_ACK
+/*########################### init_ack_ptrs() ###########################*/
+void
+init_ack_ptrs(time_t         **creation_time,
+              unsigned int   **job_id,
+              unsigned int   **split_job_counter,
+# ifdef MULTI_FS_SUPPORT
+              dev_t          **dev,
+# endif
+              unsigned short **dir_no,
+              unsigned int   **unique_number,
+              char           **ack_buffer)
+{
+   if ((*ack_buffer = malloc(SF_BURST_ACK_MSG_LENGTH)) == NULL)
+   {
+      system_log(FATAL_SIGN, __FILE__, __LINE__,
+                 "malloc() error [%d bytes] : %s",
+                 SF_BURST_ACK_MSG_LENGTH, strerror(errno));
+      exit(INCORRECT);
+   }
+   *creation_time     = (time_t *)*ack_buffer;
+# ifdef MULTI_FS_SUPPORT
+   *dev               = (dev_t *)(*ack_buffer + sizeof(time_t));
+   *job_id            = (unsigned int *)(*ack_buffer + sizeof(time_t) +
+                                         sizeof(dev_t));
+   *split_job_counter = (unsigned int *)(*ack_buffer + sizeof(time_t) +
+                                         sizeof(dev_t) + sizeof(unsigned int));
+   *unique_number     = (unsigned int *)(*ack_buffer + sizeof(time_t) +
+                                         sizeof(dev_t) + sizeof(unsigned int) +
+                                         sizeof(unsigned int));
+   *dir_no            = (unsigned short *)(*ack_buffer + sizeof(time_t) +
+                                           sizeof(dev_t) +
+                                           sizeof(unsigned int) +
+                                           sizeof(unsigned int) +
+                                           sizeof(unsigned int));
+# else
+   *job_id            = (unsigned int *)(*ack_buffer + sizeof(time_t));
+   *split_job_counter = (unsigned int *)(*ack_buffer + sizeof(time_t) +
+                                         sizeof(unsigned int));
+   *unique_number     = (unsigned int *)(*ack_buffer + sizeof(time_t) +
+                                         sizeof(unsigned int) +
+                                         sizeof(unsigned int));
+   *dir_no            = (unsigned short *)(*ack_buffer + sizeof(time_t) +
+                                           sizeof(unsigned int) +
+                                           sizeof(unsigned int) +
+                                           sizeof(unsigned int));
+# endif
+
+   return;
+}
+#endif

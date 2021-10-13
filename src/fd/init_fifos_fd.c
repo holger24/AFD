@@ -1,6 +1,6 @@
 /*
  *  init_fifos_fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2008 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,14 +59,20 @@ extern int  transfer_log_fd,
             msg_fifo_writefd,
             read_fin_writefd,
             retry_writefd,
+# ifdef SF_BURST_ACK
+            sf_burst_ack_writefd,
+# endif
             transfer_log_readfd,
             trl_calc_writefd,
 #endif
+            delete_jobs_fd,
             fd_wake_up_fd,
             msg_fifo_fd,
             read_fin_fd,
             retry_fd,
-            delete_jobs_fd,
+#ifdef SF_BURST_ACK
+            sf_burst_ack_fd,
+#endif
             trl_calc_fd;
 extern char *p_work_dir;
 
@@ -81,6 +87,9 @@ init_fifos_fd(void)
                msg_fifo[MAX_PATH_LENGTH],
                retry_fifo[MAX_PATH_LENGTH],
                sf_fin_fifo[MAX_PATH_LENGTH],
+#ifdef SF_BURST_ACK
+               sf_burst_ack_fifo[MAX_PATH_LENGTH],
+#endif
                transfer_log_fifo[MAX_PATH_LENGTH],
                trl_calc_fifo[MAX_PATH_LENGTH];
    struct stat stat_buf;
@@ -102,6 +111,10 @@ init_fifos_fd(void)
    (void)strcat(retry_fifo, RETRY_FD_FIFO);
    (void)strcpy(delete_jobs_fifo, transfer_log_fifo);
    (void)strcat(delete_jobs_fifo, FD_DELETE_FIFO);
+#ifdef SF_BURST_ACK
+   (void)strcpy(sf_burst_ack_fifo, transfer_log_fifo);
+   (void)strcat(sf_burst_ack_fifo, SF_BURST_ACK_FIFO);
+#endif
    (void)strcat(transfer_log_fifo, TRANSFER_LOG_FIFO);
 
    /* If the process AFD has not yet created these fifos */
@@ -172,7 +185,8 @@ init_fifos_fd(void)
          return(INCORRECT);
       }
    }
-   if ((stat(delete_jobs_fifo, &stat_buf) == -1) || (!S_ISFIFO(stat_buf.st_mode)))
+   if ((stat(delete_jobs_fifo, &stat_buf) == -1) ||
+       (!S_ISFIFO(stat_buf.st_mode)))
    {
       if (make_fifo(delete_jobs_fifo) < 0)
       {
@@ -181,6 +195,18 @@ init_fifos_fd(void)
          return(INCORRECT);
       }
    }
+#ifdef SF_BURST_ACK
+   if ((stat(sf_burst_ack_fifo, &stat_buf) == -1) ||
+       (!S_ISFIFO(stat_buf.st_mode)))
+   {
+      if (make_fifo(sf_burst_ack_fifo) < 0)
+      {
+         system_log(FATAL_SIGN, __FILE__, __LINE__,
+                    "Could not create fifo %s.", sf_burst_ack_fifo);
+         return(INCORRECT);
+      }
+   }
+#endif
 
    /* Open fifo to receive message when a sf_xxx process is complete. */
 #ifdef WITHOUT_FIFO_RW_SUPPORT
@@ -259,6 +285,19 @@ init_fifos_fd(void)
                  delete_jobs_fifo, strerror(errno));
       return(INCORRECT);
    }
+#ifdef SF_BURST_ACK
+# ifdef WITHOUT_FIFO_RW_SUPPORT
+   if (open_fifo_rw(sf_burst_ack_fifo, &sf_burst_ack_fd, &sf_burst_ack_writefd) == -1)
+# else
+   if ((sf_burst_ack_fd = coe_open(sf_burst_ack_fifo, O_RDWR)) == -1)
+# endif
+   {
+      system_log(FATAL_SIGN, __FILE__, __LINE__,
+                 "Could not open fifo %s : %s",
+                 sf_burst_ack_fifo, strerror(errno));
+      return(INCORRECT);
+   }
+#endif
 #ifdef WITHOUT_FIFO_RW_SUPPORT
    if (open_fifo_rw(trl_calc_fifo, &trl_calc_fd, &trl_calc_writefd) == -1)
 #else

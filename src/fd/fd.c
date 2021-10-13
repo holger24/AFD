@@ -109,8 +109,12 @@ DESCR__E_M1
 #define FD_CHECK_FSA_INTERVAL        600 /* 10 minutes. */
 #define ABNORMAL_TERM_CHECK_INTERVAL 45  /* seconds */
 #define FRA_QUEUE_CHECK_TIME         900 /* 15 minutes. */
+#ifdef SF_BURST_ACK
+# define ACK_QUEUE_CHECK_TIME        120 /* seconds */
+#endif
 
-#define SHOW_MESSAGES_ARRIVING
+#define _ACKQUEUE_
+/* #define _ADDQUEUE_ */
 /* #define WITH_MULTI_FSA_CHECKS */
 /* #define _MACRO_DEBUG */
 /* #define _FDQUEUE_ */
@@ -136,6 +140,9 @@ int                        crash = NO,
                            msg_fifo_writefd,
                            read_fin_writefd,
                            retry_writefd,
+# ifdef SF_BURST_ACK
+                           sf_burst_ack_writefd,
+# endif
                            transfer_log_readfd,
                            trl_calc_writefd,
 #endif
@@ -171,6 +178,9 @@ int                        crash = NO,
                            remove_error_jobs_not_in_queue = NO,
                            *retrieve_list = NULL,
                            retry_fd,
+#ifdef SF_BURST_ACK
+                           sf_burst_ack_fd,
+#endif
                            simulate_send_mode = NO,
                            sys_log_fd = STDERR_FILENO,
                            transfer_log_fd = STDERR_FILENO,
@@ -211,6 +221,11 @@ char                       stop_flag = 0,
                            *default_smtp_from,
                            *default_smtp_reply_to,
                            default_smtp_server[MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_INT_LENGTH];
+#ifdef SF_BURST_ACK
+int                        ab_fd = -1,
+                           *no_of_acks_queued;
+struct ack_queue_buf       *ab;
+#endif
 struct filetransfer_status *fsa;
 struct fileretrieve_status *fra;
 struct afd_status          *p_afd_status;
@@ -231,6 +246,42 @@ static time_t              now;
 static double              max_threshold;
 
 #ifdef START_PROCESS_DEBUG
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+#define START_PROCESS()                                       \
+        {                                                     \
+           int fsa_pos,                                       \
+               kk;                                            \
+                                                              \
+           /* Try handle any pending jobs. */                 \
+           for (kk = 0; kk < *no_msg_queued; kk++)            \
+           {                                                  \
+              if (qb[kk].pid == PENDING)                      \
+              {                                               \
+                 if ((qb[kk].special_flag & FETCH_JOB) == 0)  \
+                 {                                            \
+                    fsa_pos = mdb[qb[kk].pos].fsa_pos;        \
+                 }                                            \
+                 else                                         \
+                 {                                            \
+                    fsa_pos = fra[qb[kk].pos].fsa_pos;        \
+                 }                                            \
+                 if (start_process(fsa_pos, kk, now, NO, __LINE__) == REMOVED) \
+                 {                                            \
+                    /*                                        \
+                     * The message can be removed because the \
+                     * files are queued in another message    \
+                     * or have been removed due to age.       \
+                     */                                       \
+                    remove_msg(kk, NO, "fd.c", __LINE__);     \
+                    if (kk < *no_msg_queued)                  \
+                    {                                         \
+                       kk--;                                  \
+                    }                                         \
+                 }                                            \
+              }                                               \
+           }                                                  \
+        }
+#else
 #define START_PROCESS()                                       \
         {                                                     \
            int fsa_pos,                                       \
@@ -257,6 +308,43 @@ static double              max_threshold;
                      * or have been removed due to age.       \
                      */                                       \
                     remove_msg(kk, NO);                       \
+                    if (kk < *no_msg_queued)                  \
+                    {                                         \
+                       kk--;                                  \
+                    }                                         \
+                 }                                            \
+              }                                               \
+           }                                                  \
+        }
+#endif
+#else
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+#define START_PROCESS()                                       \
+        {                                                     \
+           int fsa_pos,                                       \
+               kk;                                            \
+                                                              \
+           /* Try handle any pending jobs. */                 \
+           for (kk = 0; kk < *no_msg_queued; kk++)            \
+           {                                                  \
+              if (qb[kk].pid == PENDING)                      \
+              {                                               \
+                 if ((qb[kk].special_flag & FETCH_JOB) == 0)  \
+                 {                                            \
+                    fsa_pos = mdb[qb[kk].pos].fsa_pos;        \
+                 }                                            \
+                 else                                         \
+                 {                                            \
+                    fsa_pos = fra[qb[kk].pos].fsa_pos;        \
+                 }                                            \
+                 if (start_process(fsa_pos, kk, now, NO) == REMOVED) \
+                 {                                            \
+                    /*                                        \
+                     * The message can be removed because the \
+                     * files are queued in another message    \
+                     * or have been removed due to age.       \
+                     */                                       \
+                    remove_msg(kk, NO, "fd.c", __LINE__);     \
                     if (kk < *no_msg_queued)                  \
                     {                                         \
                        kk--;                                  \
@@ -301,6 +389,7 @@ static double              max_threshold;
            }                                                  \
         }
 #endif
+#endif
 
 /* Local function prototypes. */
 static void  check_zombie_queue(time_t, int),
@@ -309,6 +398,9 @@ static void  check_zombie_queue(time_t, int),
              get_local_interface_names(void),
              qb_pos_fsa(int, int *),
              qb_pos_pid(pid_t, int *),
+#ifdef SF_BURST_ACK
+             remove_ack(char *, time_t),
+#endif
              sig_exit(int),
              sig_segv(int),
              sig_bus(int),
@@ -320,6 +412,13 @@ static int   check_dir_in_use(int),
              get_free_disp_pos(int, int),
 #else
              get_free_disp_pos(int),
+#endif
+#ifdef SF_BURST_ACK
+# if defined (_ACKQUEUE_) && defined (_MAINTAINER_LOG)
+             queue_burst_ack(char *, time_t, int),
+# else
+             queue_burst_ack(char *, time_t),
+# endif
 #endif
              zombie_check(struct connection *, time_t, int *, int);
 static pid_t make_process(struct connection *, int),
@@ -335,19 +434,19 @@ int
 main(int argc, char *argv[])
 {
    int              afd_status_fd,
+                    bytes_done,
+                    bytes_read,
                     do_fsa_check = NO,
                     fifo_full_counter = 0,
                     flush_msg_fifo_dump_queue = NO,
                     host_config_counter,
                     i,
-                    status,
-                    status_done,
                     max_fd,
 #ifdef WITH_MULTIPLE_START_RESTART
                     multiple_start_errors = 0,
 #endif
-                    nmsg_bytes_read = 0,
-                    nmsg_bytes_buffered;
+                    status,
+                    status_done;
    unsigned int     *files_to_send,
                     *job_id,
                     last_job_id_lookup = 0,
@@ -356,9 +455,23 @@ main(int argc, char *argv[])
                     *split_job_counter,
                     *unique_number;
    unsigned short   *dir_no;
+#ifdef SF_BURST_ACK
+   char             *ack_buffer;
+# ifdef MULTI_FS_SUPPORT
+   dev_t            *ack_dev;
+# endif
+   time_t           *ack_creation_time;
+   unsigned int     *ack_job_id,
+                    *ack_split_job_counter,
+                    *ack_unique_number;
+   unsigned short   *ack_dir_no;
+#endif
    long             fd_rescan_time;
    time_t           *creation_time,
                     abnormal_term_check_time,
+#ifdef SF_BURST_ACK
+                    ack_queue_check_time,
+#endif
                     fsa_check_time,
 #ifdef _WITH_INTERRUPT_JOB
                     interrupt_check_time,
@@ -369,12 +482,16 @@ main(int argc, char *argv[])
 #ifdef MULTI_FS_SUPPORT
    dev_t            *dev;
 #endif
-   size_t           fifo_size;
+   size_t           fifo_size,
+#ifdef SF_BURST_ACK
+                    max_ack_read_hunk,
+#endif
+                    max_msg_read_hunk,
+                    max_term_read_hunk,
+                    max_trl_read_hunk;
    char             *fifo_buffer,
                     *msg_buffer,
                     *msg_priority,
-                    *nmsg_fifo_buffer,
-                    *nmsg_read_ptr,
                     *originator,
                     work_dir[MAX_PATH_LENGTH];
    fd_set           rset;
@@ -467,6 +584,17 @@ main(int argc, char *argv[])
                  &msg_priority,
                  &originator,
                  &msg_buffer);
+#ifdef SF_BURST_ACK
+   init_ack_ptrs(&ack_creation_time,
+                 &ack_job_id,
+                 &ack_split_job_counter,
+# ifdef MULTI_FS_SUPPORT
+                 &ack_dev,
+# endif
+                 &ack_dir_no,
+                 &ack_unique_number,
+                 &ack_buffer);
+#endif
 
    /* Open and create all fifos. */
    if (init_fifos_fd() == INCORRECT)
@@ -598,7 +726,11 @@ main(int argc, char *argv[])
                        "FRA position %d is larger then the possible number of directories %d. Will remove job from queue.",
                        qb[i].pos, no_of_dirs);
          }
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+         remove_msg(i, NO, "fd.c", __LINE__);
+#else
          remove_msg(i, NO);
+#endif
          if (i < *no_msg_queued)
          {
             i--;
@@ -631,7 +763,11 @@ main(int argc, char *argv[])
                        last_job_id_lookup);
             if ((qb[i].pos = lookup_job_id(last_job_id_lookup)) == INCORRECT)
             {
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+               remove_msg(i, NO, "fd.c", __LINE__);
+#else
                remove_msg(i, NO);
+#endif
                if (i < *no_msg_queued)
                {
                   i--;
@@ -640,6 +776,11 @@ main(int argc, char *argv[])
          }
       }
    }
+
+#ifdef SF_BURST_ACK
+   /* At this point we can savely ignore any pending acks. */
+   *no_of_acks_queued = 0;
+#endif
 
    /*
     * Initialize jobs_queued but only if the queue is not to large.
@@ -674,14 +815,18 @@ main(int argc, char *argv[])
    }
 
    /* Allocate a buffer for reading data from FIFO's. */
-   if (((fifo_buffer = malloc(fifo_size)) == NULL) ||
-       ((nmsg_fifo_buffer = malloc(fifo_size)) == NULL))
+   if ((fifo_buffer = malloc(fifo_size)) == NULL)
    {
       system_log(FATAL_SIGN, __FILE__, __LINE__,
                  "malloc() error [%d bytes] : %s", fifo_size, strerror(errno));
       exit(INCORRECT);
    }
-   nmsg_read_ptr = nmsg_fifo_buffer; /* Silence compiler warning */
+#ifdef SF_BURST_ACK
+   max_ack_read_hunk = (fifo_size / SF_BURST_ACK_MSG_LENGTH) * SF_BURST_ACK_MSG_LENGTH;
+#endif
+   max_msg_read_hunk = (fifo_size / MAX_BIN_MSG_LENGTH) * MAX_BIN_MSG_LENGTH;
+   max_term_read_hunk = (fifo_size / sizeof(pid_t)) * sizeof(pid_t);
+   max_trl_read_hunk = (fifo_size / sizeof(int)) * sizeof(int);
 
 #ifdef WITH_ERROR_QUEUE
    if (attach_error_queue() == INCORRECT)
@@ -755,6 +900,12 @@ main(int argc, char *argv[])
    {
       max_fd = trl_calc_fd;
    }
+#ifdef SF_BURST_ACK
+   if (sf_burst_ack_fd > max_fd)
+   {
+      max_fd = sf_burst_ack_fd;
+   }
+#endif
    max_fd++;
 
    /* Allocate memory for connection structure. */
@@ -854,6 +1005,10 @@ main(int argc, char *argv[])
                           PRIORITY_INTERRUPT_CHECK_TIME) +
                           PRIORITY_INTERRUPT_CHECK_TIME;
 #endif
+#ifdef SF_BURST_ACK
+   ack_queue_check_time = ((now / ACK_QUEUE_CHECK_TIME) *
+                           ACK_QUEUE_CHECK_TIME) + ACK_QUEUE_CHECK_TIME;
+#endif
    max_threshold = (double)now * 10000.0 * 20.0;
    FD_ZERO(&rset);
 
@@ -868,6 +1023,9 @@ main(int argc, char *argv[])
       FD_SET(retry_fd, &rset);
       FD_SET(delete_jobs_fd, &rset);
       FD_SET(trl_calc_fd, &rset);
+#ifdef SF_BURST_ACK
+      FD_SET(sf_burst_ack_fd, &rset);
+#endif
       if (no_of_zombie_waitstates == 0)
       {
          fd_rescan_time = AFD_RESCAN_TIME;
@@ -919,7 +1077,11 @@ main(int argc, char *argv[])
                      if ((faulty = zombie_check(&connection[i], now, &qb_pos,
                                                 WNOHANG)) == NO)
                      {
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+                        remove_msg(qb_pos, NO, "fd.c", __LINE__);
+#else
                         remove_msg(qb_pos, NO);
+#endif
                      }
                      else if ((faulty == YES) || (faulty == NONE))
                           {
@@ -1095,6 +1257,60 @@ system_log(DEBUG_SIGN, NULL, 0,
                                 PRIORITY_INTERRUPT_CHECK_TIME;
       }
 #endif /* _WITH_INTERRUPT_JOB */
+
+#ifdef SF_BURST_ACK
+      if (ack_queue_check_time <= now)
+      {
+         for (i = 0; i < *no_of_acks_queued; i++)
+         {
+            if ((now - ab[i].insert_time) >= ACK_QUE_TIMEOUT)
+            {
+               int gotcha = NO,
+                   j;
+
+               for (j = 0; j < *no_msg_queued; j++)
+               {
+                  if (strncmp(qb[j].msg_name, ab[i].msg_name,
+                              MAX_MSG_NAME_LENGTH) == 0)
+                  {
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+# if SIZEOF_PID_T == 4
+                                "Have not received an ACK for %s. Reactivating this job. [pid=%d special_flag=%d pos=%d retries=%u]",
+# else
+                                "Have not received an ACK for %s. Reactivating this job. [pid=%lld special_flag=%d pos=%d retries=%u]",
+# endif
+                                qb[j].msg_name, (pri_pid_t)qb[j].pid,
+                                (int)qb[j].special_flag, qb[j].pos,
+                                qb[j].retries);
+                     qb[j].pid = PENDING;
+                     gotcha = YES;
+                     break;
+                  }
+               }
+               if (gotcha == NO)
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "Have not received an ACK for %s. Was unable to locate the corresponding job in the queue.",
+                             ab[i].msg_name);
+               }
+               if (i <= (*no_of_acks_queued - 1))
+               {
+                  (void)memmove(&ab[i], &ab[i + 1],
+                                ((*no_of_acks_queued - 1 - i) *
+                                 sizeof(struct ack_queue_buf)));
+               }
+               (*no_of_acks_queued)--;
+               if (i < *no_of_acks_queued)
+               {
+                  i--;
+               }
+            }
+         }
+         ack_queue_check_time = ((now / ACK_QUEUE_CHECK_TIME) *
+                                 ACK_QUEUE_CHECK_TIME) + ACK_QUEUE_CHECK_TIME;
+      }
+#endif
+
       if (next_fra_queue_check_time <= now)
       {
          if ((no_of_retrieves > 0) && (fra != NULL))
@@ -1297,7 +1513,11 @@ system_log(DEBUG_SIGN, NULL, 0,
                                          "FRA position %d is larger then the possible number of directories %d. Will remove job from queue.",
                                          retrieve_list[i], no_of_dirs);
                            }
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+                           remove_msg(qb_pos, YES, "fd.c", __LINE__);
+#else
                            remove_msg(qb_pos, YES);
+#endif
 #ifdef WITH_MULTIPLE_START_RESTART
                            multiple_start_errors++;
                            if (multiple_start_errors == 3)
@@ -1514,16 +1734,17 @@ system_log(DEBUG_SIGN, NULL, 0,
       {
          int n;
 
-         if ((n = read(read_fin_fd, fifo_buffer, fifo_size)) >= sizeof(pid_t))
+         if ((n = read(read_fin_fd, fifo_buffer,
+                       max_term_read_hunk)) >= sizeof(pid_t))
          {
-            int   bytes_done = 0,
-                  qb_pos;
+            int   qb_pos;
             pid_t pid;
 #ifdef _WITH_BURST_2
             int   start_new_process;
 #endif
 
             now = time(NULL);
+            bytes_done = 0;
             do
             {
 #ifdef WITH_MULTI_FSA_CHECKS
@@ -1595,7 +1816,8 @@ system_log(DEBUG_SIGN, NULL, 0,
 #  else
                                        "Want's more data! pid=%lld bytes_done=%d n=%d no_msg_queued=%d",
 #  endif
-                                       (pri_pid_t)pid, bytes_done, n, *no_msg_queued);
+                                       (pri_pid_t)pid, bytes_done, n,
+                                       *no_msg_queued);
 # endif
                      }
                      else
@@ -1619,7 +1841,8 @@ system_log(DEBUG_SIGN, NULL, 0,
 
                               /* Put data in queue. */
                               check_queue_space();
-                              (void)snprintf(qb[new_qb_pos].msg_name, MAX_INT_HEX_LENGTH,
+                              (void)snprintf(qb[new_qb_pos].msg_name,
+                                             MAX_INT_HEX_LENGTH,
                                              "%x", fra[qb[qb_pos].pos].dir_id);
                               qb[new_qb_pos].msg_number = (double)now * 10000.0 * 200.0;
                               qb[new_qb_pos].creation_time = now;
@@ -1814,12 +2037,31 @@ system_log(DEBUG_SIGN, NULL, 0,
 
                         qb[i].pid = pid;
                         qb[i].connect_pos = qb[qb_pos].connect_pos;
+# ifdef _WITH_BURST_MISS_CHECK
+                        qb[i].special_flag |= QUEUED_FOR_BURST;
+# endif
 # ifdef _WITH_INTERRUPT_JOB
                         if (interrupt == NO)
                         {
 # endif
-                           ABS_REDUCE(fsa_pos);
-                           remove_msg(qb_pos, NO);
+# ifdef SF_BURST_ACK
+                           if ((qb[qb_pos].special_flag & FETCH_JOB) ||
+                               (queue_burst_ack(qb[qb_pos].msg_name, now
+#  if defined (_ACKQUEUE_) && defined (_MAINTAINER_LOG)
+                                                , __LINE__
+#  endif
+                                                ) != SUCCESS))
+                           {
+# endif
+                              ABS_REDUCE(fsa_pos);
+# if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+                              remove_msg(qb_pos, NO, "fd.c", __LINE__);
+# else
+                              remove_msg(qb_pos, NO);
+# endif
+# ifdef SF_BURST_ACK
+                           }
+# endif
 # ifdef _WITH_INTERRUPT_JOB
                         }
 # endif
@@ -1917,6 +2159,66 @@ system_log(DEBUG_SIGN, NULL, 0,
          status_done++;
       } /* sf_xxx or gf_xxx PROCESS TERMINATED */
 
+#ifdef SF_BURST_ACK
+      /*
+       * MESSAGE FROM SF ACK FIFO ARRIVED
+       * ================================
+       */
+      if (((status - status_done) > 0) && (FD_ISSET(sf_burst_ack_fd, &rset)))
+      {
+         if (((bytes_read = read(sf_burst_ack_fd, fifo_buffer,
+                                 max_ack_read_hunk)) > 0) &&
+             (bytes_read >= SF_BURST_ACK_MSG_LENGTH))
+         {
+            char ack_msg_name[MAX_MSG_NAME_LENGTH];
+
+            bytes_done = 0;
+            do
+            {
+               (void)memcpy(ack_buffer, &fifo_buffer[bytes_done],
+                            SF_BURST_ACK_MSG_LENGTH);
+               if ((i = snprintf(ack_msg_name, MAX_MSG_NAME_LENGTH,
+#ifdef MULTI_FS_SUPPORT
+# if SIZEOF_TIME_T == 4
+                                 "%x/%x/%x/%lx_%x_%x",
+# else
+                                 "%x/%x/%x/%llx_%x_%x",
+# endif
+                                 (unsigned int)*ack_dev,
+#else
+# if SIZEOF_TIME_T == 4
+                                 "%x/%x/%lx_%x_%x",
+# else
+                                 "%x/%x/%llx_%x_%x",
+# endif
+#endif
+                                 *ack_job_id, *ack_dir_no,
+                                 (pri_time_t)*ack_creation_time,
+                                 *ack_unique_number,
+                                 *ack_split_job_counter)) >= MAX_MSG_NAME_LENGTH)
+               {
+                  system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                             "ack_msg_name overflowed (%d >= %d)",
+                             i, MAX_MSG_NAME_LENGTH);
+               }
+
+               /* Remove message */
+               remove_ack(ack_msg_name, *ack_creation_time);
+
+               bytes_done += SF_BURST_ACK_MSG_LENGTH;
+               bytes_read -= SF_BURST_ACK_MSG_LENGTH;
+            } while (bytes_read >= SF_BURST_ACK_MSG_LENGTH);
+         }
+         else
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       "Hmmm. Seems like I am reading garbage from the fifo. (%d)",
+                       bytes_read);
+         }
+         status_done++;
+      }
+#endif /* SF_BURST_ACK */
+
       /*
        * RETRY
        * =====
@@ -1946,7 +2248,11 @@ system_log(DEBUG_SIGN, NULL, 0,
                   if (start_process(fsa_pos, qb_pos, time(NULL), YES) == REMOVED)
 #endif
                   {
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+                     remove_msg(qb_pos, NO, "fd.c", __LINE__);
+#else
                      remove_msg(qb_pos, NO);
+#endif
                   }
                }
             }
@@ -1960,28 +2266,14 @@ system_log(DEBUG_SIGN, NULL, 0,
        */
       if (((status - status_done) > 0) && (FD_ISSET(msg_fifo_fd, &rset)))
       {
-         if (nmsg_bytes_read == 0)
+         if (((bytes_read = read(msg_fifo_fd, fifo_buffer,
+                                 max_msg_read_hunk)) > 0) &&
+             (bytes_read >= MAX_BIN_MSG_LENGTH))
          {
-            nmsg_bytes_buffered = 0;
-         }
-         else
-         {
-            (void)memmove(nmsg_fifo_buffer, nmsg_read_ptr,
-                          nmsg_bytes_read);
-            nmsg_bytes_buffered = nmsg_bytes_read;
-         }
-         nmsg_read_ptr = nmsg_fifo_buffer;
-
-         if (((nmsg_bytes_read = read(msg_fifo_fd,
-                                      &nmsg_fifo_buffer[nmsg_bytes_buffered],
-                                      (fifo_size - nmsg_bytes_buffered))) > 0) &&
-             ((nmsg_bytes_read + nmsg_bytes_buffered) >= MAX_BIN_MSG_LENGTH))
-         {
-            int bytes_done = 0,
-                pos;
+            int pos;
 
             now = time(NULL);
-            nmsg_bytes_read += nmsg_bytes_buffered;
+            bytes_done = 0;
             do
             {
 #ifdef WITH_MULTI_FSA_CHECKS
@@ -1993,45 +2285,8 @@ system_log(DEBUG_SIGN, NULL, 0,
                   last_pos_lookup = INCORRECT;
                }
 #endif
-               (void)memcpy(msg_buffer, &nmsg_fifo_buffer[bytes_done],
+               (void)memcpy(msg_buffer, &fifo_buffer[bytes_done],
                             MAX_BIN_MSG_LENGTH);
-#if defined (_MAINTAINER_LOG) && defined (SHOW_MESSAGES_ARRIVING)
-               maintainer_log(DEBUG_SIGN, NULL, 0,
-# ifdef MULTI_FS_SUPPORT
-#  if SIZEOF_TIME_T == 4
-#   if SIZEOF_OFF_T == 4
-                              "FD msg: %x %x/%x/%lx_%x_%x %c %d %d %ld",
-#   else
-                              "FD msg: %x %x/%x/%lx_%x_%x %c %d %d %lld",
-#   endif
-#  else
-#   if SIZEOF_OFF_T == 4
-                              "FD msg: %x %x/%x/%llx_%x_%x %c %d %d %ld",
-#   else
-                              "FD msg: %x %x/%x/%llx_%x_%x %c %d %d %lld",
-#   endif
-#  endif
-                              (unsigned int)*dev,
-# else
-#  if SIZEOF_TIME_T == 4
-#   if SIZEOF_OFF_T == 4
-                              "FD msg: %x/%x/%lx_%x_%x %c %d %d %ld",
-#   else
-                              "FD msg: %x/%x/%lx_%x_%x %c %d %d %lld",
-#   endif
-#  else
-#   if SIZEOF_OFF_T == 4
-                              "FD msg: %x/%x/%llx_%x_%x %c %d %d %ld",
-#   else
-                              "FD msg: %x/%x/%llx_%x_%x %c %d %d %lld",
-#   endif
-#  endif
-# endif
-                              *job_id, *dir_no, (pri_time_t)*creation_time,
-                              *unique_number, *split_job_counter,
-                              *msg_priority, (int)*originator, *files_to_send,
-                              (pri_off_t)*file_size_to_send);
-#endif
                /* Queue the job order. */
                if (*msg_priority != 0)
                {
@@ -2165,38 +2420,42 @@ system_log(DEBUG_SIGN, NULL, 0,
                      /*       msg_name is really MAX_MSG_NAME_LENGTH */
                      /*       long.                                  */
 #endif
-                     (void)snprintf(qb[qb_pos].msg_name, MAX_MSG_NAME_LENGTH,
+                     if ((i = snprintf(qb[qb_pos].msg_name, MAX_MSG_NAME_LENGTH,
 #ifdef MULTI_FS_SUPPORT
 # if SIZEOF_TIME_T == 4
-                                    "%x/%x/%x/%lx_%x_%x",
+                                       "%x/%x/%x/%lx_%x_%x",
 # else
-                                    "%x/%x/%x/%llx_%x_%x",
+                                       "%x/%x/%x/%llx_%x_%x",
 # endif
-                                    (unsigned int)*dev,
+                                       (unsigned int)*dev,
 #else
 # if SIZEOF_TIME_T == 4
-                                    "%x/%x/%lx_%x_%x",
+                                       "%x/%x/%lx_%x_%x",
 # else
-                                    "%x/%x/%llx_%x_%x",
+                                       "%x/%x/%llx_%x_%x",
 # endif
 #endif
-                                    *job_id, *dir_no,
-                                    (pri_time_t)*creation_time,
-                                    *unique_number, *split_job_counter);
-#if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
+                                       *job_id, *dir_no,
+                                       (pri_time_t)*creation_time,
+                                       *unique_number,
+                                       *split_job_counter)) >= MAX_MSG_NAME_LENGTH)
+                     {
+                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                   "msg_name overflowed (%d >= %d)",
+                                   i, MAX_MSG_NAME_LENGTH);
+                     }
+#if defined (_ADDQUEUE_) && defined (_MAINTAINER_LOG)
                      maintainer_log(DEBUG_SIGN, NULL, 0,
 # if SIZEOF_OFF_T == 4
-                                    "%d: job_id= #%x  creation_time=%x  unique_number=%x  sjc=%x  files_to_send=%d  file_size_to_send=%ld [pos=%d no_msg_queued=%d]",
+                                    "add msg: %d %s %u %ld %c %d [%d %d]",
 # else
-                                    "%d: job_id= #%x  creation_time=%x  unique_number=%x  sjc=%x  files_to_send=%d  file_size_to_send=%lld [pos=%d no_msg_queued=%d]",
+                                    "add msg: %d %s %u %lld %c %d [%d %d]",
 # endif
-                                    qb_pos, *job_id, *creation_time,
-                                    *unique_number, *split_job_counter,
+                                    qb_pos, qb[qb_pos].msg_name,
                                     *files_to_send,
                                     (pri_off_t)*file_size_to_send,
+                                    *msg_priority, (int)*originator,
                                     pos, *no_msg_queued);
-                     maintainer_log(DEBUG_SIGN, __FILE__, __LINE__, "%s",
-                                    qb[qb_pos].msg_name);
 #endif
                      qb[qb_pos].msg_number = msg_number;
                      qb[qb_pos].pid = PENDING;
@@ -2223,11 +2482,10 @@ system_log(DEBUG_SIGN, NULL, 0,
                              *msg_priority);
                }
                bytes_done += MAX_BIN_MSG_LENGTH;
-               nmsg_bytes_read -= MAX_BIN_MSG_LENGTH;
-            } while (nmsg_bytes_read >= MAX_BIN_MSG_LENGTH);
-            nmsg_read_ptr += bytes_done;
+               bytes_read -= MAX_BIN_MSG_LENGTH;
+            } while (bytes_read >= MAX_BIN_MSG_LENGTH);
 
-            if (((bytes_done + nmsg_bytes_read) == fifo_size) &&
+            if (((bytes_done + bytes_read) == max_msg_read_hunk) &&
                 (fifo_full_counter < 6))
             {
                fifo_full_counter++;
@@ -2302,11 +2560,12 @@ system_log(DEBUG_SIGN, NULL, 0,
       {
          int n;
 
-         if ((n = read(trl_calc_fd, fifo_buffer, fifo_size)) >= sizeof(int))
+         if ((n = read(trl_calc_fd, fifo_buffer,
+                       max_trl_read_hunk)) >= sizeof(int))
          {
-            int bytes_done = 0,
-                trl_fsa_pos;
+            int trl_fsa_pos;
 
+            bytes_done = 0;
             do
             {
                trl_fsa_pos = *(int *)&fifo_buffer[bytes_done];
@@ -2390,7 +2649,11 @@ system_log(DEBUG_SIGN, NULL, 0,
                       * files are queued in another message
                       * or have been removed due to age.
                       */
+# if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+                     remove_msg(i, NO, "fd.c", __LINE__);
+# else
                      remove_msg(i, NO);
+# endif
                      if (i < *no_msg_queued)
                      {
                         i--;
@@ -2711,6 +2974,10 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
                           (mdb[qb[qb_pos].pos].type == mdb[qb[exec_qb_pos].pos].type) &&
                           (mdb[qb[qb_pos].pos].port == mdb[qb[exec_qb_pos].pos].port)))
                      {
+#ifdef _WITH_BURST_MISS_CHECK
+                        int do_remove_msg = YES;
+#endif
+
                         if (qb[qb_pos].retries > 0)
                         {
                            fsa[fsa_pos].job_status[i].file_name_in_use[0] = '\0';
@@ -2802,6 +3069,9 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
 #endif
                                             (pri_pid_t)qb[exec_qb_pos].pid, strerror(errno));
                               }
+#ifdef _WITH_BURST_MISS_CHECK
+                              qb[qb_pos].special_flag |= QUEUED_FOR_BURST;
+#endif
                               p_afd_status->burst2_counter++;
 #ifdef HAVE_SETPRIORITY
                               if (add_afd_priority == YES)
@@ -2882,8 +3152,50 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
                            calc_trl_per_process(fsa_pos);
                         }
                         pid = qb[qb_pos].pid;
-                        ABS_REDUCE(fsa_pos);
-                        remove_msg(exec_qb_pos, NO);
+
+#ifdef _WITH_BURST_MISS_CHECK
+                        if (((qb[exec_qb_pos].special_flag & FETCH_JOB) == 0) &&
+                            (qb[exec_qb_pos].special_flag & QUEUED_FOR_BURST))
+                        {
+                           struct stat stat_buf;
+
+                           (void)strcpy(p_file_dir, qb[exec_qb_pos].msg_name);
+                           if (stat(file_dir, &stat_buf) == 0)
+                           {
+                              system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                         "Job terminated but directory still exists %s. Assume it is a burst miss.",
+                                         qb[exec_qb_pos].msg_name);
+                              do_remove_msg = NO;
+                              qb[exec_qb_pos].pid = PENDING;
+                              qb[exec_qb_pos].special_flag &= ~QUEUED_FOR_BURST;
+                           }
+                           *p_file_dir = '\0';
+                        }
+                        if (do_remove_msg == YES)
+                        {
+#endif
+# ifdef SF_BURST_ACK
+                           if ((qb[qb_pos].special_flag & FETCH_JOB) ||
+                               (queue_burst_ack(qb[exec_qb_pos].msg_name,
+                                                current_time
+#  if defined (_ACKQUEUE_) && defined (_MAINTAINER_LOG)
+                                                , __LINE__
+#  endif
+                                                ) != SUCCESS))
+                           {
+# endif
+                              ABS_REDUCE(fsa_pos);
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+                              remove_msg(exec_qb_pos, NO, "fd.c", __LINE__);
+#else
+                              remove_msg(exec_qb_pos, NO);
+#endif
+# ifdef SF_BURST_ACK
+                           }
+#endif
+#ifdef _WITH_BURST_MISS_CHECK
+                        }
+#endif
 
                         return(pid);
                      }
@@ -2929,7 +3241,8 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
 #else
                                       "Failed to send SIGUSR1 to %lld : %s",
 #endif
-                                      (pri_pid_t)qb[other_qb_pos[i]].pid, strerror(errno));
+                                      (pri_pid_t)qb[other_qb_pos[i]].pid,
+                                      strerror(errno));
                            fsa[fsa_pos].job_status[other_job_wait_pos[i]].unique_name[2] = 5;
                         }
                         else
@@ -3679,6 +3992,113 @@ make_process(struct connection *con, int qb_pos)
 }
 
 
+#ifdef SF_BURST_ACK
+/*-------------------------- queue_burst_ack() --------------------------*/
+static int
+# if defined (_ACKQUEUE_) && defined (_MAINTAINER_LOG)
+queue_burst_ack(char *msg_name, time_t now, int line)
+# else
+queue_burst_ack(char *msg_name, time_t now)
+# endif
+{
+# if defined (_ACKQUEUE_) && defined (_MAINTAINER_LOG)
+   maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+                  "queue_burst_ack(): %s (%d) [fd.c %d]",
+                  msg_name, *no_of_acks_queued, line);
+# endif
+   if ((*no_of_acks_queued != 0) &&
+       ((*no_of_acks_queued % MSG_QUE_BUF_SIZE) == 0))
+   {
+      char   *ptr;
+      size_t new_size;
+
+      new_size = (((*no_of_acks_queued / ACK_QUE_BUF_SIZE) + 1) *
+                 ACK_QUE_BUF_SIZE * sizeof(struct queue_buf)) +
+                 AFD_WORD_OFFSET;
+      ptr = (char *)ab - AFD_WORD_OFFSET;
+      if ((ptr = mmap_resize(ab_fd, ptr, new_size)) == (caddr_t) -1)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "mmap() error : %s", strerror(errno));
+         return(INCORRECT);
+      }
+      no_of_acks_queued = (int *)ptr;
+      ptr += AFD_WORD_OFFSET;
+      ab = (struct ack_queue_buf *)ptr;
+   }
+   ab[*no_of_acks_queued].insert_time = now;
+   (void)memcpy(ab[*no_of_acks_queued].msg_name, msg_name, MAX_MSG_NAME_LENGTH);
+   (*no_of_acks_queued)++;
+
+   return(SUCCESS);
+}
+
+
+/*----------------------------- remove_ack() ----------------------------*/
+static void
+remove_ack(char *ack_msg_name, time_t ack_creation_time)
+{
+   int i;
+
+# if defined (_ACKQUEUE_) && defined (_MAINTAINER_LOG)
+   maintainer_log(DEBUG_SIGN, __FILE__, __LINE__,
+                  "remove_ack(): %s (%d)", ack_msg_name, *no_of_acks_queued);
+# endif
+   for (i = 0; i < *no_of_acks_queued; i++)
+   {
+      if (strncmp(ab[i].msg_name, ack_msg_name, MAX_MSG_NAME_LENGTH) == 0)
+      {
+         int fsa_pos = -10,
+             j;
+
+         for (j = 0; j < *no_msg_queued; j++)
+         {
+            if ((qb[j].creation_time == ack_creation_time) &&
+                (strncmp(qb[j].msg_name, ack_msg_name,
+                         MAX_MSG_NAME_LENGTH) == 0))
+            {
+               if (qb[j].special_flag & FETCH_JOB)
+               {
+                  fsa_pos = fra[qb[j].pos].fsa_pos;
+               }
+               else
+               {
+                  fsa_pos = mdb[qb[j].pos].fsa_pos;
+               }
+               ABS_REDUCE(fsa_pos);
+# if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+               remove_msg(j, NO, "fd.c", __LINE__);
+# else
+               remove_msg(j, NO);
+# endif
+               break;
+            }
+         }
+         if (fsa_pos == -10)
+         {
+            system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                       "Hmm, failed to locate %s in queue_buf (%d)",
+                       ack_msg_name, *no_msg_queued);
+         }
+         if (i <= (*no_of_acks_queued - 1))
+         {
+            (void)memmove(&ab[i], &ab[i + 1],
+                          ((*no_of_acks_queued - 1 - i) *
+                           sizeof(struct ack_queue_buf)));
+         }
+         (*no_of_acks_queued)--;
+
+         return;
+      }
+   }
+
+   system_log(DEBUG_SIGN, __FILE__, __LINE__,
+              "Hmm, failed to locate %s in ack_queue_buf (%d)",
+              ack_msg_name, *no_of_acks_queued);
+}
+#endif /* SF_BURST_ACK */
+
+
 /*+++++++++++++++++++++++++ check_zombie_queue() ++++++++++++++++++++++++*/
 static void
 check_zombie_queue(time_t now, int qb_pos)
@@ -3690,21 +4110,64 @@ check_zombie_queue(time_t now, int qb_pos)
       if ((faulty = zombie_check(&connection[qb[qb_pos].connect_pos], now,
                                  &qb_pos, WNOHANG)) == NO)
       {
-#if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
-         maintainer_log(DEBUG_SIGN, NULL, 0,
-# if SIZEOF_PID_T == 4
-                        "removing msg: pid=%d msg_name=%s faulty=%d",
-# else
-                        "removing msg: pid=%lld msg_name=%s faulty=%d",
-# endif
-                        (pri_pid_t)connection[qb[qb_pos].connect_pos].pid,
-                        connection[qb[qb_pos].connect_pos].msg_name, faulty);
+#ifdef _WITH_BURST_MISS_CHECK
+         int do_remove_msg = YES;
+
+         /*
+          * During a burst we have a small window where we
+          * pass a job to sf_xxx and that is already in the
+          * closing phase and terminates without distributing
+          * the new data. FD has already deleted the message
+          * from the queue. To detect this, we need to check
+          * if the job directory still exists. If that is
+          * the case, insert the job back into the queue.
+          */
+         if (((qb[qb_pos].special_flag & FETCH_JOB) == 0) &&
+             (qb[qb_pos].special_flag & QUEUED_FOR_BURST))
+         {
+            struct stat stat_buf;
+
+            (void)strcpy(p_file_dir, qb[qb_pos].msg_name);
+            if (stat(file_dir, &stat_buf) == 0)
+            {
+               system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                          "Job terminated but directory still exists %s. Assume it is a burst miss.",
+                          qb[qb_pos].msg_name);
+               do_remove_msg = NO;
+               qb[qb_pos].pid = PENDING;
+               qb[qb_pos].special_flag &= ~QUEUED_FOR_BURST;
+               INCREMENT_JOB_QUEUED_FETCH_JOB_CHECK(qb_pos);
+            }
+            *p_file_dir = '\0';
+         }
+         if (do_remove_msg == YES)
+         {
 #endif
-         remove_msg(qb_pos, NO);
+#if defined (_FDQUEUE_) && defined (_MAINTAINER_LOG)
+            maintainer_log(DEBUG_SIGN, NULL, 0,
+# if SIZEOF_PID_T == 4
+                           "removing msg: pid=%d msg_name=%s faulty=%d",
+# else
+                           "removing msg: pid=%lld msg_name=%s faulty=%d",
+# endif
+                           (pri_pid_t)connection[qb[qb_pos].connect_pos].pid,
+                           connection[qb[qb_pos].connect_pos].msg_name, faulty);
+#endif
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+            remove_msg(qb_pos, NO, "fd.c", __LINE__);
+#else
+            remove_msg(qb_pos, NO);
+#endif
+#ifdef _WITH_BURST_MISS_CHECK
+         }
+#endif
       }
       else if ((faulty == YES) || (faulty == NONE))
            {
               qb[qb_pos].pid = PENDING;
+#ifdef _WITH_BURST_MISS_CHECK
+              qb[qb_pos].special_flag &= ~QUEUED_FOR_BURST;
+#endif
               INCREMENT_JOB_QUEUED_FETCH_JOB_CHECK(qb_pos);
            }
       else if (faulty == NEITHER)
@@ -3756,12 +4219,55 @@ check_zombie_queue(time_t now, int qb_pos)
                if ((faulty = zombie_check(&connection[zwl[i]], now, &tmp_qb_pos,
                                           WNOHANG)) == NO)
                {
-                  remove_msg(tmp_qb_pos, NO);
+#ifdef _WITH_BURST_MISS_CHECK
+                  int do_remove_msg = YES;
+
+                  /*
+                   * During a burst we have a small window where we
+                   * pass a job to sf_xxx and that is already in the
+                   * closing phase and terminates without distributing
+                   * the new data. FD has already deleted the message
+                   * from the queue. To detect this, we need to check
+                   * if the job directory still exists. If that is
+                   * the case, insert the job back into the queue.
+                   */
+                  if (((qb[tmp_qb_pos].special_flag & FETCH_JOB) == 0) &&
+                      (qb[tmp_qb_pos].special_flag & QUEUED_FOR_BURST))
+                  {
+                     struct stat stat_buf;
+
+                     (void)strcpy(p_file_dir, qb[tmp_qb_pos].msg_name);
+                     if (stat(file_dir, &stat_buf) == 0)
+                     {
+                        system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                   "Job terminated but directory still exists %s. Assume it is a burst miss.",
+                                   qb[tmp_qb_pos].msg_name);
+                        do_remove_msg = NO;
+                        qb[tmp_qb_pos].pid = PENDING;
+                        qb[tmp_qb_pos].special_flag &= ~QUEUED_FOR_BURST;
+                        INCREMENT_JOB_QUEUED_FETCH_JOB_CHECK(tmp_qb_pos);
+                     }
+                     *p_file_dir = '\0';
+                  }
+                  if (do_remove_msg == YES)
+                  {
+#endif
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+                     remove_msg(tmp_qb_pos, NO, "fd.c", __LINE__);
+#else
+                     remove_msg(tmp_qb_pos, NO);
+#endif
+#ifdef _WITH_BURST_MISS_CHECK
+                  }
+#endif
                   remove_from_zombie_queue = YES;
                }
                else if ((faulty == YES) || (faulty == NONE))
                     {
                        qb[tmp_qb_pos].pid = PENDING;
+#ifdef _WITH_BURST_MISS_CHECK
+                       qb[tmp_qb_pos].special_flag &= ~QUEUED_FOR_BURST;
+#endif
                        INCREMENT_JOB_QUEUED_FETCH_JOB_CHECK(tmp_qb_pos);
                        remove_from_zombie_queue = YES;
                     }
@@ -5743,7 +6249,11 @@ fd_exit(void)
                         {
                            /* Process was in disconnection phase, so we */
                            /* can remove the message from the queue.    */
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+                           remove_msg(qb_pos, NO, "fd.c", __LINE__);
+#else
                            remove_msg(qb_pos, NO);
+#endif
                         }
                         else
                         {
@@ -5759,7 +6269,11 @@ fd_exit(void)
                   }
                   else if (faulty == NO)
                        {
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+                          remove_msg(qb_pos, NO, "fd.c", __LINE__);
+#else
                           remove_msg(qb_pos, NO);
+#endif
                        }
                }
             } /* if (connection[i].pid > 0) */
@@ -5820,7 +6334,11 @@ fd_exit(void)
                            {
                               /* Process was in disconnection phase, so we */
                               /* can remove the message from the queue.    */
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+                              remove_msg(qb_pos, NO, "fd.c", __LINE__);
+#else
                               remove_msg(qb_pos, NO);
+#endif
                            }
                            else
                            {
@@ -5836,7 +6354,11 @@ fd_exit(void)
                      }
                      else if (faulty == NO)
                           {
+#if defined (_RMQUEUE_) && defined (_MAINTAINER_LOG)
+                             remove_msg(qb_pos, NO, "fd.c", __LINE__);
+#else
                              remove_msg(qb_pos, NO);
+#endif
                           }
                   }
                }
