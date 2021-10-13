@@ -1742,7 +1742,8 @@ http_put(char *path,
 
    get_content_type(filename, content_type, YES);
 
-   if ((hmr.features & PROT_OPT_NO_EXPECT) == 0)
+   if (((hmr.features & PROT_OPT_NO_EXPECT) == 0) &&
+       (file_size > 0))
    {
       int reply;
 
