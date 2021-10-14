@@ -1,6 +1,6 @@
 /*
  *  draw_dir_line.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2013 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,6 +50,9 @@ DESCR__S_M3
  **   05.05.2002 H.Kiehl Show the number files currently in the directory.
  **   28.09.2006 H.Kiehl Added error counter.
  **   24.02.2008 H.Kiehl For drawing areas, draw to offline pixmap as well.
+ **   14.10.2021 H.Kiehl Prevent this dialog from crashing when we access
+ **                      color_pool values that do not exist due to broken
+ **                      data.
  **
  */
 DESCR__E_M3
@@ -387,7 +390,14 @@ draw_dir_identifier(int pos, int x, int y)
    {
       gc_values.foreground = color_pool[FG];
    }
-   gc_values.background = color_pool[(int)connect_data[pos].dir_status];
+   if ((unsigned int)connect_data[pos].dir_status < COLOR_POOL_SIZE)
+   {
+      gc_values.background = color_pool[(int)connect_data[pos].dir_status];
+   }
+   else
+   {
+      gc_values.background = color_pool[DEFAULT_BG];
+   }
    XChangeGC(display, color_letter_gc,
              GCForeground | GCBackground, &gc_values);
 

@@ -1,6 +1,6 @@
 /*
  *  draw_mon_line.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -55,6 +55,8 @@ DESCR__S_M3
  **   13.01.2017 H.Kiehl Prevent this dialog from crashing when we access
  **                      color_pool values that do not exist due to broken
  **                      data.
+ **   14.10.2021 H.Kiehl The values for color_pool need also be checked
+ **                      for negative values.
  **
  */
 DESCR__E_M3
@@ -529,7 +531,7 @@ draw_afd_identifier(int pos, int x, int y)
    {
       gc_values.foreground = color_pool[FG];
    }
-   if (connect_data[pos].connect_status < COLOR_POOL_SIZE)
+   if ((unsigned int)connect_data[pos].connect_status < COLOR_POOL_SIZE)
    {
       gc_values.background = color_pool[(int)connect_data[pos].connect_status];
    }
@@ -605,7 +607,14 @@ draw_mon_proc_led(int led_no, signed char led_status, int x, int y)
            }
            else
            {
-              gc_values.foreground = color_pool[(int)led_status];
+              if ((unsigned int)led_status < COLOR_POOL_SIZE)
+              {
+                 gc_values.foreground = color_pool[(int)led_status];
+              }
+              else
+              {
+                 gc_values.foreground = color_pool[DEFAULT_BG];
+              }
               XChangeGC(display, color_gc, GCForeground, &gc_values);
            }
       XFillArc(display, current_window, color_gc, x_offset, y_offset,
@@ -642,7 +651,7 @@ draw_remote_log_status(int pos, int si_pos, int x, int y)
    }
    for (i = 0; i < LOG_FIFO_SIZE; i++)
    {
-      if (connect_data[pos].sys_log_fifo[i] < COLOR_POOL_SIZE)
+      if ((unsigned int)connect_data[pos].sys_log_fifo[i] < COLOR_POOL_SIZE)
       {
          gc_values.foreground = color_pool[(int)connect_data[pos].sys_log_fifo[i]];
       }
@@ -716,7 +725,7 @@ draw_mon_log_status(int log_typ, int si_pos)
    {
       for (i = 0; i < LOG_FIFO_SIZE; i++)
       {
-         if (prev_afd_mon_status.mon_sys_log_fifo[i] < COLOR_POOL_SIZE)
+         if ((unsigned int)prev_afd_mon_status.mon_sys_log_fifo[i] < COLOR_POOL_SIZE)
          {
             gc_values.foreground = color_pool[(int)prev_afd_mon_status.mon_sys_log_fifo[i]];
          }
@@ -764,7 +773,7 @@ draw_mon_log_status(int log_typ, int si_pos)
    {
       for (i = 0; i < LOG_FIFO_SIZE; i++)
       {
-         if (prev_afd_mon_status.mon_log_fifo[i] < COLOR_POOL_SIZE)
+         if ((unsigned int)prev_afd_mon_status.mon_log_fifo[i] < COLOR_POOL_SIZE)
          {
             gc_values.foreground = color_pool[(int)prev_afd_mon_status.mon_log_fifo[i]];
          }
@@ -825,7 +834,7 @@ draw_remote_history(int pos, int type, int x, int y)
 
    for (i = (MAX_LOG_HISTORY - his_log_set); i < MAX_LOG_HISTORY; i++)
    {
-      if (connect_data[pos].log_history[type][i] < COLOR_POOL_SIZE)
+      if ((unsigned int)connect_data[pos].log_history[type][i] < COLOR_POOL_SIZE)
       {
          gc_values.foreground = color_pool[(int)connect_data[pos].log_history[type][i]];
       }
