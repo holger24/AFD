@@ -46,7 +46,8 @@ DESCR__E_M3
 #include "httpdefs.h"
 
 /* External global variabal. */
-extern char msg_str[];
+extern char       msg_str[];
+extern struct job db;
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$ noop_wrapper() $$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
@@ -55,7 +56,7 @@ noop_wrapper(void)
 {
    int ret;
 
-   ret = http_noop();
+   ret = http_noop(db.target_dir);
    if (ret != SUCCESS)
    {
       if (ret == 301) /* Moved Permanently */

@@ -125,7 +125,7 @@ extern int  basic_authentication(struct http_message_reply *),
 #endif
             http_head(char *, char *, off_t *, time_t *),
             http_init_authentication(char *, char*),
-            http_noop(void),
+            http_noop(char *),
             http_options(char *),
             http_put(char *, char *, char *, off_t, char *, int),
             http_put_response(void),

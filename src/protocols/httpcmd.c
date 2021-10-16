@@ -36,7 +36,7 @@ DESCR__S_M3
  **                 char *etag, off_t *content_length, off_t offset)
  **   int  http_head(char *path, char *filename, off_t *content_length,
  **                  time_t date)
- **   int  http_noop(void)
+ **   int  http_noop(char *path)
  **   int  http_put(char *path, char *filename, char *fullname,
  **                 off_t file_size, char *file_content_hash_hex,
  **                 int first_file)
@@ -2802,7 +2802,7 @@ http_chunk_read(char **chunk, int *chunksize)
 
 /*############################ http_noop() ##############################*/
 int
-http_noop(void)
+http_noop(char *path)
 {
    off_t  file_size;
    time_t file_mtime;
@@ -2813,10 +2813,10 @@ http_noop(void)
 
 #ifdef WITH_TRACE
    trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
-             "http_noop(): Calling http_head(\"%s\", \"\", \"\")",
-             hmr.hostname);
+             "http_noop(): Calling http_head(\"%s\", \"%s\", \"\")",
+             hmr.hostname, path);
 #endif
-   return(http_head("", "", &file_size, &file_mtime));
+   return(http_head(path, "", &file_size, &file_mtime));
 }
 
 
