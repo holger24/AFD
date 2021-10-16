@@ -1,6 +1,6 @@
 /*
  *  common.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -113,7 +113,7 @@ command(int fd, char *fmt, ...)
 #endif
       if (write(fd, buf, length) != length)
       {
-         if ((errno == ECONNRESET) || (errno == EBADF))
+         if ((errno == ECONNRESET) || (errno == EBADF) || (errno == EPIPE))
          {
             timeout_flag = CON_RESET;
          }
@@ -381,7 +381,8 @@ ssl_write(SSL *ssl, const char *buf, size_t count)
                break;
 
             case SSL_ERROR_SYSCALL :
-               if ((errno == ECONNRESET) || (errno == EBADF))
+               if ((errno == ECONNRESET) || (errno == EBADF) ||
+                   (errno == EPIPE))
                {
                   timeout_flag = CON_RESET;
                }
