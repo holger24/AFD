@@ -977,13 +977,24 @@ main(int argc, char *argv[])
              */
          }
 
-         if ((status = http_put_response()) != SUCCESS)
+         if ((fsa->protocol_options & NO_EXPECT) && (*p_file_size_buffer != 0))
          {
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
-                      "Failed to PUT remote file `%s' (%d).",
-                      p_remote_filename, status);
-            http_quit();
-            exit(eval_timeout(OPEN_REMOTE_ERROR));
+            if ((status = http_put_response()) != SUCCESS)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                         "Failed to PUT remote file `%s' (%d).",
+                         p_remote_filename, status);
+               if (status == CONNECTION_REOPENED)
+               {
+                  exit_status = STILL_FILES_TO_SEND;
+               }
+               else
+               {
+                  exit_status = OPEN_REMOTE_ERROR;
+               }
+               http_quit();
+               exit(eval_timeout(exit_status));
+            }
          }
 
          /* Update FSA, one file transmitted. */

@@ -1742,30 +1742,42 @@ http_put(char *path,
 
    get_content_type(filename, content_type, YES);
 
-   if (((hmr.features & PROT_OPT_NO_EXPECT) == 0) &&
-       (file_size > 0))
+   if (((hmr.features & PROT_OPT_NO_EXPECT) == 0) ||
+       (file_size == 0))
    {
       int reply;
 
+retry_put:
       if ((reply = command(http_fd,
 #if SIZEOF_OFF_T == 4
-                           "PUT %s%s%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: AFD/%s\r\nAccept: */*\r\nContent-length: %ld\r\n%sContent-Type: %s\r\nExpect: 100-continue\r\nControl: overwrite=1\r\n",
+                           "PUT %s%s%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: AFD/%s\r\nAccept: */*\r\nContent-length: %ld\r\n%sContent-Type: %s\r\n%sControl: overwrite=1\r\n",
 #else
-                           "PUT %s%s%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: AFD/%s\r\nAccept: */*\r\nContent-length: %lld\r\n%sContent-Type: %s\r\nExpect: 100-continue\r\nControl: overwrite=1\r\n",
+                           "PUT %s%s%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: AFD/%s\r\nAccept: */*\r\nContent-length: %lld\r\n%sContent-Type: %s\r\n%sControl: overwrite=1\r\n",
 #endif
                            (*path != '/') ? "/" : "", path, filename,
                            hmr.hostname, PACKAGE_VERSION, (pri_off_t)file_size,
                            (hmr.authorization == NULL) ? "" : hmr.authorization,
-                           content_type)) == SUCCESS)
+                           content_type,
+                           (file_size > 0) ? "Expect: 100-continue\r\n" : "")) == SUCCESS)
       {
-retry_put_reply:
-         if ((reply = get_http_reply(NULL, 100, __LINE__)) == 100)
+         int expected_reply;
+
+         if (file_size > 0)
+         {
+            expected_reply = 100;
+         }
+         else
+         {
+            expected_reply = 200;
+         }
+         if ((reply = get_http_reply(NULL, expected_reply,
+                                     __LINE__)) == expected_reply)
          {
             reply = SUCCESS;
          }
          else if (reply == CONNECTION_REOPENED)
               {
-                 goto retry_put_reply;
+                 goto retry_put;
               }
               else
               {
@@ -1809,20 +1821,15 @@ http_put_response(void)
       free(hmr.authorization);
       hmr.authorization = NULL;
    }
-retry_put_response:
    if (((reply = get_http_reply(NULL, 201, __LINE__)) == 201) ||
        (reply == 204) || (reply == 200))
    {
       reply = SUCCESS;
    }
-   else if (reply == CONNECTION_REOPENED)
-        {
-           goto retry_put_response;
-        }
-        else
-        {
-           clear_msg_str();
-        }
+   else
+   {
+      clear_msg_str();
+   }
 
    hmr.bytes_buffered = 0;
    hmr.bytes_read = 0;
@@ -2912,6 +2919,9 @@ check_connection(void)
    if (connection_closed == YES)
    {
       int status;
+#ifdef WITH_SSL
+       char *tmp_authorization = hmr.authorization;;
+#endif
 
       if ((status = http_connect(hmr.hostname, hmr.http_proxy, hmr.port,
                                  hmr.user, hmr.passwd, hmr.auth_type,
@@ -2938,6 +2948,8 @@ check_connection(void)
       }
       else
       {
+         hmr.authorization = tmp_authorization;
+
          return(CONNECTION_REOPENED);
       }
    }
