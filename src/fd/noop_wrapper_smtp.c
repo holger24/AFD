@@ -1,6 +1,6 @@
 /*
  *  noop_wrapper_smtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2009 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2009 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,8 @@ DESCR__E_M3
 #include "smtpdefs.h"
 
 /* External global variabal. */
+extern int  exitflag,
+            timeout_flag;
 extern char msg_str[];
 
 
@@ -58,9 +60,19 @@ noop_wrapper(void)
    ret = smtp_noop();
    if (ret != SUCCESS)
    {
-      trans_log(WARN_SIGN, __FILE__, __LINE__, NULL,
-                (ret == INCORRECT) ? NULL : msg_str,
-                "Failed to send NOOP command.");
+      if (timeout_flag == CON_RESET)
+      {
+         trans_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                   (ret == INCORRECT) ? NULL : msg_str,
+                   "Connection closed by remote server.");
+         exitflag = 0;
+      }
+      else
+      {
+         trans_log(WARN_SIGN, __FILE__, __LINE__, NULL,
+                   (ret == INCORRECT) ? NULL : msg_str,
+                   "Failed to send NOOP command.");
+      }
       (void)smtp_quit();
       exit(NOOP_ERROR);
    }
