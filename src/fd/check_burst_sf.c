@@ -60,6 +60,7 @@ DESCR__S_M3
  **                      a burst.
  **   18.05.2006 H.Kiehl For protocol SFTP users must be the same,
  **                      otherwise a burst is not possible.
+ **   16.10.2021 H.Kiehl Do send noop for HTTP.
  **
  */
 DESCR__E_M3
@@ -1057,7 +1058,7 @@ check_burst_sf(char         *file_path,
 #ifdef _WITH_DE_MAIL_SUPPORT
                         (db.protocol & DE_MAIL_FLAG) ||
 #endif
-                        (db.protocol & SMTP_FLAG))
+                        (db.protocol & HTTP_FLAG) || (db.protocol & SMTP_FLAG))
                     {
                        if (noop_wrapper() == SUCCESS)
                        {
