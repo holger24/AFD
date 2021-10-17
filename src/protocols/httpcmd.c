@@ -2811,19 +2811,175 @@ http_chunk_read(char **chunk, int *chunksize)
 int
 http_noop(char *path)
 {
-   off_t  file_size;
-   time_t file_mtime;
+   int reply;
 
-   /* I do not know of a better way. HTTP does not support  */
-   /* a NOOP command, so lets just do a HEAD on the current */
-   /* current server.                                       */
+   if (http_fd == -1)
+   {
+      reply = PERMANENT_DISCONNECT;
+   }
+   else
+   {
+      char resource[8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + 1];
 
-#ifdef WITH_TRACE
-   trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
-             "http_noop(): Calling http_head(\"%s\", \"%s\", \"\")",
-             hmr.hostname, path);
+      if (check_connection() == CONNECTION_REOPENED)
+      {
+         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_noop", NULL,
+                   _("Reconnected."));
+         hmr.retries = 1;
+      }
+
+      if (hmr.http_options_not_working & HTTP_OPTION_HEAD)
+      {
+         hmr.date = 0;
+         hmr.content_length = 0;
+
+         return(INCORRECT);
+      }
+      hmr.retries = 0;
+      hmr.date = 0;
+      if (hmr.http_proxy[0] == '\0')
+      {
+         if (*path == '/')
+         {
+            (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + 1,
+                           "%s", path);
+         }
+         else
+         {
+            (void)snprintf(resource, 8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + 1,
+                           "/%s", path);
+         }
+      }
+      else
+      {
+#ifdef WITH_SSL
+         if (hmr.tls_auth == YES)
+         {
+            if (*path == '/')
+            {
+               (void)snprintf(resource,
+                              8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + 1,
+                              "https://%s%s", hmr.hostname, path);
+            }
+            else
+            {
+               (void)snprintf(resource,
+                              8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + 1,
+                              "https://%s/%s", hmr.hostname, path);
+            }
+         }
+         else
+         {
 #endif
-   return(http_head(path, "", &file_size, &file_mtime));
+            if (*path == '/')
+            {
+               (void)snprintf(resource,
+                              8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + 1,
+                              "http://%s%s", hmr.hostname, path);
+            }
+            else
+            {
+               (void)snprintf(resource,
+                              8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + 1,
+                              "http://%s/%s", hmr.hostname, path);
+            }
+#ifdef WITH_SSL
+         }
+#endif
+      }
+#ifdef WITH_SSL
+      if (hmr.auth_type == AUTH_AWS4_HMAC_SHA256)
+      {
+         if (aws4_cmd_authentication("HEAD", "", path, "", &hmr) != SUCCESS)
+         {
+            return(INCORRECT);
+         }
+      }
+      else
+      {
+#endif
+         if (hmr.authorization == NULL)
+         {
+            if (init_basic_authentication() != SUCCESS)
+            {
+               return(INCORRECT);
+            }
+         }
+#ifdef WITH_SSL
+      }
+#endif
+
+      /* I do not know of a better way. HTTP does not support  */
+      /* a NOOP command, so lets just do a HEAD on the current */
+      /* current server.                                       */
+#ifdef WITH_TRACE
+      trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
+                "http_noop(): Trying HEAD on %s", path);
+#endif
+retry_noop:
+      if ((reply = test_command(http_fd,
+                                "HEAD %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: AFD/%s\r\n%sContent-length: 0\r\nAccept: */*\r\n",
+                                resource, hmr.hostname, PACKAGE_VERSION,
+                                (hmr.authorization == NULL) ? "" : hmr.authorization)) == SUCCESS)
+      {
+         if ((reply = get_http_reply(NULL, 999, __LINE__)) == 200)
+         {
+            reply = SUCCESS;
+         }
+         else if (reply == 401) /* Unauthorized */
+              {
+                 if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
+                 {
+                    if (basic_authentication(&hmr) == SUCCESS)
+                    {
+                       if (check_connection() > INCORRECT)
+                       {
+                          goto retry_noop;
+                       }
+                    }
+                    trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_noop", NULL,
+                              _("Failed to create basic authentication."));
+                 }
+                 else if (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST)
+                      {
+                         trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_noop", NULL,
+                                   _("Digest authentication not yet implemented."));
+                      }
+
+                 clear_msg_str();
+                 hmr.bytes_buffered = 0;
+                 hmr.bytes_read = 0;
+              }
+         else if ((reply == 400) || /* Bad Request */
+                  (reply == 405) || /* Method Not Allowed */
+                  (reply == 403) || /* Forbidden */
+                  (reply == 501))   /* Not Implemented */
+              {
+                 hmr.http_options_not_working |= HTTP_OPTION_HEAD;
+                 hmr.bytes_buffered = 0;
+                 hmr.bytes_read = 0;
+              }
+         else if (reply == CONNECTION_REOPENED)
+              {
+                 goto retry_noop;
+              }
+              else
+              {
+                 clear_msg_str();
+                 hmr.bytes_buffered = 0;
+                 hmr.bytes_read = 0;
+              }
+      }
+
+      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) &&
+          (hmr.authorization != NULL))
+      {
+         free(hmr.authorization);
+         hmr.authorization = NULL;
+      }
+   }
+
+   return(reply);
 }
 
 

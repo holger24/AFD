@@ -44,6 +44,9 @@ DESCR__S_M3
  **   26.06.2005 H.Kiehl Don't show password during a trace.
  **   27.02.2013 H.Kiehl Added function connect_with_timeout().
  **   03.11.2018 H.Kiehl Implemented ServerNameIndication for TLS.
+ **   17.10.2021 H.Kiehl Added test_command() which is very similar
+ **                      to command() but does not treat a disconnect
+ **                      by the remote server as an error in the log.
  */
 DESCR__E_M3
 
@@ -146,6 +149,164 @@ command(int fd, char *fmt, ...)
    else
    {
       if (ssl_write(ssl_con, buf, length) != length)
+      {
+         return(INCORRECT);
+      }
+   }
+#endif
+#ifdef WITH_TRACE
+   ptr = buf;
+   do
+   {
+      ptr_start = ptr;
+      while ((*ptr != '\r') && (*(ptr + 1) != '\n') && (ptr < &buf[length - 1]))
+      {
+         ptr++;
+      }
+      if (*ptr == '\r')
+      {
+         *ptr = '\0';
+      }
+      if ((*(ptr + 2) == '\r') && (*(ptr + 3) == '\n'))
+      {
+         /* This is required by HTTP, meaning end of command. */
+         if (((ptr_start + 5) < (buf + length)) &&
+             (*ptr_start == 'P') && (*(ptr_start + 1) == 'A') &&
+             (*(ptr_start + 2) == 'S') && (*(ptr_start + 3) == 'S') &&
+             (*(ptr_start + 4) == ' '))
+         {
+            trace_log(NULL, 0, W_TRACE, NULL, 0, "PASS xxx<0D><0A><0D><0A>");
+         }
+         else
+         {
+            trace_log(NULL, 0, W_TRACE, NULL, 0, "%s<0D><0A><0D><0A>",
+                      ptr_start);
+         }
+         ptr += 4;
+      }
+      else
+      {
+         if (((ptr_start + 5) < (buf + length)) &&
+             (*ptr_start == 'P') && (*(ptr_start + 1) == 'A') &&
+             (*(ptr_start + 2) == 'S') && (*(ptr_start + 3) == 'S') &&
+             (*(ptr_start + 4) == ' '))
+         {
+            trace_log(NULL, 0, W_TRACE, NULL, 0, "PASS xxx<0D><0A>");
+         }
+         else
+         {
+            trace_log(NULL, 0, W_TRACE, NULL, 0, "%s<0D><0A>", ptr_start);
+         }
+         ptr += 2;
+      }
+   } while (ptr < &buf[length - 1]);
+#endif
+   return(SUCCESS);
+}
+
+
+/*############################ test_command() ###########################*/
+int
+test_command(int fd, char *fmt, ...)
+{
+   int     length;
+   char    buf[MAX_LINE_LENGTH + 1];
+   va_list ap;
+   char    *ptr,
+           *ptr_start;
+
+   va_start(ap, fmt);
+   length = vsnprintf(buf, MAX_LINE_LENGTH, fmt, ap);
+   va_end(ap);
+   if (length > MAX_LINE_LENGTH)
+   {
+      trans_log(ERROR_SIGN, __FILE__, __LINE__, "command", NULL,
+                "Command to long (%d > %d)", length, MAX_LINE_LENGTH);
+      return(INCORRECT);
+   }
+   buf[length] = '\r';
+   buf[length + 1] = '\n';
+   length += 2;
+#ifdef WITH_SSL
+   if (ssl_con == NULL)
+   {
+#endif
+      if (write(fd, buf, length) != length)
+      {
+         if ((errno == ECONNRESET) || (errno == EBADF) || (errno == EPIPE))
+         {
+            timeout_flag = CON_RESET;
+         }
+         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "command", NULL,
+                   _("write() error : %s"), strerror(errno));
+         ptr = buf;
+         do
+         {
+            ptr_start = ptr;
+            while ((*ptr != '\r') && (*ptr != '\n') && (ptr < &buf[length - 1]))
+            {
+               ptr++;
+            }
+            if ((*ptr == '\r') || (*ptr == '\n'))
+            {
+               *ptr = '\0';
+               ptr++;
+               while (((*ptr == '\n') || (*ptr == '\r')) && (ptr < &buf[length - 1]))
+               {
+                  ptr++;
+               }
+            }
+            trans_log(DEBUG_SIGN, NULL, 0, "command", NULL, "%s", ptr_start);
+         } while (ptr < &buf[length - 1]);
+
+         return(INCORRECT);
+      }
+#ifdef WITH_SSL
+   }
+   else
+   {
+      int     bytes_done;
+      size_t  count = length;
+      ssize_t bytes_total = 0;
+
+      do
+      {
+         if ((bytes_done = SSL_write(ssl_con, buf + bytes_total, count)) <= 0)
+         {
+            int ret;
+
+            ret = SSL_get_error(ssl_con, bytes_done);
+            switch (ret)
+            {
+               case SSL_ERROR_WANT_READ : /* Renegotiation takes place. */
+                  my_usleep(50000L);
+                  break;
+
+               case SSL_ERROR_SYSCALL :
+                  if ((errno == ECONNRESET) || (errno == EBADF) ||
+                      (errno == EPIPE))
+                  {
+                     timeout_flag = CON_RESET;
+                  }
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ssl_write", NULL,
+                            _("SSL_write() error (%d) : %s"),
+                            ret, strerror(errno));
+                  return(INCORRECT);
+
+               default : /* Error */
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "ssl_write", NULL,
+                            _("SSL_write() error (%d)"), ret);
+                  return(INCORRECT);
+            }
+         }
+         else
+         {
+            count -= bytes_done;
+            bytes_total += bytes_done;
+         }
+      } while (count > 0);
+
+      if (bytes_total != length)
       {
          return(INCORRECT);
       }

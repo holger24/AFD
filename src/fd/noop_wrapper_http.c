@@ -46,6 +46,8 @@ DESCR__E_M3
 #include "httpdefs.h"
 
 /* External global variabal. */
+extern int        exitflag,
+                  timeout_flag;
 extern char       msg_str[];
 extern struct job db;
 
@@ -65,9 +67,19 @@ noop_wrapper(void)
       }
       else
       {
-         trans_log(WARN_SIGN, __FILE__, __LINE__, NULL,
-                   (ret == INCORRECT) ? NULL : msg_str,
-                   "Failed to send NOOP command.");
+         if (timeout_flag == CON_RESET)
+         {
+            trans_log(INFO_SIGN, __FILE__, __LINE__, NULL,
+                      (ret == INCORRECT) ? NULL : msg_str,
+                      "Connection closed by remote server.");
+            exitflag = 0;
+         }
+         else
+         {
+            trans_log(WARN_SIGN, __FILE__, __LINE__, NULL,
+                      (ret == INCORRECT) ? NULL : msg_str,
+                      "Failed to send NOOP command.");
+         }
          http_quit();
          exit(NOOP_ERROR);
       }

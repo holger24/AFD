@@ -32,7 +32,8 @@
 /* Function prototypes. */
 extern void    get_content_type(char *, char *, int);
 extern int     command(int, char *, ...),
-               connect_with_timeout(int, const struct sockaddr *, socklen_t);
+               connect_with_timeout(int, const struct sockaddr *, socklen_t),
+               test_command(int, char *, ...);
 #ifdef WITH_SSL
 extern int     ssl_connect(int, char *, char *, int);
 extern ssize_t ssl_write(SSL *, const char *, size_t);
