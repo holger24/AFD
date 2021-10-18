@@ -65,7 +65,6 @@ noop_wrapper(void)
          trans_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                    (ret == INCORRECT) ? NULL : msg_str,
                    "Connection closed by remote server.");
-         exitflag = 0;
       }
       else
       {
@@ -73,6 +72,7 @@ noop_wrapper(void)
                    (ret == INCORRECT) ? NULL : msg_str,
                    "Failed to send NOOP command.");
       }
+      exitflag = 0;
       (void)smtp_quit();
       exit(NOOP_ERROR);
    }

@@ -1,6 +1,6 @@
 /*
  *  noop_wrapper_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -78,6 +78,7 @@ noop_wrapper(void)
          trans_log(WARN_SIGN, __FILE__, __LINE__, NULL,
                    (ret == INCORRECT) ? NULL : msg_str,
                    "Failed to send NOOP command.");
+         exitflag = 0;
          (void)ftp_quit();
          exit(NOOP_ERROR);
       }
