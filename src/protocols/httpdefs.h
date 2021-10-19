@@ -37,7 +37,7 @@
 /* 7176 elements/keys.                                                */
 
 #define PERMANENT_DISCONNECT        -10
-#define CONNECTION_REOPENED         100
+#define CONNECTION_REOPENED         99
 #define WWW_AUTHENTICATE_BASIC      10
 #define WWW_AUTHENTICATE_DIGEST     11
 

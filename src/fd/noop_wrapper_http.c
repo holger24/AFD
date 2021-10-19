@@ -41,21 +41,30 @@ DESCR__S_M3
  */
 DESCR__E_M3
 
-#include <stdlib.h>             /* exit()                                */
+/* #define DO_REAL_NOOP_HTTP 1 */
+
+#ifdef DO_REAL_NOOP_HTTP
+# include <stdlib.h>            /* exit()                                */
+# include "httpdefs.h"
+#endif
 #include "fddefs.h"
-#include "httpdefs.h"
 
 /* External global variabal. */
+#ifdef DO_REAL_NOOP_HTTP
 extern int        exitflag,
                   timeout_flag;
 extern char       msg_str[];
 extern struct job db;
+#endif
 
 
 /*$$$$$$$$$$$$$$$$$$$$$$$$$$$ noop_wrapper() $$$$$$$$$$$$$$$$$$$$$$$$$$$$*/
 int
 noop_wrapper(void)
 {
+#ifndef DO_REAL_NOOP_HTTP
+   return(SUCCESS);
+#else
    int ret;
 
    ret = http_noop(db.target_dir);
@@ -86,4 +95,5 @@ noop_wrapper(void)
    }
    
    return(ret);
+#endif
 }
