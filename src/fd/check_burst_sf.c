@@ -825,13 +825,21 @@ check_burst_sf(char         *file_path,
                     {
                        p_new_db->port = DEFAULT_SMTP_PORT;
                     }
-#ifdef WITH_SSL
-               else if ((db.protocol & HTTP_FLAG) && (db.protocol & SSL_FLAG) &&
-                        (db.port == DEFAULT_HTTP_PORT))
+               else if (db.protocol & HTTP_FLAG)
                     {
-                       p_new_db->port = DEFAULT_HTTPS_PORT;
-                    }
+#ifdef WITH_SSL
+                       if (db.protocol & SSL_FLAG)
+                       {
+                          p_new_db->port = DEFAULT_HTTPS_PORT;
+                       }
+                       else
+                       {
 #endif
+                          p_new_db->port = DEFAULT_HTTP_PORT;
+#ifdef WITH_SSL
+                       }
+#endif
+                    }
                     else
                     {
                        p_new_db->port = -1;
