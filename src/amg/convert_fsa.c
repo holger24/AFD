@@ -1806,6 +1806,624 @@ convert_fsa(int           old_fsa_fd,
                       (int)old_version, (int)new_version);
         }
 #ifdef NEW_FSA
+   else if ((old_version == 0) && (new_version == 4))
+        {
+           struct filetransfer_status_0 *old_fsa;
+           struct filetransfer_status_4 *new_fsa;
+
+           /* Get the size of the old FSA file. */
+           if (fstat(old_fsa_fd, &stat_buf) < 0)
+           {
+              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "Failed to fstat() %s : %s", old_fsa_stat, strerror(errno));
+              *old_fsa_size = -1;
+              return(NULL);
+           }
+           else
+           {
+              if (stat_buf.st_size > 0)
+              {
+#ifdef HAVE_MMAP
+                 if ((ptr = mmap(NULL, stat_buf.st_size,
+                                 (PROT_READ | PROT_WRITE),
+                                 MAP_SHARED, old_fsa_fd, 0)) == (caddr_t) -1)
+#else
+                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                                     (PROT_READ | PROT_WRITE),
+                                     MAP_SHARED, old_fsa_stat, 0)) == (caddr_t) -1)
+#endif
+                 {
+                    system_log(ERROR_SIGN, __FILE__, __LINE__,
+                               "Failed to mmap() to %s : %s",
+                               old_fsa_stat, strerror(errno));
+                    *old_fsa_size = -1;
+                    return(NULL);
+                 }
+              }
+              else
+              {
+                 system_log(ERROR_SIGN, __FILE__, __LINE__,
+                            "FSA file %s is empty.", old_fsa_stat);
+                 *old_fsa_size = -1;
+                 return(NULL);
+              }
+           }
+
+           ptr += AFD_WORD_OFFSET_0;
+           old_fsa = (struct filetransfer_status_0 *)ptr;
+
+           new_size = old_no_of_hosts * sizeof(struct filetransfer_status_4);
+           if ((ptr = malloc(new_size)) == NULL)
+           {
+              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "malloc() error [%d %d] : %s",
+                         old_no_of_hosts, new_size, strerror(errno));
+              ptr = (char *)old_fsa;
+              ptr -= AFD_WORD_OFFSET_0;
+#ifdef HAVE_MMAP
+              if (munmap(ptr, stat_buf.st_size) == -1)
+#else
+              if (munmap_emu(ptr) == -1)
+#endif
+              {
+                 system_log(WARN_SIGN, __FILE__, __LINE__,
+                            "Failed to munmap() %s : %s",
+                            old_fsa_stat, strerror(errno));
+              }
+              *old_fsa_size = -1;
+              return(NULL);
+           }
+           (void)memset(ptr, 0, new_size);
+           new_fsa = (struct filetransfer_status_4 *)ptr;
+
+           /*
+            * Copy all the old data into the new region.
+            */
+           for (i = 0; i < old_no_of_hosts; i++)
+           {
+              (void)strcpy(new_fsa[i].host_alias, old_fsa[i].host_alias);
+              (void)strcpy(new_fsa[i].real_hostname[0], old_fsa[i].real_hostname[0]);
+              (void)strcpy(new_fsa[i].real_hostname[1], old_fsa[i].real_hostname[1]);
+              (void)strcpy(new_fsa[i].host_dsp_name, old_fsa[i].host_dsp_name);
+              new_fsa[i].host_dsp_name[MAX_HOSTNAME_LENGTH_4 + 1] = '\0';
+              (void)strcpy(new_fsa[i].proxy_name, old_fsa[i].proxy_name);
+              (void)strcpy(new_fsa[i].host_toggle_str, old_fsa[i].host_toggle_str);
+              new_fsa[i].toggle_pos             = old_fsa[i].toggle_pos;
+              new_fsa[i].original_toggle_pos    = old_fsa[i].original_toggle_pos;
+              new_fsa[i].auto_toggle            = old_fsa[i].auto_toggle;
+              new_fsa[i].file_size_offset       = old_fsa[i].file_size_offset;
+              new_fsa[i].successful_retries     = old_fsa[i].successful_retries;
+              new_fsa[i].max_successful_retries = old_fsa[i].max_successful_retries;
+              new_fsa[i].special_flag           = old_fsa[i].special_flag;
+              new_fsa[i].protocol               = 0;
+              if (old_fsa[i].protocol & FTP_FLAG)
+              {
+                 new_fsa[i].protocol |= FTP_FLAG;
+              }
+              if (old_fsa[i].protocol & LOC_FLAG)
+              {
+                 new_fsa[i].protocol |= LOC_FLAG;
+              }
+              if (old_fsa[i].protocol & SMTP_FLAG)
+              {
+                 new_fsa[i].protocol |= SMTP_FLAG;
+              }
+#ifdef _WITH_MAP_SUPPORT
+              if (old_fsa[i].protocol & MAP_FLAG)
+              {
+                 new_fsa[i].protocol |= MAP_FLAG;
+              }
+#endif
+#ifdef _WITH_SCP_SUPPORT
+              if (old_fsa[i].protocol & SCP_FLAG)
+              {
+                 new_fsa[i].protocol |= SCP_FLAG;
+              }
+#endif
+#ifdef _WITH_WMO_SUPPORT
+              if (old_fsa[i].protocol & WMO_FLAG)
+              {
+                 new_fsa[i].protocol |= WMO_FLAG;
+              }
+#endif
+              if (old_fsa[i].protocol & GET_FTP_FLAG_0)
+              {
+                 new_fsa[i].protocol |= GET_FTP_FLAG_4;
+              }
+              if (old_fsa[i].protocol & SEND_FLAG_0)
+              {
+                 new_fsa[i].protocol |= SEND_FLAG_4;
+              }
+              if (old_fsa[i].protocol & RETRIEVE_FLAG_0)
+              {
+                 new_fsa[i].protocol |= RETRIEVE_FLAG_4;
+              }
+              new_fsa[i].protocol_options = 0;
+#ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
+              if (old_fsa[i].protocol & STAT_KEEPALIVE_0)
+              {
+                 new_fsa[i].protocol_options |= STAT_KEEPALIVE_4;
+              }
+#endif
+              if (old_fsa[i].protocol & SET_IDLE_TIME_0)
+              {
+                 new_fsa[i].protocol_options |= SET_IDLE_TIME_4;
+              }
+              if (old_fsa[i].protocol & FTP_PASSIVE_MODE_0)
+              {
+                 new_fsa[i].protocol_options |= FTP_PASSIVE_MODE_4;
+              }
+              new_fsa[i].socksnd_bufsize        = 0U;
+              new_fsa[i].sockrcv_bufsize        = 0U;
+              new_fsa[i].keep_connected         = 0U;
+#ifdef WITH_DUP_CHECK
+              new_fsa[i].dup_check_flag         = 0U;
+#endif
+              new_fsa[i].host_id                = get_str_checksum(new_fsa[i].host_alias);
+              if (old_fsa[i].debug == NO)
+              {
+                 new_fsa[i].debug               = NORMAL_MODE;
+              }
+              else
+              {
+                 new_fsa[i].debug               = DEBUG_MODE;
+              }
+              new_fsa[i].host_toggle            = old_fsa[i].host_toggle;
+              new_fsa[i].host_status            = old_fsa[i].host_status;
+              new_fsa[i].error_counter          = old_fsa[i].error_counter;
+              new_fsa[i].total_errors           = old_fsa[i].total_errors;
+              new_fsa[i].max_errors             = old_fsa[i].max_errors;
+              for (j = 0; j < ERROR_HISTORY_LENGTH; j++)
+              {
+                 new_fsa[i].error_history[j] = 0;
+              }
+              new_fsa[i].retry_interval         = old_fsa[i].retry_interval;
+              new_fsa[i].block_size             = old_fsa[i].block_size;
+              new_fsa[i].ttl                    = 0;
+#ifdef WITH_DUP_CHECK
+              new_fsa[i].dup_check_timeout      = 0L;
+#endif
+              new_fsa[i].last_retry_time        = old_fsa[i].last_retry_time;
+              new_fsa[i].last_connection        = old_fsa[i].last_connection;
+              new_fsa[i].first_error_time       = 0L;
+              new_fsa[i].start_event_handle     = 0L;
+              new_fsa[i].end_event_handle       = 0L;
+              new_fsa[i].warn_time              = 0L;
+              new_fsa[i].total_file_counter     = old_fsa[i].total_file_counter;
+              new_fsa[i].total_file_size        = (off_t)(old_fsa[i].total_file_size);
+              new_fsa[i].jobs_queued            = old_fsa[i].jobs_queued;
+              new_fsa[i].file_counter_done      = old_fsa[i].file_counter_done;
+              new_fsa[i].bytes_send             = (u_off_t)(old_fsa[i].bytes_send);
+              new_fsa[i].connections            = old_fsa[i].connections;
+              new_fsa[i].mc_nack_counter        = 0U;
+              new_fsa[i].active_transfers       = old_fsa[i].active_transfers;
+              new_fsa[i].allowed_transfers      = old_fsa[i].allowed_transfers;
+              new_fsa[i].transfer_rate_limit    = 0;
+              new_fsa[i].trl_per_process        = 0;
+              new_fsa[i].mc_ct_rate_limit       = 0;
+              new_fsa[i].mc_ctrl_per_process    = 0;
+              new_fsa[i].transfer_timeout       = old_fsa[i].transfer_timeout;
+              for (j = 0; j < MAX_NO_PARALLEL_JOBS_0; j++)
+              {
+                 new_fsa[i].job_status[j].proc_id = old_fsa[i].job_status[j].proc_id;
+#ifdef _WITH_BURST_2
+                 (void)strcpy(new_fsa[i].job_status[j].unique_name, old_fsa[i].job_status[j].unique_name);
+                 new_fsa[i].job_status[j].job_id = old_fsa[i].job_status[j].job_id;
+#endif
+                 new_fsa[i].job_status[j].connect_status = old_fsa[i].job_status[j].connect_status;
+                 new_fsa[i].job_status[j].no_of_files = old_fsa[i].job_status[j].no_of_files;
+                 new_fsa[i].job_status[j].no_of_files_done = old_fsa[i].job_status[j].no_of_files_done;
+                 new_fsa[i].job_status[j].file_size = (off_t)old_fsa[i].job_status[j].file_size;
+                 new_fsa[i].job_status[j].file_size_done = (u_off_t)old_fsa[i].job_status[j].file_size_done;
+                 new_fsa[i].job_status[j].bytes_send = (u_off_t)old_fsa[i].job_status[j].bytes_send;
+                 (void)strcpy(new_fsa[i].job_status[j].file_name_in_use, old_fsa[i].job_status[j].file_name_in_use);
+                 new_fsa[i].job_status[j].file_size_in_use = (off_t)old_fsa[i].job_status[j].file_size_in_use;
+                 new_fsa[i].job_status[j].file_size_in_use_done = (off_t)old_fsa[i].job_status[j].file_size_in_use_done;
+              }
+           }
+
+           ptr = (char *)old_fsa;
+           ptr -= AFD_WORD_OFFSET_0;
+
+           /*
+            * Resize the old FSA to the size of new one and then copy
+            * the new structure into it. Then update the FSA version
+            * number.
+            */
+           if ((ptr = mmap_resize(old_fsa_fd, ptr, new_size + AFD_WORD_OFFSET_4)) == (caddr_t) -1)
+           {
+              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "Failed to mmap_resize() %s : %s",
+                         old_fsa_stat, strerror(errno));
+              free((void *)new_fsa);
+              return(NULL);
+           }
+           ptr += AFD_WORD_OFFSET_4;
+           (void)memcpy(ptr, new_fsa, new_size);
+           free((void *)new_fsa);
+           ptr -= AFD_WORD_OFFSET_4;
+           *(ptr + SIZEOF_INT + 1 + 1) = 0;               /* Not used. */
+           *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
+           *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;      /* Not used. */
+           *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;  /* Not used. */
+           *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;  /* Not used. */
+           *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 3) = 0;  /* Not used. */
+           *old_fsa_size = new_size + AFD_WORD_OFFSET_4;
+
+           system_log(INFO_SIGN, NULL, 0,
+                      "Converted FSA from verion %d to %d.",
+                      (int)old_version, (int)new_version);
+        }
+   else if ((old_version == 1) && (new_version == 4))
+        {
+           struct filetransfer_status_1 *old_fsa;
+           struct filetransfer_status_4 *new_fsa;
+
+           /* Get the size of the old FSA file. */
+           if (fstat(old_fsa_fd, &stat_buf) < 0)
+           {
+              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "Failed to fstat() %s : %s", old_fsa_stat, strerror(errno));
+              *old_fsa_size = -1;
+              return(NULL);
+           }
+           else
+           {
+              if (stat_buf.st_size > 0)
+              {
+#ifdef HAVE_MMAP
+                 if ((ptr = mmap(NULL, stat_buf.st_size,
+                                 (PROT_READ | PROT_WRITE),
+                                 MAP_SHARED, old_fsa_fd, 0)) == (caddr_t) -1)
+#else
+                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                                     (PROT_READ | PROT_WRITE),
+                                     MAP_SHARED, old_fsa_stat, 0)) == (caddr_t) -1)
+#endif
+                 {
+                    system_log(ERROR_SIGN, __FILE__, __LINE__,
+                               "Failed to mmap() to %s : %s",
+                               old_fsa_stat, strerror(errno));
+                    *old_fsa_size = -1;
+                    return(NULL);
+                 }
+              }
+              else
+              {
+                 system_log(ERROR_SIGN, __FILE__, __LINE__,
+                            "FSA file %s is empty.", old_fsa_stat);
+                 *old_fsa_size = -1;
+                 return(NULL);
+              }
+           }
+
+           ptr += AFD_WORD_OFFSET_1;
+           old_fsa = (struct filetransfer_status_1 *)ptr;
+
+           new_size = old_no_of_hosts * sizeof(struct filetransfer_status_4);
+           if ((ptr = malloc(new_size)) == NULL)
+           {
+              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "malloc() error [%d %d] : %s",
+                         old_no_of_hosts, new_size, strerror(errno));
+              ptr = (char *)old_fsa;
+              ptr -= AFD_WORD_OFFSET_1;
+#ifdef HAVE_MMAP
+              if (munmap(ptr, stat_buf.st_size) == -1)
+#else
+              if (munmap_emu(ptr) == -1)
+#endif
+              {
+                 system_log(WARN_SIGN, __FILE__, __LINE__,
+                            "Failed to munmap() %s : %s",
+                            old_fsa_stat, strerror(errno));
+              }
+              *old_fsa_size = -1;
+              return(NULL);
+           }
+           (void)memset(ptr, 0, new_size);
+           new_fsa = (struct filetransfer_status_4 *)ptr;
+
+           /*
+            * Copy all the old data into the new region.
+            */
+           for (i = 0; i < old_no_of_hosts; i++)
+           {
+              (void)my_strncpy(new_fsa[i].host_alias, old_fsa[i].host_alias, MAX_HOSTNAME_LENGTH_4 + 1);
+              (void)strcpy(new_fsa[i].real_hostname[0], old_fsa[i].real_hostname[0]);
+              (void)strcpy(new_fsa[i].real_hostname[1], old_fsa[i].real_hostname[1]);
+              (void)my_strncpy(new_fsa[i].host_dsp_name, old_fsa[i].host_dsp_name, MAX_HOSTNAME_LENGTH_4 + 1);
+              new_fsa[i].host_dsp_name[MAX_HOSTNAME_LENGTH_4 + 1] = '\0';
+              (void)strcpy(new_fsa[i].proxy_name, old_fsa[i].proxy_name);
+              (void)strcpy(new_fsa[i].host_toggle_str, old_fsa[i].host_toggle_str);
+              new_fsa[i].toggle_pos             = old_fsa[i].toggle_pos;
+              new_fsa[i].original_toggle_pos    = old_fsa[i].original_toggle_pos;
+              new_fsa[i].auto_toggle            = old_fsa[i].auto_toggle;
+              new_fsa[i].file_size_offset       = old_fsa[i].file_size_offset;
+              new_fsa[i].successful_retries     = old_fsa[i].successful_retries;
+              new_fsa[i].max_successful_retries = old_fsa[i].max_successful_retries;
+              new_fsa[i].special_flag           = old_fsa[i].special_flag;
+              new_fsa[i].protocol               = old_fsa[i].protocol;
+              new_fsa[i].protocol_options       = old_fsa[i].protocol_options;
+              new_fsa[i].protocol_options2      = 0;
+              new_fsa[i].socksnd_bufsize        = 0U;
+              new_fsa[i].sockrcv_bufsize        = 0U;
+              new_fsa[i].keep_connected         = 0U;
+#ifdef WITH_DUP_CHECK
+              new_fsa[i].dup_check_flag         = 0U;
+#endif
+              new_fsa[i].host_id                = get_str_checksum(new_fsa[i].host_alias);
+              new_fsa[i].debug                  = old_fsa[i].debug;
+              new_fsa[i].host_toggle            = old_fsa[i].host_toggle;
+              new_fsa[i].host_status            = old_fsa[i].host_status;
+              new_fsa[i].error_counter          = old_fsa[i].error_counter;
+              new_fsa[i].total_errors           = old_fsa[i].total_errors;
+              new_fsa[i].max_errors             = old_fsa[i].max_errors;
+              (void)memcpy(new_fsa[i].error_history, old_fsa[i].error_history, ERROR_HISTORY_LENGTH);
+              new_fsa[i].retry_interval         = old_fsa[i].retry_interval;
+              new_fsa[i].block_size             = old_fsa[i].block_size;
+              new_fsa[i].ttl                    = old_fsa[i].ttl;
+#ifdef WITH_DUP_CHECK
+              new_fsa[i].dup_check_timeout      = 0L;
+#endif
+              new_fsa[i].last_retry_time        = old_fsa[i].last_retry_time;
+              new_fsa[i].last_connection        = old_fsa[i].last_connection;
+              new_fsa[i].first_error_time       = old_fsa[i].first_error_time;
+              new_fsa[i].start_event_handle     = 0L;
+              new_fsa[i].end_event_handle       = 0L;
+              new_fsa[i].warn_time              = 0L;
+              new_fsa[i].total_file_counter     = old_fsa[i].total_file_counter;
+              new_fsa[i].total_file_size        = old_fsa[i].total_file_size;
+              new_fsa[i].jobs_queued            = old_fsa[i].jobs_queued;
+              new_fsa[i].file_counter_done      = old_fsa[i].file_counter_done;
+              new_fsa[i].bytes_send             = old_fsa[i].bytes_send;
+              new_fsa[i].connections            = old_fsa[i].connections;
+              new_fsa[i].mc_nack_counter        = old_fsa[i].mc_nack_counter;
+              new_fsa[i].active_transfers       = old_fsa[i].active_transfers;
+              new_fsa[i].allowed_transfers      = old_fsa[i].allowed_transfers;
+              new_fsa[i].transfer_rate_limit    = old_fsa[i].transfer_rate_limit;
+              new_fsa[i].trl_per_process        = old_fsa[i].trl_per_process;
+              new_fsa[i].mc_ct_rate_limit       = old_fsa[i].mc_ct_rate_limit;
+              new_fsa[i].mc_ctrl_per_process    = old_fsa[i].mc_ctrl_per_process;
+              new_fsa[i].transfer_timeout       = old_fsa[i].transfer_timeout;
+              for (j = 0; j < MAX_NO_PARALLEL_JOBS_1; j++)
+              {
+                 new_fsa[i].job_status[j].proc_id = old_fsa[i].job_status[j].proc_id;
+#ifdef _WITH_BURST_2
+                 (void)memcpy(new_fsa[i].job_status[j].unique_name, old_fsa[i].job_status[j].unique_name, MAX_MSG_NAME_LENGTH_1);
+                 new_fsa[i].job_status[j].job_id = old_fsa[i].job_status[j].job_id;
+#endif
+                 new_fsa[i].job_status[j].connect_status = old_fsa[i].job_status[j].connect_status;
+                 new_fsa[i].job_status[j].no_of_files = old_fsa[i].job_status[j].no_of_files;
+                 new_fsa[i].job_status[j].no_of_files_done = old_fsa[i].job_status[j].no_of_files_done;
+                 new_fsa[i].job_status[j].file_size = old_fsa[i].job_status[j].file_size;
+                 new_fsa[i].job_status[j].file_size_done = old_fsa[i].job_status[j].file_size_done;
+                 new_fsa[i].job_status[j].bytes_send = old_fsa[i].job_status[j].bytes_send;
+                 (void)strcpy(new_fsa[i].job_status[j].file_name_in_use, old_fsa[i].job_status[j].file_name_in_use);
+                 new_fsa[i].job_status[j].file_size_in_use = old_fsa[i].job_status[j].file_size_in_use;
+                 new_fsa[i].job_status[j].file_size_in_use_done = old_fsa[i].job_status[j].file_size_in_use_done;
+              }
+           }
+
+           ptr = (char *)old_fsa;
+           ptr -= AFD_WORD_OFFSET_1;
+
+           /*
+            * Resize the old FSA to the size of new one and then copy
+            * the new structure into it. Then update the FSA version
+            * number.
+            */
+           if ((ptr = mmap_resize(old_fsa_fd, ptr, new_size + AFD_WORD_OFFSET_4)) == (caddr_t) -1)
+           {
+              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "Failed to mmap_resize() %s : %s",
+                         old_fsa_stat, strerror(errno));
+              free((void *)new_fsa);
+              return(NULL);
+           }
+           ptr += AFD_WORD_OFFSET_4;
+           (void)memcpy(ptr, new_fsa, new_size);
+           free((void *)new_fsa);
+           ptr -= AFD_WORD_OFFSET_4;
+           *(ptr + SIZEOF_INT + 1 + 1) = 0;               /* Not used. */
+           *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
+           *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;      /* Not used. */
+           *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;  /* Not used. */
+           *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;  /* Not used. */
+           *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 3) = 0;  /* Not used. */
+           *old_fsa_size = new_size + AFD_WORD_OFFSET_4;
+
+           system_log(INFO_SIGN, NULL, 0,
+                      "Converted FSA from verion %d to %d.",
+                      (int)old_version, (int)new_version);
+        }
+   else if ((old_version == 2) && (new_version == 4))
+        {
+           struct filetransfer_status_2 *old_fsa;
+           struct filetransfer_status_4 *new_fsa;
+
+           /* Get the size of the old FSA file. */
+           if (fstat(old_fsa_fd, &stat_buf) < 0)
+           {
+              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "Failed to fstat() %s : %s",
+                         old_fsa_stat, strerror(errno));
+              *old_fsa_size = -1;
+              return(NULL);
+           }
+           else
+           {
+              if (stat_buf.st_size > 0)
+              {
+#ifdef HAVE_MMAP
+                 if ((ptr = mmap(NULL, stat_buf.st_size,
+                                 (PROT_READ | PROT_WRITE),
+                                 MAP_SHARED, old_fsa_fd, 0)) == (caddr_t) -1)
+#else
+                 if ((ptr = mmap_emu(NULL, stat_buf.st_size,
+                                     (PROT_READ | PROT_WRITE),
+                                     MAP_SHARED, old_fsa_stat, 0)) == (caddr_t) -1)
+#endif
+                 {
+                    system_log(ERROR_SIGN, __FILE__, __LINE__,
+                               "Failed to mmap() to %s : %s",
+                               old_fsa_stat, strerror(errno));
+                    *old_fsa_size = -1;
+                    return(NULL);
+                 }
+              }
+              else
+              {
+                 system_log(ERROR_SIGN, __FILE__, __LINE__,
+                            "FSA file %s is empty.", old_fsa_stat);
+                 *old_fsa_size = -1;
+                 return(NULL);
+              }
+           }
+
+           ptr += AFD_WORD_OFFSET_2;
+           old_fsa = (struct filetransfer_status_2 *)ptr;
+
+           new_size = old_no_of_hosts * sizeof(struct filetransfer_status_4);
+           if ((ptr = malloc(new_size)) == NULL)
+           {
+              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "malloc() error [%d %d] : %s",
+                         old_no_of_hosts, new_size, strerror(errno));
+              ptr = (char *)old_fsa;
+              ptr -= AFD_WORD_OFFSET_2;
+#ifdef HAVE_MMAP
+              if (munmap(ptr, stat_buf.st_size) == -1)
+#else
+              if (munmap_emu(ptr) == -1)
+#endif
+              {
+                 system_log(WARN_SIGN, __FILE__, __LINE__,
+                            "Failed to munmap() %s : %s",
+                            old_fsa_stat, strerror(errno));
+              }
+              *old_fsa_size = -1;
+              return(NULL);
+           }
+           (void)memset(ptr, 0, new_size);
+           new_fsa = (struct filetransfer_status_4 *)ptr;
+
+           /*
+            * Copy all the old data into the new region.
+            */
+           for (i = 0; i < old_no_of_hosts; i++)
+           {
+              (void)my_strncpy(new_fsa[i].host_alias, old_fsa[i].host_alias, MAX_HOSTNAME_LENGTH_4 + 1);
+              (void)strcpy(new_fsa[i].real_hostname[0], old_fsa[i].real_hostname[0]);
+              (void)strcpy(new_fsa[i].real_hostname[1], old_fsa[i].real_hostname[1]);
+              (void)my_strncpy(new_fsa[i].host_dsp_name, old_fsa[i].host_dsp_name, MAX_HOSTNAME_LENGTH_4 + 1);
+              new_fsa[i].host_dsp_name[MAX_HOSTNAME_LENGTH_4 + 1] = '\0';
+              (void)strcpy(new_fsa[i].proxy_name, old_fsa[i].proxy_name);
+              (void)strcpy(new_fsa[i].host_toggle_str, old_fsa[i].host_toggle_str);
+              new_fsa[i].toggle_pos             = old_fsa[i].toggle_pos;
+              new_fsa[i].original_toggle_pos    = old_fsa[i].original_toggle_pos;
+              new_fsa[i].auto_toggle            = old_fsa[i].auto_toggle;
+              new_fsa[i].file_size_offset       = old_fsa[i].file_size_offset;
+              new_fsa[i].successful_retries     = old_fsa[i].successful_retries;
+              new_fsa[i].max_successful_retries = old_fsa[i].max_successful_retries;
+              new_fsa[i].special_flag           = old_fsa[i].special_flag;
+              new_fsa[i].protocol               = old_fsa[i].protocol;
+              new_fsa[i].protocol_options       = old_fsa[i].protocol_options;
+              new_fsa[i].protocol_options2      = 0;
+              new_fsa[i].socksnd_bufsize        = old_fsa[i].socksnd_bufsize;
+              new_fsa[i].sockrcv_bufsize        = old_fsa[i].sockrcv_bufsize;
+              new_fsa[i].keep_connected         = old_fsa[i].keep_connected;
+#ifdef WITH_DUP_CHECK
+              new_fsa[i].dup_check_flag         = old_fsa[i].dup_check_flag;
+#endif
+              new_fsa[i].host_id                = old_fsa[i].host_id;
+              new_fsa[i].debug                  = old_fsa[i].debug;
+              new_fsa[i].host_toggle            = old_fsa[i].host_toggle;
+              new_fsa[i].host_status            = old_fsa[i].host_status;
+              new_fsa[i].error_counter          = old_fsa[i].error_counter;
+              new_fsa[i].total_errors           = old_fsa[i].total_errors;
+              new_fsa[i].max_errors             = old_fsa[i].max_errors;
+              (void)memcpy(new_fsa[i].error_history, old_fsa[i].error_history, ERROR_HISTORY_LENGTH);
+              new_fsa[i].retry_interval         = old_fsa[i].retry_interval;
+              new_fsa[i].block_size             = old_fsa[i].block_size;
+              new_fsa[i].ttl                    = old_fsa[i].ttl;
+#ifdef WITH_DUP_CHECK
+              new_fsa[i].dup_check_timeout      = old_fsa[i].dup_check_timeout;
+#endif
+              new_fsa[i].last_retry_time        = old_fsa[i].last_retry_time;
+              new_fsa[i].last_connection        = old_fsa[i].last_connection;
+              new_fsa[i].first_error_time       = old_fsa[i].first_error_time;
+              new_fsa[i].start_event_handle     = 0L;
+              new_fsa[i].end_event_handle       = 0L;
+              new_fsa[i].warn_time              = 0L;
+              new_fsa[i].total_file_counter     = old_fsa[i].total_file_counter;
+              new_fsa[i].total_file_size        = old_fsa[i].total_file_size;
+              new_fsa[i].jobs_queued            = old_fsa[i].jobs_queued;
+              new_fsa[i].file_counter_done      = old_fsa[i].file_counter_done;
+              new_fsa[i].bytes_send             = old_fsa[i].bytes_send;
+              new_fsa[i].connections            = old_fsa[i].connections;
+              new_fsa[i].mc_nack_counter        = old_fsa[i].mc_nack_counter;
+              new_fsa[i].active_transfers       = old_fsa[i].active_transfers;
+              new_fsa[i].allowed_transfers      = old_fsa[i].allowed_transfers;
+              new_fsa[i].transfer_rate_limit    = old_fsa[i].transfer_rate_limit;
+              new_fsa[i].trl_per_process        = old_fsa[i].trl_per_process;
+              new_fsa[i].mc_ct_rate_limit       = old_fsa[i].mc_ct_rate_limit;
+              new_fsa[i].mc_ctrl_per_process    = old_fsa[i].mc_ctrl_per_process;
+              new_fsa[i].transfer_timeout       = old_fsa[i].transfer_timeout;
+              for (j = 0; j < MAX_NO_PARALLEL_JOBS_2; j++)
+              {
+                 new_fsa[i].job_status[j].proc_id = old_fsa[i].job_status[j].proc_id;
+#ifdef _WITH_BURST_2
+                 (void)memcpy(new_fsa[i].job_status[j].unique_name, old_fsa[i].job_status[j].unique_name, MAX_MSG_NAME_LENGTH_2);
+                 new_fsa[i].job_status[j].job_id = old_fsa[i].job_status[j].job_id;
+#endif
+                 new_fsa[i].job_status[j].connect_status = old_fsa[i].job_status[j].connect_status;
+                 new_fsa[i].job_status[j].no_of_files = old_fsa[i].job_status[j].no_of_files;
+                 new_fsa[i].job_status[j].no_of_files_done = old_fsa[i].job_status[j].no_of_files_done;
+                 new_fsa[i].job_status[j].file_size = old_fsa[i].job_status[j].file_size;
+                 new_fsa[i].job_status[j].file_size_done = old_fsa[i].job_status[j].file_size_done;
+                 new_fsa[i].job_status[j].bytes_send = old_fsa[i].job_status[j].bytes_send;
+                 (void)strcpy(new_fsa[i].job_status[j].file_name_in_use, old_fsa[i].job_status[j].file_name_in_use);
+                 new_fsa[i].job_status[j].file_size_in_use = old_fsa[i].job_status[j].file_size_in_use;
+                 new_fsa[i].job_status[j].file_size_in_use_done = old_fsa[i].job_status[j].file_size_in_use_done;
+              }
+           }
+
+           ptr = (char *)old_fsa;
+           ptr -= AFD_WORD_OFFSET_2;
+
+           /*
+            * Resize the old FSA to the size of new one and then copy
+            * the new structure into it. Then update the FSA version
+            * number.
+            */
+           if ((ptr = mmap_resize(old_fsa_fd, ptr, new_size + AFD_WORD_OFFSET_4)) == (caddr_t) -1)
+           {
+              system_log(ERROR_SIGN, __FILE__, __LINE__,
+                         "Failed to mmap_resize() %s : %s",
+                         old_fsa_stat, strerror(errno));
+              free((void *)new_fsa);
+              return(NULL);
+           }
+           ptr += AFD_WORD_OFFSET_4;
+           (void)memcpy(ptr, new_fsa, new_size);
+           free((void *)new_fsa);
+           ptr -= AFD_WORD_OFFSET_4;
+           *(ptr + SIZEOF_INT + 1 + 1) = 0;               /* Not used. */
+           *(ptr + SIZEOF_INT + 1 + 1 + 1) = new_version;
+           *(int *)(ptr + SIZEOF_INT + 4) = pagesize;
+           *(ptr + SIZEOF_INT + 4 + SIZEOF_INT) = 0;      /* Not used. */
+           *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 1) = 0;  /* Not used. */
+           *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 2) = 0;  /* Not used. */
+           *(ptr + SIZEOF_INT + 4 + SIZEOF_INT + 3) = 0;  /* Not used. */
+           *old_fsa_size = new_size + AFD_WORD_OFFSET_4;
+
+           system_log(INFO_SIGN, NULL, 0,
+                      "Converted FSA from verion %d to %d.",
+                      (int)old_version, (int)new_version);
+        }
    else if ((old_version == 3) && (new_version == 4))
         {
            int                          ignore_first_errors;
