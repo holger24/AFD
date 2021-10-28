@@ -912,6 +912,8 @@ typedef unsigned long       u_long_64;
 #define EXEC_CMD_TO_LONG           8388608
 #define BUFFER_TO_SHORT            16777216
 #define REGION_NAME_TO_LONG        33554432
+#define PARAMETER_MISSING          67108864
+#define URL_UNKNOWN_VALUE          134217728
 
 /* When looking at difference in two URL's, flags for which parts differ. */
 #define URL_SCHEME_DIFS            1

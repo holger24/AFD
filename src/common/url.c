@@ -1252,6 +1252,8 @@ url_evaluate(char          *url,
 
                if (todo)
                {
+                  char *ptr_tmp;
+
                   if (*ptr == '/')
                   {
                      ptr++;
@@ -1841,235 +1843,265 @@ url_evaluate(char          *url,
                      }
                   }
 
-                  if (todo)
+                  while ((todo) && (*ptr == ';') && (*ptr != '\0'))
                   {
-                     if (*ptr == ';')
+                     ptr++;
+                     ptr_tmp = ptr;
+                     while ((*ptr != '\0') && (*ptr != '='))
                      {
-                        char *ptr_tmp;
-
                         ptr++;
-                        ptr_tmp = ptr;
-                        while ((*ptr != '\0') && (*ptr != '='))
+                     }
+                     if (*ptr == '=')
+                     {
+                        i = ptr - ptr_tmp;
+                        if ((transfer_type != NULL) && (i == 4) &&
+                            (*(ptr - 1) == 'e') && (*(ptr - 2) == 'p') &&
+                            (*(ptr - 3) == 'y') && (*(ptr - 4) == 't'))
                         {
                            ptr++;
-                        }
-                        if (*ptr == '=')
-                        {
-                           i = ptr - ptr_tmp;
-                           if ((transfer_type != NULL) && (i == 4) &&
-                               (*(ptr - 1) == 'e') && (*(ptr - 2) == 'p') &&
-                               (*(ptr - 3) == 'y') && (*(ptr - 4) == 't'))
+                           switch (*ptr)
                            {
-                              ptr++;
-                              switch (*ptr)
-                              {
-                                 case 'a': /* ASCII. */
-                                 case 'A': *transfer_type = 'A';
-                                           break;
-                                 case 'd': /* DOS binary. */
-                                 case 'D': *transfer_type = 'D';
-                                           break;
-                                 case 'i': /* Image/binary. */
-                                 case 'I': *transfer_type = 'I';
-                                           break;
-                                 case 'n': /* None, for sending no type. */
-                                 case 'N': *transfer_type = 'N';
-                                           break;
+                              case 'a': /* ASCII. */
+                              case 'A': *transfer_type = 'A';
+                                        break;
+                              case 'd': /* DOS binary. */
+                              case 'D': *transfer_type = 'D';
+                                        break;
+                              case 'i': /* Image/binary. */
+                              case 'I': *transfer_type = 'I';
+                                        break;
+                              case 'n': /* None, for sending no type. */
+                              case 'N': *transfer_type = 'N';
+                                        break;
 #ifdef _WITH_WMO_SUPPORT
-                                 case 'f': /* Indicates FAX message in scheme wmo. */
-                                 case 'F': *transfer_type = 'F';
-                                           break;
+                              case 'f': /* Indicates FAX message in scheme wmo. */
+                              case 'F': *transfer_type = 'F';
+                                        break;
 #endif
-                                 default : url_error |= UNKNOWN_TRANSFER_TYPE;
-                                           *transfer_type = 'I';
-                                           break;
-                              }
-                              todo &= ~URL_GET_TRANSFER_TYPE;
+                              default : url_error |= UNKNOWN_TRANSFER_TYPE;
+                                        *transfer_type = 'I';
+                                        break;
                            }
-                                /* server= */
-                           else if ((server != NULL) && (i == 6) &&
-                                    (*(ptr - 1) == 'r') &&
-                                    (*(ptr - 2) == 'e') &&
-                                    (*(ptr - 3) == 'v') &&
-                                    (*(ptr - 4) == 'r') &&
-                                    (*(ptr - 5) == 'e') && (*(ptr - 6) == 's'))
-                                {
-                                   ptr++;
-                                   i = 0;
-                                   while ((*ptr != '\0') && (*ptr != ' ') &&
-                                          (*ptr != '\t') && (*ptr != ';') &&
-                                          (i < MAX_REAL_HOSTNAME_LENGTH))
-                                   {
-                                      server[i] = *ptr;
-                                      i++; ptr++;
-                                   }
-                                   if (i >= MAX_REAL_HOSTNAME_LENGTH)
-                                   {
-                                      url_error |= SERVER_NAME_TO_LONG;
-                                      server[0] = '\0';
-                                      while ((*ptr != '\0') && (*ptr != ' ') &&
-                                             (*ptr != '\t') && (*ptr != ';'))
-                                      {
-                                         if (*ptr == '\\')
-                                         {
-                                            ptr++;
-                                         }
-                                         ptr++;
-                                      }
-                                   }
-                                   else
-                                   {
-                                      server[i] = '\0';
-                                   }
-
-                                   todo &= ~URL_GET_SERVER;
-                                }
-                                /* auth= */
-                           else if ((auth != NULL) && (i == 4) &&
-                                    (*(ptr - 1) == 'h') &&
-                                    (*(ptr - 2) == 't') &&
-                                    (*(ptr - 3) == 'u') &&
-                                    (*(ptr - 4) == 'a'))
-                                {
-                                   ptr++;
-                                   /* basic */
-                                   if ((*ptr == 'b') && (*(ptr + 1) == 'a') &&
-                                       (*(ptr + 2) == 's') &&
-                                       (*(ptr + 3) == 'i') &&
-                                       (*(ptr + 4) == 'c') &&
-                                       ((*(ptr + 5) == '\0') ||
-                                        (*(ptr + 5) == ';') ||
-                                        (*(ptr + 5) == ' ') ||
-                                        (*(ptr + 5) == '\0')))
-                                   {
-                                      *auth = AUTH_BASIC;
-                                   }
-                                        /* aws4-hmac-sha256 */
-                                   else if ((*ptr == 'a') &&
-                                            (*(ptr + 1) == 'w') &&
-                                            (*(ptr + 2) == 's') &&
-                                            (*(ptr + 3) == '4') &&
-                                            (*(ptr + 4) == '-') &&
-                                            (*(ptr + 5) == 'h') &&
-                                            (*(ptr + 6) == 'm') &&
-                                            (*(ptr + 7) == 'a') &&
-                                            (*(ptr + 8) == 'c') &&
-                                            (*(ptr + 9) == '-') &&
-                                            (*(ptr + 10) == 's') &&
-                                            (*(ptr + 11) == 'h') &&
-                                            (*(ptr + 12) == 'a') &&
-                                            (*(ptr + 13) == '2') &&
-                                            (*(ptr + 14) == '5') &&
-                                            (*(ptr + 15) == '6') &&
-                                            ((*(ptr + 16) == '\0') ||
-                                             (*(ptr + 16) == ';') ||
-                                             (*(ptr + 16) == ' ') ||
-                                             (*(ptr + 16) == '\0')))
-                                        {
-                                           *auth = AUTH_AWS4_HMAC_SHA256;
-                                        }
-
-                                   todo &= ~URL_GET_AUTH;
-                                }
-                                /* region= */
-                           else if ((region != NULL) && (i == 6) &&
-                                    (*(ptr - 1) == 'n') &&
-                                    (*(ptr - 2) == 'o') &&
-                                    (*(ptr - 3) == 'i') &&
-                                    (*(ptr - 4) == 'g') &&
-                                    (*(ptr - 5) == 'e') && (*(ptr - 6) == 'r'))
-                                {
-                                   ptr++;
-                                   i = 0;
-                                   while ((*ptr != '\0') && (*ptr != ' ') &&
-                                          (*ptr != '\t') && (*ptr != ';') &&
-                                          (i < MAX_REAL_HOSTNAME_LENGTH))
-                                   {
-                                      region[i] = *ptr;
-                                      i++; ptr++;
-                                   }
-                                   if (i >= MAX_REAL_HOSTNAME_LENGTH)
-                                   {
-                                      url_error |= REGION_NAME_TO_LONG;
-                                      region[0] = '\0';
-                                      while ((*ptr != '\0') && (*ptr != ' ') &&
-                                             (*ptr != '\t') && (*ptr != ';'))
-                                      {
-                                         if (*ptr == '\\')
-                                         {
-                                            ptr++;
-                                         }
-                                         ptr++;
-                                      }
-                                   }
-                                   else
-                                   {
-                                      region[i] = '\0';
-                                   }
-
-                                   todo &= ~URL_GET_REGION;
-                                }
-                                /* service= */
-                           else if ((service != NULL) && (i == 7) &&
-                                    (*(ptr - 1) == 's') &&
-                                    (*(ptr - 2) == 'e') &&
-                                    (*(ptr - 3) == 'r') &&
-                                    (*(ptr - 4) == 'v') &&
-                                    (*(ptr - 5) == 'i') &&
-                                    (*(ptr - 6) == 'c') && (*(ptr - 7) == 'e'))
-                                {
-                                   ptr++;
-                                   /* s3 */
-                                   if ((*ptr == 's') && (*(ptr + 1) == '3') &&
-                                       ((*(ptr + 2) == '\0') ||
-                                        (*(ptr + 2) == ';') ||
-                                        (*(ptr + 2) == ' ') ||
-                                        (*(ptr + 2) == '\0')))
-                                   {
-                                      *service = SERVICE_S3;
-                                   }
-
-                                   todo &= ~URL_GET_SERVICE;
-                                }
-                                /* protocol= */
-                           else if ((protocol_version != NULL) && (i == 8) &&
-                                    (*(ptr - 1) == 'l') &&
-                                    (*(ptr - 2) == 'o') &&
-                                    (*(ptr - 3) == 'c') &&
-                                    (*(ptr - 4) == 'o') &&
-                                    (*(ptr - 5) == 't') &&
-                                    (*(ptr - 6) == 'o') &&
-                                    (*(ptr - 7) == 'r') &&
-                                    (*(ptr - 8) == 'p'))
-                                {
-                                   char str_number[MAX_INT_LENGTH];
-
-                                   ptr++;
-                                   i = 0;
-                                   while ((*ptr != '\0') && (*ptr != ' ') &&
-                                          (*ptr != '\t') &&
-                                          (i < MAX_INT_LENGTH))
-                                   {
-                                      str_number[i] = *ptr;
-                                      i++; ptr++;
-                                   }
-                                   if (i >= MAX_INT_LENGTH)
-                                   {
-                                      url_error |= PROTOCOL_VERSION_TO_LONG;
-                                      *protocol_version = 0;
-                                   }
-                                   else if (i == 0)
-                                        {
-                                           url_error |= NO_PROTOCOL_VERSION;
-                                        }
-                                        else
-                                        {
-                                           str_number[i] = '\0';
-                                           *protocol_version = (unsigned char)atoi(str_number);
-                                        }
-                                   todo &= ~URL_GET_PROTOCOL_VERSION;
-                                }
+                           todo &= ~URL_GET_TRANSFER_TYPE;
                         }
+                             /* server= */
+                        else if ((server != NULL) && (i == 6) &&
+                                 (*(ptr - 1) == 'r') &&
+                                 (*(ptr - 2) == 'e') &&
+                                 (*(ptr - 3) == 'v') &&
+                                 (*(ptr - 4) == 'r') &&
+                                 (*(ptr - 5) == 'e') && (*(ptr - 6) == 's'))
+                             {
+                                ptr++;
+                                i = 0;
+                                while ((*ptr != '\0') && (*ptr != ' ') &&
+                                       (*ptr != '\t') && (*ptr != ';') &&
+                                       (i < MAX_REAL_HOSTNAME_LENGTH))
+                                {
+                                   server[i] = *ptr;
+                                   i++; ptr++;
+                                }
+                                if (i >= MAX_REAL_HOSTNAME_LENGTH)
+                                {
+                                   url_error |= SERVER_NAME_TO_LONG;
+                                   server[0] = '\0';
+                                   while ((*ptr != '\0') && (*ptr != ' ') &&
+                                          (*ptr != '\t') && (*ptr != ';'))
+                                   {
+                                      if (*ptr == '\\')
+                                      {
+                                         ptr++;
+                                      }
+                                      ptr++;
+                                   }
+                                }
+                                else
+                                {
+                                   server[i] = '\0';
+                                }
+
+                                todo &= ~URL_GET_SERVER;
+                             }
+                             /* auth= */
+                        else if ((auth != NULL) && (i == 4) &&
+                                 (*(ptr - 1) == 'h') &&
+                                 (*(ptr - 2) == 't') &&
+                                 (*(ptr - 3) == 'u') &&
+                                 (*(ptr - 4) == 'a'))
+                             {
+                                ptr++;
+                                /* basic */
+                                if ((*ptr == 'b') && (*(ptr + 1) == 'a') &&
+                                    (*(ptr + 2) == 's') &&
+                                    (*(ptr + 3) == 'i') &&
+                                    (*(ptr + 4) == 'c') &&
+                                    ((*(ptr + 5) == '\0') ||
+                                     (*(ptr + 5) == ';') ||
+                                     (*(ptr + 5) == ' ') ||
+                                     (*(ptr + 5) == '\0')))
+                                {
+                                   *auth = AUTH_BASIC;
+                                   ptr += 5;
+                                }
+                                     /* aws4-hmac-sha256 */
+                                else if ((*ptr == 'a') &&
+                                         (*(ptr + 1) == 'w') &&
+                                         (*(ptr + 2) == 's') &&
+                                         (*(ptr + 3) == '4') &&
+                                         (*(ptr + 4) == '-') &&
+                                         (*(ptr + 5) == 'h') &&
+                                         (*(ptr + 6) == 'm') &&
+                                         (*(ptr + 7) == 'a') &&
+                                         (*(ptr + 8) == 'c') &&
+                                         (*(ptr + 9) == '-') &&
+                                         (*(ptr + 10) == 's') &&
+                                         (*(ptr + 11) == 'h') &&
+                                         (*(ptr + 12) == 'a') &&
+                                         (*(ptr + 13) == '2') &&
+                                         (*(ptr + 14) == '5') &&
+                                         (*(ptr + 15) == '6') &&
+                                         ((*(ptr + 16) == ';') ||
+                                          (*(ptr + 16) == ' ') ||
+                                          (*(ptr + 16) == '\0')))
+                                     {
+                                        *auth = AUTH_AWS4_HMAC_SHA256;
+                                        ptr += 16;
+                                     }
+                                     else
+                                     {
+                                        url_error |= URL_UNKNOWN_VALUE;
+                                        *auth = AUTH_BASIC;
+                                        while ((*ptr != '\0') && (*ptr != ' ') &&
+                                               (*ptr != '\t') && (*ptr != ';'))
+                                        {
+                                           if (*ptr == '\\')
+                                           {
+                                              ptr++;
+                                           }
+                                           ptr++;
+                                        }
+                                     }
+
+                                todo &= ~URL_GET_AUTH;
+                             }
+                             /* region= */
+                        else if ((region != NULL) && (i == 6) &&
+                                 (*(ptr - 1) == 'n') &&
+                                 (*(ptr - 2) == 'o') &&
+                                 (*(ptr - 3) == 'i') &&
+                                 (*(ptr - 4) == 'g') &&
+                                 (*(ptr - 5) == 'e') &&
+                                 (*(ptr - 6) == 'r'))
+                             {
+                                ptr++;
+                                i = 0;
+                                while ((*ptr != '\0') && (*ptr != ' ') &&
+                                       (*ptr != '\t') && (*ptr != ';') &&
+                                       (i < MAX_REAL_HOSTNAME_LENGTH))
+                                {
+                                   region[i] = *ptr;
+                                   i++; ptr++;
+                                }
+                                if (i >= MAX_REAL_HOSTNAME_LENGTH)
+                                {
+                                   url_error |= REGION_NAME_TO_LONG;
+                                   region[0] = '\0';
+                                   while ((*ptr != '\0') && (*ptr != ' ') &&
+                                          (*ptr != '\t') && (*ptr != ';'))
+                                   {
+                                      if (*ptr == '\\')
+                                      {
+                                         ptr++;
+                                      }
+                                      ptr++;
+                                   }
+                                }
+                                else
+                                {
+                                   region[i] = '\0';
+                                   if (i == 0)
+                                   {
+                                      url_error |= PARAMETER_MISSING;
+                                   }
+                                }
+
+                                todo &= ~URL_GET_REGION;
+                             }
+                             /* service= */
+                        else if ((service != NULL) && (i == 7) &&
+                                 (*(ptr - 1) == 'e') &&
+                                 (*(ptr - 2) == 'c') &&
+                                 (*(ptr - 3) == 'i') &&
+                                 (*(ptr - 4) == 'v') &&
+                                 (*(ptr - 5) == 'r') &&
+                                 (*(ptr - 6) == 'e') &&
+                                 (*(ptr - 7) == 's'))
+                             {
+                                ptr++;
+                                /* s3 */
+                                if ((*ptr == 's') && (*(ptr + 1) == '3') &&
+                                    ((*(ptr + 2) == ';') ||
+                                     (*(ptr + 2) == ' ') ||
+                                     (*(ptr + 2) == '\0')))
+                                {
+                                   *service = SERVICE_S3;
+                                   ptr += 2;
+                                }
+                                else
+                                {
+                                   url_error |= URL_UNKNOWN_VALUE;
+                                   *service = SERVICE_NONE;
+                                   while ((*ptr != '\0') && (*ptr != ' ') &&
+                                          (*ptr != '\t') && (*ptr != ';'))
+                                   {
+                                      if (*ptr == '\\')
+                                      {
+                                         ptr++;
+                                      }
+                                      ptr++;
+                                   }
+                                }
+
+                                todo &= ~URL_GET_SERVICE;
+                             }
+                             /* protocol= */
+                        else if ((protocol_version != NULL) && (i == 8) &&
+                                 (*(ptr - 1) == 'l') &&
+                                 (*(ptr - 2) == 'o') &&
+                                 (*(ptr - 3) == 'c') &&
+                                 (*(ptr - 4) == 'o') &&
+                                 (*(ptr - 5) == 't') &&
+                                 (*(ptr - 6) == 'o') &&
+                                 (*(ptr - 7) == 'r') &&
+                                 (*(ptr - 8) == 'p'))
+                             {
+                                char str_number[MAX_INT_LENGTH];
+
+                                ptr++;
+                                i = 0;
+                                while ((*ptr != '\0') && (*ptr != ' ') &&
+                                       (*ptr != '\t') &&
+                                       (i < MAX_INT_LENGTH))
+                                {
+                                   str_number[i] = *ptr;
+                                   i++; ptr++;
+                                }
+                                if (i >= MAX_INT_LENGTH)
+                                {
+                                   url_error |= PROTOCOL_VERSION_TO_LONG;
+                                   *protocol_version = 0;
+                                }
+                                else if (i == 0)
+                                     {
+                                        url_error |= NO_PROTOCOL_VERSION;
+                                     }
+                                     else
+                                     {
+                                        str_number[i] = '\0';
+                                        *protocol_version = (unsigned char)atoi(str_number);
+                                     }
+                                todo &= ~URL_GET_PROTOCOL_VERSION;
+                             }
                      }
                   }
                }
@@ -3157,6 +3189,58 @@ url_get_error(int error_mask, char *error_str, int error_str_length)
                length = snprintf(error_str, error_str_length,
                                  "region name may only be %d bytes long",
                                  MAX_REAL_HOSTNAME_LENGTH);
+               if (length > error_str_length)
+               {
+                  length = error_str_length;
+               }
+            }
+            error_str_length -= length;
+         }
+         if ((error_str_length > 19) && (error_mask & PARAMETER_MISSING))
+         {
+            if (length)
+            {
+               tlen = snprintf(&error_str[length], error_str_length - length,
+                               ", parameter missing");
+               if (tlen > (error_str_length - length))
+               {
+                  length = error_str_length - length;
+               }
+               else
+               {
+                  length += tlen;
+               }
+            }
+            else
+            {
+               length = snprintf(error_str, error_str_length,
+                                 "parameter missing");
+               if (length > error_str_length)
+               {
+                  length = error_str_length;
+               }
+            }
+            error_str_length -= length;
+         }
+         if ((error_str_length > 15) && (error_mask & URL_UNKNOWN_VALUE))
+         {
+            if (length)
+            {
+               tlen = snprintf(&error_str[length], error_str_length - length,
+                               ", unknown value");
+               if (tlen > (error_str_length - length))
+               {
+                  length = error_str_length - length;
+               }
+               else
+               {
+                  length += tlen;
+               }
+            }
+            else
+            {
+               length = snprintf(error_str, error_str_length,
+                                 "unknown value");
                if (length > error_str_length)
                {
                   length = error_str_length;
