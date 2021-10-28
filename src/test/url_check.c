@@ -33,7 +33,7 @@ main(int argc, char *argv[])
                  server[MAX_REAL_HOSTNAME_LENGTH + 1],
                  work_dir[MAX_PATH_LENGTH];
    unsigned char protocol_version,
-                 smtp_auth
+                 smtp_auth,
                  auth,
                  service;
 
