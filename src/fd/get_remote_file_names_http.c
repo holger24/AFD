@@ -782,13 +782,13 @@ try_attach_again:
 
                if (content_length > MAX_HTTP_DIR_BUFFER)
                {
-                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
 #if SIZEOF_OFF_T == 4
-                             "Directory buffer length is only for %d bytes, remote system wants to send %ld bytes. If needed increase MAX_HTTP_DIR_BUFFER.",
+                            "Directory buffer length is only for %d bytes, remote system wants to send %ld bytes. If needed increase MAX_HTTP_DIR_BUFFER.",
 #else
-                             "Directory buffer length is only for %d bytes, remote system wants to send %lld bytes. If needed increase MAX_HTTP_DIR_BUFFER.",
+                            "Directory buffer length is only for %d bytes, remote system wants to send %lld bytes. If needed increase MAX_HTTP_DIR_BUFFER.",
 #endif
-                             MAX_HTTP_DIR_BUFFER, (pri_off_t)content_length);
+                            MAX_HTTP_DIR_BUFFER, (pri_off_t)content_length);
                   http_quit();
                   exit(ALLOC_ERROR);
                } else if (content_length == 0)
