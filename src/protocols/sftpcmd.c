@@ -374,7 +374,8 @@ retry_connect:
                                          __LINE__)) == SUCCESS)
                   {
 #ifdef WITH_TRACE
-                     if (scd.debug == TRACE_MODE)
+                     if ((scd.debug == TRACE_MODE) ||
+                         (scd.debug == FULL_TRACE_MODE))
                      {
                         show_sftp_cmd(ui_var, R_TRACE);
                      }
@@ -1776,17 +1777,12 @@ sftp_open_dir(char *dirname)
 int
 sftp_close_file(void)
 {
-   int status = SUCCESS;
+   int status;
 
    /*
     * Before doing a close, catch all pending writes.
     */
-   if (scd.pending_write_counter > 0)
-   {
-      status = sftp_flush();
-   }
-
-   if (status == SUCCESS)
+   if ((status = sftp_flush()) == SUCCESS)
    {
       /*
        * byte   SSH_FXP_CLOSE
@@ -3073,6 +3069,16 @@ sftp_flush(void)
               }
               else
               {
+#ifdef WITH_TRACE
+                 if ((scd.debug == TRACE_MODE) ||
+                     (scd.debug == FULL_TRACE_MODE))
+                 {
+                    trace_log(__FILE__, __LINE__, C_TRACE, NULL, 0,
+                              "sftp_flush(): get_reply() returned %d (i=%d)",
+                              status, i);
+                 }
+#endif
+
                  return(INCORRECT);
               }
       }
@@ -3375,9 +3381,20 @@ sftp_quit(void)
    {
       int i;
 
+      trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_quit", NULL,
+                "Hmm, there are %d unaccounted replies!", scd.stored_replies);
+
       for (i = 0; i < scd.stored_replies; i++)
       {
+#ifdef WITH_TRACE
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+         {
+            (void)memcpy(msg, scd.sm[i].sm_buffer, scd.sm[i].message_length);
+            show_sftp_cmd(scd.sm[i].message_length, R_TRACE);
+         }
+#endif
          free(scd.sm[i].sm_buffer);
+         scd.stored_replies = 0;
       }
    }
    if (msg != NULL)
@@ -3491,6 +3508,12 @@ get_reply(unsigned int id, int line)
          {
             /* Save content of stored message to buffer msg. */
             (void)memcpy(msg, scd.sm[i].sm_buffer, scd.sm[i].message_length);
+#ifdef WITH_TRACE
+            if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+            {
+               msg_length = scd.sm[i].message_length;
+            }
+#endif
 
             /* Remove reply from buffer and free its memory. */
             free(scd.sm[i].sm_buffer);
@@ -3502,6 +3525,13 @@ get_reply(unsigned int id, int line)
                (void)memmove(&scd.sm[i], &scd.sm[i + 1], move_size);
             }
             scd.stored_replies--;
+
+#ifdef WITH_TRACE
+            if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
+            {
+               show_sftp_cmd(msg_length, R_TRACE);
+            }
+#endif
 
             return(SUCCESS);
          }
@@ -3560,7 +3590,8 @@ retry:
    }
 
 #ifdef WITH_TRACE
-   if ((reply == SUCCESS) && (scd.debug == TRACE_MODE))
+   if ((reply == SUCCESS) &&
+       ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE)))
    {
       show_sftp_cmd(msg_length, R_TRACE);
    }
@@ -3613,7 +3644,8 @@ get_write_reply(unsigned int id, int line)
                if ((reply = read_msg(msg, (int)msg_length, line)) == SUCCESS)
                {
 #ifdef WITH_TRACE
-                  if (scd.debug == TRACE_MODE)
+                  if ((scd.debug == TRACE_MODE) ||
+                      (scd.debug == FULL_TRACE_MODE))
                   {
                      show_sftp_cmd(msg_length, R_TRACE);
                   }
@@ -3822,7 +3854,7 @@ write_msg(char *block, int size, int line)
                  return(tmp_errno);
               }
 #ifdef WITH_TRACE
-              if (scd.debug == TRACE_MODE)
+              if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
               {
                  if ((nleft == size) && (status > 4))
                  {
@@ -3965,7 +3997,7 @@ read_msg(char *block, int blocksize, int line)
               }
 
 #ifdef WITH_TRACE
-         if (scd.debug == TRACE_MODE)
+         if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
          {
             if ((bytes_read > 4) && (*(block + 4) == SSH_FXP_DATA))
             {
@@ -5095,6 +5127,9 @@ store_attributes(char *msg, unsigned int *p_stat_flag, struct stat *p_stat_buf)
       }
       if (stat_flag & SSH_FILEXFER_ATTR_EXTENDED)
       {
+         /* Ignore */
+         pos += 4;
+         stat_flag &= ~SSH_FILEXFER_ATTR_EXTENDED;
       }
    }
    else
@@ -5107,6 +5142,7 @@ store_attributes(char *msg, unsigned int *p_stat_flag, struct stat *p_stat_buf)
       }
       if (stat_flag & SSH_FILEXFER_ATTR_SUBSECOND_TIMES)
       {
+         /* Ignore */
          pos += 4;
          stat_flag &= ~SSH_FILEXFER_ATTR_SUBSECOND_TIMES;
       }
@@ -5115,21 +5151,11 @@ store_attributes(char *msg, unsigned int *p_stat_flag, struct stat *p_stat_buf)
          pos += 8;
          stat_flag &= ~SSH_FILEXFER_ATTR_CREATETIME;
       }
-      if (stat_flag & SSH_FILEXFER_ATTR_SUBSECOND_TIMES)
-      {
-         pos += 4;
-         stat_flag &= ~SSH_FILEXFER_ATTR_SUBSECOND_TIMES;
-      }
       if (stat_flag & SSH_FILEXFER_ATTR_MODIFYTIME)
       {
          p_stat_buf->st_mtime = (time_t)get_xfer_uint64(&msg[pos]);
          pos += 8;
          stat_flag &= ~SSH_FILEXFER_ATTR_MODIFYTIME;
-      }
-      if (stat_flag & SSH_FILEXFER_ATTR_SUBSECOND_TIMES)
-      {
-         pos += 4;
-         stat_flag &= ~SSH_FILEXFER_ATTR_SUBSECOND_TIMES;
       }
       if (stat_flag & SSH_FILEXFER_ATTR_CTIME)
       {
@@ -5137,15 +5163,23 @@ store_attributes(char *msg, unsigned int *p_stat_flag, struct stat *p_stat_buf)
          pos += 8;
          stat_flag &= ~SSH_FILEXFER_ATTR_CTIME;
       }
-      if (stat_flag & SSH_FILEXFER_ATTR_SUBSECOND_TIMES)
-      {
-         pos += 4;
-         stat_flag &= ~SSH_FILEXFER_ATTR_SUBSECOND_TIMES;
-      }
       if (stat_flag & SSH_FILEXFER_ATTR_BITS)
       {
+         /* Ignore */
          pos += 4;
          stat_flag &= ~SSH_FILEXFER_ATTR_BITS;
+      }
+      if (stat_flag & SSH_FILEXFER_ATTR_LINK_COUNT)
+      {
+         /* Ignore */
+         pos += 4;
+         stat_flag &= ~SSH_FILEXFER_ATTR_LINK_COUNT;
+      }
+      if (stat_flag & SSH_FILEXFER_ATTR_TEXT_HINT)
+      {
+         /* Ignore */
+         pos += 1;
+         stat_flag &= ~SSH_FILEXFER_ATTR_TEXT_HINT;
       }
    }
    if (stat_flag != 0)
