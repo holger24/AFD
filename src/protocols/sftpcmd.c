@@ -220,9 +220,10 @@ static void                     get_msg_str(char *),
                                 set_xfer_str(char *, char *, int),
                                 set_xfer_uint(char *, unsigned int),
                                 set_xfer_uint64(char *, u_long_64),
-                                sig_handler(int);
+                                sig_handler(int),
+                                update_pending_writes(int);
 #ifdef WITH_TRACE
-static void                     show_sftp_cmd(unsigned int, int),
+static void                     show_sftp_cmd(unsigned int, int, int),
                                 show_trace_handle(char *, unsigned int,
                                                   char *, char *,
                                                   unsigned int, off_t,
@@ -377,7 +378,7 @@ retry_connect:
                      if ((scd.debug == TRACE_MODE) ||
                          (scd.debug == FULL_TRACE_MODE))
                      {
-                        show_sftp_cmd(ui_var, R_TRACE);
+                        show_sftp_cmd(ui_var, R_TRACE, SSC_HANDLED);
                      }
 #endif
                      if (msg[0] == SSH_FXP_VERSION)
@@ -3030,6 +3031,74 @@ sftp_flush(void)
       int i,
           status;
 
+      /*
+       * Since get_write_reply() does call get_reply() which buffers
+       * the returned message to scd.sm when the id does not match.
+       * So first check if there is a write acknowledge with a matching
+       * id.
+       */
+      if (scd.stored_replies > 0)
+      {
+         int          gotcha,
+                      j;
+         unsigned int reply_id;
+         size_t       move_size;
+
+         trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_flush", NULL,
+                   "Hmm, need to check %d stored messages.",
+                   scd.stored_replies);
+         for (i = 0; i < scd.stored_replies; i++)
+         {
+            if (scd.sm[i].message_length > 4)
+            {
+               gotcha = NO;
+               reply_id = get_xfer_uint(&scd.sm[i].sm_buffer[1]);
+               for (j = 0; j < scd.pending_write_counter; j++)
+               {
+                  if (reply_id == scd.pending_write_id[j])
+                  {
+#ifdef WITH_TRACE
+                     if ((scd.debug == TRACE_MODE) ||
+                         (scd.debug == FULL_TRACE_MODE))
+                     {
+                        (void)memcpy(msg, scd.sm[i].sm_buffer,
+                                     scd.sm[i].message_length);
+                        show_sftp_cmd(scd.sm[i].message_length, R_TRACE,
+                                      SSC_FROM_BUFFER);
+                     }
+#endif
+                     if ((scd.pending_write_counter > 1) &&
+                         (j != (scd.pending_write_counter - 1)))
+                     {
+                        move_size = (scd.pending_write_counter - 1 - j) *
+                                    sizeof(unsigned int);
+                        (void)memmove(&scd.pending_write_id[j],
+                                      &scd.pending_write_id[j + 1],
+                                      move_size);
+                     }
+                     scd.pending_write_counter--;
+                     gotcha = YES;
+                     break;
+                  }
+               }
+               if (gotcha == YES)
+               {
+                  /* Remove reply from buffer and free its memory. */
+                  free(scd.sm[i].sm_buffer);
+                  if ((scd.stored_replies > 1) &&
+                      (i != (scd.stored_replies - 1)))
+                  {
+                     move_size = (scd.stored_replies - 1 - i) *
+                                 sizeof(struct stored_messages);
+                     (void)memmove(&scd.sm[i], &scd.sm[i + 1], move_size);
+                  }
+                  scd.stored_replies--;
+                  i--;
+               }
+            }
+         }
+      }
+
 #ifdef WITH_TRACE
       if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
       {
@@ -3040,7 +3109,7 @@ sftp_flush(void)
 #endif
       for (i = 0; i < scd.pending_write_counter; i++)
       {
-         if ((status = get_reply(scd.pending_write_id[i], __LINE__)) == SUCCESS)
+         if ((status = get_write_reply(scd.pending_write_id[i], __LINE__)) == SUCCESS)
          {
             if (msg[0] == SSH_FXP_STATUS)
             {
@@ -3050,6 +3119,8 @@ sftp_flush(void)
                   get_msg_str(&msg[9]);
                   trans_log(DEBUG_SIGN, __FILE__, __LINE__, "sftp_flush", NULL,
                             "%s", error_2_str(&msg[5]));
+                  update_pending_writes(i);
+
                   return(INCORRECT);
                }
             }
@@ -3059,6 +3130,8 @@ sftp_flush(void)
                          _("Expecting %d (SSH_FXP_STATUS) but got %d (%s) as reply."),
                          SSH_FXP_STATUS, (int)msg[0], response_2_str(msg[0]));
                msg_str[0] = '\0';
+               update_pending_writes(i);
+
                return(INCORRECT);
             }
          }
@@ -3078,6 +3151,7 @@ sftp_flush(void)
                               status, i);
                  }
 #endif
+                 update_pending_writes(i);
 
                  return(INCORRECT);
               }
@@ -3086,6 +3160,27 @@ sftp_flush(void)
    }
 
    return(SUCCESS);
+}
+
+
+/*+++++++++++++++++++++++ update_pending_writes() +++++++++++++++++++++++*/
+static void
+update_pending_writes(int pos)
+{
+   if (pos > 0)
+   {
+      if (pos != (scd.pending_write_counter - 1))
+      {
+         size_t move_size = (scd.pending_write_counter - 1 - pos) *
+                            sizeof(unsigned int);
+
+         (void)memmove(&scd.pending_write_id[pos],
+                       &scd.pending_write_id[pos + 1], move_size);
+      }
+      scd.pending_write_counter -= pos;
+   }
+
+   return;
 }
 
 
@@ -3390,7 +3485,7 @@ sftp_quit(void)
          if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
          {
             (void)memcpy(msg, scd.sm[i].sm_buffer, scd.sm[i].message_length);
-            show_sftp_cmd(scd.sm[i].message_length, R_TRACE);
+            show_sftp_cmd(scd.sm[i].message_length, R_TRACE, SSC_DELETED);
          }
 #endif
          free(scd.sm[i].sm_buffer);
@@ -3529,7 +3624,7 @@ get_reply(unsigned int id, int line)
 #ifdef WITH_TRACE
             if ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE))
             {
-               show_sftp_cmd(msg_length, R_TRACE);
+               show_sftp_cmd(msg_length, R_TRACE, SSC_FROM_BUFFER);
             }
 #endif
 
@@ -3570,6 +3665,13 @@ retry:
                   }
                   else
                   {
+#ifdef WITH_TRACE
+                     if ((scd.debug == TRACE_MODE) ||
+                         (scd.debug == FULL_TRACE_MODE))
+                     {
+                        show_sftp_cmd(msg_length, R_TRACE, SSC_TO_BUFFER);
+                     }
+#endif
                      (void)memcpy(scd.sm[scd.stored_replies].sm_buffer,
                                   msg, msg_length);
                      scd.stored_replies++;
@@ -3593,7 +3695,7 @@ retry:
    if ((reply == SUCCESS) &&
        ((scd.debug == TRACE_MODE) || (scd.debug == FULL_TRACE_MODE)))
    {
-      show_sftp_cmd(msg_length, R_TRACE);
+      show_sftp_cmd(msg_length, R_TRACE, SSC_HANDLED);
    }
 #endif
 
@@ -3643,13 +3745,6 @@ get_write_reply(unsigned int id, int line)
             {
                if ((reply = read_msg(msg, (int)msg_length, line)) == SUCCESS)
                {
-#ifdef WITH_TRACE
-                  if ((scd.debug == TRACE_MODE) ||
-                      (scd.debug == FULL_TRACE_MODE))
-                  {
-                     show_sftp_cmd(msg_length, R_TRACE);
-                  }
-#endif
                   gotcha = NO;
                   reply_id = get_xfer_uint(&msg[1]);
 
@@ -3684,6 +3779,13 @@ get_write_reply(unsigned int id, int line)
                      }
                      if (gotcha == NO)
                      {
+#ifdef WITH_TRACE
+                        if ((scd.debug == TRACE_MODE) ||
+                            (scd.debug == FULL_TRACE_MODE))
+                        {
+                           show_sftp_cmd(msg_length, R_TRACE, SSC_TO_BUFFER);
+                        }
+#endif
                         if (scd.stored_replies == MAX_SFTP_REPLY_BUFFER)
                         {
                            trans_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -3723,6 +3825,13 @@ get_write_reply(unsigned int id, int line)
                         reply = INCORRECT;
                      }
                   }
+#ifdef WITH_TRACE
+                  if ((scd.debug == TRACE_MODE) ||
+                      (scd.debug == FULL_TRACE_MODE))
+                  {
+                     show_sftp_cmd(msg_length, R_TRACE, SSC_HANDLED);
+                  }
+#endif
                }
             }
             else
@@ -3858,7 +3967,8 @@ write_msg(char *block, int size, int line)
               {
                  if ((nleft == size) && (status > 4))
                  {
-                    show_sftp_cmd((unsigned int)(size - 4), W_TRACE);
+                    show_sftp_cmd((unsigned int)(size - 4), W_TRACE,
+                                  SSC_HANDLED);
                     if (*(ptr + 4) == SSH_FXP_WRITE)
                     {
                        if (status < (4 + 1 + 4 + 4 + scd.file_handle_length + 8 + 4))
@@ -4059,7 +4169,7 @@ read_msg(char *block, int blocksize, int line)
 #ifdef WITH_TRACE
 /*++++++++++++++++++++++++++ show_sftp_cmd() ++++++++++++++++++++++++++++*/
 static void
-show_sftp_cmd(unsigned int ui_var, int type)
+show_sftp_cmd(unsigned int ui_var, int type, int mode)
 {
    int  length,
         offset;
@@ -4497,6 +4607,109 @@ show_sftp_cmd(unsigned int ui_var, int type)
    }
    if (length > 0)
    {
+      if (type == R_TRACE)
+      {
+         if (mode == SSC_TO_BUFFER)
+         {
+            if ((length + 11) < 1024)
+            {
+               /* " [BUFFERED]" */
+               buffer[length] = ' ';
+               buffer[length + 1] = '[';
+               buffer[length + 2] = 'B';
+               buffer[length + 3] = 'U';
+               buffer[length + 4] = 'F';
+               buffer[length + 5] = 'F';
+               buffer[length + 6] = 'E';
+               buffer[length + 7] = 'R';
+               buffer[length + 8] = 'E';
+               buffer[length + 9] = 'D';
+               buffer[length + 10] = ']';
+               buffer[length + 11] = '\0';
+               length += 11;
+            }
+         }
+         else if (mode == SSC_HANDLED)
+              {
+                 if ((length + 10) < 1024)
+                 {
+                    /* " [HANDLED]" */
+                    buffer[length] = ' ';
+                    buffer[length + 1] = '[';
+                    buffer[length + 2] = 'H';
+                    buffer[length + 3] = 'A';
+                    buffer[length + 4] = 'N';
+                    buffer[length + 5] = 'D';
+                    buffer[length + 6] = 'L';
+                    buffer[length + 7] = 'E';
+                    buffer[length + 8] = 'D';
+                    buffer[length + 9] = ']';
+                    buffer[length + 10] = '\0';
+                    length += 10;
+                 }
+              }
+         else if (mode == SSC_FROM_BUFFER)
+              {
+                 if ((length + 14) < 1024)
+                 {
+                    /* " [FROM BUFFER]" */
+                    buffer[length] = ' ';
+                    buffer[length + 1] = '[';
+                    buffer[length + 2] = 'F';
+                    buffer[length + 3] = 'R';
+                    buffer[length + 4] = 'O';
+                    buffer[length + 5] = 'M';
+                    buffer[length + 6] = ' ';
+                    buffer[length + 7] = 'B';
+                    buffer[length + 8] = 'U';
+                    buffer[length + 9] = 'F';
+                    buffer[length + 10] = 'F';
+                    buffer[length + 11] = 'E';
+                    buffer[length + 12] = 'R';
+                    buffer[length + 13] = ']';
+                    buffer[length + 14] = '\0';
+                    length += 14;
+                 }
+              }
+         else if (mode == SSC_DELETED)
+              {
+                 if ((length + 10) < 1024)
+                 {
+                    /* " [DELETED]" */
+                    buffer[length] = ' ';
+                    buffer[length + 1] = '[';
+                    buffer[length + 2] = 'D';
+                    buffer[length + 3] = 'E';
+                    buffer[length + 4] = 'L';
+                    buffer[length + 5] = 'E';
+                    buffer[length + 6] = 'T';
+                    buffer[length + 7] = 'E';
+                    buffer[length + 8] = 'D';
+                    buffer[length + 9] = ']';
+                    buffer[length + 10] = '\0';
+                    length += 10;
+                 }
+              }
+              else
+              {
+                 if ((length + 10) < 1024)
+                 {
+                    /* " [UNKNOWN]" */
+                    buffer[length] = ' ';
+                    buffer[length + 1] = '[';
+                    buffer[length + 2] = 'U';
+                    buffer[length + 3] = 'N';
+                    buffer[length + 4] = 'K';
+                    buffer[length + 5] = 'N';
+                    buffer[length + 6] = 'O';
+                    buffer[length + 7] = 'W';
+                    buffer[length + 8] = 'N';
+                    buffer[length + 9] = ']';
+                    buffer[length + 10] = '\0';
+                    length += 10;
+                 }
+              }
+      }
       trace_log(NULL, 0, type, buffer, length, NULL);
    }
 

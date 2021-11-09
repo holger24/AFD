@@ -200,6 +200,12 @@
 #define OPENSSH_FSYNC_EXT               "fsync@openssh.com"
 #define OPENSSH_FSYNC_EXT_LENGTH        (sizeof(OPENSSH_FSYNC_EXT) - 1)
 
+/* Different modes for function show_sftp_cmd() */
+#define SSC_HANDLED     1
+#define SSC_TO_BUFFER   2
+#define SSC_FROM_BUFFER 3
+#define SSC_DELETED     4
+
 /* Storage for whats returned in SSH_FXP_NAME reply. */
 struct name_list
        {
