@@ -3585,7 +3585,7 @@ sftp_quit(void)
 static int
 get_reply(unsigned int id, int line)
 {
-   unsigned int msg_length;
+   unsigned int msg_length = 0;
    int          reply;
 
    if (simulation_mode == YES)
