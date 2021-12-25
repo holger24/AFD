@@ -878,6 +878,19 @@ defaults is shown in the table below:
    <td align=center>X</td>
    <td align=center>not set</td>
 </tr>
+<tr>
+   <td width="30%"><a name="local_remote_dir">local remote dir</a></td>
+   <td>When AFD retrieves files from a remote host it stores them
+       in $AFD_WORK_DIR/files/incoming. If the target is a local
+       directory not in the same filesystem as $AFD_WORK_DIR, AFD
+       must do a copy. To avoid this copy you can set this option
+       to replace the $AFD_WORK_DIR part, to a directory in the
+       same filesystem as the target. Then AFD will just do a move
+       and will not copy the data of the file.</td>
+   <td align=center>&nbsp;</td>
+   <td align=center>X</td>
+   <td align=center>$AFD_WORK_DIR</td>
+</tr>
 </table></center>
 <h3 align=center><u><a name="files_entry">The files entry [files]</a></u></h3>
 <p>
@@ -3037,7 +3050,7 @@ section. Valid options can be taken from the following table:
    <td width="90%"><address><small>
    Copyright &copy; 1997 - 2021 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 06.09.2021
+   Last updated: 18.11.2021
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
