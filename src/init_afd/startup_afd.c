@@ -97,6 +97,7 @@ startup_afd(void)
       system_log(WARN_SIGN, __FILE__, __LINE__,
                  "Initialize database due to %d change(s).", status);
       initialize_db(0, old_value_list, NO);
+      (void)write_typesize_data();
    }
 
    (void)strcpy(probe_only_fifo, p_work_dir);
