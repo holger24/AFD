@@ -289,6 +289,7 @@ main(int argc, char *argv[])
                        "Initialize database due to %d change(s). (%s %d)\n",
                        binary_changed, __FILE__, __LINE__);
          initialize_db(0, old_value_list, NO);
+         (void)write_typesize_data();
       }
    }
 
