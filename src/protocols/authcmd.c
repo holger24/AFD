@@ -1,6 +1,6 @@
 /*
  *  authcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2021, 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   07.08.2021 H.Kiehl Created
+ **   06.01.2022 H.Kiehl Catch double / at start of target directory.
  */
 DESCR__E_M3
 
@@ -207,8 +208,9 @@ aws4_cmd_authentication(char                      *cmd,
          url_path_encode(target_dir, target_dir_encoded);
          url_path_encode(file_name, file_name_encoded);
          ret = snprintf(canonical_request, CANONICAL_REQUEST_CMD_LENGTH,
-                        "%s\n/%s%s\n%s\nhost:%s\nx-amz-content-sha256:%s\nx-amz-date:%s\n\nhost;x-amz-content-sha256;x-amz-date\n%s",
-                        cmd, target_dir_encoded, file_name_encoded, parameter,
+                        "%s\n%s%s%s\n%s\nhost:%s\nx-amz-content-sha256:%s\nx-amz-date:%s\n\nhost;x-amz-content-sha256;x-amz-date\n%s",
+                        cmd, (*target_dir_encoded != '/') ? "/" : "",
+                        target_dir_encoded, file_name_encoded, parameter,
                         p_hmr->hostname, SHA256_EMPTY_PAYLOAD, date_long,
                         SHA256_EMPTY_PAYLOAD);
       }
@@ -494,10 +496,11 @@ aws4_put_authentication(char                      *file_name,
       (void)snprintf(canonical_request,
                      4 + 1 + (3 * MAX_RECIPIENT_LENGTH) + 1 + (3 * MAX_FILENAME_LENGTH) + 2 + 15 + MAX_OFF_T_LENGTH + 1 + 5 + MAX_REAL_HOSTNAME_LENGTH + 1 + 21 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1 + 11 + 16 + 2 + 52 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1,
 # if SIZEOF_OFF_T == 4
-                     "PUT\n/%s%s\n\ncontent-length:%ld\nhost:%s\nx-amz-content-sha256:%s\nx-amz-date:%s\n\ncontent-length;host;x-amz-content-sha256;x-amz-date\n%s",
+                     "PUT\n%s%s%s\n\ncontent-length:%ld\nhost:%s\nx-amz-content-sha256:%s\nx-amz-date:%s\n\ncontent-length;host;x-amz-content-sha256;x-amz-date\n%s",
 # else
-                     "PUT\n/%s%s\n\ncontent-length:%lld\nhost:%s\nx-amz-content-sha256:%s\nx-amz-date:%s\n\ncontent-length;host;x-amz-content-sha256;x-amz-date\n%s",
+                     "PUT\n%s%s%s\n\ncontent-length:%lld\nhost:%s\nx-amz-content-sha256:%s\nx-amz-date:%s\n\ncontent-length;host;x-amz-content-sha256;x-amz-date\n%s",
 # endif
+                     (*target_dir_encoded != '/') ? "/" : "",
                      target_dir_encoded, file_name_encoded,
                      (pri_off_t)file_size, p_hmr->hostname,
                      file_content_hash_hex, date_long, file_content_hash_hex);
