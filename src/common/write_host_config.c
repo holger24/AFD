@@ -1,7 +1,7 @@
 /*
  *  write_host_config.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -285,6 +285,8 @@ DESCR__E_M3
 #                          26(33554432)- Disable SSH stricht host key checking.\n\
 #                          27(67108864)- Enable FTP STAT listing.\n\
 #                          28(134217728)- Set implicit FTPS.\n\
+#                          30(536870912)- Do not use HTTP expect.\n\
+#                          31(1073741824)- Bucketname is in path.\n\
 #                          DEFAULT: 0\n\
 # Transfer rate limit    - The maximum number of kilobytes that may be\n\
 #                          transfered per second.\n\

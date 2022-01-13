@@ -1,6 +1,6 @@
 /*
  *  eval_host_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -96,6 +96,7 @@ DESCR__S_M3
  **   11.04.2017 H.Kiehl Added debug_fp parameter to print warnings and
  **                      errors.
  **   19.07.2019 H.Kiehl Allow simulate mode for host_status.
+ **   29.11.2021 H.Kiehl Added protocol option bucketname in path.
  **
  */
 DESCR__E_M3
@@ -1600,7 +1601,12 @@ eval_host_config(int              *hosts_found,
        * have different values. So we must do this check here.
        */
       if (((*hl)[host_counter].protocol_options != 0) &&
-          (((*hl)[host_counter].protocol_options > (IMPLICIT_FTPS |
+          (((*hl)[host_counter].protocol_options > (HTTP_BUCKETNAME_IN_PATH |
+                                                    NO_EXPECT |
+#ifdef _WITH_EXTRA_CHECK
+                                                    USE_EXTRA_CHECK |
+#endif
+                                                    IMPLICIT_FTPS |
                                                     USE_STAT_LIST |
                                                     DISABLE_STRICT_HOST_KEY|
                                                     KEEP_CONNECTED_DISCONNECT |
@@ -1639,7 +1645,12 @@ eval_host_config(int              *hosts_found,
                        _("Unknown protocol option <%d> for host %s, largest value is %d and smallest %d. Setting to 0."),
                        (*hl)[host_counter].protocol_options,
                        (*hl)[host_counter].host_alias,
-                       (IMPLICIT_FTPS |
+                       (HTTP_BUCKETNAME_IN_PATH |
+                        NO_EXPECT |
+#ifdef _WITH_EXTRA_CHECK
+                        USE_EXTRA_CHECK |
+#endif
+                        IMPLICIT_FTPS |
                         USE_STAT_LIST |
                         DISABLE_STRICT_HOST_KEY |
                         KEEP_CONNECTED_DISCONNECT |

@@ -940,7 +940,11 @@ check_files(struct directory_entry *p_de,
                                (fra[p_de->fra_pos].protocol != LOC))
                            {
                               if ((p_de->flag & IN_SAME_FILESYSTEM) &&
+#ifdef NEW_FRA
+                                  ((fra[p_de->fra_pos].dir_options & DO_NOT_MOVE) == 0))
+#else
                                   ((fra[p_de->fra_pos].dir_flag & DO_NOT_MOVE) == 0))
+#endif
                               {
                                  ret = move_file(fullname, tmp_file_dir);
                                  if (ret == DATA_COPIED)

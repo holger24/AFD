@@ -1,6 +1,6 @@
 /*
  *  edit_hc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -88,6 +88,7 @@ DESCR__S_M1
  **   24.11.2012 H.Kiehl Added support for selecting CRC type.
  **   13.01.2014 H.Kiehl Added support for makeing dupcheck timeout fixed.
  **   06.03.2020 H.Kiehl Added implicit FTPS option.
+ **   10.01.2022 H.Kiehl Added no expect option.
  **
  */
 DESCR__E_M1
@@ -139,6 +140,7 @@ Widget                     active_mode_w,
 #endif
                            appshell,
                            auto_toggle_w,
+                           bucketname_in_path_w,
                            compression_w,
 #ifdef WITH_DUP_CHECK
                            dc_alias_w,
@@ -200,6 +202,7 @@ Widget                     active_mode_w,
                            max_errors_label_w,
                            mode_label_w,
                            no_ageing_jobs_w,
+                           no_expect_w,
                            no_source_icon_w,
                            passive_mode_w,
                            passive_redirect_w,
@@ -2225,6 +2228,27 @@ main(int argc, char *argv[])
                  (XtCallbackProc)toggle_button2,
                  (XtPointer)TCP_KEEPALIVE_CHANGED);
 #endif
+   bucketname_in_path_w = XtVaCreateManagedWidget("Bucketname in path",
+                       xmToggleButtonGadgetClass, box_w,
+                       XmNfontList,               fontlist,
+                       XmNset,                    False,
+                       XmNtopAttachment,          XmATTACH_FORM,
+                       XmNtopOffset,              SIDE_OFFSET,
+                       XmNleftAttachment,         XmATTACH_WIDGET,
+#ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
+                       XmNleftWidget,             tcp_keepalive_w,
+#else
+# ifdef _WITH_BURST_2
+                       XmNleftWidget,             allow_burst_w,
+# else
+                       XmNleftWidget,             ftp_ignore_bin_w,
+# endif
+#endif
+                       XmNbottomAttachment,       XmATTACH_FORM,
+                       NULL);
+   XtAddCallback(bucketname_in_path_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)toggle_button2,
+                 (XtPointer)BUCKETNAME_IN_PATH_CHANGED);
    XtManageChild(box_w);
 
    argcount = 0;
@@ -2307,7 +2331,7 @@ main(int argc, char *argv[])
    XtAddCallback(sort_file_names_w, XmNvalueChangedCallback,
                  (XtCallbackProc)toggle_button2,
                  (XtPointer)SORT_FILE_NAMES_CHANGED);
-   no_ageing_jobs_w = XtVaCreateManagedWidget("No ageing jobs",
+   no_ageing_jobs_w = XtVaCreateManagedWidget("No ageing",
                        xmToggleButtonGadgetClass, box_w,
                        XmNfontList,               fontlist,
                        XmNset,                    False,
@@ -2346,6 +2370,22 @@ main(int argc, char *argv[])
    XtAddCallback(strict_tls_w, XmNvalueChangedCallback,
                  (XtCallbackProc)toggle_button2, (XtPointer)STRICT_TLS_CHANGED);
 #endif /* WITH_SSL */
+   no_expect_w = XtVaCreateManagedWidget("No expect",
+                       xmToggleButtonGadgetClass, box_w,
+                       XmNfontList,               fontlist,
+                       XmNset,                    False,
+                       XmNtopAttachment,          XmATTACH_FORM,
+                       XmNtopOffset,              SIDE_OFFSET,
+                       XmNleftAttachment,         XmATTACH_WIDGET,
+#ifdef WITH_SSL
+                       XmNleftWidget,             strict_tls_w,
+#else
+                       XmNleftWidget,             match_size_w,
+#endif
+                       XmNbottomAttachment,       XmATTACH_FORM,
+                       NULL);
+   XtAddCallback(no_expect_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)toggle_button2, (XtPointer)NO_EXPECT_CHANGED);
    XtManageChild(box_w);
    XtManageChild(form_w);
 

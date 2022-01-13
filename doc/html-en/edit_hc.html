@@ -242,7 +242,7 @@ only possible to have one of this dialog open at the same time.
               slightly higher memory usage but computes twice as fast as
               the first algorithm CRC-32. If you CPU supports SSE4.2, this
               calculation is done hardware and approximately six time faster
-              then CRC-32.</td>
+              then CRC-32. Murmur3 is another very fast hash algorithm.</td>
        </tr>
        </table>
    </td>
@@ -395,6 +395,12 @@ only possible to have one of this dialog open at the same time.
               5 seconds and not the default 2 hours.</td>
        </tr>
        <tr>
+          <td><a name="bucketname_in_path">Bucketname in path</a></td>
+          <td>For AWS4 HTTP one needs to set this if the bucketname
+              is at the first element of the path entry. If the bucketname
+              is in the hostname one does not need to set this option.</td>
+       </tr>
+       <tr>
           <td><a name="seq_locking">Seq. Locking</a></td>
           <td>When transmitting file "xxxx.yyyy" it adds the number of
               retries to the end of the file name "xxxx.yyyy-<retries>"
@@ -432,7 +438,7 @@ only possible to have one of this dialog open at the same time.
           <td>Files are being sorted by their name before being send.</td>
        </tr>
        <tr>
-          <td><a name="no_ageing_jobs">No ageing jobs</a></td>
+          <td><a name="no_ageing">No ageing</a></td>
           <td>When during transmission an error occurs, the job with this
               error starts to age. This means its priority decreases so much
               that even jobs that have a lower priority become more important
@@ -448,6 +454,14 @@ only possible to have one of this dialog open at the same time.
        <tr>
           <td><a name="strict_tls">Strict TLS</a></td>
           <td>Todo. Not yet ready.</td>
+       </tr>
+       <tr>
+          <td><a name="no_expect">No expect</a></td>
+          <td>When sending a file via HTTP one can send a
+              "Expect: 100-continue". This makes it easier to transmit
+              large files. It is set by default. Some servers do not
+              handle this correctly or do not know this option. So
+              here you can disable it.</td>
        </tr>
        </table>
    </td>
@@ -471,9 +485,9 @@ only possible to have one of this dialog open at the same time.
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 1997 - 2020 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2022 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 06.03.2020
+   Last updated: 10.01.2022
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

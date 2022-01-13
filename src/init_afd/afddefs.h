@@ -27,7 +27,7 @@
 #define DESCR__S_M3             /* Start for Subroutines Man Page.  */
 #define DESCR__E_M3             /* End for Subroutines Man Page.    */
 
-/* #define NEW_FRA */    /* Nothing new yet! */
+/* #define NEW_FRA */
 /* #define NEW_FSA */
 /* #define NEW_PWB */    /* Nothing new yet! */
 
@@ -239,15 +239,14 @@ typedef unsigned long       u_long_64;
 /*
  * The maximum real host name or IP number length.
  * DEFAULT: 40
- * N O T E : When NEW_FSA + NEW_PWB is defined we need to
- *           edit configure.ac and README.configure to correct the
- *           values there too.
+ * N O T E : When this is modified edit configure.ac and
+ *           README.configure to correct the values there too.
  */
 #ifndef MAX_REAL_HOSTNAME_LENGTH
-# if defined NEW_FSA && defined NEW_PWB
-#  define MAX_REAL_HOSTNAME_LENGTH     65
+# if defined NEW_FSA && defined NEW_FRA
+#  define MAX_REAL_HOSTNAME_LENGTH 70
 # else
-#  define MAX_REAL_HOSTNAME_LENGTH     40
+#  define MAX_REAL_HOSTNAME_LENGTH 40
 # endif
 #endif
 
@@ -936,50 +935,55 @@ typedef unsigned long       u_long_64;
 #define URL_SERVICE_DIFS           32768
 
 /* Definitions for protocol_options in FSA. */
-#define FTP_PASSIVE_MODE           1
-#define SET_IDLE_TIME              2
+#define FTP_PASSIVE_MODE           1                 /*  1 */
+#define SET_IDLE_TIME              2                 /*  2 */
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
-# define STAT_KEEPALIVE            4
+# define STAT_KEEPALIVE            4                 /*  3 */
 #endif
-#define FTP_FAST_MOVE              8
-#define FTP_FAST_CD                16
-#define FTP_IGNORE_BIN             32
-#define FTP_EXTENDED_MODE          64
+#define FTP_FAST_MOVE              8                 /*  4 */
+#define FTP_FAST_CD                16                /*  5 */
+#define FTP_IGNORE_BIN             32                /*  6 */
+#define FTP_EXTENDED_MODE          64                /*  7 */
 #ifdef _WITH_BURST_2
-# define DISABLE_BURSTING          128
+# define DISABLE_BURSTING          128               /*  8 */
 #endif
-#define FTP_ALLOW_DATA_REDIRECT    256
-#define FILE_WHEN_LOCAL_FLAG       512
+#define FTP_ALLOW_DATA_REDIRECT    256               /*  9 */
+#define FILE_WHEN_LOCAL_FLAG       512               /* 10 */
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
-# define AFD_TCP_KEEPALIVE         1024
+# define AFD_TCP_KEEPALIVE         1024              /* 11 */
 #endif
-#define USE_SEQUENCE_LOCKING       2048
-#define ENABLE_COMPRESSION         4096
-#define KEEP_TIME_STAMP            8192
-#define SORT_FILE_NAMES            16384
-#define NO_AGEING_JOBS             32768
-#define CHECK_SIZE                 65536
-#define TIMEOUT_TRANSFER           131072
-#define KEEP_CON_NO_FETCH_2        262144
-#define KEEP_CON_NO_SEND_2         524288
-#define FTP_CCC_OPTION             1048576
-#define FTP_USE_LIST               2097152
-#define TLS_STRICT_VERIFY          4194304
-#define FTP_DISABLE_MLST           8388608
-#define KEEP_CONNECTED_DISCONNECT  16777216
-#define DISABLE_STRICT_HOST_KEY    33554432
-#define USE_STAT_LIST              67108864
-#define IMPLICIT_FTPS              134217728
+#define USE_SEQUENCE_LOCKING       2048              /* 12 */
+#define ENABLE_COMPRESSION         4096              /* 13 */
+#define KEEP_TIME_STAMP            8192              /* 14 */
+#define SORT_FILE_NAMES            16384             /* 15 */
+#define NO_AGEING_JOBS             32768             /* 16 */
+#define CHECK_SIZE                 65536             /* 17 */
+#define TIMEOUT_TRANSFER           131072            /* 18 */
+#define KEEP_CON_NO_FETCH_2        262144            /* 19 */
+#define KEEP_CON_NO_SEND_2         524288            /* 20 */
+#define FTP_CCC_OPTION             1048576           /* 21 */
+#define FTP_USE_LIST               2097152           /* 22 */
+#define TLS_STRICT_VERIFY          4194304           /* 23 */
+#define FTP_DISABLE_MLST           8388608           /* 24 */
+#define KEEP_CONNECTED_DISCONNECT  16777216          /* 25 */
+#define DISABLE_STRICT_HOST_KEY    33554432          /* 26 */
+#define USE_STAT_LIST              67108864          /* 27 */
+#define IMPLICIT_FTPS              134217728         /* 28 */
 #ifdef _WITH_EXTRA_CHECK
-# define USE_EXTRA_CHECK           268435456
+# define USE_EXTRA_CHECK           268435456         /* 29 */
 #endif
-#define NO_EXPECT                  536870912
+#define NO_EXPECT                  536870912         /* 30 */
+#define HTTP_BUCKETNAME_IN_PATH    1073741824        /* 31 */
+
+/* Definitions for protocol_options2 in FSA. */
 
 /* Definitions for protocol_options in sf_xxx + gf_xxx functions. */
 #define PROT_OPT_NO_EXPECT          1
+#define BUCKETNAME_IS_IN_PATH       2
 #ifdef WITH_SSL
-# define PROT_OPT_TLS_STRICT_VERIFY 2
+# define PROT_OPT_TLS_STRICT_VERIFY 4
 #endif
+
 
 #define FTP_SHEME                  "ftp"
 #define FTP_SHEME_LENGTH           (sizeof(FTP_SHEME) - 1)
@@ -1114,8 +1118,6 @@ typedef unsigned long       u_long_64;
 #define LOCAL_REMOTE_DIR_ID_LENGTH       (sizeof(LOCAL_REMOTE_DIR_ID) - 1)
 #define ONE_PROCESS_JUST_SCANNING_ID     "one process just scanning"
 #define ONE_PROCESS_JUST_SCANNING_ID_LENGTH (sizeof(ONE_PROCESS_JUST_SCANNING_ID) - 1)
-#define BUCKETNAME_IN_PATH_ID            "bucketname in path"
-#define BUCKETNAME_IN_PATH_ID_LENGTH     (sizeof(BUCKETNAME_IN_PATH_ID) - 1)
 #define NO_DELIMITER_ID                  "no delimiter"
 #define NO_DELIMITER_ID_LENGTH           (sizeof(NO_DELIMITER_ID) - 1)
 #define KEEP_PATH_ID                     "keep path"
@@ -2062,10 +2064,13 @@ typedef unsigned long       u_long_64;
 #define QUEUE_LIST_EMPTY           2
 #define QUEUE_LIST_DONE            3
 
-/* Definitions for directory flags. */
+/* Definitions for directory flags + options. */
+/* NOTE: Do not seperate these into flags + options. Reason is that */
+/*       Up to FRA version 7 these where all under flags. Only with */
+/*       version came the new variable dir_options.                 */
 #define MAX_COPIED                 1
 #define FILES_IN_QUEUE             2
-#define ADD_TIME_ENTRY             4
+/* #define ____no_used____            4 */
 #define LINK_NO_EXEC               8
 #define DIR_DISABLED               16
 #define ACCEPT_DOT_FILES           32
@@ -2082,7 +2087,7 @@ typedef unsigned long       u_long_64;
 # define INOTIFY_CLOSE             32768
 #endif
 #define ALL_DISABLED               65536
-#define CREATE_R_SRC_DIR           131072
+/* #define ____no_used____            131072 */
 #ifdef WITH_INOTIFY
 # define INOTIFY_NEEDS_SCAN        262144
 # define INOTIFY_CREATE            524288
@@ -2096,7 +2101,7 @@ typedef unsigned long       u_long_64;
 #define DIR_DISABLED_STATIC        16777216
 #define ONE_PROCESS_JUST_SCANNING  33554432
 #define URL_CREATES_FILE_NAME      67108864
-#define BUCKETNAME_IN_PATH         134217728
+/* #define ____no_used____            134217728 */
 #define NO_DELIMITER               268435456
 #define KEEP_PATH                  536870912
 
@@ -2164,6 +2169,7 @@ typedef unsigned long       u_long_64;
 #define MAX_ERRORS_IDC             16384
 #define UNREADABLE_FILES_IDC       32768
 #define LOCAL_REMOTE_DIR_IDC       65536
+#define CREATE_SRC_DIR_IDC         131072
 
 /* In process AFD we have various stop flags. */
 #define STARTUP_ID                 -1
@@ -2465,49 +2471,49 @@ typedef unsigned long       u_long_64;
 #endif
 struct status
        {
-          pid_t         proc_id;                /* Process ID of trans-  */
-                                                /* fering job.           */
+          pid_t         proc_id;            /* Process ID of transfering */
+                                            /* job.                      */
 #ifdef _WITH_BURST_2
           char          unique_name[MAX_MSG_NAME_LENGTH];
-          unsigned int  job_id;                 /* Since each host can   */
-                                                /* have different type   */
-                                                /* of jobs (other user,  */
-                                                /* different directory,  */
-                                                /* other options, etc),  */
-                                                /* each of these is      */
-                                                /* identified by this    */
-                                                /* number.               */
+          unsigned int  job_id;             /* Since each host can have  */
+                                            /* different type of jobs    */
+                                            /* (other user, different    */
+                                            /* directory, other options, */
+                                            /* etc), each of these is    */
+                                            /* identified by this number.*/
 #endif
-          char          connect_status;         /* The status of what    */
-                                                /* sf_xxx() is doing.    */
-          int           no_of_files;            /* Total number of all   */
-                                                /* files when job        */
-                                                /* started.              */
-          int           no_of_files_done;       /* Number of files done  */
-                                                /* since the job has been*/
-                                                /* started.              */
-          off_t         file_size;              /* Total size of all     */
-                                                /* files when we started */
-                                                /* this job.             */
-          u_off_t       file_size_done;         /* The total number of   */
-                                                /* bytes we have send so */
-                                                /* far.                  */
-          u_off_t       bytes_send;             /* Overall number of     */
-                                                /* bytes send so far for */
-                                                /* this job.             */
+#ifdef NEW_FSA
+          unsigned char special_flag;       /*+-----+-------------------+*/
+                                            /*| Bit |      Meaning      |*/
+                                            /*+-----+-------------------+*/
+                                            /*| 1-8 | Not used.         |*/
+                                            /*+-----+-------------------+*/
+#endif
+          char          connect_status;     /* The status of what        */
+                                            /* sf_xxx() is doing.        */
+          int           no_of_files;        /* Total number of all files */
+                                            /* when job started.         */
+          int           no_of_files_done;   /* Number of files done since*/
+                                            /* the job has been started. */
+          off_t         file_size;          /* Total size of all files   */
+                                            /* when we started this job. */
+          u_off_t       file_size_done;     /* The total number of bytes */
+                                            /* we have send so far.      */
+          u_off_t       bytes_send;         /* Overall number of bytes   */
+                                            /* send so far for this job. */
           char          file_name_in_use[MAX_FILENAME_LENGTH];
-                                                /* The name of the file  */
-                                                /* that is in transfer.  */
+                                            /* The name of the file that */
+                                            /* is in transfer.           */
 #ifdef _WITH_BURST_2
-                                                /* NOTE: We misuse this  */
-                                                /* field in case of a    */
-                                                /* burst to specify the  */
-                                                /* number of retries.    */
+                                            /* NOTE: We misuse this      */
+                                            /* field in case of a burst  */
+                                            /* to specify the number of  */
+                                            /* retries.                  */
 #endif
-          off_t         file_size_in_use;       /* Total size of current */
-                                                /* file.                 */
-          off_t         file_size_in_use_done;  /* Number of bytes send  */
-                                                /* for current file.     */
+          off_t         file_size_in_use;   /* Total size of current     */
+                                            /* file.                     */
+          off_t         file_size_in_use_done;/* Number of bytes send    */
+                                            /* for current file.         */
        };
 
 struct filetransfer_status
@@ -2558,86 +2564,87 @@ struct filetransfer_status
                                             /* switching hosts.          */
           unsigned char  special_flag;      /* Special flag with the     */
                                             /* following meaning:        */
-                                            /*+------+------------------+*/
-                                            /*|Bit(s)|     Meaning      |*/
-                                            /*+------+------------------+*/
-                                            /*| 8    | Not used.        |*/
-                                            /*| 7    | Host is in       |*/
-                                            /*|      | DIR_CONFIG file. |*/
-                                            /*| 6    | Host disabled.   |*/
-                                            /*| 3-5  | Not used.        |*/
-                                            /*| 2    | KEEP_CON_NO_SEND |*/
-                                            /*| 1    | KEEP_CON_NO_FETCH|*/
-                                            /*+------+------------------+*/
+                                            /*+-----+-------------------+*/
+                                            /*| Bit |      Meaning      |*/
+                                            /*+-----+-------------------+*/
+                                            /*|   8 | Not used.         |*/
+                                            /*|   7 | Host is in        |*/
+                                            /*|     | DIR_CONFIG file.  |*/
+                                            /*|   6 | Host disabled.    |*/
+                                            /*| 3-5 | Not used.         |*/
+                                            /*|   2 | KEEP_CON_NO_SEND  |*/
+                                            /*|   1 | KEEP_CON_NO_FETCH |*/
+                                            /*+-----+-------------------+*/
           unsigned int   protocol;          /* Transfer protocol that    */
                                             /* is being used:            */
-                                            /*+------+------------------+*/
-                                            /*|Bit(s)|     Meaning      |*/
-                                            /*+------+------------------+*/
-                                            /*| 32   | RETRIEVE         |*/
-                                            /*| 31   | SEND             |*/
-                                            /*| 30   | SSL              |*/
-                                            /*| 29   | DISABLE_IPV6     |*/
-                                            /*| 12-28| Not used.        |*/
-                                            /*| 11   | DEMAIL           |*/
-                                            /*| 10   | DFAX             |*/
-                                            /*| 9    | EXEC             |*/
-                                            /*| 8    | SFTP             |*/
-                                            /*| 7    | HTTP      [SSL]  |*/
-                                            /*| 6    | WMO              |*/
-                                            /*| 5    | SCP              |*/
-                                            /*| 4    | MAP              |*/
-                                            /*| 3    | SMTP             |*/
-                                            /*| 2    | LOC              |*/
-                                            /*| 1    | FTP       [SSL]  |*/
-                                            /*+------+------------------+*/
+                                            /*+-----+-------------------+*/
+                                            /*| Bit |      Meaning      |*/
+                                            /*+-----+-------------------+*/
+                                            /*|   32| RETRIEVE          |*/
+                                            /*|   31| SEND              |*/
+                                            /*|   30| SSL               |*/
+                                            /*|   29| DISABLE_IPV6      |*/
+                                            /*|12-28| Not used.         |*/
+                                            /*|   11| DEMAIL            |*/
+                                            /*|   10| DFAX              |*/
+                                            /*|    9| EXEC              |*/
+                                            /*|    8| SFTP              |*/
+                                            /*|    7| HTTP       [SSL]  |*/
+                                            /*|    6| WMO               |*/
+                                            /*|    5| SCP               |*/
+                                            /*|    4| MAP               |*/
+                                            /*|    3| SMTP              |*/
+                                            /*|    2| LOC               |*/
+                                            /*|    1| FTP        [SSL]  |*/
+                                            /*+-----+-------------------+*/
           unsigned int   protocol_options;  /* Special options for the   */
                                             /* protocols:                */
-                                            /*+------+------------------+*/
-                                            /*|Bit(s)|     Meaning      |*/
-                                            /*+------+------------------+*/
-                                            /*| 32   | Not used.        |*/
-                                            /*| 31   | NO_EXPECT        |*/
+                                            /*+-----+-------------------+*/
+                                            /*| Bit |      Meaning      |*/
+                                            /*+-----+-------------------+*/
+                                            /*|   32| Not used.         |*/
+                                            /*|   31| HTTP_BUCKETNAME_IN_PATH|*/
+                                            /*|   30| NO_EXPECT         |*/
 #ifdef _WITH_EXTRA_CHECK
-                                            /*| 30   | USE_EXTRA_CHECK  |*/
+                                            /*|   29| USE_EXTRA_CHECK   |*/
 #endif
-                                            /*| 29   | IMPLICIT_FTPS    |*/
-                                            /*| 27   | USE_STAT_LIST    |*/
-                                            /*| 26   | DISABLE_STRICT_HOST_KEY|*/
-                                            /*| 25   | KEEP_CONNECTED_DISCONNECT|*/
-                                            /*| 24   | FTP_DISABLE_MLST |*/
-                                            /*| 23   | TLS_STRICT_VERIFY|*/
-                                            /*| 22   | FTP_USE_LIST     |*/
-                                            /*| 21   | FTP_CCC_OPTION   |*/
-                                            /*| 20   | KEEP_CON_NO_SEND_2|*/
-                                            /*| 19   | KEEP_CON_NO_FETCH_2|*/
-                                            /*| 18   | TIMEOUT_TRANSFER |*/
-                                            /*| 17   | CHECK_SIZE       |*/
-                                            /*| 16   | NO_AGEING_JOBS   |*/
-                                            /*| 15   | SORT_FILE_NAMES  |*/
-                                            /*| 14   | KEEP_TIME_STAMP  |*/
-                                            /*| 13   | ENABLE_COMPRESSION|*/
-                                            /*| 12   | USE_SEQUENCE_LOCKING|*/
-                                            /*| 11   | AFD_TCP_KEEPALIVE|*/
-                                            /*| 10   | FILE_WHEN_LOCAL  |*/
-                                            /*| 9    | FTP_ALLOW_DATA_REDIRECT|*/
-                                            /*| 8    | DISABLE_BURSTING |*/
-                                            /*| 7    | FTP_EXTENDED_MODE|*/
-                                            /*| 6    | FTP_IGNORE_BIN   |*/
-                                            /*| 5    | FTP_FAST_CD      |*/
-                                            /*| 4    | FTP_FAST_MOVE    |*/
-                                            /*| 3    | STAT_KEEPALIVE   |*/
-                                            /*| 2    | SET_IDLE_TIME    |*/
-                                            /*| 1    | FTP_PASSIVE_MODE |*/
-                                            /*+------+------------------+*/
+                                            /*|   28| IMPLICIT_FTPS     |*/
+                                            /*|   27| USE_STAT_LIST     |*/
+                                            /*|   26| DISABLE_STRICT_HOST_KEY|*/
+                                            /*|   25| KEEP_CONNECTED_DISCONNECT|*/
+                                            /*|   24| FTP_DISABLE_MLST  |*/
+                                            /*|   23| TLS_STRICT_VERIFY |*/
+                                            /*|   22| FTP_USE_LIST      |*/
+                                            /*|   21| FTP_CCC_OPTION    |*/
+                                            /*|   20| KEEP_CON_NO_SEND_2|*/
+                                            /*|   19| KEEP_CON_NO_FETCH_2|*/
+                                            /*|   18| TIMEOUT_TRANSFER  |*/
+                                            /*|   17| CHECK_SIZE        |*/
+                                            /*|   16| NO_AGEING_JOBS    |*/
+                                            /*|   15| SORT_FILE_NAMES   |*/
+                                            /*|   14| KEEP_TIME_STAMP   |*/
+                                            /*|   13| ENABLE_COMPRESSION|*/
+                                            /*|   12| USE_SEQUENCE_LOCKING|*/
+                                            /*|   11| AFD_TCP_KEEPALIVE |*/
+                                            /*|   10| FILE_WHEN_LOCAL_FLAG|*/
+                                            /*|    9| FTP_ALLOW_DATA_REDIRECT|*/
+                                            /*|    8| DISABLE_BURSTING  |*/
+                                            /*|    7| FTP_EXTENDED_MODE |*/
+                                            /*|    6| FTP_IGNORE_BIN    |*/
+                                            /*|    5| FTP_FAST_CD       |*/
+                                            /*|    4| FTP_FAST_MOVE     |*/
+                                            /*|    3| STAT_KEEPALIVE    |*/
+                                            /*|    2| SET_IDLE_TIME     |*/
+                                            /*|    1| FTP_PASSIVE_MODE  |*/
+                                            /*+-----+-------------------+*/
 #ifdef NEW_FSA
           unsigned int   protocol_options2; /* More special options for  */
                                             /* the protocols:            */
-                                            /*+------+------------------+*/
-                                            /*|Bit(s)|     Meaning      |*/
-                                            /*+------+------------------+*/
-                                            /*|  0-32| Not used.        |*/
-                                            /*+------+------------------+*/
+                                            /*+-----+-------------------+*/
+                                            /*| Bit |      Meaning      |*/
+                                            /*+-----+-------------------+*/
+                                            /*| 1-32| Not used.         |*/
+                                            /*+-----+-------------------+*/
 #endif
           unsigned int   socksnd_bufsize;   /* Socket buffer size for    */
                                             /* sending data. 0 is default*/
@@ -2689,7 +2696,7 @@ struct filetransfer_status
           unsigned int   host_status;       /* What is the status for    */
                                             /* this host?                */
                                             /*+-----+-------------------------+*/
-                                            /*| Bit |     Meaning             |*/
+                                            /*| Bit |        Meaning          |*/
                                             /*+-----+-------------------------+*/
                                             /*|22-32|Not used.                |*/
                                             /*|   21|WARN_HOSTS_IN_GROUP      |*/
@@ -2732,6 +2739,8 @@ struct filetransfer_status
                                             /* files get transfered.     */
           int            ttl;               /* Time-to-live for outgoing */
                                             /* multicasts.               */
+                                            /* NOTE: Not used. Also in   */
+                                            /*       HOST_CONFIG!        */
 #ifdef WITH_DUP_CHECK                                                      
           time_t         dup_check_timeout; /* When the stored CRC for   */
                                             /* duplicate checks are no   */
@@ -2762,9 +2771,11 @@ struct filetransfer_status
           unsigned int   file_counter_done; /* No. of files done so far. */
           u_off_t        bytes_send;        /* No. of bytes send so far. */
           unsigned int   connections;       /* No. of connections.       */
+#ifndef NEW_FSA /* Remove! */
           unsigned int   mc_nack_counter;   /* Multicast Negative        */
                                             /* Acknowledge Counter.      */
                                             /* NOTE: Unused!             */
+#endif
           int            active_transfers;  /* No. of jobs transferring  */
                                             /* data.                     */
           int            allowed_transfers; /* Maximum no. of parallel   */
@@ -2776,6 +2787,7 @@ struct filetransfer_status
                                             /* second.                   */
           off_t          trl_per_process;   /* Transfer rate limit per   */
                                             /* active process.           */
+#ifndef NEW_FSA /* Remove! */
           off_t          mc_ct_rate_limit;  /* Multicast current transfer*/
                                             /* rate limit.               */
                                             /* NOTE: Unused!             */
@@ -2783,6 +2795,7 @@ struct filetransfer_status
                                             /* transfer rate limit per   */
                                             /* process.                  */
                                             /* NOTE: Unused!             */
+#endif
           struct status  job_status[MAX_NO_PARALLEL_JOBS];
        };
 
@@ -2801,7 +2814,7 @@ struct host_list
           int           allowed_transfers;
           int           max_errors;
           int           retry_interval;
-          int           ttl;
+          int           ttl;                /* Not used!                 */
           int           transfer_blksize;
           int           transfer_rate_limit;
           int           successful_retries; /* NOTE: Corresponds to      */
@@ -2826,24 +2839,24 @@ struct host_list
                                             /* check that is to be done  */
                                             /* and what type of CRC to   */
                                             /* use:                      */
-                                            /*+------+------------------+*/
-                                            /*|Bit(s)|     Meaning      |*/
-                                            /*+------+------------------+*/
-                                            /*|27-32 | Not used.        |*/
-                                            /*|   26 | DC_WARN          |*/
-                                            /*|   25 | DC_STORE         |*/
-                                            /*|   24 | DC_DELETE        |*/
-                                            /*|19-23 | Not used.        |*/
-                                            /*|   18 | DC_MURMUR3        |*/
-                                            /*|   17 | DC_CRC32C        |*/
-                                            /*|   16 | DC_CRC32         |*/
-                                            /*| 6-15 | Not used.        |*/
-                                            /*|    5 | DC_FILENAME_AND_SIZE|*/
-                                            /*|    4 | DC_NAME_NO_SUFFIX|*/
-                                            /*|    3 | DC_FILE_CONT_NAME|*/
-                                            /*|    2 | DC_FILE_CONTENT  |*/
-                                            /*|    1 | DC_FILENAME_ONLY |*/
-                                            /*+------+------------------+*/
+                                            /*+-----+-------------------+*/
+                                            /*| Bit |      Meaning      |*/
+                                            /*+-----+-------------------+*/
+                                            /*|27-32| Not used.         |*/
+                                            /*|   26| DC_WARN           |*/
+                                            /*|   25| DC_STORE          |*/
+                                            /*|   24| DC_DELETE         |*/
+                                            /*|19-23| Not used.         |*/
+                                            /*|   18| DC_MURMUR3        |*/
+                                            /*|   17| DC_CRC32C         |*/
+                                            /*|   16| DC_CRC32          |*/
+                                            /*| 6-15| Not used.         |*/
+                                            /*|    5| DC_FILENAME_AND_SIZE|*/
+                                            /*|    4| DC_NAME_NO_SUFFIX |*/
+                                            /*|    3| DC_FILE_CONT_NAME |*/
+                                            /*|    2| DC_FILE_CONTENT   |*/
+                                            /*|    1| DC_FILENAME_ONLY  |*/
+                                            /*+-----+-------------------+*/
 #endif
           unsigned int  protocol;
           unsigned int  host_status;
@@ -2906,7 +2919,11 @@ struct bd_time_entry
        };
 
 /* Structure holding all neccessary data for retrieving files. */
+#ifdef NEW_FRA
+# define CURRENT_FRA_VERSION     8
+#else
 # define CURRENT_FRA_VERSION     7
+#endif
 #define MAX_FRA_TIME_ENTRIES     12
 #define MAX_FRA_TIME_ENTRIES_STR "MAX_FRA_TIME_ENTRIES"
 #define MAX_WAIT_FOR_LENGTH      64
@@ -2981,16 +2998,16 @@ struct fileretrieve_status
                                             /* OLD_RLOCKED_FILES: Old    */
                                             /* locked files on remote    */
                                             /* hosts are to be deleted.  */
-                                            /*+------+------------------+*/
-                                            /*|Bit(s)|     Meaning      |*/
-                                            /*+------+------------------+*/
-                                            /*|  6-8 | Not used.        |*/
-                                            /*|    5 | OLD_RLOCKED_FILES|*/
-                                            /*|    4 | UNREADABLE_FILES |*/
-                                            /*|    3 | OLD_LOCKED_FILES |*/
-                                            /*|    2 | QUEUED_FILES     |*/
-                                            /*|    1 | UNKNOWN_FILES    |*/
-                                            /*+------+------------------+*/
+                                            /*+-----+-------------------+*/
+                                            /*| Bit |      Meaning      |*/
+                                            /*+-----+-------------------+*/
+                                            /*| 6-8 | Not used.         |*/
+                                            /*|   5 | OLD_RLOCKED_FILES |*/
+                                            /*|   4 | UNREADABLE_FILES  |*/
+                                            /*|   3 | OLD_LOCKED_FILES  |*/
+                                            /*|   2 | QUEUED_FILES      |*/
+                                            /*|   1 | UNKNOWN_FILES     |*/
+                                            /*+-----+-------------------+*/
           unsigned char report_unknown_files;
           unsigned char important_dir;      /* Directory is important.   */
                                             /* In times where all        */
@@ -3019,45 +3036,59 @@ struct fileretrieve_status
                                             /* far.                      */
 #ifdef NEW_FRA
           unsigned int  dir_options;
+                                            /*+-----+-------------------+*/
+                                            /*| Bit |      Meaning      |*/
+                                            /*+-----+-------------------+*/
+                                            /*|31-32| Not used.         |*/
+                                            /*|   30| KEEP_PATH         |*/
+                                            /*|   29| NO_DELIMITER      |*/
+                                            /*|   28| Not used.         |*/
+                                            /*|   27| URL_CREATES_FILE_NAME|*/
+                                            /*|   26| ONE_PROCESS_JUST_SCANNING|*/
+                                            /*|   25| Not used.         |*/
+                                            /*|   24| INOTIFY_DELETE    |*/
+                                            /*|   23| DO_NOT_MOVE       |*/
+                                            /*|   22| DO_NOT_PARALLELIZE|*/
+                                            /*|   21| Not used.         |*/
+                                            /*|   20| INOTIFY_CREATE    |*/
+                                            /*|17-19| Not used.         |*/
+                                            /*|   16| INOTIFY_CLOSE     |*/
+                                            /*|   15| INOTIFY_RENAME    |*/
+                                            /*| 8-14| Not used.         |*/
+                                            /*|    7| DONT_GET_DIR_LIST |*/
+                                            /*|    6| ACCEPT_DOT_FILES  |*/
+                                            /*|  1-5| Not used.         |*/
+                                            /*+-----+-------------------+*/
 #endif
           unsigned int  dir_flag;           /* Flag for this directory   */
                                             /* informing about the       */
                                             /* following status:         */
-                                            /*+------+------------------+*/
-                                            /*|Bit(s)|     Meaning      |*/
-                                            /*+------+------------------+*/
-                                            /*|31-32 | Not used.        |*/
-                                            /*|   30 | KEEP_PATH        |*/
-                                            /*|   29 | NO_DELIMITER     |*/
-                                            /*|   28 | BUCKETNAME_IN_PATH|*/
-                                            /*|   27 | URL_CREATES_FILE_NAME|*/
-                                            /*|   26 | ONE_PROCESS_JUST_SCANNING|*/
-                                            /*|   25 | DIR_DISABLED_STATIC|*/
-                                            /*|   24 | INOTIFY_DELETE   |*/
-                                            /*|   23 | DO_NOT_MOVE      |*/
-                                            /*|   22 | DO_NOT_PARALLELIZ|*/
-                                            /*|   21 | INFO_TIME_REACHED|*/
-                                            /*|   20 | INOTIFY_CREATE   |*/
-                                            /*|   19 | INOTIFY_NEEDS_SCAN*/
-                                            /*|   18 | CREATE_R_SRC_DIR |*/
-                                            /*|   17 | ALL_DISABLED     |*/
-                                            /*|   16 | INOTIFY_CLOSE    |*/
-                                            /*|   15 | INOTIFY_RENAME   |*/
-                                            /*|   14 | DIR_STOPPED      |*/
-                                            /*|   13 | DIR_ERROR_OFFL_T |*/
-                                            /*|   12 | DIR_ERROR_ACKN_T |*/
-                                            /*|   11 | DIR_ERROR_OFFLINE|*/
-                                            /*|   10 | DIR_ERROR_ACKN   |*/
-                                            /*|    9 | WARN_TIME_REACHED|*/
-                                            /*|    8 | DIR_ERROR_SET    |*/
-                                            /*|    7 | DONT_GET_DIR_LIST|*/
-                                            /*|    6 | ACCEPT_DOT_FILES |*/
-                                            /*|    5 | DIR_DISABLED     |*/
-                                            /*|    4 | LINK_NO_EXEC     |*/
-                                            /*|    3 | ADD_TIME_ENTRY   |*/
-                                            /*|    2 | FILES_IN_QUEUE   |*/
-                                            /*|    1 | MAX_COPIED       |*/
-                                            /*+------+------------------+*/
+                                            /*+-----+-------------------+*/
+                                            /*| Bit |      Meaning      |*/
+                                            /*+-----+-------------------+*/
+                                            /*|26-32| Not used.         |*/
+                                            /*|   25| DIR_DISABLED_STATIC|*/
+                                            /*|22-24| Not used.         |*/
+                                            /*|   21| INFO_TIME_REACHED |*/
+                                            /*|   20| Not used.         |*/
+                                            /*|   19| INOTIFY_NEEDS_SCAN|*/
+                                            /*|   18| Not used.         |*/
+                                            /*|   17| ALL_DISABLED      |*/
+                                            /*|15-16| Not used.         |*/
+                                            /*|   14| DIR_STOPPED       |*/
+                                            /*|   13| DIR_ERROR_OFFL_T  |*/
+                                            /*|   12| DIR_ERROR_ACKN_T  |*/
+                                            /*|   11| DIR_ERROR_OFFLINE |*/
+                                            /*|   10| DIR_ERROR_ACKN    |*/
+                                            /*|    9| WARN_TIME_REACHED |*/
+                                            /*|    8| DIR_ERROR_SET     |*/
+                                            /*|  6-7| Not used.         |*/
+                                            /*|    5| DIR_DISABLED      |*/
+                                            /*|    4| LINK_NO_EXEC      |*/
+                                            /*|    3| Not used.         |*/
+                                            /*|    2| FILES_IN_QUEUE    |*/
+                                            /*|    1| MAX_COPIED        |*/
+                                            /*+-----+-------------------+*/
           unsigned int  in_dc_flag;         /* Flag to indicate which of */
                                             /* the options have been     */
                                             /* stored in DIR_CONFIG. This*/
@@ -3065,28 +3096,29 @@ struct fileretrieve_status
                                             /* the DIR_CONFIG from       */
                                             /* scratch. The following    */
                                             /* flags are possible:       */
-                                            /*+---+---------------------+*/
-                                            /*|Bit|        Meaning      |*/
-                                            /*+---+---------------------+*/
+                                            /*+-----+-------------------+*/
+                                            /*| Bit |      Meaning      |*/
+                                            /*+-----+-------------------+*/
                                             /*|18-32|Not used.          |*/
-                                            /*|17 |LOCAL_REMOTE_DIR_IDC |*/
-                                            /*|16 |UNREADABLE_FILES_IDC |*/
-                                            /*|15 |MAX_ERRORS_IDC       |*/
-                                            /*|14 |INFO_TIME_IDC        |*/
-                                            /*|13 |MAX_PROCESS_IDC      |*/
-                                            /*|12 |DONT_DELUKW_FILES_IDC|*/
-                                            /*|11 |INOTIFY_FLAG_IDC     |*/
-                                            /*|10 |KEEP_CONNECTED_IDC   |*/
-                                            /*| 9 |WARN_TIME_IDC        |*/
-                                            /*| 8 |MAX_CP_FILE_SIZE_IDC |*/
-                                            /*| 7 |MAX_CP_FILES_IDC     |*/
-                                            /*| 6 |DONT_REPUKW_FILES_IDC|*/
-                                            /*| 5 |REPUKW_FILES_IDC     |*/
-                                            /*| 4 |OLD_LOCKED_FILES_IDC |*/
-                                            /*| 3 |QUEUED_FILES_IDC     |*/
-                                            /*| 2 |UNKNOWN_FILES_IDC    |*/
-                                            /*| 1 |DIR_ALIAS_IDC        |*/
-                                            /*+---+---------------------+*/
+                                            /*|   18|CREATE_SRC_DIR_IDC |*/
+                                            /*|   17|LOCAL_REMOTE_DIR_IDC|*/
+                                            /*|   16|UNREADABLE_FILES_IDC|*/
+                                            /*|   15|MAX_ERRORS_IDC     |*/
+                                            /*|   14|INFO_TIME_IDC      |*/
+                                            /*|   13|MAX_PROCESS_IDC    |*/
+                                            /*|   12|DONT_DELUKW_FILES_IDC|*/
+                                            /*|   11|INOTIFY_FLAG_IDC   |*/
+                                            /*|   10|KEEP_CONNECTED_IDC |*/
+                                            /*|    9|WARN_TIME_IDC      |*/
+                                            /*|    8|MAX_CP_FILE_SIZE_ID|*/
+                                            /*|    7|MAX_CP_FILES_IDC   |*/
+                                            /*|    6|DONT_REPUKW_FILES_IDC|*/
+                                            /*|    5|REPUKW_FILES_IDC   |*/
+                                            /*|    4|OLD_LOCKED_FILES_IDC|*/
+                                            /*|    3|QUEUED_FILES_IDC   |*/
+                                            /*|    2|UNKNOWN_FILES_IDC  |*/
+                                            /*|    1|DIR_ALIAS_IDC      |*/
+                                            /*+-----+-------------------+*/
           unsigned int  files_in_dir;       /* The number of files       */
                                             /* currently in this         */
                                             /* directory.                */
@@ -3106,20 +3138,19 @@ struct fileretrieve_status
                                             /*     ignore_file_time      */
                                             /* These are bit masked      */
                                             /* for each variable.        */
-                                            /*+---+---------------------+*/
-                                            /*|Bit|       Meaning       |*/
-                                            /*+---+---------------------+*/
-                                            /*| 1 | ISIZE_EQUAL         |*/
-                                            /*| 2 | ISIZE_LESS_THEN     |*/
-                                            /*| 3 | ISIZE_GREATER_THEN  |*/
-                                            /*+---+---------------------+*/
-                                            /*| 4 | IFTIME_EQUAL        |*/
-                                            /*| 5 | IFTIME_LESS_THEN    |*/
-                                            /*| 6 | IFTIME_GREATER_THEN |*/
-                                            /*+---+---------------------+*/
-                                            /*+---+---------------------+*/
-                                            /*| * | Rest not used.      |*/
-                                            /*+---+---------------------+*/
+                                            /*+-----+-------------------+*/
+                                            /*| Bit |      Meaning      |*/
+                                            /*+-----+-------------------+*/
+                                            /*| 7-32| Not used.         |*/
+                                            /*+-----+-------------------+*/
+                                            /*|    6| IFTIME_GREATER_THEN|*/
+                                            /*|    5| IFTIME_LESS_THEN  |*/
+                                            /*|    4| IFTIME_EQUAL      |*/
+                                            /*+-----+-------------------+*/
+                                            /*|    3| ISIZE_GREATER_THEN|*/
+                                            /*|    2| ISIZE_LESS_THEN   |*/
+                                            /*|    1| ISIZE_EQUAL       |*/
+                                            /*+-----+-------------------+*/
           unsigned int  keep_connected;     /* After all files have been */
                                             /* retrieved, the time to    */
                                             /* stay connected.           */
@@ -3128,24 +3159,24 @@ struct fileretrieve_status
                                             /* check that is to be done  */
                                             /* and what type of CRC to   */
                                             /* use:                      */
-                                            /*+------+------------------+*/
-                                            /*|Bit(s)|     Meaning      |*/
-                                            /*+------+------------------+*/
-                                            /*|27-32 | Not used.        |*/
-                                            /*|   26 | DC_WARN          |*/
-                                            /*|   25 | DC_STORE         |*/
-                                            /*|   24 | DC_DELETE        |*/
-                                            /*|19-23 | Not used.        |*/
-                                            /*|   18 | DC_MURMUR3       |*/
-                                            /*|   17 | DC_CRC32C        |*/
-                                            /*|   16 | DC_CRC32         |*/
-                                            /*| 6-15 | Not used.        |*/
-                                            /*|    5 | DC_FILENAME_AND_SIZE|*/
-                                            /*|    4 | DC_NAME_NO_SUFFIX|*/
-                                            /*|    3 | DC_FILE_CONT_NAME|*/
-                                            /*|    2 | DC_FILE_CONTENT  |*/
-                                            /*|    1 | DC_FILENAME_ONLY |*/
-                                            /*+------+------------------+*/
+                                            /*+-----+-------------------+*/
+                                            /*| Bit |      Meaning      |*/
+                                            /*+-----+-------------------+*/
+                                            /*|27-32| Not used.         |*/
+                                            /*|   26| DC_WARN           |*/
+                                            /*|   25| DC_STORE          |*/
+                                            /*|   24| DC_DELETE         |*/
+                                            /*|19-23| Not used.         |*/
+                                            /*|   18| DC_MURMUR3        |*/
+                                            /*|   17| DC_CRC32C         |*/
+                                            /*|   16| DC_CRC32          |*/
+                                            /*| 6-15| Not used.         |*/
+                                            /*|    5| DC_FILENAME_AND_SIZE|*/
+                                            /*|    4| DC_NAME_NO_SUFFIX |*/
+                                            /*|    3| DC_FILE_CONT_NAME |*/
+                                            /*|    2| DC_FILE_CONTENT   |*/
+                                            /*|    1| DC_FILENAME_ONLY  |*/
+                                            /*+-----+-------------------+*/
 #endif
           mode_t        dir_mode;           /* Permission of directory   */
                                             /* when created via AFD.     */
@@ -3247,24 +3278,24 @@ struct afd_status
           unsigned char  amg_jobs;        /* Bitmap to show if jobs of    */
                                           /* the AMG (dir_check(),        */
                                           /* time_job(), ...) are active: */
-                                          /*+------+---------------------+*/
-                                          /*|Bit(s)|      Meaning        |*/
-                                          /*+------+---------------------+*/
-                                          /*|  1   | dir_check() active  |*/
-                                          /*|  2   | Rereading DIR_CONFIG|*/
-                                          /*|  3   | FD waiting for AMG  |*/
-                                          /*|      | to finish DIR_CONFIG|*/
-                                          /*|  4   | Pause distribution  |*/
-                                          /*|      | at start.           |*/
-                                          /*|  5   | not used            |*/
-                                          /*|  6   | dir_check() has msg |*/
-                                          /*|      | queued.             |*/
-                                          /*|  7   | AMG writting to     |*/
-                                          /*|      | JID structure.      |*/
-                                          /*|  8   | Check file directory|*/
-                                          /*|      | for jobs without a  |*/
-                                          /*|      | message.            |*/
-                                          /*+------+---------------------+*/
+                                          /*+-----+----------------------+*/
+                                          /*| Bit |       Meaning        |*/
+                                          /*+-----+----------------------+*/
+                                          /*|  1  | dir_check() active   |*/
+                                          /*|  2  | Rereading DIR_CONFIG |*/
+                                          /*|  3  | FD waiting for AMG   |*/
+                                          /*|     | to finish DIR_CONFIG |*/
+                                          /*|  4  | Pause distribution   |*/
+                                          /*|     | at start.            |*/
+                                          /*|  5  | not used             |*/
+                                          /*|  6  | dir_check() has msg  |*/
+                                          /*|     | queued.              |*/
+                                          /*|  7  | AMG writting to      |*/
+                                          /*|     | JID structure.       |*/
+                                          /*|  8  | Check file directory |*/
+                                          /*|     | for jobs without a   |*/
+                                          /*|     | message.             |*/
+                                          /*+-----+----------------------+*/
           signed char    fd;              /* File Distributor             */
           signed char    sys_log;         /* System Log                   */
           signed char    maintainer_log;  /* Maintainer Log               */
@@ -3411,11 +3442,11 @@ struct job_id_data
        {
 #ifdef _NEW_JID
           time_t       creation_time;   /* Time when job was created.    */
-          unsigned int special_flag;    /*+------+----------------------+*/
-                                        /*|Bit(s)|      Meaning         |*/
-                                        /*+------+----------------------+*/
-                                        /*|1 - 32| Not used.            |*/
-                                        /*+------+----------------------+*/
+          unsigned int special_flag;    /*+-----+-----------------------+*/
+                                        /*| Bit |        Meaning        |*/
+                                        /*+-----+-----------------------+*/
+                                        /*| 1-32| Not used.             |*/
+                                        /*+-----+-----------------------+*/
 #endif
           unsigned int job_id;          /* CRC-32 checksum of the job.   */
           unsigned int dir_id;          /* CRC-32 checksum of the dir.   */
@@ -3469,11 +3500,11 @@ struct job_id_stat
           double       nbs;             /* Number of bytes send.         */
           time_t       creation_time;   /* Time when job was created.    */
           time_t       usage_time;      /* Last time this job was used.  */
-          unsigned int special_flag;    /*+------+----------------------+*/
-                                        /*|Bit(s)|      Meaning         |*/
-                                        /*+------+----------------------+*/
-                                        /*|1 - 32| Not used.            |*/
-                                        /*+------+----------------------+*/
+          unsigned int special_flag;    /*+-----+-----------------------+*/
+                                        /*| Bit |        Meaning        |*/
+                                        /*+-----+-----------------------+*/
+                                        /*| 1-32| Not used.             |*/
+                                        /*+-----+-----------------------+*/
           unsigned int nfs;             /* Number of files send.         */
           unsigned int ne;              /* Number of errors.             */
        };
@@ -3501,17 +3532,18 @@ struct queue_buf
                                             /* for sf_xxx or position in */
                                             /* FRA for gf_xxx.           */
           int           connect_pos;
-          unsigned char special_flag;       /*+------+------------------+*/
-                                            /*|Bit(s)|     Meaning      |*/
-                                            /*+------+------------------+*/
+          unsigned char special_flag;       /*+-----+-------------------+*/
+                                            /*| Bit |      Meaning      |*/
+                                            /*+-----+-------------------+*/
+                                            /*| 6-8 | Not used.         |*/
 #ifdef _WITH_BURST_MISS_CHECK
-                                            /*| 5    | QUEUED_FOR_BURST |*/
+                                            /*|   5 | QUEUED_FOR_BURST  |*/
 #endif
-                                            /*| 4    | FETCH_JOB        |*/
-                                            /*| 3    | HELPER_JOB       |*/
-                                            /*| 2    | RESEND_JOB       |*/
-                                            /*| 1    | no used          |*/
-                                            /*+------+------------------+*/
+                                            /*|   4 | FETCH_JOB         |*/
+                                            /*|   3 | HELPER_JOB        |*/
+                                            /*|   2 | RESEND_JOB        |*/
+                                            /*|   1 | Not used.         |*/
+                                            /*+-----+-------------------+*/
           char          msg_name[MAX_MSG_NAME_LENGTH];
 #ifdef HAVE_SETPRIORITY
                                             /* NOTE: At position         */
@@ -3611,11 +3643,12 @@ struct retrieve_list
 #endif
           unsigned char assigned;        /* Which job has been assigned to */
                                          /* fetch these files.             */
-          unsigned char special_flag;    /*+------+------------------------+*/
-                                         /*|Bit(s)|        Meaning         |*/
-                                         /*+------+------------------------+*/
-                                         /*|   1  | RL_GOT_EXACT_SIZE_DATE |*/
-                                         /*+------+------------------------+*/
+          unsigned char special_flag;    /*+-----+------------------------+*/
+                                         /*| Bit |        Meaning         |*/
+                                         /*+-----+------------------------+*/
+                                         /*| 2-32| Not used.              |*/
+                                         /*|    1| RL_GOT_EXACT_SIZE_DATE |*/
+                                         /*+-----+------------------------+*/
           char          got_date;
           char          retrieved;       /* Has the file already been      */
                                          /* retrieved?                     */

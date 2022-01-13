@@ -416,7 +416,11 @@ try_attach_again:
                               *file_size_to_retrieve += rl[i].size;
                            }
                         }
+#ifdef NEW_FRA
+                        if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#else
                         if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#endif
                             (db.special_flag & DISTRIBUTED_HELPER_JOB))
                         {
                            rl[i].assigned = (unsigned char)db.job_no + 1;
@@ -451,7 +455,11 @@ try_attach_again:
                                  *file_size_to_retrieve += rl[i].size;
                               }
                            }
+#ifdef NEW_FRA
+                           if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#else
                            if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#endif
                                (db.special_flag & DISTRIBUTED_HELPER_JOB))
                            {
                               rl[i].assigned = (unsigned char)db.job_no + 1;
@@ -723,7 +731,11 @@ do_scan(int          *files_to_retrieve,
          {
             p_list += 2;
          }
+#ifdef NEW_FRA
+         if ((*p_list != '.') || (fra->dir_options & ACCEPT_DOT_FILES))
+#else
          if ((*p_list != '.') || (fra->dir_flag & ACCEPT_DOT_FILES))
+#endif
          {
             *p_end = '\0';
             list_length++;
@@ -1164,7 +1176,11 @@ check_list(char         *file,
 #endif
                      {
                         rl[i].retrieved = NO;
+#ifdef NEW_FRA
+                        if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#else
                         if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#endif
                             (db.special_flag & DISTRIBUTED_HELPER_JOB))
                         {
                            rl[i].assigned = (unsigned char)db.job_no + 1;
@@ -1213,7 +1229,11 @@ check_list(char         *file,
 #endif
                         {
                            rl[i].retrieved = NO;
+#ifdef NEW_FRA
+                           if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#else
                            if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#endif
                                (db.special_flag & DISTRIBUTED_HELPER_JOB))
                            {
                               rl[i].assigned = (unsigned char)db.job_no + 1;
@@ -1289,7 +1309,11 @@ check_list(char         *file,
             {
                if ((rl[i].retrieved == NO) && (rl[i].assigned == 0))
                {
+#ifdef NEW_FRA
+                  if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#else
                   if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#endif
                       (db.special_flag & DISTRIBUTED_HELPER_JOB))
                   {
                      rl[i].assigned = (unsigned char)db.job_no + 1;
@@ -1461,7 +1485,11 @@ check_list(char         *file,
                             ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size))
 #endif
                         {
+#ifdef NEW_FRA
+                           if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#else
                            if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#endif
                                (db.special_flag & DISTRIBUTED_HELPER_JOB))
                            {
                               rl[i].assigned = (unsigned char)db.job_no + 1;
@@ -1521,7 +1549,11 @@ check_list(char         *file,
                                ((*file_size_to_retrieve + size_to_retrieve) < fra->max_copied_file_size))
 #endif
                            {
+#ifdef NEW_FRA
+                              if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#else
                               if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#endif
                                   (db.special_flag & DISTRIBUTED_HELPER_JOB))
                               {
                                  rl[i].assigned = (unsigned char)db.job_no + 1;
@@ -1838,7 +1870,11 @@ check_list(char         *file,
           (*file_size_to_retrieve < fra->max_copied_file_size))
 #endif
       {
+#ifdef NEW_FRA
+         if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#else
          if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#endif
              (db.special_flag & DISTRIBUTED_HELPER_JOB))
          {
             rl[no_of_listed_files - 1].assigned = (unsigned char)db.job_no + 1;

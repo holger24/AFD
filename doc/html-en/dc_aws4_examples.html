@@ -86,7 +86,6 @@ follows:
       https://user:secret@host/test;auth=aws4-hmac-sha256
 
          [dir options]
-         bucketname in path
          store retrieve list
          do not remove
          time * * * * *
@@ -117,7 +116,6 @@ delimiter</a>:
       https://user:secret@host/test;auth=aws4-hmac-sha256
 
          [dir options]
-         bucketname in path
          <span style="background-color:#00FF00">no delimiter</span>
          store retrieve list
          do not remove
@@ -159,7 +157,6 @@ To avoid this situation you can use the [dir options]
       https://user:secret@host/test;auth=aws4-hmac-sha256
 
          [dir options]
-         bucketname in path
          no delimiter
          <span style="background-color:#00FF00">keep path</span>
          store retrieve list
@@ -192,7 +189,6 @@ prefix option is added as soon as you specify a path after the bucketname:
       https://user:secret@host/test<span style="background-color:#00FF00">/test2</span>;auth=aws4-hmac-sha256
 
          [dir options]
-         bucketname in path
          no delimiter
          keep path
          store retrieve list
@@ -223,7 +219,6 @@ under the [files] filter:
       https://user:secret@host/test;auth=aws4-hmac-sha256
 
          [dir options]
-         bucketname in path
          no delimiter
          keep path
          store retrieve list
@@ -251,7 +246,6 @@ method is not recommended. Rather work without 'no delimiter' and
       https://user:secret@host/test<span style="background-color:#00FF00">/test2</span>;auth=aws4-hmac-sha256
 
          [dir options]
-         bucketname in path
          store retrieve list
          do not remove
          time * * * * *

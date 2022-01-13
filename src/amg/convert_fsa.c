@@ -286,7 +286,7 @@ struct filetransfer_status_2
           unsigned int    host_id;           /* New */
           char            debug;
           char            host_toggle;
-          int             host_status;
+          unsigned int    host_status;       /* Modified */
           int             error_counter;
           unsigned int    total_errors;
           int             max_errors;
@@ -378,7 +378,7 @@ struct filetransfer_status_3
           unsigned int    host_id;
           char            debug;
           char            host_toggle;
-          int             host_status;
+          unsigned int    host_status;
           int             error_counter;
           unsigned int    total_errors;
           int             max_errors;
@@ -439,6 +439,7 @@ struct status_4
           char            unique_name[MAX_MSG_NAME_LENGTH_4];
           unsigned int    job_id;
 #endif
+          unsigned char   special_flag;           /* New. */
           char            connect_status;
           int             no_of_files;
           int             no_of_files_done;
@@ -465,7 +466,7 @@ struct filetransfer_status_4
           unsigned char   special_flag;
           unsigned int    protocol;
           unsigned int    protocol_options;
-          unsigned int    protocol_options2;    /* New. */
+          unsigned int    protocol_options2;      /* New. */
           unsigned int    socksnd_bufsize;
           unsigned int    sockrcv_bufsize;
           unsigned int    keep_connected;
@@ -475,7 +476,7 @@ struct filetransfer_status_4
           unsigned int    host_id;
           char            debug;
           char            host_toggle;
-          int             host_status;
+          unsigned int    host_status;
           int             error_counter;
           unsigned int    total_errors;
           int             max_errors;
@@ -498,14 +499,14 @@ struct filetransfer_status_4
           unsigned int    file_counter_done;
           u_off_t         bytes_send;
           unsigned int    connections;
-          unsigned int    mc_nack_counter;
+/*        unsigned int    mc_nack_counter;     */ /* Removed. */
           int             active_transfers;
           int             allowed_transfers;
           long            transfer_timeout;
           off_t           transfer_rate_limit;
           off_t           trl_per_process;
-          off_t           mc_ct_rate_limit;
-          off_t           mc_ctrl_per_process;
+/*        off_t           mc_ct_rate_limit;    */ /* Removed. */
+/*        off_t           mc_ctrl_per_process; */ /* Removed. */
           struct status_4 job_status[MAX_NO_PARALLEL_JOBS_4];
        };
 #endif
@@ -1995,13 +1996,10 @@ convert_fsa(int           old_fsa_fd,
               new_fsa[i].file_counter_done      = old_fsa[i].file_counter_done;
               new_fsa[i].bytes_send             = (u_off_t)(old_fsa[i].bytes_send);
               new_fsa[i].connections            = old_fsa[i].connections;
-              new_fsa[i].mc_nack_counter        = 0U;
               new_fsa[i].active_transfers       = old_fsa[i].active_transfers;
               new_fsa[i].allowed_transfers      = old_fsa[i].allowed_transfers;
               new_fsa[i].transfer_rate_limit    = 0;
               new_fsa[i].trl_per_process        = 0;
-              new_fsa[i].mc_ct_rate_limit       = 0;
-              new_fsa[i].mc_ctrl_per_process    = 0;
               new_fsa[i].transfer_timeout       = old_fsa[i].transfer_timeout;
               for (j = 0; j < MAX_NO_PARALLEL_JOBS_0; j++)
               {
@@ -2179,13 +2177,10 @@ convert_fsa(int           old_fsa_fd,
               new_fsa[i].file_counter_done      = old_fsa[i].file_counter_done;
               new_fsa[i].bytes_send             = old_fsa[i].bytes_send;
               new_fsa[i].connections            = old_fsa[i].connections;
-              new_fsa[i].mc_nack_counter        = old_fsa[i].mc_nack_counter;
               new_fsa[i].active_transfers       = old_fsa[i].active_transfers;
               new_fsa[i].allowed_transfers      = old_fsa[i].allowed_transfers;
               new_fsa[i].transfer_rate_limit    = old_fsa[i].transfer_rate_limit;
               new_fsa[i].trl_per_process        = old_fsa[i].trl_per_process;
-              new_fsa[i].mc_ct_rate_limit       = old_fsa[i].mc_ct_rate_limit;
-              new_fsa[i].mc_ctrl_per_process    = old_fsa[i].mc_ctrl_per_process;
               new_fsa[i].transfer_timeout       = old_fsa[i].transfer_timeout;
               for (j = 0; j < MAX_NO_PARALLEL_JOBS_1; j++)
               {
@@ -2364,13 +2359,10 @@ convert_fsa(int           old_fsa_fd,
               new_fsa[i].file_counter_done      = old_fsa[i].file_counter_done;
               new_fsa[i].bytes_send             = old_fsa[i].bytes_send;
               new_fsa[i].connections            = old_fsa[i].connections;
-              new_fsa[i].mc_nack_counter        = old_fsa[i].mc_nack_counter;
               new_fsa[i].active_transfers       = old_fsa[i].active_transfers;
               new_fsa[i].allowed_transfers      = old_fsa[i].allowed_transfers;
               new_fsa[i].transfer_rate_limit    = old_fsa[i].transfer_rate_limit;
               new_fsa[i].trl_per_process        = old_fsa[i].trl_per_process;
-              new_fsa[i].mc_ct_rate_limit       = old_fsa[i].mc_ct_rate_limit;
-              new_fsa[i].mc_ctrl_per_process    = old_fsa[i].mc_ctrl_per_process;
               new_fsa[i].transfer_timeout       = old_fsa[i].transfer_timeout;
               for (j = 0; j < MAX_NO_PARALLEL_JOBS_2; j++)
               {
@@ -2558,13 +2550,10 @@ convert_fsa(int           old_fsa_fd,
               new_fsa[i].file_counter_done      = old_fsa[i].file_counter_done;
               new_fsa[i].bytes_send             = old_fsa[i].bytes_send;
               new_fsa[i].connections            = old_fsa[i].connections;
-              new_fsa[i].mc_nack_counter        = old_fsa[i].mc_nack_counter;
               new_fsa[i].active_transfers       = old_fsa[i].active_transfers;
               new_fsa[i].allowed_transfers      = old_fsa[i].allowed_transfers;
               new_fsa[i].transfer_rate_limit    = old_fsa[i].transfer_rate_limit;
               new_fsa[i].trl_per_process        = old_fsa[i].trl_per_process;
-              new_fsa[i].mc_ct_rate_limit       = old_fsa[i].mc_ct_rate_limit;
-              new_fsa[i].mc_ctrl_per_process    = old_fsa[i].mc_ctrl_per_process;
               new_fsa[i].transfer_timeout       = old_fsa[i].transfer_timeout;
               for (j = 0; j < MAX_NO_PARALLEL_JOBS_3; j++)
               {

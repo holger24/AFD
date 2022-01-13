@@ -1,7 +1,7 @@
 /*
  *  edit_hc_callbacks.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -48,6 +48,8 @@ DESCR__S_M3
  **                      parameter.
  **   24.11.2012 H.Kiehl Added support for selecting CRC type.
  **   20.03.2017 H.Kiehl Add support for groups.
+ **   25.10.2021 H.Kiehl Added option bucketname in path.
+ **   10.01.2022 H.Kiehl Added no expect option.
  **
  */
 DESCR__E_M3
@@ -76,6 +78,7 @@ extern Widget                     active_mode_w,
 #endif
                                   appshell,
                                   auto_toggle_w,
+                                  bucketname_in_path_w,
                                   compression_w,
 #ifdef WITH_DUP_CHECK
                                   dc_alias_w,
@@ -137,6 +140,7 @@ extern Widget                     active_mode_w,
                                   max_errors_label_w,
                                   mode_label_w,
                                   no_ageing_jobs_w,
+                                  no_expect_w,
                                   no_source_icon_w,
                                   passive_mode_w,
                                   passive_redirect_w,
@@ -1466,6 +1470,8 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
          XtSetSensitive(tcp_keepalive_w, False);
 #endif
+         XtSetSensitive(bucketname_in_path_w, False);
+         XtSetSensitive(no_expect_w, False);
          XtSetSensitive(sequence_locking_w, False);
          XtSetSensitive(keep_time_stamp_w, False);
          XtSetSensitive(sort_file_names_w, False);
@@ -2596,6 +2602,32 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
             XtSetSensitive(tcp_keepalive_w, False);
          }
 #endif
+         if (fsa[cur_pos].protocol & HTTP_FLAG)
+         {
+            XtSetSensitive(bucketname_in_path_w, True);
+            if (fsa[cur_pos].protocol_options & HTTP_BUCKETNAME_IN_PATH)
+            {
+               XtVaSetValues(bucketname_in_path_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(bucketname_in_path_w, XmNset, False, NULL);
+            }
+            XtSetSensitive(no_expect_w, True);
+            if (fsa[cur_pos].protocol_options & NO_EXPECT)
+            {
+               XtVaSetValues(no_expect_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(no_expect_w, XmNset, False, NULL);
+            }
+         }
+         else
+         {
+            XtSetSensitive(bucketname_in_path_w, False);
+            XtSetSensitive(no_expect_w, False);
+         }
 
          /* Set USE_SEQUENCE_LOCKING option or not. */
          if ((fsa[cur_pos].protocol & FTP_FLAG) ||
@@ -3287,6 +3319,11 @@ submite_button(Widget w, XtPointer client_data, XtPointer call_data)
             changes++;
          }
 #endif
+         if (ce[i].value_changed2 & BUCKETNAME_IN_PATH_CHANGED)
+         {
+            fsa[i].protocol_options ^= HTTP_BUCKETNAME_IN_PATH;
+            changes++;
+         }
          if (ce[i].value_changed2 & USE_SEQUENCE_LOCKING_CHANGED)
          {
             fsa[i].protocol_options ^= USE_SEQUENCE_LOCKING;
@@ -3424,6 +3461,11 @@ submite_button(Widget w, XtPointer client_data, XtPointer call_data)
          if (ce[i].value_changed2 & DISCONNECT_CHANGED)
          {
             fsa[i].protocol_options ^= KEEP_CONNECTED_DISCONNECT;
+            changes++;
+         }
+         if (ce[i].value_changed2 & NO_EXPECT_CHANGED)
+         {
+            fsa[i].protocol_options ^= NO_EXPECT;
             changes++;
          }
 

@@ -448,8 +448,10 @@ create_fsa(void)
          fsa[i].protocol               = hl[i].protocol;
          fsa[i].transfer_rate_limit    = hl[i].transfer_rate_limit;
          fsa[i].trl_per_process        = hl[i].transfer_rate_limit;
+#ifndef NEW_FSA
          fsa[i].mc_ct_rate_limit       = hl[i].transfer_rate_limit;
          fsa[i].mc_ctrl_per_process    = hl[i].transfer_rate_limit;
+#endif
          fsa[i].ttl                    = hl[i].ttl;
          fsa[i].socksnd_bufsize        = hl[i].socksnd_bufsize;
          fsa[i].sockrcv_bufsize        = hl[i].sockrcv_bufsize;
@@ -461,7 +463,9 @@ create_fsa(void)
 #endif
          fsa[i].host_id                = get_str_checksum(fsa[i].host_alias);
          fsa[i].protocol_options       = hl[i].protocol_options;
+#ifndef NEW_FSA
          fsa[i].mc_nack_counter        = 0;
+#endif
          fsa[i].special_flag           = 0;
          if (hl[i].in_dir_config == YES)
          {
@@ -778,19 +782,25 @@ create_fsa(void)
             {
                fsa[i].host_id             = old_fsa[host_pos].host_id;
             }
+#ifndef NEW_FSA
             fsa[i].mc_ct_rate_limit       = old_fsa[host_pos].mc_ct_rate_limit;
             fsa[i].mc_nack_counter        = old_fsa[host_pos].mc_nack_counter;
+#endif
             if (fsa[i].active_transfers > 1)
             {
                fsa[i].trl_per_process     = fsa[i].transfer_rate_limit /
                                             fsa[i].active_transfers;
+#ifndef NEW_FSA
                fsa[i].mc_ctrl_per_process = fsa[i].mc_ct_rate_limit /
                                             fsa[i].active_transfers;
+#endif
             }
             else
             {
                fsa[i].trl_per_process     = fsa[i].transfer_rate_limit;
+#ifndef NEW_FSA
                fsa[i].mc_ctrl_per_process = fsa[i].mc_ct_rate_limit;
+#endif
             }
 
             /* Copy all job entries. */
@@ -859,10 +869,14 @@ create_fsa(void)
             fsa[i].total_file_size     = 0;
             fsa[i].special_flag        = 0;
             fsa[i].successful_retries  = 0;
+#ifndef NEW_FSA
             fsa[i].mc_nack_counter     = 0;
+#endif
             fsa[i].trl_per_process     = fsa[i].transfer_rate_limit;
+#ifndef NEW_FSA
             fsa[i].mc_ct_rate_limit    = fsa[i].transfer_rate_limit;
             fsa[i].mc_ctrl_per_process = fsa[i].transfer_rate_limit;
+#endif
             fsa[i].debug               = NO;
             fsa[i].host_id             = get_str_checksum(fsa[i].host_alias);
             fsa[i].last_connection = fsa[i].last_retry_time = time(NULL);

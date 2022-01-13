@@ -1,6 +1,6 @@
 /*
  *  edit_hc.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -132,31 +132,33 @@
 #define KC_DIRECTION_CHANGED            8
 #define FILE_WHEN_LOCAL_CHANGED         16
 #define TCP_KEEPALIVE_CHANGED           32
-#define DO_NOT_DELETE_DATA_CHANGED      64
+#define BUCKETNAME_IN_PATH_CHANGED      64
+#define DO_NOT_DELETE_DATA_CHANGED      128
 #ifdef WITH_DUP_CHECK
-# define DC_REF_CHANGED                 128
-# define DC_CRC_CHANGED                 256
-# define DC_TIMEOUT_FIXED_CHANGED       512
+# define DC_REF_CHANGED                 256
+# define DC_CRC_CHANGED                 512
+# define DC_TIMEOUT_FIXED_CHANGED       1024
 #endif
-#define USE_SEQUENCE_LOCKING_CHANGED    1024
-#define WARN_TIME_DAYS_CHANGED          2048
-#define WARN_TIME_HOURS_CHANGED         4096
-#define WARN_TIME_MINS_CHANGED          8192
-#define WARN_TIME_SECS_CHANGED          16384
-#define COMPRESION_CHANGED              32768
-#define KEEP_TIME_STAMP_CHANGED         65536
-#define SORT_FILE_NAMES_CHANGED         131072
-#define NO_AGEING_JOBS_CHANGED          262144
-#define CHECK_SIZE_CHANGED              524288
-#define TIMEOUT_TRANSFER_CHANGED        1048576
-#define FTPS_CCC_CHANGED                2097152
-#define USE_LIST_CHANGED                4194304
-#define STRICT_TLS_CHANGED              8388608
-#define DISABLE_MLST_CHANGED            16777216
-#define DISCONNECT_CHANGED              33554432
-#define DISABLE_STRICT_HOST_KEY_CHANGED 67108864
-#define USE_STAT_LIST_CHANGED           134217728
-#define FTPS_IMPLICIT_CHANGED           268435456
+#define USE_SEQUENCE_LOCKING_CHANGED    2048
+#define WARN_TIME_DAYS_CHANGED          4096
+#define WARN_TIME_HOURS_CHANGED         8192
+#define WARN_TIME_MINS_CHANGED          16384
+#define WARN_TIME_SECS_CHANGED          32768
+#define COMPRESION_CHANGED              65536
+#define KEEP_TIME_STAMP_CHANGED         131072
+#define SORT_FILE_NAMES_CHANGED         262144
+#define NO_AGEING_JOBS_CHANGED          524288
+#define CHECK_SIZE_CHANGED              1048576
+#define TIMEOUT_TRANSFER_CHANGED        2097152
+#define FTPS_CCC_CHANGED                4194304
+#define USE_LIST_CHANGED                8388608
+#define STRICT_TLS_CHANGED              16777216
+#define DISABLE_MLST_CHANGED            33554432
+#define DISCONNECT_CHANGED              67108864
+#define DISABLE_STRICT_HOST_KEY_CHANGED 134217728
+#define USE_STAT_LIST_CHANGED           268435456
+#define FTPS_IMPLICIT_CHANGED           536870912
+#define NO_EXPECT_CHANGED               1073741824
 
 /* Structure holding all changed entries of one host. */
 struct changed_entry

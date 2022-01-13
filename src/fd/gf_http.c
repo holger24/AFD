@@ -335,15 +335,23 @@ main(int argc, char *argv[])
       features |= PROT_OPT_NO_EXPECT;
    }
    fra_options = 0;
-   if (fra->dir_flag & BUCKETNAME_IN_PATH)
+   if (fsa->protocol_options & HTTP_BUCKETNAME_IN_PATH)
    {
-      fra_options |= BUCKETNAME_IN_PATH;
+      features |= BUCKETNAME_IS_IN_PATH;
    }
+#ifdef NEW_FRA
+   if (fra->dir_options & NO_DELIMITER)
+#else
    if (fra->dir_flag & NO_DELIMITER)
+#endif
    {
       fra_options |= NO_DELIMITER;
    }
+#ifdef NEW_FRA
+   if (fra->dir_options & KEEP_PATH)
+#else
    if (fra->dir_flag & KEEP_PATH)
+#endif
    {
       fra_options |= KEEP_PATH;
    }
@@ -518,7 +526,11 @@ main(int argc, char *argv[])
          if ((files_to_retrieve = get_remote_file_names_http(&file_size_to_retrieve,
                                                              &more_files_in_list)) > 0)
          {
+#ifdef NEW_FRA
+            if ((fra->dir_options & ONE_PROCESS_JUST_SCANNING) &&
+#else
             if ((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) &&
+#endif
                 ((db.special_flag & DISTRIBUTED_HELPER_JOB) == 0))
             {
                (void)gsf_check_fra((struct job *)&db);
@@ -532,7 +544,11 @@ main(int argc, char *argv[])
                }
             }
             if ((more_files_in_list == YES) &&
+#ifdef NEW_FRA
+                ((fra->dir_options & DO_NOT_PARALLELIZE) == 0) &&
+#else
                 ((fra->dir_flag & DO_NOT_PARALLELIZE) == 0) &&
+#endif
                 (fsa->active_transfers < fsa->allowed_transfers))
             {
                /* Tell fd that he may start some more helper jobs that */
@@ -544,7 +560,11 @@ main(int argc, char *argv[])
             /* will now start to retrieve data.                */
             if (gsf_check_fsa((struct job *)&db) != NEITHER)
             {
+#ifdef NEW_FRA
+               if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#else
                if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#endif
                     (db.special_flag & DISTRIBUTED_HELPER_JOB))
                {
                   fsa->job_status[(int)db.job_no].no_of_files += files_to_retrieve;
@@ -628,7 +648,11 @@ main(int argc, char *argv[])
                p_local_tmp_file++;
             }
 
+#ifdef NEW_FRA
+            if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#else
             if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#endif
                 (db.special_flag & DISTRIBUTED_HELPER_JOB))
             {
                int                  diff_no_of_files_done;
@@ -704,7 +728,11 @@ main(int argc, char *argv[])
                            prev_download_exists = NO;
                      off_t offset;
 
+#ifdef NEW_FRA
+                     if (fra->dir_options & URL_CREATES_FILE_NAME)
+#else
                      if (fra->dir_flag & URL_CREATES_FILE_NAME)
+#endif
                      {
                         int end;
 
@@ -771,7 +799,11 @@ main(int argc, char *argv[])
                         }
 
                         if ((tmp_rl.size == -1) &&
+#ifdef NEW_FRA
+                            ((fra->dir_options & DONT_GET_DIR_LIST) == 0))
+#else
                             ((fra->dir_flag & DONT_GET_DIR_LIST) == 0))
+#endif
                         {
                            content_length = 0;
                         }
@@ -796,7 +828,11 @@ main(int argc, char *argv[])
 #endif
                      if (((status = http_get(db.target_dir,
                                              tmp_rl.file_name,
+#ifdef NEW_FRA
+                                             (fra->dir_options & URL_CREATES_FILE_NAME) ? tmp_rl.file_name : NULL,
+#else
                                              (fra->dir_flag & URL_CREATES_FILE_NAME) ? tmp_rl.file_name : NULL,
+#endif
 #ifdef _WITH_EXTRA_CHECK
                                              tmp_rl.extra_data,
 #endif
@@ -975,7 +1011,11 @@ main(int argc, char *argv[])
                                         "Opened HTTP connection for file %s.",
                                         tmp_rl.file_name);
                         }
+#ifdef NEW_FRA
+                        if ((fra->dir_options & URL_CREATES_FILE_NAME) &&
+#else
                         if ((fra->dir_flag & URL_CREATES_FILE_NAME) &&
+#endif
                             (tmp_rl.file_name[0] == '\0'))
                         {
                            *p_local_tmp_file = 'N';
@@ -1679,7 +1719,11 @@ main(int argc, char *argv[])
                         }
 
                         /* Rename the file so AMG can grab it. */
+#ifdef NEW_FRA
+                        if (fra->dir_options & URL_CREATES_FILE_NAME)
+#else
                         if (fra->dir_flag & URL_CREATES_FILE_NAME)
+#endif
                         {
                            if (tmp_rl.file_name[0] == '\0')
                            {
@@ -1710,7 +1754,11 @@ main(int argc, char *argv[])
                            }
                         }
                         fd = 0;
+#ifdef NEW_FRA
+                        if (fra->dir_options & KEEP_PATH)
+#else
                         if (fra->dir_flag & KEEP_PATH)
+#endif
                         {
                            if (tmp_rl.file_name[0] == '.')
                            {
@@ -1998,10 +2046,18 @@ main(int argc, char *argv[])
                                          (struct job *)&db);
                  if ((more_files_in_list == YES) &&
                      ((db.special_flag & DISTRIBUTED_HELPER_JOB) == 0) &&
+#ifdef NEW_FRA
+                     (fra->dir_options & ONE_PROCESS_JUST_SCANNING))
+#else
                      (fra->dir_flag & ONE_PROCESS_JUST_SCANNING))
+#endif
                  {
                     more_files_in_list = NO;
+#ifdef NEW_FRA
+                    if (((fra->dir_options & DO_NOT_PARALLELIZE) == 0) &&
+#else
                     if (((fra->dir_flag & DO_NOT_PARALLELIZE) == 0) &&
+#endif
                         (fsa->active_transfers < fsa->allowed_transfers))
                     {
                        /* Tell fd that he may start some more helper jobs that */

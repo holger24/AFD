@@ -575,7 +575,11 @@ main(int argc, char *argv[])
             int  local_file_length;
             char *p_local_tmp_file;
 
+#ifdef NEW_FRA
+            if ((fra->dir_options & ONE_PROCESS_JUST_SCANNING) &&
+#else
             if ((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) &&
+#endif
                 ((db.special_flag & DISTRIBUTED_HELPER_JOB) == 0))
             {
                (void)gsf_check_fra((struct job *)&db);
@@ -589,7 +593,11 @@ main(int argc, char *argv[])
                }
             }
             if ((more_files_in_list == YES) &&
+#ifdef NEW_FRA
+                ((fra->dir_options & DO_NOT_PARALLELIZE) == 0) &&
+#else
                 ((fra->dir_flag & DO_NOT_PARALLELIZE) == 0) &&
+#endif
                 (fsa->active_transfers < fsa->allowed_transfers))
             {
                /* Tell fd that he may start some more helper jobs that */
@@ -601,7 +609,11 @@ main(int argc, char *argv[])
             /* will now start to retrieve data.                */
             if (gsf_check_fsa((struct job *)&db) != NEITHER)
             {
+#ifdef NEW_FRA
+               if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#else
                if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#endif
                     (db.special_flag & DISTRIBUTED_HELPER_JOB))
                {
                   fsa->job_status[(int)db.job_no].no_of_files += files_to_retrieve;
@@ -686,7 +698,11 @@ main(int argc, char *argv[])
                p_local_tmp_file++;
             }
 
+#ifdef NEW_FRA
+            if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#else
             if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#endif
                 (db.special_flag & DISTRIBUTED_HELPER_JOB))
             {
                int                  diff_no_of_files_done,
@@ -1830,10 +1846,18 @@ main(int argc, char *argv[])
                                          (struct job *)&db);
                  if ((more_files_in_list == YES) &&
                      ((db.special_flag & DISTRIBUTED_HELPER_JOB) == 0) &&
+#ifdef NEW_FRA
+                     (fra->dir_options & ONE_PROCESS_JUST_SCANNING))
+#else
                      (fra->dir_flag & ONE_PROCESS_JUST_SCANNING))
+#endif
                  {
                     more_files_in_list = NO;
+#ifdef NEW_FRA
+                    if (((fra->dir_options & DO_NOT_PARALLELIZE) == 0) &&
+#else
                     if (((fra->dir_flag & DO_NOT_PARALLELIZE) == 0) &&
+#endif
                         (fsa->active_transfers < fsa->allowed_transfers))
                     {
                        /* Tell fd that he may start some more helper jobs that */

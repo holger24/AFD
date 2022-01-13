@@ -1,6 +1,6 @@
 /*
  *  eval_recipient.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -175,6 +175,33 @@ eval_recipient(char       *recipient,
          }
       }
 #ifdef WITH_SSL
+# ifdef WITH_PROPER_PROXY_SUPPORT
+      if (scheme & SSL_FLAG)
+      {
+         if (scheme & FTP_FLAG)
+         {
+            if (recipient[3] == 'S')
+            {
+               p_db->tls_auth = BOTH;
+            }
+            else
+            {
+               p_db->tls_auth = YES;
+            }
+         }
+         else if (scheme & HTTP_FLAG)
+              {
+                 if (p_db->http_proxy[0] == '\0')
+                 {
+                    p_db->tls_auth = YES;
+                 }
+              }
+              else
+              {
+                 p_db->tls_auth = YES;
+              }
+      }
+# else
       if (scheme & SSL_FLAG)
       {
          if (recipient[3] == 'S')
@@ -186,6 +213,7 @@ eval_recipient(char       *recipient,
             p_db->tls_auth = YES;
          }
       }
+# endif
 #endif
 
       if (p_db->user[0] == MAIL_GROUP_IDENTIFIER)

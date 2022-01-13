@@ -1062,7 +1062,7 @@ http_get(char  *path,
       if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) && (filename[0] != '\0'))
       {
          resource_length = 0;
-         if (hmr.fra_options & BUCKETNAME_IN_PATH)
+         if (hmr.features & BUCKETNAME_IS_IN_PATH)
          {
             while ((resource_length < MAX_RECIPIENT_LENGTH) &&
                    (path[resource_length] != '/') &&
@@ -1422,7 +1422,7 @@ prepare_aws4_listing(char *filename,
           *p_path;
 
    p_path = path;
-   if (hmr.fra_options & BUCKETNAME_IN_PATH)
+   if (hmr.features & BUCKETNAME_IS_IN_PATH)
    {
       /* Remove bucket name */
       while ((*p_path != '/') && (*p_path != '\0'))
@@ -3885,7 +3885,8 @@ clear_msg_str(void)
       try_restore_msg_buffer = NO;
    }
 
-   if ((flush_read(extra_msg) == NO) && (hmr.chunked == YES))
+   if ((flush_read(extra_msg) == NO) && (hmr.chunked == YES) &&
+       (http_fd != -1))
    {
       read_last_chunk();
    }

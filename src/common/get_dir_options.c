@@ -263,6 +263,24 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
          {
             unsigned int flag = 0;
 
+# ifdef NEW_FRA
+            if (fra[i].dir_options & INOTIFY_RENAME)
+            {
+               flag += INOTIFY_RENAME_FLAG;
+            }
+            if (fra[i].dir_options & INOTIFY_CLOSE)
+            {
+               flag += INOTIFY_CLOSE_FLAG;
+            }
+            if (fra[i].dir_options & INOTIFY_CREATE)
+            {
+               flag += INOTIFY_CREATE_FLAG;
+            }
+            if (fra[i].dir_options & INOTIFY_DELETE)
+            {
+               flag += INOTIFY_DELETE_FLAG;
+            }
+# else
             if (fra[i].dir_flag & INOTIFY_RENAME)
             {
                flag += INOTIFY_RENAME_FLAG;
@@ -279,6 +297,7 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
             {
                flag += INOTIFY_DELETE_FLAG;
             }
+# endif
             (void)snprintf(d_o->aoptions[d_o->no_of_dir_options],
                            MAX_OPTION_LENGTH,
                            "%s %u", INOTIFY_FLAG_ID, flag);
@@ -492,7 +511,11 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
+#ifdef NEW_FRA
+         if (fra[i].dir_options & URL_CREATES_FILE_NAME)
+#else
          if (fra[i].dir_flag & URL_CREATES_FILE_NAME)
+#endif
          {
             (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
                          URL_CREATES_FILE_NAME_ID);
@@ -502,17 +525,11 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
-         if (fra[i].dir_flag & BUCKETNAME_IN_PATH)
-         {
-            (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
-                         BUCKETNAME_IN_PATH_ID);
-            d_o->no_of_dir_options++;
-            if (d_o->no_of_dir_options >= MAX_NO_OPTIONS)
-            {
-               goto done;
-            }
-         }
+#ifdef NEW_FRA
+         if (fra[i].dir_options & NO_DELIMITER)
+#else
          if (fra[i].dir_flag & NO_DELIMITER)
+#endif
          {
             (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
                          NO_DELIMITER_ID);
@@ -522,7 +539,11 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
+#ifdef NEW_FRA
+         if (fra[i].dir_options & KEEP_PATH)
+#else
          if (fra[i].dir_flag & KEEP_PATH)
+#endif
          {
             (void)strcpy(d_o->aoptions[d_o->no_of_dir_options], KEEP_PATH_ID);
             d_o->no_of_dir_options++;
@@ -531,7 +552,11 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
+#ifdef NEW_FRA
+         if (fra[i].dir_options & ONE_PROCESS_JUST_SCANNING)
+#else
          if (fra[i].dir_flag & ONE_PROCESS_JUST_SCANNING)
+#endif
          {
             (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
                          ONE_PROCESS_JUST_SCANNING_ID);
@@ -541,7 +566,7 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
-         if (fra[i].dir_flag & CREATE_R_SRC_DIR)
+         if (fra[i].in_dc_flag & CREATE_SRC_DIR_IDC)
          {
             if (fra[i].dir_mode == 0)
             {
@@ -576,7 +601,11 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
+#ifdef NEW_FRA
+         if (fra[i].dir_options & ACCEPT_DOT_FILES)
+#else
          if (fra[i].dir_flag & ACCEPT_DOT_FILES)
+#endif
          {
             (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
                          ACCEPT_DOT_FILES_ID);
@@ -586,7 +615,11 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
+#ifdef NEW_FRA
+         if (fra[i].dir_options & DO_NOT_PARALLELIZE)
+#else
          if (fra[i].dir_flag & DO_NOT_PARALLELIZE)
+#endif
          {
             (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
                          DO_NOT_PARALLELIZE_ID);
@@ -596,7 +629,11 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
+#ifdef NEW_FRA
+         if (fra[i].dir_options & DO_NOT_MOVE)
+#else
          if (fra[i].dir_flag & DO_NOT_MOVE)
+#endif
          {
             (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
                          FORCE_COPY_ID);

@@ -1,6 +1,6 @@
 /*
  *  fra_edit.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -224,44 +224,58 @@ main(int argc, char *argv[])
                                   (fra[position].dir_flag & MAX_COPIED) ? 1 : 0);
                     (void)fprintf(stdout, "     FILES_IN_QUEUE [%d]...........(2)\n",
                                   (fra[position].dir_flag & FILES_IN_QUEUE) ? 1 : 0);
-                    (void)fprintf(stdout, "     ADD_TIME_ENTRY [%d]...........(3)\n",
-                                  (fra[position].dir_flag & ADD_TIME_ENTRY) ? 1 : 0);
-                    (void)fprintf(stdout, "     LINK_NO_EXEC [%d].............(4)\n",
+                    (void)fprintf(stdout, "     LINK_NO_EXEC [%d].............(3)\n",
                                   (fra[position].dir_flag & LINK_NO_EXEC) ? 1 : 0);
-                    (void)fprintf(stdout, "     DIR_DISABLED [%d].............(5)\n",
+                    (void)fprintf(stdout, "     DIR_DISABLED [%d].............(4)\n",
                                   (fra[position].dir_flag & DIR_DISABLED) ? 1 : 0);
-                    (void)fprintf(stdout, "     ACCEPT_DOT_FILES [%d].........(6)\n",
+#ifdef NEW_FRA
+                    (void)fprintf(stdout, "     ACCEPT_DOT_FILES [%d].........(5)\n",
+                                  (fra[position].dir_options & ACCEPT_DOT_FILES) ? 1 : 0);
+                    (void)fprintf(stdout, "     DONT_GET_DIR_LIST [%d]........(6)\n",
+                                  (fra[position].dir_options & DONT_GET_DIR_LIST) ? 1 : 0);
+#else
+                    (void)fprintf(stdout, "     ACCEPT_DOT_FILES [%d].........(5)\n",
                                   (fra[position].dir_flag & ACCEPT_DOT_FILES) ? 1 : 0);
-                    (void)fprintf(stdout, "     DONT_GET_DIR_LIST [%d]........(7)\n",
+                    (void)fprintf(stdout, "     DONT_GET_DIR_LIST [%d]........(6)\n",
                                   (fra[position].dir_flag & DONT_GET_DIR_LIST) ? 1 : 0);
-                    (void)fprintf(stdout, "     DIR_ERROR_SET [%d]............(8)\n",
+#endif
+                    (void)fprintf(stdout, "     DIR_ERROR_SET [%d]............(7)\n",
                                   (fra[position].dir_flag & DIR_ERROR_SET) ? 1 : 0);
-                    (void)fprintf(stdout, "     WARN_TIME_REACHED [%d]........(9)\n",
+                    (void)fprintf(stdout, "     WARN_TIME_REACHED [%d]........(8)\n",
                                   (fra[position].dir_flag & WARN_TIME_REACHED) ? 1 : 0);
-                    (void)fprintf(stdout, "     DIR_ERROR_ACKN [%d]...........(a)\n",
+                    (void)fprintf(stdout, "     DIR_ERROR_ACKN [%d]...........(9)\n",
                                   (fra[position].dir_flag & DIR_ERROR_ACKN) ? 1 : 0);
-                    (void)fprintf(stdout, "     DIR_ERROR_OFFLINE [%d]........(b)\n",
+                    (void)fprintf(stdout, "     DIR_ERROR_OFFLINE [%d]........(a)\n",
                                   (fra[position].dir_flag & DIR_ERROR_OFFLINE) ? 1 : 0);
-                    (void)fprintf(stdout, "     DIR_ERROR_ACKN_T [%d].........(c)\n",
+                    (void)fprintf(stdout, "     DIR_ERROR_ACKN_T [%d].........(b)\n",
                                   (fra[position].dir_flag & DIR_ERROR_ACKN_T) ? 1 : 0);
-                    (void)fprintf(stdout, "     DIR_ERROR_OFFL_T [%d].........(d)\n",
+                    (void)fprintf(stdout, "     DIR_ERROR_OFFL_T [%d].........(c)\n",
                                   (fra[position].dir_flag & DIR_ERROR_OFFL_T) ? 1 : 0);
-                    (void)fprintf(stdout, "     DIR_STOPPED [%d]..............(e)\n",
+                    (void)fprintf(stdout, "     DIR_STOPPED [%d]..............(d)\n",
                                   (fra[position].dir_flag & DIR_ERROR_OFFL_T) ? 1 : 0);
 #ifdef WITH_INOTIFY
-                    (void)fprintf(stdout, "     INOTIFY_RENAME [%d]...........(f)\n",
+# ifdef NEW_FRA
+                    (void)fprintf(stdout, "     INOTIFY_RENAME [%d]...........(e)\n",
+                                  (fra[position].dir_options & INOTIFY_RENAME) ? 1 : 0);
+                    (void)fprintf(stdout, "     INOTIFY_CLOSE [%d]............(f)\n",
+                                  (fra[position].dir_options & INOTIFY_CLOSE) ? 1 : 0);
+                    (void)fprintf(stdout, "     INOTIFY_CREATE [%d]...........(g)\n",
+                                  (fra[position].dir_options & INOTIFY_CREATE) ? 1 : 0);
+                    (void)fprintf(stdout, "     INOTIFY_DELETE [%d]...........(h)\n",
+                                  (fra[position].dir_options & INOTIFY_DELETE) ? 1 : 0);
+# else
+                    (void)fprintf(stdout, "     INOTIFY_RENAME [%d]...........(e)\n",
                                   (fra[position].dir_flag & INOTIFY_RENAME) ? 1 : 0);
-                    (void)fprintf(stdout, "     INOTIFY_CLOSE [%d]............(g)\n",
+                    (void)fprintf(stdout, "     INOTIFY_CLOSE [%d]............(f)\n",
                                   (fra[position].dir_flag & INOTIFY_CLOSE) ? 1 : 0);
-                    (void)fprintf(stdout, "     INOTIFY_CREATE [%d]...........(h)\n",
+                    (void)fprintf(stdout, "     INOTIFY_CREATE [%d]...........(g)\n",
                                   (fra[position].dir_flag & INOTIFY_CREATE) ? 1 : 0);
-                    (void)fprintf(stdout, "     INOTIFY_DELETE [%d]...........(i)\n",
+                    (void)fprintf(stdout, "     INOTIFY_DELETE [%d]...........(h)\n",
                                   (fra[position].dir_flag & INOTIFY_DELETE) ? 1 : 0);
+# endif
 #endif
-                    (void)fprintf(stdout, "     ALL_DISABLED [%d].............(j)\n",
+                    (void)fprintf(stdout, "     ALL_DISABLED [%d].............(i)\n",
                                   (fra[position].dir_flag & ALL_DISABLED) ? 1 : 0);
-                    (void)fprintf(stdout, "     CREATE_R_SRC_DIR [%d].........(k)\n",
-                                  (fra[position].dir_flag & CREATE_R_SRC_DIR) ? 1 : 0);
                     (void)fprintf(stderr, "     None..........................(Z) ");
 
                     switch (get_key())
@@ -272,43 +286,58 @@ main(int argc, char *argv[])
                                   break;
                        case '2' : fra[position].dir_flag ^= FILES_IN_QUEUE;
                                   break;
-                       case '3' : fra[position].dir_flag ^= ADD_TIME_ENTRY;
+                       case '3' : fra[position].dir_flag ^= LINK_NO_EXEC;
                                   break;
-                       case '4' : fra[position].dir_flag ^= LINK_NO_EXEC;
+                       case '4' : fra[position].dir_flag ^= DIR_DISABLED;
                                   break;
-                       case '5' : fra[position].dir_flag ^= DIR_DISABLED;
+#ifdef NEW_FRA
+                       case '5' : fra[position].dir_options ^= ACCEPT_DOT_FILES;
+#else
+                       case '5' : fra[position].dir_flag ^= ACCEPT_DOT_FILES;
+#endif
                                   break;
-                       case '6' : fra[position].dir_flag ^= ACCEPT_DOT_FILES;
+#ifdef NEW_FRA
+                       case '6' : fra[position].dir_options ^= DONT_GET_DIR_LIST;
+#else
+                       case '6' : fra[position].dir_flag ^= DONT_GET_DIR_LIST;
+#endif
                                   break;
-                       case '7' : fra[position].dir_flag ^= DONT_GET_DIR_LIST;
+                       case '7' : fra[position].dir_flag ^= DIR_ERROR_SET;
                                   break;
-                       case '8' : fra[position].dir_flag ^= DIR_ERROR_SET;
+                       case '8' : fra[position].dir_flag ^= WARN_TIME_REACHED;
                                   break;
-                       case '9' : fra[position].dir_flag ^= WARN_TIME_REACHED;
+                       case '9' : fra[position].dir_flag ^= DIR_ERROR_ACKN;
                                   break;
-                       case 'a' : fra[position].dir_flag ^= DIR_ERROR_ACKN;
+                       case 'a' : fra[position].dir_flag ^= DIR_ERROR_OFFLINE;
                                   break;
-                       case 'b' : fra[position].dir_flag ^= DIR_ERROR_OFFLINE;
+                       case 'b' : fra[position].dir_flag ^= DIR_ERROR_ACKN_T;
                                   break;
-                       case 'c' : fra[position].dir_flag ^= DIR_ERROR_ACKN_T;
+                       case 'c' : fra[position].dir_flag ^= DIR_ERROR_OFFL_T;
                                   break;
-                       case 'd' : fra[position].dir_flag ^= DIR_ERROR_OFFL_T;
-                                  break;
-                       case 'e' : fra[position].dir_flag ^= DIR_STOPPED;
+                       case 'd' : fra[position].dir_flag ^= DIR_STOPPED;
                                   break;
 #ifdef WITH_INOTIFY
-                       case 'f' : fra[position].dir_flag ^= INOTIFY_RENAME;
+# ifdef NEW_FRA
+                       case 'e' : fra[position].dir_options ^= INOTIFY_RENAME;
                                   break;
-                       case 'g' : fra[position].dir_flag ^= INOTIFY_CLOSE;
+                       case 'f' : fra[position].dir_options ^= INOTIFY_CLOSE;
                                   break;
-                       case 'h' : fra[position].dir_flag ^= INOTIFY_CREATE;
+                       case 'g' : fra[position].dir_options ^= INOTIFY_CREATE;
                                   break;
-                       case 'i' : fra[position].dir_flag ^= INOTIFY_DELETE;
+                       case 'h' : fra[position].dir_options ^= INOTIFY_DELETE;
                                   break;
+# else
+                       case 'e' : fra[position].dir_flag ^= INOTIFY_RENAME;
+                                  break;
+                       case 'f' : fra[position].dir_flag ^= INOTIFY_CLOSE;
+                                  break;
+                       case 'g' : fra[position].dir_flag ^= INOTIFY_CREATE;
+                                  break;
+                       case 'h' : fra[position].dir_flag ^= INOTIFY_DELETE;
+                                  break;
+# endif
 #endif
-                       case 'j' : fra[position].dir_flag ^= ALL_DISABLED;
-                                  break;
-                       case 'k' : fra[position].dir_flag ^= CREATE_R_SRC_DIR;
+                       case 'i' : fra[position].dir_flag ^= ALL_DISABLED;
                                   break;
                        case 'Z' : break;
                        default  : (void)printf(_("Wrong choice!\n"));

@@ -691,16 +691,20 @@ calc_trl_per_process(int fsa_pos)
          {
             fsa[fsa_pos].trl_per_process = 1;
          }
+#ifndef NEW_FSA
          fsa[fsa_pos].mc_ctrl_per_process = fsa[fsa_pos].mc_ct_rate_limit / real_active_transfers;
          if (fsa[fsa_pos].mc_ctrl_per_process == 0)
          {
             fsa[fsa_pos].mc_ctrl_per_process = 1;
          }
+#endif
       }
       else
       {
          fsa[fsa_pos].trl_per_process = fsa[fsa_pos].transfer_rate_limit;
+#ifndef NEW_FSA
          fsa[fsa_pos].mc_ctrl_per_process = fsa[fsa_pos].mc_ct_rate_limit;
+#endif
       }
    }
 #ifdef TRL_DEBUG

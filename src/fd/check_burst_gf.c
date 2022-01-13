@@ -129,7 +129,11 @@ check_burst_gf(unsigned int *values_changed)
          return(NO);
       }
 
+#ifdef NEW_FRA
+      if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#else
       if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#endif
           (db.special_flag & DISTRIBUTED_HELPER_JOB))
       {
          if ((db.protocol != LOC_FLAG) && (db.protocol != EXEC_FLAG) &&
@@ -659,8 +663,8 @@ check_burst_gf(unsigned int *values_changed)
                }
             }
          }
-      } /* if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) || */
-        /*     (db.special_flag & DISTRIBUTED_HELPER_JOB))           */
+      } /* if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) || */
+        /*     (db.special_flag & DISTRIBUTED_HELPER_JOB))              */
 
       if (ret == YES)
       {
@@ -747,7 +751,11 @@ check_burst_gf(unsigned int *values_changed)
                        {
                           break;
                        }
+#ifdef NEW_FRA
+                       if (((fra->dir_options & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#else
                        if (((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) == 0) ||
+#endif
                            (db.special_flag & DISTRIBUTED_HELPER_JOB))
                        {
                           if (fsa->job_status[(int)db.job_no].unique_name[2] == 6)
@@ -823,7 +831,11 @@ check_burst_gf(unsigned int *values_changed)
                           }
                           start_time = time(NULL);
                        }
+#ifdef NEW_FRA
+                       if ((fra->dir_options & ONE_PROCESS_JUST_SCANNING) &&
+#else
                        if ((fra->dir_flag & ONE_PROCESS_JUST_SCANNING) &&
+#endif
                            ((db.special_flag & DISTRIBUTED_HELPER_JOB) == 0) &&
                            (start_time >= timeup))
                        {
