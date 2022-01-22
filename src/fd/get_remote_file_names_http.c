@@ -1,7 +1,7 @@
 /*
  *  get_remote_file_names_http.c - Part of AFD, an automatic file distribution
  *                                 program.
- *  Copyright (c) 2006 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -718,11 +718,25 @@ try_attach_again:
           (fra->delete_files_flag & UNKNOWN_FILES) ||
           (fra->delete_files_flag & OLD_RLOCKED_FILES))
       {
-         /* Note: FTP returns GMT so we need to convert this to GMT! */
-         current_time = time(NULL);
-         now = current_time;
+         current_time = 0;
          p_tm = gmtime(&current_time);
          current_time = mktime(p_tm);
+         if (current_time != 0)
+         {
+            /*
+             * Note: Current system not GMT, assume server returns GMT
+             *       so we need to convert this to GMT.
+             */
+            current_time = time(NULL);
+            now = current_time;
+            p_tm = gmtime(&current_time);
+            current_time = mktime(p_tm);
+         }
+         else
+         {
+            current_time = time(NULL);
+            now = current_time;
+         }
       }
       else
       {
