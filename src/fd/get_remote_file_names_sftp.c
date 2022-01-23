@@ -417,23 +417,11 @@ do_scan(int   *files_to_retrieve,
        (fra->delete_files_flag & UNKNOWN_FILES) ||
        (fra->delete_files_flag & OLD_RLOCKED_FILES))
    {
-      current_time = 0;
-      p_tm = gmtime(&current_time);
-      current_time = mktime(p_tm);
-      if (current_time != 0)
-      {
-         /*
-          * Note: Current system not GMT, assume server returns GMT
-          *       so we need to convert this to GMT.
-          */
-         current_time = time(NULL);
-         p_tm = gmtime(&current_time);
-         current_time = mktime(p_tm);
-      }
-      else
-      {
-         current_time = time(NULL);
-      }
+      /*
+       * Note: For SFTP lets NOT assume the server returns GMT.
+       *       So do not try convert current_time to GMT to.
+       */
+      current_time = time(NULL);
    }
 
    /*
