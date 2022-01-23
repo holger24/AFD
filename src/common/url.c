@@ -1,6 +1,6 @@
 /*
  *  url.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2008 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -108,6 +108,7 @@ DESCR__S_M3
  **   13.10.2021 H.Kiehl Added function url_path_encode(). This is
  **                      similar to url_encode() and differs only in
  **                      allowing the path sign /.
+ **   23.01.2022 H.Kiehl Do not allow mailto://;server=somename
  **
  */
 DESCR__E_M3
@@ -510,6 +511,10 @@ url_evaluate(char          *url,
             else
             {
                user[i] = '\0';
+               if ((i == 0) && (*scheme & SMTP_FLAG) && (*ptr == ';'))
+               {
+                  return(PARAMETER_MISSING);
+               }
             }
             todo &= ~URL_GET_USER;
          }
