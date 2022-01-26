@@ -1,6 +1,6 @@
 /*
  *  link_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -466,6 +466,7 @@ try_copy_file:
                           else
                           {
                              int    tmp_errno = errno;
+                             char   *sign;
 #ifdef _DELETE_LOG
                              size_t dl_real_size;
 #endif
@@ -482,7 +483,15 @@ try_copy_file:
                              }
 #endif
 
-                             system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             if (errno == EEXIST)
+                             {
+                                sign = WARN_SIGN;
+                             }
+                             else
+                             {
+                                sign = ERROR_SIGN;
+                             }
+                             system_log(sign, __FILE__, __LINE__,
                                         "Failed to link file %s to %s : %s",
                                         src_file_path, dest_file_path,
                                         strerror(tmp_errno));
