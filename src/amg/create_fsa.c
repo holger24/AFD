@@ -1,6 +1,6 @@
 /*
  *  create_fsa.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -463,6 +463,9 @@ create_fsa(void)
 #endif
          fsa[i].host_id                = get_str_checksum(fsa[i].host_alias);
          fsa[i].protocol_options       = hl[i].protocol_options;
+#ifdef NEW_FSA
+         fsa[i].protocol_options2      = hl[i].protocol_options2;
+#endif
 #ifndef NEW_FSA
          fsa[i].mc_nack_counter        = 0;
 #endif
@@ -636,6 +639,9 @@ create_fsa(void)
          fsa[i].transfer_timeout       = hl[i].transfer_timeout;
          fsa[i].protocol               = hl[i].protocol;
          fsa[i].protocol_options       = hl[i].protocol_options;
+#ifdef NEW_FSA
+         fsa[i].protocol_options2      = hl[i].protocol_options2;
+#endif
          fsa[i].transfer_rate_limit    = hl[i].transfer_rate_limit;
          fsa[i].ttl                    = hl[i].ttl;
          fsa[i].socksnd_bufsize        = hl[i].socksnd_bufsize;
@@ -1155,6 +1161,9 @@ create_fsa(void)
 #endif
                      hl[j].protocol            = fsa[j].protocol;
                      hl[j].protocol_options    = fsa[j].protocol_options;
+#ifdef NEW_FSA
+                     hl[j].protocol_options2   = fsa[j].protocol_options2;
+#endif
                      hl[j].in_dir_config       = NO;
                      fsa[j].special_flag &= ~HOST_IN_DIR_CONFIG;
                      hl[j].host_status = 0;

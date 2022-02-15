@@ -1,6 +1,6 @@
 /*
  *  eval_host_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,19 +37,20 @@ DESCR__S_M3
  **   This function reads the HOST_CONFIG file which has the following
  **   format:
  **
- **   Warn time             <---------------------------------------------------+
- **   Keep connected        <------------------------------------------------+  |
- **   Duplicate check flag    <-------------------------------------------+  |  |
- **   Duplicate check timeout <----------------------------------------+  |  |  |
- **   Socket receive buffer <---------------------------------------+  |  |  |  |
- **   Socket send buffer    <-----------------------------------+   |  |  |  |  |
- **                                                             |   |  |  |  |  |
- **   AH:HN1:HN2:HT:PXY:AT:ME:RI:TB:SR:FSO:TT:NB:HS:SF:TRL:TTL:SSB:SRB:DT:DF:KC:WT
+ **   Protocol options 2    <-------------------------------------------------------+
+ **   Warn time             <---------------------------------------------------+   |
+ **   Keep connected        <------------------------------------------------+  |   |
+ **   Duplicate check flag    <-------------------------------------------+  |  |   |
+ **   Duplicate check timeout <----------------------------------------+  |  |  |   |
+ **   Socket receive buffer <---------------------------------------+  |  |  |  |   |
+ **   Socket send buffer    <-----------------------------------+   |  |  |  |  |   |
+ **                                                             |   |  |  |  |  |   |
+ **   AH:HN1:HN2:HT:PXY:AT:ME:RI:TB:SR:FSO:TT:NB:HS:PO:TRL:TTL:SSB:SRB:DT:DF:KC:WT:PO2
  **   |   |   |   |  |  |  |  |  |  |   |  |  |  |  |   |   |
  **   |   |   |   |  |  |  |  |  |  |   |  |  |  |  |   |   +-> TTL
  **   |   |   |   |  |  |  |  |  |  |   |  |  |  |  |   +-----> Transfer rate
  **   |   |   |   |  |  |  |  |  |  |   |  |  |  |  |           limit
- **   |   |   |   |  |  |  |  |  |  |   |  |  |  |  +---------> Special flag
+ **   |   |   |   |  |  |  |  |  |  |   |  |  |  |  +---------> Protocol options
  **   |   |   |   |  |  |  |  |  |  |   |  |  |  +------------> Host status
  **   |   |   |   |  |  |  |  |  |  |   |  |  +---------------> Number of no
  **   |   |   |   |  |  |  |  |  |  |   |  |                    bursts
@@ -97,6 +98,7 @@ DESCR__S_M3
  **                      errors.
  **   19.07.2019 H.Kiehl Allow simulate mode for host_status.
  **   29.11.2021 H.Kiehl Added protocol option bucketname in path.
+ **   26.01.2022 H.Kiehl Added protocol options 2.
  **
  */
 DESCR__E_M3
@@ -283,6 +285,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
 
          if (*ptr == '\n')
          {
@@ -357,6 +360,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -431,6 +435,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -503,6 +508,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -563,6 +569,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -662,6 +669,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -750,6 +758,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -837,6 +846,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -942,6 +952,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -1027,6 +1038,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -1111,6 +1123,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -1194,6 +1207,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
 
          if (*ptr == '\n')
          {
@@ -1350,6 +1364,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
 
          if (*ptr == '\n')
          {
@@ -1471,6 +1486,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
 
          if (*ptr == '\n')
          {
@@ -1548,6 +1564,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
 
          /*
           * As of 1.3.0 SET_IDLE_TIME, STAT_KEEPALIVE and FTP_PASSIVE_MODE
@@ -1746,6 +1763,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
 
          if (*ptr == '\n')
          {
@@ -1820,6 +1838,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
 
          if (*ptr == '\n')
          {
@@ -1893,6 +1912,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
 
          if (*ptr == '\n')
          {
@@ -1965,6 +1985,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
 
          if (*ptr == '\n')
          {
@@ -2035,6 +2056,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].dup_check_flag      = 0;
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
 
          if (*ptr == '\n')
          {
@@ -2103,6 +2125,7 @@ eval_host_config(int              *hosts_found,
          /* Initialise rest with DEFAULTS. */
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
 
          if (*ptr == '\n')
          {
@@ -2171,6 +2194,7 @@ eval_host_config(int              *hosts_found,
       {
          /* Initialise rest with DEFAULTS. */
          (*hl)[host_counter].warn_time           = 0L;
+         (*hl)[host_counter].protocol_options2   = 0;
 
          if (*ptr == '\n')
          {
@@ -2234,6 +2258,84 @@ eval_host_config(int              *hosts_found,
            {
               (*hl)[host_counter].warn_time = (time_t)str2timet(number, NULL, 10);
            }
+      if ((*ptr == '\n') || (*ptr == '\0'))
+      {
+         /* Initialise rest with DEFAULTS. */
+         (*hl)[host_counter].protocol_options2   = 0;
+
+         if (*ptr == '\n')
+         {
+            while (*ptr == '\n')
+            {
+               ptr++;
+            }
+            (host_counter)++;
+            continue;
+         }
+         else
+         {
+            break;
+         }
+      }
+
+#ifdef NEW_FSA
+      /* Store the protocol options 2. */
+      i = 0; ptr++;
+      while ((*ptr != ':') && (*ptr != '\n') && (*ptr != '\0') &&
+             (i < MAX_INT_LENGTH))
+      {
+         if (isdigit((int)(*ptr)))
+         {
+            number[i] = *ptr;
+            ptr++; i++;
+         }
+         else
+         {
+            error_flag = YES;
+            update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                          _("Non numeric character <%d> in protocol options 2 field for host %s, using default 0."),
+                          (int)*ptr, (*hl)[host_counter].host_alias);
+
+            /* Ignore this entry. */
+            i = 0;
+            while ((*ptr != ':') && (*ptr != '\n') && (*ptr != '\0'))
+            {
+               ptr++;
+            }
+         }
+      }
+      number[i] = '\0';
+      if (i == 0)
+      {
+         error_flag = YES;
+         (*hl)[host_counter].protocol_options2 = 0;
+      }
+      else if (i == MAX_INT_LENGTH)
+           {
+              error_flag = YES;
+              update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                            _("Numeric value for protocol options 2 to large (>%d characters) for host %s to store as integer, using default 0"),
+                            MAX_INT_LENGTH, (*hl)[host_counter].host_alias);
+              (*hl)[host_counter].protocol_options2 = 0;
+              while ((*ptr != ':') && (*ptr != '\n') && (*ptr != '\0'))
+              {
+                 ptr++;
+              }
+           }
+           else
+           {
+              (*hl)[host_counter].protocol_options2 = (unsigned int)atoi(number);
+           }
+      if ((*hl)[host_counter].protocol_options2 > 0)
+      {
+         error_flag = YES;
+         update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
+                       _("Unknown protocol option 2 <%d> for host %s, largest value is %d and smallest %d. Setting to 0."),
+                       (*hl)[host_counter].protocol_options2,
+                       (*hl)[host_counter].host_alias, 0);
+         (*hl)[host_counter].protocol_options2 = 0;
+      }
+#endif
 
       /* Ignore the rest of the line. We have everything we need. */
       while ((*ptr != '\n') && (*ptr != '\0'))

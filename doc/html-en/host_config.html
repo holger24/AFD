@@ -14,14 +14,15 @@ visa versa. This file consists of a table with 17 entries for each
 host. See below for a description of each entry.
 </p>
 <pre>
-  Warn time               &lt;-------------------------------------------------+
-  Keep connected          &lt;----------------------------------------------+  |
-  Duplicate check flag    &lt;-------------------------------------------+  |  |
-  Duplicate check timeout &lt;----------------------------------------+  |  |  |
-  Socket receive buffer   &lt;-------------------------------------+  |  |  |  |
-  Socket send buffer      &lt;---------------------------------+   |  |  |  |  |
-                                                            |   |  |  |  |  |
-  AH:HN1:HN2:HT:PXY:AT:ME:RI:TB:SR:FSO:TT:NB:HS:SF:TRL:TTL:SSB:SRB:DT:DF:KC:WT
+  Protocol options 2      &lt;-----------------------------------------------------+
+  Warn time               &lt;-------------------------------------------------+   |
+  Keep connected          &lt;----------------------------------------------+  |   |
+  Duplicate check flag    &lt;-------------------------------------------+  |  |   |
+  Duplicate check timeout &lt;----------------------------------------+  |  |  |   |
+  Socket receive buffer   &lt;-------------------------------------+  |  |  |  |   |
+  Socket send buffer      &lt;---------------------------------+   |  |  |  |  |   |
+                                                            |   |  |  |  |  |   |
+  AH:HN1:HN2:HT:PXY:AT:ME:RI:TB:SR:FSO:TT:NB:HS:PO:TRL:TTL:SSB:SRB:DT:DF:KC:WT:PO2
   |   |   |   |  |  |  |  |  |  |   |  |  |  |  |   |   |
   |   |   |   |  |  |  |  |  |  |   |  |  |  |  |   |   +-&gt; TTL
   |   |   |   |  |  |  |  |  |  |   |  |  |  |  |   +-----&gt; Transfer rate limit
@@ -471,6 +472,10 @@ host. See below for a description of each entry.
        send successful the script/program is called again with the parameter
        'stop'.</td>
 </tr>
+<tr>
+   <th valign=top><a name="protocol_options_2">Protocol options 2</a></th>
+   <td>For future use.</td>
+</tr>
 </table>
 <hr size=3 noshade>
 <table width="100%">
@@ -478,7 +483,7 @@ host. See below for a description of each entry.
    <td width="90%"><small><address>
    Copyright &copy; 1997 - 2022 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 10.01.2022
+   Last updated: 26.01.2022
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>

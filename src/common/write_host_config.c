@@ -64,6 +64,7 @@ DESCR__S_M3
  **                      and no sending.
  **   04.03.2017 H.Kiehl Added group support.
  **   19.07.2019 H.Kiehl Simulation mode is now stored in HOST_CONFIG.
+ **   26.01.2022 H.Kiehl Added protocol options 2.
  **
  */
 DESCR__E_M3
@@ -87,14 +88,15 @@ DESCR__E_M3
 # There are 22 parameters that can be configured for each remote\n\
 # host. They are:\n\
 #\n\
-# Warn time               <-------------------------------------------------+\n\
-# Keep connected          <----------------------------------------------+  |\n\
-# Duplicate check flag    <-------------------------------------------+  |  |\n\
-# Duplicate check timeout <----------------------------------------+  |  |  |\n\
-# Socket receive buffer   <-------------------------------------+  |  |  |  |\n\
-# Socket send buffer      <---------------------------------+   |  |  |  |  |\n\
-#                                                           |   |  |  |  |  |\n\
-# AH:HN1:HN2:HT:PXY:AT:ME:RI:TB:SR:FSO:TT:NB:HS:SF:TRL:TTL:SSB:SRB:DT:DF:KC:WT\n\
+# Protocol options 2      <-----------------------------------------------------+\n\
+# Warn time               <-------------------------------------------------+   |\n\
+# Keep connected          <----------------------------------------------+  |   |\n\
+# Duplicate check flag    <-------------------------------------------+  |  |   |\n\
+# Duplicate check timeout <----------------------------------------+  |  |  |   |\n\
+# Socket receive buffer   <-------------------------------------+  |  |  |  |   |\n\
+# Socket send buffer      <---------------------------------+   |  |  |  |  |   |\n\
+#                                                           |   |  |  |  |  |   |\n\
+# AH:HN1:HN2:HT:PXY:AT:ME:RI:TB:SR:FSO:TT:NB:HS:PO:TRL:TTL:SSB:SRB:DT:DF:KC:WT:PO2\n\
 # |   |   |   |  |  |  |  |  |  |   |  |  |  |  |   |   |\n\
 # |   |   |   |  |  |  |  |  |  |   |  |  |  |  |   |   +-> TTL\n\
 # |   |   |   |  |  |  |  |  |  |   |  |  |  |  |   +-----> Transfer rate limit\n\
@@ -119,9 +121,10 @@ DESCR__E_M3
 #   <Alias hostname>:<Real hostname 1>:<Real hostname 2>:<Host toggle>:\n\
 #   <Proxy name>:<Allowed transfers>:<Max. errors>:<Retry interval>:\n\
 #   <Transfer block size>:<Successful retries>:<File size offset>:\n\
-#   <Transfer timeout>:<no bursts>:<host status>:<special flag>:\n\
+#   <Transfer timeout>:<no bursts>:<host status>:<protocol options>:\n\
 #   <transfer rate limit>:<TTL>:<Socket send buffer>:<Socket receive buffer>:\n\
-#   <dupcheck timeout>:<dupcheck flag>:<Keep connected>:<Warn time>\n"
+#   <dupcheck timeout>:<dupcheck flag>:<Keep connected>:<Warn time>:\n\
+#   <protocol options 2>\n"
 #else
 #define HOST_CONFIG_TEXT_PART1 "#\n\
 #                Host configuration file for the AFD\n\
@@ -130,12 +133,13 @@ DESCR__E_M3
 # There are 20 parameters that can be configured for each remote\n\
 # host. They are:\n\
 #\n\
-# Warn time               <-------------------------------------------+\n\
-# Keep connected          <----------------------------------------+  |\n\
-# Socket receive buffer   <-------------------------------------+  |  |\n\
-# Socket send buffer      <---------------------------------+   |  |  |\n\
-#                                                           |   |  |  |\n\
-# AH:HN1:HN2:HT:PXY:AT:ME:RI:TB:SR:FSO:TT:NB:HS:SF:TRL:TTL:SSB:SRB:KC:WT\n\
+# Protocol options 2      <-----------------------------------------------+\n\
+# Warn time               <-------------------------------------------+   |\n\
+# Keep connected          <----------------------------------------+  |   |\n\
+# Socket receive buffer   <-------------------------------------+  |  |   |\n\
+# Socket send buffer      <---------------------------------+   |  |  |   |\n\
+#                                                           |   |  |  |   |\n\
+# AH:HN1:HN2:HT:PXY:AT:ME:RI:TB:SR:FSO:TT:NB:HS:PO:TRL:TTL:SSB:SRB:KC:WT:PO2\n\
 # |   |   |   |  |  |  |  |  |  |   |  |  |  |  |   |   |\n\
 # |   |   |   |  |  |  |  |  |  |   |  |  |  |  |   |   +-> TTL\n\
 # |   |   |   |  |  |  |  |  |  |   |  |  |  |  |   +-----> Transfer rate limit\n\
@@ -160,9 +164,9 @@ DESCR__E_M3
 #   <Alias hostname>:<Real hostname 1>:<Real hostname 2>:<Host toggle>:\n\
 #   <Proxy name>:<Allowed transfers>:<Max. errors>:<Retry interval>:\n\
 #   <Transfer block size>:<Successful retries>:<File size offset>:\n\
-#   <Transfer timeout>:<no bursts>:<host status>:<special flag>:\n\
+#   <Transfer timeout>:<no bursts>:<host status>:<protocol options>:\n\
 #   <transfer rate limit>:<TTL>:<Socket send buffer>:<Socket receive buffer>:\n\
-#   <Keep connected>:<Warn time>\n"
+#   <Keep connected>:<Warn time>:<protocol options 2>\n"
 #endif
 
 #define HOST_CONFIG_TEXT_PART2 "#\n\
@@ -339,16 +343,18 @@ DESCR__E_M3
 #                          successful the script/program is called again with\n\
 #                          the parameter 'stop'.\n\
 #                          DEFAULT: 0\n\
+# Protocol options 2     - For future use.\n\
+#                          DEFAULT: 0\n\
 #\n\
 # Example entry:\n\
-#  idefix:192.168.1.24:192.168.1.25:[12]::5:10:300:4096:10:-2:20:0:0:0:0:0:0:0:0:0:0:0\n\n"
+#  idefix:192.168.1.24:192.168.1.25:[12]::5:10:300:4096:10:-2:20:0:0:0:0:0:0:0:0:0:0:0:0\n\n"
 #else
 #define HOST_CONFIG_TEXT_PART3 "#  Keep connected         - Keep connection for the given number of seconds\n\
 #                           after all files have been transmitted.\n\
 #                           DEFAULT: 0\n\
 #\n\
 # Example entry:\n\
-#  idefix:192.168.1.24:192.168.1.25:[12]::5:10:300:4096:10:-2:20:0:0:0:0:0:0:0:0:0\n\n"
+#  idefix:192.168.1.24:192.168.1.25:[12]::5:10:300:4096:10:-2:20:0:0:0:0:0:0:0:0:0:0\n\n"
 #endif
 
 
@@ -387,10 +393,12 @@ write_host_config(int              no_of_hosts,
                              MAX_INT_LENGTH +       /* Dupcheck flag     */
 #endif
                              MAX_INT_LENGTH +       /* Keep connected    */
+                             MAX_TIME_T_LENGTH +    /* Warn time         */
+                             MAX_INT_LENGTH +       /* Protocol options 2*/
 #ifdef WITH_DUP_CHECK
-                             21 +                   /* Separator signs   */
+                             23 +                   /* Separator signs   */
 #else
-                             19 +                   /* Separator signs   */
+                             21 +                   /* Separator signs   */
 #endif
                              2],                    /* \n and \0         */
                  *new_name,
@@ -503,23 +511,49 @@ write_host_config(int              no_of_hosts,
                            MAX_INT_LENGTH +
 #endif
                            MAX_INT_LENGTH +
-#ifdef WITH_DUP_CHECK
-                           21 +
-#else
-                           19 +
-#endif
-                           2,
-#ifdef WITH_DUP_CHECK
-# if SIZEOF_TIME_T == 4
-                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%ld:%u:%u:%ld\n",
+                           MAX_TIME_T_LENGTH +
+#ifdef NEW_FSA
+                           MAX_INT_LENGTH +
+# ifdef WITH_DUP_CHECK
+                           23 +
 # else
-                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%lld:%u:%u:%lld\n",
+                           21 +
 # endif
 #else
-# if SIZEOF_TIME_T == 4
-                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%u:%ld\n",
+# ifdef WITH_DUP_CHECK
+                           22 +
 # else
+                           20 +
+# endif
+#endif
+                           2,
+#ifdef NEW_FSA
+# ifdef WITH_DUP_CHECK
+#  if SIZEOF_TIME_T == 4
+                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%ld:%u:%u:%ld:%u\n",
+#  else
+                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%lld:%u:%u:%lld:%u\n",
+#  endif
+# else
+#  if SIZEOF_TIME_T == 4
+                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%u:%ld:%u\n",
+#  else
+                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%u:%lld:%u\n",
+#  endif
+# endif
+#else
+# ifdef WITH_DUP_CHECK
+#  if SIZEOF_TIME_T == 4
+                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%ld:%u:%u:%ld\n",
+#  else
+                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%lld:%u:%u:%lld\n",
+#  endif
+# else
+#  if SIZEOF_TIME_T == 4
+                           "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%u:%ld\n",
+#  else
                            "%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%d:%ld:%d:%u:%u:%d:%d:%u:%u:%u:%lld\n",
+#  endif
 # endif
 #endif
                            p_hl[i].host_alias,
@@ -550,7 +584,12 @@ write_host_config(int              no_of_hosts,
                            p_hl[i].dup_check_flag,
 #endif
                            p_hl[i].keep_connected,
+#ifdef NEW_FSA
+                           (pri_time_t)p_hl[i].warn_time,
+                           p_hl[i].protocol_options2);
+#else
                            (pri_time_t)p_hl[i].warn_time);
+#endif
       }
 
       if (write(fd, line_buffer, length) != length)

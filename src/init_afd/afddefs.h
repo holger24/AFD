@@ -1,6 +1,6 @@
 /*
  *  afddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -2803,27 +2803,30 @@ struct filetransfer_status
 #define HOST_BUF_SIZE 100
 struct host_list
        {
-          char          host_alias[MAX_HOSTNAME_LENGTH + 1];
-          char          fullname[MAX_FILENAME_LENGTH];
+          char           host_alias[MAX_HOSTNAME_LENGTH + 1];
+          char           fullname[MAX_FILENAME_LENGTH];
                                               /* This is needed when we   */
                                               /* have hostname with []    */
                                               /* syntax.                  */
-          char          real_hostname[2][MAX_REAL_HOSTNAME_LENGTH];
-          char          host_toggle_str[MAX_TOGGLE_STR_LENGTH];
-          char          proxy_name[MAX_PROXY_NAME_LENGTH + 1];
-          int           allowed_transfers;
-          int           max_errors;
-          int           retry_interval;
-          int           ttl;                /* Not used!                 */
-          int           transfer_blksize;
-          int           transfer_rate_limit;
-          int           successful_retries; /* NOTE: Corresponds to      */
+          char           real_hostname[2][MAX_REAL_HOSTNAME_LENGTH];
+          char           host_toggle_str[MAX_TOGGLE_STR_LENGTH];
+          char           proxy_name[MAX_PROXY_NAME_LENGTH + 1];
+          int            allowed_transfers;
+          int            max_errors;
+          int            retry_interval;
+          int            ttl;               /* Not used!                 */
+          int            transfer_blksize;
+          int            transfer_rate_limit;
+          int            successful_retries;/* NOTE: Corresponds to      */
                                             /* max_successful_retries in */
                                             /* FSA.                      */
-          unsigned int  protocol_options;   /* Mostly used for FTP, to   */
+          unsigned int   protocol_options;  /* Mostly used for FTP, to   */
                                             /* indicate for example:     */
                                             /* active-, passive-mode,    */
                                             /* send IDLE command, etc.   */
+#ifdef NEW_FSA
+          unsigned int   protocol_options2;
+#endif
           unsigned int   socksnd_bufsize;   /* Socket buffer size for    */
                                             /* sending data. 0 is default*/
                                             /* which is the socket buffer*/
