@@ -71,7 +71,7 @@
 # define MURMUR3_DUPCHECK_SEL   16
 #endif
 
-#define MAX_TB_BUTTONS          15
+#define MAX_TB_BUTTONS          16
 #define MAX_FSO_BUTTONS         14
 #define MAX_FSO_SFTP_BUTTONS    2
 

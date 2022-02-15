@@ -2717,6 +2717,7 @@ create_option_menu_tb(Widget parent, XmFontList fontlist)
                   "4 KiB",
                   "8 KiB",
                   "16 KiB",
+                  "32 KiB",
                   "64 KiB",
                   "128 KiB",
                   "256 KiB",
@@ -2769,9 +2770,10 @@ create_option_menu_tb(Widget parent, XmFontList fontlist)
 
    tb.value[0] = 256; tb.value[1] = 512; tb.value[2] = 1024;
    tb.value[3] = 2048; tb.value[4] = 4096; tb.value[5] = 8192;
-   tb.value[6] = 16384; tb.value[7] = 65536; tb.value[8] = 131072;
-   tb.value[9] = 262144; tb.value[10] = 524288; tb.value[11] = 1048576;
-   tb.value[12] = 2097152; tb.value[13] = 4194304; tb.value[14] = 8388608;
+   tb.value[6] = 16384; tb.value[7] = 32768; tb.value[8] = 65536;
+   tb.value[9] = 131072; tb.value[10] = 262144; tb.value[11] = 524288;
+   tb.value[12] = 1048576; tb.value[13] = 2097152; tb.value[14] = 4194304;
+   tb.value[15] = 8388608;
 
    return;
 }
