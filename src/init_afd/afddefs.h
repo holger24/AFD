@@ -2824,9 +2824,7 @@ struct host_list
                                             /* indicate for example:     */
                                             /* active-, passive-mode,    */
                                             /* send IDLE command, etc.   */
-#ifdef NEW_FSA
           unsigned int   protocol_options2;
-#endif
           unsigned int   socksnd_bufsize;   /* Socket buffer size for    */
                                             /* sending data. 0 is default*/
                                             /* which is the socket buffer*/
