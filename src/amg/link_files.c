@@ -81,6 +81,8 @@ DESCR__E_M3
 #include <errno.h>
 #include "amgdefs.h"
 
+/* #define _DEBUG_LINK_FILES */
+
 
 /* External global variables. */
 #ifndef _WITH_PTHREAD
@@ -282,6 +284,10 @@ link_files(char                   *src_file_path,
                      p_dest = p_dest_end + strlen(unique_name);
                      *(p_dest++) = '/';
                      *p_dest = '\0';
+#ifdef _DEBUG_LINK_FILES
+                     system_log(DEBUG_SIGN, __FILE__, __LINE__,
+                                "%s -> %s", src_file_path, dest_file_path);
+#endif
                   }
                   else
                   {
