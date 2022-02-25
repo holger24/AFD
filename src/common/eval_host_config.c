@@ -274,7 +274,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].transfer_timeout    = 0;
          (*hl)[host_counter].number_of_no_bursts = 0;
          (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
-         (*hl)[host_counter].protocol_options    = 0;
+         (*hl)[host_counter].protocol_options    = DEFAULT_PROTOCOL_OPTIONS;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
          (*hl)[host_counter].socksnd_bufsize     = 0;
@@ -285,7 +285,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
 
          if (*ptr == '\n')
          {
@@ -349,7 +349,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
          (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
-         (*hl)[host_counter].protocol_options    = 0;
+         (*hl)[host_counter].protocol_options    = DEFAULT_PROTOCOL_OPTIONS;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
          (*hl)[host_counter].socksnd_bufsize     = 0;
@@ -360,7 +360,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -424,7 +424,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
          (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
-         (*hl)[host_counter].protocol_options    = 0;
+         (*hl)[host_counter].protocol_options    = DEFAULT_PROTOCOL_OPTIONS;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
          (*hl)[host_counter].socksnd_bufsize     = 0;
@@ -435,7 +435,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -497,7 +497,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
          (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
-         (*hl)[host_counter].protocol_options    = 0;
+         (*hl)[host_counter].protocol_options    = DEFAULT_PROTOCOL_OPTIONS;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
          (*hl)[host_counter].socksnd_bufsize     = 0;
@@ -508,7 +508,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -558,7 +558,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
          (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
-         (*hl)[host_counter].protocol_options    = 0;
+         (*hl)[host_counter].protocol_options    = DEFAULT_PROTOCOL_OPTIONS;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
          (*hl)[host_counter].socksnd_bufsize     = 0;
@@ -569,7 +569,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -658,7 +658,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
          (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
-         (*hl)[host_counter].protocol_options    = 0;
+         (*hl)[host_counter].protocol_options    = DEFAULT_PROTOCOL_OPTIONS;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
          (*hl)[host_counter].socksnd_bufsize     = 0;
@@ -669,7 +669,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -747,7 +747,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
          (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
-         (*hl)[host_counter].protocol_options    = 0;
+         (*hl)[host_counter].protocol_options    = DEFAULT_PROTOCOL_OPTIONS;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
          (*hl)[host_counter].socksnd_bufsize     = 0;
@@ -758,7 +758,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -835,7 +835,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
          (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
-         (*hl)[host_counter].protocol_options    = 0;
+         (*hl)[host_counter].protocol_options    = DEFAULT_PROTOCOL_OPTIONS;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
          (*hl)[host_counter].socksnd_bufsize     = 0;
@@ -846,7 +846,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -941,7 +941,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
          (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
-         (*hl)[host_counter].protocol_options    = 0;
+         (*hl)[host_counter].protocol_options    = DEFAULT_PROTOCOL_OPTIONS;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
          (*hl)[host_counter].socksnd_bufsize     = 0;
@@ -952,7 +952,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -1027,7 +1027,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
          (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
-         (*hl)[host_counter].protocol_options    = 0;
+         (*hl)[host_counter].protocol_options    = DEFAULT_PROTOCOL_OPTIONS;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
          (*hl)[host_counter].socksnd_bufsize     = 0;
@@ -1038,7 +1038,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -1112,7 +1112,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].transfer_timeout    = DEFAULT_TRANSFER_TIMEOUT;
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
          (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
-         (*hl)[host_counter].protocol_options    = 0;
+         (*hl)[host_counter].protocol_options    = DEFAULT_PROTOCOL_OPTIONS;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
          (*hl)[host_counter].socksnd_bufsize     = 0;
@@ -1123,7 +1123,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
          error_flag = YES;
 
          if (*ptr == '\n')
@@ -1196,7 +1196,7 @@ eval_host_config(int              *hosts_found,
          /* Initialise rest with DEFAULTS. */
          (*hl)[host_counter].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
          (*hl)[host_counter].host_status         = DEFAULT_FSA_HOST_STATUS;
-         (*hl)[host_counter].protocol_options    = 0;
+         (*hl)[host_counter].protocol_options    = DEFAULT_PROTOCOL_OPTIONS;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
          (*hl)[host_counter].socksnd_bufsize     = 0;
@@ -1207,7 +1207,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
 
          if (*ptr == '\n')
          {
@@ -1353,7 +1353,7 @@ eval_host_config(int              *hosts_found,
                }
             }
          }
-         (*hl)[host_counter].protocol_options    = 0;
+         (*hl)[host_counter].protocol_options    = DEFAULT_PROTOCOL_OPTIONS;
          (*hl)[host_counter].transfer_rate_limit = 0;
          (*hl)[host_counter].ttl                 = 0;
          (*hl)[host_counter].socksnd_bufsize     = 0;
@@ -1364,7 +1364,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
 
          if (*ptr == '\n')
          {
@@ -1462,7 +1462,7 @@ eval_host_config(int              *hosts_found,
                                                           FTP_PASSIVE_MODE)) ||
                  ((*hl)[host_counter].protocol_options < FTP_PASSIVE_MODE)))
             {
-               (*hl)[host_counter].protocol_options = 0;
+               (*hl)[host_counter].protocol_options = DEFAULT_PROTOCOL_OPTIONS;
             }
             else
             {
@@ -1472,7 +1472,7 @@ eval_host_config(int              *hosts_found,
          }
          else
          {
-            (*hl)[host_counter].protocol_options = 0;
+            (*hl)[host_counter].protocol_options = DEFAULT_PROTOCOL_OPTIONS;
          }
 
          /* Initialise rest with DEFAULTS. */
@@ -1486,7 +1486,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
 
          if (*ptr == '\n')
          {
@@ -1517,8 +1517,9 @@ eval_host_config(int              *hosts_found,
          {
             error_flag = YES;
             update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
-                          _("Non numeric character <%d> in protocol options field for host %s, using default 0."),
-                          (int)*ptr, (*hl)[host_counter].host_alias);
+                          _("Non numeric character <%d> in protocol options field for host %s, using default %d."),
+                          (int)*ptr, (*hl)[host_counter].host_alias,
+                          DEFAULT_PROTOCOL_OPTIONS);
 
             /* Ignore this entry. */
             i = 0;
@@ -1532,15 +1533,16 @@ eval_host_config(int              *hosts_found,
       if (i == 0)
       {
          error_flag = YES;
-         (*hl)[host_counter].protocol_options = 0;
+         (*hl)[host_counter].protocol_options = DEFAULT_PROTOCOL_OPTIONS;
       }
       else if (i == MAX_INT_LENGTH)
            {
               error_flag = YES;
               update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
-                            _("Numeric value for protocol options to large (>%d characters) for host %s to store as integer, using default 0"),
-                            MAX_INT_LENGTH, (*hl)[host_counter].host_alias);
-              (*hl)[host_counter].protocol_options = 0;
+                            _("Numeric value for protocol options to large (>%d characters) for host %s to store as integer, using default %d"),
+                            MAX_INT_LENGTH, (*hl)[host_counter].host_alias,
+                            DEFAULT_PROTOCOL_OPTIONS);
+              (*hl)[host_counter].protocol_options = DEFAULT_PROTOCOL_OPTIONS;
               while ((*ptr != ':') && (*ptr != '\n') && (*ptr != '\0'))
               {
                  ptr++;
@@ -1564,7 +1566,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
 
          /*
           * As of 1.3.0 SET_IDLE_TIME, STAT_KEEPALIVE and FTP_PASSIVE_MODE
@@ -1581,7 +1583,7 @@ eval_host_config(int              *hosts_found,
          {
             int old_protocol_options = (*hl)[host_counter].protocol_options;
 
-            (*hl)[host_counter].protocol_options = 0;
+            (*hl)[host_counter].protocol_options = DEFAULT_PROTOCOL_OPTIONS;
             if (old_protocol_options & OLD_SET_IDLE_TIME)
             {
                (*hl)[host_counter].protocol_options |= SET_IDLE_TIME;
@@ -1659,7 +1661,7 @@ eval_host_config(int              *hosts_found,
       {
          error_flag = YES;
          update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
-                       _("Unknown protocol option <%d> for host %s, largest value is %d and smallest %d. Setting to 0."),
+                       _("Unknown protocol option <%d> for host %s, largest value is %d and smallest %d. Setting to %d."),
                        (*hl)[host_counter].protocol_options,
                        (*hl)[host_counter].host_alias,
                        (HTTP_BUCKETNAME_IN_PATH |
@@ -1699,8 +1701,8 @@ eval_host_config(int              *hosts_found,
                         FTP_FAST_CD |
                         FTP_IGNORE_BIN |
                         FTP_PASSIVE_MODE),
-                       FTP_PASSIVE_MODE);
-         (*hl)[host_counter].protocol_options = 0;
+                       FTP_PASSIVE_MODE, DEFAULT_PROTOCOL_OPTIONS);
+         (*hl)[host_counter].protocol_options = DEFAULT_PROTOCOL_OPTIONS;
       }
 
       /* Store transfer rate limit. */
@@ -1763,7 +1765,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
 
          if (*ptr == '\n')
          {
@@ -1838,7 +1840,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
 
          if (*ptr == '\n')
          {
@@ -1912,7 +1914,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
 
          if (*ptr == '\n')
          {
@@ -1985,7 +1987,7 @@ eval_host_config(int              *hosts_found,
 #endif
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
 
          if (*ptr == '\n')
          {
@@ -2056,7 +2058,7 @@ eval_host_config(int              *hosts_found,
          (*hl)[host_counter].dup_check_flag      = 0;
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
 
          if (*ptr == '\n')
          {
@@ -2125,7 +2127,7 @@ eval_host_config(int              *hosts_found,
          /* Initialise rest with DEFAULTS. */
          (*hl)[host_counter].keep_connected      = 0;
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
 
          if (*ptr == '\n')
          {
@@ -2194,7 +2196,7 @@ eval_host_config(int              *hosts_found,
       {
          /* Initialise rest with DEFAULTS. */
          (*hl)[host_counter].warn_time           = 0L;
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
 
          if (*ptr == '\n')
          {
@@ -2261,7 +2263,7 @@ eval_host_config(int              *hosts_found,
       if ((*ptr == '\n') || (*ptr == '\0'))
       {
          /* Initialise rest with DEFAULTS. */
-         (*hl)[host_counter].protocol_options2   = 0;
+         (*hl)[host_counter].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
 
          if (*ptr == '\n')
          {
@@ -2293,8 +2295,9 @@ eval_host_config(int              *hosts_found,
          {
             error_flag = YES;
             update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
-                          _("Non numeric character <%d> in protocol options 2 field for host %s, using default 0."),
-                          (int)*ptr, (*hl)[host_counter].host_alias);
+                          _("Non numeric character <%d> in protocol options 2 field for host %s, using default %d."),
+                          (int)*ptr, (*hl)[host_counter].host_alias,
+                          DEFAULT_PROTOCOL_OPTIONS2);
 
             /* Ignore this entry. */
             i = 0;
@@ -2308,15 +2311,16 @@ eval_host_config(int              *hosts_found,
       if (i == 0)
       {
          error_flag = YES;
-         (*hl)[host_counter].protocol_options2 = 0;
+         (*hl)[host_counter].protocol_options2 = DEFAULT_PROTOCOL_OPTIONS2;
       }
       else if (i == MAX_INT_LENGTH)
            {
               error_flag = YES;
               update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
-                            _("Numeric value for protocol options 2 to large (>%d characters) for host %s to store as integer, using default 0"),
-                            MAX_INT_LENGTH, (*hl)[host_counter].host_alias);
-              (*hl)[host_counter].protocol_options2 = 0;
+                            _("Numeric value for protocol options 2 to large (>%d characters) for host %s to store as integer, using default %d"),
+                            MAX_INT_LENGTH, (*hl)[host_counter].host_alias,
+                            DEFAULT_PROTOCOL_OPTIONS2);
+              (*hl)[host_counter].protocol_options2 = DEFAULT_PROTOCOL_OPTIONS2;
               while ((*ptr != ':') && (*ptr != '\n') && (*ptr != '\0'))
               {
                  ptr++;
@@ -2330,10 +2334,11 @@ eval_host_config(int              *hosts_found,
       {
          error_flag = YES;
          update_db_log(WARN_SIGN, __FILE__, __LINE__, debug_fp, warn_counter,
-                       _("Unknown protocol option 2 <%d> for host %s, largest value is %d and smallest %d. Setting to 0."),
+                       _("Unknown protocol option 2 <%d> for host %s, largest value is %d and smallest %d. Setting to %d."),
                        (*hl)[host_counter].protocol_options2,
-                       (*hl)[host_counter].host_alias, 0);
-         (*hl)[host_counter].protocol_options2 = 0;
+                       (*hl)[host_counter].host_alias, 0,
+                       DEFAULT_PROTOCOL_OPTIONS2);
+         (*hl)[host_counter].protocol_options2 = DEFAULT_PROTOCOL_OPTIONS2;
       }
 #endif
 

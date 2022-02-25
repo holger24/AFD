@@ -1,6 +1,6 @@
 /*
  *  eval_dir_config.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -2779,7 +2779,8 @@ check_hostname_list(char         *recipient,
       hl[no_of_hosts].number_of_no_bursts = (unsigned char)DEFAULT_NO_OF_NO_BURSTS;
       hl[no_of_hosts].in_dir_config       = YES;
       hl[no_of_hosts].protocol            = scheme | flag;
-      hl[no_of_hosts].protocol_options    = 0;
+      hl[no_of_hosts].protocol_options    = DEFAULT_PROTOCOL_OPTIONS;
+      hl[no_of_hosts].protocol_options2   = DEFAULT_PROTOCOL_OPTIONS2;
       hl[no_of_hosts].transfer_rate_limit = 0;
       hl[no_of_hosts].host_status         = default_error_offline_flag;
       i = no_of_hosts;

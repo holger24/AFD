@@ -1273,6 +1273,8 @@ typedef unsigned long       u_long_64;
 #endif
 #define DEFAULT_HEARTBEAT_TIMEOUT        25L
 #define DEFAULT_TRANSFER_MODE            'I'
+#define DEFAULT_PROTOCOL_OPTIONS         FTP_PASSIVE_MODE
+#define DEFAULT_PROTOCOL_OPTIONS2        0
 #define DIR_ALIAS_OFFSET                 16
 #ifdef _WITH_DE_MAIL_SUPPORT
 # define DEFAULT_DE_MAIL_CONF_TIMEUP     172800L /* 2 days */
