@@ -1,6 +1,6 @@
 /*
  *  save_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -69,6 +69,8 @@ DESCR__S_M3
  **                      copy files, we must check for files we will
  **                      overwrite, otherwise files_queued and
  **                      bytes_in_queue will be wrong.
+ **   25.02.2022 H.Kiehl On Linux we must check for hardlink protection.
+ **                      If that is the case, copy the file.
  **
  */
 DESCR__E_M3
@@ -93,6 +95,9 @@ extern off_t                      *file_size_pool;
 extern time_t                     *file_mtime_pool;
 extern char                       **file_name_pool;
 extern unsigned char              *file_length_pool;
+#endif
+#ifdef LINUX
+extern char                       hardlinks_protected;
 #endif
 extern struct filetransfer_status *fsa;
 extern struct fileretrieve_status *fra;
@@ -346,52 +351,64 @@ save_files(char                   *src_path,
                   }
                   else
                   {
-                     if ((retstat = link(src_path, dest_path)) == -1)
+#ifdef LINUX
+                     if (((hardlinks_protected == YES) &&
+                         (access(src_path, W_OK) != 0)))
                      {
-                        if (errno == EEXIST)
+try_copy_file:
+                        if ((retstat = copy_file(src_path, dest_path,
+                                                 NULL)) < 0)
                         {
-                           off_t del_file_size = 0;
-
-                           if (stat(dest_path, &stat_buf) == -1)
-                           {
-                              system_log(WARN_SIGN, __FILE__, __LINE__,
-                                         "Failed to stat() %s : %s",
-                                         dest_path, strerror(errno));
-                           }
-                           else
-                           {
-                              del_file_size = stat_buf.st_size;
-                           }
-
-                           /*
-                            * A file with the same name already exists. Remove
-                            * this file and try to link again.
-                            */
-                           if (unlink(dest_path) == -1)
-                           {
-                              system_log(WARN_SIGN, __FILE__, __LINE__,
-                                         "Failed to unlink() file `%s' : %s",
-                                         dest_path, strerror(errno));
-                              errno = 0;
-#ifdef _DISTRIBUTION_LOG
-                              dist_type = ERROR_DIS_TYPE;
+                           system_log(WARN_SIGN, __FILE__, __LINE__,
+                                      "Failed to copy file %s to %s",
+                                      src_path, dest_path);
+                        }
+                        else
+                        {
+                           files_saved++;
+                           file_size_saved += file_size_pool[i];
+                        }
+                     }
+                     else
+                     {
 #endif
-                           }
-                           else
+                        if ((retstat = link(src_path, dest_path)) == -1)
+                        {
+#ifdef LINUX
+                           if ((errno == EPERM) &&
+                               (hardlinks_protected == NEITHER))
                            {
-                              files_deleted++;
-                              file_size_deleted += del_file_size;
-                              if ((retstat = link(src_path, dest_path)) == -1)
+                              system_log(WARN_SIGN, __FILE__, __LINE__,
+                                         "Hardlinks are protected! You need to unset this in /proc/sys/fs/protected_hardlinks. Otherwise AFD must copy files!");
+                              hardlinks_protected = YES;
+
+                              goto try_copy_file;
+                           }
+#endif
+                           if (errno == EEXIST)
+                           {
+                              off_t del_file_size = 0;
+
+                              if (stat(dest_path, &stat_buf) == -1)
                               {
-                                 if (errno == EXDEV)
-                                 {
-                                    link_flag &= ~IN_SAME_FILESYSTEM;
-                                    goto cross_link_error;
-                                 }
                                  system_log(WARN_SIGN, __FILE__, __LINE__,
-                                            "Failed to link file `%s' to `%s' : %s",
-                                            src_path, dest_path,
-                                            strerror(errno));
+                                            "Failed to stat() %s : %s",
+                                            dest_path, strerror(errno));
+                              }
+                              else
+                              {
+                                 del_file_size = stat_buf.st_size;
+                              }
+
+                              /*
+                               * A file with the same name already exists.
+                               * Remove this file and try to link again.
+                               */
+                              if (unlink(dest_path) == -1)
+                              {
+                                 system_log(WARN_SIGN, __FILE__, __LINE__,
+                                            "Failed to unlink() file `%s' : %s",
+                                            dest_path, strerror(errno));
                                  errno = 0;
 #ifdef _DISTRIBUTION_LOG
                                  dist_type = ERROR_DIS_TYPE;
@@ -399,32 +416,56 @@ save_files(char                   *src_path,
                               }
                               else
                               {
-                                 files_saved++;
-                                 file_size_saved += file_size_pool[i];
+                                 files_deleted++;
+                                 file_size_deleted += del_file_size;
+                                 if ((retstat = link(src_path, dest_path)) == -1)
+                                 {
+                                    if (errno == EXDEV)
+                                    {
+                                       link_flag &= ~IN_SAME_FILESYSTEM;
+                                       goto cross_link_error;
+                                    }
+                                    system_log(WARN_SIGN, __FILE__, __LINE__,
+                                               "Failed to link file `%s' to `%s' : %s",
+                                               src_path, dest_path,
+                                               strerror(errno));
+                                    errno = 0;
+#ifdef _DISTRIBUTION_LOG
+                                    dist_type = ERROR_DIS_TYPE;
+#endif
+                                 }
+                                 else
+                                 {
+                                    files_saved++;
+                                    file_size_saved += file_size_pool[i];
+                                 }
                               }
                            }
-                        }
-                        else if (errno == EXDEV)
-                             {
-                                link_flag &= ~IN_SAME_FILESYSTEM;
-                                goto cross_link_error;
-                             }
-                             else
-                             {
-                                system_log(WARN_SIGN, __FILE__, __LINE__,
-                                           "Failed to link file `%s' to `%s' : %s",
-                                           src_path, dest_path, strerror(errno));
-                                errno = 0;
+                           else if (errno == EXDEV)
+                                {
+                                   link_flag &= ~IN_SAME_FILESYSTEM;
+                                   goto cross_link_error;
+                                }
+                                else
+                                {
+                                   system_log(WARN_SIGN, __FILE__, __LINE__,
+                                              "Failed to link file `%s' to `%s' : %s",
+                                              src_path, dest_path,
+                                              strerror(errno));
+                                   errno = 0;
 #ifdef _DISTRIBUTION_LOG
-                                dist_type = ERROR_DIS_TYPE;
+                                   dist_type = ERROR_DIS_TYPE;
 #endif
-                             }
+                                }
+                        }
+                        else
+                        {
+                           files_saved++;
+                           file_size_saved += file_size_pool[i];
+                        }
+#ifdef LINUX
                      }
-                     else
-                     {
-                        files_saved++;
-                        file_size_saved += file_size_pool[i];
-                     }
+#endif
                   }
                }
                else
