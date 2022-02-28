@@ -1,6 +1,6 @@
 /*
  *  fd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -71,6 +71,8 @@ DESCR__S_M1
  **                      position in mdb.
  **   15.09.2021 H.Kiehl Try be more aggressive when restarting jobs in
  **                      error situation.
+ **   28.02.2022 H.Kiehl Inform user if we have reached maximum number
+ **                      of parallel transfers.
  **
  */
 DESCR__E_M1
@@ -160,6 +162,7 @@ int                        crash = NO,
                            maintainer_log_fd = STDERR_FILENO,
 #endif
                            max_connections = MAX_DEFAULT_CONNECTIONS,
+                           max_connections_reached = NO,
 #ifdef _OUTPUT_LOG
                            max_output_log_files = MAX_OUTPUT_LOG_FILES,
 #endif
@@ -1579,6 +1582,15 @@ system_log(DEBUG_SIGN, NULL, 0,
             }
          }
       }
+      else if ((max_connections_reached == NO) &&
+               (p_afd_status->no_of_transfers >= max_connections))
+           {
+              system_log(INFO_SIGN, __FILE__, __LINE__,
+                         "**NOTE** Unable to start a new process for distributing data, since the number of current active transfers is %d and AFD may only start %d. Please consider raising %s in AFD_CONFIG.",
+                         p_afd_status->no_of_transfers, max_connections,
+                         MAX_CONNECTIONS_DEF);
+              max_connections_reached = YES;
+           }
 
       /* Check if we have to stop and we have */
       /* no more running jobs.                */
@@ -1884,6 +1896,16 @@ system_log(DEBUG_SIGN, NULL, 0,
                                  (*no_msg_queued)--;
                               }
                            }
+                           else if ((max_connections_reached == NO) &&
+                                    (p_afd_status->no_of_transfers >= max_connections))
+                                {
+                                   system_log(INFO_SIGN, __FILE__, __LINE__,
+                                              "**NOTE** Unable to start a new process for distributing data, since the number of current active transfers is %d and AFD may only start %d. Please consider raising %s in AFD_CONFIG.",
+                                              p_afd_status->no_of_transfers,
+                                              max_connections,
+                                              MAX_CONNECTIONS_DEF);
+                                   max_connections_reached = YES;
+                                }
                         }
                      }
                   }
@@ -3474,6 +3496,15 @@ start_process(int fsa_pos, int qb_pos, time_t current_time, int retry)
                }
             }
          }
+         else if ((max_connections_reached == NO) &&
+                  (p_afd_status->no_of_transfers >= max_connections))
+              {
+                 system_log(INFO_SIGN, __FILE__, __LINE__,
+                            "**NOTE** Unable to start a new process for distributing data, since the number of current active transfers is %d and AFD may only start %d. Please consider raising %s in AFD_CONFIG.",
+                            p_afd_status->no_of_transfers, max_connections,
+                            MAX_CONNECTIONS_DEF);
+                 max_connections_reached = YES;
+              }
       }
    }
    qb[qb_pos].pid = pid;
