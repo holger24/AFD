@@ -1,7 +1,7 @@
 /*
  *  setup_mon_window.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 1998 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -329,10 +329,10 @@ setup_mon_window(char *font_name)
 
       /* Set the font for the Setup pulldown. */
       XtVaSetValues(mw[CONFIG_W], XmNfontList, fontlist, NULL);
-      XtVaSetValues(sw[FONT_W], XmNfontList, fontlist, NULL);
-      XtVaSetValues(sw[ROWS_W], XmNfontList, fontlist, NULL);
-      XtVaSetValues(sw[STYLE_W], XmNfontList, fontlist, NULL);
-      XtVaSetValues(sw[HISTORY_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(sw[MON_FONT_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(sw[MON_ROWS_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(sw[MON_STYLE_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(sw[MON_HISTORY_W], XmNfontList, fontlist, NULL);
       XtVaSetValues(sw[MON_OTHER_W], XmNfontList, fontlist, NULL);
       if (have_groups == YES)
       {

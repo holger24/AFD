@@ -1,6 +1,6 @@
 /*
  *  dir_ctrl.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -63,6 +63,13 @@
 #define DIR_VIEW_DC_W                  10
 #define DIR_VIEW_RR_W                  11
 #define NO_DIR_VIEW_MENU               12
+
+/* Definitions for the Setup pulldown. */
+#define DIR_FONT_W                     0
+#define DIR_ROWS_W                     1
+#define DIR_STYLE_W                    2
+#define DIR_OTHER_W                    3
+#define DIR_SAVE_W                     4
 
 /* Definitions of popup selections. */
 #define DIR_INFO_SEL                   70

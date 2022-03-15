@@ -1,6 +1,6 @@
 /*
  *  mafd_ctrl.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -88,6 +88,16 @@
 #define DIR_CTRL_W                      5
 #define STARTUP_AFD_W                   6
 #define SHUTDOWN_AFD_W                  7
+
+/* Definitions for the Setup pulldown. */
+#define AFD_FONT_W                      0
+#define AFD_ROWS_W                      1
+#define AFD_ALIAS_LENGTH_W              2
+#define AFD_STYLE_W                     3
+#define AFD_OTHER_W                     4
+#define AFD_OPEN_ALL_GROUPS_W           5
+#define AFD_CLOSE_ALL_GROUPS_W          6
+#define AFD_SAVE_W                      7
 
 /* Definintions for debug level. */
 #define DEBUG_STYLE_W                   0
@@ -302,6 +312,7 @@ struct job_data
 
 /* Function Prototypes. */
 extern void        calc_but_coord(int),
+                   change_alias_length_cb(Widget, XtPointer, XtPointer),
                    change_font_cb(Widget, XtPointer, XtPointer),
                    change_other_cb(Widget, XtPointer, XtPointer),
                    change_rows_cb(Widget, XtPointer, XtPointer),

@@ -1,6 +1,6 @@
 /*
  *  setup_window.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -67,11 +67,12 @@ extern Widget                     mw[],
                                   cw[],
                                   sw[],
                                   hw[],
-                                  rw[],
                                   lw[],
                                   lsw[],
                                   ptw[],
                                   oow[],
+                                  rw[],
+                                  adl[],
                                   pw[],
                                   dprw[],
                                   dprwpp[];
@@ -166,6 +167,8 @@ setup_window(char *font_name, int redraw_mainmenu)
 
       if (line_height != 0)
       {
+         int i;
+
          /* Set the font for the Host pulldown. */
          XtVaSetValues(mw[HOST_W], XmNfontList, fontlist, NULL);
          if ((acp.handle_event != NO_PERMISSION) ||
@@ -404,16 +407,17 @@ setup_window(char *font_name, int redraw_mainmenu)
 
          /* Set the font for the Setup pulldown. */
          XtVaSetValues(mw[CONFIG_W], XmNfontList, fontlist, NULL);
-         XtVaSetValues(sw[FONT_W], XmNfontList, fontlist, NULL);
-         XtVaSetValues(sw[ROWS_W], XmNfontList, fontlist, NULL);
-         XtVaSetValues(sw[STYLE_W], XmNfontList, fontlist, NULL);
-         XtVaSetValues(sw[OTHER_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(sw[AFD_FONT_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(sw[AFD_ROWS_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(sw[AFD_ALIAS_LENGTH_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(sw[AFD_STYLE_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(sw[AFD_OTHER_W], XmNfontList, fontlist, NULL);
          if (have_groups == YES)
          {
-            XtVaSetValues(sw[OPEN_ALL_GROUPS_W], XmNfontList, fontlist, NULL);
-            XtVaSetValues(sw[CLOSE_ALL_GROUPS_W], XmNfontList, fontlist, NULL);
+            XtVaSetValues(sw[AFD_OPEN_ALL_GROUPS_W], XmNfontList, fontlist, NULL);
+            XtVaSetValues(sw[AFD_CLOSE_ALL_GROUPS_W], XmNfontList, fontlist, NULL);
          }
-         XtVaSetValues(sw[SAVE_W], XmNfontList, fontlist, NULL);
+         XtVaSetValues(sw[AFD_SAVE_W], XmNfontList, fontlist, NULL);
 
          /* Set the font for the Help pulldown. */
 #ifdef _WITH_HELP_PULLDOWN
@@ -445,6 +449,12 @@ setup_window(char *font_name, int redraw_mainmenu)
          XtVaSetValues(rw[ROW_18_W], XmNfontList, fontlist, NULL);
          XtVaSetValues(rw[ROW_19_W], XmNfontList, fontlist, NULL);
          XtVaSetValues(rw[ROW_20_W], XmNfontList, fontlist, NULL);
+
+         /* Set the font for the alias display length. */
+         for (i = MIN_ALIAS_DISPLAY_LENGTH; i < (MAX_HOSTNAME_LENGTH + 2); i++)
+         {
+            XtVaSetValues(adl[i - MIN_ALIAS_DISPLAY_LENGTH], XmNfontList, fontlist, NULL);
+         }
 
          /* Set the font for the Line Style pulldown. */
          XtVaSetValues(lsw[STYLE_0_W], XmNfontList, fontlist, NULL);

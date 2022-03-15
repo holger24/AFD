@@ -1,6 +1,6 @@
 /*
  *  dir_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -122,7 +122,7 @@ Widget                     appshell,
                            mw[4],                /* Main menu */
                            dw[NO_DIR_MENU],      /* Directory menu */
                            vw[NO_DIR_VIEW_MENU], /* View menu */
-                           sw[7],                /* Setup menu */
+                           sw[5],                /* Setup menu */
                            hw[3],                /* Help menu */
                            fw[NO_OF_FONTS],      /* Select font */
                            rw[NO_OF_ROWS],       /* Select rows */
@@ -1189,25 +1189,25 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
 #endif
                            XmNsubMenuId,               setup_pull_down_w,
                            NULL);
-   sw[FONT_W] = XtVaCreateManagedWidget("Font size",
+   sw[DIR_FONT_W] = XtVaCreateManagedWidget("Font size",
                            xmCascadeButtonWidgetClass, setup_pull_down_w,
                            XmNfontList,                fontlist,
                            XmNsubMenuId,               pullright_font,
                            NULL);
    create_pullright_font(pullright_font);
-   sw[ROWS_W] = XtVaCreateManagedWidget("Number of rows",
+   sw[DIR_ROWS_W] = XtVaCreateManagedWidget("Number of rows",
                            xmCascadeButtonWidgetClass, setup_pull_down_w,
                            XmNfontList,                fontlist,
                            XmNsubMenuId,               pullright_row,
                            NULL);
    create_pullright_row(pullright_row);
-   sw[STYLE_W] = XtVaCreateManagedWidget("Line Style",
+   sw[DIR_STYLE_W] = XtVaCreateManagedWidget("Line Style",
                            xmCascadeButtonWidgetClass, setup_pull_down_w,
                            XmNfontList,                fontlist,
                            XmNsubMenuId,               pullright_line_style,
                            NULL);
    create_pullright_style(pullright_line_style);
-   sw[OTHER_W] = XtVaCreateManagedWidget("Other options",
+   sw[DIR_OTHER_W] = XtVaCreateManagedWidget("Other options",
                            xmCascadeButtonWidgetClass, setup_pull_down_w,
                            XmNfontList,                fontlist,
                            XmNsubMenuId,               pullright_other_options,
@@ -1216,7 +1216,7 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
    XtVaCreateManagedWidget("Separator",
                            xmSeparatorWidgetClass, setup_pull_down_w,
                            NULL);
-   sw[SAVE_W] = XtVaCreateManagedWidget("Save Setup",
+   sw[DIR_SAVE_W] = XtVaCreateManagedWidget("Save Setup",
                            xmPushButtonWidgetClass, setup_pull_down_w,
                            XmNfontList,             fontlist,
 #ifdef WHEN_WE_KNOW_HOW_TO_FIX_THIS
@@ -1228,7 +1228,7 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                            XmNaccelerator,          "Alt<Key>a",
 #endif
                            NULL);
-   XtAddCallback(sw[SAVE_W], XmNactivateCallback, save_dir_setup_cb, (XtPointer)0);
+   XtAddCallback(sw[DIR_SAVE_W], XmNactivateCallback, save_dir_setup_cb, (XtPointer)0);
 
 #ifdef _WITH_HELP_PULLDOWN
    /**********************************************************************/

@@ -1,6 +1,6 @@
 /*
  *  mon_ctrl.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -82,7 +82,10 @@
 /*         x_common_defs.h 100 onwards.                */
 
 /* Definitions for the Setup pulldown. */
-#define HISTORY_W                      3
+#define MON_FONT_W                     0
+#define MON_ROWS_W                     1
+#define MON_STYLE_W                    2
+#define MON_HISTORY_W                  3
 #define MON_OTHER_W                    4
 #define MON_OPEN_ALL_GROUPS_W          5
 #define MON_CLOSE_ALL_GROUPS_W         6

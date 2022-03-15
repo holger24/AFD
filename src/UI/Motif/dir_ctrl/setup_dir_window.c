@@ -1,7 +1,7 @@
 /*
  *  setup_dir_window.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 2000 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2000 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -247,11 +247,11 @@ setup_dir_window(char *font_name)
 
       /* Set the font for the Setup pulldown. */
       XtVaSetValues(mw[CONFIG_W], XmNfontList, fontlist, NULL);
-      XtVaSetValues(sw[FONT_W], XmNfontList, fontlist, NULL);
-      XtVaSetValues(sw[ROWS_W], XmNfontList, fontlist, NULL);
-      XtVaSetValues(sw[STYLE_W], XmNfontList, fontlist, NULL);
-      XtVaSetValues(sw[OTHER_W], XmNfontList, fontlist, NULL);
-      XtVaSetValues(sw[SAVE_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(sw[DIR_FONT_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(sw[DIR_ROWS_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(sw[DIR_STYLE_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(sw[DIR_OTHER_W], XmNfontList, fontlist, NULL);
+      XtVaSetValues(sw[DIR_SAVE_W], XmNfontList, fontlist, NULL);
 
       /* Set the font for the Help pulldown. */
 #ifdef _WITH_HELP_PULLDOWN

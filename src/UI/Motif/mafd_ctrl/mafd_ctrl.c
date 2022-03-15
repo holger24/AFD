@@ -1,6 +1,6 @@
 /*
  *  mafd_ctrl.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -60,6 +60,7 @@ DESCR__S_M1
  **   17.07.2019 H.Kiehl Added parameter -bs to disable backing store
  **                      and save under.
  **   23.01.2021 H.Kiehl Added viewing rename rules.
+ **   05.03.2022 H.Kiehl Added setup option to modify alias display length.
  **
  */
 DESCR__E_M1
@@ -134,17 +135,18 @@ XFontStruct                *font_struct = NULL;
 XmFontList                 fontlist = NULL;
 Widget                     mw[5],          /* Main menu */
                            ow[13],         /* Host menu */
+                           tw[2],          /* Test (ping, traceroute) */
                            vw[15],         /* View menu */
                            cw[8],          /* Control menu */
-                           sw[7],          /* Setup menu */
+                           sw[8],          /* Setup menu */
                            hw[3],          /* Help menu */
-                           fw[NO_OF_FONTS],/* Select font */
-                           rw[NO_OF_ROWS], /* Select rows */
-                           tw[2],          /* Test (ping, traceroute) */
                            lw[4],          /* AFD load */
                            lsw[4],         /* Line style */
                            ptw[3],         /* Process type. */
                            oow[3],         /* Other options */
+                           fw[NO_OF_FONTS],/* Select font */
+                           rw[NO_OF_ROWS], /* Select rows */
+                           adl[MAX_HOSTNAME_LENGTH - MIN_ALIAS_DISPLAY_LENGTH + 2], /* Alias display length */
                            pw[13],         /* Popup menu */
                            dprw[3],        /* Debug pull right */
                            dprwpp[3],      /* Debug pull right in popup */
@@ -165,7 +167,8 @@ Pixmap                     button_pixmap,
                            label_pixmap,
                            line_pixmap;
 float                      max_bar_length;
-int                        bar_thickness_2,
+int                        alias_length_set,
+                           bar_thickness_2,
                            bar_thickness_3,
                            button_width,
                            depth,
@@ -233,7 +236,8 @@ int                        bar_thickness_2,
                            x_offset_tv_file_name,
                            y_center_log,
                            y_offset_led;
-XT_PTR_TYPE                current_font = -1,
+XT_PTR_TYPE                current_alias_length = -1,
+                           current_font = -1,
                            current_row = -1;
 long                       danger_no_of_jobs,
                            link_max;
@@ -290,6 +294,7 @@ const char                 *sys_log_name = SYSTEM_LOG_FIFO;
 
 /* Local function prototypes. */
 static void                mafd_ctrl_exit(void),
+                           create_pullright_alias_length(Widget),
                            create_pullright_debug(Widget),
                            create_pullright_font(Widget),
                            create_pullright_load(Widget),
@@ -550,6 +555,8 @@ main(int argc, char *argv[])
       /* Set toggle button for font|row|style. */
       XtVaSetValues(fw[current_font], XmNset, True, NULL);
       XtVaSetValues(rw[current_row], XmNset, True, NULL);
+      XtVaSetValues(adl[current_alias_length - MIN_ALIAS_DISPLAY_LENGTH],
+                    XmNset, True, NULL);
       if (line_style & SHOW_LEDS)
       {
          XtVaSetValues(lsw[LEDS_STYLE_W], XmNset, True, NULL);
@@ -1033,12 +1040,14 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
    other_options = DEFAULT_OTHER_OPTIONS;
    line_style = SHOW_LEDS | SHOW_JOBS | SHOW_CHARACTERS | SHOW_BARS;
    no_of_rows_set = DEFAULT_NO_OF_ROWS;
+   alias_length_set = MAX_HOSTNAME_LENGTH;
    filename_display_length = DEFAULT_FILENAME_DISPLAY_LENGTH;
    hostname_display_length = DEFAULT_HOSTNAME_DISPLAY_LENGTH;
    RT_ARRAY(hosts, no_of_hosts, (MAX_REAL_HOSTNAME_LENGTH + 4 + 1), char);
    read_setup(AFD_CTRL, profile, &hostname_display_length,
               &filename_display_length, NULL,
               &no_of_invisible_members, &invisible_members);
+   current_alias_length = hostname_display_length;
 
    /* Determine the default bar length. */
    max_bar_length  = 6 * BAR_LENGTH_MODIFIER;
@@ -1090,7 +1099,7 @@ init_mafd_ctrl(int *argc, char *argv[], char *window_title)
       }
       (void)snprintf(connect_data[i].host_display_str, MAX_HOSTNAME_LENGTH + 2,
                      "%-*s",
-                     MAX_HOSTNAME_LENGTH, fsa[i].host_dsp_name);
+                     MAX_HOSTNAME_LENGTH + 1, fsa[i].host_dsp_name);
       connect_data[i].host_toggle = fsa[i].host_toggle;
       if (fsa[i].host_toggle_str[0] != '\0')
       {
@@ -1391,6 +1400,7 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
    Arg      args[MAXARGS];
    Cardinal argcount;
    Widget   pull_down_w,
+            pullright_alias_length,
             pullright_font,
             pullright_load,
             pullright_row,
@@ -1933,6 +1943,8 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                                                "pullright_font", NULL, 0);
    pullright_row = XmCreateSimplePulldownMenu(pull_down_w,
                                               "pullright_row", NULL, 0);
+   pullright_alias_length = XmCreateSimplePulldownMenu(pull_down_w,
+                                              "pullright_alias_length", NULL, 0);
    pullright_line_style = XmCreateSimplePulldownMenu(pull_down_w,
                                               "pullright_line_style", NULL, 0);
    pullright_other_options = XmCreateSimplePulldownMenu(pull_down_w,
@@ -1945,25 +1957,31 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
 #endif
                            XmNsubMenuId,               pull_down_w,
                            NULL);
-   sw[FONT_W] = XtVaCreateManagedWidget("Font size",
+   sw[AFD_FONT_W] = XtVaCreateManagedWidget("Font size",
                            xmCascadeButtonWidgetClass, pull_down_w,
                            XmNfontList,                fontlist,
                            XmNsubMenuId,               pullright_font,
                            NULL);
    create_pullright_font(pullright_font);
-   sw[ROWS_W] = XtVaCreateManagedWidget("Number of rows",
+   sw[AFD_ROWS_W] = XtVaCreateManagedWidget("Number of rows",
                            xmCascadeButtonWidgetClass, pull_down_w,
                            XmNfontList,                fontlist,
                            XmNsubMenuId,               pullright_row,
                            NULL);
    create_pullright_row(pullright_row);
-   sw[STYLE_W] = XtVaCreateManagedWidget("Line Style",
+   sw[AFD_ALIAS_LENGTH_W] = XtVaCreateManagedWidget("Alias length",
+                           xmCascadeButtonWidgetClass, pull_down_w,
+                           XmNfontList,                fontlist,
+                           XmNsubMenuId,               pullright_alias_length,
+                           NULL);
+   create_pullright_alias_length(pullright_alias_length);
+   sw[AFD_STYLE_W] = XtVaCreateManagedWidget("Line Style",
                            xmCascadeButtonWidgetClass, pull_down_w,
                            XmNfontList,                fontlist,
                            XmNsubMenuId,               pullright_line_style,
                            NULL);
    create_pullright_style(pullright_line_style);
-   sw[OTHER_W] = XtVaCreateManagedWidget("Other options",
+   sw[AFD_OTHER_W] = XtVaCreateManagedWidget("Other options",
                            xmCascadeButtonWidgetClass, pull_down_w,
                            XmNfontList,                fontlist,
                            XmNsubMenuId,               pullright_other_options,
@@ -1976,9 +1994,9 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                               xmSeparatorWidgetClass, pull_down_w,
                               NULL);
 #ifdef WITH_CTRL_ACCELERATOR
-      sw[OPEN_ALL_GROUPS_W] = XtVaCreateManagedWidget("Open Groups   (Ctrl+o)",
+      sw[AFD_OPEN_ALL_GROUPS_W] = XtVaCreateManagedWidget("Open Groups   (Ctrl+o)",
 #else
-      sw[OPEN_ALL_GROUPS_W] = XtVaCreateManagedWidget("Open Groups   (Alt+o)",
+      sw[AFD_OPEN_ALL_GROUPS_W] = XtVaCreateManagedWidget("Open Groups   (Alt+o)",
 #endif
                               xmPushButtonWidgetClass, pull_down_w,
                               XmNfontList,             fontlist,
@@ -1991,13 +2009,13 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                               XmNaccelerator,          "Alt<Key>o",
 #endif
                               NULL);
-      XtAddCallback(sw[OPEN_ALL_GROUPS_W], XmNactivateCallback,
+      XtAddCallback(sw[AFD_OPEN_ALL_GROUPS_W], XmNactivateCallback,
                     open_close_all_groups, (XtPointer)OPEN_ALL_GROUPS_SEL);
 
 #ifdef WITH_CTRL_ACCELERATOR
-      sw[CLOSE_ALL_GROUPS_W] = XtVaCreateManagedWidget("Close Groups (Ctrl+c)",
+      sw[AFD_CLOSE_ALL_GROUPS_W] = XtVaCreateManagedWidget("Close Groups (Ctrl+c)",
 #else
-      sw[CLOSE_ALL_GROUPS_W] = XtVaCreateManagedWidget("Close Groups (Alt+c)",
+      sw[AFD_CLOSE_ALL_GROUPS_W] = XtVaCreateManagedWidget("Close Groups (Alt+c)",
 #endif
                               xmPushButtonWidgetClass, pull_down_w,
                               XmNfontList,             fontlist,
@@ -2010,7 +2028,7 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                               XmNaccelerator,          "Alt<Key>c",
 #endif
                               NULL);
-      XtAddCallback(sw[CLOSE_ALL_GROUPS_W], XmNactivateCallback,
+      XtAddCallback(sw[AFD_CLOSE_ALL_GROUPS_W], XmNactivateCallback,
                     open_close_all_groups, (XtPointer)CLOSE_ALL_GROUPS_SEL);
    }
 
@@ -2018,7 +2036,7 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
    XtVaCreateManagedWidget("Separator",
                            xmSeparatorWidgetClass, pull_down_w,
                            NULL);
-   sw[SAVE_W] = XtVaCreateManagedWidget("Save Setup",
+   sw[AFD_SAVE_W] = XtVaCreateManagedWidget("Save Setup",
                            xmPushButtonWidgetClass, pull_down_w,
                            XmNfontList,             fontlist,
 #ifdef WHEN_WE_KNOW_HOW_TO_FIX_THIS
@@ -2030,7 +2048,7 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
                            XmNaccelerator,          "Alt<Key>a",
 #endif
                            NULL);
-   XtAddCallback(sw[SAVE_W], XmNactivateCallback, save_setup_cb, (XtPointer)0);
+   XtAddCallback(sw[AFD_SAVE_W], XmNactivateCallback, save_setup_cb, (XtPointer)0);
 
 #ifdef _WITH_HELP_PULLDOWN
    /**********************************************************************/
@@ -2485,6 +2503,39 @@ create_pullright_row(Widget pullright_row)
       rw[i] = XmCreateToggleButton(pullright_row, "row_x", args, argcount);
       XtAddCallback(rw[i], XmNvalueChangedCallback, change_rows_cb, (XtPointer)i);
       XtManageChild(rw[i]);
+      XmStringFree(x_string);
+   }
+
+   return;
+}
+
+
+/*-------------------- create_pullright_alias_length() ------------------*/
+static void
+create_pullright_alias_length(Widget pullright_alias_length)
+{
+   XT_PTR_TYPE i;
+   char        alias_length_str[MAX_INT_LENGTH + 1];
+   XmString    x_string;
+   Arg         args[3];
+   Cardinal    argcount;
+
+   for (i = MIN_ALIAS_DISPLAY_LENGTH; i < (MAX_HOSTNAME_LENGTH + 2); i++)
+   {
+      if ((current_alias_length == -1) && (alias_length_set == i))
+      {
+         current_alias_length = i;
+      }
+      argcount = 0;
+      (void)snprintf(alias_length_str, MAX_INT_LENGTH, "%ld", i);
+      x_string = XmStringCreateLocalized(alias_length_str);
+      XtSetArg(args[argcount], XmNlabelString, x_string); argcount++;
+      XtSetArg(args[argcount], XmNindicatorType, XmONE_OF_MANY); argcount++;
+      XtSetArg(args[argcount], XmNfontList, fontlist); argcount++;
+      adl[i - MIN_ALIAS_DISPLAY_LENGTH] = XmCreateToggleButton(pullright_alias_length, "alias_length_x", args, argcount);
+      XtAddCallback(adl[i - MIN_ALIAS_DISPLAY_LENGTH], XmNvalueChangedCallback,
+                    change_alias_length_cb, (XtPointer)i);
+      XtManageChild(adl[i - MIN_ALIAS_DISPLAY_LENGTH]);
       XmStringFree(x_string);
    }
 

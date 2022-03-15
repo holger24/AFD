@@ -1,7 +1,7 @@
 /*
  *  handle_setup_file.c - Part of AFD, an automatic file distribution
  *                        program.
- *  Copyright (c) 1997 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -491,9 +491,9 @@ read_setup(char *file_name,
          tmp_buffer[i] = '\0';
          *hostname_display_length = atoi(tmp_buffer);
 #ifdef WITH_HOSTNAME_LENGTH_CORRECTION
-         if (*hostname_display_length > MAX_HOSTNAME_LENGTH)
+         if (*hostname_display_length > (MAX_HOSTNAME_LENGTH + 1))
          {
-            *hostname_display_length = MAX_HOSTNAME_LENGTH;
+            *hostname_display_length = MAX_HOSTNAME_LENGTH + 1;
          }
 #endif
       }

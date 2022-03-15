@@ -1,6 +1,6 @@
 /*
  *  ui_common_defs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2007 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -56,6 +56,11 @@
 #endif
 #define MAX_WNINDOW_TITLE_LENGTH         80
 #define MULTI_SELECT_THRESHOLD           6
+#if MAX_HOSTNAME_LENGTH > 4
+# define MIN_ALIAS_DISPLAY_LENGTH        4
+#else
+# define MIN_ALIAS_DISPLAY_LENGTH        MAX_HOSTNAME_LENGTH
+#endif
 
 /* Definitions for the printer interface. */
 #define SELECTION_TOGGLE                 1
@@ -138,15 +143,6 @@
 #define FORCE_SHIFT_SELECT               1
 #define AUTO_SAVE                        2
 #define FRAMED_GROUPS                    4
-
-/* Definitions for the Setup pulldown. */
-#define FONT_W                           0
-#define ROWS_W                           1
-#define STYLE_W                          2
-#define OTHER_W                          3
-#define OPEN_ALL_GROUPS_W                4
-#define CLOSE_ALL_GROUPS_W               5
-#define SAVE_W                           6
 
 /* Definitions for the Help pulldown. */
 #define ABOUT_W                          0

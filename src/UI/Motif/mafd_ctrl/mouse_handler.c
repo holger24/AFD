@@ -1,6 +1,6 @@
 /*
  *  mouse_handler.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -100,7 +100,8 @@ extern Display                    *display;
 extern XtAppContext               app;
 extern XtIntervalId               interval_id_tv;
 extern XtInputId                  db_update_cmd_id;
-extern Widget                     fw[],
+extern Widget                     adl[],
+                                  fw[],
                                   rw[],
                                   lsw[],
                                   ptw[],
@@ -126,7 +127,8 @@ extern GC                         letter_gc,
                                   black_line_gc,
                                   white_line_gc,
                                   led_gc;
-extern int                        bar_thickness_3,
+extern int                        alias_length_set,
+                                  bar_thickness_3,
                                   button_width,
                                   depth,
                                   fsa_fd,
@@ -135,6 +137,7 @@ extern int                        bar_thickness_3,
                                   hostname_display_length,
                                   line_height,
                                   *line_length,
+                                  max_line_length,
                                   no_backing_store,
                                   no_of_active_process,
                                   no_of_current_jobs,
@@ -154,7 +157,8 @@ extern int                        bar_thickness_3,
                                   x_offset_proc;
 extern unsigned int               *current_jid_list,
                                   glyph_width;
-extern XT_PTR_TYPE                current_font,
+extern XT_PTR_TYPE                current_alias_length,
+                                  current_font,
                                   current_row;
 #ifdef HAVE_MMAP
 extern off_t                      afd_active_size;
@@ -3974,6 +3978,71 @@ change_rows_cb(Widget w, XtPointer client_data, XtPointer call_data)
 
       redraw = YES;
    }
+
+   if (resize_window() == YES)
+   {
+      redraw_all();
+      redraw = YES;
+   }
+
+   if (redraw == YES)
+   {
+      XFlush(display);
+   }
+
+   return;
+}
+
+
+/*###################### change_alias_length_cb() #######################*/
+void
+change_alias_length_cb(Widget w, XtPointer client_data, XtPointer call_data)
+{
+   int         redraw = NO;
+   XT_PTR_TYPE item_no = (XT_PTR_TYPE)client_data;
+
+   if (item_no > (MAX_HOSTNAME_LENGTH + 1))
+   {
+      alias_length_set = MAX_HOSTNAME_LENGTH + 1;
+   }
+   else if (item_no < MIN_ALIAS_DISPLAY_LENGTH)
+        {
+           alias_length_set = MIN_ALIAS_DISPLAY_LENGTH;
+        }
+        else
+        {
+           alias_length_set = item_no;
+        }
+
+   if (current_alias_length != alias_length_set)
+   {
+      XtVaSetValues(adl[current_alias_length - MIN_ALIAS_DISPLAY_LENGTH],
+                    XmNset, False, NULL);
+      current_alias_length = alias_length_set;
+      hostname_display_length = alias_length_set;
+      setup_window(font_name, NO);
+
+      /* Redraw detailed transfer view window. */
+      if ((no_of_jobs_selected > 0) && (resize_tv_window() == YES))
+      {
+         int i;
+
+         XClearWindow(display, detailed_window);
+
+         draw_tv_label_line();
+         for (i = 0; i < no_of_jobs_selected; i++)
+         {
+            draw_detailed_line(i);
+         }
+
+         redraw = YES;
+      }
+   }
+
+#ifdef _DEBUG
+   (void)fprintf(stderr, "%s: You have chosen: %d alias length\n",
+                 __FILE__, alias_length_set);
+#endif
 
    if (resize_window() == YES)
    {

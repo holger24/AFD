@@ -1650,25 +1650,25 @@ init_menu_bar(Widget mainform_w, Widget *menu_w)
 #endif
                            XmNsubMenuId,               pull_down_w,
                            NULL);
-   sw[FONT_W] = XtVaCreateManagedWidget("Font size",
+   sw[MON_FONT_W] = XtVaCreateManagedWidget("Font size",
                            xmCascadeButtonWidgetClass, pull_down_w,
                            XmNfontList,                fontlist,
                            XmNsubMenuId,               pullright_font,
                            NULL);
    create_pullright_font(pullright_font);
-   sw[ROWS_W] = XtVaCreateManagedWidget("Number of rows",
+   sw[MON_ROWS_W] = XtVaCreateManagedWidget("Number of rows",
                            xmCascadeButtonWidgetClass, pull_down_w,
                            XmNfontList,                fontlist,
                            XmNsubMenuId,               pullright_row,
                            NULL);
    create_pullright_row(pullright_row);
-   sw[STYLE_W] = XtVaCreateManagedWidget("Line Style",
+   sw[MON_STYLE_W] = XtVaCreateManagedWidget("Line Style",
                            xmCascadeButtonWidgetClass, pull_down_w,
                            XmNfontList,                fontlist,
                            XmNsubMenuId,               pullright_line_style,
                            NULL);
    create_pullright_style(pullright_line_style);
-   sw[HISTORY_W] = XtVaCreateManagedWidget("History Length",
+   sw[MON_HISTORY_W] = XtVaCreateManagedWidget("History Length",
                            xmCascadeButtonWidgetClass, pull_down_w,
                            XmNfontList,                fontlist,
                            XmNsubMenuId,               pullright_history,
