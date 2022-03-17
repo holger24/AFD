@@ -511,7 +511,8 @@ url_evaluate(char          *url,
             else
             {
                user[i] = '\0';
-               if ((i == 0) && (*scheme & SMTP_FLAG) && (*ptr == ';'))
+               if ((i == 0) && (scheme != NULL) &&
+                   (*scheme & SMTP_FLAG) && (*ptr == ';'))
                {
                   return(PARAMETER_MISSING);
                }
