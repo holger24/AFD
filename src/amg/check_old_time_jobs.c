@@ -1,7 +1,7 @@
 /*
  *  check_old_time_jobs.c - Part of AFD, an automatic file distribution
  *                          program.
- *  Copyright (c) 1999 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -54,7 +54,9 @@ DESCR__E_M3
 #include <stdlib.h>           /* strtoul()                               */
 #include <ctype.h>            /* isxdigit()                              */
 #include <sys/types.h>
-#include <sys/stat.h>         /* S_ISDIR()                               */
+#ifndef LINUX
+# include <sys/stat.h>        /* S_ISDIR()                               */
+#endif
 #include <dirent.h>           /* opendir(), readdir(), closedir()        */
 #include <unistd.h>           /* rmdir(), unlink()                       */
 #include <errno.h>
@@ -125,9 +127,14 @@ check_old_time_jobs(int no_of_jobs, char *time_dir)
          }
          if (*ptr == '\0')
          {
+#ifndef LINUX
             struct stat stat_buf;
+#endif
 
             (void)strcpy(time_dir_ptr, p_dir->d_name);
+#ifdef LINUX
+               if (p_dir->d_type == DT_DIR)
+#else
             if (stat(time_dir, &stat_buf) == -1)
             {
                if (errno != ENOENT)
@@ -139,6 +146,7 @@ check_old_time_jobs(int no_of_jobs, char *time_dir)
             else
             {
                if (S_ISDIR(stat_buf.st_mode))
+#endif
                {
                   int          gotcha = NO;
                   unsigned int job_id;
@@ -292,8 +300,10 @@ check_old_time_jobs(int no_of_jobs, char *time_dir)
                         }
                      } /* if ((rmdir(time_dir) == -1) && (errno == ENOTEMPTY)) */
                   } /* if (gotcha == NO) */
-               } /* if (S_ISDIR(stat_buf.st_mode) == 0) */
+               } /* if (S_ISDIR(stat_buf.st_mode)) */
+#ifndef LINUX
             } /* stat() successful */
+#endif
          } /* if (*ptr == '\0') */
          errno = 0;
       } /* while ((p_dir = readdir(dp)) != NULL) */

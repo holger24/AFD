@@ -1,6 +1,6 @@
 /*
  *  get_log_number.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -57,7 +57,9 @@ DESCR__E_M3
 #include <stdlib.h>                /* atoi()                             */
 #include <ctype.h>                 /* isdigit()                          */
 #include <sys/types.h>
-#include <sys/stat.h>              /* stat(), S_ISREG()                  */
+#ifndef LINUX
+# include <sys/stat.h>             /* stat(), S_ISREG()                  */
+#endif
 #include <unistd.h>                /* unlink()                           */
 #include <dirent.h>                /* readdir(), closedir(), DIR,        */
                                    /* struct dirent                      */
@@ -81,7 +83,9 @@ get_log_number(int  *log_number,
                  str_number[MAX_INT_LENGTH],
                  fullname[MAX_PATH_LENGTH + 256],
                  log_dir[MAX_PATH_LENGTH];
+#ifndef LINUX
    struct stat   stat_buf;
+#endif
    struct dirent *p_dir;
    DIR           *dp;
 
@@ -106,7 +110,11 @@ get_log_number(int  *log_number,
    errno = 0;
    while ((p_dir = readdir(dp)) != NULL)
    {
+#ifdef LINUX
+      if ((p_dir->d_type != DT_REG) || (p_dir->d_name[0] == '.'))
+#else
       if (p_dir->d_name[0] == '.')
+#endif
       {
          continue;
       }
@@ -115,6 +123,7 @@ get_log_number(int  *log_number,
       {
          (void)snprintf(fullname, MAX_PATH_LENGTH + 256, "%s/%s",
                         log_dir, p_dir->d_name);
+#ifndef LINUX
          if (stat(fullname, &stat_buf) < 0)
          {
             if (errno != ENOENT)
@@ -129,6 +138,7 @@ get_log_number(int  *log_number,
          /* Sure it is a normal file? */
          if (S_ISREG(stat_buf.st_mode))
          {
+#endif
             ptr = p_dir->d_name;
             ptr += log_name_length;
             if (*ptr != '\0')
@@ -166,7 +176,9 @@ get_log_number(int  *log_number,
                }
             }
          }
+#ifndef LINUX
       }
+#endif
       errno = 0;
    } /*  while (readdir(dp) != NULL) */
 

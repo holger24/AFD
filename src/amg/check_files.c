@@ -1,6 +1,6 @@
 /*
  *  check_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -337,6 +337,9 @@ check_files(struct directory_entry *p_de,
       while ((p_dir = readdir(dp)) != NULL)
       {
          if ((p_dir->d_name[0] != '.') &&
+#ifdef LINUX
+             (p_dir->d_type == DT_REG) &&
+#endif
              ((alfc < 1) || ((check_additional_lock_filters(p_dir->d_name)) == 0)))
          {
             (void)strcpy(work_ptr, p_dir->d_name);
@@ -357,9 +360,11 @@ check_files(struct directory_entry *p_de,
                diff_time = current_time - stat_buf.st_mtime;
             }
 
+#ifndef LINUX
             /* Sure it is a normal file? */
             if (S_ISREG(stat_buf.st_mode))
             {
+#endif
                dummy_files_in_dir++;
                dummy_bytes_in_dir += stat_buf.st_size;
                if (((fra[p_de->fra_pos].ignore_size == -1) ||
@@ -407,7 +412,9 @@ check_files(struct directory_entry *p_de,
                      } /* If file in file mask. */
                   }
                }
+#ifndef LINUX
             }
+#endif
          }
       } /* while ((p_dir = readdir(dp)) != NULL) */
 
@@ -440,6 +447,9 @@ check_files(struct directory_entry *p_de,
       while (((p_dir = readdir(dp)) != NULL) && (gotcha == NO))
       {
          if ((p_dir->d_name[0] != '.') &&
+#ifdef LINUX
+             (p_dir->d_type == DT_REG) &&
+#endif
              ((alfc < 1) || ((check_additional_lock_filters(p_dir->d_name)) == 0)))
          {
             (void)strcpy(work_ptr, p_dir->d_name);
@@ -460,9 +470,11 @@ check_files(struct directory_entry *p_de,
                diff_time = current_time - stat_buf.st_mtime;
             }
 
+#ifndef LINUX
             /* Sure it is a normal file? */
             if (S_ISREG(stat_buf.st_mode))
             {
+#endif
                dummy_files_in_dir++;
                dummy_bytes_in_dir += stat_buf.st_size;
                if (((fra[p_de->fra_pos].ignore_size == -1) ||
@@ -598,7 +610,9 @@ check_files(struct directory_entry *p_de,
                      }
                   }
                }
+#ifndef LINUX
             }
+#endif
          }
       } /* while ((p_dir = readdir(dp)) != NULL) */
 
@@ -620,6 +634,9 @@ check_files(struct directory_entry *p_de,
    while ((p_dir = readdir(dp)) != NULL)
    {
       if ((p_dir->d_name[0] == '.') ||
+#ifdef LINUX
+          (p_dir->d_type != DT_REG) ||
+#endif
           ((alfc > 0) && (check_additional_lock_filters(p_dir->d_name))))
       {
          errno = 0;
@@ -645,8 +662,10 @@ check_files(struct directory_entry *p_de,
          diff_time = current_time - stat_buf.st_mtime;
       }
 
+#ifndef LINUX
       /* Sure it is a normal file? */
       if (S_ISREG(stat_buf.st_mode))
+#endif
       {
          size_t file_name_length = strlen(p_dir->d_name);
 

@@ -1,6 +1,6 @@
 /*
  *  remove_job_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -119,10 +119,38 @@ remove_job_files(char           *del_dir,
    errno = 0;
    while ((p_dir = readdir(dp)) != NULL)
    {
+#ifdef LINUX
+      if ((p_dir->d_type != DT_REG) || (p_dir->d_name[0] == '.'))
+      {
+         if (p_dir->d_type != DT_REG)
+         {
+            system_log(WARN_SIGN, __FILE__, __LINE__,
+                       _("UUUPS! Not a regular file [%s]! Whats that doing here? Deleted %d files. [host_alias=%s] [%s %d]"),
+                       del_dir, number_deleted,
+                       (fsa_pos > -1) ? p_fsa->host_alias : "-",
+                       caller_file, caller_line);
+
+            /* Lets bail out. If del_dir contains garbage we should stop */
+            /* the deleting of files.                                    */
+            if (closedir(dp) == -1)
+            {
+               system_log(ERROR_SIGN, __FILE__, __LINE__,
+                          _("Could not closedir() `%s' : %s [%s %d]"),
+                          del_dir, strerror(errno), caller_file, caller_line);
+            }
+            return;
+         }
+         else
+         {
+            continue;
+         }
+      }
+#else
       if (p_dir->d_name[0] == '.')
       {
          continue;
       }
+#endif
       (void)strcpy(ptr, p_dir->d_name);
 
       if (stat(del_dir, &stat_buf) == -1)
@@ -142,8 +170,10 @@ remove_job_files(char           *del_dir,
       }
       else
       {
+#ifndef LINUX
          if (!S_ISDIR(stat_buf.st_mode))
          {
+#endif
             if (unlink(del_dir) == -1)
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -184,11 +214,12 @@ remove_job_files(char           *del_dir,
                }
 #endif
             }
+#ifndef LINUX
          }
          else
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
-                       _("UUUPS! A directory [%s]! Whats that doing here? Deleted %d files. [host_alias=%s] [%s %d]"),
+                       _("UUUPS! Not a regular file [%s]! Whats that doing here? Deleted %d files. [host_alias=%s] [%s %d]"),
                        del_dir, number_deleted,
                        (fsa_pos > -1) ? p_fsa->host_alias : "-",
                        caller_file, caller_line);
@@ -203,6 +234,7 @@ remove_job_files(char           *del_dir,
             }
             return;
          }
+#endif
       }
       errno = 0;
    }

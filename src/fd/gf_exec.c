@@ -1,6 +1,6 @@
 /*
  *  gf_exec.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2013 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -389,7 +389,11 @@ main(int argc, char *argv[])
       }
       while ((p_dir = readdir(dp)) != NULL)
       {
+#ifdef LINUX
+         if ((p_dir->d_type == DT_REG) || (p_dir->d_name[0] == '.'))
+#else
          if (p_dir->d_name[0] == '.')
+#endif
          {
             errno = 0;
             continue;
@@ -406,9 +410,11 @@ main(int argc, char *argv[])
             continue;
          }
 
+#ifndef LINUX
          /* Sure it is a normal file? */
          if (S_ISREG(stat_buf.st_mode))
          {
+#endif
             /* Generate name for the new file. */
             (void)strcpy(p_local_file, p_dir->d_name);
 
@@ -434,7 +440,9 @@ main(int argc, char *argv[])
                                local_tmp_file, local_file);
                }
             }
+#ifndef LINUX
          }
+#endif
       }
       if (errno == EBADF)
       {

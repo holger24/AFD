@@ -1,7 +1,7 @@
 /*
  *  handle_full_dc_names.c - Part of AFD, an automatic file distribution
  *                           program.
- *  Copyright (c) 2014, 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -105,7 +105,11 @@ get_full_dc_names(char *dc_filter, off_t *db_size)
 
       while ((p_dir = readdir(dp)) != NULL)
       {
+#ifdef LINUX
+         if ((p_dir->d_type != DT_REG) || (p_dir->d_name[0] == '.'))
+#else
          if (p_dir->d_name[0] == '.')
+#endif
          {
             errno = 0;
             continue;
@@ -124,9 +128,11 @@ get_full_dc_names(char *dc_filter, off_t *db_size)
             continue;
          }
 
+#ifndef LINUX
          /* Sure it is a normal file? */
          if (S_ISREG(stat_buf.st_mode))
          {
+#endif
             if (pmatch(filter, p_dir->d_name, NULL) == 0)
             {
                int length;
@@ -162,7 +168,9 @@ get_full_dc_names(char *dc_filter, off_t *db_size)
                no_of_dir_configs++;
                *db_size += stat_buf.st_size;
             }
+#ifndef LINUX
          }
+#endif
       }
 
       /* When using readdir() it can happen that it always returns     */
@@ -259,7 +267,11 @@ check_full_dc_name(char *dc_filter)
 
       while ((p_dir = readdir(dp)) != NULL)
       {
+#ifdef LINUX
+         if ((p_dir->d_type != DT_REG) || (p_dir->d_name[0] == '.'))
+#else
          if (p_dir->d_name[0] == '.')
+#endif
          {
             errno = 0;
             continue;
@@ -292,9 +304,11 @@ check_full_dc_name(char *dc_filter)
                continue;
             }
 
+#ifndef LINUX
             /* Sure it is a normal file? */
             if (S_ISREG(stat_buf.st_mode))
             {
+#endif
                if (pmatch(filter, p_dir->d_name, NULL) == 0)
                {
                   int length;
@@ -334,7 +348,9 @@ check_full_dc_name(char *dc_filter)
                   no_of_dir_configs++;
                   changed = YES;
                }
+#ifndef LINUX
             }
+#endif
          } /* if (gotcha == NO) */
       }
 

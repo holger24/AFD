@@ -1,6 +1,6 @@
 /*
  *  get_file_names.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -314,7 +314,11 @@ get_file_names(char *file_path, off_t *file_size_to_send)
    errno = 0;
    while ((p_dir = readdir(dp)) != NULL)
    {
-      if (((p_dir->d_name[0] == '.') && (p_dir->d_name[1] == '\0')) ||
+      if (
+#ifdef LINUX
+          (p_dir->d_type != DT_REG) ||
+#endif
+          ((p_dir->d_name[0] == '.') && (p_dir->d_name[1] == '\0')) ||
           ((p_dir->d_name[0] == '.') && (p_dir->d_name[1] == '.') &&
           (p_dir->d_name[2] == '\0')))
       {
@@ -329,8 +333,10 @@ get_file_names(char *file_path, off_t *file_size_to_send)
          continue;
       }
 
+#ifndef LINUX
       /* Sure it is a normal file? */
       if (S_ISREG(stat_buf.st_mode))
+#endif
       {
 #ifdef WITH_DUP_CHECK
          int is_duplicate = NO;

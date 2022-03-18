@@ -1,7 +1,7 @@
 /*
  *  remove_old_ls_data_files.c - Part of AFD, an automatic file distribution
  *                               program.
- *  Copyright (c) 2006 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,7 +46,6 @@ DESCR__E_M3
 #include <stdio.h>
 #include <string.h>           /* strerror()                              */
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <dirent.h>           /* opendir(), readdir(), closedir()        */
 #include <unistd.h>           /* unlink()                                */
 #include <errno.h>
@@ -86,7 +85,11 @@ remove_old_ls_data_files(void)
       errno = 0;
       while ((p_dir = readdir(dp)) != NULL)
       {
+#ifdef LINUX
+         if ((p_dir->d_type == DT_REG) && (p_dir->d_name[0] != '.'))
+#else
          if (p_dir->d_name[0] != '.')
+#endif
          {
             gotcha = NO;
             for (i = 0; i < no_of_local_dirs; i++)

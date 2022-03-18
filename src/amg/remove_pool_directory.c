@@ -1,7 +1,7 @@
 /*
  *  remove_pool_directory.c - Part of AFD, an automatic file distribution
  *                            program.
- *  Copyright (c) 1998 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -83,7 +83,11 @@ remove_pool_directory(char *job_dir, unsigned int dir_id)
    errno = 0;
    while ((p_dir = readdir(dp)) != NULL)
    {
+#ifdef LINUX
+      if ((p_dir->d_type != DT_DIR) && (p_dir->d_name[0] != '.'))
+#else
       if (p_dir->d_name[0] != '.')
+#endif
       {
          (void)strcpy(ptr, p_dir->d_name);
          if (stat(job_dir, &stat_buf) < 0)
@@ -93,9 +97,11 @@ remove_pool_directory(char *job_dir, unsigned int dir_id)
             continue;
          }
 
+#ifndef LINUX
          /* Sure it is a normal file? */
          if (S_ISDIR(stat_buf.st_mode) == 0)
          {
+#endif
             if (unlink(job_dir) == -1)
             {
                system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -132,7 +138,9 @@ remove_pool_directory(char *job_dir, unsigned int dir_id)
                              "write() error : %s", strerror(errno));
                }
             }
+#ifndef LINUX
          }
+#endif
       }
       errno = 0;
    } /* while ((p_dir = readdir(dp)) != NULL) */

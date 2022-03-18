@@ -1,7 +1,7 @@
 /*
  *  del_unknown_inotify_files.c - Part of AFD, an automatic file
  *                                distribution program.
- *  Copyright (c) 2013 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -94,7 +94,11 @@ del_unknown_inotify_files(time_t current_time)
 
             while ((p_dir = readdir(dp)) != NULL)
             {
+#ifdef LINUX
+               if ((p_dir->d_type == DT_REG) && (p_dir->d_name[0] != '.'))
+#else
                if (p_dir->d_name[0] != '.')
+#endif
                {
                   int gotcha = NO,
                       j,
@@ -133,8 +137,10 @@ del_unknown_inotify_files(time_t current_time)
                      }
                      else
                      {
+#ifndef LINUX
                         /* Sure it is a normal file? */
                         if (S_ISREG(stat_buf.st_mode))
+#endif
                         {
                            time_t diff_time = current_time - stat_buf.st_mtime;
 
