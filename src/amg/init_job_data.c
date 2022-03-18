@@ -1,6 +1,6 @@
 /*
  *  init_job_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2009 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,7 +47,6 @@ DESCR__E_M3
 #include <sys/stat.h>
 #include <stdlib.h>       /* exit()                                      */
 #include <unistd.h>       /* read()                                      */
-#include <dirent.h>       /* opendir(), closedir(), readdir(), DIR       */
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
 #endif

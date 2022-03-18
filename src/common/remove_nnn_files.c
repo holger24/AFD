@@ -1,6 +1,6 @@
 /*
  *  remove_nnn_files.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2013, 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2013 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,8 +46,6 @@ DESCR__E_M3
 #include <stdio.h>
 #include <string.h>             /* strcpy(), strlen()                    */
 #include <unistd.h>             /* rmdir(), unlink()                     */
-#include <sys/types.h>
-#include <dirent.h>             /* opendir(), readdir(), closedir()      */
 #include <errno.h>
 
 /* External global variables. */

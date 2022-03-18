@@ -1,6 +1,6 @@
 /*
  *  archive_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -67,13 +67,9 @@ DESCR__E_M3
 #include <stdio.h>       /* fprintf(), stderr                            */
 #include <string.h>      /* strcpy(), strcat(), strerror()               */
 #include <time.h>        /* time()                                       */
-#include <ctype.h>       /* isdigit()                                    */
 #include <limits.h>      /* LINK_MAX                                     */
-#include <stdlib.h>      /* atoi()                                       */
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <dirent.h>      /* opendir(), readdir(), closedir()             */
-#include <fcntl.h>
 #include <unistd.h>      /* mkdir(), pathconf(), unlink()                */
 #include <errno.h>
 #include "fddefs.h"

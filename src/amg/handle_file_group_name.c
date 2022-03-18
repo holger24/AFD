@@ -1,7 +1,7 @@
 /*
  *  handle_file_group_name.c - Part of AFD, an automatic file distribution
  *                             program.
- *  Copyright (c) 2015 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,10 +52,6 @@ DESCR__E_M3
 #include <stdio.h>                 /* fprintf(), sprintf()               */
 #include <string.h>                /* strcmp(), strcpy(), strerror()     */
 #include <stdlib.h>                /* exit()                             */
-#include <sys/types.h>
-#include <sys/stat.h>              /* stat(), S_ISREG()                  */
-#include <dirent.h>                /* opendir(), closedir(), readdir(),  */
-                                   /* DIR, struct dirent                 */
 #include <errno.h>
 #include "amgdefs.h"
 
