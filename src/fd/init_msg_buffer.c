@@ -1,6 +1,6 @@
 /*
  *  init_msg_buffer.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -533,7 +533,6 @@ stat_again:
    {
       char          *ck_ml;             /* Checked message list. */
       struct dirent *p_dir;
-      struct stat   stat_buf;
 
       if ((ck_ml = malloc(*no_msg_cached)) == NULL)
       {
