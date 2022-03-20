@@ -1,6 +1,6 @@
 /*
  *  common.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,17 +47,19 @@ DESCR__S_M3
  **   17.10.2021 H.Kiehl Added test_command() which is very similar
  **                      to command() but does not treat a disconnect
  **                      by the remote server as an error in the log.
+ **   19.03.2022 H.Kiehl Add strict TLS support.
  */
 DESCR__E_M3
 
 
 #include <stdio.h>
 #include <stdarg.h>       /* va_start(), va_end()                        */
-#include <string.h>       /* memcpy(), strerror()                        */
+#include <string.h>       /* memcpy(), strerror(), strdup()              */
 #include <sys/types.h>    /* fd_set                                      */
 #include <sys/time.h>     /* struct timeval                              */
 #include <sys/stat.h>     /* S_ISUID, S_ISGID, etc                       */
 #ifdef WITH_SSL
+# include <stdlib.h>      /* malloc()                                    */
 # include <setjmp.h>      /* sigsetjmp(), siglongjmp()                   */
 # include <signal.h>      /* signal()                                    */
 # include <openssl/crypto.h>
@@ -419,29 +421,33 @@ ssl_connect(int sock_fd, char *hostname, char *func_name, int strict)
    {
       SSL_CTX_load_verify_locations(ssl_ctx, p_env, p_env1);
    }
-# ifdef WHEN_WE_KNOW
-   if (((p_env = getenv("SSL_CRL_FILE")) != NULL) &&
-       ((p_env1 = getenv("SSL_CRL_DIR")) != NULL))
-   {
-   }
    else
    {
+      if (SSL_CTX_set_default_verify_paths(ssl_ctx) != 1)
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, func_name, NULL,
+                   _("SSL_CTX_set_default_verify_paths() failed."));
+         (void)close(sock_fd);
+         return(INCORRECT);
+      }
    }
-# endif
-   SSL_CTX_set_verify(ssl_ctx,
-                      (strict == YES) ? SSL_VERIFY_PEER : SSL_VERIFY_NONE,
-                      NULL);
 
-   ssl_con = (SSL *)SSL_new(ssl_ctx);
+   if ((ssl_con = (SSL *)SSL_new(ssl_ctx)) == NULL)
+   {
+      trans_log(ERROR_SIGN, __FILE__, __LINE__, func_name, NULL,
+                _("SSL_new() cannot create SSL_CTX."));
+      (void)close(sock_fd);
+      return(INCORRECT);
+   }
+   SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
    SSL_set_connect_state(ssl_con);
    SSL_set_fd(ssl_con, sock_fd);
    if (!SSL_set_tlsext_host_name(ssl_con, hostname))
    {
-      trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_ssl_auth", NULL,
+      trans_log(ERROR_SIGN, __FILE__, __LINE__, func_name, NULL,
                 _("SSL_set_tlsext_host_name() failed to enable ServerNameIndication for %s"),
                 hostname);
       (void)close(sock_fd);
-      sock_fd = -1;
       return(INCORRECT);
    }
 
@@ -510,6 +516,79 @@ ssl_connect(int sock_fd, char *hostname, char *func_name, int strict)
    }
    else
    {
+      if (strict == YES)
+      {
+         X509 *cert;
+
+         if ((cert = SSL_get_peer_certificate(ssl_con)) == NULL)
+         {
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, func_name, NULL,
+                      _("No certificate presented by %s. Strict TLS requested."),
+                      hostname);
+            (void)SSL_shutdown(ssl_con);
+            SSL_free(ssl_con);
+            ssl_con = NULL;
+            (void)close(sock_fd);
+            X509_free(cert);
+
+            return(INCORRECT);
+         }
+         else
+         {
+            char *issuer = NULL;
+# ifdef WITH_TRACE
+            char *subject;
+
+            issuer = rfc2253_formatted(X509_get_issuer_name(cert));
+            subject = rfc2253_formatted(X509_get_subject_name(cert));
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_connect", NULL,
+                      "<CERT subject: %s issuer: %s>", subject, issuer);
+            free(subject);
+
+# endif
+            if ((reply = SSL_get_verify_result(ssl_con)) != X509_V_OK)
+            {
+               switch (reply)
+               {
+                  case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
+                     if (issuer == NULL)
+                     {
+                        issuer = rfc2253_formatted(X509_get_issuer_name(cert));
+                     }
+                     (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                    "Unable to locally verify the issuer's (%s) authority.",
+                                    issuer);
+                     break;
+                  case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
+                  case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+                     (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                    "Self-signed certificate encountered.");
+                  case X509_V_ERR_CERT_NOT_YET_VALID:
+                     (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                    "Issued certificate not yet valid.");
+                     break;
+                  case X509_V_ERR_CERT_HAS_EXPIRED:
+                     (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                    "Issued certificate has expired.");
+                     break;
+                  default:
+                     (void)snprintf(msg_str, MAX_RET_MSG_LENGTH, "%s",
+                                    X509_verify_cert_error_string(reply));
+               }
+               (void)SSL_shutdown(ssl_con);
+               SSL_free(ssl_con);
+               ssl_con = NULL;
+               (void)close(sock_fd);
+               sock_fd = -1;
+               free(issuer);
+               X509_free(cert);
+
+               return(INCORRECT);
+            }
+            free(issuer);
+         }
+         X509_free(cert);
+      }
       reply = SUCCESS;
    }
 # ifdef WITH_SSL_READ_AHEAD
@@ -687,10 +766,38 @@ ssl_error_msg(char *function, SSL *ssl, int *ssl_ret, int reply, char *msg_str)
    return(msg_str + len);
 }
 
+
 /*+++++++++++++++++++++++++++++ sig_handler() +++++++++++++++++++++++++++*/
 static void
 sig_handler(int signo)
 {
    siglongjmp(env_alrm, 1);
+}
+
+
+/*######################## rfc2253_formatted() ##########################*/
+/*                         -------------------                           */
+/* This code is taken from wget https://www.gnu.org/software/wget/       */
+/*#######################################################################*/
+char *
+rfc2253_formatted(X509_NAME *name)
+{
+   int  length;
+   char *out = NULL;
+   BIO*  b;
+
+   if ((b = BIO_new(BIO_s_mem())))
+   {
+      if ((X509_NAME_print_ex(b, name, 0, XN_FLAG_RFC2253) >= 0) &&
+          ((length = BIO_number_written(b)) > 0))
+      {
+         out = malloc(length + 1);
+         BIO_read(b, out, length);
+         out[length] = 0;
+      }
+      BIO_free(b);
+   }
+
+  return(out ? out : strdup(""));
 }
 #endif /* WITH_SSL */

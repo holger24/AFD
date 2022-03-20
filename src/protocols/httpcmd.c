@@ -1,6 +1,6 @@
 /*
  *  httpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,6 +76,7 @@ DESCR__S_M3
  **   23.03.2021 H.Kiehl Added etag support for http_get().
  **   25.07.2021 H.Kiehl Added http_init_basic_authentication().
  **   07.08.2021 H.Kiehl Put authentication into new authcmd.c.
+ **   19.03.2022 H.Kiehl Add strict TLS support.
  */
 DESCR__E_M3
 
@@ -83,7 +84,7 @@ DESCR__E_M3
 #include <stdio.h>        /* fprintf()                                   */
 #include <stdarg.h>       /* va_start(), va_arg(), va_end()              */
 #include <string.h>       /* memset(), memcpy(), strcpy()                */
-#include <stdlib.h>       /* strtol()                                    */
+#include <stdlib.h>       /* strtol(), free()                            */
 #include <ctype.h>        /* isdigit()                                   */
 #include <sys/types.h>    /* fd_set                                      */
 #include <sys/time.h>     /* struct timeval                              */
@@ -841,18 +842,18 @@ http_connect(char          *hostname,
          {
             SSL_CTX_load_verify_locations(ssl_ctx, p_env, p_env1);
          }
-# ifdef WHEN_WE_KNOW
-         if (((p_env = getenv("SSL_CRL_FILE")) != NULL) &&
-             ((p_env1 = getenv("SSL_CRL_DIR")) != NULL))
-         {
-         }
          else
          {
+            if (SSL_CTX_set_default_verify_paths(ssl_ctx) != 1)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_connect", NULL,
+                         _("SSL_CTX_set_default_verify_paths() failed."));
+               (void)close(http_fd);
+               http_fd = -1;
+               return(INCORRECT);
+            }
          }
-# endif
-         SSL_CTX_set_verify(ssl_ctx,
-                            (hmr.features & PROT_OPT_TLS_STRICT_VERIFY) ? SSL_VERIFY_PEER : SSL_VERIFY_NONE,
-                            NULL);
+         SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
 
          ssl_con = (SSL *)SSL_new(ssl_ctx);
          SSL_set_connect_state(ssl_con);
@@ -962,6 +963,80 @@ http_connect(char          *hostname,
                               "  <%s, cipher ?, ? bits>", ssl_version);
             }
 # endif
+            if (hmr.features & PROT_OPT_TLS_STRICT_VERIFY)
+            {
+               X509 *cert;
+
+               if ((cert = SSL_get_peer_certificate(ssl_con)) == NULL)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_connect", NULL,
+                           _("No certificate presented by %s. Strict TLS requested."),
+                           hostname);
+                  (void)SSL_shutdown(ssl_con);
+                  SSL_free(ssl_con);
+                  ssl_con = NULL;
+                  (void)close(http_fd);
+                  http_fd = -1;
+                  X509_free(cert);
+
+                  return(INCORRECT);
+               }
+               else
+               {
+                  char *issuer = NULL;
+# ifdef WITH_TRACE
+                  char *subject;
+
+                  issuer = rfc2253_formatted(X509_get_issuer_name(cert));
+                  subject = rfc2253_formatted(X509_get_subject_name(cert));
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "http_connect", NULL,
+                            "<CERT subject: %s issuer: %s>", subject, issuer);
+                  free(subject);
+
+# endif
+                  if ((reply = SSL_get_verify_result(ssl_con)) != X509_V_OK)
+                  {
+                     switch (reply)
+                     {
+                        case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
+                           if (issuer == NULL)
+                           {
+                              issuer = rfc2253_formatted(X509_get_issuer_name(cert));
+                           }
+                           (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                          "Unable to locally verify the issuer's (%s) authority.",
+                                          issuer);
+                           break;
+                        case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
+                        case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+                           (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                          "Self-signed certificate encountered.");
+                        case X509_V_ERR_CERT_NOT_YET_VALID:
+                           (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                          "Issued certificate not yet valid.");
+                           break;
+                        case X509_V_ERR_CERT_HAS_EXPIRED:
+                           (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                          "Issued certificate has expired.");
+                           break;
+                        default:
+                           (void)snprintf(msg_str, MAX_RET_MSG_LENGTH, "%s",
+                                          X509_verify_cert_error_string(reply));
+                     }
+                     (void)SSL_shutdown(ssl_con);
+                     SSL_free(ssl_con);
+                     ssl_con = NULL;
+                     (void)close(http_fd);
+                     http_fd = -1;
+                     free(issuer);
+                     X509_free(cert);
+
+                     return(INCORRECT);
+                  }
+                  free(issuer);
+               }
+               X509_free(cert);
+            }
             reply = SUCCESS;
          }
 # ifdef WITH_SSL_READ_AHEAD

@@ -1,6 +1,6 @@
 /*
  *  ftpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -213,6 +213,7 @@ DESCR__S_M3
  **   27.06.2019 H.Kiehl Extended list command to show hidden files.
  **   05.11.2019 H.Kiehl Add support for STAT list command.
  **   06.03.2020 H.Kiehl Implement implicit FTPS.
+ **   19.03.2022 H.Kiehl Add strict TLS support.
  */
 DESCR__E_M3
 
@@ -220,7 +221,7 @@ DESCR__E_M3
 #include <stdio.h>        /* fprintf(), fdopen(), fclose()               */
 #include <stdarg.h>       /* va_start(), va_arg(), va_end()              */
 #include <string.h>       /* memset(), memcpy(), strcpy()                */
-#include <stdlib.h>       /* strtoul()                                   */
+#include <stdlib.h>       /* strtoul(), free()                           */
 #include <ctype.h>        /* isdigit()                                   */
 #include <time.h>         /* mktime(), strftime(), gmtime()              */
 #include <setjmp.h>       /* sigsetjmp(), siglongjmp()                   */
@@ -824,15 +825,6 @@ ftp_connect(char *hostname, int port)
          {
             SSL_CTX_load_verify_locations(ssl_ctx, p_env, p_env1);
          }
-# ifdef WHEN_WE_KNOW
-         if (((p_env = getenv("SSL_CRL_FILE")) != NULL) && 
-             ((p_env1 = getenv("SSL_CRL_DIR")) != NULL))
-         {
-         }
-         else
-         {
-         }
-# endif
          SSL_CTX_set_verify(ssl_ctx,
                             (strict == YES) ? SSL_VERIFY_PEER : SSL_VERIFY_NONE,
                             NULL);
@@ -902,11 +894,114 @@ ftp_connect(char *hostname, int port)
                     (void)snprintf(ptr, MAX_RET_MSG_LENGTH - (ptr - msg_str),
                                    _(" | Verify result: %d"), reply);
                  }
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_connect", msg_str,
                       "SSL/TSL connection to server `%s' at port %d failed.",
                       hostname, port);
+            SSL_free(ssl_con);
+            ssl_con = NULL;
             (void)close(control_fd);
+            control_fd = -1;
             return(INCORRECT);
+         }
+         else
+         {
+# ifdef WITH_TRACE
+            const char       *ssl_version;
+            int              length;
+            const SSL_CIPHER *ssl_cipher;
+
+            ssl_version = SSL_get_cipher_version(ssl_con);
+            length = strlen(msg_str);
+            if ((ssl_cipher = SSL_get_current_cipher(ssl_con)) != NULL)
+            {
+               int ssl_bits;
+
+               SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
+               (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                              "  <%s, cipher %s, %d bits>",
+                              ssl_version, SSL_CIPHER_get_name(ssl_cipher),
+                              ssl_bits);
+            }
+            else
+            {
+               (void)snprintf(&msg_str[length], MAX_RET_MSG_LENGTH - length,
+                              "  <%s, cipher ?, ? bits>", ssl_version);
+            }
+# endif
+            if (strict == YES)
+            {
+               X509 *cert;
+
+               if ((cert = SSL_get_peer_certificate(ssl_con)) == NULL)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "ftp_connect", NULL,
+                           _("No certificate presented by %s. Strict TLS requested."),
+                           hostname);
+                  (void)SSL_shutdown(ssl_con);
+                  SSL_free(ssl_con);
+                  ssl_con = NULL;
+                  (void)close(control_fd);
+                  control_fd = -1;
+                  X509_free(cert);
+
+                  return(INCORRECT);
+               }
+               else
+               {
+                  char *issuer = NULL;
+# ifdef WITH_TRACE
+                  char *subject;
+
+                  issuer = rfc2253_formatted(X509_get_issuer_name(cert));
+                  subject = rfc2253_formatted(X509_get_subject_name(cert));
+                  trans_log(DEBUG_SIGN, __FILE__, __LINE__, "ftp_connect", NULL,
+                            "<CERT subject: %s issuer: %s>", subject, issuer);
+                  free(subject);
+
+# endif
+                  if ((reply = SSL_get_verify_result(ssl_con)) != X509_V_OK)
+                  {
+                     switch (reply)
+                     {
+                        case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
+                           if (issuer == NULL)
+                           {
+                              issuer = rfc2253_formatted(X509_get_issuer_name(cert));
+                           }
+                           (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                          "Unable to locally verify the issuer's (%s) authority.",
+                                          issuer);
+                           break;
+                        case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
+                        case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+                           (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                          "Self-signed certificate encountered.");
+                        case X509_V_ERR_CERT_NOT_YET_VALID:
+                           (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                          "Issued certificate not yet valid.");
+                           break;
+                        case X509_V_ERR_CERT_HAS_EXPIRED:
+                           (void)snprintf(msg_str, MAX_RET_MSG_LENGTH,
+                                          "Issued certificate has expired.");
+                           break;
+                        default:
+                           (void)snprintf(msg_str, MAX_RET_MSG_LENGTH, "%s",
+                                          X509_verify_cert_error_string(reply));
+                     }
+                     (void)SSL_shutdown(ssl_con);
+                     SSL_free(ssl_con);
+                     ssl_con = NULL;
+                     (void)close(control_fd);
+                     control_fd = -1;
+                     free(issuer);
+                     X509_free(cert);
+
+                     return(INCORRECT);
+                  }
+                  free(issuer);
+               }
+               X509_free(cert);
+            }
          }
       }
 #endif /* WITH_SSL */
