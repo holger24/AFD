@@ -40,11 +40,13 @@ DESCR__S_M3
  ** HISTORY
  **   20.12.2003 H.Kiehl Created
  **   21.03.2022 H.Kiehl Added choice for protocol.
+ **                      Added case insensitive search.
  **
  */
 DESCR__E_M3
 
 #include <stdio.h>
+#include <ctype.h>            /* tolower()                               */
 #include <stdlib.h>
 #include <Xm/Xm.h>
 #include <Xm/Form.h>
@@ -77,7 +79,8 @@ extern struct fileretrieve_status *fra;
 static Widget                     alias_toggle_w,
                                   find_text_w,
                                   proto_togglebox_w;
-static int                        deselect,
+static int                        case_sensitive,
+                                  deselect,
                                   dirname_type,
                                   static_select;
 static XT_PTR_TYPE                toggles_set;
@@ -92,6 +95,7 @@ static void                       done_button(Widget, XtPointer, XtPointer),
 #define DESELECT_CB               2
 #define ALIAS_DIRNAME_CB          3
 #define REAL_DIRNAME_CB           4
+#define CASE_SENSITIVE_CB         5
 #define ALIAS_NAME                1
 #define REAL_NAME                 2
 
@@ -109,6 +113,7 @@ select_dir_dialog(Widget w, XtPointer client_data, XtPointer call_data)
    {
       Widget          buttonbox_w,
                       button_w,
+                      case_sensitive_toggle_w,
                       criteriabox_w,
                       dialog_w,
                       main_form_w,
@@ -227,22 +232,42 @@ select_dir_dialog(Widget w, XtPointer client_data, XtPointer call_data)
       /*---------------------------------------------------------------*/
       /*                        Enter dirname                          */
       /*---------------------------------------------------------------*/
-      dialog_w = XtVaCreateManagedWidget("Search dirname:",
+      dialog_w = XtVaCreateManagedWidget("Search dirname",
                         xmLabelGadgetClass,  criteriabox_w,
                         XmNleftAttachment,   XmATTACH_FORM,
                         XmNleftOffset,       5,
                         XmNtopAttachment,    XmATTACH_FORM,
                         XmNtopOffset,        5,
-                        XmNrightAttachment,  XmATTACH_FORM,
-                        XmNleftOffset,       2,
                         XmNfontList,         p_fontlist,
                         XmNalignment,        XmALIGNMENT_BEGINNING,
                         NULL);
+      togglebox_w = XtVaCreateWidget("togglebox",
+                                xmRowColumnWidgetClass, criteriabox_w,
+                                XmNorientation,         XmHORIZONTAL,
+                                XmNpacking,             XmPACK_TIGHT,
+                                XmNnumColumns,          1,
+                                XmNtopAttachment,       XmATTACH_FORM,
+                                XmNtopOffset,           0,
+                                XmNleftAttachment,      XmATTACH_WIDGET,
+                                XmNleftWidget,          dialog_w,
+                                XmNresizable,           False,
+                                NULL);
+      case_sensitive_toggle_w = XtVaCreateManagedWidget("Case Sensitive",
+                                xmToggleButtonGadgetClass, togglebox_w,
+                                XmNfontList,               p_fontlist,
+                                XmNset,                    False,
+                                NULL);
+      XtAddCallback(case_sensitive_toggle_w, XmNvalueChangedCallback,
+                    (XtCallbackProc)select_callback,
+                    (XtPointer)CASE_SENSITIVE_CB);
+      XtManageChild(togglebox_w);
+      case_sensitive = NO;
+
       find_text_w = XtVaCreateWidget("find_directory",
                         xmTextWidgetClass,   criteriabox_w,
                         XmNtopAttachment,    XmATTACH_WIDGET,
-                        XmNtopWidget,        dialog_w,
-                        XmNtopOffset,        5,
+                        XmNtopWidget,        togglebox_w,
+                        XmNtopOffset,        0,
                         XmNrightAttachment,  XmATTACH_FORM,
                         XmNrightOffset,      5,
                         XmNleftAttachment,   XmATTACH_FORM,
@@ -516,6 +541,17 @@ select_callback(Widget w, XtPointer client_data, XtPointer call_data)
          dirname_type = REAL_NAME;
          break;
 
+      case CASE_SENSITIVE_CB :
+         if (case_sensitive == YES)
+         {
+            case_sensitive = NO;
+         }
+         else
+         {
+            case_sensitive = YES;
+         }
+         break;
+
       default :
 #if SIZEOF_LONG == 4
          (void)xrec(WARN_DIALOG, "Impossible callback %d! (%s %d)\n",
@@ -534,10 +570,31 @@ select_callback(Widget w, XtPointer client_data, XtPointer call_data)
 static void
 search_select_dir(Widget w, XtPointer client_data, XtPointer call_data)
 {
-   char *text = XmTextGetString(find_text_w);
+   char *p_check,
+        *p_store,
+        *ptr,
+        *text = XmTextGetString(find_text_w),
+        *tmp_store = NULL;
    int  draw_selection,
         i,
         match;
+
+   if (case_sensitive == NO)
+   {
+      ptr = text;
+      while (*ptr != '\0')
+      {
+         *ptr = tolower((int)*ptr);
+         ptr++;
+      }
+      if ((tmp_store = malloc(MAX_RECIPIENT_LENGTH + 20)) == NULL)
+      {
+         (void)fprintf(stderr,
+                       "ERROR : Failed to malloc() memory : %s (%s %d)\n",
+                       strerror(errno), __FILE__, __LINE__);
+         exit(INCORRECT);
+      }
+   }
 
    for (i = 0; i < no_of_dirs; i++)
    {
@@ -549,12 +606,41 @@ search_select_dir(Widget w, XtPointer client_data, XtPointer call_data)
       {
          if (dirname_type == ALIAS_NAME)
          {
-            match = pmatch((text[0] == '\0') ? "*" : text, connect_data[i].dir_alias, NULL);
+            if (case_sensitive == NO)
+            {
+               ptr = connect_data[i].dir_alias;
+               p_check = p_store = tmp_store;
+               while (*ptr != '\0')
+               {
+                  *p_store = tolower((int)*ptr);
+                  ptr++; p_store++;
+               }
+               *p_store = '\0';
+            }
+            else
+            {
+               p_check = connect_data[i].dir_alias;
+            }
          }
          else
          {
-            match = pmatch((text[0] == '\0') ? "*" : text, fra[i].url, NULL);
+            if (case_sensitive == NO)
+            {
+               ptr = fra[i].url;
+               p_check = p_store = tmp_store;
+               while (*ptr != '\0')
+               {
+                  *p_store = tolower((int)*ptr);
+                  ptr++; p_store++;
+               }
+               *p_store = '\0';
+            }
+            else
+            {
+               p_check = fra[i].url;
+            }
          }
+         match = pmatch((text[0] == '\0') ? "*" : text, p_check, NULL);
          if (match == 0)
          {
             if (deselect == YES)
@@ -621,6 +707,10 @@ search_select_dir(Widget w, XtPointer client_data, XtPointer call_data)
    }
    XFlush(display);
    XtFree(text);
+   if (case_sensitive == NO)
+   {
+      free(tmp_store);
+   }
 
    return;
 }

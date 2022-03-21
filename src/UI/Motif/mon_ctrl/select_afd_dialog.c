@@ -1,6 +1,6 @@
 /*
  *  select_afd_dialog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ DESCR__S_M3
  **
  ** HISTORY
  **   20.12.2003 H.Kiehl Created
+ **   21.03.2022 H.Kiehl Added case insensitive search.
  **
  */
 DESCR__E_M3
@@ -46,6 +47,7 @@ DESCR__E_M3
 #include <stdio.h>
 #include <stdlib.h>                      /* malloc()                     */
 #include <unistd.h>                      /* close()                      */
+#include <ctype.h>                       /* tolower()                    */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>                       /* O_RDONLY                     */
@@ -85,7 +87,8 @@ extern struct mon_status_area *msa;
 /* Local global variables. */
 static Widget                 alias_toggle_w,
                               find_text_w;
-static int                    deselect,
+static int                    case_sensitive,
+                              deselect,
                               name_class,
                               name_type,
                               redraw_counter,
@@ -105,6 +108,7 @@ static void                   done_button(Widget, XtPointer, XtPointer),
 #define HOST_NAME_CLASS_CB    4
 #define ALIAS_AFDNAME_CB      5
 #define REAL_AFDNAME_CB       6
+#define CASE_SENSITIVE_CB     7
 #define ALIAS_NAME            1
 #define REAL_NAME             2
 #define AFD_NAME_CLASS        1
@@ -124,6 +128,7 @@ select_afd_dialog(Widget w, XtPointer client_data, XtPointer call_data)
    {
       Widget          buttonbox_w,
                       button_w,
+                      case_sensitive_toggle_w,
                       criteriabox_w,
                       dialog_w,
                       main_form_w,
@@ -297,6 +302,48 @@ select_afd_dialog(Widget w, XtPointer client_data, XtPointer call_data)
                                 XmNtopAttachment,       XmATTACH_WIDGET,
                                 XmNtopWidget,           separator_w,
                                 XmNleftAttachment,      XmATTACH_FORM,
+                                XmNbottomAttachment,    XmATTACH_FORM,
+                                XmNresizable,           False,
+                                NULL);
+      case_sensitive_toggle_w = XtVaCreateManagedWidget("Case Sensitive",
+                                xmToggleButtonGadgetClass, togglebox_w,
+                                XmNfontList,               p_fontlist,
+                                XmNset,                    False,
+                                NULL);
+      XtAddCallback(case_sensitive_toggle_w, XmNvalueChangedCallback,
+                    (XtCallbackProc)select_callback,
+                    (XtPointer)CASE_SENSITIVE_CB);
+      XtManageChild(togglebox_w);
+      case_sensitive = NO;
+
+      /*---------------------------------------------------------------*/
+      /*                      Vertical Separator                       */
+      /*---------------------------------------------------------------*/
+      argcount = 0;
+      XtSetArg(args[argcount], XmNorientation,      XmVERTICAL);
+      argcount++;
+      XtSetArg(args[argcount], XmNtopAttachment,    XmATTACH_WIDGET);
+      argcount++;
+      XtSetArg(args[argcount], XmNtopWidget,        separator_w);
+      argcount++;
+      XtSetArg(args[argcount], XmNbottomAttachment, XmATTACH_FORM);
+      argcount++;
+      XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
+      argcount++;
+      XtSetArg(args[argcount], XmNleftWidget,       togglebox_w);
+      argcount++;
+      dialog_w = XmCreateSeparator(criteriabox_w, "separator", args, argcount);
+      XtManageChild(dialog_w);
+
+      togglebox_w = XtVaCreateWidget("togglebox",
+                                xmRowColumnWidgetClass, criteriabox_w,
+                                XmNorientation,         XmHORIZONTAL,
+                                XmNpacking,             XmPACK_TIGHT,
+                                XmNnumColumns,          1,
+                                XmNtopAttachment,       XmATTACH_WIDGET,
+                                XmNtopWidget,           separator_w,
+                                XmNleftAttachment,      XmATTACH_WIDGET,
+                                XmNleftWidget,          dialog_w,
                                 XmNbottomAttachment,    XmATTACH_FORM,
                                 XmNresizable,           False,
                                 NULL);
@@ -484,6 +531,17 @@ select_callback(Widget w, XtPointer client_data, XtPointer call_data)
          name_type = REAL_NAME;
          break;
 
+      case CASE_SENSITIVE_CB :
+         if (case_sensitive == YES)
+         {
+            case_sensitive = NO;
+         }
+         else
+         {
+            case_sensitive = YES;
+         }
+         break;
+
       default :
 #if SIZEOF_LONG == 4
          (void)xrec(WARN_DIALOG, "Impossible callback %d! (%s %d)\n",
@@ -502,8 +560,29 @@ select_callback(Widget w, XtPointer client_data, XtPointer call_data)
 static void
 search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
 {
-   char *text = XmTextGetString(find_text_w);
+   char *p_check,
+        *p_store,
+        *ptr,
+        *text = XmTextGetString(find_text_w),
+        *tmp_store = NULL;
    int  i;
+
+   if (case_sensitive == NO)
+   {
+      ptr = text;
+      while (*ptr != '\0')
+      {
+         *ptr = tolower((int)*ptr);
+         ptr++;
+      }
+      if ((tmp_store = malloc(MAX_REAL_HOSTNAME_LENGTH + 20)) == NULL)
+      {
+         (void)fprintf(stderr,
+                       "ERROR : Failed to malloc() memory : %s (%s %d)\n",
+                       strerror(errno), __FILE__, __LINE__);
+         exit(INCORRECT);
+      }
+   }
 
    redraw_counter = 0;
    if ((redraw_line = malloc((no_of_afds * sizeof(int)))) == NULL)
@@ -522,15 +601,60 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
       {
          if (name_type == ALIAS_NAME)
          {
-            match = pmatch((text[0] == '\0') ? "*" : text, connect_data[i].afd_alias, NULL);
+            if (case_sensitive == NO)
+            {
+               ptr = connect_data[i].afd_alias;
+               p_check = p_store = tmp_store;
+               while (*ptr != '\0')
+               {
+                  *p_store = tolower((int)*ptr);
+                  ptr++; p_store++;
+               }
+               *p_store = '\0';
+            }
+            else
+            {
+               p_check = connect_data[i].afd_alias;
+            }
+            match = pmatch((text[0] == '\0') ? "*" : text, p_check, NULL);
          }
          else
          {
-            match = pmatch((text[0] == '\0') ? "*" : text, msa[i].hostname[0], NULL);
-            if ((match != 0) && (msa[i].hostname[1][0] != '\0') &&
-                (my_strcmp(msa[i].hostname[0], msa[i].hostname[0]) != 0))
+            if (case_sensitive == NO)
             {
-               match = pmatch((text[0] == '\0') ? "*" : text, msa[i].hostname[1], NULL);
+               ptr = msa[i].hostname[0];
+               p_check = p_store = tmp_store;
+               while (*ptr != '\0')
+               {
+                  *p_store = tolower((int)*ptr);
+                  ptr++; p_store++;
+               }
+               *p_store = '\0';
+            }
+            else
+            {
+               p_check = msa[i].hostname[0];
+            }
+            match = pmatch((text[0] == '\0') ? "*" : text, p_check, NULL);
+            if ((match != 0) && (msa[i].hostname[1][0] != '\0') &&
+                (my_strcmp(msa[i].hostname[0], msa[i].hostname[1]) != 0))
+            {
+               if (case_sensitive == NO)
+               {
+                  ptr = msa[i].hostname[1];
+                  p_check = p_store = tmp_store;
+                  while (*ptr != '\0')
+                  {
+                     *p_store = tolower((int)*ptr);
+                     ptr++; p_store++;
+                  }
+                  *p_store = '\0';
+               }
+               else
+               {
+                  p_check = msa[i].hostname[1];
+               }
+               match = pmatch((text[0] == '\0') ? "*" : text, p_check, NULL);
             }
          }
          if (match == 0)
@@ -591,7 +715,22 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
             {
                for (j = 0; j < msa[i].no_of_hosts; j++)
                {
-                  if (pmatch((text[0] == '\0') ? "*" : text, ahl[i][j].host_alias, NULL) == 0)
+                  if (case_sensitive == NO)
+                  {
+                     ptr = ahl[i][j].host_alias;
+                     p_check = p_store = tmp_store;
+                     while (*ptr != '\0')
+                     {
+                        *p_store = tolower((int)*ptr);
+                        ptr++; p_store++;
+                     }
+                     *p_store = '\0';
+                  }
+                  else
+                  {
+                     p_check = ahl[i][j].host_alias;
+                  }
+                  if (pmatch((text[0] == '\0') ? "*" : text, p_check, NULL) == 0)
                   {
                      select_line(i);
                   }
@@ -607,13 +746,51 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
             {
                for (j = 0; j < msa[i].no_of_hosts; j++)
                {
-                  if (((ahl[i][j].real_hostname[0][0] != GROUP_IDENTIFIER) &&
-                       (pmatch((text[0] == '\0') ? "*" : text, ahl[i][j].real_hostname[0], NULL) == 0)) ||
-                      ((ahl[i][j].real_hostname[1][0] != '\0') &&
-                       (pmatch((text[0] == '\0') ? "*" : text,  ahl[i][j].real_hostname[1], NULL) == 0)))
+                  if (ahl[i][j].real_hostname[0][0] != GROUP_IDENTIFIER)
+                  {
+                     if (case_sensitive == NO)
+                     {
+                        ptr = ahl[i][j].real_hostname[0];
+                        p_check = p_store = tmp_store;
+                        while (*ptr != '\0')
+                        {
+                           *p_store = tolower((int)*ptr);
+                           ptr++; p_store++;
+                        }
+                        *p_store = '\0';
+                     }
+                     else
+                     {
+                        p_check = ahl[i][j].real_hostname[0];
+                     }
+                  }
+                  if (pmatch((text[0] == '\0') ? "*" : text, p_check, NULL) == 0)
                   {
                      select_line(i);
                   }
+                  else if ((ahl[i][j].real_hostname[1][0] != '\0') &&
+                           (my_strcmp(ahl[i][j].real_hostname[0], ahl[i][j].real_hostname[1]) != 0))
+                       {
+                          if (case_sensitive == NO)
+                          {
+                             ptr = ahl[i][j].real_hostname[1];
+                             p_check = p_store = tmp_store;
+                             while (*ptr != '\0')
+                             {
+                                *p_store = tolower((int)*ptr);
+                                ptr++; p_store++;
+                             }
+                             *p_store = '\0';
+                          }
+                          else
+                          {
+                             p_check = ahl[i][j].real_hostname[1];
+                          }
+                          if (pmatch((text[0] == '\0') ? "*" : text, p_check, NULL) == 0)
+                          {
+                             select_line(i);
+                          }
+                       }
                }
             }
          }
@@ -644,6 +821,10 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
    XtFree(text);
    free(redraw_line);
    redraw_line = NULL;
+   if (case_sensitive == NO)
+   {
+      free(tmp_store);
+   }
 
    return;
 }

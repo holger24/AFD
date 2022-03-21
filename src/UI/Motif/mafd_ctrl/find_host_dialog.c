@@ -1,6 +1,6 @@
 /*
  *  select_host_dialog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,18 +39,20 @@ DESCR__S_M3
  **
  ** HISTORY
  **   31.03.2001 H.Kiehl Created
- **   17.07.2009 H.Kiehl Added choise for protocol.
- **   24.08.2009 H.Kiehl Added choise to search in host information.
+ **   17.07.2009 H.Kiehl Added choice for protocol.
+ **   24.08.2009 H.Kiehl Added choice to search in host information.
  **   07.04.2010 H.Kiehl Fix bug with searching for SFTP and added
  **                      toggle button for no protocol.
+ **   20.03.2022 H.Kiehl Added case insensitive search.
  **
  */
 DESCR__E_M3
 
 #include <stdio.h>
 #ifdef HAVE_STRCASESTR
-#include <string.h>
+# include <string.h>
 #endif
+#include <ctype.h>
 #include <stdlib.h>
 #include <Xm/Xm.h>
 #include <Xm/Form.h>
@@ -90,7 +92,8 @@ static Widget                     alias_toggle_w,
                                   find_text_w,
                                   host_radiobox_w,
                                   proto_togglebox_w;
-static int                        deselect,
+static int                        case_sensitive,
+                                  deselect,
                                   hostname_type,
                                   redraw_counter,
                                   *redraw_line,
@@ -112,6 +115,7 @@ static void                       done_button(Widget, XtPointer, XtPointer),
 #define REAL_HOSTNAME_CB          4
 #define SEARCH_INFORMATION_CB     5
 #define SEARCH_HOSTNAME_CB        6
+#define CASE_SENSITIVE_CB         7
 #define ALIAS_NAME                1
 #define REAL_NAME                 2
 #define SEARCH_INFORMATION        3
@@ -132,6 +136,7 @@ select_host_dialog(Widget w, XtPointer client_data, XtPointer call_data)
       Widget          box_w,
                       buttonbox_w,
                       button_w,
+                      case_sensitive_toggle_w,
                       criteriabox_w,
                       dialog_w,
                       main_form_w,
@@ -262,7 +267,7 @@ select_host_dialog(Widget w, XtPointer client_data, XtPointer call_data)
                         XmNleftAttachment,   XmATTACH_FORM,
                         XmNleftOffset,       5,
                         XmNtopAttachment,    XmATTACH_FORM,
-                        XmNtopOffset,        5,
+                        XmNtopOffset,        0,
                         XmNbottomAttachment, XmATTACH_FORM,
                         XmNfontList,         p_fontlist,
                         XmNalignment,        XmALIGNMENT_END,
@@ -271,7 +276,7 @@ select_host_dialog(Widget w, XtPointer client_data, XtPointer call_data)
       argcount = 0;
       XtSetArg(args[argcount], XmNtopAttachment,    XmATTACH_FORM);
       argcount++;
-      XtSetArg(args[argcount], XmNtopOffset,        5);
+      XtSetArg(args[argcount], XmNtopOffset,        0);
       argcount++;
       XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
       argcount++;
@@ -304,13 +309,36 @@ select_host_dialog(Widget w, XtPointer client_data, XtPointer call_data)
                     (XtPointer)SEARCH_INFORMATION_CB);
       search_type = SEARCH_HOSTNAME;
       XtManageChild(radiobox_w);
+
+      togglebox_w = XtVaCreateWidget("togglebox",
+                                xmRowColumnWidgetClass, box_w,
+                                XmNorientation,         XmHORIZONTAL,
+                                XmNpacking,             XmPACK_TIGHT,
+                                XmNnumColumns,          1,
+                                XmNtopAttachment,       XmATTACH_FORM,
+                                XmNtopOffset,           0,
+                                XmNleftAttachment,      XmATTACH_WIDGET,
+                                XmNleftWidget,          radiobox_w,
+                                XmNbottomAttachment,    XmATTACH_FORM,
+                                XmNresizable,           False,
+                                NULL);
+      case_sensitive_toggle_w = XtVaCreateManagedWidget("Case Sensitive",
+                                xmToggleButtonGadgetClass, togglebox_w,
+                                XmNfontList,               p_fontlist,
+                                XmNset,                    False,
+                                NULL);
+      XtAddCallback(case_sensitive_toggle_w, XmNvalueChangedCallback,
+                    (XtCallbackProc)select_callback,
+                    (XtPointer)CASE_SENSITIVE_CB);
+      XtManageChild(togglebox_w);
+      case_sensitive = NO;
       XtManageChild(box_w);
 
       find_text_w = XtVaCreateWidget("find_hostname",
                         xmTextWidgetClass,   criteriabox_w,
                         XmNtopAttachment,    XmATTACH_WIDGET,
                         XmNtopWidget,        box_w,
-                        XmNtopOffset,        5,
+                        XmNtopOffset,        0,
                         XmNrightAttachment,  XmATTACH_FORM,
                         XmNrightOffset,      5,
                         XmNleftAttachment,   XmATTACH_FORM,
@@ -712,6 +740,17 @@ select_callback(Widget w, XtPointer client_data, XtPointer call_data)
          XmProcessTraversal(find_text_w, XmTRAVERSE_NEXT_TAB_GROUP);
          break;
 
+      case CASE_SENSITIVE_CB :
+         if (case_sensitive == YES)
+         {
+            case_sensitive = NO;
+         }
+         else
+         {
+            case_sensitive = YES;
+         }
+         break;
+
       default :
 #if SIZEOF_LONG == 4
          (void)xrec(WARN_DIALOG, "Impossible callback %d! (%s %d)\n",
@@ -730,8 +769,47 @@ select_callback(Widget w, XtPointer client_data, XtPointer call_data)
 static void
 search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
 {
-   char *text = XmTextGetString(find_text_w);
+   char *p_check,
+#ifndef ONLY_SELECT_ACTIVE_HOST
+        *p_check2,
+#endif
+        *p_store,
+        *ptr,
+        *text = XmTextGetString(find_text_w),
+#ifndef ONLY_SELECT_ACTIVE_HOST
+        *tmp_store2 = NULL,
+#endif
+        *tmp_store = NULL;
    int  i;
+
+   if (case_sensitive == NO)
+   {
+      ptr = text;
+      while (*ptr != '\0')
+      {
+         *ptr = tolower((int)*ptr);
+         ptr++;
+      }
+      if (search_type == SEARCH_HOSTNAME)
+      {
+         if ((tmp_store = malloc(MAX_REAL_HOSTNAME_LENGTH + 20)) == NULL)
+         {
+            (void)fprintf(stderr,
+                          "ERROR : Failed to malloc() memory : %s (%s %d)\n",
+                          strerror(errno), __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+#ifndef ONLY_SELECT_ACTIVE_HOST
+         if ((tmp_store2 = malloc(MAX_REAL_HOSTNAME_LENGTH + 20)) == NULL)
+         {
+            (void)fprintf(stderr,
+                          "ERROR : Failed to malloc() memory : %s (%s %d)\n",
+                          strerror(errno), __FILE__, __LINE__);
+            exit(INCORRECT);
+         }
+#endif
+      }
+   }
 
    redraw_counter = 0;
    if ((redraw_line = malloc((no_of_hosts * sizeof(int)))) == NULL)
@@ -779,7 +857,22 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
          {
             if (hostname_type == ALIAS_NAME)
             {
-               match = pmatch((text[0] == '\0') ? "*" : text, connect_data[i].hostname, NULL);
+               if (case_sensitive == NO)
+               {
+                  ptr = connect_data[i].hostname;
+                  p_check = p_store = tmp_store;
+                  while (*ptr != '\0')
+                  {
+                     *p_store = tolower((int)*ptr);
+                     ptr++; p_store++;
+                  }
+                  *p_store = '\0';
+               }
+               else
+               {
+                  p_check = connect_data[i].hostname;
+               }
+               match = pmatch((text[0] == '\0') ? "*" : text, p_check, NULL);
             }
             else
             {
@@ -790,27 +883,89 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
                else
                {
 #ifdef ONLY_SELECT_ACTIVE_HOST
-                  if ((fsa[i].toggle_pos > 0) &&
-                      (fsa[i].host_toggle_str[0] != '\0'))
+                  if (case_sensitive == NO)
                   {
-                     if (fsa[i].host_toggle == HOST_ONE)
+                     if ((fsa[i].toggle_pos > 0) &&
+                         (fsa[i].host_toggle_str[0] != '\0'))
                      {
-                        match = pmatch((text[0] == '\0') ? "*" : text, fsa[i].real_hostname[HOST_ONE - 1], NULL);
+                        if (fsa[i].host_toggle == HOST_ONE)
+                        {
+                           ptr = fsa[i].real_hostname[HOST_ONE - 1];
+                        }
+                        else
+                        {
+                           ptr = fsa[i].real_hostname[HOST_TWO - 1];
+                        }
                      }
                      else
                      {
-                        match = pmatch((text[0] == '\0') ? "*" : text, fsa[i].real_hostname[HOST_TWO - 1], NULL);
+                        ptr = fsa[i].real_hostname[HOST_ONE - 1]);
+                     }
+                     p_check = p_store = tmp_store;
+                     while (*ptr != '\0')
+                     {
+                        *p_store = tolower((int)*ptr);
+                        ptr++; p_store++;
+                     }
+                     *p_store = '\0';
+                  }
+                  else
+                  {
+                     if ((fsa[i].toggle_pos > 0) &&
+                         (fsa[i].host_toggle_str[0] != '\0'))
+                     {
+                        if (fsa[i].host_toggle == HOST_ONE)
+                        {
+                           p_check = fsa[i].real_hostname[HOST_ONE - 1];
+                        }
+                        else
+                        {
+                           p_check = fsa[i].real_hostname[HOST_TWO - 1];
+                        }
+                     }
+                     else
+                     {
+                        p_check = fsa[i].real_hostname[HOST_ONE - 1]);
+                     }
+                  }
+                  match = pmatch((text[0] == '\0') ? "*" : text, p_check, NULL);
+#else
+                  if (case_sensitive == NO)
+                  {
+                     ptr = fsa[i].real_hostname[HOST_ONE - 1];
+                     p_check = p_store = tmp_store;
+                     while (*ptr != '\0')
+                     {
+                        *p_store = tolower((int)*ptr);
+                        ptr++; p_store++;
+                     }
+                     *p_store = '\0';
+                     if ((fsa[i].toggle_pos > 0) &&
+                         (fsa[i].host_toggle_str[0] != '\0'))
+                     {
+                        ptr = fsa[i].real_hostname[HOST_TWO - 1];
+                        p_check2 = p_store = tmp_store2;
+                        while (*ptr != '\0')
+                        {
+                           *p_store = tolower((int)*ptr);
+                           ptr++; p_store++;
+                        }
+                        *p_store = '\0';
+                     }
+                     else
+                     {
+                        p_check2 = fsa[i].real_hostname[HOST_TWO - 1];
                      }
                   }
                   else
                   {
-                     match = pmatch((text[0] == '\0') ? "*" : text, fsa[i].real_hostname[HOST_ONE - 1], NULL);
+                     p_check = fsa[i].real_hostname[HOST_ONE - 1];
+                     p_check2 = fsa[i].real_hostname[HOST_TWO - 1];
                   }
-#else
-                  if ((pmatch((text[0] == '\0') ? "*" : text, fsa[i].real_hostname[HOST_ONE - 1], NULL) == 0) ||
+                  if ((pmatch((text[0] == '\0') ? "*" : text, p_check, NULL) == 0) ||
                       ((fsa[i].toggle_pos > 0) &&
                        (fsa[i].host_toggle_str[0] != '\0') &&
-                       (pmatch((text[0] == '\0') ? "*" : text, fsa[i].real_hostname[HOST_TWO - 1], NULL) == 0)))
+                       (pmatch((text[0] == '\0') ? "*" : text, p_check2, NULL) == 0)))
                   {
                      match = 0;
                   }
@@ -851,16 +1006,46 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
          (void)check_info_file(connect_data[i].hostname, HOST_INFO_FILE, NO);
          if (info_data != NULL)
          {
+            if (case_sensitive == NO)
+            {
+               size_t length;
+
+               length = strlen(info_data);
+               if ((tmp_store = malloc(length + 1)) == NULL)
+               {
+                  (void)fprintf(stderr,
+                                "ERROR : Failed to malloc() memory : %s (%s %d)\n",
+                                strerror(errno), __FILE__, __LINE__);
+                  exit(INCORRECT);
+               }
+               ptr = info_data;
+               p_check = p_store = tmp_store;
+               while (*ptr != '\0')
+               {
+                  *p_store = tolower((int)*ptr);
+                  ptr++; p_store++;
+               }
+               *p_store = '\0';
+            }
+            else
+            {
+               p_check = info_data;
+            }
 #ifdef HAVE_STRCASESTR
-            if (strcasestr(info_data, text) != NULL)
+            if (strcasestr(p_check, text) != NULL)
 #else
-            if (pmatch(real_text, info_data, NULL) == 0)
+            if (pmatch(real_text, p_check, NULL) == 0)
 #endif
             {
                select_line(i);
             }
             free(info_data);
             info_data = NULL;
+            if (case_sensitive == NO)
+            {
+               free(tmp_store);
+               tmp_store = NULL;
+            }
          }
       }
 #ifndef HAVE_STRCASESTR
@@ -872,6 +1057,13 @@ search_select_host(Widget w, XtPointer client_data, XtPointer call_data)
    XtFree(text);
    free(redraw_line);
    redraw_line = NULL;
+   if (case_sensitive == NO)
+   {
+      free(tmp_store);
+#ifndef ONLY_SELECT_ACTIVE_HOST
+      free(tmp_store2);
+#endif
+   }
 
    return;
 }
