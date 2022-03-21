@@ -2461,7 +2461,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
-   <td><a name="file_name_is_user">file name is user[ rename rule]</a></td>
+   <td><a name="file_name_is_user">file name is user[ &lt;rename rule name&gt;]</a></td>
    <td>The user name of the mail address (the first part up to the @ sign)
        is the file name. This can only be used when sending mails. The
        optional rename rule allows to filter or create the user name from
@@ -2477,7 +2477,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
-   <td><a name="file_name_is_target">file name is target[ rename rule]</a></td>
+   <td><a name="file_name_is_target">file name is target[ &lt;rename rule name&gt;]</a></td>
    <td>The full recipient of the mail address is the file name. So the
        file name must be a fully qualified mail address. This can only be
        used when sending mails. The optional rename rule allows to filter or
@@ -2493,7 +2493,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
-   <td><a name="mail_header">mail header[ &lt;full path to mail header file&gt;|rename rule]</a></td>
+   <td><a name="mail_header">mail header[ &lt;full path to mail header file&gt;|&lt;rename rule name&gt;]</a></td>
    <td>Is used to insert some default information at the top of the
        main body of the mail. If the option is used without the optional
        mail header file, it will take the file MAIL-host_alias in the
@@ -2513,7 +2513,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
-   <td><a name="attach_file">attach file[ rename rule]</a></td>
+   <td><a name="attach_file">attach file[ &lt>rename rule name&gt;]</a></td>
    <td>With this option it is possible to attach a file to a mail.
        Each file will be attached to a separate mail (one file
        per mail).  The encoding will be done in BASE64 according to
@@ -2530,7 +2530,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
-   <td><a name="attach_all_files">attach all files[ rename rule]</a></td>
+   <td><a name="attach_all_files">attach all files[ &lt;rename rule name&gt;]</a></td>
    <td>With this option it is possible to attach files to a mail.
        If more than one file is available they will all be
        attached to ONE mail. The encoding will be done in BASE64
@@ -2587,7 +2587,7 @@ section. Valid options can be taken from the following table:
    <th>exec</th>
 </tr>
 <tr>
-   <td><a name="subject_file">subject &lt;full path to subject file&gt; [rename rule]</a></td>
+   <td><a name="subject_file">subject &lt;full path to subject file&gt;[ &lt;rename rule name&gt;]</a></td>
    <td>Adds the subject in the &lt;subject file&gt; to the mail. It
        is possible to insert the current date or filename, for more details
        see the next option.
@@ -2602,7 +2602,7 @@ section. Valid options can be taken from the following table:
    <td><pre>&nbsp;</pre></td>
 </tr>
 <tr>
-   <td><a name="subject_line">subject "xxx"[ rename rule]</a></td>
+   <td><a name="subject_line">subject "xxx"[ &lt;rename rule name&gt;]</a></td>
    <td>Adds the line xxx after the subject identifier to the mails subject.
        Note that only 7-bit ASCII characters are allowed in the subject.
        It is possible to insert the current date in any form with %tx
@@ -2999,7 +2999,7 @@ section. Valid options can be taken from the following table:
        also need to execute create_eumetsat_name to create the correct
        file name. Syntax of create_eumetsat_name is as follows:
        <pre>
-       create_eumetsat_name &lt;file name&gt;[ &lt;rename rule&gt;]
+       create_eumetsat_name &lt;file name&gt;[ &lt;rename rule name&gt;]
        </pre></td>
    <td><pre>&nbsp;</pre></td>
    <td align=center>X</td>
@@ -3039,9 +3039,9 @@ section. Valid options can be taken from the following table:
 <table width="100%">
 <tr>
    <td width="90%"><address><small>
-   Copyright &copy; 1997 - 2021 by H.Kiehl<br>
+   Copyright &copy; 1997 - 2022 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 18.11.2021
+   Last updated: 21.03.2022
    </small></address></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
