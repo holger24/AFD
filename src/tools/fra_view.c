@@ -1,6 +1,6 @@
 /*
  *  fra_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -818,6 +818,10 @@ main(int argc, char *argv[])
          else if (fra[i].protocol == SMTP)
               {
                  (void)fprintf(stdout, "SMTP\n");
+              }
+         else if (fra[i].protocol == EXEC)
+              {
+                 (void)fprintf(stdout, "EXEC\n");
               }
 #ifdef _WITH_WMO_SUPPORT
          else if (fra[i].protocol == WMO)
