@@ -477,7 +477,7 @@ main(int argc, char *argv[])
 #ifdef WITH_SSL
       if (fsa[j].protocol & SSL_FLAG)
       {
-         (void)fprintf(stdout, "SSL ");
+         (void)fprintf(stdout, "TLS ");
       }
       if (fsa[j].protocol_options & TLS_STRICT_VERIFY)
       {
