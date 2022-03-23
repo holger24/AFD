@@ -120,31 +120,29 @@ remove_job_files(char           *del_dir,
    while ((p_dir = readdir(dp)) != NULL)
    {
 #ifdef LINUX
-      if ((p_dir->d_type != DT_REG) || (p_dir->d_name[0] == '.'))
+      if (p_dir->d_name[0] == '.')
       {
-         if (p_dir->d_type != DT_REG)
-         {
-            system_log(WARN_SIGN, __FILE__, __LINE__,
-                       _("UUUPS! Not a regular file [%s]! Whats that doing here? Deleted %d files. [host_alias=%s] [%s %d]"),
-                       del_dir, number_deleted,
-                       (fsa_pos > -1) ? p_fsa->host_alias : "-",
-                       caller_file, caller_line);
-
-            /* Lets bail out. If del_dir contains garbage we should stop */
-            /* the deleting of files.                                    */
-            if (closedir(dp) == -1)
-            {
-               system_log(ERROR_SIGN, __FILE__, __LINE__,
-                          _("Could not closedir() `%s' : %s [%s %d]"),
-                          del_dir, strerror(errno), caller_file, caller_line);
-            }
-            return;
-         }
-         else
-         {
-            continue;
-         }
+         continue;
       }
+      else if (p_dir->d_type == DT_DIR)
+           {
+              (void)strcpy(ptr, p_dir->d_name);
+              system_log(WARN_SIGN, __FILE__, __LINE__,
+                         _("UUUPS! A directory [%s]! Whats that doing here? Deleted %d files. [host_alias=%s] [%s %d]"),
+                         del_dir, number_deleted,
+                         (fsa_pos > -1) ? p_fsa->host_alias : "-",
+                         caller_file, caller_line);
+
+              /* Lets bail out. If del_dir contains garbage we should stop */
+              /* the deleting of files.                                    */
+              if (closedir(dp) == -1)
+              {
+                 system_log(ERROR_SIGN, __FILE__, __LINE__,
+                            _("Could not closedir() `%s' : %s [%s %d]"),
+                            del_dir, strerror(errno), caller_file, caller_line);
+              }
+              return;
+           }
 #else
       if (p_dir->d_name[0] == '.')
       {
