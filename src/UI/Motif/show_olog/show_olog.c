@@ -1,6 +1,6 @@
 /*
  *  show_olog.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ DESCR__S_M1
  **   31.01.2006 H.Kiehl Added SFTP support.
  **   04.04.2007 H.Kiehl Added button to view data.
  **   26.09.2015 H.Kiehl Added Job ID and hide protocols behind a button.
+ **   28.03.2022 H.Kiehl Added option to view output only.
  **
  */
 DESCR__E_M1
@@ -106,6 +107,7 @@ Widget                     appshell,
                            headingbox_w,
                            listbox_w,
                            oa_toggle_w,
+                           oo_toggle_w,
                            print_button_w,
                            recipient_w,
                            resend_button_w,
@@ -149,8 +151,9 @@ int                        acd_counter = 0,
 #ifdef _WITH_DE_MAIL_SUPPORT
                            view_confirmation = NO,
 #endif
-                           view_received_only = NO,
                            view_archived_only = NO,
+                           view_output_only = NO,
+                           view_received_only = NO,
                            view_mode;
 unsigned int               all_list_items = 0,
                            *search_dirid = NULL,
@@ -922,6 +925,43 @@ main(int argc, char *argv[])
                                 NULL);
    XtAddCallback(ro_toggle_w, XmNvalueChangedCallback,
                  (XtCallbackProc)received_only_toggle, NULL);
+   XtManageChild(xx_togglebox_w);
+
+   /* Vertical Separator */
+   argcount = 0;
+   XtSetArg(args[argcount], XmNorientation,      XmVERTICAL);
+   argcount++;
+   XtSetArg(args[argcount], XmNtopAttachment,    XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNbottomAttachment, XmATTACH_FORM);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftAttachment,   XmATTACH_WIDGET);
+   argcount++;
+   XtSetArg(args[argcount], XmNleftWidget,       xx_togglebox_w);
+   argcount++;
+   separator_w = XmCreateSeparator(selectionbox_w, "separator", args, argcount);
+   XtManageChild(separator_w);
+
+   /* Output only toggle box */
+   xx_togglebox_w = XtVaCreateWidget("oo_togglebox",
+                                xmRowColumnWidgetClass, selectionbox_w,
+                                XmNorientation,      XmHORIZONTAL,
+                                XmNpacking,          XmPACK_TIGHT,
+                                XmNnumColumns,       1,
+                                XmNtopAttachment,    XmATTACH_FORM,
+                                XmNleftAttachment,   XmATTACH_WIDGET,
+                                XmNleftWidget,       separator_w,
+                                XmNbottomAttachment, XmATTACH_FORM,
+                                XmNresizable,        False,
+                                NULL);
+
+   oo_toggle_w = XtVaCreateManagedWidget("Output only",
+                                xmToggleButtonGadgetClass, xx_togglebox_w,
+                                XmNfontList,               fontlist,
+                                XmNset,                    False,
+                                NULL);
+   XtAddCallback(oo_toggle_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)output_only_toggle, NULL);
    XtManageChild(xx_togglebox_w);
 
    /* Vertical Separator */

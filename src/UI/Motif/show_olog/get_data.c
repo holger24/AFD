@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -115,6 +115,7 @@ extern int              continues_toggle_set,
                         view_confirmation,
 #endif
                         view_archived_only,
+                        view_output_only,
                         view_received_only;
 extern unsigned int     all_list_items,
                         *search_dirid,
@@ -1481,7 +1482,9 @@ get_data(void)
    }
 
 #ifdef DEBUG_PARAMETERS
-   (void)fprintf(stderr, "view_received_only=%s view_archived_only=%s\n",
+   (void)fprintf(stderr,
+                 "view_output_only=%s view_received_only=%s view_archived_only=%s\n",
+                 (view_output_only == YES) ? "YES" : "NO",
                  (view_received_only == YES) ? "YES" : "NO",
                  (view_archived_only == YES) ? "YES" : "NO");
    (void)fprintf(stderr, "no_of_search_hosts=%d\n", no_of_search_hosts);
@@ -2399,7 +2402,7 @@ no_criteria(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if (view_archived_only == YES)
+                  if ((view_archived_only == YES) || (view_output_only == YES))
                   {
                      IGNORE_ENTRY();
                   }
@@ -2466,7 +2469,8 @@ no_criteria(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if (view_archived_only == YES)
+                     if ((view_archived_only == YES) ||
+                         (view_output_only == YES))
                      {
                         IGNORE_ENTRY();
                      }
@@ -3222,7 +3226,7 @@ file_name_only(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if (view_archived_only == YES)
+                  if ((view_archived_only == YES) || (view_output_only == YES))
                   {
                      IGNORE_ENTRY();
                   }
@@ -3289,7 +3293,8 @@ file_name_only(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if (view_archived_only == YES)
+                     if ((view_archived_only == YES) ||
+                         (view_output_only == YES))
                      {
                         IGNORE_ENTRY();
                      }
@@ -4343,7 +4348,7 @@ file_size_only(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if (view_archived_only == YES)
+                  if ((view_archived_only == YES) || (view_output_only == YES))
                   {
                      IGNORE_ENTRY();
                   }
@@ -4410,7 +4415,8 @@ file_size_only(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if (view_archived_only == YES)
+                     if ((view_archived_only == YES) ||
+                         (view_output_only == YES))
                      {
                         IGNORE_ENTRY();
                      }
@@ -4860,7 +4866,7 @@ file_name_and_size(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if (view_archived_only == YES)
+                  if ((view_archived_only == YES) || (view_output_only == YES))
                   {
                      IGNORE_ENTRY();
                   }
@@ -4927,7 +4933,8 @@ file_name_and_size(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if (view_archived_only == YES)
+                     if ((view_archived_only == YES) ||
+                         (view_output_only == YES))
                      {
                         IGNORE_ENTRY();
                      }
@@ -5862,7 +5869,7 @@ recipient_only(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if (view_archived_only == YES)
+                  if ((view_archived_only == YES) || (view_output_only == YES))
                   {
                      IGNORE_ENTRY();
                   }
@@ -5929,7 +5936,8 @@ recipient_only(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if (view_archived_only == YES)
+                     if ((view_archived_only == YES) ||
+                         (view_output_only == YES))
                      {
                         IGNORE_ENTRY();
                      }
@@ -6937,7 +6945,7 @@ file_name_and_recipient(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if (view_archived_only == YES)
+                  if ((view_archived_only == YES) || (view_output_only == YES))
                   {
                      IGNORE_ENTRY();
                   }
@@ -7004,7 +7012,8 @@ file_name_and_recipient(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if (view_archived_only == YES)
+                     if ((view_archived_only == YES) ||
+                         (view_output_only == YES))
                      {
                         IGNORE_ENTRY();
                      }
@@ -7399,7 +7408,7 @@ file_size_and_recipient(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if (view_archived_only == YES)
+                  if ((view_archived_only == YES) || (view_output_only == YES))
                   {
                      IGNORE_ENTRY();
                   }
@@ -7466,7 +7475,8 @@ file_size_and_recipient(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if (view_archived_only == YES)
+                     if ((view_archived_only == YES) ||
+                         (view_output_only == YES))
                      {
                         IGNORE_ENTRY();
                      }
@@ -7911,7 +7921,7 @@ file_name_size_recipient(register char *ptr,
                type_offset = 5;
                if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                {
-                  if (view_archived_only == YES)
+                  if ((view_archived_only == YES) || (view_output_only == YES))
                   {
                      IGNORE_ENTRY();
                   }
@@ -7978,7 +7988,8 @@ file_name_size_recipient(register char *ptr,
                   type_offset = 5;
                   if (*(ptr + log_date_length + 1 + max_hostname_length + 1) == ('0' + OT_NORMAL_RECEIVED))
                   {
-                     if (view_archived_only == YES)
+                     if ((view_archived_only == YES) ||
+                         (view_output_only == YES))
                      {
                         IGNORE_ENTRY();
                      }
