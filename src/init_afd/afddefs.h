@@ -1427,19 +1427,19 @@ typedef unsigned long       u_long_64;
 
 /* Definitions for AFDD Logs. */
 /* NOTE: Bits 1-4, 24 are defined in afd_mon/mondefs.h */
-#define AFDD_SYSTEM_LOG                  16
-#define AFDD_RECEIVE_LOG                 32
-#define AFDD_TRANSFER_LOG                64
-#define AFDD_TRANSFER_DEBUG_LOG          128
-#define AFDD_INPUT_LOG                   256
-#define AFDD_PRODUCTION_LOG              512
-#define AFDD_OUTPUT_LOG                  1024
-#define AFDD_DELETE_LOG                  2048
-#define AFDD_JOB_DATA                    4096
-#define AFDD_COMPRESSION_1               8192
-#define AFDD_EVENT_LOG                   16384
-#define AFDD_DISTRIBUTION_LOG            32768
-#define AFDD_CONFIRMATION_LOG            65536
+#define AFDD_SYSTEM_LOG                  16     /*  5 */
+#define AFDD_RECEIVE_LOG                 32     /*  6 */
+#define AFDD_TRANSFER_LOG                64     /*  7 */
+#define AFDD_TRANSFER_DEBUG_LOG          128    /*  8 */
+#define AFDD_INPUT_LOG                   256    /*  9 */
+#define AFDD_PRODUCTION_LOG              512    /* 10 */
+#define AFDD_OUTPUT_LOG                  1024   /* 11 */
+#define AFDD_DELETE_LOG                  2048   /* 12 */
+#define AFDD_JOB_DATA                    4096   /* 13 */
+#define AFDD_COMPRESSION_1               8192   /* 14 */
+#define AFDD_EVENT_LOG                   16384  /* 15 */
+#define AFDD_DISTRIBUTION_LOG            32768  /* 16 */
+#define AFDD_CONFIRMATION_LOG            65536  /* 17 */
 /* NOTE: If new flags are added check afd_mon/mondefs.h first! */
 
 /* Group identifier for mails. */

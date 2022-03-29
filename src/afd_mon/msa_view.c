@@ -1,6 +1,6 @@
 /*
  *  msa_view.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1999 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -210,9 +210,9 @@ main(int argc, char *argv[])
          {
             (void)fprintf(stdout, " DONT_USE_FULL_PATH");
          }
-         if (msa[j].options & ENABLE_SSL_ENCRYPTION)
+         if (msa[j].options & ENABLE_TLS_ENCRYPTION)
          {
-            (void)fprintf(stdout, " ENABLE_SSL_ENCRYPTION");
+            (void)fprintf(stdout, " ENABLE_TLS_ENCRYPTION");
          }
          if (msa[j].options & DISABLE_SSH_STRICT_HOST_KEY)
          {

@@ -143,12 +143,14 @@
 /*       the true return code of a TCP command.                    */
 
 /* Flags for the options field in struct mon_status_area. */
-#define COMPRESS_FLAG               1
-#define MINUS_Y_FLAG                2
-#define DONT_USE_FULL_PATH_FLAG     4
-#define ENABLE_SSL_ENCRYPTION       8 /* Still to be implemented. */
-#define DISABLE_SSH_STRICT_HOST_KEY 8388608
-/* NOTE: afddefs.h defines bits 5 - 17 . */
+#define COMPRESS_FLAG               1        /*  1 */
+#define MINUS_Y_FLAG                2        /*  2 */
+#define DONT_USE_FULL_PATH_FLAG     4        /*  3 */
+#define ENABLE_TLS_ENCRYPTION       8        /*  4 */ /* Still to be implemented. */
+/* NOTE: afddefs.h defines bits 5 - 17. */
+/*       Bits 18 - 23 undefined         */
+#define DISABLE_SSH_STRICT_HOST_KEY 8388608  /* 24 */
+/*       Bits 25 - 31 undefined         */
 
 /* Different toggling status for switching AFD's. */
 #define NO_SWITCHING                0
