@@ -3570,6 +3570,12 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
                           {
                              char end_char;
 
+                             /* Ignore any leading space. */
+                             while (((i + 9) < read_length) && (msg_str[i + 9] == ' '))
+                             {
+                                i++;
+                             }
+
                              if (msg_str[i + 9] == '"')
                              {
                                 i = i + 10;
