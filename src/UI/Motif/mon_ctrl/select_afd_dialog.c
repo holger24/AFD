@@ -763,34 +763,34 @@ search_select_afd(Widget w, XtPointer client_data, XtPointer call_data)
                      {
                         p_check = ahl[i][j].real_hostname[0];
                      }
-                  }
-                  if (pmatch((text[0] == '\0') ? "*" : text, p_check, NULL) == 0)
-                  {
-                     select_line(i);
-                  }
-                  else if ((ahl[i][j].real_hostname[1][0] != '\0') &&
-                           (my_strcmp(ahl[i][j].real_hostname[0], ahl[i][j].real_hostname[1]) != 0))
-                       {
-                          if (case_sensitive == NO)
+                     if (pmatch((text[0] == '\0') ? "*" : text, p_check, NULL) == 0)
+                     {
+                        select_line(i);
+                     }
+                     else if ((ahl[i][j].real_hostname[1][0] != '\0') &&
+                              (my_strcmp(ahl[i][j].real_hostname[0], ahl[i][j].real_hostname[1]) != 0))
                           {
-                             ptr = ahl[i][j].real_hostname[1];
-                             p_check = p_store = tmp_store;
-                             while (*ptr != '\0')
+                             if (case_sensitive == NO)
                              {
-                                *p_store = tolower((int)*ptr);
-                                ptr++; p_store++;
+                                ptr = ahl[i][j].real_hostname[1];
+                                p_check = p_store = tmp_store;
+                                while (*ptr != '\0')
+                                {
+                                   *p_store = tolower((int)*ptr);
+                                   ptr++; p_store++;
+                                }
+                                *p_store = '\0';
                              }
-                             *p_store = '\0';
+                             else
+                             {
+                                p_check = ahl[i][j].real_hostname[1];
+                             }
+                             if (pmatch((text[0] == '\0') ? "*" : text, p_check, NULL) == 0)
+                             {
+                                select_line(i);
+                             }
                           }
-                          else
-                          {
-                             p_check = ahl[i][j].real_hostname[1];
-                          }
-                          if (pmatch((text[0] == '\0') ? "*" : text, p_check, NULL) == 0)
-                          {
-                             select_line(i);
-                          }
-                       }
+                  }
                }
             }
          }
