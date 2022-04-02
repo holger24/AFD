@@ -843,7 +843,12 @@ main(int argc, char *argv[])
                      {
                         trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                   "Failed to open remote file %s in %s (%d).",
-                                  tmp_rl.file_name, fra->dir_alias, status);
+#ifdef NEW_FRA
+                                  (fra->dir_options & URL_CREATES_FILE_NAME) ? db.target_dir : tmp_rl.file_name,
+#else
+                                  (fra->dir_flag & URL_CREATES_FILE_NAME) ? db.target_dir : tmp_rl.file_name,
+#endif
+                                  fra->dir_alias, status);
                         (void)http_quit();
                         reset_values(files_retrieved, file_size_retrieved,
                                      files_to_retrieve, file_size_to_retrieve,
@@ -870,7 +875,12 @@ main(int argc, char *argv[])
                         bytes_done = 0;
                         trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, msg_str,
                                   "Failed to open remote file %s in %s (%d).",
-                                  tmp_rl.file_name, fra->dir_alias, status);
+#ifdef NEW_FRA
+                                  (fra->dir_options & URL_CREATES_FILE_NAME) ? db.target_dir : tmp_rl.file_name,
+#else
+                                  (fra->dir_flag & URL_CREATES_FILE_NAME) ? db.target_dir : tmp_rl.file_name,
+#endif
+                                  fra->dir_alias, status);
 
                         /* Delete partly downloaded file. */
                         if ((prev_download_exists == YES) ||
@@ -1009,23 +1019,35 @@ main(int argc, char *argv[])
                         {
                            trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
                                         "Opened HTTP connection for file %s.",
-                                        tmp_rl.file_name);
+#ifdef NEW_FRA
+                                        (fra->dir_options & URL_CREATES_FILE_NAME) ? db.target_dir : tmp_rl.file_name
+#else
+                                        (fra->dir_flag & URL_CREATES_FILE_NAME) ? db.target_dir : tmp_rl.file_name
+#endif
+                                        );
                         }
 #ifdef NEW_FRA
-                        if ((fra->dir_options & URL_CREATES_FILE_NAME) &&
+                        if (fra->dir_options & URL_CREATES_FILE_NAME)
 #else
-                        if ((fra->dir_flag & URL_CREATES_FILE_NAME) &&
+                        if (fra->dir_flag & URL_CREATES_FILE_NAME)
 #endif
-                            (tmp_rl.file_name[0] == '\0'))
                         {
-                           *p_local_tmp_file = 'N';
-                           *(p_local_tmp_file + 1) = 'O';
-                           *(p_local_tmp_file + 2) = '_';
-                           *(p_local_tmp_file + 3) = 'N';
-                           *(p_local_tmp_file + 4) = 'A';
-                           *(p_local_tmp_file + 5) = 'M';
-                           *(p_local_tmp_file + 6) = 'E';
-                           *(p_local_tmp_file + 7) = '\0';
+                           if (tmp_rl.file_name[0] == '\0')
+                           {
+                              *p_local_tmp_file = 'N';
+                              *(p_local_tmp_file + 1) = 'O';
+                              *(p_local_tmp_file + 2) = '_';
+                              *(p_local_tmp_file + 3) = 'N';
+                              *(p_local_tmp_file + 4) = 'A';
+                              *(p_local_tmp_file + 5) = 'M';
+                              *(p_local_tmp_file + 6) = 'E';
+                              *(p_local_tmp_file + 7) = '\0';
+                           }
+                           else
+                           {
+                              (void)strcpy(p_local_tmp_file,
+                                           tmp_rl.file_name);
+                           }
                         }
 
                         if (prev_download_exists == YES)
