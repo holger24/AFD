@@ -3083,7 +3083,7 @@ http_quit(void)
 #ifdef WITH_SSL
       if (ssl_con != NULL)
       {
-         if (timeout_flag != CON_RESET)
+         if ((timeout_flag != ON) && (timeout_flag != CON_RESET))
          {
             if (SSL_shutdown(ssl_con) == 0)
             {
