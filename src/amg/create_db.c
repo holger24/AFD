@@ -953,6 +953,13 @@ create_db(FILE *udc_reply_fp, int write_fd)
                                      udc_reply_fp, NULL, "%s", ptr);
                     }
                  }
+            else if ((db[i].loptions_flag & CONVERT_ID_FLAG) &&
+                     (CHECK_STRNCMP(p_loptions, CONVERT_ID,
+                                    CONVERT_ID_LENGTH) == 0))
+                 {
+                    db[i].lfs |= GO_PARALLEL;
+                    db[i].lfs |= DO_NOT_LINK_FILES;
+                 }
             else if ((db[i].loptions_flag & GTS2TIFF_ID_FLAG) &&
                      (CHECK_STRNCMP(p_loptions, GTS2TIFF_ID,
                                     GTS2TIFF_ID_LENGTH) == 0))
