@@ -1,6 +1,6 @@
 /*
  *  get_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -55,9 +55,7 @@ DESCR__E_M3
 #include <string.h>       /* strerror()                                  */
 #include <stdlib.h>       /* malloc(), realloc(), free(), strtod()       */
 #include <time.h>         /* time()                                      */
-#ifdef TM_IN_SYS_TIME
-# include <sys/time.h>
-#endif
+#include <sys/time.h>     /* struct tm                                   */
 #include <unistd.h>       /* close()                                     */
 #include <sys/types.h>
 #include <sys/stat.h>

@@ -1,6 +1,6 @@
 /*
  *  sf_sftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2006 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2006 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -71,11 +71,9 @@ DESCR__E_M1
 #include <ctype.h>                     /* isdigit(), isalpha()           */
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <time.h>                      /* time()                         */
 #ifdef _OUTPUT_LOG
 # include <sys/times.h>                /* times()                        */
-#endif
-#ifdef TM_IN_SYS_TIME
-# include <sys/time.h>
 #endif
 #include <fcntl.h>
 #include <signal.h>                    /* signal()                       */

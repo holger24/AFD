@@ -1,6 +1,6 @@
 /*
  *  show_bench_stat.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2014 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,9 +46,7 @@ DESCR__E_M1
 #include <stdio.h>                  /* fprintf(), stderr                 */
 #include <string.h>                 /* strcpy(), strerror(), strcmp()    */
 #include <time.h>                   /* time()                            */
-#ifdef TM_IN_SYS_TIME
-# include <sys/time.h>              /* struct tm                         */
-#endif
+#include <sys/time.h>               /* struct tm                         */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h>

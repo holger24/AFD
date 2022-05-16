@@ -1,6 +1,6 @@
 /*
  *  fprint_dup_msg.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,9 +48,7 @@ DESCR__E_M3
 
 #include <stdio.h>                    /* fprintf()                       */
 #include <time.h>                     /* localtime()                     */
-#ifdef TM_IN_SYS_TIME
-# include <sys/time.h>                /* struct tm                       */
-#endif
+#include <sys/time.h>                 /* struct tm                       */
 #include "logdefs.h"
 
 

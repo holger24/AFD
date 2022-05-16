@@ -1,7 +1,7 @@
 /*
  *  create_eumetsat_header.c - Part of AFD, an automatic file distribution
  *                             program.
- *  Copyright (c) 1999 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1999 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -57,9 +57,7 @@ DESCR__E_M3
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#ifdef TM_IN_SYS_TIME
-#include <sys/time.h>
-#endif
+#include <sys/time.h>                    /* struct tm                    */
 #include "eumetsat_header_defs.h"
 
 

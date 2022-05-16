@@ -1,6 +1,6 @@
 /*
  *  callbacks.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -77,9 +77,7 @@ DESCR__E_M3
 #include <ctype.h>          /* isdigit()                                 */
 #include <stdlib.h>         /* atol(), malloc(), free(), exit()          */
 #include <time.h>           /* localtime(), mktime(), strftime()         */
-#ifdef TM_IN_SYS_TIME
-# include <sys/time.h>
-#endif
+#include <sys/time.h>       /* struct tm                                 */
 #include <Xm/Xm.h>
 #include <Xm/List.h>
 #include <Xm/Text.h>

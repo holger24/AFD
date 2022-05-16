@@ -58,9 +58,7 @@ DESCR__E_M3
 #include <string.h>       /* strcmp(), strerror()                        */
 #include <stdlib.h>       /* malloc(), realloc(), free(), strtoul(), labs()*/
 #include <time.h>         /* time()                                      */
-#ifdef TM_IN_SYS_TIME
-# include <sys/time.h>
-#endif
+#include <sys/time.h>     /* struct tm                                   */
 #include <unistd.h>       /* close()                                     */
 #include <sys/types.h>
 #include <sys/stat.h>

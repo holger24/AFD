@@ -1,6 +1,6 @@
 /*
  *  show_stat.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -78,9 +78,7 @@ DESCR__E_M1
 #include <string.h>                 /* strcpy(), strerror()              */
 #include <time.h>                   /* time()                            */
 #include <ctype.h>                  /* isdigit()                         */
-#ifdef TM_IN_SYS_TIME
-# include <sys/time.h>              /* struct tm                         */
-#endif
+#include <sys/time.h>               /* struct tm                         */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>                 /* getcwd(), close(), STDERR_FILENO  */

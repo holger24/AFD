@@ -1,6 +1,6 @@
 /*
  *  display_data.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2012 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,9 +44,7 @@ DESCR__E_M3
 #include <stdio.h>        /* sprintf()                                   */
 #include <string.h>       /* strerror()                                  */
 #include <time.h>         /* localtime()                                 */
-#ifdef TM_IN_SYS_TIME
-# include <sys/time.h>    /* struct tm                                   */
-#endif
+#include <sys/time.h>     /* struct tm                                   */
 #include <errno.h>
 
 #include <Xm/Xm.h>

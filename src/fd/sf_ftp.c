@@ -1,6 +1,6 @@
 /*
  *  sf_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -90,11 +90,9 @@ DESCR__E_M1
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>                  /* time()                         */
 #ifdef _OUTPUT_LOG
 # include <sys/times.h>                /* times()                        */
-#endif
-#ifdef TM_IN_SYS_TIME
-# include <sys/time.h>
 #endif
 #include <fcntl.h>
 #include <signal.h>                    /* signal()                       */

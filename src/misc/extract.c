@@ -1,6 +1,6 @@
 /*
  *  extract.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2017 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -112,9 +112,7 @@ DESCR__E_M3
 # include <sys/mman.h>                   /* mmap(), munmap()             */
 #endif
 #include <time.h>
-#ifdef TM_IN_SYS_TIME
-# include <sys/time.h>
-#endif
+#include <sys/time.h>                    /* struct tm                    */
 #include <fcntl.h>                       /* open()                       */
 #include <errno.h>
 #include "amgdefs.h"
