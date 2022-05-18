@@ -148,11 +148,7 @@ open_log_file(char *log_file_name)
    if (iobuf != NULL)
    {
       errno = 0;
-#ifdef SETVBUF_REVERSED
-      if (setvbuf(log_file, _IOFBF, iobuf, 262144 + 8) != 0)
-#else
       if (setvbuf(log_file, iobuf, _IOFBF, 262144 + 8) != 0)
-#endif
       {
          system_log(ERROR_SIGN, __FILE__, __LINE__,
                     "Failed to change I/O-buffer to 262144 : %s",
