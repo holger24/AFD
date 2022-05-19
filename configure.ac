@@ -1,13 +1,13 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.59])
-AC_INIT([afd], [1.4.8-0.10.beta], [Holger.Kiehl@dwd.de])
+AC_INIT([afd],[1.4.8-0.10.beta],[Holger.Kiehl@dwd.de])
 AC_CONFIG_SRCDIR(src/init_afd/afd.c)
 AC_CONFIG_AUX_DIR(ac-tools)
 dnl# AC_PREFIX_DEFAULT("/usr/local/afd")
 dnl# [no-dependencies dist-bzip2]
 AM_INIT_AUTOMAKE([dist-bzip2 subdir-objects])
-AM_CONFIG_HEADER(config.h:ac-tools/config.h.in)
-AC_GNU_SOURCE
+AC_CONFIG_HEADERS([config.h:ac-tools/config.h.in])
+AC_USE_SYSTEM_EXTENSIONS
 AM_SILENT_RULES([yes])
 
 REQUIRES=""
@@ -20,8 +20,7 @@ AC_SUBST(AFD_VERSION)
 AFD_RELEASE=`echo $VERSION | cut -d '-' -f 2`
 AC_SUBST(AFD_RELEASE)
 
-AC_TRY_COMPILE(,[long long i;],
-               AC_DEFINE(HAVE_LONG_LONG, 1, [Define if C compiler supports long long type.]))
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[long long i;]])],[AC_DEFINE(HAVE_LONG_LONG, 1, Define if C compiler supports long long type.)],[])
 
 compile_alda=false
 dnl# --------------------------------------------------------------------------
@@ -1195,24 +1194,20 @@ then
          CFLAGS="$CFLAGS $CRCFLAGS"
 
          AC_MSG_CHECKING([whether the compiler has the __get_cpuid intrinsic])
-         AC_TRY_COMPILE([#include <cpuid.h>],
-                        [unsigned int eax, ebx, ecx, edx, i;
+         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <cpuid.h>]], [[unsigned int eax, ebx, ecx, edx, i;
                          __get_cpuid(1, &eax, &ebx, &ecx, &edx);
-                         i = ecx & bit_SSE4_2; return 0;],
-                         HAVE_GET_CPUID=yes, HAVE_GET_CPUID=no)
+                         i = ecx & bit_SSE4_2; return 0;]])],[HAVE_GET_CPUID=yes],[HAVE_GET_CPUID=no])
          if test "x$HAVE_GET_CPUID" = "xyes"
          then
             AC_MSG_RESULT(yes)
 
             AC_MSG_CHECKING([whether the compiler has the CRC32 intrinsic])
-            AC_TRY_COMPILE([#include <stdint.h>],
-                           [unsigned int crc;
+            AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdint.h>]], [[unsigned int crc;
                             char *mem;
                             crc = __builtin_ia32_crc32si(crc, *(uint32_t *)mem);
                             crc = __builtin_ia32_crc32qi(crc, *mem++);
                             crc = __builtin_ia32_crc32hi(crc, *(uint16_t *)mem);
-                            return 0;],
-                            HAVE_CPU_CRC32=yes, HAVE_CPU_CRC32=no)
+                            return 0;]])],[HAVE_CPU_CRC32=yes],[HAVE_CPU_CRC32=no])
             if test "x$HAVE_CPU_CRC32" = "xyes"
             then
                AC_MSG_RESULT(yes)
@@ -1315,7 +1310,7 @@ then
       LIBS="$LIBS $AFD_SSL_LIBS"
       CPPFLAGS="$CPPFLAGS $AFD_SSL_INCLUDES"
       AC_MSG_CHECKING([correct OpenSSL version])
-      AC_TRY_RUN([
+      AC_RUN_IFELSE([AC_LANG_SOURCE([[
                     #include <stdio.h>
                     #include <string.h>
                     #include <openssl/opensslv.h>
@@ -1340,11 +1335,9 @@ then
                           }
                        }
                        exit(1);
-                    }],
-                 [ssl_library_ver=`cat conftest.ssllibver`
-                  AC_MSG_RESULT(yes $ssl_library_ver)],
-                 [AC_MSG_RESULT(incorrect not found)
-                  AC_MSG_ERROR(incorect OpenSSL library or not found.)])
+                    }]])],[ssl_library_ver=`cat conftest.ssllibver`
+                  AC_MSG_RESULT(yes $ssl_library_ver)],[AC_MSG_RESULT(incorrect not found)
+                  AC_MSG_ERROR(incorect OpenSSL library or not found.)],[])
       LIBS="$savedLIBS"
       CPPFLAGS="$savedCPPFLAGS"
       if test "$REQUIRES" = ""
@@ -1613,7 +1606,6 @@ AC_SUBST(BUILD_REQUIRES)
 AC_SUBST(BUILD_REQUIRES_REDHAT)
 
 
-AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(fcntl.h limits.h sys/file.h sys/time.h unistd.h errno.h \
                  sys/socket.h netdb.h arpa/inet.h arpa/telnet.h)
@@ -1652,7 +1644,6 @@ AC_TYPE_MODE_T
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
-AC_HEADER_TIME
 AC_STRUCT_TM
 AC_CHECK_SIZEOF(off_t)
 AC_CHECK_SIZEOF(pid_t)
@@ -1688,8 +1679,6 @@ esac
 
 dnl Checks for library functions.
 AC_FUNC_MEMCMP
-AC_FUNC_SETVBUF_REVERSED
-AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
 AC_FUNC_UTIME_NULL
 AC_FUNC_VPRINTF

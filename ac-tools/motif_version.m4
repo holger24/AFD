@@ -11,7 +11,7 @@ savedINCLUDES="$INCLUDES"
 LIBS="$LIBS $link_motif $X_LIBS -lXt $X_PRE_LIBS $AFD_XP_LIB -lX11 $X_EXTRA_LIBS"
 CPPFLAGS="$CPPFLAGS $include_motif $X_CFLAGS"
 INCLUDES="$INCLUDES $include_motif $X_CFLAGS"
-AC_TRY_RUN([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
               #include <stdio.h>
               #include <string.h>
               #include "Xm/Xm.h"
@@ -28,9 +28,7 @@ AC_TRY_RUN([
                     }
                  }
                  return(1);
-              }],
-           [motif_library_ver=`cat conftest.motifver`],
-           [motif_library_ver=0.0])
+              }]])],[motif_library_ver=`cat conftest.motifver`],[motif_library_ver=0.0],[])
 LIBS="$savedLIBS"
 CPPFLAGS="$savedCPPFLAGS"
 INCLUDES="$savedINCLUDES"

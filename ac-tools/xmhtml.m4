@@ -42,12 +42,10 @@ CFLAGS="$X_CFLAGS $CFLAGS"
 CPPFLAGS="$X_CFLAGS $CPPFLAGS"
 LDFLAGS="$X_LIBS $LDFLAGS"
 #
-AC_TRY_COMPILE([#include <XmHTML/XmHTML.h>],[int a;],
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <XmHTML/XmHTML.h>]], [[int a;]])],[
 # XmHTML/XmHTML.h is in the standard search path.
 ac_cv_xmhtml_includes=
-],
-[
+],[
 # XmHTML/XmHTML.h is not in the standard search path.
 # Locate it and put its directory in `xmhtml_includes'
 #
@@ -97,12 +95,10 @@ CFLAGS="$X_CFLAGS $CFLAGS"
 CPPFLAGS="$X_CFLAGS $CPPFLAGS"
 LDFLAGS="$X_LIBS $LDFLAGS"
 #
-AC_TRY_LINK([#include <XmHTML/XmHTML.h>],[XmCreateHTML();],
-[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <XmHTML/XmHTML.h>]], [[XmCreateHTML();]])],[
 # libXm.a is in the standard search path.
 ac_cv_xmhtml_libraries=
-],
-[
+],[
 # libXm.a is not in the standard search path.
 # Locate it and put its directory in `xmhtml_libraries'
 #

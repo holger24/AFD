@@ -21,10 +21,10 @@ lt_save_LIBS="$LIBS"
 LIBS="$X_LIBS -lXp -lXext -lXt $X_PRE_LIBS -lX11 $X_EXTRA_LIBS $LIBS"
 CFLAGS="$X_CFLAGS $CFLAGS"
 CPPFLAGS="$X_CFLAGS $CPPFLAGS"
-AC_TRY_LINK([
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <X11/Intrinsic.h>
 #include <X11/extensions/Print.h>
-],[
+]], [[
 int main() {
 Display *display=NULL;
 short   major_version, minor_version;
@@ -32,9 +32,7 @@ Status rc;
 rc=XpQueryVersion(display, &major_version, &minor_version);
 exit(0);
 }
-],
-lt_cv_libxp=yes,
-lt_cv_libxp=no)
+]])],[lt_cv_libxp=yes],[lt_cv_libxp=no])
 ])
 if test "$lt_cv_libxp" = "yes"; then
   AC_DEFINE(HAVE_LIB_XP, [], [With -lXp support])

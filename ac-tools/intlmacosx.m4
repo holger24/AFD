@@ -22,10 +22,7 @@ AC_DEFUN([gt_INTL_MACOSX],
     gt_cv_func_CFPreferencesCopyAppValue,
     [gt_save_LIBS="$LIBS"
      LIBS="$LIBS -Wl,-framework -Wl,CoreFoundation"
-     AC_TRY_LINK([#include <CoreFoundation/CFPreferences.h>],
-       [CFPreferencesCopyAppValue(NULL, NULL)],
-       [gt_cv_func_CFPreferencesCopyAppValue=yes],
-       [gt_cv_func_CFPreferencesCopyAppValue=no])
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <CoreFoundation/CFPreferences.h>]], [[CFPreferencesCopyAppValue(NULL, NULL)]])],[gt_cv_func_CFPreferencesCopyAppValue=yes],[gt_cv_func_CFPreferencesCopyAppValue=no])
      LIBS="$gt_save_LIBS"])
   if test $gt_cv_func_CFPreferencesCopyAppValue = yes; then
     AC_DEFINE([HAVE_CFPREFERENCESCOPYAPPVALUE], 1,
@@ -35,9 +32,7 @@ AC_DEFUN([gt_INTL_MACOSX],
   AC_CACHE_CHECK([for CFLocaleCopyCurrent], gt_cv_func_CFLocaleCopyCurrent,
     [gt_save_LIBS="$LIBS"
      LIBS="$LIBS -Wl,-framework -Wl,CoreFoundation"
-     AC_TRY_LINK([#include <CoreFoundation/CFLocale.h>], [CFLocaleCopyCurrent();],
-       [gt_cv_func_CFLocaleCopyCurrent=yes],
-       [gt_cv_func_CFLocaleCopyCurrent=no])
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <CoreFoundation/CFLocale.h>]], [[CFLocaleCopyCurrent();]])],[gt_cv_func_CFLocaleCopyCurrent=yes],[gt_cv_func_CFLocaleCopyCurrent=no])
      LIBS="$gt_save_LIBS"])
   if test $gt_cv_func_CFLocaleCopyCurrent = yes; then
     AC_DEFINE([HAVE_CFLOCALECOPYCURRENT], 1,

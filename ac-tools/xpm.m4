@@ -54,12 +54,10 @@ then
 	CFLAGS="$X_CFLAGS $CFLAGS"
 	CPPFLAGS="$X_CFLAGS $CPPFLAGS"
 	#
-	AC_TRY_COMPILE([#include <X11/xpm.h>],[int a;],
-	[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <X11/xpm.h>]], [[int a;]])],[
 	# X11/xpm.h is in the standard search path.
 	ac_cv_xpm_includes=
-	],
-	[
+	],[
 	# X11/xpm.h is not in the standard search path.
 	# Locate it and put its directory in `xpm_includes'
 	#
@@ -116,12 +114,10 @@ then
 	CFLAGS="$XPM_CFLAGS $X_CFLAGS $CFLAGS"
 	CPPFLAGS="$XPM_CFLAGS $X_CFLAGS $CPPFLAGS"
 	#
-	AC_TRY_LINK([#include <X11/xpm.h>],[XpmAttributesSize();],
-	[
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <X11/xpm.h>]], [[XpmAttributesSize();]])],[
 	# libXpm.a is in the standard search path.
 	ac_cv_xpm_libraries=
-	],
-	[
+	],[
 	# libXpm.a is not in the standard search path.
 	# Locate it and put its directory in `xpm_libraries'
 	#
@@ -175,14 +171,12 @@ then
     CFLAGS="$XPM_CFLAGS $X_CFLAGS $CFLAGS"
     CPPFLAGS="$XPM_CFLAGS $X_CFLAGS $CPPFLAGS"
 
-    AC_TRY_LINK([#include <X11/xpm.h>],[XpmAttributesSize();],
-	[
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <X11/xpm.h>]], [[XpmAttributesSize();]])],[
 	#
 	# link passed
 	#
 	AC_DEFINE([HAVE_XPM], [], [With XPM support])
-	],
-	[
+	],[
 	#
 	# link failed
 	#
@@ -191,7 +185,7 @@ then
 	with_xpm="no"
 	XPM_CFLAGS=""
 	XPM_LIBS=""
-	]) dnl AC_TRY_LINK
+	]) dnl AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[],[])
 
     LIBS="$ac_xpm_save_LIBS"
     CFLAGS="$ac_xpm_save_CFLAGS"

@@ -15,51 +15,45 @@ AC_CACHE_CHECK(for libraries containing socket functions,
 ac_cv_socket_libs, [
         oLIBS=$LIBS
 
-        AC_TRY_LINK([
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[
                         #include <sys/types.h>
                         #include <sys/socket.h>
                         #include <netinet/in.h>
                         #include <arpa/inet.h>
-                ],
-                [
+                ]], [[
                         struct in_addr add;
                         int sd = socket(AF_INET, SOCK_STREAM, 0);
                         inet_ntoa(add);
-                ],
-                ac_cv_socket_libs=-lc, ac_cv_socket_libs=no)
+                ]])],[ac_cv_socket_libs=-lc],[ac_cv_socket_libs=no])
 
         if test x"$ac_cv_socket_libs" = "xno"
         then
                 LIBS="$oLIBS -lsocket"
-                AC_TRY_LINK([
+                AC_LINK_IFELSE([AC_LANG_PROGRAM([[
                                 #include <sys/types.h>
                                 #include <sys/socket.h>
                                 #include <netinet/in.h>
                                 #include <arpa/inet.h>
-                        ],
-                        [
+                        ]], [[
                                 struct in_addr add;
                                 int sd = socket(AF_INET, SOCK_STREAM, 0);
                                 inet_ntoa(add);
-                        ],
-                        ac_cv_socket_libs=-lsocket, ac_cv_socket_libs=no)
+                        ]])],[ac_cv_socket_libs=-lsocket],[ac_cv_socket_libs=no])
         fi
 
         if test x"$ac_cv_socket_libs" = "xno"
         then
                 LIBS="$oLIBS -lsocket -lnsl"
-                AC_TRY_LINK([
+                AC_LINK_IFELSE([AC_LANG_PROGRAM([[
                                 #include <sys/types.h>
                                 #include <sys/socket.h>
                                 #include <netinet/in.h>
                                 #include <arpa/inet.h>
-                        ],
-                        [
+                        ]], [[
                                 struct in_addr add;
                                 int sd = socket(AF_INET, SOCK_STREAM, 0);
                                 inet_ntoa(add);
-                        ],
-                        ac_cv_socket_libs="-lsocket -lnsl", ac_cv_socket_libs=no)
+                        ]])],[ac_cv_socket_libs="-lsocket -lnsl"],[ac_cv_socket_libs=no])
         fi
 
         LIBS=$oLIBS
