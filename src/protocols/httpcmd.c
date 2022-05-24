@@ -3966,8 +3966,8 @@ clear_msg_str(void)
       try_restore_msg_buffer = NO;
    }
 
-   if ((flush_read(extra_msg) == NO) && (hmr.chunked == YES) &&
-       (http_fd != -1))
+   if ((http_fd != -1) &&
+       (flush_read(extra_msg) == NO) && (hmr.chunked == YES))
    {
       read_last_chunk();
    }
