@@ -4172,7 +4172,8 @@ static void
 show_sftp_cmd(unsigned int ui_var, int type, int mode)
 {
    int  length,
-        offset;
+        offset,
+        show_binary_length = -1;
    char buffer[1024];
 
    if (type == R_TRACE)
@@ -4192,6 +4193,7 @@ show_sftp_cmd(unsigned int ui_var, int type, int mode)
                            ui_var, get_xfer_uint(&msg[offset + 1]));
          break;
       case SSH_FXP_VERSION :
+         show_binary_length = ui_var;
          length = snprintf(buffer, 1024,
                            "SSH_FXP_VERSION length=%u version=%u",
                            ui_var, get_xfer_uint(&msg[offset + 1]));
@@ -4480,6 +4482,7 @@ show_sftp_cmd(unsigned int ui_var, int type, int mode)
          }
          break;
       case SSH_FXP_ATTRS :
+         show_binary_length = ui_var;
          length = snprintf(buffer, 1024,
                            "SSH_FXP_ATTRS length=%u id=%u",
                            ui_var, get_xfer_uint(&msg[offset + 1]));
@@ -4711,6 +4714,10 @@ show_sftp_cmd(unsigned int ui_var, int type, int mode)
               }
       }
       trace_log(NULL, 0, type, buffer, length, NULL);
+   }
+   if (show_binary_length != -1)
+   {
+      trace_log(NULL, 0, BIN_CMD_R_TRACE, msg, show_binary_length, NULL);
    }
 
    return;
@@ -5241,95 +5248,27 @@ store_attributes(char *msg, unsigned int *p_stat_flag, struct stat *p_stat_buf)
       pos += 8;
       stat_flag &= ~SSH_FILEXFER_ATTR_SIZE;
    }
-   if (stat_flag & SSH_FILEXFER_ATTR_UIDGID) /* Up to version 3. */
-   {
-      p_stat_buf->st_uid = (uid_t)get_xfer_uint(&msg[pos]);
-      pos += 4;
-      p_stat_buf->st_gid = (gid_t)get_xfer_uint(&msg[pos]);
-      pos += 4;
-      stat_flag &= ~SSH_FILEXFER_ATTR_UIDGID;
-   }
-   if (stat_flag & SSH_FILEXFER_ATTR_ALLOCATION_SIZE)
-   {
-      pos += 8;
-      stat_flag &= ~SSH_FILEXFER_ATTR_ALLOCATION_SIZE;
-   }
-   if (stat_flag & SSH_FILEXFER_ATTR_OWNERGROUP)
-   {
-      unsigned int  length;
-#ifdef WITH_OWNER_GROUP_EVAL
-      char          *p_owner_group = NULL,
-                    *ptr;
-      struct passwd *p_pw;
-      struct group  *p_gr;
-
-      /* Get the user ID. */
-      if ((length = get_xfer_str(&msg[pos], &p_owner_group)) == 0)
-      {
-         return(INCORRECT);
-      }
-      pos += (length + 4);
-      ptr = p_owner_group;
-      while ((*ptr != '@') && (*ptr != '\0'))
-      {
-         ptr++;
-      }
-      if (*ptr == '@')
-      {
-         *ptr = '\0';
-      }
-      if ((p_pw = getpwnam(p_owner_group)) != NULL)
-      {
-         scd.stat_buf.st_uid = p_pw->pw_uid;
-      }
-      free(p_owner_group);
-      p_owner_group = NULL;
-
-      /* Get the group ID. */
-      if ((length = get_xfer_str(&msg[pos], &p_owner_group)) == 0)
-      {
-         return(INCORRECT);
-      }
-      pos += (length + 4);
-      ptr = p_owner_group;
-      while ((*ptr != '@') && (*ptr != '\0'))
-      {
-         ptr++;
-      }
-      if (*ptr == '@')
-      {
-         *ptr = '\0';
-      }
-      if ((p_gr = getgrnam(p_owner_group)) != NULL)
-      {
-         p_stat_buf->st_gid = p_gr->gr_gid;
-      }
-      free(p_owner_group);
-#else
-      if ((length = get_xfer_str(&msg[pos], NULL)) == 0)
-      {
-         return(INCORRECT);
-      }
-      pos += (length + 4);
-      if ((length = get_xfer_str(&msg[pos], NULL)) == 0)
-      {
-         return(INCORRECT);
-      }
-      pos += (length + 4);
-#endif
-      stat_flag &= ~SSH_FILEXFER_ATTR_OWNERGROUP;
-   }
-   if (stat_flag & SSH_FILEXFER_ATTR_PERMISSIONS)
-   {
-      unsigned int ui_var;
-
-      ui_var = get_xfer_uint(&msg[pos]);
-      p_stat_buf->st_mode |= ui_var;
-      pos += 4;
-      stat_flag &= ~SSH_FILEXFER_ATTR_PERMISSIONS;
-   }
    if (scd.version < 4)
    {
+      if (stat_flag & SSH_FILEXFER_ATTR_UIDGID) /* Up to version 3. */
+      {
+         p_stat_buf->st_uid = (uid_t)get_xfer_uint(&msg[pos]);
+         pos += 4;
+         p_stat_buf->st_gid = (gid_t)get_xfer_uint(&msg[pos]);
+         pos += 4;
+         stat_flag &= ~SSH_FILEXFER_ATTR_UIDGID;
+      }
+
+      if (stat_flag & SSH_FILEXFER_ATTR_PERMISSIONS)
+      {
+         unsigned int ui_var;
+
+         ui_var = get_xfer_uint(&msg[pos]);
+         p_stat_buf->st_mode |= ui_var;
+         pos += 4;
+         stat_flag &= ~SSH_FILEXFER_ATTR_PERMISSIONS;
+      }
+
       if (stat_flag & SSH_FILEXFER_ATTR_ACMODTIME)
       {
          p_stat_buf->st_atime = (time_t)get_xfer_uint(&msg[pos]);
@@ -5338,6 +5277,7 @@ store_attributes(char *msg, unsigned int *p_stat_flag, struct stat *p_stat_buf)
          pos += 4;
          stat_flag &= ~SSH_FILEXFER_ATTR_ACMODTIME;
       }
+
       if (stat_flag & SSH_FILEXFER_ATTR_EXTENDED)
       {
          /* Ignore */
@@ -5347,6 +5287,76 @@ store_attributes(char *msg, unsigned int *p_stat_flag, struct stat *p_stat_buf)
    }
    else
    {
+      if (stat_flag & SSH_FILEXFER_ATTR_ALLOCATION_SIZE)
+      {
+         pos += 8;
+         stat_flag &= ~SSH_FILEXFER_ATTR_ALLOCATION_SIZE;
+      }
+
+      if (stat_flag & SSH_FILEXFER_ATTR_OWNERGROUP)
+      {
+         unsigned int  length;
+#ifdef WITH_OWNER_GROUP_EVAL
+         char          *p_owner_group = NULL,
+                       *ptr;
+         struct passwd *p_pw;
+         struct group  *p_gr;
+
+         /* Get the user ID. */
+         length = get_xfer_str(&msg[pos], &p_owner_group);
+         pos += (length + 4);
+         ptr = p_owner_group;
+         while ((*ptr != '@') && (*ptr != '\0'))
+         {
+            ptr++;
+         }
+         if (*ptr == '@')
+         {
+            *ptr = '\0';
+         }
+         if ((p_pw = getpwnam(p_owner_group)) != NULL)
+         {
+            scd.stat_buf.st_uid = p_pw->pw_uid;
+         }
+         free(p_owner_group);
+         p_owner_group = NULL;
+
+         /* Get the group ID. */
+         length = get_xfer_str(&msg[pos], &p_owner_group);
+         pos += (length + 4);
+         ptr = p_owner_group;
+         while ((*ptr != '@') && (*ptr != '\0'))
+         {
+            ptr++;
+         }
+         if (*ptr == '@')
+         {
+            *ptr = '\0';
+         }
+         if ((p_gr = getgrnam(p_owner_group)) != NULL)
+         {
+            p_stat_buf->st_gid = p_gr->gr_gid;
+         }
+         free(p_owner_group);
+#else
+         length = get_xfer_str(&msg[pos], NULL);
+         pos += (length + 4);
+         length = get_xfer_str(&msg[pos], NULL);
+         pos += (length + 4);
+#endif
+         stat_flag &= ~SSH_FILEXFER_ATTR_OWNERGROUP;
+      }
+
+      if (stat_flag & SSH_FILEXFER_ATTR_PERMISSIONS)
+      {
+         unsigned int ui_var;
+
+         ui_var = get_xfer_uint(&msg[pos]);
+         p_stat_buf->st_mode |= ui_var;
+         pos += 4;
+         stat_flag &= ~SSH_FILEXFER_ATTR_PERMISSIONS;
+      }
+
       if (stat_flag & SSH_FILEXFER_ATTR_ACCESSTIME)
       {
          p_stat_buf->st_atime = (time_t)get_xfer_uint64(&msg[pos]);
@@ -5357,42 +5367,84 @@ store_attributes(char *msg, unsigned int *p_stat_flag, struct stat *p_stat_buf)
       {
          /* Ignore */
          pos += 4;
-         stat_flag &= ~SSH_FILEXFER_ATTR_SUBSECOND_TIMES;
       }
+
       if (stat_flag & SSH_FILEXFER_ATTR_CREATETIME)
       {
          pos += 8;
          stat_flag &= ~SSH_FILEXFER_ATTR_CREATETIME;
       }
+      if (stat_flag & SSH_FILEXFER_ATTR_SUBSECOND_TIMES)
+      {
+         /* Ignore */
+         pos += 4;
+      }
+
       if (stat_flag & SSH_FILEXFER_ATTR_MODIFYTIME)
       {
          p_stat_buf->st_mtime = (time_t)get_xfer_uint64(&msg[pos]);
          pos += 8;
          stat_flag &= ~SSH_FILEXFER_ATTR_MODIFYTIME;
       }
+      if (stat_flag & SSH_FILEXFER_ATTR_SUBSECOND_TIMES)
+      {
+         /* Ignore */
+         pos += 4;
+      }
+
       if (stat_flag & SSH_FILEXFER_ATTR_CTIME)
       {
          p_stat_buf->st_ctime = (time_t)get_xfer_uint64(&msg[pos]);
          pos += 8;
          stat_flag &= ~SSH_FILEXFER_ATTR_CTIME;
       }
+      if (stat_flag & SSH_FILEXFER_ATTR_SUBSECOND_TIMES)
+      {
+         /* Ignore */
+         pos += 4;
+         stat_flag &= ~SSH_FILEXFER_ATTR_SUBSECOND_TIMES;
+      }
+
+      if (stat_flag & SSH_FILEXFER_ATTR_ACL)
+      {
+         unsigned int length;
+
+         /* Ignore */
+         length = get_xfer_str(&msg[pos], NULL);
+         pos += (length + 4);
+         stat_flag &= ~SSH_FILEXFER_ATTR_ACL;
+      }
+
       if (stat_flag & SSH_FILEXFER_ATTR_BITS)
       {
          /* Ignore */
          pos += 4;
+         pos += 4;
          stat_flag &= ~SSH_FILEXFER_ATTR_BITS;
       }
-      if (stat_flag & SSH_FILEXFER_ATTR_LINK_COUNT)
-      {
-         /* Ignore */
-         pos += 4;
-         stat_flag &= ~SSH_FILEXFER_ATTR_LINK_COUNT;
-      }
+
       if (stat_flag & SSH_FILEXFER_ATTR_TEXT_HINT)
       {
          /* Ignore */
          pos += 1;
          stat_flag &= ~SSH_FILEXFER_ATTR_TEXT_HINT;
+      }
+
+      if (stat_flag & SSH_FILEXFER_ATTR_MIME_TYPE)
+      {
+         unsigned int length;
+
+         /* Ignore */
+         length = get_xfer_str(&msg[pos], NULL);
+         pos += (length + 4);
+         stat_flag &= ~SSH_FILEXFER_ATTR_MIME_TYPE;
+      }
+
+      if (stat_flag & SSH_FILEXFER_ATTR_LINK_COUNT)
+      {
+         /* Ignore */
+         pos += 4;
+         stat_flag &= ~SSH_FILEXFER_ATTR_LINK_COUNT;
       }
    }
    if (stat_flag != 0)
