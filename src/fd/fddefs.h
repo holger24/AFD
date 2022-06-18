@@ -836,18 +836,27 @@ struct trl_cache
            }                                                \
         }
 
-#define ABS_REDUCE(value)                                     \
-        {                                                     \
-           unsigned int tmp_value = fsa[(value)].jobs_queued; \
-                                                              \
-           fsa[(value)].jobs_queued = fsa[(value)].jobs_queued - 1;\
-           if (fsa[(value)].jobs_queued > tmp_value)          \
-           {                                                  \
-              system_log(DEBUG_SIGN, __FILE__, __LINE__,      \
-                         "Overflow from <%u> for %s. Trying to correct.",\
-                         tmp_value, fsa[(value)].host_dsp_name);\
-              fsa[(value)].jobs_queued = recount_jobs_queued((value));\
-           }                                                  \
+#define ABS_REDUCE(value)                                        \
+        {                                                        \
+           if (((value) >= 0) && ((value) < no_of_hosts))        \
+           {                                                     \
+              unsigned int tmp_value = fsa[(value)].jobs_queued; \
+                                                                 \
+              fsa[(value)].jobs_queued = fsa[(value)].jobs_queued - 1;\
+              if (fsa[(value)].jobs_queued > tmp_value)          \
+              {                                                  \
+                 system_log(DEBUG_SIGN, __FILE__, __LINE__,      \
+                            "Overflow from <%u> for %s. Trying to correct.",\
+                            tmp_value, fsa[(value)].host_dsp_name);\
+                 fsa[(value)].jobs_queued = recount_jobs_queued((value));\
+              }                                                  \
+           }                                                     \
+           else                                                  \
+           {                                                     \
+              system_log(ERROR_SIGN, __FILE__, __LINE__,         \
+                         "Unable to reduce jobs_queued for FSA position %d since it is out of range (0 - %d).",\
+                         (value), no_of_hosts);                  \
+           }                                                     \
         }
 
 /* Function prototypes. */
