@@ -165,6 +165,7 @@ extern Widget                     active_mode_w,
                                   statusbox_w,
 #ifdef WITH_SSL
                                   strict_tls_w,
+                                  tls_legacy_renegotiation_w,
 #endif
                                   successful_retries_label_w,
                                   successful_retries_w,
@@ -1465,6 +1466,7 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
 #endif
 #ifdef WITH_SSL
          XtSetSensitive(strict_tls_w, False);
+         XtSetSensitive(tls_legacy_renegotiation_w, False);
 #endif
          XtSetSensitive(fso.option_menu_w, False);
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
@@ -2075,10 +2077,20 @@ selected(Widget w, XtPointer client_data, XtPointer call_data)
             {
                XtVaSetValues(strict_tls_w, XmNset, False, NULL);
             }
+            XtSetSensitive(tls_legacy_renegotiation_w, True);
+            if (fsa[cur_pos].protocol_options & TLS_LEGACY_RENEGOTIATION)
+            {
+               XtVaSetValues(tls_legacy_renegotiation_w, XmNset, True, NULL);
+            }
+            else
+            {
+               XtVaSetValues(tls_legacy_renegotiation_w, XmNset, False, NULL);
+            }
          }
          else
          {
             XtSetSensitive(strict_tls_w, False);
+            XtSetSensitive(tls_legacy_renegotiation_w, False);
          }
 #endif
 
@@ -3446,6 +3458,11 @@ submite_button(Widget w, XtPointer client_data, XtPointer call_data)
          if (ce[i].value_changed2 & STRICT_TLS_CHANGED)
          {
             fsa[i].protocol_options ^= TLS_STRICT_VERIFY;
+            changes++;
+         }
+         if (ce[i].value_changed2 & TLS_LEGACY_RENEGOTIATION_CHANGED)
+         {
+            fsa[i].protocol_options ^= TLS_LEGACY_RENEGOTIATION;
             changes++;
          }
          if (ce[i].value_changed2 & FTPS_CCC_CHANGED)

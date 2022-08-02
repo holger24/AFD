@@ -227,6 +227,7 @@ Widget                     active_mode_w,
                            statusbox_w,
 #ifdef WITH_SSL
                            strict_tls_w,
+                           tls_legacy_renegotiation_w,
 #endif
                            successful_retries_label_w,
                            successful_retries_w,
@@ -2249,6 +2250,18 @@ main(int argc, char *argv[])
    XtAddCallback(bucketname_in_path_w, XmNvalueChangedCallback,
                  (XtCallbackProc)toggle_button2,
                  (XtPointer)BUCKETNAME_IN_PATH_CHANGED);
+   no_expect_w = XtVaCreateManagedWidget("No expect",
+                       xmToggleButtonGadgetClass, box_w,
+                       XmNfontList,               fontlist,
+                       XmNset,                    False,
+                       XmNtopAttachment,          XmATTACH_FORM,
+                       XmNtopOffset,              SIDE_OFFSET,
+                       XmNleftAttachment,         XmATTACH_WIDGET,
+                       XmNleftWidget,             bucketname_in_path_w,
+                       XmNbottomAttachment,       XmATTACH_FORM,
+                       NULL);
+   XtAddCallback(no_expect_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)toggle_button2, (XtPointer)NO_EXPECT_CHANGED);
    XtManageChild(box_w);
 
    argcount = 0;
@@ -2369,23 +2382,20 @@ main(int argc, char *argv[])
                        NULL);
    XtAddCallback(strict_tls_w, XmNvalueChangedCallback,
                  (XtCallbackProc)toggle_button2, (XtPointer)STRICT_TLS_CHANGED);
-#endif /* WITH_SSL */
-   no_expect_w = XtVaCreateManagedWidget("No expect",
+   tls_legacy_renegotiation_w = XtVaCreateManagedWidget("Legacy renegotiation",
                        xmToggleButtonGadgetClass, box_w,
                        XmNfontList,               fontlist,
                        XmNset,                    False,
                        XmNtopAttachment,          XmATTACH_FORM,
                        XmNtopOffset,              SIDE_OFFSET,
                        XmNleftAttachment,         XmATTACH_WIDGET,
-#ifdef WITH_SSL
                        XmNleftWidget,             strict_tls_w,
-#else
-                       XmNleftWidget,             match_size_w,
-#endif
                        XmNbottomAttachment,       XmATTACH_FORM,
                        NULL);
-   XtAddCallback(no_expect_w, XmNvalueChangedCallback,
-                 (XtCallbackProc)toggle_button2, (XtPointer)NO_EXPECT_CHANGED);
+   XtAddCallback(tls_legacy_renegotiation_w, XmNvalueChangedCallback,
+                 (XtCallbackProc)toggle_button2,
+                 (XtPointer)TLS_LEGACY_RENEGOTIATION_CHANGED);
+#endif /* WITH_SSL */
    XtManageChild(box_w);
    XtManageChild(form_w);
 

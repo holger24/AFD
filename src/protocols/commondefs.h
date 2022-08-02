@@ -35,7 +35,7 @@ extern int     command(int, char *, ...),
                connect_with_timeout(int, const struct sockaddr *, socklen_t),
                test_command(int, char *, ...);
 #ifdef WITH_SSL
-extern int     ssl_connect(int, char *, char *, int);
+extern int     ssl_connect(int, char *, char *, int, int);
 extern ssize_t ssl_write(SSL *, const char *, size_t);
 extern char    *rfc2253_formatted(X509_NAME *name),
                *ssl_error_msg(char *, SSL *, int *, int, char *);

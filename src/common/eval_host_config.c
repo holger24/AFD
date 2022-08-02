@@ -99,6 +99,7 @@ DESCR__S_M3
  **   19.07.2019 H.Kiehl Allow simulate mode for host_status.
  **   29.11.2021 H.Kiehl Added protocol option bucketname in path.
  **   26.01.2022 H.Kiehl Added protocol options 2.
+ **   02.08.2022 H.Kiehl Added protocol option TLS legacy renegotiation.
  **
  */
 DESCR__E_M3
@@ -1620,7 +1621,8 @@ eval_host_config(int              *hosts_found,
        * have different values. So we must do this check here.
        */
       if (((*hl)[host_counter].protocol_options != 0) &&
-          (((*hl)[host_counter].protocol_options > (HTTP_BUCKETNAME_IN_PATH |
+          (((*hl)[host_counter].protocol_options > (TLS_LEGACY_RENEGOTIATION |
+                                                    HTTP_BUCKETNAME_IN_PATH |
                                                     NO_EXPECT |
 #ifdef _WITH_EXTRA_CHECK
                                                     USE_EXTRA_CHECK |
@@ -1664,7 +1666,8 @@ eval_host_config(int              *hosts_found,
                        _("Unknown protocol option <%d> for host %s, largest value is %d and smallest %d. Setting to %d."),
                        (*hl)[host_counter].protocol_options,
                        (*hl)[host_counter].host_alias,
-                       (HTTP_BUCKETNAME_IN_PATH |
+                       (TLS_LEGACY_RENEGOTIATION |
+                        HTTP_BUCKETNAME_IN_PATH |
                         NO_EXPECT |
 #ifdef _WITH_EXTRA_CHECK
                         USE_EXTRA_CHECK |

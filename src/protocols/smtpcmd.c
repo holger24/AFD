@@ -1,6 +1,6 @@
 /*
  *  smtpcmd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ DESCR__S_M3
  **   int smtp_auth(char *user, char *passwd)
  **   int smtp_helo(char *host_name)
  **   int smtp_ehlo(char *host_name)
- **   int smtp_smarttls(int strict)
+ **   int smtp_smarttls(int strict, int legacy_renegotiation)
  **   int smtp_user(char *user)
  **   int smtp_rcpt(char *recipient)
  **   int smtp_open(void)
@@ -537,7 +537,7 @@ smtp_ehlo(char *host_name)
 #ifdef WITH_SSL
 /*########################### smtp_smarttls() ###########################*/
 int
-smtp_smarttls(int strict)
+smtp_smarttls(int strict, int legacy_renegotiation)
 {
    int reply;
 
@@ -557,7 +557,9 @@ smtp_smarttls(int strict)
                else
                {
                   if ((reply = ssl_connect(smtp_fd, connected_hostname,
-                                           "smtp_smarttls", strict)) == SUCCESS)
+                                           "smtp_smarttls",
+                                           strict,
+                                           legacy_renegotiation)) == SUCCESS)
                   {
                      ssc.ssl_enabled = YES;
                   }

@@ -1,6 +1,6 @@
 /*
  *  sf_http.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2005 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2005 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -352,6 +352,10 @@ main(int argc, char *argv[])
    if (fsa->protocol_options & TLS_STRICT_VERIFY)
    {
       features |= PROT_OPT_TLS_STRICT_VERIFY;
+   }
+   if (fsa->protocol_options & TLS_LEGACY_RENEGOTIATION)
+   {
+      features |= PROT_OPT_TLS_LEGACY_RENEGOTIATION;
    }
 #endif
    if (fsa->protocol_options & NO_EXPECT)

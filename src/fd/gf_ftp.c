@@ -1,6 +1,6 @@
 /*
  *  gf_ftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -339,12 +339,13 @@ main(int argc, char *argv[])
        (fsa->protocol_options & IMPLICIT_FTPS))
    {
       status = ftp_connect(db.hostname, db.port, YES,
-                           (fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO);
+                           (fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO,
+                           (fsa->protocol_options & TLS_LEGACY_RENEGOTIATION) ? YES : NO);
       implicit_ssl_connect = YES;
    }
    else
    {
-      status = ftp_connect(db.hostname, db.port, NO, NO);
+      status = ftp_connect(db.hostname, db.port, NO, NO, NO);
       implicit_ssl_connect = NO;
    }
 #else
@@ -430,7 +431,8 @@ main(int argc, char *argv[])
          if (((db.tls_auth == YES) || (db.tls_auth == BOTH)) &&
              (implicit_ssl_connect == NO))
          {
-            if (ftp_ssl_auth((fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO) == INCORRECT)
+            if (ftp_ssl_auth((fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO,
+                             (fsa->protocol_options & TLS_LEGACY_RENEGOTIATION) ? YES : NO) == INCORRECT)
             {
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          "SSL/TSL connection to server `%s' failed.",
@@ -499,12 +501,13 @@ main(int argc, char *argv[])
                       (fsa->protocol_options & IMPLICIT_FTPS))
                   {
                      status = ftp_connect(db.hostname, db.port, YES,
-                                          (fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO);
+                                          (fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO,
+                                          (fsa->protocol_options & TLS_LEGACY_RENEGOTIATION) ? YES : NO);
                      implicit_ssl_connect = YES;
                   }
                   else
                   {
-                     status = ftp_connect(db.hostname, db.port, NO, NO);
+                     status = ftp_connect(db.hostname, db.port, NO, NO, NO);
                      implicit_ssl_connect = NO;
                   }
 #else

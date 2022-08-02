@@ -77,6 +77,7 @@ DESCR__S_M3
  **   25.07.2021 H.Kiehl Added http_init_basic_authentication().
  **   07.08.2021 H.Kiehl Put authentication into new authcmd.c.
  **   19.03.2022 H.Kiehl Add strict TLS support.
+ **   17.07.2022 H.Kiehl Add option to enable TLS legacy renegotiation.
  */
 DESCR__E_M3
 
@@ -791,8 +792,9 @@ http_connect(char          *hostname,
       hmr.tls_auth = tls_auth;
       if ((tls_auth == YES) || (tls_auth == BOTH))
       {
-         char *p_env,
-              *p_env1;
+         uint64_t ctx_options;
+         char     *p_env,
+                  *p_env1;
 
          if (ssl_ctx != NULL)
          {
@@ -808,26 +810,33 @@ http_connect(char          *hostname,
             return(INCORRECT);
          }
 # ifdef NO_SSLv2
-         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2);
+         ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2);
 # else 
 #  ifdef NO_SSLv3
-         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv3);
+         ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv3);
 #  else
 #   ifdef NO_SSLv23
-         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+         ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 #   else
 #    ifdef NO_SSLv23TLS1_0
-         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1);
+         ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
+                        SSL_OP_NO_TLSv1);
 #    else
 #     ifdef NO_SSLv23TLS1_0TLS1_1
-         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
+         ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
+                        SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
 #     else
-         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL);
+         ctx_options = SSL_OP_ALL;
 #     endif
 #    endif
 #   endif
 #  endif
 # endif
+         if (hmr.features & PROT_OPT_TLS_LEGACY_RENEGOTIATION)
+         {
+            ctx_options |= SSL_OP_LEGACY_SERVER_CONNECT;
+         }
+         SSL_CTX_set_options(ssl_ctx, ctx_options);
          SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
          if ((p_env = getenv("SSL_CIPHER")) != NULL)
          {

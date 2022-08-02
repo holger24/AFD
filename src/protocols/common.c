@@ -27,7 +27,8 @@ DESCR__S_M3
  ** SYNOPSIS
  **   int     command(int fd, char *fmt, ...)
  **   int     ssl_connect(int sock_fd, char *hostname,
- **                       char *func_name, int strict)
+ **                       char *func_name, int strict,
+ **                       int legacy_renegotiation)
  **   ssize_t ssl_write(SSL *ssl, const char *buf, size_t count)
  **   char    *ssl_error_msg(char *function, SSL *ssl, int *ssl_ret,
  **                          int reply, char *msg_str)
@@ -48,6 +49,8 @@ DESCR__S_M3
  **                      to command() but does not treat a disconnect
  **                      by the remote server as an error in the log.
  **   19.03.2022 H.Kiehl Add strict TLS support.
+ **   17.07.2022 H.Kiehl Add option to enable legacy renegotiation
+ **                      for ssl_connect().
  */
 DESCR__E_M3
 
@@ -368,11 +371,16 @@ test_command(int fd, char *fmt, ...)
 #ifdef WITH_SSL
 /*############################ ssl_connect() ############################*/
 int
-ssl_connect(int sock_fd, char *hostname, char *func_name, int strict)
+ssl_connect(int  sock_fd,
+            char *hostname,
+            char *func_name,
+            int  strict,
+            int  legacy_renegotiation)
 {
-   int  reply;
-   char *p_env,
-        *p_env1;
+   int      reply;
+   uint64_t ctx_options;
+   char     *p_env,
+            *p_env1;
 
    if (ssl_ctx != NULL)
    {
@@ -387,26 +395,33 @@ ssl_connect(int sock_fd, char *hostname, char *func_name, int strict)
       return(INCORRECT);
    }
 # ifdef NO_SSLv2
-   SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2);
+   ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2);
 # else
 #  ifdef NO_SSLv3
-   SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv3);
+   ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv3);
 #  else
 #   ifdef NO_SSLv23
-   SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+   ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 #   else
 #    ifdef NO_SSLv23TLS1_0
-   SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1);
+   ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
+                  SSL_OP_NO_TLSv1);
 #    else
 #     ifdef NO_SSLv23TLS1_0TLS1_1
-   SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
+   ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
+                  SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
 #     else
-   SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL);
+   ctx_options = SSL_OP_ALL;
 #     endif
 #    endif
 #   endif
 #  endif
 # endif
+   if (legacy_renegotiation == YES)
+   {
+      ctx_options |= SSL_OP_LEGACY_SERVER_CONNECT;
+   }
+   SSL_CTX_set_options(ssl_ctx, ctx_options);
    SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
    if ((p_env = getenv("SSL_CIPHER")) != NULL)
    {

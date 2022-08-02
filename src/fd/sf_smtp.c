@@ -1,6 +1,6 @@
 /*
  *  sf_smtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -623,7 +623,8 @@ main(int argc, char *argv[])
 
 #ifdef WITH_SSL
          /* Try negotiate SMARTTLS. */
-         if ((status = smtp_smarttls((fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO)) == SUCCESS)
+         if ((status = smtp_smarttls((fsa->protocol_options & TLS_STRICT_VERIFY) ? YES : NO,
+                                     (fsa->protocol_options & TLS_LEGACY_RENEGOTIATION) ? YES : NO)) == SUCCESS)
          {
             if (fsa->debug > NORMAL_MODE)
             {

@@ -33,9 +33,10 @@ DESCR__S_M3
  **              char *created_path)
  **   int ftp_chmod(char *filename, char *mode)
  **   int ftp_close_data(void)
- **   int ftp_connect(char *hostname, int port, int ssl, int strict)
+ **   int ftp_connect(char *hostname, int port, int ssl, int strict,
+ **                   int legacy_renegotiation)
  **   int ftp_auth_data(void)
- **   int ftp_ssl_auth(int strict)
+ **   int ftp_ssl_auth(int strict, int legacy_renegotiation)
  **   int ftp_ssl_init(char type)
  **   int ftp_ssl_disable_ctrl_encrytion(void)
  **   int ftp_feat(unsigned int *)
@@ -214,6 +215,7 @@ DESCR__S_M3
  **   05.11.2019 H.Kiehl Add support for STAT list command.
  **   06.03.2020 H.Kiehl Implement implicit FTPS.
  **   19.03.2022 H.Kiehl Add strict TLS support.
+ **   17.07.2022 H.Kiehl Add option to enable TLS legacy renegotiation.
  */
 DESCR__E_M3
 
@@ -332,7 +334,7 @@ static void                    sig_handler(int);
 /*########################## ftp_connect() ##############################*/
 int
 #ifdef WITH_SSL
-ftp_connect(char *hostname, int port, int ssl, int strict)
+ftp_connect(char *hostname, int port, int ssl, int strict, int legacy_renegotiation)
 #else
 ftp_connect(char *hostname, int port)
 #endif
@@ -775,8 +777,9 @@ ftp_connect(char *hostname, int port)
 #ifdef WITH_SSL
       if (ssl == YES)
       {
-         char *p_env,
-              *p_env1;
+         uint64_t ctx_options;
+         char     *p_env,
+                  *p_env1;
 
          if (ssl_ctx != NULL)
          {
@@ -791,26 +794,33 @@ ftp_connect(char *hostname, int port)
             return(INCORRECT);
          }
 # ifdef NO_SSLv2
-         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2);
+         ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2);
 # else
 #  ifdef NO_SSLv3
-         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv3);
+         ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv3);
 #  else
 #   ifdef NO_SSLv23
-         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+         ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 #   else
 #    ifdef NO_SSLv23TLS1_0
-         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1);
+         ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
+                        SSL_OP_NO_TLSv1);
 #    else
 #     ifdef NO_SSLv23TLS1_0TLS1_1
-         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
+         ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
+                        SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
 #     else
-         SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL);
+         ctx_options = SSL_OP_ALL;
 #     endif
 #    endif
 #   endif
 #  endif
 # endif
+         if (legacy_renegotiation == YES)
+         {
+            ctx_options |= SSL_OP_LEGACY_SERVER_CONNECT;
+         }
+         SSL_CTX_set_options(ssl_ctx, ctx_options);
          SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
          if ((p_env = getenv("SSL_CIPHER")) != NULL)
          {
@@ -1033,7 +1043,7 @@ ftp_connect(char *hostname, int port)
 #ifdef WITH_SSL
 /*########################## ftp_ssl_auth() #############################*/
 int
-ftp_ssl_auth(int strict)
+ftp_ssl_auth(int strict, int legacy_renegotiation)
 {
    int reply = SUCCESS;
 
@@ -1045,8 +1055,9 @@ ftp_ssl_auth(int strict)
       {
          if ((reply == 234) || (reply == 334))
          {
-            char *p_env,
-                 *p_env1;
+            uint64_t ctx_options;
+            char     *p_env,
+                     *p_env1;
 
             if (ssl_ctx != NULL)
             {
@@ -1061,26 +1072,33 @@ ftp_ssl_auth(int strict)
                return(INCORRECT);
             }
 # ifdef NO_SSLv2
-            SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2);
+            ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2);
 # else
 #  ifdef NO_SSLv3
-            SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv3);
+            ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv3);
 #  else
 #   ifdef NO_SSLv23
-            SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+            ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 #   else
 #    ifdef NO_SSLv23TLS1_0
-            SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1);
+            ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
+                           SSL_OP_NO_TLSv1);
 #    else
 #     ifdef NO_SSLv23TLS1_0TLS1_1
-            SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
+            ctx_options = (SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
+                           SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
 #     else
-            SSL_CTX_set_options(ssl_ctx, SSL_OP_ALL);
+            ctx_options = SSL_OP_ALL;
 #     endif
 #    endif
 #   endif
 #  endif
 # endif
+            if (legacy_renegotiation == YES)
+            {
+               ctx_options |= SSL_OP_LEGACY_SERVER_CONNECT;
+            }
+            SSL_CTX_set_options(ssl_ctx, ctx_options);
             SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
             if ((p_env = getenv("SSL_CIPHER")) != NULL)
             {
@@ -5829,7 +5847,7 @@ try_again_read_msg:
                     {
                        if (bytes_read == 0)
                        {
-                          trans_log(sign,  __FILE__, __LINE__, "read_msg", NULL,
+                          trans_log(sign, __FILE__, __LINE__, "read_msg", NULL,
                                     _("Remote hang up. [%d]"), line);
                           timeout_flag = NEITHER;
                        }

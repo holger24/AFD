@@ -974,14 +974,16 @@ typedef unsigned long       u_long_64;
 #endif
 #define NO_EXPECT                  536870912         /* 30 */
 #define HTTP_BUCKETNAME_IN_PATH    1073741824        /* 31 */
+#define TLS_LEGACY_RENEGOTIATION   2147483648U       /* 32 */
 
 /* Definitions for protocol_options2 in FSA. */
 
 /* Definitions for protocol_options in sf_xxx + gf_xxx functions. */
-#define PROT_OPT_NO_EXPECT          1
-#define BUCKETNAME_IS_IN_PATH       2
+#define PROT_OPT_NO_EXPECT                 1
+#define BUCKETNAME_IS_IN_PATH              2
 #ifdef WITH_SSL
-# define PROT_OPT_TLS_STRICT_VERIFY 4
+# define PROT_OPT_TLS_STRICT_VERIFY        4
+# define PROT_OPT_TLS_LEGACY_RENEGOTIATION 8
 #endif
 
 

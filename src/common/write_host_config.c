@@ -291,6 +291,7 @@ DESCR__E_M3
 #                          28(134217728)- Set implicit FTPS.\n\
 #                          30(536870912)- Do not use HTTP expect.\n\
 #                          31(1073741824)- Bucketname is in path.\n\
+#                          32(2147483648)- TLS legacy renegotiation.\n\
 #                          DEFAULT: 0\n\
 # Transfer rate limit    - The maximum number of kilobytes that may be\n\
 #                          transfered per second.\n\
