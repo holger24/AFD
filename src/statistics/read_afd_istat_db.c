@@ -197,7 +197,12 @@ read_afd_istat_db(int no_of_dirs)
    if (lseek(new_status_fd, istat_db_size - 1, SEEK_SET) == -1)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Could not seek() on %s : %s",
+#if SIZEOF_SIZE_T == 4
+                 "Could not seek() to %d [no_of_dirs=%d] on %s : %s",
+#else
+                 "Could not seek() to %lld [no_of_dirs=%d] on %s : %s",
+#endif
+                 (pri_size_t)(istat_db_size - 1), no_of_dirs,
                  new_istatistic_file, strerror(errno));
       exit(INCORRECT);
    }

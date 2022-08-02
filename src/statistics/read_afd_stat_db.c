@@ -199,7 +199,12 @@ read_afd_stat_db(int no_of_hosts)
    if (lseek(new_status_fd, stat_db_size - 1, SEEK_SET) == -1)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "Could not seek() on %s : %s",
+#if SIZEOF_SIZE_T == 4
+                 "Could not seek() to %d [no_of_hosts=%d] on %s : %s",
+#else
+                 "Could not seek() to %lld [no_of_hosts=%d] on %s : %s",
+#endif
+                 (pri_size_t)(stat_db_size - 1), no_of_hosts,
                  new_statistic_file, strerror(errno));
       exit(INCORRECT);
    }

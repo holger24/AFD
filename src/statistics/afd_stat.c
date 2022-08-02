@@ -1,6 +1,6 @@
 /*
  *  afd_stat.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -726,22 +726,42 @@ stat_exit(void)
    if (msync(((char *)stat_db - AFD_WORD_OFFSET), stat_db_size, MS_SYNC) == -1)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "msync() error : %s", strerror(errno));
+#if SIZEOF_SIZE_T == 4
+                 "msync() error [stat_db_size=%d] : %s",
+#else
+                 "msync() error [stat_db_size=ll%d] : %s",
+#endif
+                 (pri_size_t)stat_db_size, strerror(errno));
    }
    if (msync(((char *)istat_db - AFD_WORD_OFFSET), istat_db_size, MS_SYNC) == -1)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "msync() error : %s", strerror(errno));
+#if SIZEOF_SIZE_T == 4
+                 "msync() error [istat_db_size=%d] : %s",
+#else
+                 "msync() error [istat_db_size=%lld] : %s",
+#endif
+                 (pri_size_t)istat_db_size, strerror(errno));
    }
    if (munmap(((char *)stat_db - AFD_WORD_OFFSET), stat_db_size) == -1)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "munmap() error : %s", strerror(errno));
+#if SIZEOF_SIZE_T == 4
+                 "munmap() error [stat_db_size=%d] : %s",
+#else
+                 "munmap() error [stat_db_size=%lld] : %s",
+#endif
+                 (pri_size_t)stat_db_size, strerror(errno));
    }
    if (munmap(((char *)istat_db - AFD_WORD_OFFSET), istat_db_size) == -1)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
-                 "munmap() error : %s", strerror(errno));
+#if SIZEOF_SIZE_T == 4
+                 "munmap() error [istat_db_size=%d] : %s",
+#else
+                 "munmap() error [istat_db_size=%lld] : %s",
+#endif
+                 (pri_size_t)istat_db_size, strerror(errno));
    }
 
    return;
