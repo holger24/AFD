@@ -1,6 +1,6 @@
 /*
  *  cmdline.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2004 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2004 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -167,6 +167,7 @@ struct data
           int          rcvbuf_size;      /* Socket receive buffer size.    */
 #ifdef WITH_SSL
           int          strict;
+          int          legacy_renegotiation;
 #endif
           long         transfer_timeout; /* When to timeout the            */
                                          /* transmitting job.              */

@@ -1,6 +1,6 @@
 /*
  *  init_asmtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2000 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -74,25 +74,26 @@ init_asmtp(int argc, char *argv[], struct data *p_db)
    (void)my_strncpy(name, argv[0], 30);
 
    /* First initialize all values with default values. */
-   p_db->blocksize        = DEFAULT_TRANSFER_BLOCKSIZE;
-   p_db->smtp_server[0]   = '\0';
-   p_db->user[0]          = '\0';
-   p_db->password[0]      = '\0';
-   p_db->hostname[0]      = '\0';
-   p_db->port             = DEFAULT_SMTP_PORT;
-   p_db->remove           = NO;
-   p_db->transfer_timeout = DEFAULT_TRANSFER_TIMEOUT;
-   p_db->verbose          = NO;
-   p_db->no_of_files      = 0;
-   p_db->subject          = NULL;
-   p_db->from             = NULL;
-   p_db->reply_to         = NULL;
-   p_db->special_flag     = 0;
-   p_db->filename         = NULL;
-   p_db->realname         = NULL;
-   p_db->charset          = NULL;
+   p_db->blocksize            = DEFAULT_TRANSFER_BLOCKSIZE;
+   p_db->smtp_server[0]       = '\0';
+   p_db->user[0]              = '\0';
+   p_db->password[0]          = '\0';
+   p_db->hostname[0]          = '\0';
+   p_db->port                 = DEFAULT_SMTP_PORT;
+   p_db->remove               = NO;
+   p_db->transfer_timeout     = DEFAULT_TRANSFER_TIMEOUT;
+   p_db->verbose              = NO;
+   p_db->no_of_files          = 0;
+   p_db->subject              = NULL;
+   p_db->from                 = NULL;
+   p_db->reply_to             = NULL;
+   p_db->special_flag         = 0;
+   p_db->filename             = NULL;
+   p_db->realname             = NULL;
+   p_db->charset              = NULL;
 #ifdef WITH_SSL
-   p_db->strict           = NO;
+   p_db->strict               = NO;
+   p_db->legacy_renegotiation = NO;
 #endif
 
    /* Evaluate all arguments with '-'. */
@@ -451,6 +452,10 @@ init_asmtp(int argc, char *argv[], struct data *p_db)
             break;
 
 #ifdef WITH_SSL
+         case 'x' : /* TLS legacy renegotiation. */
+            p_db->legacy_renegotiation = YES;
+            break;
+
          case 'Y' : /* Strict SSL/TLS verification. */
             p_db->strict = YES;
             break;
@@ -549,6 +554,9 @@ usage(void)
    (void)fprintf(stderr, _("  -u <user>                  - The user who should get the mail.\n"));
    (void)fprintf(stderr, _("  -v                         - Verbose. Shows all SMTP commands and\n"));
    (void)fprintf(stderr, _("                               the reply from the SMTP server.\n"));
+#ifdef WITH_SSL
+   (void)fprintf(stderr, _("  -x                         - Use TLS legacy renegotiation.\n"));
+#endif
    (void)fprintf(stderr, _("  -y                         - File name is user.\n"));
 #ifdef WITH_SSL
    (void)fprintf(stderr, _("  -Y                         - Use strict SSL/TLS verification.\n"));

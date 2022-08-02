@@ -1,6 +1,6 @@
 /*
  *  asmtp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ DESCR__S_M1
  **       -u <user>               - The user who should get the mail.
  **       -v                      - Verbose. Shows all SMTP commands
  **                                 and the reply from the remote server.
+ **       -x                      - Use TLS legacy renegotiation.
  **       -y                      - File name is user.
  **       -Y                      - Use strict SSL/TLS verification.
  **       -?                      - Display some help.
@@ -249,7 +250,7 @@ main(int argc, char *argv[])
 
 #ifdef WITH_SSL
    /* Try negotiate SMARTTLS. */
-   if ((status = smtp_smarttls(db.strict)) == SUCCESS)
+   if ((status = smtp_smarttls(db.strict, db.legacy_renegotiation)) == SUCCESS)
    {
       if (db.verbose == YES)
       {

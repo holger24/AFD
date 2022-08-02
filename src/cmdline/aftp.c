@@ -1,6 +1,6 @@
 /*
  *  aftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -64,6 +64,7 @@ DESCR__S_M1
  **                                       (-x) mode.
  **     -x                              - Use passive mode instead of active
  **                                       mode.
+ **     -y                              - Use TLS legacy renegotiation.
  **     -Y                              - Use strict SSL/TLS verification.
  **     -z                              - With SSL/TLS authentification for
  **                                       control connection.
@@ -95,6 +96,7 @@ DESCR__S_M1
  **   16.03.2009 H.Kiehl Added gettext supoort.
  **   30.03.2012 H.Kiehl Inform when we created a directory.
  **   06.03.2020 H.Kiehl Implement implicit FTPS.
+ **   02.08.2022 H.Kiehl Added parameter -y to use TLS legacy renegotiation.
  **
  */
 DESCR__E_M1
@@ -224,11 +226,12 @@ main(int argc, char *argv[])
    if (((db.tls_auth == YES) || (db.tls_auth == BOTH)) &&
        (db.implicit_ftps == YES))
    {
-      status = ftp_connect(db.hostname, db.port, YES, db.strict);
+      status = ftp_connect(db.hostname, db.port, YES, db.strict,
+                           db.legacy_renegotiation);
    }
    else
    {
-      status = ftp_connect(db.hostname, db.port, NO, NO);
+      status = ftp_connect(db.hostname, db.port, NO, NO, NO);
    }
 #else
    status = ftp_connect(db.hostname, db.port);
@@ -275,7 +278,7 @@ main(int argc, char *argv[])
    if (((db.tls_auth == YES) || (db.tls_auth == BOTH)) &&
        (db.implicit_ftps != YES))
    {
-      if (ftp_ssl_auth(db.strict) == INCORRECT)
+      if (ftp_ssl_auth(db.strict, db.legacy_renegotiation) == INCORRECT)
       {
          trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                    _("SSL/TSL connection to server `%s' failed."), db.hostname);

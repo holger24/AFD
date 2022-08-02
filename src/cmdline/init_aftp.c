@@ -1,6 +1,6 @@
 /*
  *  init_aftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -55,6 +55,7 @@ DESCR__S_M3
  **   12.08.2006 H.Kiehl    Added option -X.
  **   05.03.2008 H.Kiehl    Added option -o.
  **   06.03.2020 H.Kiehl    Added option -I.
+ **   02.09.2022 H.Kiehl    Added option -y.
  **
  */
 DESCR__E_M3
@@ -112,46 +113,47 @@ init_aftp(int argc, char *argv[], struct data *p_db)
         }
 
    /* First initialize all values with default values. */
-   p_db->file_size_offset  = -1;       /* No appending. */
-   p_db->blocksize         = DEFAULT_TRANSFER_BLOCKSIZE;
-   p_db->remote_dir[0]     = '\0';
-   p_db->hostname[0]       = '\0';
-   p_db->lock              = DOT;
-   p_db->lock_notation[0]  = '.';
-   p_db->lock_notation[1]  = '\0';
-   p_db->transfer_mode     = 'I';
-   p_db->ftp_mode          = ACTIVE_MODE;
+   p_db->file_size_offset     = -1;       /* No appending. */
+   p_db->blocksize            = DEFAULT_TRANSFER_BLOCKSIZE;
+   p_db->remote_dir[0]        = '\0';
+   p_db->hostname[0]          = '\0';
+   p_db->lock                 = DOT;
+   p_db->lock_notation[0]     = '.';
+   p_db->lock_notation[1]     = '\0';
+   p_db->transfer_mode        = 'I';
+   p_db->ftp_mode             = ACTIVE_MODE;
 #ifdef FTP_CTRL_KEEP_ALIVE_INTERVAL
-   p_db->keepalive         = NO;
+   p_db->keepalive            = NO;
 #endif
-   p_db->port              = DEFAULT_FTP_PORT;
+   p_db->port                 = DEFAULT_FTP_PORT;
    (void)strcpy(p_db->user, DEFAULT_AFD_USER);
    (void)strcpy(p_db->password, DEFAULT_AFD_PASSWORD);
-   p_db->remove            = NO;
-   p_db->transfer_timeout  = DEFAULT_TRANSFER_TIMEOUT;
-   p_db->verbose           = NO;
-   p_db->append            = NO;
+   p_db->remove               = NO;
+   p_db->transfer_timeout     = DEFAULT_TRANSFER_TIMEOUT;
+   p_db->verbose              = NO;
+   p_db->append               = NO;
 #ifdef WITH_SSL
-   p_db->implicit_ftps     = NO;
-   p_db->tls_auth          = NO;
-   p_db->strict            = NO;
+   p_db->implicit_ftps        = NO;
+   p_db->tls_auth             = NO;
+   p_db->strict               = NO;
+   p_db->legacy_renegotiation = NO;
 #endif
-   p_db->create_target_dir = NO;
-   p_db->dir_mode_str[0]   = '\0';
+   p_db->create_target_dir    = NO;
+   p_db->dir_mode_str[0]      = '\0';
    if (name[0] == 't')
    {
-      p_db->no_of_files    = 1;
-      p_db->dummy_size     = DEFAULT_TRANSFER_BLOCKSIZE;
+      p_db->no_of_files       = 1;
+      p_db->dummy_size        = DEFAULT_TRANSFER_BLOCKSIZE;
    }
    else
    {
-      p_db->no_of_files    = 0;
+      p_db->no_of_files       = 0;
    }
-   p_db->filename          = NULL;
-   p_db->realname          = NULL;
-   p_db->sndbuf_size       = 0;
-   p_db->rcvbuf_size       = 0;
-   p_db->proxy_name[0]     = '\0';
+   p_db->filename             = NULL;
+   p_db->realname             = NULL;
+   p_db->sndbuf_size          = 0;
+   p_db->rcvbuf_size          = 0;
+   p_db->proxy_name[0]        = '\0';
 
    /* Evaluate all arguments with '-'. */
    while ((--argc > 0) && ((*++argv)[0] == '-'))
@@ -617,6 +619,10 @@ init_aftp(int argc, char *argv[], struct data *p_db)
             break;
 
 #ifdef WITH_SSL
+         case 'y' : /* TLS legacy renegotiation. */
+            p_db->legacy_renegotiation = YES;
+            break;
+
          case 'Y' : /* TLS/SSL strict authentification. */
             p_db->strict = YES;
             break;
@@ -858,6 +864,7 @@ usage(void)
    (void)fprintf(stderr, _("  -X                                 - Use extended mode active or passive\n\
                                        (-x) mode.\n"));
 #ifdef WITH_SSL
+   (void)fprintf(stderr, _("  -y                                 - Use TLS legacy renegotiation.\n"));
    (void)fprintf(stderr, _("  -Y                                 - Use strict SSL/TLS checks.\n"));
    (void)fprintf(stderr, _("  -z                                 - Use SSL/TLS for control connection.\n"));
    (void)fprintf(stderr, _("  -Z                                 - Use SSL/TLS for control and data\n\
