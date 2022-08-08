@@ -10,6 +10,7 @@ User=%i
 ExecStart=/usr/bin/afd_mon -sn %n -C -nd
 ExecStop=/usr/bin/mafd -S --all
 KillMode=control-group
+LimitCORE=infinity
 Restart=on-abnormal
 WatchdogSec=40
 WatchdogSignal=SIGTERM
