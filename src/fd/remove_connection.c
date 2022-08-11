@@ -1,6 +1,6 @@
 /*
  *  remove_connection.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -58,6 +58,7 @@ DESCR__E_M3
 /* External global variables. */
 extern int                        fsa_fd,
                                   fra_fd,
+                                  last_pos_lookup,
                                   no_of_dirs,
                                   no_of_hosts,
                                   no_of_trl_groups,
@@ -87,6 +88,7 @@ remove_connection(struct connection *p_con, int faulty, time_t now)
          (void)check_fra_fd();
          get_new_positions();
          init_msg_buffer();
+         last_pos_lookup = INCORRECT;
       }
    }
 #endif
