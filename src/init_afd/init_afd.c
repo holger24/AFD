@@ -1,6 +1,6 @@
 /*
  *  init_afd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1995 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -77,6 +77,8 @@ DESCR__S_M1
  **   26.11.2018 H.Kiehl Added option -C.
  **   16.06.2020 H.Kiehl Add systemd support.
  **   25.07.2020 H.Kiehl Add option -sn.
+ **   29.03.2022 H.Kiehl Added process AFDDS.
+ **   15.08.2022 H.Kiehl Allow user to specify the interface to bind to.
  **
  */
 DESCR__E_M1
@@ -85,6 +87,7 @@ DESCR__E_M1
 #include <string.h>              /* strcpy(), strcat(), strerror(),      */
                                  /* memset()                             */
 #include <stdlib.h>              /* getenv(), atexit(), exit(), abort()  */
+#include <ctype.h>               /* isdigit()                            */
 #include <time.h>                /* time(), ctime()                      */
 #include <sys/types.h>
 #ifdef HAVE_MMAP
@@ -1822,7 +1825,7 @@ get_afd_config_value(int          *afdd_port,
    if ((eaccess(config_file, F_OK) == 0) &&
        (read_file_no_cr(config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {
-      char value[MAX_INT_LENGTH];
+      char value[MAX_IP_LENGTH + 1 + MAX_INT_LENGTH + 1];
 
 #ifdef HAVE_SETPRIORITY
       if (get_definition(buffer, INIT_AFD_PRIORITY_DEF,
@@ -1836,10 +1839,118 @@ get_afd_config_value(int          *afdd_port,
          }
       }
 #endif
-      if (get_definition(buffer, AFD_TCP_PORT_DEF,
-                         value, MAX_INT_LENGTH) != NULL)
+      if (get_definition(buffer, AFD_TCP_PORT_DEF, value,
+                         MAX_IP_LENGTH + 1 + MAX_INT_LENGTH) != NULL)
       {
-         *afdd_port = atoi(value);
+         int  i = 0;
+         char bind_address[MAX_IP_LENGTH + 1],
+              port_no[MAX_INT_LENGTH + 1],
+              *tmp_ptr = value;
+
+         tmp_ptr = value;
+         while ((*tmp_ptr != ':') && (*tmp_ptr != '\0'))
+         {
+            if (i < MAX_IP_LENGTH)
+            {
+               bind_address[i] = *tmp_ptr;
+               i++;
+            }
+            tmp_ptr++;
+         }
+         if (*tmp_ptr == ':')
+         {
+            tmp_ptr++;
+            if (i == MAX_IP_LENGTH)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Address for listening is to long (>= %d). Ignoring.",
+                          MAX_IP_LENGTH);
+               bind_address[0] = '\0';
+            }
+            else
+            {
+               bind_address[i] = '\0';
+            }
+            i = 0;
+            while (*tmp_ptr != '\0')
+            {
+               if (i < MAX_INT_LENGTH)
+               {
+                  if (isdigit((int)(*tmp_ptr)))
+                  {
+                     port_no[i] = *tmp_ptr;
+                     i++;
+                  }
+                  else
+                  {
+                     system_log(WARN_SIGN, __FILE__, __LINE__,
+                                "Port number may only contain digits (0 through 9). Ignoring entry %s.",
+                                AFD_TCP_PORT_DEF);
+                     port_no[0] = '0';
+                     port_no[1] = '\0';
+                     bind_address[0] = '\0';
+                     i = 0;
+                     break;
+                  }
+                  tmp_ptr++;
+               }
+               if (i == MAX_INT_LENGTH)
+               {
+                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                             "Port for listening is to long (>= %d). Ignoring entry %s.",
+                             MAX_INT_LENGTH, AFD_TCP_PORT_DEF);
+                  port_no[0] = '0';
+                  port_no[1] = '\0';
+                  bind_address[0] = '\0';
+               }
+            }
+            if (i > 0)
+            {
+               port_no[i] = '\0';
+            }
+         }
+         else
+         {
+            if (i == MAX_INT_LENGTH)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Port for listening is to long (>= %d). Ignoring entry %s.",
+                          MAX_INT_LENGTH, AFD_TCP_PORT_DEF);
+               port_no[0] = '0';
+               port_no[1] = '\0';
+               bind_address[0] = '\0';
+            }
+            else
+            {
+               int j;
+
+               for (j = 0; j < i; j++)
+               {
+                  if (isdigit((int)bind_address[j]))
+                  {
+                     port_no[j] = bind_address[j];
+                     j++;
+                  }
+                  else
+                  {
+                     system_log(WARN_SIGN, __FILE__, __LINE__,
+                                "Port number may only contain digits (0 through 9). Ignoring entry %s.",
+                                AFD_TCP_PORT_DEF);
+                     port_no[0] = '0';
+                     port_no[1] = '\0';
+                     bind_address[0] = '\0';
+                     j = 0;
+                     break;
+                  }
+               }
+               if (j > 0)
+               {
+                  port_no[i] = '\0';
+               }
+            }
+            bind_address[0] = '\0';
+         }
+         *afdd_port = atoi(port_no);
 
          /* Note: Port range is checked by afdd process. */
       }

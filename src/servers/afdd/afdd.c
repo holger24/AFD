@@ -1,6 +1,6 @@
 /*
  *  afdd.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1997 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -51,6 +51,8 @@ DESCR__S_M1
  **   23.11.2008 H.Kiehl Added danger_no_of_jobs.
  **   04.01.2011 H.Kiehl Ensure that we do not set a port that is in the
  **                      dynamic port range.
+ **   13.08.2022 H.Kiehl Allow user to bind to a specific network
+ **                      interface.
  */
 DESCR__E_M1
 
@@ -107,7 +109,7 @@ static int        in_child = NO,
 
 /* Local function prototypes. */
 static void       afdd_exit(void),
-                  get_afdd_config_value(char *, int *),
+                  get_afdd_config_value(char *, char *, int *),
 #ifdef LINUX
                   get_ip_local_port_range(int *, int *),
 #endif
@@ -129,7 +131,8 @@ main(int argc, char *argv[])
                       status,
                       trusted_ip_pos = -1;
    my_socklen_t       peer_addrlen;
-   char               *ptr,
+   char               bind_address[MAX_IP_LENGTH + 1],
+                      *ptr,
                       port_no[MAX_INT_LENGTH],
                       work_dir[MAX_PATH_LENGTH];
    fd_set             rset;
@@ -150,7 +153,7 @@ main(int argc, char *argv[])
    p_work_dir_end = work_dir + strlen(work_dir);
    no_of_connections = 0;
    (void)strcpy(port_no, DEFAULT_AFD_PORT_NO);
-   get_afdd_config_value(port_no, &max_afdd_connections);
+   get_afdd_config_value(bind_address, port_no, &max_afdd_connections);
    if ((pid = malloc((max_afdd_connections * sizeof(pid_t)))) == NULL)
    {
       system_log(ERROR_SIGN, __FILE__, __LINE__,
@@ -291,7 +294,14 @@ main(int argc, char *argv[])
 
    (void)memset((struct sockaddr *) &data, 0, sizeof(data));
    data.sin_family = AF_INET;
-   data.sin_addr.s_addr = INADDR_ANY;
+   if (bind_address[0] == '\0')
+   {
+      data.sin_addr.s_addr = INADDR_ANY;
+   }
+   else
+   {
+      data.sin_addr.s_addr = inet_addr(bind_address);
+   }
 
    do
    {
@@ -354,8 +364,18 @@ main(int argc, char *argv[])
       }
    } while (status == -1);
 
-   system_log(INFO_SIGN, NULL, 0, _("Starting %s at port %d (%s)"),
-              AFDD, port, PACKAGE_VERSION);
+   if (bind_address[0] == '\0')
+   {
+      system_log(INFO_SIGN, NULL, 0,
+                 _("Starting %s at port %d on all interfaces (%s)"),
+                 AFDD, port, PACKAGE_VERSION);
+   }
+   else
+   {
+      system_log(INFO_SIGN, NULL, 0,
+                 _("Starting %s at port %d on %s (%s)"),
+                 AFDD, port, bind_address, PACKAGE_VERSION);
+   }
 
    if (listen(sockfd, 5) == -1)
    {
@@ -543,7 +563,9 @@ zombie_check(void)
 
 /*++++++++++++++++++++++++ get_afdd_config_value() ++++++++++++++++++++++*/
 static void                                                                
-get_afdd_config_value(char *port_no, int *max_afdd_connections)
+get_afdd_config_value(char *bind_address,
+                      char *port_no,
+                      int  *max_afdd_connections)
 {
    char *buffer;
 
@@ -554,8 +576,7 @@ get_afdd_config_value(char *port_no, int *max_afdd_connections)
        (read_file_no_cr(afd_config_file, &buffer, YES, __FILE__, __LINE__) != INCORRECT))
    {
       char *ptr = buffer,
-           tmp_trusted_ip[MAX_IP_LENGTH + 1],
-           value[MAX_INT_LENGTH];
+           value[MAX_IP_LENGTH + 1 + MAX_INT_LENGTH + 1];
 
 #ifdef HAVE_SETPRIORITY
       if (get_definition(buffer, AFDD_PRIORITY_DEF,
@@ -583,18 +604,82 @@ get_afdd_config_value(char *port_no, int *max_afdd_connections)
          }
       }
 
-      if (get_definition(buffer, AFD_TCP_PORT_DEF,
-                         port_no, MAX_INT_LENGTH) != NULL)
+      if (get_definition(buffer, AFD_TCP_PORT_DEF, value,
+                         MAX_IP_LENGTH + 1 + MAX_INT_LENGTH) != NULL)
       {
-         int lower_limit = 49152,
-             port,
-             upper_limit = 65535;
+         int  i = 0,
+              lower_limit = 49152,
+              port,
+              upper_limit = 65535;
+         char *tmp_ptr;
 
+         tmp_ptr = value;
+         while ((*tmp_ptr != ':') && (*tmp_ptr != '\0'))
+         {
+            if (i < MAX_IP_LENGTH)
+            {
+               bind_address[i] = *tmp_ptr;
+               i++;
+            }
+            tmp_ptr++;
+         }
+         if (*tmp_ptr == ':')
+         {
+            tmp_ptr++;
+            if (i == MAX_IP_LENGTH)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Address for listening is to long (>= %d). Ignoring.",
+                          MAX_IP_LENGTH);
+               bind_address[0] = '\0';
+            }
+            else
+            {
+               bind_address[i] = '\0';
+            }
+            i = 0;
+            while (*tmp_ptr != '\0')
+            {
+               if (i < MAX_INT_LENGTH)
+               {
+                  port_no[i] = *tmp_ptr;
+                  i++;
+               }
+               tmp_ptr++;
+            }
+            if (i == MAX_INT_LENGTH)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Port for listening is to long (>= %d). Setting to default %s.",
+                          MAX_INT_LENGTH, DEFAULT_AFD_PORT_NO);
+               (void)strcpy(port_no, DEFAULT_AFD_PORT_NO);
+            }
+            else
+            {
+               port_no[i] = '\0';
+            }
+         }
+         else
+         {
+            if (i == MAX_INT_LENGTH)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Port for listening is to long (>= %d). Setting to default %s.",
+                          MAX_INT_LENGTH, DEFAULT_AFD_PORT_NO);
+               (void)strcpy(port_no, DEFAULT_AFD_PORT_NO);
+            }
+            else
+            {
+               (void)memcpy(port_no, bind_address, i);
+               port_no[i] = '\0';
+            }
+            bind_address[0] = '\0';
+         }
          port = atoi(port_no);
 #ifdef LINUX
          get_ip_local_port_range(&lower_limit, &upper_limit);
 #endif
-         if ((port >= lower_limit) && (port <= upper_limit))
+         if ((port < lower_limit) || (port > upper_limit))
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
                        _("Setting %s to %d, but it is not in the valid range (lower limit = %d, upper limit = %d)."),
@@ -614,13 +699,13 @@ get_afdd_config_value(char *port_no, int *max_afdd_connections)
        */
       do
       {
-         if ((ptr = get_definition(ptr, TRUSTED_REMOTE_IP_DEF, tmp_trusted_ip,
+         if ((ptr = get_definition(ptr, TRUSTED_REMOTE_IP_DEF, value,
                                    MAX_IP_LENGTH)) != NULL)
          {
             int  counter = 0;
             char *check_ptr;
 
-            check_ptr = tmp_trusted_ip;
+            check_ptr = value;
             while (((isdigit((int)(*check_ptr))) || (*check_ptr == '*') ||
                     (*check_ptr == '?')) && (counter < 3))
             {
@@ -688,7 +773,7 @@ get_afdd_config_value(char *port_no, int *max_afdd_connections)
                            ip_log_defs[number_of_trusted_ips - 1] = default_log_defs;
                         }
                         (void)strcpy(trusted_ip[number_of_trusted_ips - 1],
-                                     tmp_trusted_ip);
+                                     value);
                      }
 
                      /* Check if log definitions have been added for this ip. */
