@@ -20,7 +20,7 @@ the new value:
    <th>Restart</th>
 </tr>
 <tr>
-   <td valign=top><a name="afd_tcp_port">AFD_TCP_PORT &lt;port number&gt;</a></td>
+   <td valign=top><a name="afd_tcp_port">AFD_TCP_PORT [&lt;interface ip&gt;:]&lt;port number&gt;</a></td>
    <td>The TCP port number at which the process afdd will listen and
        wait for remote requests. If that port is currently in use
        by another program it will add one and see if that works
@@ -29,6 +29,10 @@ the new value:
        suggests this port range to be 49152 to 65535. On linux systems
        this usually is 32768 to 61000.  On linux AFD will determine this
        value by reading /proc/sys/net/ipv4/ip_local_port_range.
+       Optionally you can specify the interface ip where AFDD should
+       listen. If this is not specified it will listen on all interfaces
+       the system has. Unfortunately you can only specify one interface
+       ip.
        NOTE: If this option is not set the afdd process will NOT start.</td>
    <td valign=top>4444</td>
    <td valign=top>afdd</td>
@@ -865,9 +869,9 @@ restarted.
 <table width="100%">
 <tr>
    <td width="90%"><small><address>
-   Copyright &copy; 1999 - 2020 by H.Kiehl<br>
+   Copyright &copy; 1999 - 2022 by H.Kiehl<br>
    <a href="mailto:Holger.Kiehl@dwd.de?subject=AFD Homepage">Holger.Kiehl@dwd.de</a><br>
-   Last updated: 22.06.2020
+   Last updated: 15.08.2022
    </address></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="contents.html">Index</a></small></td>
    <td nowrap><small><img align=middle src="../images/reddot.gif" alt="[red dot]"><a href="index.html">Home</a></small></td>
