@@ -1,6 +1,6 @@
 /*
  *  asftp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2015 - 2019 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -67,6 +67,7 @@ DESCR__S_M1
  **
  ** HISTORY
  **   04.05.2015 H.Kiehl Created
+ **   30.08.2022 H.Kiehl Fix error where files are not fully uploaded.
  **
  */
 DESCR__E_M1
@@ -490,9 +491,7 @@ main(int argc, char *argv[])
    else /* Send data. */
    {
       int    files_send = 0,
-             local_file_not_found = 0,
-             loops,
-             rest;
+             local_file_not_found = 0;
       size_t length;
       off_t  append_offset = 0;
 
@@ -698,8 +697,6 @@ main(int argc, char *argv[])
 
          /* Read (local) and write (remote) file. */
          no_of_bytes = 0;
-         loops = (local_file_size - append_offset) / db.blocksize;
-         rest = (local_file_size - append_offset) % db.blocksize;
          if (ascii_buffer != NULL)
          {
             ascii_buffer[0] = 0;
@@ -707,106 +704,72 @@ main(int argc, char *argv[])
 
          if (db.exec_mode == TRANSFER_MODE)
          {
-            int j;
+            int bytes_buffered;
 
-            for (;;)
+            do
             {
-               for (j = 0; j < loops; j++)
+               if ((bytes_buffered = read(fd, buffer, db.blocksize - buffer_offset)) < 0)
                {
-                  if (read(fd, buffer, db.blocksize - buffer_offset) != (db.blocksize - buffer_offset))
+                  if (db.verbose == YES)
                   {
-                     if (db.verbose == YES)
-                     {
-                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                  _("Could not read local file %s : %s"),
-                                  final_filename, strerror(errno));
-                     }
-                     WHAT_DONE("send", file_size_done, no_of_files_done);
-                     sftp_quit();
-                     exit(READ_LOCAL_ERROR);
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                               _("Could not read local file `%s' [%d] : %s"),
+                               final_filename, bytes_buffered,
+                               strerror(errno));
                   }
+                  WHAT_DONE("send", file_size_done, no_of_files_done);
+                  sftp_quit();
+                  exit(READ_LOCAL_ERROR);
+               }
 
+               if (bytes_buffered > 0)
+               {
                   if ((status = sftp_write(buffer,
-                                           db.blocksize - buffer_offset)) != SUCCESS)
+                                           bytes_buffered)) != SUCCESS)
                   {
                      WHAT_DONE("send", file_size_done, no_of_files_done);
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
 #if SIZEOF_OFF_T == 4
-                               _("Failed to write to remote file %s after writing %ld bytes."),
+                               _("Failed to write %d bytes to remote file %s after writing %ld bytes."),
 #else
-                               _("Failed to write to remote file %s after writing %lld bytes."),
+                               _("Failed to write %d bytes to remote file %s after writing %lld bytes."),
 #endif
-                               initial_filename, (pri_off_t)file_size_done);
+                               bytes_buffered, initial_filename,
+                               (pri_off_t)file_size_done);
                      sftp_quit();
                      exit(eval_timeout(WRITE_REMOTE_ERROR));
                   }
 
                   file_size_done += db.blocksize;
                   no_of_bytes += db.blocksize;
-               }
-               if (rest > 0)
-               {
-                  if (read(fd, buffer, rest) != rest)
-                  {
-                     if (db.verbose == YES)
-                     {
-                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                                  _("Could not read local file %s : %s"),
-                                  final_filename, strerror(errno));
-                     }
-                     WHAT_DONE("send", file_size_done, no_of_files_done);
-                     sftp_quit();
-                     exit(READ_LOCAL_ERROR);
-                  }
-                  if ((status = sftp_write(buffer, rest)) != SUCCESS)
-                  {
-                     WHAT_DONE("send", file_size_done, no_of_files_done);
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                               _("Failed to write rest to remote file %s"),
-                               initial_filename);
-                     sftp_quit();
-                     exit(eval_timeout(WRITE_REMOTE_ERROR));
-                  }
+               } /* if (bytes_buffered > 0) */
+            } while (bytes_buffered == (db.blocksize - buffer_offset));
 
-                  file_size_done += rest;
-                  no_of_bytes += rest;
-               }
-
-               /*
-                * Since there are always some users sending files to the
-                * AFD not in dot notation, lets check here if this is really
-                * the EOF.
-                * If not lets continue so long until we hopefully have reached
-                * the EOF.
-                * NOTE: This is NOT a fool proof way. There must be a better
-                *       way!
-                */
-               if (stat(db.filename[files_send], &stat_buf) == 0)
+            /*
+             * Since there are always some users sending files to the
+             * AFD not in dot notation, lets check here if this is really
+             * the EOF.
+             */
+            if (stat(db.filename[files_send], &stat_buf) == 0)
+            {
+               if (stat_buf.st_size != local_file_size)
                {
-                  if (stat_buf.st_size > local_file_size)
-                  {
-                     loops = (stat_buf.st_size - local_file_size) / db.blocksize;
-                     rest = (stat_buf.st_size - local_file_size) % db.blocksize;
-                     local_file_size = stat_buf.st_size;
-
-                     /*
-                      * Give a warning in the system log, so some action
-                      * can be taken against the originator.
-                      */
-                     (void)rec(sys_log_fd, WARN_SIGN,
-                               _("Someone is still writting to file %s. (%s %d)\n"),
-                               db.filename[files_send], __FILE__, __LINE__);
-                  }
-                  else
-                  {
-                     break;
-                  }
+                  /*
+                   * Give a warning, so some action can be taken against
+                   * the originator.
+                   */
+                  (void)rec(sys_log_fd, WARN_SIGN,
+#if SIZEOF_OFF_T == 4
+                            _("Someone is still writting to file %s. Size changed from %ld to %ld. (%s %d)\n"),
+#else
+                            _("Someone is still writting to file %s. Size changed from %ld to %ld. (%s %d)\n"),
+#endif
+                            db.filename[files_send],
+                            (pri_off_t)local_file_size,
+                            (pri_off_t)stat_buf.st_size,
+                            __FILE__, __LINE__);
                }
-               else
-               {
-                  break;
-               }
-            } /* for (;;) */
+            }
 
             /* Close local file. */
             if (close(fd) < 0)
@@ -823,8 +786,12 @@ main(int argc, char *argv[])
          }
          else /* TEST_MODE, write dummy files. */
          {
-            int j;
+            int j,
+                loops,
+                rest;
 
+            loops = (local_file_size - append_offset) / db.blocksize;
+            rest = (local_file_size - append_offset) % db.blocksize;
             for (j = 0; j < loops; j++)
             {
                if ((status = sftp_write(buffer,
