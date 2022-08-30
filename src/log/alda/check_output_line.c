@@ -1,6 +1,6 @@
 /*
  *  check_output_line.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2008 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2008 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,8 @@ DESCR__S_M1
  **   11.02.2010 H.Kiehl Check if we need to search for a certain directory.
  **   18.05.2018 H.Kiehl Added option to only search for retrieved data
  **                      in OUTPUT_LOG.
+ **   30.08.2022 A.Maul  When there is a mail ID, do not forget to
+ **                      continue reading for archive data.
  **
  */
 DESCR__E_M1
@@ -532,6 +534,11 @@ check_output_line(char         *line,
                                                                   {
                                                                      i++;
                                                                   }
+                                                               }
+                                                               if ((*(ptr + i)) == SEPARATOR_CHAR)
+                                                               {
+                                                                   /* To get the archive data. */
+                                                                   tmp_char = SEPARATOR_CHAR;
                                                                }
                                                             }
                                                             if (tmp_char == SEPARATOR_CHAR)
