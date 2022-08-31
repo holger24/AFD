@@ -71,6 +71,13 @@
 #  define memmove(d, s, n) bcopy ((s), (d), (n))
 # endif
 #endif
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#else
+# typedef signed int        int32_t;
+# typedef unsigned int      uint32_t;
+# typedef unsigned long int uint64_t;
+#endif
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>

@@ -1608,7 +1608,7 @@ AC_SUBST(BUILD_REQUIRES_REDHAT)
 
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(fcntl.h limits.h sys/file.h sys/time.h unistd.h errno.h \
-                 sys/socket.h netdb.h arpa/inet.h arpa/telnet.h)
+                 sys/socket.h netdb.h arpa/inet.h arpa/telnet.h stdint.h)
 
 dnl
 dnl FreeBSD and Darwin requires sys/param.h and in.h to compile test
