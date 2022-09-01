@@ -679,7 +679,7 @@ get_afdd_config_value(char *bind_address,
 #ifdef LINUX
          get_ip_local_port_range(&lower_limit, &upper_limit);
 #endif
-         if ((port < lower_limit) || (port > upper_limit))
+         if ((port >= lower_limit) && (port <= upper_limit))
          {
             system_log(WARN_SIGN, __FILE__, __LINE__,
                        _("Setting %s to %d, but it is not in the valid range (lower limit = %d, upper limit = %d)."),
