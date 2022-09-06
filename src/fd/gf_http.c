@@ -423,7 +423,7 @@ main(int argc, char *argv[])
              */
             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                       "Database changed, exiting.");
-            (void)http_quit();
+            http_quit();
             reset_values(files_retrieved, file_size_retrieved,
                          files_to_retrieve, file_size_to_retrieve,
                          (struct job *)&db);
@@ -450,7 +450,8 @@ main(int argc, char *argv[])
          if ((status = http_options(db.target_dir)) != SUCCESS)
          {
             trans_log((timeout_flag == ON) ? ERROR_SIGN : DEBUG_SIGN,
-                      __FILE__, __LINE__, NULL, msg_str,
+                      __FILE__, __LINE__, NULL,
+                      (status == INCORRECT) ? NULL : msg_str,
                       "Failed to get options (%d).", status);
             if (timeout_flag == ON)
             {
@@ -519,7 +520,7 @@ main(int argc, char *argv[])
             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                       "hostname changed (%s -> %s), exiting.",
                       db.hostname, p_current_real_hostname);
-            (void)http_quit();
+            http_quit();
             reset_values(files_retrieved, file_size_retrieved,
                          files_to_retrieve, file_size_to_retrieve,
                          (struct job *)&db);
@@ -602,7 +603,7 @@ main(int argc, char *argv[])
                      */
                     trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                               "Database changed, exiting.");
-                    (void)http_quit();
+                    http_quit();
                     reset_values(files_retrieved, file_size_retrieved,
                                  files_to_retrieve, file_size_to_retrieve,
                                  (struct job *)&db);
@@ -618,7 +619,7 @@ main(int argc, char *argv[])
                 */
                trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                          "Database changed, exiting.");
-               (void)http_quit();
+               http_quit();
                reset_values(files_retrieved, file_size_retrieved,
                             files_to_retrieve, file_size_to_retrieve,
                             (struct job *)&db);
@@ -700,7 +701,7 @@ main(int argc, char *argv[])
                      trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                                "hostname changed (%s -> %s), exiting.",
                                db.hostname, p_current_real_hostname);
-                     (void)http_quit();
+                     http_quit();
                      reset_values(files_retrieved, file_size_retrieved,
                                   files_to_retrieve, file_size_to_retrieve,
                                   (struct job *)&db);
@@ -716,7 +717,7 @@ main(int argc, char *argv[])
                                   "no_of_listed_files has been reduced (%d -> %d)!",
                                   no_of_listed_files,
                                   *current_no_of_listed_files);
-                        (void)http_quit();
+                        http_quit();
                         reset_values(files_retrieved, file_size_retrieved,
                                      files_to_retrieve, file_size_to_retrieve,
                                      (struct job *)&db);
@@ -845,7 +846,8 @@ main(int argc, char *argv[])
                          (status != CHUNKED) && (status != NOTHING_TO_FETCH) &&
                          (status != 301) && (status != 400) && (status != 404))
                      {
-                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                        trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                                  (status == INCORRECT) ? NULL : msg_str,
                                   "Failed to open remote file %s in %s (%d).",
 #ifdef NEW_FRA
                                   (fra->dir_options & URL_CREATES_FILE_NAME) ? db.target_dir : tmp_rl.file_name,
@@ -853,7 +855,7 @@ main(int argc, char *argv[])
                                   (fra->dir_flag & URL_CREATES_FILE_NAME) ? db.target_dir : tmp_rl.file_name,
 #endif
                                   fra->dir_alias, status);
-                        (void)http_quit();
+                        http_quit();
                         reset_values(files_retrieved, file_size_retrieved,
                                      files_to_retrieve, file_size_to_retrieve,
                                      (struct job *)&db);
@@ -1007,7 +1009,7 @@ main(int argc, char *argv[])
                                 }
                                 trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                                           "Database changed, exiting.");
-                                (void)http_quit();
+                                http_quit();
                                 reset_values(files_retrieved,
                                              file_size_retrieved,
                                              files_to_retrieve,
@@ -1123,7 +1125,7 @@ main(int argc, char *argv[])
                                  */
                                 trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                                           "Database changed, exiting.");
-                                (void)http_quit();
+                                http_quit();
                                 (void)close(fd);
                                 if (prev_download_exists != YES)
                                 {
@@ -1171,7 +1173,8 @@ main(int argc, char *argv[])
 #endif
                                     if ((status = http_read(buffer, blocksize)) <= 0)
                                     {
-                                       trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                       trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                                                 (status == INCORRECT) ? NULL : msg_str,
                                                  "Failed to read from remote file %s in %s (%d)",
                                                  tmp_rl.file_name,
                                                  fra->dir_alias, status);
@@ -1273,7 +1276,7 @@ main(int argc, char *argv[])
                                              */
                                             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                                                       "Database changed, exiting.");
-                                            (void)http_quit();
+                                            http_quit();
                                             (void)close(fd);
                                             reset_values(files_retrieved,
                                                          file_size_retrieved,
@@ -1316,7 +1319,8 @@ main(int argc, char *argv[])
 #endif
                                     if ((status = http_read(buffer, hunk_size)) <= 0)
                                     {
-                                       trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                       trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                                                 (status == INCORRECT) ? NULL : msg_str,
                                                  "Failed to read from remote file %s in %s (%d)",
                                                  tmp_rl.file_name,
                                                  fra->dir_alias, status);
@@ -1413,7 +1417,7 @@ main(int argc, char *argv[])
                                              */
                                             trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                                                       "Database changed, exiting.");
-                                            (void)http_quit();
+                                            http_quit();
                                             (void)close(fd);
                                             (void)unlink(local_tmp_file);
                                             reset_values(files_retrieved,
@@ -1447,7 +1451,8 @@ main(int argc, char *argv[])
                                  if ((status = http_chunk_read(&chunkbuffer,
                                                                &chunksize)) == INCORRECT)
                                  {
-                                    trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                    trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                                              (status == INCORRECT) ? NULL : msg_str,
                                               "Failed to read from remote file %s in %s",
                                               tmp_rl.file_name, fra->dir_alias);
                                     reset_values(files_retrieved,
@@ -1505,7 +1510,7 @@ main(int argc, char *argv[])
                                           */
                                          trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                                                    "Database changed, exiting.");
-                                         (void)http_quit();
+                                         http_quit();
                                          (void)close(fd);
                                          (void)unlink(local_tmp_file);
                                          reset_values(files_retrieved,
@@ -1553,7 +1558,8 @@ main(int argc, char *argv[])
                            {
                               if (fra->stupid_mode != YES)
                               {
-                                 trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                 trans_log(WARN_SIGN, __FILE__, __LINE__, NULL,
+                                           (status == INCORRECT) ? NULL : msg_str,
                                            "Failed to delete remote file %s in %s (%d).",
                                            tmp_rl.file_name, fra->dir_alias,
                                            status);
@@ -1565,7 +1571,8 @@ main(int argc, char *argv[])
                                  /* already retrieved we must exit. */
                                  /* Otherwise we are in a constant  */
                                  /* loop fetching the same files!   */
-                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                                 trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                                           (status == INCORRECT) ? NULL : msg_str,
                                            "Failed to delete remote file %s in %s (%d).",
                                            tmp_rl.file_name, fra->dir_alias,
                                            status);
@@ -1963,7 +1970,7 @@ main(int argc, char *argv[])
                                      "no_of_listed_files has been reduced (%d -> %d)!",
                                      no_of_listed_files,
                                      *current_no_of_listed_files);
-                           (void)http_quit();
+                           http_quit();
                            reset_values(files_retrieved, file_size_retrieved,
                                         files_to_retrieve,
                                         file_size_to_retrieve,
@@ -1982,7 +1989,7 @@ main(int argc, char *argv[])
                         /* structures (FRA/FSA)!                      */
                         trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                                   "Database changed, exiting.");
-                        (void)http_quit();
+                        http_quit();
                         reset_values(files_retrieved, file_size_retrieved,
                                      files_to_retrieve, file_size_to_retrieve,
                                      (struct job *)&db);
@@ -1991,7 +1998,7 @@ main(int argc, char *argv[])
                      }
                      if (delete_failed == YES)
                      {
-                        (void)http_quit();
+                        http_quit();
                         reset_values(files_retrieved, file_size_retrieved,
                                      files_to_retrieve, file_size_to_retrieve,
                                      (struct job *)&db);
@@ -2061,7 +2068,7 @@ main(int argc, char *argv[])
                     /* since we try to access this structure FRA! */
                     trans_log(INFO_SIGN, __FILE__, __LINE__, NULL, NULL,
                               "Database changed, exiting.");
-                    (void)http_quit();
+                    http_quit();
                     reset_values(files_retrieved, file_size_retrieved,
                                  files_to_retrieve, file_size_to_retrieve,
                                  (struct job *)&db);

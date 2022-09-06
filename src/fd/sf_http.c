@@ -601,7 +601,8 @@ main(int argc, char *argv[])
                                 (files_send == 0) ? YES : NO)) != SUCCESS)
 #endif
          {
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                      (status == INCORRECT) ? NULL : msg_str,
                       "Failed to open remote file `%s' (%d).",
                       p_remote_filename, status);
             http_quit();
@@ -983,7 +984,8 @@ main(int argc, char *argv[])
 
          if ((status = http_put_response()) != SUCCESS)
          {
-            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                      (status == INCORRECT) ? NULL : msg_str,
                       "Failed to PUT remote file `%s' (%d).",
                       p_remote_filename, status);
             if (status == CONNECTION_REOPENED)

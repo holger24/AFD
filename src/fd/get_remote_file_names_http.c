@@ -497,7 +497,8 @@ try_attach_again:
                      else
                      {
                         trans_log((timeout_flag == ON) ? ERROR_SIGN : DEBUG_SIGN,
-                                  __FILE__, __LINE__, NULL, msg_str,
+                                  __FILE__, __LINE__, NULL,
+                                  (status == INCORRECT) ? NULL : msg_str,
                                   "Failed to get date and size of data %s (%d).",
                                   rl[i].file_name, status);
                         if (timeout_flag != OFF)
@@ -789,7 +790,8 @@ try_attach_again:
                   }
                }
 #endif
-               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                         (status == INCORRECT) ? NULL : msg_str,
                          "Failed to open remote directory %s (%d).",
                          db.target_dir, status);
                http_quit();
@@ -849,7 +851,8 @@ try_attach_again:
                   if ((status = http_read(&listbuffer[bytes_buffered],
                                           read_length)) == INCORRECT)
                   {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                               (status == INCORRECT) ? NULL : msg_str,
                                "Failed to read from remote directory listing for %s (%d)",
                                db.target_dir, status);
                      free(listbuffer);
@@ -896,7 +899,8 @@ try_attach_again:
                   if ((status = http_chunk_read(&chunkbuffer,
                                                 &chunksize)) == INCORRECT)
                   {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                               (status == INCORRECT) ? NULL : msg_str,
                                "Failed to read from remote directory listing for %s",
                                db.target_dir);
                      free(chunkbuffer);
@@ -2548,7 +2552,8 @@ check_list(char   *file,
                   }
                   else
                   {
-                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
+                               (status == INCORRECT) ? NULL : msg_str,
                                "Failed to get date and size of file %s (%d).",
                                file, status);
                      if (timeout_flag != OFF)
@@ -2797,7 +2802,8 @@ check_list(char   *file,
                   else
                   {
                      trans_log((timeout_flag == ON) ? ERROR_SIGN : DEBUG_SIGN,
-                               __FILE__, __LINE__, NULL, msg_str,
+                               __FILE__, __LINE__, NULL,
+                               (status == INCORRECT) ? NULL : msg_str,
                                "Failed to get date and size of file %s (%d).",
                                file, status);
                      if (timeout_flag != OFF)
@@ -3105,7 +3111,8 @@ check_list(char   *file,
       else
       {
          trans_log((timeout_flag == ON) ? ERROR_SIGN : DEBUG_SIGN,
-                   __FILE__, __LINE__, NULL, msg_str,
+                   __FILE__, __LINE__, NULL,
+                   (status == INCORRECT) ? NULL : msg_str,
                    "Failed to get date and size of file %s (%d).",
                    file, status);
          if (timeout_flag != OFF)
