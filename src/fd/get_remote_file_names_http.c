@@ -3110,16 +3110,22 @@ check_list(char   *file,
       }
       else
       {
-         trans_log((timeout_flag == ON) ? ERROR_SIGN : DEBUG_SIGN,
-                   __FILE__, __LINE__, NULL,
+         /*
+          * We could not treat this as an error and just check
+          * that there is no timeout and continue as http_get()
+          * will get us the size. Turns out that this can cause
+          * file corruption, since when get_http_reply() gets to
+          * read just one or two bytes it misses the real response
+          * and this will appear in content of the file when it
+          * is downloaded. This is now fixed in get_http_reply()
+          * but it is saver to just disconnect and retry again.
+          */
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
                    (status == INCORRECT) ? NULL : msg_str,
                    "Failed to get date and size of file %s (%d).",
                    file, status);
-         if (timeout_flag != OFF)
-         {
-            http_quit();
-            exit(DATE_ERROR);
-         }
+         http_quit();
+         exit(DATE_ERROR);
       }
    }
    rl[no_of_listed_files].file_mtime = file_mtime;
