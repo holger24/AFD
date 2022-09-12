@@ -852,7 +852,7 @@ try_attach_again:
                                           read_length)) == INCORRECT)
                   {
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL,
-                               (status == INCORRECT) ? NULL : msg_str,
+                               (status > 0) ? NULL : msg_str,
                                "Failed to read from remote directory listing for %s (%d)",
                                db.target_dir, status);
                      free(listbuffer);
