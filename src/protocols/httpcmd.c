@@ -3228,6 +3228,7 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
    {
       *ret_bytes_buffered = 0;
    }
+read_msg_again:
    if ((bytes_buffered = read_msg(&read_length, 0, line)) > 0)
    {
       hmr.close = NO;
@@ -3284,7 +3285,7 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
 
             /* Content-Length: */
             if ((read_length > 15) && (msg_str[14] == ':') &&
-                ((msg_str[8] == 'l') || (msg_str[8] == 'L')) &&
+                ((msg_str[8] == 'L') || (msg_str[8] == 'l')) &&
                 ((msg_str[9] == 'e') || (msg_str[9] == 'E')) &&
                 ((msg_str[10] == 'n') || (msg_str[10] == 'N')) &&
                 ((msg_str[11] == 'g') || (msg_str[11] == 'G')) &&
@@ -3366,17 +3367,17 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
                      ((msg_str[1] == 'W') || (msg_str[1] == 'w')) &&
                      ((msg_str[2] == 'W') || (msg_str[2] == 'w')) &&
                      ((msg_str[4] == 'A') || (msg_str[4] == 'a')) &&
-                     ((msg_str[5] == 'U') || (msg_str[5] == 'u')) &&
-                     ((msg_str[6] == 'T') || (msg_str[6] == 't')) &&
-                     ((msg_str[7] == 'H') || (msg_str[7] == 'h')) &&
-                     ((msg_str[8] == 'E') || (msg_str[8] == 'e')) &&
-                     ((msg_str[9] == 'N') || (msg_str[9] == 'n')) &&
-                     ((msg_str[10] == 'T') || (msg_str[10] == 't')) &&
-                     ((msg_str[11] == 'I') || (msg_str[11] == 'i')) &&
-                     ((msg_str[12] == 'C') || (msg_str[12] == 'c')) &&
-                     ((msg_str[13] == 'A') || (msg_str[13] == 'a')) &&
-                     ((msg_str[14] == 'T') || (msg_str[14] == 't')) &&
-                     ((msg_str[15] == 'E') || (msg_str[15] == 'e')))
+                     ((msg_str[5] == 'u') || (msg_str[5] == 'U')) &&
+                     ((msg_str[6] == 't') || (msg_str[6] == 'T')) &&
+                     ((msg_str[7] == 'h') || (msg_str[7] == 'H')) &&
+                     ((msg_str[8] == 'e') || (msg_str[8] == 'E')) &&
+                     ((msg_str[9] == 'n') || (msg_str[9] == 'N')) &&
+                     ((msg_str[10] == 't') || (msg_str[10] == 'T')) &&
+                     ((msg_str[11] == 'i') || (msg_str[11] == 'I')) &&
+                     ((msg_str[12] == 'c') || (msg_str[12] == 'C')) &&
+                     ((msg_str[13] == 'a') || (msg_str[13] == 'A')) &&
+                     ((msg_str[14] == 't') || (msg_str[14] == 'T')) &&
+                     ((msg_str[15] == 'e') || (msg_str[15] == 'E')))
                  {
                     int i = 17;
 
@@ -3389,44 +3390,44 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
                     {
                        /* Basic */
                        if (((msg_str[i] == 'B') || (msg_str[i] == 'b')) &&
-                           ((msg_str[i + 1] == 'A') || (msg_str[i + 1] == 'a')) &&
-                           ((msg_str[i + 2] == 'S') || (msg_str[i + 2] == 's')) &&
-                           ((msg_str[i + 3] == 'I') || (msg_str[i + 3] == 'i')) &&
-                           ((msg_str[i + 4] == 'C') || (msg_str[i + 4] == 'c')))
+                           ((msg_str[i + 1] == 'a') || (msg_str[i + 1] == 'A')) &&
+                           ((msg_str[i + 2] == 's') || (msg_str[i + 2] == 'S')) &&
+                           ((msg_str[i + 3] == 'i') || (msg_str[i + 3] == 'I')) &&
+                           ((msg_str[i + 4] == 'c') || (msg_str[i + 4] == 'C')))
                        {
                           hmr.www_authenticate = WWW_AUTHENTICATE_BASIC;
                        }
                             /* Digest */
                        else if (((msg_str[i] == 'D') || (msg_str[i] == 'd')) &&
-                                ((msg_str[i + 1] == 'I') || (msg_str[i + 1] == 'i')) &&
-                                ((msg_str[i + 2] == 'G') || (msg_str[i + 2] == 'g')) &&
-                                ((msg_str[i + 3] == 'E') || (msg_str[i + 3] == 'e')) &&
-                                ((msg_str[i + 4] == 'S') || (msg_str[i + 4] == 's')) &&
-                                ((msg_str[i + 5] == 'T') || (msg_str[i + 5] == 't')))
+                                ((msg_str[i + 1] == 'i') || (msg_str[i + 1] == 'I')) &&
+                                ((msg_str[i + 2] == 'g') || (msg_str[i + 2] == 'G')) &&
+                                ((msg_str[i + 3] == 'e') || (msg_str[i + 3] == 'E')) &&
+                                ((msg_str[i + 4] == 's') || (msg_str[i + 4] == 'S')) &&
+                                ((msg_str[i + 5] == 't') || (msg_str[i + 5] == 'T')))
                             {
                                hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST;
                             }
                     }
                  }
-                 /* Transfer-encoding: */
+                 /* Transfer-Encoding: */
             else if ((read_length > 18) && (msg_str[17] == ':') &&
                      (msg_str[8] == '-') &&
                      ((msg_str[0] == 'T') || (msg_str[0] == 't')) &&
-                     ((msg_str[1] == 'R') || (msg_str[1] == 'r')) &&
-                     ((msg_str[2] == 'A') || (msg_str[2] == 'a')) &&
-                     ((msg_str[3] == 'N') || (msg_str[3] == 'n')) &&
-                     ((msg_str[4] == 'S') || (msg_str[4] == 's')) &&
-                     ((msg_str[5] == 'F') || (msg_str[5] == 'f')) &&
-                     ((msg_str[6] == 'E') || (msg_str[6] == 'e')) &&
-                     ((msg_str[7] == 'R') || (msg_str[7] == 'r')) &&
+                     ((msg_str[1] == 'r') || (msg_str[1] == 'R')) &&
+                     ((msg_str[2] == 'a') || (msg_str[2] == 'A')) &&
+                     ((msg_str[3] == 'n') || (msg_str[3] == 'N')) &&
+                     ((msg_str[4] == 's') || (msg_str[4] == 'S')) &&
+                     ((msg_str[5] == 'f') || (msg_str[5] == 'F')) &&
+                     ((msg_str[6] == 'e') || (msg_str[6] == 'E')) &&
+                     ((msg_str[7] == 'r') || (msg_str[7] == 'R')) &&
                      ((msg_str[9] == 'E') || (msg_str[9] == 'e')) &&
-                     ((msg_str[10] == 'N') || (msg_str[10] == 'n')) &&
-                     ((msg_str[11] == 'C') || (msg_str[11] == 'c')) &&
-                     ((msg_str[12] == 'O') || (msg_str[12] == 'o')) &&
-                     ((msg_str[13] == 'D') || (msg_str[13] == 'd')) &&
-                     ((msg_str[14] == 'I') || (msg_str[14] == 'i')) &&
-                     ((msg_str[15] == 'N') || (msg_str[15] == 'n')) &&
-                     ((msg_str[16] == 'G') || (msg_str[16] == 'g')))
+                     ((msg_str[10] == 'n') || (msg_str[10] == 'N')) &&
+                     ((msg_str[11] == 'c') || (msg_str[11] == 'C')) &&
+                     ((msg_str[12] == 'o') || (msg_str[12] == 'O')) &&
+                     ((msg_str[13] == 'd') || (msg_str[13] == 'D')) &&
+                     ((msg_str[14] == 'i') || (msg_str[14] == 'I')) &&
+                     ((msg_str[15] == 'n') || (msg_str[15] == 'N')) &&
+                     ((msg_str[16] == 'g') || (msg_str[16] == 'G')))
                  {
                     int i = 18;
 
@@ -3437,20 +3438,20 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
                     }
                     if ((i + 7) < read_length)
                     {
-                       /* Chunked */
-                       if (((msg_str[i] == 'C') || (msg_str[i] == 'c')) &&
-                           ((msg_str[i + 1] == 'H') || (msg_str[i + 1] == 'h')) &&
-                           ((msg_str[i + 2] == 'U') || (msg_str[i + 2] == 'u')) &&
-                           ((msg_str[i + 3] == 'N') || (msg_str[i + 3] == 'n')) &&
-                           ((msg_str[i + 4] == 'K') || (msg_str[i + 4] == 'k')) &&
-                           ((msg_str[i + 5] == 'E') || (msg_str[i + 5] == 'e')) &&
-                           ((msg_str[i + 6] == 'D') || (msg_str[i + 6] == 'd')))
+                       /* chunked */
+                       if (((msg_str[i] == 'c') || (msg_str[i] == 'C')) &&
+                           ((msg_str[i + 1] == 'h') || (msg_str[i + 1] == 'H')) &&
+                           ((msg_str[i + 2] == 'u') || (msg_str[i + 2] == 'U')) &&
+                           ((msg_str[i + 3] == 'n') || (msg_str[i + 3] == 'N')) &&
+                           ((msg_str[i + 4] == 'k') || (msg_str[i + 4] == 'K')) &&
+                           ((msg_str[i + 5] == 'e') || (msg_str[i + 5] == 'E')) &&
+                           ((msg_str[i + 6] == 'd') || (msg_str[i + 6] == 'D')))
                        {
                           hmr.chunked = YES;
                        }
                     }
                  }
-                 /* Last-modified: */
+                 /* Last-Modified: */
             else if ((hmr.date != -1) &&
                      (read_length > 14) && (msg_str[13] == ':') &&
                      (msg_str[4] == '-') &&
@@ -3675,6 +3676,18 @@ get_http_reply(int *ret_bytes_buffered, int reply, int line)
             (void)read_msg(NULL, -2, line);
          }
       }
+           /*
+            * We are expecting a HTTP reply. If read_msg() just manages
+            * to read some bytes, assume something went wrong and
+            * try again.
+            */
+      else if (read_length < 3)
+           {
+              trans_log(DEBUG_SIGN, __FILE__, __LINE__, "get_http_reply", NULL,
+                          _("Ignoring %d bytes and retry read_msg() (bytes_buffered = %d [%d]) [%d]"),
+                          read_length, bytes_buffered, (int)msg_str[0], line);
+              goto read_msg_again;
+           }
    }
    else if (bytes_buffered == 0)
         {
