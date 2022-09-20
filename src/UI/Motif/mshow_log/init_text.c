@@ -1,6 +1,6 @@
 /*
  *  init_text.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ DESCR__S_M1
  **   16.03.1996 H.Kiehl Created
  **   31.05.1997 H.Kiehl Added debug toggle.
  **   27.12.2003 H.Kiehl Added trace toggle.
+ **   20.09.2022 H.Kiehl Replace unprintable characters with dot (.) sign.
  **
  */
 DESCR__E_M1
@@ -48,9 +49,6 @@ DESCR__E_M1
 #include <stdlib.h>     /* calloc(), free()                              */
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef HAVE_MMAP
-# include <sys/mman.h>  /* mmap(), munmap()                              */
-#endif
 #include <unistd.h>
 #include <X11/X.h>
 #include <X11/Xlib.h>
@@ -181,21 +179,6 @@ read_text(void)
       XFlush(display);
 
       /* Copy file to memory. */
-#ifdef HAVE_MMAP
-      if (lseek(fd, stat_buf.st_size, SEEK_SET) == -1)
-      {
-         (void)xrec(FATAL_DIALOG, "lseek() error : %s (%s %d)",
-                    strerror(errno), __FILE__, __LINE__);
-         return;
-      }
-      if ((src = mmap(NULL, stat_buf.st_size, PROT_READ, MAP_SHARED,
-                      fd, 0)) == (caddr_t) -1)
-      {
-         (void)xrec(FATAL_DIALOG, "mmap() error : %s (%s %d)",
-                    strerror(errno), __FILE__, __LINE__);
-         return;
-      }
-#else
       if ((src = malloc(stat_buf.st_size)) == NULL)
       {
          (void)xrec(FATAL_DIALOG, "malloc() error : %s (%s %d)",
@@ -211,9 +194,10 @@ read_text(void)
                     strerror(tmp_errno), __FILE__, __LINE__);
          return;
       }
-#endif
       if ((dst = malloc(stat_buf.st_size + 1)) == NULL)
       {
+         free(src);
+         free(dst);
          (void)xrec(FATAL_DIALOG, "malloc() error [%d bytes] : %s (%s %d)",
                     stat_buf.st_size + 1, strerror(errno), __FILE__, __LINE__);
          return;
@@ -232,8 +216,14 @@ read_text(void)
          {
             length = 0;
             ptr_line = ptr;
-            while ((*ptr != '\n') && (*ptr != '\0'))
+            while ((*ptr != '\n') &&
+                   ((tmp_total_length + length) < stat_buf.st_size))
             {
+               /* Remove unprintable characters. */
+               if ((unsigned char)(*ptr) < ' ')
+               {
+                  *ptr = '.';
+               }
                length++; ptr++;
             }
             length++; ptr++;
@@ -353,8 +343,14 @@ read_text(void)
          {
             length = 0;
             ptr_line = ptr;
-            while ((*ptr != '\n') && (*ptr != '\0'))
+            while ((*ptr != '\n') &&
+                   ((tmp_total_length + length) < stat_buf.st_size))
             {
+               /* Remove unprintable characters. */
+               if ((unsigned char)(*ptr) < ' ')
+               {
+                  *ptr = '.';
+               }
                length++; ptr++;
             }
             length++; ptr++;
@@ -432,15 +428,7 @@ read_text(void)
          *(ptr_dst + block_length) = '\0';
       }
 
-#ifdef HAVE_MMAP
-      if (munmap(src, stat_buf.st_size) < 0)
-      {
-         (void)xrec(WARN_DIALOG, "munmap() error : %s (%s %d)",
-                    strerror(errno), __FILE__, __LINE__);
-      }
-#else
       free(src);
-#endif
 
       if (wpr_position == 0)
       {

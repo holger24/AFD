@@ -1,6 +1,6 @@
 /*
  *  check_log.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2018 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ DESCR__S_M1
  **                      information and then show in one block.
  **   27.12.2003 H.Kiehl Added trace toggle.
  **   26.03.2004 H.Kiehl Handle implementations with sticky EOF behaviour.
+ **   20.09.2022 H.Kiehl Replace unprintable characters with dot (.) sign.
  **
  */
 DESCR__E_M1
@@ -112,7 +113,8 @@ check_log(Widget w)
 
    if (p_log_file != NULL)
    {
-      int          max_lines = 0;
+      int          i,
+                   max_lines = 0;
       size_t       length,
                    line_length = MAX_LINE_LENGTH + 1;
       unsigned int chars_buffered = 0;
@@ -128,8 +130,6 @@ check_log(Widget w)
       }
       if (no_of_hosts > 0)
       {
-         int i;
-
 #ifdef HAVE_GETLINE
          while ((length = getline(&line, &line_length, p_log_file)) != -1)
 #else
@@ -139,6 +139,17 @@ check_log(Widget w)
 #ifndef HAVE_GETLINE
             length = strlen(line);
 #endif
+            /* Check if line contains unprintable characters. */
+            i = 0;
+            while (i < length)
+            {
+               if ((line[i] < ' ') && (line[i] != '\n'))
+               {
+                  line[i] = '.';
+               }
+               i++;
+            }
+
             if ((length > 0) && (line[length - 1] == '\n'))
             {
                if (incomplete_line != NULL)
@@ -246,6 +257,17 @@ check_log(Widget w)
 #ifndef HAVE_GETLINE
             length = strlen(line);
 #endif
+            /* Check if line contains unprintable characters. */
+            i = 0;
+            while (i < length)
+            {
+               if ((line[i] < ' ') && (line[i] != '\n'))
+               {
+                  line[i] = '.';
+               }
+               i++;
+            }
+
             if ((length > 0) && (line[length - 1] == '\n'))
             {
                if (incomplete_line != NULL)
