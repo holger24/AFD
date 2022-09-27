@@ -1,6 +1,6 @@
 /*
  *  eval_time_str.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1999 - 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1999 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -51,6 +51,8 @@ DESCR__S_M3
  **   21.05.2007 H.Kiehl Added check_time_str() to just check the time
  **                      string supplied.
  **   14.11.2013 H.Kiehl Added support for 'time external'.
+ **   27.09.2022 H.Kiehl When giving a range, check that the second
+ **                      number is not less then the first number.
  **
  */
 DESCR__E_M3
@@ -156,44 +158,54 @@ eval_time_str(char *time_str, struct bd_time_entry *te, FILE *cmd_fp)
                }
                else
                {
-                  int i;
-
-                  if ((step_size == 1) && (continuous == YES))
+                  if (number < first_number)
                   {
-                     for (i = first_number; i <= number; i = i + step_size)
-                     {
-#ifdef HAVE_LONG_LONG
-                        te->continuous_minute |= bit_array_long[i];
-#else
-                        bitset(te->continuous_minute, i);
-#endif
-                     }
-                     step_size = 0;
+                     update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("In minute field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                   number, first_number);
+                     return(INCORRECT);
                   }
                   else
                   {
-                     if (step_size == 0)
-                     {
-                        for (i = first_number; i <= number; i++)
-                        {
-#ifdef HAVE_LONG_LONG
-                           te->minute |= bit_array_long[i];
-#else
-                           bitset(te->minute, i);
-#endif
-                        }
-                     }
-                     else
+                     int i;
+
+                     if ((step_size == 1) && (continuous == YES))
                      {
                         for (i = first_number; i <= number; i = i + step_size)
-                        {
+                     {
 #ifdef HAVE_LONG_LONG
-                           te->minute |= bit_array_long[i];
+                           te->continuous_minute |= bit_array_long[i];
 #else
-                           bitset(te->minute, i);
+                           bitset(te->continuous_minute, i);
 #endif
                         }
                         step_size = 0;
+                     }
+                     else
+                     {
+                        if (step_size == 0)
+                        {
+                           for (i = first_number; i <= number; i++)
+                           {
+#ifdef HAVE_LONG_LONG
+                              te->minute |= bit_array_long[i];
+#else
+                              bitset(te->minute, i);
+#endif
+                           }
+                        }
+                        else
+                        {
+                           for (i = first_number; i <= number; i = i + step_size)
+                        {
+#ifdef HAVE_LONG_LONG
+                              te->minute |= bit_array_long[i];
+#else
+                              bitset(te->minute, i);
+#endif
+                           }
+                           step_size = 0;
+                        }
                      }
                   }
                   first_number = -1;
@@ -293,46 +305,56 @@ eval_time_str(char *time_str, struct bd_time_entry *te, FILE *cmd_fp)
                     }
                     else
                     {
-                       int i;
-
-                       if ((step_size == 1) && (continuous == YES))
+                       if (number < first_number)
                        {
-                          for (i = first_number; i <= number; i = i + step_size)
-                          {
-#ifdef HAVE_LONG_LONG
-                             te->continuous_minute |= bit_array_long[i];
-#else
-                             bitset(te->continuous_minute, i);
-#endif
-                          }
-                          step_size = 0;
+                          update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("In minute field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                        number, first_number);
+                          return(INCORRECT);
                        }
                        else
                        {
-                          if (step_size == 0)
-                          {
-                             for (i = first_number; i <= number; i++)
-                             {
-#ifdef HAVE_LONG_LONG
-                                te->minute |= bit_array_long[i];
-#else
-                                bitset(te->minute, i);
-#endif
-                             }
-                          }
-                          else
+                          int i;
+
+                          if ((step_size == 1) && (continuous == YES))
                           {
                              for (i = first_number; i <= number; i = i + step_size)
                              {
 #ifdef HAVE_LONG_LONG
-                                te->minute |= bit_array_long[i];
+                                te->continuous_minute |= bit_array_long[i];
 #else
-                                bitset(te->minute, i);
+                                bitset(te->continuous_minute, i);
 #endif
                              }
                              step_size = 0;
                           }
-                          continuous = YES;
+                          else
+                          {
+                             if (step_size == 0)
+                             {
+                                for (i = first_number; i <= number; i++)
+                                {
+#ifdef HAVE_LONG_LONG
+                                   te->minute |= bit_array_long[i];
+#else
+                                   bitset(te->minute, i);
+#endif
+                                }
+                             }
+                             else
+                             {
+                                for (i = first_number; i <= number; i = i + step_size)
+                                {
+#ifdef HAVE_LONG_LONG
+                                   te->minute |= bit_array_long[i];
+#else
+                                   bitset(te->minute, i);
+#endif
+                                }
+                                step_size = 0;
+                             }
+                             continuous = YES;
+                          }
                        }
                        first_number = -1;
                     }
@@ -451,22 +473,32 @@ eval_time_str(char *time_str, struct bd_time_entry *te, FILE *cmd_fp)
                }
                else
                {
-                  int i;
-
-                  if (step_size == 0)
+                  if (number < first_number)
                   {
-                     for (i = first_number; i <= number; i++)
-                     {
-                        te->hour |= bit_array[i];
-                     }
+                     update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("In hour field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                   number, first_number);
+                     return(INCORRECT);
                   }
                   else
                   {
-                     for (i = first_number; i <= number; i = i + step_size)
+                     int i;
+
+                     if (step_size == 0)
                      {
-                        te->hour |= bit_array[i];
+                        for (i = first_number; i <= number; i++)
+                        {
+                           te->hour |= bit_array[i];
+                        }
                      }
-                     step_size = 0;
+                     else
+                     {
+                        for (i = first_number; i <= number; i = i + step_size)
+                        {
+                           te->hour |= bit_array[i];
+                        }
+                        step_size = 0;
+                     }
                   }
                   first_number = -1;
                }
@@ -545,22 +577,32 @@ eval_time_str(char *time_str, struct bd_time_entry *te, FILE *cmd_fp)
                     }
                     else
                     {
-                       int i;
-
-                       if (step_size == 0)
+                       if (number < first_number)
                        {
-                          for (i = first_number; i <= number; i++)
-                          {
-                             te->hour |= bit_array[i];
-                          }
+                          update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("In hour field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                        number, first_number);
+                          return(INCORRECT);
                        }
                        else
                        {
-                          for (i = first_number; i <= number; i = i + step_size)
+                          int i;
+
+                          if (step_size == 0)
                           {
-                             te->hour |= bit_array[i];
+                             for (i = first_number; i <= number; i++)
+                             {
+                                te->hour |= bit_array[i];
+                             }
                           }
-                          step_size = 0;
+                          else
+                          {
+                             for (i = first_number; i <= number; i = i + step_size)
+                             {
+                                te->hour |= bit_array[i];
+                             }
+                             step_size = 0;
+                          }
                        }
                        first_number = -1;
                     }
@@ -681,22 +723,32 @@ eval_time_str(char *time_str, struct bd_time_entry *te, FILE *cmd_fp)
                }
                else
                {
-                  int i;
-
-                  if (step_size == 0)
+                  if (number < first_number)
                   {
-                     for (i = first_number; i <= number; i++)
-                     {
-                        te->day_of_month |= bit_array[i - 1];
-                     }
+                     update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("In day of month field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                   number, first_number);
+                     return(INCORRECT);
                   }
                   else
                   {
-                     for (i = first_number; i <= number; i = i + step_size)
+                     int i;
+
+                     if (step_size == 0)
                      {
-                        te->day_of_month |= bit_array[i - 1];
+                        for (i = first_number; i <= number; i++)
+                        {
+                           te->day_of_month |= bit_array[i - 1];
+                        }
                      }
-                     step_size = 0;
+                     else
+                     {
+                        for (i = first_number; i <= number; i = i + step_size)
+                        {
+                           te->day_of_month |= bit_array[i - 1];
+                        }
+                        step_size = 0;
+                     }
                   }
                   first_number = -1;
                }
@@ -787,22 +839,32 @@ eval_time_str(char *time_str, struct bd_time_entry *te, FILE *cmd_fp)
                     }
                     else
                     {
-                       int i;
-
-                       if (step_size == 0)
+                       if (number < first_number)
                        {
-                          for (i = first_number; i <= number; i++)
-                          {
-                             te->day_of_month |= bit_array[i - 1];
-                          }
+                          update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("In day of month field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                        number, first_number);
+                          return(INCORRECT);
                        }
                        else
                        {
-                          for (i = first_number; i <= number; i = i + step_size)
+                          int i;
+
+                          if (step_size == 0)
                           {
-                             te->day_of_month |= bit_array[i - 1];
+                             for (i = first_number; i <= number; i++)
+                             {
+                                te->day_of_month |= bit_array[i - 1];
+                             }
                           }
-                          step_size = 0;
+                          else
+                          {
+                             for (i = first_number; i <= number; i = i + step_size)
+                             {
+                                te->day_of_month |= bit_array[i - 1];
+                             }
+                             step_size = 0;
+                          }
                        }
                        first_number = -1;
                     }
@@ -922,22 +984,32 @@ eval_time_str(char *time_str, struct bd_time_entry *te, FILE *cmd_fp)
                }
                else
                {
-                  int i;
-
-                  if (step_size == 0)
+                  if (number < first_number)
                   {
-                     for (i = first_number; i <= number; i++)
-                     {
-                        te->month |= bit_array[i - 1];
-                     }
+                     update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("In month field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                   number, first_number);
+                     return(INCORRECT);
                   }
                   else
                   {
-                     for (i = first_number; i <= number; i = i + step_size)
+                     int i;
+
+                     if (step_size == 0)
                      {
-                        te->month |= bit_array[i - 1];
+                        for (i = first_number; i <= number; i++)
+                        {
+                           te->month |= bit_array[i - 1];
+                        }
                      }
-                     step_size = 0;
+                     else
+                     {
+                        for (i = first_number; i <= number; i = i + step_size)
+                        {
+                           te->month |= bit_array[i - 1];
+                        }
+                        step_size = 0;
+                     }
                   }
                   first_number = -1;
                }
@@ -1026,22 +1098,32 @@ eval_time_str(char *time_str, struct bd_time_entry *te, FILE *cmd_fp)
                     }
                     else
                     {
-                       int i;
-
-                       if (step_size == 0)
+                       if (number < first_number)
                        {
-                          for (i = first_number; i <= number; i++)
-                          {
-                             te->month |= bit_array[i - 1];
-                          }
+                          update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("In month field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                        number, first_number);
+                          return(INCORRECT);
                        }
                        else
                        {
-                          for (i = first_number; i <= number; i = i + step_size)
+                          int i;
+
+                          if (step_size == 0)
                           {
-                             te->month |= bit_array[i - 1];
+                             for (i = first_number; i <= number; i++)
+                             {
+                                te->month |= bit_array[i - 1];
+                             }
                           }
-                          step_size = 0;
+                          else
+                          {
+                             for (i = first_number; i <= number; i = i + step_size)
+                             {
+                                te->month |= bit_array[i - 1];
+                             }
+                             step_size = 0;
+                          }
                        }
                        first_number = -1;
                     }
@@ -1157,22 +1239,32 @@ eval_time_str(char *time_str, struct bd_time_entry *te, FILE *cmd_fp)
                }
                else
                {
-                  int i;
-
-                  if (step_size == 0)
+                  if (number < first_number)
                   {
-                     for (i = first_number; i <= number; i++)
-                     {
-                        te->day_of_week |= bit_array[i - 1];
-                     }
+                     update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("In day of week field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                   number, first_number);
+                     return(INCORRECT);
                   }
                   else
                   {
-                     for (i = first_number; i <= number; i = i + step_size)
+                     int i;
+
+                     if (step_size == 0)
                      {
-                        te->day_of_week |= bit_array[i - 1];
+                        for (i = first_number; i <= number; i++)
+                        {
+                           te->day_of_week |= bit_array[i - 1];
+                        }
                      }
-                     step_size = 0;
+                     else
+                     {
+                        for (i = first_number; i <= number; i = i + step_size)
+                        {
+                           te->day_of_week |= bit_array[i - 1];
+                        }
+                        step_size = 0;
+                     }
                   }
                   first_number = -1;
                }
@@ -1251,22 +1343,32 @@ eval_time_str(char *time_str, struct bd_time_entry *te, FILE *cmd_fp)
                     }
                     else
                     {
-                       int i;
-
-                       if (step_size == 0)
+                       if (number < first_number)
                        {
-                          for (i = first_number; i <= number; i++)
-                          {
-                             te->day_of_week |= bit_array[i - 1];
-                          }
+                          update_db_log(ERROR_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("In day of week field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                        number, first_number);
+                          return(INCORRECT);
                        }
                        else
                        {
-                          for (i = first_number; i <= number; i = i + step_size)
+                          int i;
+
+                          if (step_size == 0)
                           {
-                             te->day_of_week |= bit_array[i - 1];
+                             for (i = first_number; i <= number; i++)
+                             {
+                                te->day_of_week |= bit_array[i - 1];
+                             }
                           }
-                          step_size = 0;
+                          else
+                          {
+                             for (i = first_number; i <= number; i = i + step_size)
+                             {
+                                te->day_of_week |= bit_array[i - 1];
+                             }
+                             step_size = 0;
+                          }
                        }
                        first_number = -1;
                     }
@@ -1342,6 +1444,7 @@ check_time_str(char *time_str, FILE *cmd_fp)
 {
    int  continuous = YES,
         first_number = -1,
+        number,
         step_size = 0;
    char *ptr = time_str,
         str_number[3];
@@ -1392,9 +1495,21 @@ check_time_str(char *time_str, FILE *cmd_fp)
                                    _("Possible values for minute field : 0-59."));
                      return(INCORRECT);
                   }
+                  number = ((str_number[0] - '0') * 10) + str_number[1] - '0';
+               }
+               else
+               {
+                  number = str_number[0] - '0';
                }
                if (first_number != -1)
                {
+                  if (number < first_number)
+                  {
+                     update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("In minute field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                   number, first_number);
+                     return(INCORRECT);
+                  }
                   step_size = 0;
                   first_number = -1;
                }
@@ -1454,9 +1569,21 @@ check_time_str(char *time_str, FILE *cmd_fp)
                                         _("Possible values for minute field : 0-59."));
                           return(INCORRECT);
                        }
+                       number = ((str_number[0] - '0') * 10) + str_number[1] - '0';
+                    }
+                    else
+                    {
+                       number = str_number[0] - '0';
                     }
                     if (first_number != -1)
                     {
+                       if (number < first_number)
+                       {
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("In minute field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                        number, first_number);
+                          return(INCORRECT);
+                       }
                        if ((step_size == 1) && (continuous == YES))
                        {
                           /* store continuous_minute */;
@@ -1571,9 +1698,21 @@ check_time_str(char *time_str, FILE *cmd_fp)
                                    _("Possible values for hour field : 0-23."));
                      return(INCORRECT);
                   }
+                  number = ((str_number[0] - '0') * 10) + str_number[1] - '0';
+               }
+               else
+               {
+                  number = str_number[0] - '0';
                }
                if (first_number != -1)
                {
+                  if (number < first_number)
+                  {
+                     update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("In hour field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                   number, first_number);
+                     return(INCORRECT);
+                  }
                   step_size = 0;
                   first_number = -1;
                }
@@ -1626,9 +1765,21 @@ check_time_str(char *time_str, FILE *cmd_fp)
                                         _("Possible values for hour field : 0-23."));
                           return(INCORRECT);
                        }
+                       number = ((str_number[0] - '0') * 10) + str_number[1] - '0';
+                    }
+                    else
+                    {
+                       number = str_number[0] - '0';
                     }
                     if (first_number != -1)
                     {
+                       if (number < first_number)
+                       {
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("In hour field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                        number, first_number);
+                          return(INCORRECT);
+                       }
                        step_size = 0;
                        first_number = -1;
                     }
@@ -1729,6 +1880,7 @@ check_time_str(char *time_str, FILE *cmd_fp)
                                    _("Possible values for day of month field : 1-31."));
                      return(INCORRECT);
                   }
+                  number = str_number[0] - '0';
                }
                else
                {
@@ -1739,9 +1891,17 @@ check_time_str(char *time_str, FILE *cmd_fp)
                                    _("Possible values for day of month field : 1-31."));
                      return(INCORRECT);
                   }
+                  number = ((str_number[0] - '0') * 10) + str_number[1] - '0';
                }
                if (first_number != -1)
                {
+                  if (number < first_number)
+                  {
+                     update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("In day of month field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                   number, first_number);
+                     return(INCORRECT);
+                  }
                   step_size = 0;
                   first_number = -1;
                }
@@ -1799,6 +1959,7 @@ check_time_str(char *time_str, FILE *cmd_fp)
                                         _("Possible values for day of month field : 1-31."));
                           return(INCORRECT);
                        }
+                       number = str_number[0] - '0';
                     }
                     else
                     {
@@ -1809,9 +1970,17 @@ check_time_str(char *time_str, FILE *cmd_fp)
                                         _("Possible values for day of month field : 1-31."));
                           return(INCORRECT);
                        }
+                       number = ((str_number[0] - '0') * 10) + str_number[1] - '0';
                     }
                     if (first_number != -1)
                     {
+                       if (number < first_number)
+                       {
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("In day of month field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                        number, first_number);
+                          return(INCORRECT);
+                       }
                        step_size = 0;
                        first_number = -1;
                     }
@@ -1912,6 +2081,7 @@ check_time_str(char *time_str, FILE *cmd_fp)
                                    _("Possible values for month field : 1-12."));
                      return(INCORRECT);
                   }
+                  number = str_number[0] - '0';
                }
                else
                {
@@ -1921,9 +2091,17 @@ check_time_str(char *time_str, FILE *cmd_fp)
                                    _("Possible values for month field : 1-12."));
                      return(INCORRECT);
                   }
+                  number = ((str_number[0] - '0') * 10) + str_number[1] - '0';
                }
                if (first_number != -1)
                {
+                  if (number < first_number)
+                  {
+                     update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("In month field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                   number, first_number);
+                     return(INCORRECT);
+                  }
                   step_size = 0;
                   first_number = -1;
                }
@@ -1980,6 +2158,7 @@ check_time_str(char *time_str, FILE *cmd_fp)
                                         _("Possible values for month field : 1-12."));
                           return(INCORRECT);
                        }
+                       number = str_number[0] - '0';
                     }
                     else
                     {
@@ -1989,9 +2168,17 @@ check_time_str(char *time_str, FILE *cmd_fp)
                                         _("Possible values for month field : 1-12."));
                           return(INCORRECT);
                        }
+                       number = ((str_number[0] - '0') * 10) + str_number[1] - '0';
                     }
                     if (first_number != -1)
                     {
+                       if (number < first_number)
+                       {
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("In month field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                        number, first_number);
+                          return(INCORRECT);
+                       }
                        step_size = 0;
                        first_number = -1;
                     }
@@ -2092,6 +2279,7 @@ check_time_str(char *time_str, FILE *cmd_fp)
                                    _("Possible values for day of week field : 1-7."));
                      return(INCORRECT);
                   }
+                  number = str_number[0] - '0';
                }
                else
                {
@@ -2101,6 +2289,13 @@ check_time_str(char *time_str, FILE *cmd_fp)
                }
                if (first_number != -1)
                {
+                  if (number < first_number)
+                  {
+                     update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                   _("In day of week field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                   number, first_number);
+                     return(INCORRECT);
+                  }
                   step_size = 0;
                   first_number = -1;
                }
@@ -2152,6 +2347,7 @@ check_time_str(char *time_str, FILE *cmd_fp)
                                         _("Possible values for day of week field : 1-7."));
                           return(INCORRECT);
                        }
+                       number = str_number[0] - '0';
                     }
                     else
                     {
@@ -2161,6 +2357,13 @@ check_time_str(char *time_str, FILE *cmd_fp)
                     }
                     if (first_number != -1)
                     {
+                       if (number < first_number)
+                       {
+                          update_db_log(WARN_SIGN, __FILE__, __LINE__, cmd_fp, NULL,
+                                        _("In day of week field the second number (%d) cannot be less then the first number (%d) when specifying a range. Ignoring time entry!"),
+                                        number, first_number);
+                          return(INCORRECT);
+                       }
                        step_size = 0;
                        first_number = -1;
                     }
