@@ -99,7 +99,7 @@ display_file(FILE *p_data)
       return;
    }
 
-   (void)fprintf(p_data, "211- Command successful\n\n");
+   (void)fprintf(p_data, "211- Command successful\r\n");
    (void)fflush(p_data);
    fd = fileno(p_data);
 

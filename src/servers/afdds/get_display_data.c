@@ -1,6 +1,6 @@
 /*
  *  get_display_file.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2014 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -26,7 +26,8 @@ DESCR__S_M3
  **   get_display_data - writes the contents of a file to a socket
  **
  ** SYNOPSIS
- **   int get_display_data(char *search_file,
+ **   int get_display_data(SSL  *,
+ **                        char *search_file,
  **                        int  log_number,
  **                        char *search_string,
  **                        int  start_line,
@@ -55,13 +56,11 @@ DESCR__E_M3
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
 #endif
+#include <openssl/ssl.h>
 #include <unistd.h>                     /* read(), write(), close()      */
 #include <errno.h>
-#include "afdddefs.h"
-
-/* External global variables. */
-extern int             cmd_sd;
-extern FILE            *p_data;
+#include "afddsdefs.h"
+#include "server_common_defs.h"
 
 /* Local global variables. */
 static struct fd_cache fc[MAX_AFDD_LOG_FILES];
@@ -69,7 +68,8 @@ static struct fd_cache fc[MAX_AFDD_LOG_FILES];
 
 /*########################## get_display_data() #########################*/
 int
-get_display_data(char *search_file,
+get_display_data(SSL  *ssl,
+                 char *search_file,
                  int  log_number,
                  char *search_string,
                  int  start_line,
@@ -78,7 +78,7 @@ get_display_data(char *search_file,
                  int  file_no)
 {
    int         from_fd = -1,
-	       length;
+               length;
    size_t      hunk,
                left;
    char        *buffer;
@@ -92,8 +92,8 @@ get_display_data(char *search_file,
    {
       if (stat(search_file, &stat_buf) != 0)
       {
-         (void)fprintf(p_data, "500 Failed to stat() %s : %s (%s %d)\r\n",
-                       search_file, strerror(errno), __FILE__, __LINE__);
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to stat() %s : %s", search_file, strerror(errno));
          return(INCORRECT);
       }
       if (stat_buf.st_ino == fc[log_number].st_ino)
@@ -120,8 +120,8 @@ get_display_data(char *search_file,
    {
       if ((from_fd = open(search_file, O_RDONLY)) < 0)
       {
-         (void)fprintf(p_data, "500 Failed to open() %s : %s (%s %d)\r\n",
-                       search_file, strerror(errno), __FILE__, __LINE__);
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to open() %s : %s", search_file, strerror(errno));
          return(INCORRECT);
       }
 
@@ -134,14 +134,15 @@ get_display_data(char *search_file,
       {
          if (fstat(from_fd, &stat_buf) != 0)
          {
-            (void)fprintf(p_data, "500 Failed to fstat() %s : %s (%s %d)\r\n",
-                          search_file, strerror(errno), __FILE__, __LINE__);
+            system_log(ERROR_SIGN, __FILE__, __LINE__,
+                       "Failed to fstat() %s : %s",
+                       search_file, strerror(errno));
             (void)close(from_fd);
             return(INCORRECT);
          }
          else if (stat_buf.st_size == 0)
               {
-                 (void)fprintf(p_data, "500 File %s is empty.\r\n", search_file);
+                 (void)command(ssl, "500 File %s is empty.", search_file);
                  (void)close(from_fd);
                  return(SUCCESS);
               }
@@ -157,30 +158,27 @@ get_display_data(char *search_file,
 
    if ((buffer = malloc(hunk)) == NULL)
    {
-      (void)fprintf(p_data, "500 Failed to malloc() memory : %s (%s %d)\r\n",
-                    strerror(errno), __FILE__, __LINE__);
+      system_log(ERROR_SIGN, __FILE__, __LINE__,
+                 "Failed to malloc() memory : %s", strerror(errno));
       (void)close(from_fd);
       return(INCORRECT);
    }
 
-   (void)fprintf(p_data, "211- Command successful\r\n");
-   (void)fflush(p_data);
+   (void)command(ssl, "211- Command successful");
 
    while (left > 0)
    {
       if (read(from_fd, buffer, hunk) != hunk)
       {
-         (void)fprintf(p_data, "500 Failed to read() %s : %s (%s %d)\r\n",
-                       search_file, strerror(errno), __FILE__, __LINE__);
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Failed to read() %s : %s", search_file, strerror(errno));
          free(buffer);
          (void)close(from_fd);
          return(INCORRECT);
       }
 
-      if (write(cmd_sd, buffer, hunk) != hunk)
+      if (ssl_write(ssl, buffer, hunk) != hunk)
       {
-         (void)fprintf(p_data, "520 write() error : %s (%s %d)\r\n",
-                       strerror(errno), __FILE__, __LINE__);
          free(buffer);
          (void)close(from_fd);
          return(INCORRECT);
@@ -192,7 +190,7 @@ get_display_data(char *search_file,
       }
    }
 
-   (void)fprintf(p_data, "200 End of data\n");
+   (void)command(ssl, "200 End of data");
    free(buffer);
    if (close(from_fd) == -1)
    {

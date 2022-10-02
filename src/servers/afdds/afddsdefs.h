@@ -1,5 +1,5 @@
 /*
- *  afdddefs - Part of AFD, an automatic file distribution program.
+ *  afddsdefs - Part of AFD, an automatic file distribution program.
  *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
@@ -18,23 +18,27 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef __afdddefs_h
-#define __afdddefs_h
+#ifndef __afddsdefs_h
+#define __afddsdefs_h
 
+#include <openssl/ssl.h>
 #include "afdd_common_defs.h"
 
-#define DEFAULT_AFD_PORT_NO   "4444"
-#define AFDD_SHUTDOWN_MESSAGE "500 AFDD shutdown."
+#define AFDDS_CERT_FILENAME      "cert.pem"
+#define AFDDS_KEY_FILENAME       "key.pem"
+
+#define DEFAULT_AFD_TLS_PORT_NO  "3994"
+#define AFDDS_SHUTDOWN_MESSAGE   "500 AFDDS shutdown."
 
 /* Function prototypes. */
-extern void check_changes(FILE *),
-            display_file(FILE *),
-            handle_request(int, int, int, char *),
-            show_dir_list(FILE *),
-            show_host_list(FILE *),
-            show_host_stat(FILE *),
-            show_job_list(FILE *),
-            show_summary_stat(FILE *);
-extern int  get_display_data(char *, int, char *, int, int, int, int);
+extern void check_changes(SSL *),
+            display_file(SSL *),
+            handle_request(SSL *, int, int, int, char *),
+            show_dir_list(SSL *),
+            show_host_list(SSL *),
+            show_host_stat(SSL *),
+            show_job_list(SSL *),
+            show_summary_stat(SSL *);
+extern int  get_display_data(SSL *, char *, int, char *, int, int, int, int);
 
-#endif /* __afdddefs_h */
+#endif /* __afddsdefs_h */

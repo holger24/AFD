@@ -1,6 +1,6 @@
 /*
  *  log_mon.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2007 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2007 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -89,6 +89,9 @@ DESCR__E_M1
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>        /* struct timeval                           */
+#ifdef WITH_SSL
+# include <openssl/ssl.h>
+#endif
 #include <signal.h>          /* signal()                                 */
 #ifdef HAVE_MMAP
 # include <sys/mman.h>
@@ -98,7 +101,7 @@ DESCR__E_M1
 #include <errno.h>
 #include "mondefs.h"
 #include "logdefs.h"
-#include "afdddefs.h"
+#include "afdd_common_defs.h"
 #include "version.h"
 
 /* #define DEBUG_LOG_CMD */
@@ -116,6 +119,9 @@ int                    log_fd[NO_OF_LOGS],
                        sock_fd,
                        sys_log_fd = STDERR_FILENO,
                        timeout_flag;
+#ifdef WITH_SSL
+SSL                    *ssl_con = NULL;
+#endif
 unsigned int           log_flags[NO_OF_LOGS];
 off_t                  msa_size;
 long                   tcp_timeout = 120L;
@@ -124,7 +130,6 @@ char                   log_dir[MAX_PATH_LENGTH],
                        *p_log_dir,
                        *p_mon_alias,
                        *p_work_dir;
-FILE                   *p_control;
 struct mon_status_area *msa;
 const char             *sys_log_name = MON_SYS_LOG_FIFO;
 
@@ -317,7 +322,11 @@ main(int argc, char *argv[])
    timeout_flag = OFF;
    if ((status = tcp_connect(msa[afd_no].hostname[(int)msa[afd_no].afd_toggle],
                              msa[afd_no].port[(int)msa[afd_no].afd_toggle],
-                             YES)) != SUCCESS)
+                             YES
+#ifdef WITH_SSL
+                             , msa[afd_no].options & ENABLE_TLS_ENCRYPTION
+#endif
+                             )) != SUCCESS)
    {
       if (timeout_flag == OFF)
       {

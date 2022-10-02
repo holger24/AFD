@@ -1,5 +1,5 @@
 ## Makemodule.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2021 Holger Kiehl
+## Copyright (C) 2001 - 2022 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -65,14 +65,16 @@ bin_mon_SOURCES             = src/afd_mon/evaluate_message.c\
                               src/afd_mon/mon_log.c\
                               src/afd_mon/tcpcmd.c
 bin_mon_LDADD               = lib/libafd.a\
-                              @EXTRA_SOCKET_LIBS@
+                              @EXTRA_SOCKET_LIBS@\
+                              @AFD_SSL_LIBS@
 bin_log_mon_SOURCES         = src/afd_mon/log_mon.c\
                               src/afd_mon/mon_log.c\
                               src/afd_mon/send_log_cmd.c\
                               src/afd_mon/tcpcmd.c\
                               src/afd_mon/write_afd_log.c
 bin_log_mon_LDADD           = lib/libafd.a\
-                              @EXTRA_SOCKET_LIBS@
+                              @EXTRA_SOCKET_LIBS@\
+                              @AFD_SSL_LIBS@
 
 install-exec-hook-afdmon:
 if WITH_SETUID_PROGS

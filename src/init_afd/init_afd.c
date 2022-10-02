@@ -189,12 +189,13 @@ static pid_t               make_process(char *, char *, sigset_t *);
 static void                afd_exit(void),
                            check_dirs(char *),
                            delete_old_afd_status_files(void),
-                           get_afd_config_value(int *, unsigned int *, int *),
+                           get_afd_config_value(int *, int *,
+                                                unsigned int *, int *),
                            get_path_to_self(void),
                            sig_exit(int),
                            sig_bus(int),
                            sig_segv(int),
-                           start_afd(int, time_t, unsigned int, int),
+                           start_afd(int, time_t, unsigned int, int, int),
                            stop_afd(void),
                            stop_afd_worker(unsigned int *),
                            stuck_transfer_check(time_t),
@@ -207,6 +208,7 @@ int
 main(int argc, char *argv[])
 {
    int            afdd_port,
+                  afdds_port,
                   afd_status_fd,
                   binary_changed,
                   current_month,
@@ -600,6 +602,7 @@ main(int argc, char *argv[])
       p_afd_status->archive_watch     = 0;
       p_afd_status->afd_stat          = 0;
       p_afd_status->afdd              = 0;
+      p_afd_status->afdds             = 0;
 #ifndef HAVE_MMAP
       p_afd_status->mapper            = 0;
 #endif
@@ -698,6 +701,11 @@ main(int argc, char *argv[])
             (void)strcpy(proc_table[i].proc_name, AFDD);
             break;
 
+         case AFDDS_NO :
+            proc_table[i].status = &p_afd_status->afdds;
+            (void)strcpy(proc_table[i].proc_name, AFDDS);
+            break;
+
 #ifdef _WITH_ATPD_SUPPORT
          case ATPD_NO :
             proc_table[i].status = &p_afd_status->atpd;
@@ -783,7 +791,8 @@ main(int argc, char *argv[])
             exit(INCORRECT);
       }
    }
-   get_afd_config_value(&afdd_port, &default_age_limit, &in_global_filesystem);
+   get_afd_config_value(&afdd_port, &afdds_port, &default_age_limit,
+                        &in_global_filesystem);
 
    /* Do some cleanups when we exit */
    if (atexit(afd_exit) != 0)
@@ -864,7 +873,7 @@ main(int argc, char *argv[])
    }
    *(pid_t *)(pid_list) = getpid();
 
-   start_afd(binary_changed, now, default_age_limit, afdd_port);
+   start_afd(binary_changed, now, default_age_limit, afdd_port, afdds_port);
 
 #ifdef HAVE_FDATASYNC
    if (fdatasync(afd_status_fd) == -1)
@@ -1500,7 +1509,8 @@ main(int argc, char *argv[])
                                         _("Failed to send ACKN : %s"),
                                         strerror(errno));
                           }
-                          get_afd_config_value(&afdd_port, &default_age_limit,
+                          get_afd_config_value(&afdd_port, &afdds_port,
+                                               &default_age_limit,
                                                &in_global_filesystem);
 
                           /* Initialise communication flag FD <-> AMG. */
@@ -1514,7 +1524,8 @@ main(int argc, char *argv[])
                           }
 
                           stop_typ = STARTUP_ID;
-                          start_afd(NO, now, default_age_limit, afdd_port);
+                          start_afd(NO, now, default_age_limit, afdd_port,
+                                    afdds_port);
                           break;
 
                        case STOP      : /* Stop all process of the AFD */
@@ -1803,6 +1814,7 @@ main(int argc, char *argv[])
 /*+++++++++++++++++++++++++ get_afd_config_value() ++++++++++++++++++++++*/
 static void
 get_afd_config_value(int          *afdd_port,
+                     int          *afdds_port,
                      unsigned int *default_age_limit,
                      int          *in_global_filesystem)
 {
@@ -1958,6 +1970,125 @@ get_afd_config_value(int          *afdd_port,
       {
          *afdd_port = -1;
       }
+      if (get_definition(buffer, AFD_TLS_PORT_DEF,
+                         value, MAX_INT_LENGTH) != NULL)
+      {
+         int  i = 0;
+         char bind_address[MAX_IP_LENGTH + 1],
+              port_no[MAX_INT_LENGTH + 1],
+              *tmp_ptr = value;
+
+         tmp_ptr = value;
+         while ((*tmp_ptr != ':') && (*tmp_ptr != '\0'))
+         {
+            if (i < MAX_IP_LENGTH)
+            {
+               bind_address[i] = *tmp_ptr;
+               i++;
+            }
+            tmp_ptr++;
+         }
+         if (*tmp_ptr == ':')
+         {
+            tmp_ptr++;
+            if (i == MAX_IP_LENGTH)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Address for listening is to long (>= %d). Ignoring.",
+                          MAX_IP_LENGTH);
+               bind_address[0] = '\0';
+            }
+            else
+            {
+               bind_address[i] = '\0';
+            }
+            i = 0;
+            while (*tmp_ptr != '\0')
+            {
+               if (i < MAX_INT_LENGTH)
+               {
+                  if (isdigit((int)(*tmp_ptr)))
+                  {
+                     port_no[i] = *tmp_ptr;
+                     i++;
+                  }
+                  else
+                  {
+                     system_log(WARN_SIGN, __FILE__, __LINE__,
+                                "Port number may only contain digits (0 through 9). Ignoring entry %s.",
+                                AFD_TLS_PORT_DEF);
+                     port_no[0] = '0';
+                     port_no[1] = '\0';
+                     bind_address[0] = '\0';
+                     i = 0;
+                     break;
+                  }
+                  tmp_ptr++;
+               }
+               if (i == MAX_INT_LENGTH)
+               {
+                  system_log(WARN_SIGN, __FILE__, __LINE__,
+                             "Port for listening is to long (>= %d). Ignoring entry %s.",
+                             MAX_INT_LENGTH, AFD_TLS_PORT_DEF);
+                  port_no[0] = '0';
+                  port_no[1] = '\0';
+                  bind_address[0] = '\0';
+               }
+            }
+            if (i > 0)
+            {
+               port_no[i] = '\0';
+            }
+         }
+         else
+         {
+            if (i == MAX_INT_LENGTH)
+            {
+               system_log(WARN_SIGN, __FILE__, __LINE__,
+                          "Port for listening is to long (>= %d). Ignoring entry %s.",
+                          MAX_INT_LENGTH, AFD_TLS_PORT_DEF);
+               port_no[0] = '0';
+               port_no[1] = '\0';
+               bind_address[0] = '\0';
+            }
+            else
+            {
+               int j;
+
+               for (j = 0; j < i; j++)
+               {
+                  if (isdigit((int)bind_address[j]))
+                  {
+                     port_no[j] = bind_address[j];
+                     j++;
+                  }
+                  else
+                  {
+                     system_log(WARN_SIGN, __FILE__, __LINE__,
+                                "Port number may only contain digits (0 through 9). Ignoring entry %s.",
+                                AFD_TLS_PORT_DEF);
+                     port_no[0] = '0';
+                     port_no[1] = '\0';
+                     bind_address[0] = '\0';
+                     j = 0;
+                     break;
+                  }
+               }
+               if (j > 0)
+               {
+                  port_no[i] = '\0';
+               }
+            }
+            bind_address[0] = '\0';
+         }
+         *afdds_port = atoi(port_no);
+
+         /* Note: Port range is checked by afdds process. */
+      }
+      else
+      {
+         *afdds_port = -1;
+      }
       if (get_definition(buffer, DEFAULT_AGE_LIMIT_DEF,
                          value, MAX_INT_LENGTH) != NULL)
       {
@@ -1992,6 +2123,7 @@ get_afd_config_value(int          *afdd_port,
    else
    {
       *afdd_port = -1;
+      *afdds_port = -1;
       *default_age_limit = DEFAULT_AGE_LIMIT;
       *in_global_filesystem = NO;
    }
@@ -2761,8 +2893,8 @@ fprintf(stderr, "%d -> OFF (%s %d)\n", i, __FILE__, __LINE__);
                          (i == ALDAD_NO) ||
 #endif
                          (i == TDBLOG_NO) || (i == AW_NO) ||
-                         (i == AFDD_NO) || (i == STAT_NO) ||
-                         (i == AFD_WORKER_NO))
+                         (i == AFDD_NO) || (i == AFDDS_NO) ||
+                         (i == STAT_NO) || (i == AFD_WORKER_NO))
                      {
                         proc_table[i].pid = make_process(proc_table[i].proc_name,
 #ifdef BLOCK_SIGNALS
@@ -2935,7 +3067,8 @@ static void
 start_afd(int          binary_changed,
           time_t       now,
           unsigned int default_age_limit,
-          int          afdd_port)
+          int          afdd_port,
+          int          afdds_port)
 {
    int i;
 
@@ -3051,6 +3184,19 @@ start_afd(int          binary_changed,
    {
       proc_table[AFDD_NO].pid = -1;
       *proc_table[AFDD_NO].status = NEITHER;
+   }
+
+   /* Start TLS TCP daemon of AFD. */
+   if (afdds_port > 0)
+   {
+      proc_table[AFDDS_NO].pid = make_process(AFDDS, p_work_dir, NULL);
+      *(pid_t *)(pid_list + ((AFDDS_NO + 1) * sizeof(pid_t))) = proc_table[AFDDS_NO].pid;
+      *proc_table[AFDDS_NO].status = ON;
+   }
+   else
+   {
+      proc_table[AFDDS_NO].pid = -1;
+      *proc_table[AFDDS_NO].status = NEITHER;
    }
 
 #ifdef _WITH_ATPD_SUPPORT
@@ -3219,7 +3365,8 @@ stop_afd(void)
       for (i = 0; i < NO_OF_PROCESS; i++)
       {
          if ((i != DC_NO) &&
-             ((i != AFDD_NO) || (*proc_table[i].status != NEITHER)))
+             ((i != AFDD_NO) || (i != AFDDS_NO) ||
+              (*proc_table[i].status != NEITHER)))
          {
             *proc_table[i].status = STOPPED;
          }
@@ -3278,6 +3425,7 @@ stop_afd(void)
                      if (((i - 1) != DC_NO) &&
                          (proc_table[i - 1].status != NULL) &&
                          (((i - 1) != AFDD_NO) ||
+                          ((i - 1) != AFDDS_NO) ||
                           (*proc_table[i - 1].status != NEITHER)))
                      {
                         kill_list[kill_counter] = *(pid_t *)ptr;
@@ -3293,6 +3441,7 @@ stop_afd(void)
                   if (((i - 1) != DC_NO) &&
                       (proc_table[i - 1].status != NULL) &&
                       (((i - 1) != AFDD_NO) ||
+                       ((i - 1) != AFDDS_NO) ||
                        (*proc_table[i - 1].status != NEITHER)))
                   {
                      *proc_table[i - 1].status = STOPPED;

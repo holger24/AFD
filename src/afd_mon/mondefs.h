@@ -1,6 +1,6 @@
 /*
  *  mondefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1997 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1997 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -20,6 +20,10 @@
 
 #ifndef __mondefs_h
 #define __mondefs_h
+
+#ifdef WITH_SSL
+# include <openssl/ssl.h>
+#endif
 
 /* #define NEW_MSA 1 */
 
@@ -782,34 +786,41 @@ struct process_list
        };
 
 /* Function prototypes. */
-extern int   attach_afd_mon_status(void),
-             check_afdmon_database(void),
-             check_mon(long),
-             detach_afd_mon_status(void),
-             evaluate_message(int *),
-             handle_log_data(int, int),
-             init_fifos_mon(void),
-             read_msg(void),
-             send_afdmon_start(void),
-             send_log_cmd(int, char *, int *),
-             tcp_connect(char *, int, int),
-             tcp_quit(void);
-extern pid_t start_process(char *, int);
-extern char  *convert_msa(int, char *, off_t *, int, unsigned char,
-             unsigned char);
-extern void  create_msa(void),
-             eval_afd_mon_db(struct mon_list **),
-             mon_log(char *, char *, int, time_t, char *, char *, ...),
-#ifdef WITH_SYSTEMD
-             shutdown_mon(int, char *, int),
+extern int     attach_afd_mon_status(void),
+               check_afdmon_database(void),
+               check_mon(long),
+               detach_afd_mon_status(void),
+               evaluate_message(int *),
+               handle_log_data(int, int),
+               init_fifos_mon(void),
+               read_msg(void),
+               send_afdmon_start(void),
+               send_log_cmd(int, char *, int *),
+#ifdef WITH_SSL
+               tcp_connect(char *, int, int, int),
 #else
-             shutdown_mon(int, char *),
+               tcp_connect(char *, int, int),
 #endif
-             start_all(void),
-             start_log_process(int, unsigned int),
-             stop_log_process(int),
-             stop_process(int, int),
-             update_group_summary(int),
-             write_afd_log(int, int, unsigned int, unsigned int, char *);
+               tcp_quit(void);
+extern pid_t   start_process(char *, int);
+extern char    *convert_msa(int, char *, off_t *, int, unsigned char,
+               unsigned char);
+extern void    create_msa(void),
+               eval_afd_mon_db(struct mon_list **),
+               mon_log(char *, char *, int, time_t, char *, char *, ...),
+#ifdef WITH_SYSTEMD
+               shutdown_mon(int, char *, int),
+#else
+               shutdown_mon(int, char *),
+#endif
+               start_all(void),
+               start_log_process(int, unsigned int),
+               stop_log_process(int),
+               stop_process(int, int),
+               update_group_summary(int),
+               write_afd_log(int, int, unsigned int, unsigned int, char *);
+#ifdef WITH_SSL
+extern ssize_t ssl_write(SSL *, const char *, size_t);
+#endif
 
 #endif /* __mondefs_h */

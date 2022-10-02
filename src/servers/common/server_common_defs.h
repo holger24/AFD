@@ -1,6 +1,6 @@
 /*
  *  server_common_defs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,7 +20,11 @@
 #ifndef __server_common_defs_h
 #define __server_common_defs_h
 
+#include <openssl/ssl.h>
+
 /* Function Prototypes. */
-extern int get_free_connection(const int);
+extern int     command(SSL *ssl, char *fmt, ...),
+               get_free_connection(const int);
+extern ssize_t ssl_write(SSL *, const char *, size_t);
 
 #endif /* __server_common_defs_h */

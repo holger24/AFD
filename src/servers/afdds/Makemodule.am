@@ -1,0 +1,38 @@
+## Makemodule.am -- Process this file with automake to produce Makefile.in
+## Copyright (C) 2022 Holger Kiehl
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+CLEANFILES       += src/servers/afdds/gmon.out\
+                    src/servers/afdds/core\
+                    src/servers/afdds/core.*
+noinst_HEADERS   += src/servers/afdds/afddsdefs.h
+bin_PROGRAMS     += bin/afdds
+bin_afdds_SOURCES = src/servers/afdds/afdds.c\
+                    src/servers/afdds/check_changes.c\
+                    src/servers/afdds/check_logs.c\
+                    src/servers/afdds/display_file.c\
+                    src/servers/afdds/get_display_data.c\
+                    src/servers/afdds/handle_request.c\
+                    src/servers/afdds/show_dir_list.c\
+                    src/servers/afdds/show_host_list.c\
+                    src/servers/afdds/show_host_stat.c\
+                    src/servers/afdds/show_job_list.c\
+                    src/servers/afdds/show_summary_stat.c
+bin_afdds_LDADD   = lib/libafd.a\
+                    lib/libserverafd.a\
+                    @EXTRA_SOCKET_LIBS@\
+                    @AFD_SSL_LIBS@

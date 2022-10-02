@@ -1,6 +1,6 @@
 /*
  *  afd_status.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2016 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ DESCR__S_M1
  **
  ** HISTORY
  **   11.10.1998 H.Kiehl Created
+ **   29.03.2022 H.Kiehl Added process afdds.
  **
  */
 
@@ -113,6 +114,7 @@ main(int argc, char *argv[])
    (void)fprintf(stdout, "Archive watch         : %d\n", p_afd_status->archive_watch);
    (void)fprintf(stdout, "afd_stat              : %d\n", p_afd_status->afd_stat);
    (void)fprintf(stdout, "afdd                  : %d\n", p_afd_status->afdd);
+   (void)fprintf(stdout, "afdds                 : %d\n", p_afd_status->afdds);
 #ifdef _WITH_ATPD_SUPPORT
    (void)fprintf(stdout, "atpd                  : %d\n", p_afd_status->atpd);
 #endif

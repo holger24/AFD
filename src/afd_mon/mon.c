@@ -1,6 +1,6 @@
 /*
  *  mon.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2020 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1998 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -56,6 +56,9 @@ DESCR__E_M1
 #include <signal.h>          /* signal()                                 */
 #include <ctype.h>           /* isdigit()                                */
 #include <time.h>            /* time()                                   */
+#ifdef WITH_SSL
+# include <openssl/ssl.h>
+#endif
 #include <sys/types.h>
 #include <sys/time.h>        /* struct timeval                           */
 #include <sys/stat.h>
@@ -67,7 +70,7 @@ DESCR__E_M1
 #include <errno.h>
 #include "mondefs.h"
 #include "logdefs.h"
-#include "afdddefs.h"
+#include "afdd_common_defs.h"
 #include "version.h"
 
 
@@ -85,6 +88,9 @@ int                      afd_no,
                          sock_fd,
                          sys_log_fd = STDERR_FILENO,
                          timeout_flag;
+#ifdef WITH_SSL
+SSL                      *ssl_con = NULL;
+#endif
 time_t                   new_hour_time;
 size_t                   adl_size,
                          ahl_size,
@@ -95,7 +101,6 @@ long                     tcp_timeout = 120L;
 char                     msg_str[MAX_RET_MSG_LENGTH],
                          *p_mon_alias,
                          *p_work_dir;
-FILE                     *p_control;
 struct mon_status_area   *msa;
 struct afd_dir_list      *adl = NULL;
 struct afd_host_list     *ahl = NULL;
@@ -266,7 +271,11 @@ main(int argc, char *argv[])
       timeout_flag = OFF;
       if ((status = tcp_connect(msa[afd_no].hostname[(int)msa[afd_no].afd_toggle],
                                 msa[afd_no].port[(int)msa[afd_no].afd_toggle],
-                                NO)) != SUCCESS)
+                                NO
+#ifdef WITH_SSL
+                                , msa[afd_no].options & ENABLE_TLS_ENCRYPTION
+#endif
+                                )) != SUCCESS)
       {
          if (timeout_flag == OFF)
          {
@@ -598,19 +607,48 @@ done:
 }
 
 
-/*############################## tcp_cmd() ##############################*/
+/*++++++++++++++++++++++++++++++ tcp_cmd() ++++++++++++++++++++++++++++++*/
 static int
 tcp_cmd(char *fmt, ...)
 {
    int     bytes_buffered,
-           bytes_done;
+           bytes_done,
+           length;
+   char    buf[MAX_LINE_LENGTH + 1];
    va_list ap;
 
    va_start(ap, fmt);
-   (void)vfprintf(p_control, fmt, ap);
+   length = vsnprintf(buf, MAX_LINE_LENGTH, fmt, ap);
    va_end(ap);
-   (void)fprintf(p_control, "\r\n");
-   (void)fflush(p_control);
+   if (length > MAX_LINE_LENGTH)
+   {
+      mon_log(ERROR_SIGN, __FILE__, __LINE__, 0L, msg_str,
+              "tcp_cmd(): Command to long (%d > %d)", length, MAX_LINE_LENGTH);
+      return(INCORRECT);
+   }
+   buf[length] = '\r';
+   buf[length + 1] = '\n';
+   length += 2;
+#ifdef WITH_SSL
+   if (ssl_con == NULL)
+   {
+#endif
+      if (write(sock_fd, buf, length) != length)
+      {
+         mon_log(ERROR_SIGN, __FILE__, __LINE__, 0L, msg_str,
+                 "tcp_cmd(): write() error : %s", strerror(errno));
+         return(INCORRECT);
+      }
+#ifdef WITH_SSL
+   }
+   else
+   {
+      if (ssl_write(ssl_con, buf, length) != length)
+      {
+         return(INCORRECT);
+      }
+   }
+#endif
 
    while ((bytes_buffered = read_msg()) != INCORRECT)
    {

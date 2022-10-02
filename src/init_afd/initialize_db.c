@@ -1,6 +1,6 @@
 /*
  *  initialize_db.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2011 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2011 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -129,18 +129,19 @@ DESCR__E_M3
 #define DC_CMD_FIFO_NO              52
 #define DC_RESP_FIFO_NO             53
 #define AFDD_LOG_FIFO_NO            54
-#define TYPESIZE_DATA_FILE_NO       55
-#define SYSTEM_DATA_FILE_NO         56
+#define AFDDS_LOG_FIFO_NO           55
+#define TYPESIZE_DATA_FILE_NO       56
+#define SYSTEM_DATA_FILE_NO         57
 #ifdef _MAINTAINER_LOG
-# define MAINTAINER_LOG_FIFO_NO     57
+# define MAINTAINER_LOG_FIFO_NO     58
 #endif
 #ifdef _WITH_DE_MAIL_SUPPORT
-# define DEMCD_FIFO_NO              58
+# define DEMCD_FIFO_NO              59
 #endif
 #ifdef SF_BURST_ACK
-# define SF_BURST_ACK_FIFO_NO       59
+# define SF_BURST_ACK_FIFO_NO       60
 #endif
-#define MAX_FILE_LIST_LENGTH        60
+#define MAX_FILE_LIST_LENGTH        61
 
 #define FSA_STAT_FILE_ALL_NO        0
 #define FRA_STAT_FILE_ALL_NO        1
@@ -411,6 +412,7 @@ initialize_db(int init_level, int *old_value_list, int dry_run)
          filelistflag[DC_CMD_FIFO_NO] = YES;
          filelistflag[DC_RESP_FIFO_NO] = YES;
          filelistflag[AFDD_LOG_FIFO_NO] = YES;
+         filelistflag[AFDDS_LOG_FIFO_NO] = YES;
          mfilelistflag[DB_UPDATE_REPLY_FIFO_ALL_NO] = YES;
       }
       if (init_level > 1)
@@ -752,6 +754,7 @@ delete_fifodir_files(char *fifodir,
            DC_CMD_FIFO, /* from amgdefs.h */
            DC_RESP_FIFO,
            AFDD_LOG_FIFO,
+           AFDDS_LOG_FIFO,
            TYPESIZE_DATA_FILE,
 #ifdef STAT_IN_FIFODIR
            NEW_STATISTIC_FILE,

@@ -1338,6 +1338,14 @@ then
                     }]])],[ssl_library_ver=`cat conftest.ssllibver`
                   AC_MSG_RESULT(yes $ssl_library_ver)],[AC_MSG_RESULT(incorrect not found)
                   AC_MSG_ERROR(incorect OpenSSL library or not found.)],[])
+      AC_CHECK_FUNC([TLS_client_method],
+                    [AM_CONDITIONAL(HAVE_TLS_CLIENT_METHOD, true)
+                     AC_DEFINE([HAVE_TLS_CLIENT_METHOD], [], [With TLS_client_method support])],
+                    [AM_CONDITIONAL(HAVE_TLS_CLIENT_METHOD, false)])
+      AC_CHECK_FUNC([TLS_server_method],
+                    [AM_CONDITIONAL(HAVE_TLS_SERVER_METHOD, true)
+                     AC_DEFINE([HAVE_TLS_SERVER_METHOD], [], [With TLS_server_method support])],
+                    [AM_CONDITIONAL(HAVE_TLS_SERVER_METHOD, false)])
       LIBS="$savedLIBS"
       CPPFLAGS="$savedCPPFLAGS"
       if test "$REQUIRES" = ""
@@ -1354,7 +1362,12 @@ then
       fi
    else
       AC_MSG_RESULT(no)
+      AM_CONDITIONAL(HAVE_TLS_CLIENT_METHOD, false)
+      AM_CONDITIONAL(HAVE_TLS_SERVER_METHOD, false)
    fi
+else
+   AM_CONDITIONAL(HAVE_TLS_CLIENT_METHOD, false)
+   AM_CONDITIONAL(HAVE_TLS_SERVER_METHOD, false)
 fi
 
 no_x=""
@@ -1781,7 +1794,7 @@ then
 fi
 if test "x${with_ssl}" = "xyes"
 then
-   echo "    With TLS/SSL support             : yes"
+   echo "    With TLS/SSL support             : yes $ssl_library_ver"
 else
    echo "    With TLS/SSL support             : no"
 fi
