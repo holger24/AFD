@@ -49,6 +49,7 @@ DESCR__E_M3
 #include <string.h>            /* memcpy(), strlen()                     */
 #include <time.h>              /* strftime(), time()                     */
 #ifdef WITH_SSL
+# include <openssl/opensslv.h> /* OPENSSL_VERSION_MAJOR                  */
 # include <openssl/hmac.h>     /* HMAC()                                 */
 # include <openssl/evp.h>      /* EVP_sha256()                           */
 # include <openssl/sha.h>      /* SHA256_Init(), SHA256_Update(),        */
@@ -64,7 +65,10 @@ extern char msg_str[];
 
 #ifdef WITH_SSL
 /* Local function prototypes. */
-static int  sha256_file(char *, char *);
+static int  aws4_cmd_authentication(char *, char *, char *, char *,
+                                    struct http_message_reply *),
+            aws_cmd_no_sign_request(struct http_message_reply *),
+            sha256_file(char *, char *);
 static void hash_2_hex(const unsigned char *, const int, char *),
             sha256_string(char *, char *);
 #endif
@@ -150,11 +154,42 @@ basic_authentication(struct http_message_reply *p_hmr)
 
 
 #ifdef WITH_SSL
+/*############################# aws_cmd() ###############################*/
+int
+aws_cmd(char                      *cmd,
+        char                      *file_name,
+        char                      *target_dir,
+        char                      *parameter,
+        struct http_message_reply *p_hmr)
+{
+   int ret;
+
+   if (p_hmr->auth_type == AUTH_AWS4_HMAC_SHA256)
+   {
+      ret = aws4_cmd_authentication(cmd, file_name, target_dir,
+                                    parameter, p_hmr);
+   }
+   else if (p_hmr->auth_type == AUTH_AWS_NO_SIGN_REQUEST)
+        {
+           ret = aws_cmd_no_sign_request(p_hmr);
+        }
+        else
+        {
+           trans_log(ERROR_SIGN, __FILE__, __LINE__, "aws_cmd", NULL,
+                     "Unknown auth_type (%d)",
+                     (int)p_hmr->auth_type);
+           ret = INCORRECT;
+        }
+
+   return(ret);
+}
+
+
 /*                                    cmd     target_dir                       filename                        parameter                                                             host:                              x-amz-content-sha256:                                  host;x-amz-content-sha256;x-amz-date */
 #define CANONICAL_REQUEST_CMD_LENGTH (8 + 1 + (3 * MAX_RECIPIENT_LENGTH) + 1 + (3 * MAX_FILENAME_LENGTH) + 1 + MAX_AWS4_PARAMETER_LENGTH + MAX_INT_LENGTH + MAX_FILENAME_LENGTH + 1 + 5 + MAX_REAL_HOSTNAME_LENGTH + 1 + 21 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1 + 11 + 16 + 2 + 52 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1 + 1)
 #define STRING_2_SIGN_CMD_LENGTH     (16 + 1 + 16 + 1 + 8 + 1 + MAX_REAL_HOSTNAME_LENGTH + 1 + 15 + 1 + SHA256_DIGEST_LENGTH + SHA256_DIGEST_LENGTH + 1)
-/*##################### aws4_cmd_authentication() #######################*/
-int
+/*++++++++++++++++++++++ aws4_cmd_authentication() ++++++++++++++++++++++*/
+static int
 aws4_cmd_authentication(char                      *cmd,
                         char                      *file_name,
                         char                      *target_dir,
@@ -403,6 +438,64 @@ aws4_cmd_authentication(char                      *cmd,
       {
          trans_log(ERROR_SIGN, __FILE__, __LINE__, "aws4_cmd_authentication", NULL,
                    _("HMAC() error for date key."));
+         ret = INCORRECT;
+      }
+   }
+
+   return(ret);
+}
+
+
+/*++++++++++++++++++++++ aws_cmd_no_sign_request() ++++++++++++++++++++++*/
+static int
+aws_cmd_no_sign_request(struct http_message_reply *p_hmr)
+{
+   int    ret;
+   char   date_long[17];
+   time_t now;
+
+   if (p_hmr->authorization != NULL)
+   {
+      free(p_hmr->authorization);
+      p_hmr->authorization = NULL;
+   }
+
+   now = time(NULL);
+   if (strftime(date_long, 17, "%Y%m%dT%H%M%SZ", gmtime(&now)) == 0)
+   {
+      trans_log(ERROR_SIGN, __FILE__, __LINE__, "aws_cmd_no_sign_request", NULL,
+                _("strftime() error : %s"), strerror(errno));
+      ret = INCORRECT;
+   }
+   else
+   {
+      size_t authorization_length;
+
+      authorization_length = 28 + /* x-amz-date: */
+                             2 +  /* CRLF */
+                             1;   /* \0 */
+      if ((p_hmr->authorization = malloc(authorization_length)) != NULL)
+      {
+         ret = snprintf(p_hmr->authorization, authorization_length,
+                        "x-amz-date: %s\r\n", date_long);
+         if (ret < authorization_length)
+         {
+            ret = SUCCESS;
+         }
+         else
+         {
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, "aws_cmd_no_sign_request", NULL,
+                      "snprintf() authorization output truncated (%d >= %d).",
+                      ret, authorization_length);
+            free(p_hmr->authorization);
+            p_hmr->authorization = NULL;
+            ret = INCORRECT;
+         }
+      }
+      else
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, "aws_cmd_no_sign_request", NULL,
+                   _("malloc() error : %s"), strerror(errno));
          ret = INCORRECT;
       }
    }
@@ -708,6 +801,70 @@ sha256_file(char *file, char *sha256_hash_hex)
    }
    else
    {
+#if OPENSSL_VERSION_MAJOR > 2
+      EVP_MD_CTX *sha256 = NULL;
+
+      if ((sha256 = EVP_MD_CTX_create()) != NULL)
+      {
+         if ((ret = EVP_DigestInit_ex(sha256, EVP_sha256(), NULL)) == 1)
+         {
+            char *buffer;
+
+            if ((buffer = malloc(32768)) == NULL)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "sha256_file", NULL,
+                         "Failed to malloc() 32768 bytes : %s",
+                         strerror(errno));
+               ret = INCORRECT;
+            }
+            else
+            {
+               size_t bytes_read;
+
+               while ((bytes_read = fread(buffer, 1, 32768, fp)))
+               {
+                  if ((ret = EVP_DigestUpdate(sha256, buffer, bytes_read)) != 1)
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "sha256_file", NULL,
+                               "EVP_DigestUpdate() failed (%d)", ret);
+                     ret = INCORRECT;
+                  }
+               }
+               if (ret != INCORRECT)
+               {
+                  unsigned int  ret_size;
+                  unsigned char hash[EVP_MAX_MD_SIZE];
+
+                  if ((ret = EVP_DigestFinal(sha256, hash, &ret_size)) == 1)
+                  {
+                     hash_2_hex(hash, ret_size, sha256_hash_hex);
+                     ret = SUCCESS;
+                  }
+                  else
+                  {
+                     trans_log(ERROR_SIGN, __FILE__, __LINE__, "sha256_file", NULL,
+                               "EVP_DigestFinal() failed (%d)", ret);
+                     ret = INCORRECT;
+                  }
+               }
+               free(buffer);
+            }
+         }
+         else
+         {
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, "sha256_file", NULL,
+                      "EVP_DigestInit_ex() failed (%d)", ret);
+            ret = INCORRECT;
+         }
+         EVP_MD_CTX_destroy(sha256);
+      }
+      else
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, "sha256_file", NULL,
+                   "EVP_MD_CTX_create() failed.");
+         ret = INCORRECT;
+      }
+#else
       SHA256_CTX sha256;
 
       if ((ret = SHA256_Init(&sha256)) == 1)
@@ -758,6 +915,7 @@ sha256_file(char *file, char *sha256_hash_hex)
                    "SHA256_Init() failed (%d)", ret);
          ret = INCORRECT;
       }
+#endif
       if (fclose(fp) == EOF)
       {
          trans_log(ERROR_SIGN, __FILE__, __LINE__, "sha256_file", NULL,
@@ -774,6 +932,67 @@ static void
 sha256_string(char *string, char *sha256_hash_hex)
 {
    int        i;
+#if OPENSSL_VERSION_MAJOR > 2
+   EVP_MD_CTX *sha256;
+
+   if ((sha256 = EVP_MD_CTX_create()) != NULL)
+   {
+      if ((i = EVP_DigestInit_ex(sha256, EVP_sha256(), NULL)) == 1)
+      {
+         if ((i = EVP_DigestUpdate(sha256, string, strlen(string))) == 1)
+         {
+            unsigned int  ret_size;
+            unsigned char hash[EVP_MAX_MD_SIZE];
+
+            if ((i = EVP_DigestFinal(sha256, hash, &ret_size)) == 1)
+            {
+               int  wpos = 0;
+               char *hex = "0123456789abcdef";
+
+               for (i = 0; i < ret_size; i++)
+               {
+                  if (hash[i] > 15)
+                  {
+                     sha256_hash_hex[wpos] = hex[hash[i] >> 4];
+                     sha256_hash_hex[wpos + 1] = hex[hash[i] & 0x0F];
+                  }
+                  else
+                  {
+                     sha256_hash_hex[wpos] = '0';
+                     sha256_hash_hex[wpos + 1] = hex[hash[i]];
+                  }
+                  wpos += 2;
+               }
+               i = 64;
+            }
+            else
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "sha256_string", NULL,
+                         "EVP_DigestFinal() failed (%d)", i);
+               i = 0;
+            }
+         }
+         else
+         {
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, "sha256_string", NULL,
+                      "EVP_DigestUpdate() failed (%d)", i);
+            i = 0;
+         }
+      }
+      else
+      {
+         trans_log(ERROR_SIGN, __FILE__, __LINE__, "sha256_string", NULL,
+                   "EVP_DigestInit_ex() failed (%d)", i);
+         i = 0;
+      }
+   }
+   else
+   {
+      trans_log(ERROR_SIGN, __FILE__, __LINE__, "sha256_string", NULL,
+                "EVP_MD_CTX_create() failed.");
+      i = 0;
+   }
+#else
    SHA256_CTX sha256;
 
    if ((i = SHA256_Init(&sha256)) == 1)
@@ -823,6 +1042,7 @@ sha256_string(char *string, char *sha256_hash_hex)
                 "SHA256_Init() failed (%d)", i);
       i = 0;
    }
+#endif
    sha256_hash_hex[i] = '\0';
 
    return;

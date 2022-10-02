@@ -58,7 +58,7 @@ DESCR__S_M3
  **   URL and stores them in the given buffer if supplied. The url must
  **   have the following format:
  **
- **   <scheme>://[[<user>][;fingerprint=<SSH fingerprint>][;auth=<login|plain>;user=<user name>;][:<password>]@]<host>[:<port>][/<url-path>][;type=<i|a|d|n>][;server=<server name>][;protocol=<protocol number>][;auth=<basic|aws4-hmac-sha256>][;region=<region name>][;service=s3]
+ **   <scheme>://[[<user>][;fingerprint=<SSH fingerprint>][;auth=<login|plain>;user=<user name>;][:<password>]@]<host>[:<port>][/<url-path>][;type=<i|a|d|n>][;server=<server name>][;protocol=<protocol number>][;auth=<basic|aws4-hmac-sha256|aws-no-sign-request>][;region=<region name>][;service=s3]
  **
  **   Special characters may be masked with a \ or with a % sign plus two
  **   hexa digits representing the ASCII character. A plus behind the @
@@ -1972,6 +1972,33 @@ url_evaluate(char          *url,
                                      {
                                         *auth = AUTH_AWS4_HMAC_SHA256;
                                         ptr += 16;
+                                     }
+                                     /* aws-no-sign-request */
+                                else if ((*ptr == 'a') &&
+                                         (*(ptr + 1) == 'w') &&
+                                         (*(ptr + 2) == 's') &&
+                                         (*(ptr + 3) == '-') &&
+                                         (*(ptr + 4) == 'n') &&
+                                         (*(ptr + 5) == 'o') &&
+                                         (*(ptr + 6) == '-') &&
+                                         (*(ptr + 7) == 's') &&
+                                         (*(ptr + 8) == 'i') &&
+                                         (*(ptr + 9) == 'g') &&
+                                         (*(ptr + 10) == 'n') &&
+                                         (*(ptr + 11) == '-') &&
+                                         (*(ptr + 12) == 'r') &&
+                                         (*(ptr + 13) == 'e') &&
+                                         (*(ptr + 14) == 'q') &&
+                                         (*(ptr + 15) == 'u') &&
+                                         (*(ptr + 16) == 'e') &&
+                                         (*(ptr + 17) == 's') &&
+                                         (*(ptr + 18) == 't') &&
+                                         ((*(ptr + 19) == ';') ||
+                                          (*(ptr + 19) == ' ') ||
+                                          (*(ptr + 19) == '\0')))
+                                     {
+                                        *auth = AUTH_AWS_NO_SIGN_REQUEST;
+                                        ptr += 19;
                                      }
                                      else
                                      {

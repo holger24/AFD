@@ -1136,14 +1136,15 @@ http_get(char  *path,
 #ifdef _WITH_EXTRA_CHECK
            none_match[16 + MAX_EXTRA_LS_DATA_LENGTH + 5],
 #endif
-           resource[8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + MAX_AWS4_PARAMETER_LENGTH + MAX_INT_LENGTH + MAX_FILENAME_LENGTH + 1],
 #ifdef WITH_SSL
            tmp_path[MAX_REAL_HOSTNAME_LENGTH],
 #endif
-           *tmp_ptr;
+           resource[8 + MAX_REAL_HOSTNAME_LENGTH + 1 + MAX_RECIPIENT_LENGTH + MAX_FILENAME_LENGTH + MAX_AWS4_PARAMETER_LENGTH + MAX_INT_LENGTH + MAX_FILENAME_LENGTH + 1];
 
 #ifdef WITH_SSL
-      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) && (filename[0] != '\0'))
+      if (((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) ||
+           (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)) &&
+          (filename[0] != '\0'))
       {
          resource_length = 0;
          if (hmr.features & BUCKETNAME_IS_IN_PATH)
@@ -1216,6 +1217,8 @@ http_get(char  *path,
       }
       if (hmr.http_proxy[0] == '\0')
       {
+         char *tmp_ptr;
+
          if (*p_path == '/')
          {
             resource_length = 0;
@@ -1324,7 +1327,8 @@ retry_get_range:
       }
 #endif
 #ifdef WITH_SSL
-      if (hmr.auth_type == AUTH_AWS4_HMAC_SHA256)
+      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) ||
+          (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST))
       {
          /* Directory listing? */
          if (filename[0] == '\0')
@@ -1337,8 +1341,7 @@ retry_get_range:
          }
          else
          {
-            if (aws4_cmd_authentication("GET", filename, p_path, "",
-                                        &hmr) != SUCCESS)
+            if (aws_cmd("GET", filename, p_path, "", &hmr) != SUCCESS)
             {
                return(INCORRECT);
             }
@@ -1479,7 +1482,8 @@ retry_get:
               }
       }
 
-      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) &&
+      if (((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) ||
+           (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)) &&
           (hmr.authorization != NULL))
       {
          free(hmr.authorization);
@@ -1502,7 +1506,7 @@ prepare_aws4_listing(char *filename,
    int    i = 0;
    size_t size;
    char   bucket_name_only[MAX_PATH_LENGTH],
-          *canonical_query,
+          *canonical_query = NULL,
           *p_path;
 
    p_path = path;
@@ -1573,7 +1577,7 @@ prepare_aws4_listing(char *filename,
       bucket_name_only[0] = '\0';
    }
 
-   if (*p_path == '\0')
+   if ((*p_path == '\0') || ((*p_path == '/') && (*(p_path + 1) == '\0')))
    {
       size = MAX_AWS4_PARAMETER_LENGTH + MAX_INT_LENGTH +
              (hmr.marker_length * 3) + 1 + 1;
@@ -1641,8 +1645,9 @@ prepare_aws4_listing(char *filename,
             url_encode(hmr.marker, marker_encoded);
             i = snprintf(canonical_query, size,
                          "continuation-token=%s&%slist-type=2&max-keys=%d",
+                         marker_encoded,
                          (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
-                         marker_encoded, AWS4_MAX_KEYS);
+                         AWS4_MAX_KEYS);
             free(marker_encoded);
          }
       }
@@ -1732,8 +1737,9 @@ prepare_aws4_listing(char *filename,
             url_encode(hmr.marker, marker_encoded);
             i = snprintf(canonical_query, size,
                          "continuation-token=%s&%slist-type=2&max-keys=%d&prefix=%s",
+                         marker_encoded,
                          (hmr.fra_options & NO_DELIMITER) ? "" : "delimiter=%2F&",
-                         marker_encoded, AWS4_MAX_KEYS, prefix_encoded);
+                         AWS4_MAX_KEYS, prefix_encoded);
             free(marker_encoded);
          }
       }
@@ -1763,8 +1769,8 @@ prepare_aws4_listing(char *filename,
       free(canonical_query);
       return(INCORRECT);
    }
-   if (aws4_cmd_authentication("GET", filename, bucket_name_only,
-                               canonical_query, &hmr) != SUCCESS)
+   if (aws_cmd("GET", filename, bucket_name_only, canonical_query,
+               &hmr) != SUCCESS)
    {
       free(canonical_query);
       return(INCORRECT);
@@ -1989,10 +1995,10 @@ http_del(char *path, char *filename)
 #endif
       }
 #ifdef WITH_SSL
-      if (hmr.auth_type == AUTH_AWS4_HMAC_SHA256)
+      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) ||
+          (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST))
       {
-         if (aws4_cmd_authentication("DELETE", filename, path,
-                                     "", &hmr) != SUCCESS)
+         if (aws_cmd("DELETE", filename, path, "", &hmr) != SUCCESS)
          {
             return(INCORRECT);
          }
@@ -2057,7 +2063,8 @@ retry_del:
               }
       }
 
-      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) &&
+      if (((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) ||
+           (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)) &&
           (hmr.authorization != NULL))
       {
          free(hmr.authorization);
@@ -2129,9 +2136,10 @@ http_options(char *path)
 #endif
       }
 #ifdef WITH_SSL
-      if (hmr.auth_type == AUTH_AWS4_HMAC_SHA256)
+      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) ||
+          (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST))
       {
-         if (aws4_cmd_authentication("OPTIONS", "", path, "", &hmr) != SUCCESS)
+         if (aws_cmd("OPTIONS", "", path, "", &hmr) != SUCCESS)
          {
             return(INCORRECT);
          }
@@ -2210,7 +2218,8 @@ retry_options:
               }
       }
 
-      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) &&
+      if (((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) ||
+           (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)) &&
           (hmr.authorization != NULL))
       {
          free(hmr.authorization);
@@ -2296,10 +2305,10 @@ http_head(char *path, char *filename, off_t *content_length, time_t *date)
 #endif
       }
 #ifdef WITH_SSL
-      if (hmr.auth_type == AUTH_AWS4_HMAC_SHA256)
+      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) ||
+          (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST))
       {
-         if (aws4_cmd_authentication("HEAD", filename, path,
-                                     "", &hmr) != SUCCESS)
+         if (aws_cmd("HEAD", filename, path, "", &hmr) != SUCCESS)
          {
             return(INCORRECT);
          }
@@ -2382,7 +2391,8 @@ retry_head:
               }
       }
 
-      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) &&
+      if (((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) ||
+           (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)) &&
           (hmr.authorization != NULL))
       {
          free(hmr.authorization);
@@ -2978,9 +2988,10 @@ http_noop(char *path)
                 "http_noop(): Trying HEAD on %s", tmp_path);
 #endif
 #ifdef WITH_SSL
-      if (hmr.auth_type == AUTH_AWS4_HMAC_SHA256)
+      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) ||
+          (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST))
       {
-         if (aws4_cmd_authentication("HEAD", "", tmp_path, "", &hmr) != SUCCESS)
+         if (aws_cmd("HEAD", "", tmp_path, "", &hmr) != SUCCESS)
          {
             return(INCORRECT);
          }
@@ -3057,7 +3068,8 @@ retry_noop:
               }
       }
 
-      if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) &&
+      if (((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) ||
+           (hmr.auth_type == AUTH_AWS_NO_SIGN_REQUEST)) &&
           (hmr.authorization != NULL))
       {
          free(hmr.authorization);

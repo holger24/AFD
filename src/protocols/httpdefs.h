@@ -1,6 +1,6 @@
 /*
  *  httpdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2003 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2003 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -105,8 +105,7 @@ struct http_message_reply
 
 /* Function prototypes. */
 #ifdef WITH_SSL
-extern int  aws4_cmd_authentication(char *, char *, char *, char *,
-                                    struct http_message_reply *),
+extern int  aws_cmd(char *, char *, char *, char *, struct http_message_reply *),
             aws4_put_authentication(char *, char *, off_t, char *, char *,
                                     struct http_message_reply *);
 #endif
