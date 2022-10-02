@@ -1,6 +1,6 @@
 /*
  *  get_group_list.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2018 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 2002 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -206,7 +206,8 @@ get_group_list(char *user, struct job *p_db)
                   {
                      break;
                   }
-               } while ((*ptr != '[') && (*ptr != '\0'));
+               } while ((*ptr != '[') && (*ptr != '\0') &&
+                        (counter < p_db->no_listed));
             }
             else
             {
