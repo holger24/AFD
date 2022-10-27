@@ -1,6 +1,6 @@
 /*
  *  get_new_positions.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2020 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,9 @@ DESCR__S_M3
  **
  ** HISTORY
  **   18.10.2001 H.Kiehl Created
+ **   27.10.2022 H.Kiehl If we write to the end of the fsa structure
+ **                      because the host has been removed, initialize
+ **                      this part of the structure.
  **
  */
 DESCR__E_M3
@@ -79,7 +82,7 @@ get_new_positions(void)
              * changes the alias name of the host, the data is
              * lost. For this reason the second option was
              * implemented. This has the disadvantage that since
-             * we cannot differentiate here if we realy deleted a
+             * we cannot differentiate here if we really deleted a
              * host or just renamed it we must continue sending
              * data to this host, even if the host has been
              * deleted by the user. We do this by putting this
@@ -94,6 +97,16 @@ get_new_positions(void)
 #endif
                        connection[i].hostname, i, (pri_pid_t)connection[i].pid);
             connection[i].fsa_pos = no_of_hosts;
+
+            /*
+             * Lets put some sane values into this part of the
+             * struct. It contains uninitiliazed data!
+             */
+            (void)memset(&fsa[connection[i].fsa_pos], 0,
+                         sizeof(struct filetransfer_status));
+            (void)memcpy(fsa[connection[i].fsa_pos].host_alias,
+                         connection[i].hostname, MAX_HOSTNAME_LENGTH + 1);
+            fsa[connection[i].fsa_pos].allowed_transfers = MAX_NO_PARALLEL_JOBS;
             fsa[connection[i].fsa_pos].keep_connected = 0;
 
             /*
