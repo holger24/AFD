@@ -203,6 +203,13 @@
                                        Internet Information Server (IIS) FTP
                                        server when renaming files.
                                        [Default: disabled]
+--enable-no_auto_basic_auth          - Since HTTPS digest authentication
+                                       is hardly used by servers, AFD does
+                                       by default do a preemptive basic
+                                       authentication which saves a
+                                       request/challenge cycle. With
+                                       this option the user can disable
+                                       this.
 --enable-group_can_write             - The permissions of the fifos will have
                                        write access to the fifos. This can be
                                        used to allow users of the same group

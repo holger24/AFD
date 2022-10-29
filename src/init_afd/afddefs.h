@@ -893,8 +893,9 @@ typedef unsigned long       u_long_64;
 /* Different URL auth= options. */
 #define AUTH_NONE                  0
 #define AUTH_BASIC                 1
-#define AUTH_AWS4_HMAC_SHA256      2
-#define AUTH_AWS_NO_SIGN_REQUEST   4
+#define AUTH_DIGEST                2
+#define AUTH_AWS4_HMAC_SHA256      4
+#define AUTH_AWS_NO_SIGN_REQUEST   8
 
 /* Different URL service= options. */
 #define SERVICE_NONE               0

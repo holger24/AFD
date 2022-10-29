@@ -36,10 +36,17 @@
 /* So for a MAX_HTTP_DIR_BUFFER of 1 MiB we should be able to hold    */
 /* 7176 elements/keys.                                                */
 
-#define PERMANENT_DISCONNECT        -10
-#define CONNECTION_REOPENED         99
-#define WWW_AUTHENTICATE_BASIC      10
-#define WWW_AUTHENTICATE_DIGEST     11
+#define PERMANENT_DISCONNECT                 -10
+#define CONNECTION_REOPENED                  99
+#define WWW_AUTHENTICATE_UNKNOWN             9
+#define WWW_AUTHENTICATE_BASIC               10
+#define WWW_AUTHENTICATE_DIGEST_MD5          11
+#define WWW_AUTHENTICATE_DIGEST_MD5_S        12
+#define WWW_AUTHENTICATE_DIGEST_SHA256       13
+#define WWW_AUTHENTICATE_DIGEST_SHA256_S     14
+#define WWW_AUTHENTICATE_DIGEST_SHA512_256   15
+#define WWW_AUTHENTICATE_DIGEST_SHA512_256_S 16
+#define WWW_AUTHENTICATE_DIGEST_UNKNOWN      17
 
 #define NOTHING_TO_FETCH            3
 #define CHUNKED                     2
@@ -57,6 +64,11 @@
 #define HTTP_OPTION_POST            16
 #define HTTP_OPTION_DELETE          32
 #define HTTP_OPTION_OPTIONS         64
+
+/* Digest options. */
+#define QOP_AUTH                    1
+#define QOP_AUTH_INT                2
+#define HASH_USERNAME               4
 
 struct http_message_reply
        {
@@ -76,13 +88,17 @@ struct http_message_reply
 #ifdef _WITH_EXTRA_CHECK
           char          http_etag[MAX_EXTRA_LS_DATA_LENGTH + 1];
 #endif
-          char          filename[MAX_FILENAME_LENGTH + 1];
+          char          *filename;             /* Content-Disposition */
           off_t         content_length;
           time_t        date;
           char          *authorization;
+          char          *realm;                /* HTTP digest auth */
+          char          *nonce;                /* HTTP digest auth */
+          char          *opaque;               /* HTTP digest auth */
           unsigned int  http_options;
           unsigned int  http_options_not_working;
           unsigned int  fra_options;
+          unsigned int  digest_options;
           int           port;
           int           header_length;
           int           marker_length;
@@ -110,6 +126,8 @@ extern int  aws_cmd(char *, char *, char *, char *, struct http_message_reply *)
                                     struct http_message_reply *);
 #endif
 extern int  basic_authentication(struct http_message_reply *),
+            digest_authentication(char *, char *, char *,
+                                  struct http_message_reply *),
             http_connect(char *, char *, int, char *, char *, unsigned char,
                          unsigned int, int,
 #ifdef WITH_SSL
@@ -123,7 +141,6 @@ extern int  basic_authentication(struct http_message_reply *),
             http_get(char *, char *, char *, off_t *, off_t),
 #endif
             http_head(char *, char *, off_t *, time_t *),
-            http_init_authentication(char *, char*),
             http_noop(char *),
             http_options(char *),
             http_put(char *, char *, char *, off_t, char *, int),
@@ -133,6 +150,7 @@ extern int  basic_authentication(struct http_message_reply *),
             http_version(void),
             http_write(char *, char *, int);
 extern void http_quit(void),
+            http_reset_authentication(int),
             http_set_marker(char *, int);
 
 #endif /* __httpdefs_h */

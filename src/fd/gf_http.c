@@ -441,6 +441,10 @@ main(int argc, char *argv[])
 # endif
                          values_changed);
          }
+         if (values_changed & USER_CHANGED)
+         {
+            http_reset_authentication(db.auth);
+         }
       }
 
       if ((in_burst_loop == NO) || (values_changed & TARGET_DIR_CHANGED))
@@ -469,19 +473,6 @@ main(int argc, char *argv[])
          }
 #endif /* WITH_OPTIONS_CALL */
 #ifdef _WITH_BURST_2
-      }
-#endif /* _WITH_BURST_2 */
-
-#ifdef _WITH_BURST_2
-      if ((in_burst_loop == NO) || (values_changed & USER_CHANGED))
-      {
-         if (http_init_authentication(db.user, db.password) != SUCCESS)
-         {
-            /* Note, http_init_authentication() writes a message to    */
-            /* trans_log() why it was not able to generate the string. */
-            http_quit();
-            exit(INCORRECT);
-         }
       }
 #endif /* _WITH_BURST_2 */
 

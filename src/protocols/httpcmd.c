@@ -78,6 +78,7 @@ DESCR__S_M3
  **   07.08.2021 H.Kiehl Put authentication into new authcmd.c.
  **   19.03.2022 H.Kiehl Add strict TLS support.
  **   17.07.2022 H.Kiehl Add option to enable TLS legacy renegotiation.
+ **   18.10.2022 H.Kiehl Add support for HTTP digest authentication.
  */
 DESCR__E_M3
 
@@ -160,12 +161,13 @@ static struct http_message_reply hmr;
 static int                       check_connection(void),
                                  flush_read(char *),
                                  get_http_reply(int *, int, int),
-                                 init_basic_authentication(void),
+                                 init_authentication(char *, char *, char *),
 #ifdef WITH_SSL
                                  prepare_aws4_listing(char *, char *,
                                                       char *, int *),
 #endif
-                                 read_msg(int *, int, int);
+                                 read_msg(int *, int, int),
+                                 store_http_digest(int, int);
 static void                      clear_msg_str(void),
                                  read_last_chunk(void),
 #ifdef WITH_SSL
@@ -228,7 +230,30 @@ http_connect(char          *hostname,
          (void)my_strncpy(hmr.http_proxy, http_proxy, MAX_REAL_HOSTNAME_LENGTH + 1);
          (void)my_strncpy(hmr.user, user, MAX_USER_NAME_LENGTH + 1);
          (void)my_strncpy(hmr.passwd, passwd, MAX_USER_NAME_LENGTH + 1);
+#ifdef HTTP_NO_AUTO_BASIC_AUTH
+         if (auth_type == AUTH_BASIC)
+         {
+            hmr.www_authenticate = WWW_AUTHENTICATE_BASIC;
+         }
+         else
+         {
+            hmr.www_authenticate = WWW_AUTHENTICATE_UNKNOWN;
+         }
+#else
+         if (auth_type == AUTH_DIGEST)
+         {
+            hmr.www_authenticate = WWW_AUTHENTICATE_UNKNOWN;
+         }
+         else
+         {
+            hmr.www_authenticate = WWW_AUTHENTICATE_BASIC;
+         }
+#endif
+         hmr.digest_options = 0;
          hmr.authorization = NULL;
+         hmr.realm = NULL;
+         hmr.nonce = NULL;
+         hmr.opaque = NULL;
          hmr.auth_type = auth_type;
          hmr.port = port;
          hmr.free = YES;
@@ -270,7 +295,7 @@ http_connect(char          *hostname,
          hmr.http_options_not_working = 0;
          hmr.bytes_buffered = 0;
          hmr.bytes_read = 0;
-         hmr.filename[0] = '\0';
+         hmr.filename = NULL;
 #ifdef _WITH_EXTRA_CHECK
          hmr.http_etag[0] = '\0';
          hmr.http_weak_etag = YES;
@@ -740,7 +765,30 @@ http_connect(char          *hostname,
       (void)my_strncpy(hmr.http_proxy, http_proxy, MAX_REAL_HOSTNAME_LENGTH + 1);
       (void)my_strncpy(hmr.user, user, MAX_USER_NAME_LENGTH + 1);
       (void)my_strncpy(hmr.passwd, passwd, MAX_USER_NAME_LENGTH + 1);
+#ifdef HTTP_NO_AUTO_BASIC_AUTH
+      if (auth_type == AUTH_BASIC)
+      {
+         hmr.www_authenticate = WWW_AUTHENTICATE_BASIC;
+      }
+      else
+      {
+         hmr.www_authenticate = WWW_AUTHENTICATE_UNKNOWN;
+      }
+#else
+      if (auth_type == AUTH_DIGEST)
+      {
+         hmr.www_authenticate = WWW_AUTHENTICATE_UNKNOWN;
+      }
+      else
+      {
+         hmr.www_authenticate = WWW_AUTHENTICATE_BASIC;
+      }
+#endif
+      hmr.digest_options = 0;
       hmr.authorization = NULL;
+      hmr.realm = NULL;
+      hmr.nonce = NULL;
+      hmr.opaque = NULL;
       hmr.auth_type = auth_type;
 #ifdef WITH_SSL
       hmr.service_type = service;
@@ -782,7 +830,7 @@ http_connect(char          *hostname,
       hmr.http_options_not_working = 0;
       hmr.bytes_buffered = 0;
       hmr.bytes_read = 0;
-      hmr.filename[0] = '\0';
+      hmr.filename = NULL;
 #ifdef _WITH_EXTRA_CHECK
       hmr.http_etag[0] = '\0';
       hmr.http_weak_etag = YES;
@@ -1081,33 +1129,36 @@ http_set_marker(char *marker, int marker_length)
 }
 
 
-/*##################### http_init_authentication() ######################*/
-int
-http_init_authentication(char *user, char *passwd)
+/*##################### http_reset_authentication() #####################*/
+void
+http_reset_authentication(int auth_type)
 {
-   int ret;
-
-   (void)my_strncpy(hmr.user, user, MAX_USER_NAME_LENGTH + 1);
-   (void)my_strncpy(hmr.passwd, passwd, MAX_USER_NAME_LENGTH + 1);
-   if (hmr.auth_type != AUTH_AWS4_HMAC_SHA256)
+   if (hmr.authorization != NULL)
    {
-      if ((user[0] != '\0') || (passwd[0] != '\0'))
-      {
-         ret = basic_authentication(&hmr);
-      }
-      else
-      {
-         free(hmr.authorization);
-         hmr.authorization = NULL;
-         ret = SUCCESS;
-      }
+      free(hmr.authorization);
+      hmr.authorization = NULL;
+   }
+#ifdef HTTP_NO_AUTO_BASIC_AUTH
+   if (auth_type == AUTH_BASIC)
+   {
+      hmr.www_authenticate = WWW_AUTHENTICATE_BASIC;
    }
    else
    {
-      ret = SUCCESS;
+      hmr.www_authenticate = WWW_AUTHENTICATE_UNKNOWN;
    }
+#else
+   if (auth_type == AUTH_DIGEST)
+   {
+      hmr.www_authenticate = WWW_AUTHENTICATE_UNKNOWN;
+   }
+   else
+   {
+      hmr.www_authenticate = WWW_AUTHENTICATE_BASIC;
+   }
+#endif
 
-   return(ret);
+   return;
 }
 
 
@@ -1169,7 +1220,10 @@ http_get(char  *path,
       hmr.bytes_read = 0;
       hmr.retries = 0;
       hmr.date = -1;
-      hmr.filename[0] = '\0';
+      if (hmr.filename != NULL)
+      {
+         hmr.filename[0] = '\0';
+      }
       if ((*content_length == 0) && (filename[0] != '\0') &&
           ((hmr.http_options_not_working & HTTP_OPTION_HEAD) == 0))
       {
@@ -1352,9 +1406,30 @@ retry_get_range:
 #endif
          if (hmr.authorization == NULL)
          {
-            if (init_basic_authentication() != SUCCESS)
+            if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
             {
-               return(INCORRECT);
+               if (basic_authentication(&hmr) != SUCCESS)
+               {
+                  return(INCORRECT);
+               }
+            }
+         }
+         else
+         {
+            if ((hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_MD5) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_MD5_S) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA256) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA256_S) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA512_256) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA512_256_S))
+            {
+               if (digest_authentication("GET", path, filename,
+                                          &hmr) != SUCCESS)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_get", NULL,
+                            _("Failed to create new digest authentication."));
+                  return(INCORRECT);
+               }
             }
          }
 #ifdef WITH_SSL
@@ -1363,13 +1438,13 @@ retry_get_range:
 retry_get:
 #ifdef _WITH_EXTRA_CHECK
       if ((reply = command(http_fd,
-                           "GET %s HTTP/1.1\r\nHost: %s\r\n%sUser-Agent: AFD/%s\r\n%s%sContent-length: 0\r\nAccept: */*\r\n",
+                           "GET %s HTTP/1.1\r\nHost: %s\r\n%sUser-Agent: AFD/%s\r\n%s%sContent-length: 0\r\nAccept: */*\r\nAccept-Encoding: gzip,deflate\r\n",
                            resource, hmr.hostname, range, PACKAGE_VERSION,
                            (hmr.authorization == NULL) ? "" : hmr.authorization,
                            none_match)) == SUCCESS)
 #else
       if ((reply = command(http_fd,
-                           "GET %s HTTP/1.1\r\nHost: %s\r\n%sUser-Agent: AFD/%s\r\n%sContent-length: 0\r\nAccept: */*\r\n",
+                           "GET %s HTTP/1.1\r\nHost: %s\r\n%sUser-Agent: AFD/%s\r\n%sContent-length: 0\r\nAccept: */*\r\nAccept-Encoding: gzip,deflate\r\n",
                            resource, hmr.hostname, range, PACKAGE_VERSION,
                            (hmr.authorization == NULL) ? "" : hmr.authorization)) == SUCCESS)
 #endif
@@ -1401,7 +1476,7 @@ retry_get:
             }
             if (new_filename != NULL)
             {
-               if (hmr.filename[0] == '\0')
+               if ((hmr.filename == NULL) || (hmr.filename[0] == '\0'))
                {
                   new_filename[0] = '\0';
                }
@@ -1414,6 +1489,24 @@ retry_get:
             (void)strcpy(etag, hmr.http_etag);
 #endif
          }
+         else if (reply == 401) /* Unauthorized */
+              {
+                 clear_msg_str();
+                 hmr.bytes_buffered = 0;
+                 hmr.bytes_read = 0;
+                 if (new_filename != NULL)
+                 {
+                    new_filename[0] = '\0';
+                 }
+
+                 if (init_authentication("GET", path, filename) == SUCCESS)
+                 {
+                    if (check_connection() > INCORRECT)
+                    {
+                       goto retry_get;
+                    }
+                 }
+              }
          else if (reply == 304) /* Not Modified */
               {
                  if (new_filename != NULL)
@@ -1425,34 +1518,6 @@ retry_get:
          else if ((reply == 403) || /* Forbidden */
                   (reply == 404))   /* Not Found */
               {
-                 clear_msg_str();
-                 hmr.bytes_buffered = 0;
-                 hmr.bytes_read = 0;
-                 if (new_filename != NULL)
-                 {
-                    new_filename[0] = '\0';
-                 }
-              }
-         else if (reply == 401) /* Unauthorized */
-              {
-                 if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
-                 {
-                    if (basic_authentication(&hmr) == SUCCESS)
-                    {
-                       if (check_connection() > INCORRECT)
-                       {
-                          goto retry_get;
-                       }
-                    }
-                    trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_get", NULL,
-                              _("Failed to create basic authentication."));
-                 }
-                 else if (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST)
-                      {
-                         trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_get", NULL,
-                                   _("Digest authentication not yet implemented."));
-                      }
-
                  clear_msg_str();
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
@@ -1821,9 +1886,30 @@ http_put(char *path,
 #endif
       if (hmr.authorization == NULL)
       {
-         if (init_basic_authentication() != SUCCESS)
+         if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
          {
-            return(INCORRECT);
+            if (basic_authentication(&hmr) != SUCCESS)
+            {
+               return(INCORRECT);
+            }
+         }
+         else
+         {
+            if ((hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_MD5) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_MD5_S) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA256) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA256_S) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA512_256) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA512_256_S))
+            {
+               if (digest_authentication("PUT", path, filename,
+                                         &hmr) != SUCCESS)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_put", NULL,
+                            _("Failed to create new digest authentication."));
+                  return(INCORRECT);
+               }
+            }
          }
       }
 #ifdef WITH_SSL
@@ -1855,6 +1941,17 @@ retry_put:
          {
             reply = SUCCESS;
          }
+         else if (reply == 401) /* Unauthorized */
+              {
+                 clear_msg_str();
+                 if (init_authentication("PUT", path, filename) == SUCCESS)
+                 {
+                    if (check_connection() > INCORRECT)
+                    {
+                       goto retry_put;
+                    }
+                 }
+              }
          else if (reply == CONNECTION_REOPENED)
               {
                  goto retry_put;
@@ -1921,8 +2018,7 @@ http_put_response(void)
    hmr.bytes_buffered = 0;
    hmr.bytes_read = 0;
 
-   if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) &&
-       (hmr.authorization != NULL))
+   if ((hmr.auth_type == AUTH_AWS4_HMAC_SHA256) && (hmr.authorization != NULL))
    {
       free(hmr.authorization);
       hmr.authorization = NULL;
@@ -2008,9 +2104,30 @@ http_del(char *path, char *filename)
 #endif
          if (hmr.authorization == NULL)
          {
-            if (init_basic_authentication() != SUCCESS)
+            if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
             {
-               return(INCORRECT);
+               if (basic_authentication(&hmr) != SUCCESS)
+               {
+                  return(INCORRECT);
+               }
+            }
+         }
+         else
+         {
+            if ((hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_MD5) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_MD5_S) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA256) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA256_S) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA512_256) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA512_256_S))
+            {
+               if (digest_authentication("DELETE", path, filename,
+                                          &hmr) != SUCCESS)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_delete", NULL,
+                            _("Failed to create new digest authentication."));
+                  return(INCORRECT);
+               }
             }
          }
 #ifdef WITH_SSL
@@ -2029,27 +2146,17 @@ retry_del:
          }
          else if (reply == 401) /* Unauthorized */
               {
-                 if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
-                 {
-                    if (basic_authentication(&hmr) == SUCCESS)
-                    {
-                       if (check_connection() > INCORRECT)
-                       {
-                          goto retry_del;
-                       }
-                    }
-                    trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_del", NULL,
-                              _("Failed to create basic authentication."));
-                 }
-                 else if (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST)
-                      {
-                         trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_del", NULL,
-                                   _("Digest authentication not yet implemented."));
-                      }
-
                  clear_msg_str();
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
+
+                 if (init_authentication("DELETE", path, filename) == SUCCESS)
+                 {
+                    if (check_connection() > INCORRECT)
+                    {
+                       goto retry_del;
+                    }
+                 }
               }
          else if (reply == CONNECTION_REOPENED)
               {
@@ -2149,9 +2256,29 @@ http_options(char *path)
 #endif
          if (hmr.authorization == NULL)
          {
-            if (init_basic_authentication() != SUCCESS)
+            if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
             {
-               return(INCORRECT);
+               if (basic_authentication(&hmr) != SUCCESS)
+               {
+                  return(INCORRECT);
+               }
+            }
+         }
+         else
+         {
+            if ((hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_MD5) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_MD5_S) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA256) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA256_S) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA512_256) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA512_256_S))
+            {
+               if (digest_authentication("OPTIONS", path, "", &hmr) != SUCCESS)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_options", NULL,
+                            _("Failed to create new digest authentication."));
+                  return(INCORRECT);
+               }
             }
          }
 #ifdef WITH_SSL
@@ -2174,27 +2301,17 @@ retry_options:
          }
          else if (reply == 401) /* Unauthorized */
               {
-                 if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
-                 {
-                    if (basic_authentication(&hmr) == SUCCESS)
-                    {
-                       if (check_connection() > INCORRECT)
-                       {
-                          goto retry_options;
-                       }
-                    }
-                    trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_options", NULL,
-                              _("Failed to create basic authentication."));
-                 }
-                 else if (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST)
-                      {
-                         trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_options", NULL,
-                                   _("Digest authentication not yet implemented."));
-                      }
-
                  clear_msg_str();
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
+
+                 if (init_authentication("OPTIONS", path, "") == SUCCESS)
+                 {
+                    if (check_connection() > INCORRECT)
+                    {
+                       goto retry_options;
+                    }
+                 }
               }
          else if ((reply == 403) || /* Forbidden */
                   (reply == 405) || /* Not Allowed */
@@ -2318,9 +2435,30 @@ http_head(char *path, char *filename, off_t *content_length, time_t *date)
 #endif
          if (hmr.authorization == NULL)
          {
-            if (init_basic_authentication() != SUCCESS)
+            if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
             {
-               return(INCORRECT);
+               if (basic_authentication(&hmr) != SUCCESS)
+               {
+                  return(INCORRECT);
+               }
+            }
+         }
+         else
+         {
+            if ((hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_MD5) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_MD5_S) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA256) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA256_S) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA512_256) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA512_256_S))
+            {
+               if (digest_authentication("HEAD", path, filename,
+                                          &hmr) != SUCCESS)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_head", NULL,
+                            _("Failed to create new digest authentication."));
+                  return(INCORRECT);
+               }
             }
          }
 #ifdef WITH_SSL
@@ -2343,27 +2481,17 @@ retry_head:
          }
          else if (reply == 401) /* Unauthorized */
               {
-                 if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
-                 {
-                    if (basic_authentication(&hmr) == SUCCESS)
-                    {
-                       if (check_connection() > INCORRECT)
-                       {
-                          goto retry_head;
-                       }
-                    }
-                    trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_head", NULL,
-                              _("Failed to create basic authentication."));
-                 }
-                 else if (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST)
-                      {
-                         trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_head", NULL,
-                                   _("Digest authentication not yet implemented."));
-                      }
-
                  clear_msg_str();
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
+
+                 if (init_authentication("HEAD", path, filename) == SUCCESS)
+                 {
+                    if (check_connection() > INCORRECT)
+                    {
+                       goto retry_head;
+                    }
+                 }
               }
          else if ((reply == 400) || /* Bad Request */
                   (reply == 405) || /* Method Not Allowed */
@@ -3001,9 +3129,29 @@ http_noop(char *path)
 #endif
          if (hmr.authorization == NULL)
          {
-            if (init_basic_authentication() != SUCCESS)
+            if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
             {
-               return(INCORRECT);
+               if (basic_authentication(&hmr) != SUCCESS)
+               {
+                  return(INCORRECT);
+               }
+            }
+         }
+         else
+         {
+            if ((hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_MD5) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_MD5_S) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA256) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA256_S) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA512_256) ||
+                (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST_SHA512_256_S))
+            {
+               if (digest_authentication("HEAD", path, "", &hmr) != SUCCESS)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_head", NULL,
+                            _("Failed to create new digest authentication."));
+                  return(INCORRECT);
+               }
             }
          }
 #ifdef WITH_SSL
@@ -3025,27 +3173,17 @@ retry_noop:
          }
          else if (reply == 401) /* Unauthorized */
               {
-                 if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
-                 {
-                    if (basic_authentication(&hmr) == SUCCESS)
-                    {
-                       if (check_connection() > INCORRECT)
-                       {
-                          goto retry_noop;
-                       }
-                    }
-                    trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_noop", NULL,
-                              _("Failed to create basic authentication."));
-                 }
-                 else if (hmr.www_authenticate == WWW_AUTHENTICATE_DIGEST)
-                      {
-                         trans_log(ERROR_SIGN, __FILE__, __LINE__, "http_noop", NULL,
-                                   _("Digest authentication not yet implemented."));
-                      }
-
                  clear_msg_str();
                  hmr.bytes_buffered = 0;
                  hmr.bytes_read = 0;
+
+                 if (init_authentication("HEAD", path, "") == SUCCESS)
+                 {
+                    if (check_connection() > INCORRECT)
+                    {
+                       goto retry_noop;
+                    }
+                 }
               }
          else if ((reply == 400) || /* Bad Request */
                   (reply == 405) || /* Method Not Allowed */
@@ -3085,10 +3223,33 @@ retry_noop:
 void
 http_quit(void)
 {
-   if ((hmr.authorization != NULL) && (hmr.free != NO))
+   if (hmr.free != NO)
    {
-      free(hmr.authorization);
-      hmr.authorization = NULL;
+      if (hmr.authorization != NULL)
+      {
+         free(hmr.authorization);
+         hmr.authorization = NULL;
+      }
+      if (hmr.realm != NULL)
+      {
+         free(hmr.realm);
+         hmr.realm = NULL;
+      }
+      if (hmr.nonce != NULL)
+      {
+         free(hmr.nonce);
+         hmr.nonce = NULL;
+      }
+      if (hmr.opaque != NULL)
+      {
+         free(hmr.opaque);
+         hmr.opaque = NULL;
+      }
+      if (hmr.filename != NULL)
+      {
+         free(hmr.filename);
+         hmr.filename = NULL;
+      }
    }
    if (http_fd != -1)
    {
@@ -3126,24 +3287,44 @@ http_quit(void)
 }
 
 
-/*+++++++++++++++++++++ init_basic_authentication() +++++++++++++++++++++*/
+/*++++++++++++++++++++++++ init_authentication() ++++++++++++++++++++++++*/
 static int
-init_basic_authentication(void)
+init_authentication(char *method, char *path, char *filename)
 {
    int ret;
 
-   if (((hmr.auth_type == AUTH_NONE) || (hmr.auth_type == AUTH_BASIC)) &&
-       ((hmr.user[0] != '\0') || (hmr.passwd[0] != '\0')))
+   if ((hmr.auth_type == AUTH_NONE) || (hmr.auth_type == AUTH_BASIC) ||
+       (hmr.auth_type == AUTH_DIGEST))
    {
-      if ((ret = basic_authentication(&hmr)) != SUCCESS)
+      if ((hmr.user[0] == '\0') ||
+          (hmr.www_authenticate == WWW_AUTHENTICATE_UNKNOWN))
       {
-         trans_log(ERROR_SIGN, __FILE__, __LINE__, "init_basic_authentication", NULL,
-                   _("Failed to create basic authentication."));
+         ret = INCORRECT;
+      }
+      else
+      {
+         if (hmr.www_authenticate == WWW_AUTHENTICATE_BASIC)
+         {
+            if ((ret = basic_authentication(&hmr)) != SUCCESS)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "init_authentication", NULL,
+                         _("Failed to create basic authentication."));
+            }
+         }
+         else
+         {
+            if ((ret = digest_authentication(method, path, filename,
+                                             &hmr)) != SUCCESS)
+            {
+               trans_log(ERROR_SIGN, __FILE__, __LINE__, "init_authentication", NULL,
+                         _("Failed to create digest authentication."));
+            }
+         }
       }
    }
    else
    {
-      ret = SUCCESS;
+      ret = INCORRECT;
    }
 
    return(ret);
@@ -3278,6 +3459,9 @@ read_msg_again:
           */
          for (;;)
          {
+            /*
+             * Read line by line and evaluate it.
+             */
             if ((bytes_buffered = read_msg(&read_length, 0, line)) <= 0)
             {
                if (bytes_buffered == 0)
@@ -3362,7 +3546,7 @@ read_msg_again:
                     {
                        i++;
                     }
-                    if (((i + 4) < read_length) &&
+                    if (((i + 4) <= read_length) &&
                         ((msg_str[i] == 'c') || (msg_str[i] == 'C')) &&
                         ((msg_str[i + 1] == 'l') || (msg_str[i + 1] == 'L')) &&
                         ((msg_str[i + 2] == 'o') || (msg_str[i + 2] == 'O')) &&
@@ -3410,14 +3594,24 @@ read_msg_again:
                           hmr.www_authenticate = WWW_AUTHENTICATE_BASIC;
                        }
                             /* Digest */
-                       else if (((msg_str[i] == 'D') || (msg_str[i] == 'd')) &&
+                       else if (((i + 6) < read_length) &&
+                                ((msg_str[i] == 'D') || (msg_str[i] == 'd')) &&
                                 ((msg_str[i + 1] == 'i') || (msg_str[i + 1] == 'I')) &&
                                 ((msg_str[i + 2] == 'g') || (msg_str[i + 2] == 'G')) &&
                                 ((msg_str[i + 3] == 'e') || (msg_str[i + 3] == 'E')) &&
                                 ((msg_str[i + 4] == 's') || (msg_str[i + 4] == 'S')) &&
                                 ((msg_str[i + 5] == 't') || (msg_str[i + 5] == 'T')))
                             {
-                               hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST;
+                               i += 6;
+                               while ((i < read_length) &&
+                                      ((msg_str[i] == ' ') || (msg_str[i] == '\t')))
+                               {
+                                  i++;
+                               }
+                               if (store_http_digest(i, read_length) == INCORRECT)
+                               {
+                                  status_code = INCORRECT;
+                               }
                             }
                     }
                  }
@@ -3557,7 +3751,7 @@ read_msg_again:
                        i++;
                     }
                     /* attachment; */
-                    if (((i + 11) < read_length) &&
+                    if (((i + 11) <= read_length) &&
                         ((msg_str[i] == 'a') || (msg_str[i] == 'A')) &&
                         ((msg_str[i + 1] == 't') || (msg_str[i + 1] == 'T')) &&
                         ((msg_str[i + 2] == 't') || (msg_str[i + 2] == 'T')) &&
@@ -3579,7 +3773,7 @@ read_msg_again:
                        if (i < read_length)
                        {
                           /* filename= */
-                          if (((i + 9) < read_length) &&
+                          if (((i + 9) <= read_length) &&
                               ((msg_str[i] == 'f') || (msg_str[i] == 'F')) &&
                               ((msg_str[i + 1] == 'i') || (msg_str[i + 1] == 'I')) &&
                               ((msg_str[i + 2] == 'l') || (msg_str[i + 2] == 'L')) &&
@@ -3617,59 +3811,106 @@ read_msg_again:
                              }
                              else
                              {
-                                int j = 0;
-
-                                while ((i < read_length) &&
-                                       (j < MAX_FILENAME_LENGTH) &&
-                                       (isascii((int)msg_str[i]) != 0) &&
-                                       (msg_str[i] != end_char) &&
-                                       (msg_str[i] != '/'))
+                                if ((hmr.filename == NULL) &&
+                                    ((hmr.filename = malloc(MAX_FILENAME_LENGTH + 1)) == NULL))
                                 {
-                                   hmr.filename[j] = msg_str[i];
-                                   i++;
-                                   j++;
-                                }
-                                if (msg_str[i] == end_char)
-                                {
-                                   hmr.filename[j] = '\0';
+                                   trans_log(WARN_SIGN,  __FILE__, __LINE__,
+                                             "get_http_reply", NULL,
+                                             _("malloc() error : %s"),
+                                             strerror(errno));
                                 }
                                 else
                                 {
-                                   if (j == MAX_FILENAME_LENGTH)
+                                   int j = 0;
+
+                                   while ((i < read_length) &&
+                                          (j < MAX_FILENAME_LENGTH) &&
+                                          (isascii((int)msg_str[i]) != 0) &&
+                                          (msg_str[i] != end_char) &&
+                                          (msg_str[i] != '/'))
                                    {
-                                      trans_log(DEBUG_SIGN,  __FILE__, __LINE__,
-                                                "get_http_reply", NULL,
-                                                "Filename larger then %d bytes",
-                                                MAX_FILENAME_LENGTH);
+                                      hmr.filename[j] = msg_str[i];
+                                      i++;
+                                      j++;
                                    }
-                                   else if (i == read_length)
-                                        {
-                                           trans_log(DEBUG_SIGN,  __FILE__,
-                                                     __LINE__, "get_http_reply",
-                                                     NULL,
-                                                     "Premature end of buffer reached.");
-                                        }
-                                   else if (msg_str[i] == '/')
-                                        {
-                                           trans_log(DEBUG_SIGN,  __FILE__,
-                                                     __LINE__, "get_http_reply",
-                                                     NULL,
-                                                     "Filename may not contain directory information.");
-                                        }
-                                        else
-                                        {
-                                           trans_log(DEBUG_SIGN,  __FILE__,
-                                                     __LINE__, "get_http_reply",
-                                                     NULL,
-                                                     "Filename contains non ASCII character (%d).",
-                                                     (int)msg_str[i]);
-                                        }
-                                   hmr.filename[0] = '\0';
+                                   if (msg_str[i] == end_char)
+                                   {
+                                      hmr.filename[j] = '\0';
+                                   }
+                                   else
+                                   {
+                                      if (j == MAX_FILENAME_LENGTH)
+                                      {
+                                         trans_log(DEBUG_SIGN,  __FILE__, __LINE__,
+                                                   "get_http_reply", NULL,
+                                                   "Filename larger then %d bytes",
+                                                   MAX_FILENAME_LENGTH);
+                                      }
+                                      else if (i == read_length)
+                                           {
+                                              trans_log(DEBUG_SIGN,  __FILE__,
+                                                        __LINE__, "get_http_reply",
+                                                        NULL,
+                                                        "Premature end of buffer reached.");
+                                           }
+                                      else if (msg_str[i] == '/')
+                                           {
+                                              trans_log(DEBUG_SIGN,  __FILE__,
+                                                        __LINE__, "get_http_reply",
+                                                        NULL,
+                                                        "Filename may not contain directory information.");
+                                           }
+                                           else
+                                           {
+                                              trans_log(DEBUG_SIGN,  __FILE__,
+                                                        __LINE__, "get_http_reply",
+                                                        NULL,
+                                                        "Filename contains non ASCII character (%d).",
+                                                        (int)msg_str[i]);
+                                           }
+                                      hmr.filename[0] = '\0';
+                                   }
                                 }
                              }
                           }
                        }
                     }
+                 }
+                 /* Authentication-Info: */
+            else if ((read_length > 19) && (msg_str[19] == ':') &&
+                     ((msg_str[0] == 'A') || (msg_str[0] == 'a')) &&
+                     ((msg_str[1] == 'u') || (msg_str[1] == 'U')) &&
+                     ((msg_str[2] == 't') || (msg_str[2] == 'T')) &&
+                     ((msg_str[3] == 'h') || (msg_str[3] == 'H')) &&
+                     ((msg_str[4] == 'e') || (msg_str[4] == 'E')) &&
+                     ((msg_str[5] == 'n') || (msg_str[5] == 'N')) &&
+                     ((msg_str[6] == 't') || (msg_str[6] == 'T')) &&
+                     ((msg_str[7] == 'i') || (msg_str[7] == 'I')) &&
+                     ((msg_str[8] == 'c') || (msg_str[8] == 'C')) &&
+                     ((msg_str[9] == 'a') || (msg_str[9] == 'A')) &&
+                     ((msg_str[10] == 't') || (msg_str[10] == 'T')) &&
+                     ((msg_str[11] == 'i') || (msg_str[11] == 'I')) &&
+                     ((msg_str[12] == 'o') || (msg_str[12] == 'O')) &&
+                     ((msg_str[13] == 'n') || (msg_str[13] == 'N')) &&
+                     (msg_str[14] == '-') &&
+                     ((msg_str[15] == 'I') || (msg_str[15] == 'i')) &&
+                     ((msg_str[16] == 'n') || (msg_str[16] == 'N')) &&
+                     ((msg_str[17] == 'f') || (msg_str[17] == 'F')) &&
+                     ((msg_str[18] == 'o') || (msg_str[18] == 'O')))
+                 {
+                    int i = 20;
+
+                    while ((i < read_length) &&
+                           ((msg_str[i] == ' ') || (msg_str[i] == '\t')))
+                    {
+                       i++;
+                    }
+
+                    /*
+                     * For digest authentication, check if the server
+                     * provides a nextnonce.
+                     */
+                    store_http_digest(i, read_length);
                  }
          } /* for (;;) */
 
@@ -4287,6 +4528,545 @@ store_http_etag(int i, int read_length)
 #endif
 
 
+/*------------------------- store_http_digest() -------------------------*/
+static int
+store_http_digest(int i, int read_length)
+{
+   int length;
+
+   while ((i < read_length) && (msg_str[i] != '\0'))
+   {
+      /* realm= */
+      if ((read_length > (i + 6)) &&
+          ((msg_str[i] == 'r') || (msg_str[i] == 'R')) &&
+          ((msg_str[i + 1] == 'e') || (msg_str[i + 1] == 'E')) &&
+          ((msg_str[i + 2] == 'a') || (msg_str[i + 2] == 'A')) &&
+          ((msg_str[i + 3] == 'l') || (msg_str[i + 3] == 'L')) &&
+          ((msg_str[i + 4] == 'm') || (msg_str[i + 4] == 'M')) &&
+          (msg_str[i + 5] == '=') && (msg_str[i + 6] == '"'))
+      {
+         i += 7;
+         length = 0;
+
+         while ((i < read_length) && (msg_str[i + length] != '"') &&
+                (msg_str[i + length] != ',') &&
+                (msg_str[i + length] != '\0'))
+         {
+            length++;
+         }
+         if (length == 0)
+         {
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, "store_http_digest", NULL,
+                      "Length of realm is 0!");
+            return(INCORRECT);
+         }
+         if (hmr.realm != NULL)
+         {
+            (void)free(hmr.realm);
+         }
+         if ((hmr.realm = malloc(length + 1)) == NULL)
+         {
+            trans_log(ERROR_SIGN, __FILE__, __LINE__, "store_http_digest", NULL,
+                      "Failed to malloc() for HTTP digest realm : %s",
+                      strerror(errno));
+            return(INCORRECT);
+         }
+         (void)memcpy(hmr.realm, &msg_str[i], length);
+         hmr.realm[length] = '\0';
+         if (msg_str[i + length] == '"')
+         {
+            i += (length + 1);
+         }
+         else
+         {
+            i += length;
+         }
+      }
+           /* nonce= */
+      else if ((read_length > (i + 6)) &&
+               ((msg_str[i] == 'n') || (msg_str[i] == 'N')) &&
+               ((msg_str[i + 1] == 'o') || (msg_str[i + 1] == 'O')) &&
+               ((msg_str[i + 2] == 'n') || (msg_str[i + 2] == 'N')) &&
+               ((msg_str[i + 3] == 'c') || (msg_str[i + 3] == 'C')) &&
+               ((msg_str[i + 4] == 'e') || (msg_str[i + 4] == 'E')) &&
+               (msg_str[i + 5] == '=') && (msg_str[i + 6] == '"'))
+           {
+              i += 7;
+              length = 0;
+
+              while ((i < read_length) && (msg_str[i + length] != '"') &&
+                     (msg_str[i + length] != ',') &&
+                     (msg_str[i + length] != '\0'))
+              {
+                 length++;
+              }
+              if (length == 0)
+              {
+                 trans_log(ERROR_SIGN, __FILE__, __LINE__, "store_http_digest", NULL,
+                           "Length of nonce is 0!");
+                 return(INCORRECT);
+              }
+              if (hmr.nonce != NULL)
+              {
+                 (void)free(hmr.nonce);
+              }
+              if ((hmr.nonce = malloc(length + 1)) == NULL)
+              {
+                 trans_log(ERROR_SIGN, __FILE__, __LINE__, "store_http_digest", NULL,
+                           "Failed to malloc() for HTTP digest nonce : %s",
+                           strerror(errno));
+                 return(INCORRECT);
+              }
+              (void)memcpy(hmr.nonce, &msg_str[i], length);
+              hmr.nonce[length] = '\0';
+              if (msg_str[i + length] == '"')
+              {
+                 i += (length + 1);
+              }
+              else
+              {
+                 i += length;
+              }
+           }
+           /* algorithm= */
+      else if ((read_length > (i + 9)) &&
+               ((msg_str[i] == 'a') || (msg_str[i] == 'A')) &&
+               ((msg_str[i + 1] == 'l') || (msg_str[i + 1] == 'L')) &&
+               ((msg_str[i + 2] == 'g') || (msg_str[i + 2] == 'G')) &&
+               ((msg_str[i + 3] == 'o') || (msg_str[i + 3] == 'O')) &&
+               ((msg_str[i + 4] == 'r') || (msg_str[i + 4] == 'R')) &&
+               ((msg_str[i + 5] == 'i') || (msg_str[i + 5] == 'I')) &&
+               ((msg_str[i + 6] == 't') || (msg_str[i + 6] == 'T')) &&
+               ((msg_str[i + 7] == 'h') || (msg_str[i + 7] == 'H')) &&
+               ((msg_str[i + 8] == 'm') || (msg_str[i + 8] == 'M')) &&
+               (msg_str[i + 9] == '='))
+           {
+              i += 10;
+
+              /* MD5 */
+              if (((i + 3) <= read_length) &&
+                  ((msg_str[i] == 'M') || (msg_str[i] == 'm')) &&
+                  ((msg_str[i + 1] == 'D') || (msg_str[i + 1] == 'd')) &&
+                  ((msg_str[i + 2] == '5') &&
+                   ((msg_str[i + 3] == ',') || (msg_str[i + 3] == '\0'))))
+              {
+                 i += 3;
+                 hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST_MD5;
+              }
+#ifdef HAVE_EVP_SHA256
+                   /* SHA-256 */
+              else if (((i + 7) <= read_length) &&
+                       ((msg_str[i] == 'S') || (msg_str[i] == 's')) &&
+                       ((msg_str[i + 1] == 'H') || (msg_str[i + 1] == 'h')) &&
+                       ((msg_str[i + 2] == 'A') || (msg_str[i + 2] == 'a')) &&
+                       ((msg_str[i + 3] == '-') && (msg_str[i + 4] == '2') &&
+                        (msg_str[i + 5] == '5') && (msg_str[i + 6] == '6') &&
+                        ((msg_str[i + 7] == ',') || (msg_str[i + 7] == '\0'))))
+                   {
+                      i += 7;
+                      hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST_SHA256;
+                   }
+#endif
+                   /* MD5-sess */
+              else if (((i + 8) <= read_length) &&
+                       ((msg_str[i] == 'M') || (msg_str[i] == 'm')) &&
+                       ((msg_str[i + 1] == 'D') || (msg_str[i + 1] == 'd')) &&
+                       ((msg_str[i + 2] == '5') && (msg_str[i + 3] == '-') &&
+                        ((msg_str[i + 4] == 's') || (msg_str[i + 4] == 'S')) &&
+                        ((msg_str[i + 5] == 'e') || (msg_str[i + 5] == 'E')) &&
+                        ((msg_str[i + 6] == 's') || (msg_str[i + 6] == 'S')) &&
+                        ((msg_str[i + 7] == 's') || (msg_str[i + 7] == 'S')) &&
+                        ((msg_str[i + 8] == ',') || (msg_str[i + 8] == '\0'))))
+                   {
+                      i += 8;
+                      hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST_MD5_S;
+                   }
+#ifdef HAVE_EVP_SHA256
+                   /* SHA-256-sess */
+              else if (((i + 12) <= read_length) &&
+                       ((msg_str[i] == 'S') || (msg_str[i] == 's')) &&
+                       ((msg_str[i + 1] == 'H') || (msg_str[i + 1] == 'h')) &&
+                       ((msg_str[i + 2] == 'A') || (msg_str[i + 2] == 'a')) &&
+                       ((msg_str[i + 3] == '-') && (msg_str[i + 4] == '2') &&
+                        (msg_str[i + 5] == '5') && (msg_str[i + 6] == '6') &&
+                        (msg_str[i + 7] == '-') &&
+                        ((msg_str[i + 8] == 's') || (msg_str[i + 8] == 'S')) &&
+                        ((msg_str[i + 9] == 'e') || (msg_str[i + 9] == 'E')) &&
+                        ((msg_str[i + 10] == 's') ||
+                         (msg_str[i + 10] == 'S')) &&
+                        ((msg_str[i + 11] == 's') ||
+                         (msg_str[i + 11] == 'S')) &&
+                        ((msg_str[i + 12] == ',') || (msg_str[i + 12] == '\0'))))
+                   {
+                      i += 12;
+                      hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST_SHA256_S;
+                   }
+#endif
+#ifdef HAVE_EVP_SHA512_256
+                   /* SHA-512-256 */
+              else if (((i + 11) <= read_length) &&
+                       ((msg_str[i] == 'S') || (msg_str[i] == 's')) &&
+                       ((msg_str[i + 1] == 'H') || (msg_str[i + 1] == 'h')) &&
+                       ((msg_str[i + 2] == 'A') || (msg_str[i + 2] == 'a')) &&
+                       ((msg_str[i + 3] == '-') && (msg_str[i + 4] == '5') &&
+                        (msg_str[i + 5] == '1') && (msg_str[i + 6] == '2') &&
+                        (msg_str[i + 7] == '-') && (msg_str[i + 8] == '2') &&
+                        (msg_str[i + 9] == '5') && (msg_str[i + 10] == '6') &&
+                        ((msg_str[i + 11] == ',') ||
+                         (msg_str[i + 11] == '\0'))))
+                   {
+                      i += 11;
+                      hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST_SHA512_256;
+                   }
+                   /* SHA-512-256-sees */
+              else if (((i + 17) <= read_length) &&
+                       ((msg_str[i] == 'S') || (msg_str[i] == 's')) &&
+                       ((msg_str[i + 1] == 'H') || (msg_str[i + 1] == 'h')) &&
+                       ((msg_str[i + 2] == 'A') || (msg_str[i + 2] == 'a')) &&
+                       ((msg_str[i + 3] == '-') && (msg_str[i + 4] == '5') &&
+                        (msg_str[i + 5] == '1') && (msg_str[i + 6] == '2') &&
+                        (msg_str[i + 7] == '-') && (msg_str[i + 8] == '2') &&
+                        (msg_str[i + 9] == '5') && (msg_str[i + 10] == '6') &&
+                        (msg_str[i + 11] == '-') &&
+                        ((msg_str[i + 12] == 's') ||
+                         (msg_str[i + 12] == 'S')) &&
+                        ((msg_str[i + 13] == 'e') ||
+                         (msg_str[i + 13] == 'E')) &&
+                        ((msg_str[i + 14] == 's') ||
+                         (msg_str[i + 14] == 'S')) &&
+                        ((msg_str[i + 15] == 's') ||
+                         (msg_str[i + 15] == 'S')) &&
+                        ((msg_str[i + 16] == ',') ||
+                         (msg_str[i + 16] == '\0')) &&
+                        ((msg_str[i + 17] == ',') ||
+                         (msg_str[i + 17] == '\0'))))
+                   {
+                      i += 17;
+                      hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST_SHA512_256_S;
+                   }
+#endif
+                   else
+                   {
+                      int  j = 0;
+                      char unknown[MAX_RET_MSG_LENGTH];
+
+                      /* Unknown */
+                      while ((i < read_length) && (msg_str[i] != ',') &&
+                             (msg_str[i] != '\0'))
+                      {
+                         unknown[j] = msg_str[i];
+                         i++; j++;
+                      }
+                      unknown[j] = '\0';
+                      hmr.www_authenticate = WWW_AUTHENTICATE_DIGEST_UNKNOWN;
+                      trans_log(ERROR_SIGN, __FILE__, __LINE__, "store_http_digest", NULL,
+                                "Unknown HTTP digest algorithm : %s",
+                                unknown);
+                      return(INCORRECT);
+                   }
+           }
+           /* qop= */
+      else if ((read_length > (i + 4)) &&
+               ((msg_str[i] == 'q') || (msg_str[i] == 'Q')) &&
+               ((msg_str[i + 1] == 'o') || (msg_str[i + 1] == 'O')) &&
+               ((msg_str[i + 2] == 'p') || (msg_str[i + 2] == 'P')) &&
+               (msg_str[i + 3] == '=') && (msg_str[i + 4] == '"'))
+           {
+              i += 5;
+              if (((i + 4) <= read_length) &&
+                  ((msg_str[i] == 'a') || (msg_str[i] == 'A')) &&
+                  ((msg_str[i + 1] == 'u') || (msg_str[i + 1] == 'U')) &&
+                  ((msg_str[i + 2] == 't') || (msg_str[i + 2] == 'T')) &&
+                  ((msg_str[i + 3] == 'h') || (msg_str[i + 3] == 'H')) &&
+                  ((msg_str[i + 4] == '"') || (msg_str[i + 4] == ',')))
+              {
+                 hmr.digest_options |= QOP_AUTH;
+                 if (msg_str[i + 4] == '"')
+                 {
+                    i += 5;
+                 }
+                 else
+                 {
+                    i += 5;
+                    while ((i < read_length) &&
+                           ((msg_str[i] == ' ') || (msg_str[i] == '\t')))
+                    {
+                       i++; /* Ignore space. */
+                    }
+                    if (((i + 8) <= read_length) &&
+                        ((msg_str[i] == 'a') || (msg_str[i] == 'A')) &&
+                        ((msg_str[i + 1] == 'u') || (msg_str[i + 1] == 'U')) &&
+                        ((msg_str[i + 2] == 't') || (msg_str[i + 2] == 'T')) &&
+                        ((msg_str[i + 3] == 'h') || (msg_str[i + 3] == 'H')) &&
+                        (msg_str[i + 4] == '-') &&
+                        ((msg_str[i + 5] == 'i') || (msg_str[i + 5] == 'I')) &&
+                        ((msg_str[i + 6] == 'n') || (msg_str[i + 6] == 'N')) &&
+                        ((msg_str[i + 7] == 't') || (msg_str[i + 7] == 'T')) &&
+                        ((msg_str[i + 8] == '"') || (msg_str[i + 8] == ',')))
+                    {
+                       hmr.digest_options |= QOP_AUTH_INT;
+                       if (msg_str[i + 8] == '"')
+                       {
+                          i += 9;
+                       }
+                       else
+                       {
+                          /* Some unknown quality of protection, lets ignore. */
+                          i += 9;
+                          while ((i < read_length) && (msg_str[i] != '"') &&
+                                 (msg_str[i] != '\0'))
+                          {
+                             i++;
+                          }
+                          if (msg_str[i] == '"')
+                          {
+                             i++;
+                          }
+                       }
+                    }
+                    else
+                    {
+                       /* Some unknown quality of protection, lets ignore. */
+                       while ((i < read_length) && (msg_str[i] != '"') &&
+                              (msg_str[i] != '\0'))
+                       {
+                          i++;
+                       }
+                       if (msg_str[i] == '"')
+                       {
+                          i++;
+                       }
+                    }
+                 }
+              }
+              else if (((i + 8) <= read_length) &&
+                       ((msg_str[i] == 'a') || (msg_str[i] == 'A')) &&
+                       ((msg_str[i + 1] == 'u') || (msg_str[i + 1] == 'U')) &&
+                       ((msg_str[i + 2] == 't') || (msg_str[i + 2] == 'T')) &&
+                       ((msg_str[i + 3] == 'h') || (msg_str[i + 3] == 'H')) &&
+                       (msg_str[i + 4] == '-') &&
+                       ((msg_str[i + 5] == 'i') || (msg_str[i + 5] == 'I')) &&
+                       ((msg_str[i + 6] == 'n') || (msg_str[i + 6] == 'N')) &&
+                       ((msg_str[i + 7] == 't') || (msg_str[i + 7] == 'T')) &&
+                       ((msg_str[i + 8] == '"') || (msg_str[i + 8] == ',')))
+                   {
+                      hmr.digest_options |= QOP_AUTH_INT;
+                      if (msg_str[i + 8] == '"')
+                      {
+                         i += 9;
+                      }
+                      else
+                      {
+                         i += 9;
+                         while ((i < read_length) &&
+                                ((msg_str[i] == ' ') || (msg_str[i] == '\t')))
+                         {
+                            i++; /* Ignore space. */
+                         }
+                         if (((i + 4) <= read_length) &&
+                             ((msg_str[i] == 'a') || (msg_str[i] == 'A')) &&
+                             ((msg_str[i + 1] == 'u') ||
+                              (msg_str[i + 1] == 'U')) &&
+                             ((msg_str[i + 2] == 't') ||
+                              (msg_str[i + 2] == 'T')) &&
+                             ((msg_str[i + 3] == 'h') ||
+                              (msg_str[i + 3] == 'H')) &&
+                             ((msg_str[i + 4] == '"') ||
+                              (msg_str[i + 4] == ',')))
+                         {
+                            hmr.digest_options |= QOP_AUTH;
+                            if (msg_str[i + 4] == '"')
+                            {
+                               i += 5;
+                            }
+                            else
+                            {
+                               /* Some unknown quality of protection, */
+                               /* lets ignore.                        */
+                               i += 5;
+                               while ((i < read_length) &&
+                                      (msg_str[i] != '"') &&
+                                      (msg_str[i] != '\0'))
+                               {
+                                  i++;
+                               }
+                               if (msg_str[i] == '"')
+                               {
+                                  i++;
+                               }
+                            }
+                         }
+                         else
+                         {
+                            /* Some unknown quality of protection, */
+                            /* lets ignore.                        */
+                            i += 5;
+                            while ((i < read_length) && (msg_str[i] != '"') &&
+                                   (msg_str[i] != '\0'))
+                            {
+                               i++;
+                            }
+                            if (msg_str[i] == '"')
+                            {
+                               i++;
+                            }
+                         }
+                      }
+                   }
+                   else
+                   {
+                      /* Some unknown quality of protection, lets ignore. */
+                      while ((i < read_length) && (msg_str[i] != '"') &&
+                             (msg_str[i] != '\0'))
+                      {
+                         i++;
+                      }
+                      if (msg_str[i] == '"')
+                      {
+                         i++;
+                      }
+                   }
+           }
+           /* userhash=true */
+      else if (((i + 13) <= read_length) &&
+               ((msg_str[i] == 'u') || (msg_str[i] == 'U')) &&
+               ((msg_str[i + 1] == 's') || (msg_str[i + 1] == 'S')) &&
+               ((msg_str[i + 2] == 'e') || (msg_str[i + 2] == 'E')) &&
+               ((msg_str[i + 3] == 'r') || (msg_str[i + 3] == 'R')) &&
+               ((msg_str[i + 4] == 'h') || (msg_str[i + 4] == 'H')) &&
+               ((msg_str[i + 5] == 'a') || (msg_str[i + 5] == 'A')) &&
+               ((msg_str[i + 6] == 's') || (msg_str[i + 6] == 'S')) &&
+               ((msg_str[i + 7] == 'h') || (msg_str[i + 7] == 'H')) &&
+               (msg_str[i + 8] == '=') &&
+               ((msg_str[i + 9] == 't') || (msg_str[i + 9] == 'T')) &&
+               ((msg_str[i + 10] == 'r') || (msg_str[i + 10] == 'R')) &&
+               ((msg_str[i + 11] == 'u') || (msg_str[i + 11] == 'U')) &&
+               ((msg_str[i + 12] == 'e') || (msg_str[i + 12] == 'E')) &&
+               ((msg_str[i + 13] == ',') || (msg_str[i + 13] == '\0')))
+           {
+              i += 13;
+              hmr.digest_options |= HASH_USERNAME;
+           }
+           /* opaque= */
+      else if ((read_length > (i + 7)) &&
+               ((msg_str[i] == 'o') || (msg_str[i] == 'O')) &&
+               ((msg_str[i + 1] == 'p') || (msg_str[i + 1] == 'P')) &&
+               ((msg_str[i + 2] == 'a') || (msg_str[i + 2] == 'A')) &&
+               ((msg_str[i + 3] == 'q') || (msg_str[i + 3] == 'Q')) &&
+               ((msg_str[i + 4] == 'u') || (msg_str[i + 4] == 'U')) &&
+               ((msg_str[i + 5] == 'e') || (msg_str[i + 5] == 'E')) &&
+               (msg_str[i + 6] == '=') && (msg_str[i + 7] == '"'))
+           {
+              i += 8;
+              length = 0;
+
+              while ((i < read_length) && (msg_str[i + length] != '"') &&
+                     (msg_str[i + length] != ',') &&
+                     (msg_str[i + length] != '\0'))
+              {
+                 length++;
+              }
+              if (hmr.opaque != NULL)
+              {
+                 (void)free(hmr.opaque);
+              }
+              if ((hmr.opaque = malloc(length + 1)) == NULL)
+              {
+                 trans_log(ERROR_SIGN, __FILE__, __LINE__, "store_http_digest", NULL,
+                           "Failed to malloc() for HTTP digest opaque : %s",
+                           strerror(errno));
+                 return(INCORRECT);
+              }
+              if (length > 0)
+              {
+                 (void)memcpy(hmr.opaque, &msg_str[i], length);
+              }
+              hmr.opaque[length] = '\0';
+              if (msg_str[i + length] == '"')
+              {
+                 i += (length + 1);
+              }
+              else
+              {
+                 i += length;
+              }
+           }
+           /* nextnonce= */
+      else if ((read_length > (i + 6)) &&
+               ((msg_str[i] == 'n') || (msg_str[i] == 'N')) &&
+               ((msg_str[i + 1] == 'e') || (msg_str[i + 1] == 'E')) &&
+               ((msg_str[i + 2] == 'x') || (msg_str[i + 2] == 'X')) &&
+               ((msg_str[i + 3] == 't') || (msg_str[i + 3] == 'T')) &&
+               ((msg_str[i + 4] == 'n') || (msg_str[i + 4] == 'N')) &&
+               ((msg_str[i + 5] == 'o') || (msg_str[i + 5] == 'O')) &&
+               ((msg_str[i + 6] == 'n') || (msg_str[i + 6] == 'N')) &&
+               ((msg_str[i + 7] == 'c') || (msg_str[i + 7] == 'C')) &&
+               ((msg_str[i + 8] == 'e') || (msg_str[i + 8] == 'E')) &&
+               (msg_str[i + 9] == '=') && (msg_str[i + 10] == '"'))
+           {
+              i += 11;
+              length = 0;
+
+              while ((i < read_length) && (msg_str[i + length] != '"') &&
+                     (msg_str[i + length] != ',') &&
+                     (msg_str[i + length] != '\0'))
+              {
+                 length++;
+              }
+              if (length == 0)
+              {
+                 trans_log(DEBUG_SIGN, __FILE__, __LINE__, "store_http_digest", NULL,
+                           "Length of nextnonce is 0!");
+              }
+              else
+              {
+                 if (hmr.nonce != NULL)
+                 {
+                    (void)free(hmr.nonce);
+                 }
+                 if ((hmr.nonce = malloc(length + 1)) == NULL)
+                 {
+                    trans_log(ERROR_SIGN, __FILE__, __LINE__, "store_http_digest", NULL,
+                              "Failed to malloc() for HTTP digest nonce : %s",
+                              strerror(errno));
+                    return(INCORRECT);
+                 }
+                 (void)memcpy(hmr.nonce, &msg_str[i], length);
+              }
+              hmr.nonce[length] = '\0';
+              if (msg_str[i + length] == '"')
+              {
+                 i += (length + 1);
+              }
+              else
+              {
+                 i += length;
+              }
+           }
+           else /* Unknown field, ignore it. */
+           {
+              while ((i < read_length) && (msg_str[i] != ',') &&
+                     (msg_str[i] != '\0'))
+              {
+                 i++;
+              }
+           }
+
+      if (msg_str[i] == ',')
+      {
+         i++;
+         while ((i < read_length) &&
+                ((msg_str[i] == ' ') || (msg_str[i] == '\t')))
+         {
+            i++;
+         }
+      }
+   }
+
+   return(SUCCESS);
+}
+
+
 /*------------------------- store_http_options() ------------------------*/
 static void
 store_http_options(int i, int read_length)
@@ -4294,7 +5074,7 @@ store_http_options(int i, int read_length)
    while ((i < read_length) && (msg_str[i] != '\0'))
    {
       /* HEAD */
-      if (((i + 4) < read_length) &&
+      if (((i + 4) <= read_length) &&
           ((msg_str[i] == 'H') || (msg_str[i] == 'h')) &&
           ((msg_str[i + 1] == 'E') || (msg_str[i + 1] == 'e')) &&
           ((msg_str[i + 2] == 'A') || (msg_str[i + 2] == 'a')) &&
@@ -4305,7 +5085,7 @@ store_http_options(int i, int read_length)
          i += 4;
       }
            /* GET */
-      else if (((i + 3) < read_length) &&
+      else if (((i + 3) <= read_length) &&
                ((msg_str[i] == 'G') || (msg_str[i] == 'g')) &&
                ((msg_str[i + 1] == 'E') || (msg_str[i + 1] == 'e')) &&
                ((msg_str[i + 2] == 'T') || (msg_str[i + 2] == 't')) &&
@@ -4315,7 +5095,7 @@ store_http_options(int i, int read_length)
               i += 3;
            }
            /* PUT */
-      else if (((i + 3) < read_length) &&
+      else if (((i + 3) <= read_length) &&
                ((msg_str[i] == 'P') || (msg_str[i] == 'p')) &&
                ((msg_str[i + 1] == 'U') || (msg_str[i + 1] == 'u')) &&
                ((msg_str[i + 2] == 'T') || (msg_str[i + 2] == 't')) &&
@@ -4325,7 +5105,7 @@ store_http_options(int i, int read_length)
               i += 3;
            }
            /* MOVE */
-      else if (((i + 4) < read_length) &&
+      else if (((i + 4) <= read_length) &&
                ((msg_str[i] == 'M') || (msg_str[i] == 'm')) &&
                ((msg_str[i + 1] == 'O') || (msg_str[i + 1] == 'o')) &&
                ((msg_str[i + 2] == 'V') || (msg_str[i + 2] == 'v')) &&
@@ -4336,7 +5116,7 @@ store_http_options(int i, int read_length)
               i += 4;
            }
            /* POST */
-      else if (((i + 4) < read_length) &&
+      else if (((i + 4) <= read_length) &&
                ((msg_str[i] == 'P') || (msg_str[i] == 'p')) &&
                ((msg_str[i + 1] == 'O') || (msg_str[i + 1] == 'o')) &&
                ((msg_str[i + 2] == 'S') || (msg_str[i + 2] == 's')) &&
@@ -4347,7 +5127,7 @@ store_http_options(int i, int read_length)
               i += 4;
            }
            /* DELETE */
-      else if (((i + 6) < read_length) &&
+      else if (((i + 6) <= read_length) &&
                ((msg_str[i] == 'D') || (msg_str[i] == 'd')) &&
                ((msg_str[i + 1] == 'E') || (msg_str[i + 1] == 'e')) &&
                ((msg_str[i + 2] == 'L') || (msg_str[i + 2] == 'l')) &&
@@ -4360,7 +5140,7 @@ store_http_options(int i, int read_length)
               i += 6;
            }
            /* OPTIONS */
-      else if (((i + 7) < read_length) &&
+      else if (((i + 7) <= read_length) &&
                ((msg_str[i] == 'O') || (msg_str[i] == 'o')) &&
                ((msg_str[i + 1] == 'P') || (msg_str[i + 1] == 'p')) &&
                ((msg_str[i + 2] == 'T') || (msg_str[i + 2] == 't')) &&

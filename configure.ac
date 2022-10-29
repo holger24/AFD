@@ -386,6 +386,12 @@ AC_ARG_ENABLE(ms_error_workaround,
       AC_DEFINE([WITH_MS_ERROR_WORKAROUND], [], [With MS FTP error workaround])
    fi])
 
+AC_ARG_ENABLE(ftp_reuse_data_port,
+   [  --enable-no_auto_basic_auth     disable automatic default basic HTTP authorization],
+   [if test x$enableval = xyes; then
+      AC_DEFINE([HTTP_NO_AUTO_BASIC_AUTH], [], [Without automatic HTTP basic auth])
+   fi])
+
 AC_ARG_ENABLE(group_can_write,
    [  --enable-group_can_write        allow group write access],
    [if test x$enableval = xyes; then
@@ -1346,6 +1352,14 @@ then
                     [AM_CONDITIONAL(HAVE_TLS_SERVER_METHOD, true)
                      AC_DEFINE([HAVE_TLS_SERVER_METHOD], [], [With TLS_server_method support])],
                     [AM_CONDITIONAL(HAVE_TLS_SERVER_METHOD, false)])
+      AC_CHECK_FUNC([EVP_sha256],
+                    [AM_CONDITIONAL(HAVE_EVP_SHA256, true)
+                     AC_DEFINE([HAVE_EVP_SHA256], [], [With EVP_sha256 support])],
+                    [AM_CONDITIONAL(HAVE_EVP_SHA256, false)])
+      AC_CHECK_FUNC([EVP_sha512_256],
+                    [AM_CONDITIONAL(HAVE_EVP_SHA512_256, true)
+                     AC_DEFINE([HAVE_EVP_SHA512_256], [], [With EVP_sha512_256 support])],
+                    [AM_CONDITIONAL(HAVE_EVP_SHA512_256, false)])
       LIBS="$savedLIBS"
       CPPFLAGS="$savedCPPFLAGS"
       if test "$REQUIRES" = ""

@@ -58,7 +58,7 @@ DESCR__S_M3
  **   URL and stores them in the given buffer if supplied. The url must
  **   have the following format:
  **
- **   <scheme>://[[<user>][;fingerprint=<SSH fingerprint>][;auth=<login|plain>;user=<user name>;][:<password>]@]<host>[:<port>][/<url-path>][;type=<i|a|d|n>][;server=<server name>][;protocol=<protocol number>][;auth=<basic|aws4-hmac-sha256|aws-no-sign-request>][;region=<region name>][;service=s3]
+ **   <scheme>://[[<user>][;fingerprint=<SSH fingerprint>][;auth=<login|plain>;user=<user name>;][:<password>]@]<host>[:<port>][/<url-path>][;type=<i|a|d|n>][;server=<server name>][;protocol=<protocol number>][;auth=<basic|digest|aws4-hmac-sha256|aws-no-sign-request>][;region=<region name>][;service=s3]
  **
  **   Special characters may be masked with a \ or with a % sign plus two
  **   hexa digits representing the ASCII character. A plus behind the @
@@ -1949,6 +1949,20 @@ url_evaluate(char          *url,
                                    *auth = AUTH_BASIC;
                                    ptr += 5;
                                 }
+                                /* digest */
+                                else if ((*ptr == 'd') && (*(ptr + 1) == 'i') &&
+                                         (*(ptr + 2) == 'g') &&
+                                         (*(ptr + 3) == 'e') &&
+                                         (*(ptr + 4) == 's') &&
+                                         (*(ptr + 5) == 't') &&
+                                         ((*(ptr + 6) == '\0') ||
+                                          (*(ptr + 6) == ';') ||
+                                          (*(ptr + 6) == ' ') ||
+                                          (*(ptr + 6) == '\0')))
+                                     {
+                                        *auth = AUTH_DIGEST;
+                                        ptr += 6;
+                                     }
                                      /* aws4-hmac-sha256 */
                                 else if ((*ptr == 'a') &&
                                          (*(ptr + 1) == 'w') &&

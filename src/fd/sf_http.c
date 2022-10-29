@@ -469,18 +469,12 @@ main(int argc, char *argv[])
 # endif
                          values_changed);
          }
-      }
-
-      if ((burst_2_counter == 0) || (values_changed & USER_CHANGED))
-      {
-         if (http_init_authentication(db.user, db.password) != SUCCESS)
+         if (values_changed & USER_CHANGED)
          {
-            /* Note, http_init_authentication() writes a message to    */
-            /* trans_log() why it was not able to generate the string. */
-            http_quit();
-            exit(INCORRECT);
+            http_reset_authentication(db.auth);
          }
       }
+
 #endif
 
       /* Send all files. */
