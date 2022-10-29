@@ -50,6 +50,7 @@ DESCR__S_M3
  **                      assume http_head() will always return the
  **                      seconds. Lets, see how this works and if
  **                      it increases the HEAD calls, remove it.
+ **   29.10.2022 H.Kiehl Added support for downloadLinkArea listing.
  **
  */
 DESCR__E_M3
@@ -1271,9 +1272,74 @@ eval_html_dir_list(char         *html_buffer,
             if ((ptr = llposi(html_buffer, (size_t)bytes_buffered,
                               "<?xml version=\"", 15)) == NULL)
             {
-               trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
-                         "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
-               return(INCORRECT);
+               if ((ptr = llposi(html_buffer, (size_t)bytes_buffered,
+                                 "<div id=\"downloadLinkArea\">",
+                                 27)) == NULL)
+               {
+                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
+                            "Unknown HTML directory listing. Please send author a link so that this can be implemented.");
+                  return(INCORRECT);
+               }
+               else
+               {
+                  int  file_name_length;
+                  char *end_ptr = html_buffer + bytes_buffered,
+                       file_name[MAX_FILENAME_LENGTH];
+
+                  while ((*ptr == '\n') || (*ptr == '\r'))
+                  {
+                     ptr++;
+                  }
+
+                  /* Ignore next line. */
+                  while ((*ptr != '\n') && (*ptr != '\r') && (*ptr != '\0'))
+                  {
+                     ptr++;
+                  }
+                  while ((*ptr == '\n') || (*ptr == '\r'))
+                  {
+                     ptr++;
+                  }
+
+                  while ((ptr = llposi(ptr, (size_t)bytes_buffered,
+                                       "<a href=\"", 9)) != NULL)
+                  {
+                     ptr--;
+                     file_name_length = 0;
+                     if ((*ptr == '.') && (*(ptr + 1) == '/'))
+                     {
+                        ptr += 2;
+                     }
+
+                     /* Store file name. */
+                     STORE_HTML_STRING(file_name, file_name_length,
+                                       MAX_FILENAME_LENGTH, '"');
+
+                     if (fsa->debug > DEBUG_MODE)
+                     {
+                        trans_db_log(DEBUG_SIGN, NULL, 0, NULL,
+                                     "eval_html_dir_list(): filename=%s length=%d mtime=-1 exact=%d size=-1 exact=-1",
+                                     file_name, file_name_length, DS2UT_NONE);
+                     }
+
+                     (*list_length)++;
+                     if (check_name(file_name, file_name_length,
+                                    -1, -1, files_deleted,
+                                    file_size_deleted) != YES)
+                     {
+                        file_name[0] = '\0';
+                     }
+                     else
+                     {
+                        (void)check_list(file_name, file_name_length,
+                                         -1, DS2UT_NONE, -1,
+                                         -1, files_to_retrieve,
+                                         file_size_to_retrieve,
+                                         more_files_in_list);
+                     }
+                     bytes_buffered = end_ptr - ptr;
+                  } /* while "<a href=" */
+               }
             }
             else
             {
