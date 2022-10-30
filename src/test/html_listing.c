@@ -216,15 +216,336 @@ main(int argc, char *argv[])
 static int
 eval_html_dir_list(char *html_buffer)
 {
-   char *ptr;
+   int    listing_complete = YES;
+   size_t bytes_buffered = strlen(html_buffer);
+   char   *ptr,
+          ssh_protocol = '1';
 
-   if ((ptr = lposi(html_buffer, "<h1>", 4)) == NULL)
+   if ((ptr = llposi(html_buffer, bytes_buffered, "<h1>", 4)) == NULL)
    {
-      if ((ptr = lposi(html_buffer, "<PRE>", 5)) == NULL)
+      if ((ptr = llposi(html_buffer, bytes_buffered, "<PRE>", 5)) == NULL)
       {
-         (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented. (%s %d)\n",
-                      __FILE__, __LINE__);
-         return(INCORRECT);
+         if ((ptr = llposi(html_buffer, bytes_buffered,
+                           "<?xml version=\"", 15)) == NULL)
+         {
+            if ((ptr = llposi(html_buffer, bytes_buffered,
+                              "<div id=\"downloadLinkArea\">",
+                              27)) == NULL)
+            {
+               (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented. (%s %d)\n",
+                            __FILE__, __LINE__);
+               return(INCORRECT);
+            }
+            else
+            {
+               int  file_name_length;
+               char *end_ptr = html_buffer + bytes_buffered,
+                    file_name[MAX_FILENAME_LENGTH];
+
+               while ((*ptr == '\n') || (*ptr == '\r'))
+               {
+                  ptr++;
+               }
+
+               /* Ignore next line. */
+               while ((*ptr != '\n') && (*ptr != '\r') && (*ptr != '\0'))
+               {
+                  ptr++;
+               }
+               while ((*ptr == '\n') || (*ptr == '\r'))
+               {
+                  ptr++;
+               }
+
+               while ((ptr = llposi(ptr, bytes_buffered,
+                                    "<a href=\"", 9)) != NULL)
+               {
+                  ptr--;
+                  file_name_length = 0;
+                  if ((*ptr == '.') && (*(ptr + 1) == '/'))
+                  {
+                     ptr += 2;
+                  }
+
+                  /* Store file name. */
+                  STORE_HTML_STRING(file_name, file_name_length,
+                                    MAX_FILENAME_LENGTH, '"');
+
+                  (void)printf("name=%s length=%d mtime=-1 exact_date=%d exact_size=-1 file_size=-1\n",
+                               file_name, file_name_length, DS2UT_NONE);
+
+                  bytes_buffered = end_ptr - ptr;
+               } /* while "<a href=" */
+            }
+         }
+         else
+         {
+            if ((ptr = llposi(ptr, bytes_buffered,
+                              "<IsTruncated>", 13)) == NULL)
+            {
+               (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented. (%s %d)\n",
+                            __FILE__, __LINE__);
+               return(INCORRECT);
+            }
+            else
+            {
+               int    date_str_length,
+                      exact_date = DS2UT_NONE,
+                      file_name_length = -1;
+               size_t bytes_buffered_original = bytes_buffered;
+               off_t  exact_size,
+                      file_size;
+               time_t file_mtime;
+               char   date_str[MAX_FILENAME_LENGTH],
+                      *end_ptr = html_buffer + bytes_buffered,
+#ifdef _WITH_EXTRA_CHECK
+                      etag[MAX_EXTRA_LS_DATA_LENGTH],
+#endif
+                      file_name[MAX_FILENAME_LENGTH],
+                      size_str[MAX_FILENAME_LENGTH];
+
+               /* true */
+               if ((*(ptr - 1) == 't') && (*ptr == 'r') &&
+                   (*(ptr + 1) == 'u') && (*(ptr + 2) == 'e') &&
+                   (*(ptr + 3) == '<'))
+               {
+                  listing_complete = NO;
+                  ptr += 2;
+               }
+
+               ptr = html_buffer;
+               while ((ptr = llposi(ptr, bytes_buffered,
+                                    "<Contents><Key>", 15)) != NULL)
+               {
+                  ptr--;
+                  file_name_length = 0;
+                  while ((file_name_length < MAX_FILENAME_LENGTH) &&
+                         (*ptr != '<') && (*ptr != '\r') && (*ptr != '\0'))
+                  {
+                     file_name[file_name_length] = *ptr;
+                     file_name_length++; ptr++;
+                  }
+                  if (*ptr == '<')
+                  {
+                     file_name[file_name_length] = '\0';
+                     ptr++;
+                     /* /Key><LastModified> */
+                     if ((*ptr == '/') && (*(ptr + 1) == 'K') &&
+                         (*(ptr + 2) == 'e') && (*(ptr + 3) == 'y') &&
+                         (*(ptr + 4) == '>') && (*(ptr + 5) == '<') &&
+                         (*(ptr + 6) == 'L') && (*(ptr + 7) == 'a') &&
+                         (*(ptr + 8) == 's') && (*(ptr + 9) == 't') &&
+                         (*(ptr + 10) == 'M') && (*(ptr + 11) == 'o') &&
+                         (*(ptr + 12) == 'd') && (*(ptr + 13) == 'i') &&
+                         (*(ptr + 14) == 'f') && (*(ptr + 15) == 'i') &&
+                         (*(ptr + 16) == 'e') && (*(ptr + 17) == 'd') &&
+                         (*(ptr + 18) == '>'))
+                     {
+                        ptr += 19;
+                        date_str_length = 0;
+                        while ((date_str_length < MAX_FILENAME_LENGTH) &&
+                               (*ptr != '<') && (*ptr != '\r') &&
+                               (*ptr != '\0'))
+                        {
+                           date_str[date_str_length] = *ptr;
+                           date_str_length++; ptr++;
+                        }
+                        if (*ptr == '<')
+                        {
+                           date_str[date_str_length] = '\0';
+                           file_mtime = datestr2unixtime(date_str,
+                                                         &exact_date);
+                           ptr++;
+                           /* /LastModified><ETag> */
+                           if ((*ptr == '/') && (*(ptr + 1) == 'L') &&
+                               (*(ptr + 2) == 'a') && (*(ptr + 3) == 's') &&
+                               (*(ptr + 4) == 't') && (*(ptr + 5) == 'M') &&
+                               (*(ptr + 6) == 'o') && (*(ptr + 7) == 'd') &&
+                               (*(ptr + 8) == 'i') && (*(ptr + 9) == 'f') &&
+                               (*(ptr + 10) == 'i') &&
+                               (*(ptr + 11) == 'e') &&
+                               (*(ptr + 12) == 'd') &&
+                               (*(ptr + 13) == '>') &&
+                               (*(ptr + 14) == '<') &&
+                               (*(ptr + 15) == 'E') &&
+                               (*(ptr + 16) == 'T') &&
+                               (*(ptr + 17) == 'a') &&
+                               (*(ptr + 18) == 'g') && (*(ptr + 19) == '>'))
+                           {
+                              ptr += 20;
+                              date_str_length = 0;
+#ifdef _WITH_EXTRA_CHECK
+                              while ((date_str_length < MAX_EXTRA_LS_DATA_LENGTH) &&
+                                     (*ptr != '<') && (*ptr != '\r') &&
+                                     (*ptr != '\0'))
+                              {
+                                 etag[date_str_length] = *ptr;
+                                 date_str_length++; ptr++;
+                              }
+#else
+                              while ((*ptr != '<') && (*ptr != '\r') &&
+                                     (*ptr != '\0'))
+                              {
+                                 ptr++;
+                              }
+#endif
+                              if (*ptr == '<')
+                              {
+#ifdef _WITH_EXTRA_CHECK
+                                 etag[date_str_length] = '\0';
+#endif
+                                 ptr++;
+                                 /* /ETag><Size> */
+                                 if ((*ptr == '/') && (*(ptr + 1) == 'E') &&
+                                     (*(ptr + 2) == 'T') &&
+                                     (*(ptr + 3) == 'a') &&
+                                     (*(ptr + 4) == 'g') &&
+                                     (*(ptr + 5) == '>') &&
+                                     (*(ptr + 6) == '<') &&
+                                     (*(ptr + 7) == 'S') &&
+                                     (*(ptr + 8) == 'i') &&
+                                     (*(ptr + 9) == 'z') &&
+                                     (*(ptr + 10) == 'e') &&
+                                     (*(ptr + 11) == '>'))
+                                 {
+                                    ptr += 12;
+                                    date_str_length = 0;
+
+                                    while ((date_str_length < MAX_FILENAME_LENGTH) &&
+                                           (*ptr != '<') && (*ptr != '\r') &&
+                                           (*ptr != '\0'))
+                                    {
+                                       size_str[date_str_length] = *ptr;
+                                       date_str_length++; ptr++;
+                                    }
+                                    if (*ptr == '<')
+                                    {
+                                       size_str[date_str_length] = '\0';
+                                       exact_size = convert_size(size_str,
+                                                                 &file_size);
+                                       (void)printf("name=%s length=%d mtime=%ld exact_date=%d exact_size=%ld file_size=%ld\n",
+                                                    file_name,
+                                                    file_name_length,
+                                                    file_mtime,
+                                                    exact_date,
+                                                    exact_size, file_size);
+                                    }
+                                    else
+                                    {
+                                       (void)printf("Unable to store size (length=%d char=%d). (%s %d)\n",
+                                                    file_name_length,
+                                                    (int)*ptr,
+                                                    __FILE__, __LINE__);
+                                       return(INCORRECT);
+                                    }
+                                 }
+                                 else
+                                 {
+                                    (void)printf("No matching /ETag><Size> found. (%s %d)\n",
+                                                 __FILE__, __LINE__);
+                                    return(INCORRECT);
+                                 }
+                              }
+                              else
+                              {
+                                 (void)printf("Unable to store etag (length=%d char=%d). (%s %d)\n",
+                                              file_name_length, (int)*ptr,
+                                              __FILE__, __LINE__);
+                                 return(INCORRECT);
+                              }
+                           }
+                           else
+                           {
+                              (void)printf("No matching /LastModified><ETag> found. (%s %d)\n",
+                                           __FILE__, __LINE__);
+                              return(INCORRECT);
+                           }
+                        }
+                        else
+                        {
+                           (void)printf("Unable to store date (length=%d char=%d). (%s %d)\n",
+                                        file_name_length, (int)*ptr,
+                                        __FILE__, __LINE__);
+                           return(INCORRECT);
+                        }
+                     }
+                     else
+                     {
+                        (void)printf("No matching /Key><LastModified> found. (%s %d)\n",
+                                     __FILE__, __LINE__);
+                        return(INCORRECT);
+                     }
+                  }
+                  else
+                  {
+                     (void)printf("Unable to store file name (length=%d char=%d). (%s %d)\n",
+                                  file_name_length, (int)*ptr,
+                                  __FILE__, __LINE__);
+                     return(INCORRECT);
+                  }
+                  bytes_buffered = end_ptr - ptr;
+               } /* while <Contents><Key> */
+
+               if (file_name_length == -1)
+               {
+                  listing_complete = YES;
+
+                  /* Bucket is empty or we have some new */
+                  /* listing type. So check if KeyCount  */
+                  /* is zero.                            */
+                  if ((ptr = llposi(html_buffer,
+                                    bytes_buffered_original,
+                                    "<KeyCount>0</KeyCount>", 22)) == NULL)
+                  {
+                     /* No <Contents><Key> found! */
+                     (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented. (%s %d)",
+                                  __FILE__, __LINE__);
+                     return(INCORRECT);
+                  }
+               }
+
+               if (listing_complete == NO)
+               {
+                  int  marker_name_length;
+                  char marker_name[24];
+
+                  if (ssh_protocol == '1')
+                  {
+                     (void)strcpy(marker_name, "<NextMarker>");
+                     marker_name_length = 12;
+                  }
+                  else
+                  {
+                     (void)strcpy(marker_name, "<NextContinuationToken>");
+                     marker_name_length = 23;
+                  }
+                  if ((ptr = llposi(html_buffer,
+                                    bytes_buffered_original,
+                                    marker_name,
+                                    marker_name_length)) != NULL)
+                  {
+                     ptr--;
+                     file_name_length = 0;
+                     while ((file_name_length < MAX_FILENAME_LENGTH) &&
+                            (*ptr != '<'))
+                     {
+                        file_name[file_name_length] = *ptr;
+                        ptr++; file_name_length++;
+                     }
+                     file_name[file_name_length] = '\0';
+                  }
+                  else
+                  {
+                     if (ssh_protocol != '1')
+                     {
+                        (void)printf("<IsTruncated> is true, but could not locate a <NextContinuationToken>! (%s %d)\n",
+                                     __FILE__, __LINE__);
+                        return(INCORRECT);
+                     }
+                  }
+               }
+            }
+         }
       }
       else
       {
@@ -238,7 +559,8 @@ eval_html_dir_list(char *html_buffer)
          }
          if ((*ptr == '<') && (*(ptr + 1) == 'H') && (*(ptr + 2) == 'R'))
          {
-            int    file_name_length;
+            int    exact_date = DS2UT_NONE,
+                   file_name_length;
             time_t file_mtime;
             off_t  exact_size,
                    file_size;
@@ -330,7 +652,7 @@ eval_html_dir_list(char *html_buffer)
 
                      /* Store date string. */
                      STORE_HTML_DATE();
-                     file_mtime = datestr2unixtime(date_str, NULL);
+                     file_mtime = datestr2unixtime(date_str, &exact_date);
 
                      if (*ptr == '<')
                      {
@@ -385,9 +707,9 @@ eval_html_dir_list(char *html_buffer)
                   break;
                }
 
-               (void)printf("name=%s length=%d mtime=%ld exact_size=%ld file_size=%ld\n",
-                            file_name, file_name_length, file_mtime, exact_size,
-                            file_size);
+               (void)printf("name=%s length=%d mtime=%ld exact_date=%d exact_size=%ld file_size=%ld\n",
+                            file_name, file_name_length, file_mtime,
+                            exact_date, exact_size, file_size);
 
                /* Go to end of line. */
                while ((*ptr != '\n') && (*ptr != '\r') &&
@@ -411,7 +733,8 @@ eval_html_dir_list(char *html_buffer)
    }
    else
    {
-      int    file_name_length;
+      int    exact_date = DS2UT_NONE,
+             file_name_length;
       time_t file_mtime;
       off_t  exact_size,
              file_size;
@@ -610,7 +933,8 @@ eval_html_dir_list(char *html_buffer)
                            /* Store date string. */
                            STORE_HTML_STRING(date_str, str_len,
                                              MAX_FILENAME_LENGTH, '<');
-                           file_mtime = datestr2unixtime(date_str, NULL);
+                           file_mtime = datestr2unixtime(date_str,
+                                                          &exact_date);
 
                            while (*ptr == '<')
                            {
@@ -655,9 +979,9 @@ eval_html_dir_list(char *html_buffer)
                         file_size = -1;
                      }
 
-                     (void)printf("name=%s length=%d mtime=%ld exact_size=%ld file_size=%ld\n",
+                     (void)printf("name=%s length=%d mtime=%ld exact_date=%d exact_size=%ld file_size=%ld\n",
                                   file_name, file_name_length, file_mtime,
-                                  exact_size, file_size);
+                                  exact_date, exact_size, file_size);
                   }
 
                   /* Go to end of line. */
@@ -699,8 +1023,9 @@ eval_html_dir_list(char *html_buffer)
                       (*(ptr + 4) == 'b') && (*(ptr + 5) == 'l') &&
                       (*(ptr + 6) == 'e') && (*(ptr + 7) == '>'))
                   {
-                     (void)printf("Directory empty.\n");
-                     return(INCORRECT);
+                     (void)printf("Directory empty. (%s %d)\n",
+                                  __FILE__, __LINE__);
+                     return(SUCCESS);
                   }
                }
                (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented. (%s %d)\n",
@@ -809,7 +1134,8 @@ eval_html_dir_list(char *html_buffer)
 
                           /* Store date string. */
                           STORE_HTML_DATE();
-                          file_mtime = datestr2unixtime(date_str, NULL);
+                          file_mtime = datestr2unixtime(date_str,
+                                                        &exact_date);
 
                           if (*ptr == '<')
                           {
@@ -864,9 +1190,9 @@ eval_html_dir_list(char *html_buffer)
                        break;
                     }
 
-                    (void)printf("name=%s length=%d mtime=%ld exact_size=%ld file_size=%ld\n",
+                    (void)printf("name=%s length=%d mtime=%ld exact_date=%d exact_size=%ld file_size=%ld\n",
                                  file_name, file_name_length, file_mtime,
-                                 exact_size, file_size);
+                                 exact_date, exact_size, file_size);
 
                     /* Go to end of line. */
                     while ((*ptr != '\n') && (*ptr != '\r') &&
@@ -930,9 +1256,9 @@ eval_html_dir_list(char *html_buffer)
                        break;
                     }
 
-                    (void)printf("name=%s length=%d mtime=%ld exact_size=%ld file_size=%ld\n",
+                    (void)printf("name=%s length=%d mtime=%ld exact_date=%d exact_size=%ld file_size=%ld\n",
                                  file_name, file_name_length, file_mtime,
-                                 exact_size, file_size);
+                                 exact_date, exact_size, file_size);
 
                     /* Go to end of line. */
                     while ((*ptr != '\n') && (*ptr != '\r') &&
@@ -948,8 +1274,8 @@ eval_html_dir_list(char *html_buffer)
               }
               else
               {
-                 printf("Unknown HTML directory listing. Please send author a link so that this can be implemented. (%s %d)\n",
-                        __FILE__, __LINE__);
+                 (void)printf("Unknown HTML directory listing. Please send author a link so that this can be implemented. (%s %d)\n",
+                              __FILE__, __LINE__);
                  return(INCORRECT);
               }
       }
