@@ -1182,7 +1182,8 @@ http_get(char  *path,
    else
    {
       int  resource_length;
-      char *p_path = path,
+      char accept_encoding[24],
+           *p_path = path,
            range[13 + MAX_OFF_T_LENGTH + 1 + MAX_OFF_T_LENGTH + 3],
 #ifdef _WITH_EXTRA_CHECK
            none_match[16 + MAX_EXTRA_LS_DATA_LENGTH + 5],
@@ -1325,6 +1326,35 @@ http_get(char  *path,
          }
 #endif
       }
+      if (filename[0] != '\0')
+      {
+         char *ptr = filename + strlen(filename) - 1;
+
+         if ((*ptr == 'z') && (*(ptr - 1) == 'g') && (*(ptr - 2) == '.'))
+         {
+            /* \r\nAccept-Encoding: gzip */
+            accept_encoding[0] = '\r'; accept_encoding[1] = '\n';
+            accept_encoding[2] = 'A'; accept_encoding[3] = 'c';
+            accept_encoding[4] = 'c'; accept_encoding[5] = 'e';
+            accept_encoding[6] = 'p'; accept_encoding[7] = 't';
+            accept_encoding[8] = '-'; accept_encoding[9] = 'E';
+            accept_encoding[10] = 'n'; accept_encoding[11] = 'c';
+            accept_encoding[12] = 'o'; accept_encoding[13] = 'd';
+            accept_encoding[14] = 'i'; accept_encoding[15] = 'n';
+            accept_encoding[16] = 'g'; accept_encoding[17] = ':';
+            accept_encoding[18] = ' '; accept_encoding[19] = 'g';
+            accept_encoding[20] = 'z'; accept_encoding[21] = 'i';
+            accept_encoding[22] = 'p'; accept_encoding[23] = '\0';
+         }
+         else
+         {
+            accept_encoding[0] = '\0';
+         }
+      }
+      else
+      {
+         accept_encoding[0] = '\0';
+      }
 retry_get_range:
       if ((offset == 0) || (offset < 0))
       {
@@ -1438,15 +1468,16 @@ retry_get_range:
 retry_get:
 #ifdef _WITH_EXTRA_CHECK
       if ((reply = command(http_fd,
-                           "GET %s HTTP/1.1\r\nHost: %s\r\n%sUser-Agent: AFD/%s\r\n%s%sContent-length: 0\r\nAccept: */*\r\nAccept-Encoding: gzip,deflate\r\n",
+                           "GET %s HTTP/1.1\r\nHost: %s\r\n%sUser-Agent: AFD/%s\r\n%s%sContent-length: 0\r\nAccept: */*%s\r\n",
                            resource, hmr.hostname, range, PACKAGE_VERSION,
                            (hmr.authorization == NULL) ? "" : hmr.authorization,
-                           none_match)) == SUCCESS)
+                           none_match, accept_encoding)) == SUCCESS)
 #else
       if ((reply = command(http_fd,
-                           "GET %s HTTP/1.1\r\nHost: %s\r\n%sUser-Agent: AFD/%s\r\n%sContent-length: 0\r\nAccept: */*\r\nAccept-Encoding: gzip,deflate\r\n",
+                           "GET %s HTTP/1.1\r\nHost: %s\r\n%sUser-Agent: AFD/%s\r\n%sContent-length: 0\r\nAccept: */*%s\r\n",
                            resource, hmr.hostname, range, PACKAGE_VERSION,
-                           (hmr.authorization == NULL) ? "" : hmr.authorization)) == SUCCESS)
+                           (hmr.authorization == NULL) ? "" : hmr.authorization,
+                           accept_encoding)) == SUCCESS)
 #endif
       {
          hmr.content_length = -1;
