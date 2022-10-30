@@ -1,6 +1,6 @@
 /*
  *  amgdefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1996 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -473,6 +473,10 @@ struct dir_data
                                             /* request is issued. This   */
                                             /* is currently only useful  */
                                             /* for HTTP.                 */
+          unsigned char url_with_index_file_name;/* The URL is with an   */
+                                            /* index file name. This is  */
+                                            /* used for non standard HTTP*/
+                                            /* index file names.         */
           unsigned char no_delimiter;       /* For AWS listing do not add*/
                                             /* a delimiter. Thus showing */
                                             /* the content of all sub    */

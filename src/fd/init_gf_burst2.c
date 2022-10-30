@@ -1,6 +1,6 @@
 /*
  *  init_gf_burst2.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -175,6 +175,11 @@ init_gf_burst2(struct job   *p_new_db,
             db.te = &fra->te[0];
          }
       }
+      if (db.index_file != NULL)
+      {
+         free(db.index_file);
+      }
+      db.index_file = p_new_db->index_file;
 
       free(p_new_db);
       p_new_db = NULL;

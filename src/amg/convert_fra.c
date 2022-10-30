@@ -1,6 +1,6 @@
 /*
  *  convert_fra.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2002 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2002 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -7024,6 +7024,10 @@ migrate_to_dir_options(unsigned int old_dir_flag)
    if (old_dir_flag & URL_CREATES_FILE_NAME)
    {
       dir_options |= URL_CREATES_FILE_NAME;
+   }
+   if (old_dir_flag & URL_WITH_INDEX_FILE_NAME)
+   {
+      dir_options |= URL_WITH_INDEX_FILE_NAME;
    }
    if (old_dir_flag & NO_DELIMITER)
    {

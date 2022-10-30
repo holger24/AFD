@@ -1,7 +1,7 @@
 /*
  *  eval_dir_options.c - Part of AFD, an automatic file distribution
  *                       program.
- *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -51,6 +51,7 @@ DESCR__S_M3
  **        do not get dir list
  **        do not remove
  **        url creates file name
+ **        url with index file name
  **        store retrieve list [once]
  **        priority <value>                      [DEFAULT 9]
  **        force reread [local|remote]
@@ -108,6 +109,7 @@ DESCR__S_M3
  **                      this name.
  **   11.05.2017 H.Kiehl Added parameter cmd_fp, so we can show errors
  **                      and warnings directly when udc is called.
+ **   29.10.2022 H.Kiehl Added "url with index file name" option.
  **
  */
 DESCR__E_M3
@@ -185,6 +187,7 @@ extern struct dir_data *dd;
 #define URL_CREATES_FILE_NAME_FLAG       64
 #define NO_DELIMITER_FLAG                128
 #define KEEP_PATH_FLAG                   256
+#define URL_WITH_INDEX_FILE_NAME_FLAG    512
 
 
 /*########################## eval_dir_options() #########################*/
@@ -246,6 +249,7 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
    dd[dir_pos].accept_dot_files = NO;
    dd[dir_pos].do_not_get_dir_list = NO;
    dd[dir_pos].url_creates_file_name = NO;
+   dd[dir_pos].url_with_index_file_name = NO;
    dd[dir_pos].create_source_dir = NO;
    dd[dir_pos].max_errors = 10;
    dd[dir_pos].info_time = default_info_time;
@@ -977,6 +981,17 @@ eval_dir_options(int dir_pos, char type, char *dir_options, FILE *cmd_fp)
                  ptr++;
               }
               dd[dir_pos].url_creates_file_name = YES;
+           }
+      else if (((used2 & URL_WITH_INDEX_FILE_NAME_FLAG) == 0) &&
+               (strncmp(ptr, URL_WITH_INDEX_FILE_NAME_ID, URL_WITH_INDEX_FILE_NAME_ID_LENGTH) == 0))
+           {
+              used2 |= URL_WITH_INDEX_FILE_NAME_FLAG;
+              ptr += URL_WITH_INDEX_FILE_NAME_ID_LENGTH;
+              while ((*ptr != '\n') && (*ptr != '\0'))
+              {
+                 ptr++;
+              }
+              dd[dir_pos].url_with_index_file_name = YES;
            }
       else if (((used2 & NO_DELIMITER_FLAG) == 0) &&
                (strncmp(ptr, NO_DELIMITER_ID, NO_DELIMITER_ID_LENGTH) == 0))

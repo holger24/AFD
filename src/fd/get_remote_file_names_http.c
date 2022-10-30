@@ -769,11 +769,13 @@ try_attach_again:
          do
          {
             bytes_buffered = 0;
-            content_length = 0;
+            content_length = -1;
 #ifdef _WITH_EXTRA_CHECK
             etag[0] = '\0';
 #endif
-            if (((status = http_get(db.target_dir, "", NULL,
+            if (((status = http_get(db.target_dir,
+                                    (db.index_file == NULL) ? "" : db.index_file,
+                                    NULL,
 #ifdef _WITH_EXTRA_CHECK
                                     etag,
 #endif

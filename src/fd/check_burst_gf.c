@@ -1,6 +1,6 @@
 /*
  *  check_burst_gf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2014 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2014 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -529,6 +529,21 @@ check_burst_gf(unsigned int *values_changed)
                else
                {
                   next_check_time = 0;
+               }
+               if ((db.protocol & HTTP_FLAG) &&
+#ifdef NEW_FRA
+                   (fra->dir_options & URL_WITH_INDEX_FILE_NAME))
+#else
+                   (fra->dir_flag & URL_WITH_INDEX_FILE_NAME))
+#endif
+               {
+                  if ((p_new_db->index_file = malloc(MAX_RECIPIENT_LENGTH)) == NULL)
+                  {
+                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                                "Could not malloc() memory for index file : %s",
+                                strerror(errno));
+                     exit(ALLOC_ERROR);
+                  }
                }
                if (eval_recipient(fra->url, p_new_db, NULL,
                                   next_check_time) == INCORRECT)

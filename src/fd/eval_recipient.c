@@ -338,10 +338,46 @@ eval_recipient(char       *recipient,
          else
          {
             port = strlen(p_db->target_dir) - 1;
-            if (p_db->target_dir[port] != '/')
+            if (p_db->index_file == NULL)
             {
-               p_db->target_dir[port + 1] = '/';
-               p_db->target_dir[port + 2] = '\0';
+               if (p_db->target_dir[port] != '/')
+               {
+                  p_db->target_dir[port + 1] = '/';
+                  p_db->target_dir[port + 2] = '\0';
+               }
+            }
+            else
+            {
+               int length = 0;
+
+               if (p_db->target_dir[port] == '/')
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "Directory option '%s' set, but no file name in path '%s'.",
+                             URL_WITH_INDEX_FILE_NAME_ID, p_db->target_dir);
+                  return(INCORRECT);
+               }
+               while (((port - length) > 0) &&
+                      (p_db->target_dir[port - length] != '/'))
+               {
+                  length++;
+               }
+               if ((length > 0) &&
+                   (p_db->target_dir[port - length] == '/'))
+               {
+                  length--;
+                  (void)memcpy(p_db->index_file,
+                               &p_db->target_dir[port - length], length + 1);
+                  p_db->index_file[length + 1] = '\0';
+                  p_db->target_dir[port - length] = '\0';
+               }
+               else
+               {
+                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                             "Directory option '%s' set, but no file name in path '%s'.",
+                             URL_WITH_INDEX_FILE_NAME_ID, p_db->target_dir);
+                  return(INCORRECT);
+               }
             }
          }
       }

@@ -1122,6 +1122,8 @@ typedef unsigned long       u_long_64;
 #define DO_NOT_GET_DIR_LIST_ID_LENGTH    (sizeof(DO_NOT_GET_DIR_LIST_ID) - 1)
 #define URL_CREATES_FILE_NAME_ID         "url creates file name"
 #define URL_CREATES_FILE_NAME_ID_LENGTH  (sizeof(URL_CREATES_FILE_NAME_ID) -1)
+#define URL_WITH_INDEX_FILE_NAME_ID      "url with index file name"
+#define URL_WITH_INDEX_FILE_NAME_ID_LENGTH (sizeof(URL_WITH_INDEX_FILE_NAME_ID) -1)
 #define DIR_WARN_TIME_ID                 "warn time"
 #define DIR_WARN_TIME_ID_LENGTH          (sizeof(DIR_WARN_TIME_ID) - 1)
 #define DIR_INFO_TIME_ID                 "info time"
@@ -2132,7 +2134,7 @@ typedef unsigned long       u_long_64;
 #define DIR_DISABLED_STATIC        16777216
 #define ONE_PROCESS_JUST_SCANNING  33554432
 #define URL_CREATES_FILE_NAME      67108864
-/* #define ____no_used____            134217728 */
+#define URL_WITH_INDEX_FILE_NAME   134217728
 #define NO_DELIMITER               268435456
 #define KEEP_PATH                  536870912
 
@@ -3074,7 +3076,7 @@ struct fileretrieve_status
                                             /*|31-32| Not used.         |*/
                                             /*|   30| KEEP_PATH         |*/
                                             /*|   29| NO_DELIMITER      |*/
-                                            /*|   28| Not used.         |*/
+                                            /*|   28| URL_WITH_INDEX_FILE_NAME|*/
                                             /*|   27| URL_CREATES_FILE_NAME|*/
                                             /*|   26| ONE_PROCESS_JUST_SCANNING|*/
                                             /*|   25| Not used.         |*/

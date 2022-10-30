@@ -468,6 +468,10 @@ main(int argc, char *argv[])
             {
                (void)fprintf(stdout, "URL_CREATES_FILE_NAME ");
             }
+            if (fra[i].dir_flag & URL_WITH_INDEX_FILE_NAME)
+            {
+               (void)fprintf(stdout, "URL_WITH_INDEX_FILE_NAME ");
+            }
             if (fra[i].dir_flag & NO_DELIMITER)
             {
                (void)fprintf(stdout, "NO_DELIMITER ");
@@ -572,6 +576,10 @@ main(int argc, char *argv[])
             if (fra[i].dir_options & URL_CREATES_FILE_NAME)
             {
                (void)fprintf(stdout, "URL_CREATES_FILE_NAME ");
+            }
+            if (fra[i].dir_options & URL_WITH_INDEX_FILE_NAME)
+            {
+               (void)fprintf(stdout, "URL_WITH_INDEX_FILE_NAME ");
             }
             if (fra[i].dir_options & NO_DELIMITER)
             {

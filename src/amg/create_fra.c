@@ -1,6 +1,6 @@
 /*
  *  create_fra.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -483,6 +483,14 @@ create_fra(int no_of_dirs)
             fra[i].dir_flag |= URL_CREATES_FILE_NAME;
 #endif
          }
+         if (dd[i].url_with_index_file_name == YES)
+         {
+#ifdef NEW_FRA
+            fra[i].dir_options |= URL_WITH_INDEX_FILE_NAME;
+#else
+            fra[i].dir_flag |= URL_WITH_INDEX_FILE_NAME;
+#endif
+         }
          if (dd[i].no_delimiter == YES)
          {
 #ifdef NEW_FRA
@@ -710,6 +718,13 @@ create_fra(int no_of_dirs)
             {
                fra[i].dir_options ^= URL_CREATES_FILE_NAME;
             }
+            if (((fra[i].dir_options & URL_WITH_INDEX_FILE_NAME) &&
+                 (dd[i].url_with_index_file_name == NO)) ||
+                (((fra[i].dir_options & URL_WITH_INDEX_FILE_NAME) == 0) &&
+                 (dd[i].url_with_index_file_name == YES)))
+            {
+               fra[i].dir_options ^= URL_WITH_INDEX_FILE_NAME;
+            }
             if (((fra[i].dir_options & NO_DELIMITER) &&
                  (dd[i].no_delimiter == NO)) ||
                 (((fra[i].dir_options & NO_DELIMITER) == 0) &&
@@ -766,6 +781,13 @@ create_fra(int no_of_dirs)
                  (dd[i].url_creates_file_name == YES)))
             {
                fra[i].dir_flag ^= URL_CREATES_FILE_NAME;
+            }
+            if (((fra[i].dir_flag & URL_WITH_INDEX_FILE_NAME) &&
+                 (dd[i].url_with_index_file_name == NO)) ||
+                (((fra[i].dir_flag & URL_WITH_INDEX_FILE_NAME) == 0) &&
+                 (dd[i].url_with_index_file_name == YES)))
+            {
+               fra[i].dir_flag ^= URL_WITH_INDEX_FILE_NAME;
             }
             if (((fra[i].dir_flag & NO_DELIMITER) &&
                  (dd[i].no_delimiter == NO)) ||
@@ -977,6 +999,14 @@ create_fra(int no_of_dirs)
                fra[i].dir_options |= URL_CREATES_FILE_NAME;
 #else
                fra[i].dir_flag |= URL_CREATES_FILE_NAME;
+#endif
+            }
+            if (dd[i].url_with_index_file_name == YES)
+            {
+#ifdef NEW_FRA
+               fra[i].dir_options |= URL_WITH_INDEX_FILE_NAME;
+#else
+               fra[i].dir_flag |= URL_WITH_INDEX_FILE_NAME;
 #endif
             }
             if (dd[i].no_delimiter == YES)

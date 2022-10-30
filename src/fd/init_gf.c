@@ -1,6 +1,6 @@
 /*
  *  init_gf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2000 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2000 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -121,6 +121,7 @@ init_gf(int argc, char *argv[], int protocol)
    db.dir_mode = 0;
    db.dir_mode_str[0] = '\0';
    db.user_home_dir = NULL;
+   db.index_file = NULL;
 /* db.password[0] = '\0'; */
 #ifdef WITH_SSH_FINGERPRINT
 /* db.ssh_fingerprint[0] = '\0'; */
@@ -155,7 +156,11 @@ init_gf(int argc, char *argv[], int protocol)
    if ((db.special_flag & OLD_ERROR_JOB) &&
        ((fra->queued == 1) ||
         (((db.special_flag & DISTRIBUTED_HELPER_JOB) == 0) &&
+#ifdef NEW_FRA
+         (fra->dir_options & ONE_PROCESS_JUST_SCANNING))))
+#else
          (fra->dir_flag & ONE_PROCESS_JUST_SCANNING))))
+#endif
    {
       /* No need to do any locking in get_remote_file_names_xxx(). */
       db.special_flag &= ~OLD_ERROR_JOB;
@@ -222,6 +227,20 @@ init_gf(int argc, char *argv[], int protocol)
    else
    {
       next_check_time = 0;
+   }
+#ifdef NEW_FRA
+   if ((protocol & HTTP_FLAG) && (fra->dir_options & URL_WITH_INDEX_FILE_NAME))
+#else
+   if ((protocol & HTTP_FLAG) && (fra->dir_flag & URL_WITH_INDEX_FILE_NAME))
+#endif
+   {
+      if ((db.index_file = malloc(MAX_RECIPIENT_LENGTH)) == NULL)
+      {
+         system_log(ERROR_SIGN, __FILE__, __LINE__,
+                    "Could not malloc() memory for index file : %s",
+                    strerror(errno));
+         exit(ALLOC_ERROR);
+      }
    }
    if (eval_recipient(fra->url, &db, NULL,
                        next_check_time) == INCORRECT)

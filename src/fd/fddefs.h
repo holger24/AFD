@@ -1,6 +1,6 @@
 /*
  *  fddefs.h - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1995 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1995 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -457,6 +457,7 @@ struct job
                                          /* SMTP server name.            */
           char           timezone[MAX_TIMEZONE_LENGTH + 1];
           char           *group_mail_domain;
+          char           *index_file;    /* HTTP directory listing.      */
           int            no_of_restart_files;
           int            subject_rule_pos;
           int            trans_rule_pos;
