@@ -299,6 +299,7 @@ init_sf_burst2(struct job   *p_new_db,
       db.dup_check_timeout = p_new_db->dup_check_timeout;
       db.crc_id            = p_new_db->crc_id;
 # endif
+      db.index_file = NULL;
 
       free(p_new_db);
       p_new_db = NULL;

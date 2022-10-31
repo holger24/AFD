@@ -175,11 +175,7 @@ init_gf_burst2(struct job   *p_new_db,
             db.te = &fra->te[0];
          }
       }
-      if (db.index_file != NULL)
-      {
-         free(db.index_file);
-      }
-      db.index_file = p_new_db->index_file;
+      db.index_file = NULL;
 
       free(p_new_db);
       p_new_db = NULL;
