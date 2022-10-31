@@ -1,7 +1,7 @@
 /*
  *  get_afd_status_struct_size.c - Part of AFD, an automatic file distribution
  *                                 program.
- *  Copyright (c) 2017 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2017 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -60,6 +60,7 @@ get_afd_status_struct_size(void)
           sizeof(signed char) +       /* archive_watch     */
           sizeof(signed char) +       /* afd_stat          */
           sizeof(signed char) +       /* afdd              */
+          sizeof(signed char) +       /* afdds             */
 #ifdef _WITH_ATPD_SUPPORT
           sizeof(signed char) +       /* atpd              */
 #endif
@@ -96,6 +97,7 @@ get_afd_status_struct_size(void)
 #if defined (_INPUT_LOG) || defined (_OUTPUT_LOG) || defined (_CONFIRMATION_LOG) || defined (_DELETE_LOG) || defined (_PRODUCTION_LOG) || defined (_DISTRIBUTION_LOG)
           sizeof(signed char) +       /* aldad             */
 #endif
+          sizeof(signed char) +       /* afd_worker        */
           sizeof(unsigned int) +                 /* sys_log_ec        */
           ((LOG_FIFO_SIZE + 1) * sizeof(char)) + /* sys_log_fifo[LOG_FIFO_SIZE + 1]  */
           (MAX_LOG_HISTORY * sizeof(char)) +     /* sys_log_history[MAX_LOG_HISTORY] */
