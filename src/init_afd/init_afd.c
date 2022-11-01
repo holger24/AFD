@@ -188,7 +188,7 @@ static char                *path_to_self = NULL,
 static pid_t               make_process(char *, char *, sigset_t *);
 static void                afd_exit(void),
                            check_dirs(char *),
-                           delete_old_afd_status_files(void),
+                           delete_old_afd_status_files(unsigned int *),
                            get_afd_config_value(int *, int *,
                                                 unsigned int *, int *),
                            get_path_to_self(void),
@@ -220,7 +220,8 @@ main(int argc, char *argv[])
                   auto_amg_stop = NO,
                   old_afd_stat;
    unsigned int   default_age_limit,
-                  *heartbeat;
+                  *heartbeat,
+                  old_db_calc_size;
    long           link_max;
    off_t          afd_active_size;
    time_t         month_check_time,
@@ -505,7 +506,7 @@ main(int argc, char *argv[])
          exit(INCORRECT);
       }
       old_afd_stat = NO;
-      delete_old_afd_status_files();
+      delete_old_afd_status_files(&old_db_calc_size);
    }
    else
    {
@@ -874,6 +875,21 @@ main(int argc, char *argv[])
    *(pid_t *)(pid_list) = getpid();
 
    start_afd(binary_changed, now, default_age_limit, afdd_port, afdds_port);
+
+   if (old_afd_stat == NO)
+   {
+      if (old_db_calc_size == 0)
+      {
+         system_log(DEBUG_SIGN, NULL, 0,
+                    "Initialize afd_status (%x)", get_afd_status_struct_size());
+      }
+      else
+      {
+         system_log(INFO_SIGN, NULL, 0,
+                    "Initialize afd_status due to structure change (%x -> %x)",
+                    old_db_calc_size, get_afd_status_struct_size());
+      }
+   }
 
 #ifdef HAVE_FDATASYNC
    if (fdatasync(afd_status_fd) == -1)
@@ -2616,12 +2632,13 @@ stop_afd_worker(unsigned int *heartbeat)
 
 /*+++++++++++++++++++ delete_old_afd_status_files() ++++++++++++++++++++*/
 static void
-delete_old_afd_status_files(void)
+delete_old_afd_status_files(unsigned int *old_db_calc_size)
 {
    char fifo_dir[MAX_PATH_LENGTH],
         *p_fifo_dir;
    DIR  *dp;
 
+   *old_db_calc_size = 0;
    p_fifo_dir = fifo_dir + snprintf(fifo_dir, MAX_PATH_LENGTH, "%s%s",
                                     p_work_dir, FIFO_DIR);
    if ((dp = opendir(fifo_dir)) == NULL)
@@ -2653,6 +2670,8 @@ delete_old_afd_status_files(void)
              (memcmp(p_dir->d_name, current_afd_status_file,
                      current_afd_status_file_length + 1) != 0))
          {
+            char *ptr = p_dir->d_name;
+
             (void)strcpy(p_fifo_dir + 1, p_dir->d_name);
             if (unlink(fifo_dir) == -1)
             {
@@ -2663,6 +2682,18 @@ delete_old_afd_status_files(void)
             {
                (void)fprintf(stderr, "INFO: Removed %s (%s %d)\n",
                              fifo_dir, __FILE__, __LINE__);
+            }
+
+            /* Try get the old struct size at end of file name. */
+            ptr += (AFD_STATUS_FILE_LENGTH - 1);
+            while ((*ptr != '.') && (*ptr != '\0'))
+            {
+               ptr++;
+            }
+            if (*ptr == '.')
+            {
+               ptr++;
+               *old_db_calc_size = (unsigned int)strtoul(ptr, NULL, 16);
             }
          }
          errno = 0;
