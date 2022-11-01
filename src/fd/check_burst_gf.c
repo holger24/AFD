@@ -79,7 +79,8 @@ extern struct retrieve_list       *rl;
 static sig_atomic_t               signal_caught;
 
 /* Local function prototypes. */
-static void                       sig_alarm(int);
+static void                       free_db(struct job *),
+                                  sig_alarm(int);
 
 
 /*########################### check_burst_gf() ##########################*/
@@ -545,10 +546,14 @@ check_burst_gf(unsigned int *values_changed)
                      exit(ALLOC_ERROR);
                   }
                }
+               else
+               {
+                  p_new_db->index_file = NULL;
+               }
                if (eval_recipient(fra->url, p_new_db, NULL,
                                   next_check_time) == INCORRECT)
                {
-                  free(p_new_db);
+                  free_db(p_new_db);
 
                   return(NO);
                }
@@ -564,7 +569,7 @@ check_burst_gf(unsigned int *values_changed)
                    ((db.protocol & SFTP_FLAG) &&
                     (CHECK_STRCMP(p_new_db->user, db.user) != 0)))
                {
-                  free(p_new_db);
+                  free_db(p_new_db);
                   ret = NEITHER;
                }
                else
@@ -928,6 +933,21 @@ check_burst_gf(unsigned int *values_changed)
    }
 
    return(ret);
+}
+
+
+/*++++++++++++++++++++++++++++++ free_db() ++++++++++++++++++++++++++++++*/
+static void
+free_db(struct job *p_new_db)
+{
+   if (p_new_db->index_file != NULL)
+   {
+      free(p_new_db->index_file);
+   }
+
+   free(p_new_db);
+
+   return;
 }
 
 

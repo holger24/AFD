@@ -1,6 +1,6 @@
 /*
  *  init_sf_burst2.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -250,7 +250,7 @@ init_sf_burst2(struct job   *p_new_db,
          free(db.group_mail_domain);
       }
       db.group_mail_domain = p_new_db->group_mail_domain;
-#ifdef _WITH_DE_MAIL_SUPPORT
+# ifdef _WITH_DE_MAIL_SUPPORT
       db.de_mail_options = p_new_db->de_mail_options;
       if (db.de_mail_sender != NULL)
       {
@@ -262,7 +262,7 @@ init_sf_burst2(struct job   *p_new_db,
          free(db.de_mail_privat_id);
       }
       db.de_mail_privat_id = p_new_db->de_mail_privat_id;
-#endif
+# endif
       if (db.charset != NULL)
       {
          free(db.charset);
@@ -299,7 +299,7 @@ init_sf_burst2(struct job   *p_new_db,
       db.dup_check_timeout = p_new_db->dup_check_timeout;
       db.crc_id            = p_new_db->crc_id;
 # endif
-      db.index_file = NULL;
+      db.index_file        = p_new_db->index_file; /* For sf_xxx always NULL */
 
       free(p_new_db);
       p_new_db = NULL;

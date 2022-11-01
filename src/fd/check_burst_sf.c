@@ -1,6 +1,6 @@
 /*
  *  check_burst_sf.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -98,7 +98,8 @@ extern struct job                 db;
 static sig_atomic_t               signal_caught;
 
 /* Local function prototypes. */
-static void                       sig_alarm(int);
+static void                       free_db(struct job *),
+                                  sig_alarm(int);
 #ifdef SF_BURST_ACK
 static void                       ack_burst(char *);
 #endif
@@ -864,12 +865,13 @@ check_burst_sf(char         *file_path,
                p_new_db->protocol = db.protocol;
                p_new_db->id.job = db.id.job;
                p_new_db->password[0] = '\0';
+               p_new_db->index_file = NULL; /* For sf_xxx always NULL */
 #ifdef HAVE_SETPRIORITY
                p_new_db->afd_config_mtime = db.afd_config_mtime;
 #endif
                if (eval_message(msg_name, p_new_db) < 0)
                {
-                  free(p_new_db);
+                  free_db(p_new_db);
 #ifdef SF_BURST_ACK
                   if (ret == YES)
                   {
@@ -895,7 +897,7 @@ check_burst_sf(char         *file_path,
                    ((db.protocol & SFTP_FLAG) &&
                     (CHECK_STRCMP(p_new_db->user, db.user) != 0)))
                {
-                  free(p_new_db);
+                  free_db(p_new_db);
                   ret = NEITHER;
                }
                else
@@ -1128,6 +1130,85 @@ check_burst_sf(char         *file_path,
    }
 
    return(ret);
+}
+
+
+/*++++++++++++++++++++++++++++++ free_db() ++++++++++++++++++++++++++++++*/
+static void
+free_db(struct job *p_new_db)
+{
+   if (p_new_db->recipient != NULL)
+   {
+      free(p_new_db->recipient);
+   }
+   if (p_new_db->lock_file_name != NULL)
+   {
+      free(p_new_db->lock_file_name);
+   }
+   if (p_new_db->user_home_dir != NULL)
+   {
+      free(p_new_db->user_home_dir);
+   }
+   if (p_new_db->cn_filter != NULL)
+   {
+      free(p_new_db->cn_filter);
+   }
+   if (p_new_db->cn_rename_to != NULL)
+   {
+      free(p_new_db->cn_rename_to);
+   }
+   if (p_new_db->subject != NULL)
+   {
+      free(p_new_db->subject);
+   }
+   if (p_new_db->from != NULL)
+   {
+      free(p_new_db->from);
+   }
+   if (p_new_db->reply_to != NULL)
+   {
+      free(p_new_db->reply_to);
+   }
+   if (p_new_db->group_to != NULL)
+   {
+      free(p_new_db->group_to);
+   }
+   if (p_new_db->group_mail_domain != NULL)
+   {
+      free(p_new_db->group_mail_domain);
+   }
+#ifdef _WITH_DE_MAIL_SUPPORT
+   if (p_new_db->de_mail_sender != NULL)
+   {
+      free(p_new_db->de_mail_sender);
+   }
+   if (p_new_db->de_mail_privat_id != NULL)
+   {
+      free(p_new_db->de_mail_privat_id);
+   }
+#endif
+   if (p_new_db->charset != NULL)
+   {
+      free(p_new_db->charset);
+   }
+   if (p_new_db->lock_file_name != NULL)
+   {
+      free(p_new_db->lock_file_name);
+   }
+#ifdef _WITH_TRANS_EXEC
+   if (p_new_db->trans_exec_cmd != NULL)
+   {
+      free(p_new_db->trans_exec_cmd);
+   }
+#endif
+   if (p_new_db->special_ptr != NULL)
+   {
+      free(p_new_db->special_ptr);
+   }
+
+   free(p_new_db);
+
+   return;
 }
 
 
