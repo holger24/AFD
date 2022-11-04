@@ -501,7 +501,11 @@ get_dir_options(unsigned int dir_id, struct dir_options *d_o)
                goto done;
             }
          }
+#ifdef NEW_FRA
+         if (fra[i].dir_options & DONT_GET_DIR_LIST)
+#else
          if (fra[i].dir_flag & DONT_GET_DIR_LIST)
+#endif
          {
             (void)strcpy(d_o->aoptions[d_o->no_of_dir_options],
                          DO_NOT_GET_DIR_LIST_ID);
