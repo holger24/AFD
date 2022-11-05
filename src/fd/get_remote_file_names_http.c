@@ -3437,10 +3437,6 @@ check_name(char         *file_name,
    if ((file_name[0] != '.') || (fra->dir_flag & ACCEPT_DOT_FILES))
 #endif
    {
-      int i,
-          j,
-          status;
-
       if (fra->dir_flag & ALL_DISABLED)
       {
          if (fra->remove == YES)
@@ -3454,6 +3450,10 @@ check_name(char         *file_name,
       }
       else
       {
+         int i,
+             j,
+             status = 0;
+
          for (i = 0; i < nfg; i++)
          {
             p_mask = fml[i].file_list;
