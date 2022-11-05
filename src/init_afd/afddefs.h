@@ -912,9 +912,6 @@ typedef unsigned long       u_long_64;
 # define UNKNOWN_KEY_TYPE          16
 # define NOT_A_FINGERPRINT         32
 # define ONLY_FINGERPRINT_KNOWN    64
-# define MAX_URL_ERROR_MSG         (14 + 35 + 29 + 11 + 18 + 21 + 48 + 34 + 34 + 37 + 11 + 47 + 11 + 34 + 30 + 11 + 23 + 42 + 11 + 30 + 25 + 37 + 11 + 29 + 25 + 43 + 52 + 11 + 17 + 1)
-#else
-# define MAX_URL_ERROR_MSG         (14 + 35 + 29 + 11 + 34 + 34 + 37 + 11 + 47 + 11 + 34 + 30 + 11 + 23 + 42 + 11 + 30 + 25 + 37 + 11 + 29 + 25 + 43 + 52 + 11 + 17 + 1)
 #endif
 #define PASSWORD_TO_LONG           128
 #define HOSTNAME_TO_LONG           256
@@ -937,6 +934,13 @@ typedef unsigned long       u_long_64;
 #define REGION_NAME_TO_LONG        33554432
 #define PARAMETER_MISSING          67108864
 #define URL_UNKNOWN_VALUE          134217728
+#ifdef WITH_SSH_FINGERPRINT
+                           /*    USER_NAME_TO_LONG     UNKNOWN_SMTP_AUTH UNKNOWN_KEY_TYPE NOT_A_FINGERPRINT ONLY_FINGERPRINT_KNOWN PASSWORD_TO_LONG      HOSTNAME_TO_LONG      PORT_TO_LONG          TIME_MODIFIER_TO_LONG NO_TIME_MODIFIER_SPECIFIED RECIPIENT_TO_LONG     UNKNOWN_TRANSFER_TYPE TARGET_DIR_CAN_CHANGE PROTOCOL_VERSION_TO_LONG NO_PROTOCOL_VERSION NO_PORT_SPECIFIED SERVER_NAME_TO_LONG   EXEC_CMD_ERROR EXEC_NO_RETURN EXEC_NOT_TERMINATED EXEC_CMD_TO_LONG      REGION_NAME_TO_LONG   PARAMETER_MISSING URL_UNKNOWN_VALUE BUFFER_TO_SHORT */
+# define MAX_URL_ERROR_MSG (14 + 35 + MAX_INT_LENGTH + 29 +              18 +             21 +              48 +                   34 + MAX_INT_LENGTH + 34 + MAX_INT_LENGTH + 37 + MAX_INT_LENGTH + 47 + MAX_INT_LENGTH + 34 +                       35 + MAX_INT_LENGTH + 23 +                  23 +                  42 + MAX_INT_LENGTH +    30 +                25 +              37 + MAX_INT_LENGTH + 29 +           25 +           43 +                52 + MAX_INT_LENGTH + 37 + MAX_INT_LENGTH + 19 +              15 +              17 +            1)
+#else
+                           /*    USER_NAME_TO_LONG     UNKNOWN_SMTP_AUTH                                                           PASSWORD_TO_LONG      HOSTNAME_TO_LONG      PORT_TO_LONG          TIME_MODIFIER_TO_LONG NO_TIME_MODIFIER_SPECIFIED RECIPIENT_TO_LONG     UNKNOWN_TRANSFER_TYPE TARGET_DIR_CAN_CHANGE PROTOCOL_VERSION_TO_LONG NO_PROTOCOL_VERSION NO_PORT_SPECIFIED SERVER_NAME_TO_LONG   EXEC_CMD_ERROR EXEC_NO_RETURN EXEC_NOT_TERMINATED EXEC_CMD_TO_LONG      REGION_NAME_TO_LONG   PARAMETER_MISSING URL_UNKNOWN_VALUE BUFFER_TO_SHORT */
+# define MAX_URL_ERROR_MSG (14 + 35 + MAX_INT_LENGTH + 29 +                                                                        34 + MAX_INT_LENGTH + 34 + MAX_INT_LENGTH + 37 + MAX_INT_LENGTH + 47 + MAX_INT_LENGTH + 34 +                       35 + MAX_INT_LENGTH + 23 +                  23 +                  42 + MAX_INT_LENGTH +    30 +                25 +              37 + MAX_INT_LENGTH + 29 +           25 +           43 +                52 + MAX_INT_LENGTH + 37 + MAX_INT_LENGTH + 19 +              15 +              17 +            1)
+#endif
 
 /* When looking at difference in two URL's, flags for which parts differ. */
 #define URL_SCHEME_DIFS            1

@@ -3189,7 +3189,7 @@ url_get_error(int error_mask, char *error_str, int error_str_length)
             }
             error_str_length -= length;
          }
-         if ((error_str_length > (43 + MAX_INT_LENGTH)) &&
+         if ((error_str_length > (52 + MAX_INT_LENGTH)) &&
              (error_mask & EXEC_CMD_TO_LONG))
          {
             if (length)
