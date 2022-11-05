@@ -82,7 +82,7 @@ read_afd_istat_db(int no_of_dirs)
    static int      no_of_old_dirs = 0;
    size_t          size = sizeof(struct istatistics),
                    old_istat_db_size = 0;
-   char            *old_ptr,
+   char            *old_ptr = NULL, /* silence compiler */
                    *ptr;
    struct afdistat *old_istat_db;
    struct stat     stat_buf;

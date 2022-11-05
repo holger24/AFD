@@ -221,7 +221,7 @@ main(int argc, char *argv[])
                   old_afd_stat;
    unsigned int   default_age_limit,
                   *heartbeat,
-                  old_db_calc_size;
+                  old_db_calc_size = 0; /* silence compiler */
    long           link_max;
    off_t          afd_active_size;
    time_t         month_check_time,

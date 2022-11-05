@@ -84,7 +84,7 @@ read_afd_stat_db(int no_of_hosts)
    static int     no_of_old_hosts = 0;
    size_t         size = sizeof(struct statistics),
                   old_stat_db_size = 0;
-   char           *old_ptr,
+   char           *old_ptr = NULL, /* silence compiler */
                   *ptr;
    struct afdstat *old_stat_db;
    struct stat    stat_buf;
