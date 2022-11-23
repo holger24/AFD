@@ -1145,10 +1145,6 @@ free_db(struct job *p_new_db)
    {
       free(p_new_db->lock_file_name);
    }
-   if (p_new_db->user_home_dir != NULL)
-   {
-      free(p_new_db->user_home_dir);
-   }
    if (p_new_db->cn_filter != NULL)
    {
       free(p_new_db->cn_filter);

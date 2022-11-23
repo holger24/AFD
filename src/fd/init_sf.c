@@ -171,7 +171,7 @@ init_sf(int argc, char *argv[], char *file_path, int protocol)
    db.dir_mode = 0;
    db.dir_mode_str[0] = '\0';
 /* db.trans_rename_rule[0] = '\0'; */
-   db.user_home_dir = NULL;
+/* db.user_home_dir = NULL; */
    db.index_file = NULL;
 /* db.password[0] = '\0'; */
 /* db.user_rename_rule[0] = '\0'; */

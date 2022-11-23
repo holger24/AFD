@@ -106,8 +106,6 @@ init_sf_burst2(struct job   *p_new_db,
          if (CHECK_STRCMP(db.active_user, p_new_db->user) != 0)
          {
             *values_changed |= USER_CHANGED;
-            free(db.user_home_dir);
-            db.user_home_dir = NULL;
          }
          if (CHECK_STRCMP(db.active_target_dir, p_new_db->target_dir) != 0)
          {
