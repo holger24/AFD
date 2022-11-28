@@ -1,6 +1,6 @@
 /*
  *  append.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1998 - 2015 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 1998 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 DESCR__S_M3
 /*
  ** NAME
- **   append - functions for appending files in FTP
+ **   append - functions for appending files in FTP+SFTP
  **
  ** SYNOPSIS
  **   void log_append(struct job *p_db, char *file_name, char *source_file_name)
@@ -75,7 +75,8 @@ log_append(struct job *p_db, char *file_name, char *source_file_name)
                msg[MAX_PATH_LENGTH];
    struct stat stat_buf;
 
-   (void)snprintf(msg, MAX_PATH_LENGTH, "%s%s/%x", p_work_dir, AFD_MSG_DIR, p_db->id.job);
+   (void)snprintf(msg, MAX_PATH_LENGTH, "%s%s/%x",
+                  p_work_dir, AFD_MSG_DIR, p_db->id.job);
 
    if ((fd = lock_file(msg, ON)) < 0)
    {
@@ -88,7 +89,7 @@ log_append(struct job *p_db, char *file_name, char *source_file_name)
       (void)close(fd);
       return;
    }
-   buf_size = stat_buf.st_size + strlen(OPTION_IDENTIFIER) +
+   buf_size = stat_buf.st_size + OPTION_IDENTIFIER_LENGTH +
               RESTART_FILE_ID_LENGTH + strlen(file_name) + 20 + 4;
    if ((buffer = malloc(buf_size + 1)) == NULL)
    {
