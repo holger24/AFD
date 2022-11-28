@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-## Copyright (C) 2001 - 2021 Holger Kiehl
+## Copyright (C) 2001 - 2022 Holger Kiehl
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -203,12 +203,14 @@ bin_sf_ftp_SOURCES         = src/fd/append.c\
                              src/fd/get_group_list.c\
                              src/fd/gsf_check_fsa.c\
                              src/fd/handle_proxy.c\
+                             src/fd/handle_dupcheck_delete.c\
                              src/fd/init_sf.c\
                              src/fd/init_sf_burst2.c\
                              src/fd/limit_transfer_rate.c\
                              src/fd/noop_wrapper_ftp.c\
                              src/fd/receive_log.c\
                              src/fd/reset_fsa.c\
+                             src/fd/rm_dupcheck_crc.c\
                              src/fd/send_proc_fin.c\
                              src/fd/sf_ftp.c\
                              src/fd/trans_db_log.c\
@@ -240,12 +242,14 @@ bin_sf_http_SOURCES        = src/fd/append.c\
                              src/fd/get_file_names.c\
                              src/fd/get_group_list.c\
                              src/fd/gsf_check_fsa.c\
+                             src/fd/handle_dupcheck_delete.c\
                              src/fd/init_sf.c\
                              src/fd/init_sf_burst2.c\
                              src/fd/limit_transfer_rate.c\
                              src/fd/noop_wrapper_http.c\
                              src/fd/receive_log.c\
                              src/fd/reset_fsa.c\
+                             src/fd/rm_dupcheck_crc.c\
                              src/fd/send_proc_fin.c\
                              src/fd/sf_http.c\
                              src/fd/trans_db_log.c\
@@ -278,12 +282,14 @@ bin_sf_sftp_SOURCES        = src/fd/append.c\
                              src/fd/get_file_names.c\
                              src/fd/get_group_list.c\
                              src/fd/gsf_check_fsa.c\
+                             src/fd/handle_dupcheck_delete.c\
                              src/fd/init_sf.c\
                              src/fd/init_sf_burst2.c\
                              src/fd/limit_transfer_rate.c\
                              src/fd/noop_wrapper_sftp.c\
                              src/fd/receive_log.c\
                              src/fd/reset_fsa.c\
+                             src/fd/rm_dupcheck_crc.c\
                              src/fd/send_proc_fin.c\
                              src/fd/sf_sftp.c\
                              src/fd/trans_db_log.c\
@@ -317,12 +323,14 @@ bin_sf_smtp_SOURCES        = src/fd/append.c\
                              src/fd/get_file_names.c\
                              src/fd/get_group_list.c\
                              src/fd/gsf_check_fsa.c\
+                             src/fd/handle_dupcheck_delete.c\
                              src/fd/init_sf.c\
                              src/fd/init_sf_burst2.c\
                              src/fd/limit_transfer_rate.c\
                              src/fd/noop_wrapper_smtp.c\
                              src/fd/receive_log.c\
                              src/fd/reset_fsa.c\
+                             src/fd/rm_dupcheck_crc.c\
                              src/fd/send_proc_fin.c\
                              src/fd/sf_smtp.c\
                              src/fd/trans_db_log.c\
@@ -352,12 +360,14 @@ bin_sf_scp_SOURCES         = src/fd/append.c\
                              src/fd/get_file_names.c\
                              src/fd/get_group_list.c\
                              src/fd/gsf_check_fsa.c\
+                             src/fd/handle_dupcheck_delete.c\
                              src/fd/init_sf.c\
                              src/fd/init_sf_burst2.c\
                              src/fd/limit_transfer_rate.c\
                              src/fd/noop_wrapper_dummy.c\
                              src/fd/receive_log.c\
                              src/fd/reset_fsa.c\
+                             src/fd/rm_dupcheck_crc.c\
                              src/fd/send_proc_fin.c\
                              src/fd/sf_scp.c\
                              src/fd/trans_db_log.c\
@@ -387,12 +397,14 @@ bin_sf_wmo_SOURCES         = src/fd/append.c\
                              src/fd/get_file_names.c\
                              src/fd/get_group_list.c\
                              src/fd/gsf_check_fsa.c\
+                             src/fd/handle_dupcheck_delete.c\
                              src/fd/init_sf.c\
                              src/fd/init_sf_burst2.c\
                              src/fd/limit_transfer_rate.c\
                              src/fd/noop_wrapper_dummy.c\
                              src/fd/receive_log.c\
                              src/fd/reset_fsa.c\
+                             src/fd/rm_dupcheck_crc.c\
                              src/fd/send_proc_fin.c\
                              src/fd/sf_wmo.c\
                              src/fd/trans_db_log.c\
@@ -418,10 +430,12 @@ bin_sf_map_SOURCES         = src/fd/append.c\
                              src/fd/get_file_names.c\
                              src/fd/get_group_list.c\
                              src/fd/gsf_check_fsa.c\
+                             src/fd/handle_dupcheck_delete.c\
                              src/fd/init_sf.c\
                              src/fd/noop_wrapper_dummy.c\
                              src/fd/receive_log.c\
                              src/fd/reset_fsa.c\
+                             src/fd/rm_dupcheck_crc.c\
                              src/fd/send_proc_fin.c\
                              src/fd/sf_map.c\
                              src/fd/trans_db_log.c\
@@ -441,10 +455,12 @@ bin_sf_dfax_SOURCES        = src/fd/append.c\
                              src/fd/get_file_names.c\
                              src/fd/get_group_list.c\
                              src/fd/gsf_check_fsa.c\
+                             src/fd/handle_dupcheck_delete.c\
                              src/fd/init_sf.c\
                              src/fd/noop_wrapper_dummy.c\
                              src/fd/receive_log.c\
                              src/fd/reset_fsa.c\
+                             src/fd/rm_dupcheck_crc.c\
                              src/fd/send_proc_fin.c\
                              src/fd/sf_dfax.c\
                              src/fd/trans_db_log.c\
@@ -468,11 +484,13 @@ bin_sf_loc_SOURCES         = src/fd/append.c\
                              src/fd/get_file_names.c\
                              src/fd/get_group_list.c\
                              src/fd/gsf_check_fsa.c\
+                             src/fd/handle_dupcheck_delete.c\
                              src/fd/init_sf.c\
                              src/fd/init_sf_burst2.c\
                              src/fd/noop_wrapper_dummy.c\
                              src/fd/receive_log.c\
                              src/fd/reset_fsa.c\
+                             src/fd/rm_dupcheck_crc.c\
                              src/fd/send_proc_fin.c\
                              src/fd/sf_loc.c\
                              src/fd/trans_db_log.c\
@@ -495,11 +513,13 @@ bin_sf_exec_SOURCES        = src/fd/append.c\
                              src/fd/get_file_names.c\
                              src/fd/get_group_list.c\
                              src/fd/gsf_check_fsa.c\
+                             src/fd/handle_dupcheck_delete.c\
                              src/fd/init_sf.c\
                              src/fd/init_sf_burst2.c\
                              src/fd/noop_wrapper_dummy.c\
                              src/fd/receive_log.c\
                              src/fd/reset_fsa.c\
+                             src/fd/rm_dupcheck_crc.c\
                              src/fd/send_proc_fin.c\
                              src/fd/sf_exec.c\
                              src/fd/trans_db_log.c\

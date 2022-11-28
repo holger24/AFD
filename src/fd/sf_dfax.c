@@ -1,6 +1,6 @@
 /*
  *  sf_dfax.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2015 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2015 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -483,6 +483,40 @@ main(int argc, char *argv[])
       /* Get the the name of the file we want to send next. */
       (void)strcpy(p_source_file, p_file_name_buffer);
 
+#ifdef WITH_DUP_CHECK
+# ifndef FAST_SF_DUPCHECK
+      if ((db.dup_check_timeout > 0) &&
+          (isdup(fullname, p_file_name_buffer, *p_file_size_buffer,
+                 db.crc_id, db.dup_check_timeout, db.dup_check_flag, NO,
+#  ifdef HAVE_HW_CRC32
+                 have_hw_crc32,
+#  endif
+                 YES, YES) == YES))
+      {
+         now = time(NULL);
+         handle_dupcheck_delete(SEND_FILE_SFTP, fsa->host_alias, fullname,
+                                p_file_name_buffer, *p_file_size_buffer,
+                                *p_file_mtime_buffer, now);
+         if (db.dup_check_flag & DC_DELETE)
+         {
+            local_file_size += *p_file_size_buffer;
+            local_file_counter += 1;
+            if (now >= (last_update_time + LOCK_INTERVAL_TIME))
+            {
+               last_update_time = now;
+               update_tfc(local_file_counter, local_file_size,
+                          p_file_size_buffer, files_to_send,
+                          files_send, now);
+               local_file_size = 0;
+               local_file_counter = 0;
+            }
+         }
+      }
+      else
+      {
+# endif
+#endif
+
       /* Write status to FSA? */
       if (gsf_check_fsa(p_db) != NEITHER)
       {
@@ -502,6 +536,7 @@ main(int argc, char *argv[])
       {
          trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                    "DivaDial() failed.");
+         rm_dupcheck_crc(fullname, p_file_name_buffer, *p_file_size_buffer);
          exit(DFAX_FUNCTION_ERROR);
       }
       else
@@ -549,6 +584,8 @@ main(int argc, char *argv[])
                     {
                        fsa->job_status[(int)db.job_no].connect_status = DISCONNECT;
                     }
+                    rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                    *p_file_size_buffer);
                     exit(TIMEOUT_ERROR);
                  }
          }
@@ -759,6 +796,11 @@ try_again_unlink:
          error_action(fsa->host_alias, "start", HOST_SUCCESS_ACTION,
                       transfer_log_fd);
       }
+#ifdef WITH_DUP_CHECK
+# ifndef FAST_SF_DUPCHECK
+      }
+# endif
+#endif
 
       p_file_name_buffer += MAX_FILENAME_LENGTH;
       p_file_size_buffer++;

@@ -1,6 +1,6 @@
 /*
  *  sf_scp.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 2001 - 2021 Holger Kiehl <Holger.Kiehl@dwd.de>
+ *  Copyright (c) 2001 - 2022 Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -206,6 +206,7 @@ main(int argc, char *argv[])
                     diff_time,
 #endif
                     end_transfer_time_file,
+                    *p_file_mtime_buffer,
                     start_transfer_time_file = 0,
                     last_update_time,
                     now;
@@ -413,6 +414,7 @@ main(int argc, char *argv[])
       /* Send all files. */
       p_file_name_buffer = file_name_buffer;
       p_file_size_buffer = file_size_buffer;
+      p_file_mtime_buffer = file_mtime_buffer;
       last_update_time = time(NULL);
       local_file_size = 0;
       for (files_send = 0; files_send < files_to_send; files_send++)
@@ -420,6 +422,40 @@ main(int argc, char *argv[])
          (void)snprintf(fullname, MAX_PATH_LENGTH + 1,
                         "%s/%s", file_path, p_file_name_buffer);
          no_of_bytes = 0;
+
+#ifdef WITH_DUP_CHECK
+# ifndef FAST_SF_DUPCHECK
+         if ((db.dup_check_timeout > 0) &&
+             (isdup(fullname, p_file_name_buffer, *p_file_size_buffer,
+                    db.crc_id, db.dup_check_timeout, db.dup_check_flag, NO,
+#  ifdef HAVE_HW_CRC32
+                    have_hw_crc32,
+#  endif
+                    YES, YES) == YES))
+         {
+            now = time(NULL);
+            handle_dupcheck_delete(SEND_FILE_SFTP, fsa->host_alias, fullname,
+                                   p_file_name_buffer, *p_file_size_buffer,
+                                   *p_file_mtime_buffer, now);
+            if (db.dup_check_flag & DC_DELETE)
+            {
+               local_file_size += *p_file_size_buffer;
+               local_file_counter += 1;
+               if (now >= (last_update_time + LOCK_INTERVAL_TIME))
+               {
+                  last_update_time = now;
+                  update_tfc(local_file_counter, local_file_size,
+                             p_file_size_buffer, files_to_send,
+                             files_send, now);
+                  local_file_size = 0;
+                  local_file_counter = 0;
+               }
+            }
+         }
+         else
+         {
+# endif
+#endif
 
          /* Write status to FSA? */
          if (gsf_check_fsa(p_db) != NEITHER)
@@ -450,6 +486,7 @@ main(int argc, char *argv[])
             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                       "Failed to open remote file `%s' (%d).",
                       p_file_name_buffer, status);
+            rm_dupcheck_crc(fullname, p_file_name_buffer, *p_file_size_buffer);
             scp_quit();
             exit(eval_timeout(OPEN_REMOTE_ERROR));
          }
@@ -475,6 +512,8 @@ main(int argc, char *argv[])
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                          "Failed to open local file `%s' : %s",
                          fullname, strerror(errno));
+               rm_dupcheck_crc(fullname, p_file_name_buffer,
+                               *p_file_size_buffer);
                scp_quit();
                exit(OPEN_LOCAL_ERROR);
             }
@@ -542,6 +581,8 @@ main(int argc, char *argv[])
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                             "Failed to write WMO header to remote file `%s' [%d]",
                             p_file_name_buffer, status);
+                  rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                  *p_file_size_buffer);
                   scp_quit();
                   exit(eval_timeout(WRITE_REMOTE_ERROR));
                }
@@ -572,6 +613,8 @@ main(int argc, char *argv[])
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                             "Could not read() local file `%s' [%d] : %s",
                             fullname, bytes_buffered, strerror(errno));
+                  rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                  *p_file_size_buffer);
                   scp_quit();
                   exit(READ_LOCAL_ERROR);
                }
@@ -582,6 +625,8 @@ main(int argc, char *argv[])
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                "Failed to write block from file `%s' [%d].",
                                p_file_name_buffer, status);
+                     rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                     *p_file_size_buffer);
                      scp_quit();
                      exit(eval_timeout(WRITE_REMOTE_ERROR));
                   }
@@ -616,6 +661,8 @@ main(int argc, char *argv[])
 #endif
                                         fsa->job_status[(int)db.job_no].file_name_in_use,
                                         (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
+                              rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                              *p_file_size_buffer);
                               scp_quit();
                               exitflag = 0;
                               exit(STILL_FILES_TO_SEND);
@@ -683,6 +730,8 @@ main(int argc, char *argv[])
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                             "Failed to write <CR><CR><LF><ETX> to remote file `%s' [%d]",
                             p_file_name_buffer, status);
+                  rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                  *p_file_size_buffer);
                   scp_quit();
                   exit(eval_timeout(WRITE_REMOTE_ERROR));
                }
@@ -700,6 +749,7 @@ main(int argc, char *argv[])
             trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                       "Failed to close remote file `%s'",
                       p_file_name_buffer);
+            rm_dupcheck_crc(fullname, p_file_name_buffer, *p_file_size_buffer);
             scp_quit();
             exit(eval_timeout(CLOSE_REMOTE_ERROR));
          }
@@ -959,9 +1009,17 @@ try_again_unlink:
                             transfer_log_fd);
             }
          }
-
+#ifdef WITH_DUP_CHECK
+# ifndef FAST_SF_DUPCHECK
+         }
+# endif
+#endif
          p_file_name_buffer += MAX_FILENAME_LENGTH;
          p_file_size_buffer++;
+         if (file_mtime_buffer != NULL)
+         {
+            p_file_mtime_buffer++;
+         }
       } /* for (files_send = 0; files_send < files_to_send; files_send++) */
 
 #ifdef WITH_ARCHIVE_COPY_INFO

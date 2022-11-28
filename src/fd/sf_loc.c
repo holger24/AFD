@@ -1,6 +1,6 @@
 /*
  *  sf_loc.c - Part of AFD, an automatic file distribution program.
- *  Copyright (c) 1996 - 2021 Deutscher Wetterdienst (DWD),
+ *  Copyright (c) 1996 - 2022 Deutscher Wetterdienst (DWD),
  *                            Holger Kiehl <Holger.Kiehl@dwd.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -567,6 +567,39 @@ main(int argc, char *argv[])
             *p_ff_name = '\0';
             (void)strcat(ff_name, p_file_name_buffer);
             (void)strcpy(file_name, p_file_name_buffer);
+#ifdef WITH_DUP_CHECK
+# ifndef FAST_SF_DUPCHECK
+            if ((db.dup_check_timeout > 0) &&
+                (isdup(ff_name, p_file_name_buffer, *p_file_size_buffer,
+                       db.crc_id, db.dup_check_timeout, db.dup_check_flag, NO,
+#  ifdef HAVE_HW_CRC32
+                       have_hw_crc32, 
+#  endif  
+                       YES, YES) == YES))
+            {
+               now = time(NULL);
+               handle_dupcheck_delete(SEND_FILE_SFTP, fsa->host_alias, ff_name,
+                                      p_file_name_buffer, *p_file_size_buffer,
+                                      *p_file_mtime_buffer, now);
+               if (db.dup_check_flag & DC_DELETE)
+               {
+                  local_file_size += *p_file_size_buffer;
+                  local_file_counter += 1;
+                  if (now >= (last_update_time + LOCK_INTERVAL_TIME))
+                  {
+                     last_update_time = now;
+                     update_tfc(local_file_counter, local_file_size,
+                                p_file_size_buffer, files_to_send,
+                                files_send, now);
+                     local_file_size = 0;
+                     local_file_counter = 0;
+                  }
+               }
+            }
+            else
+            {
+# endif
+#endif
             if ((db.lock == DOT) || (db.lock == DOT_VMS))
             {
                *p_if_name = '\0';
@@ -660,6 +693,8 @@ try_link_again:
                            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                      "Failed to unlink() `%s' : %s",
                                      p_to_name, strerror(errno));
+                           rm_dupcheck_crc(ff_name, p_file_name_buffer,
+                                           *p_file_size_buffer);
                            exit(MOVE_ERROR);
                         }
                         else
@@ -728,6 +763,9 @@ try_link_again:
                                                       "Failed to unlink() `%s' : %s",
                                                       p_to_name,
                                                       strerror(errno));
+                                            rm_dupcheck_crc(ff_name,
+                                                            p_file_name_buffer,
+                                                            *p_file_size_buffer);
                                             exit(MOVE_ERROR);
                                          }
                                          else
@@ -755,6 +793,9 @@ try_link_again:
                                                             source_file,
                                                             p_to_name,
                                                             strerror(errno));
+                                                  rm_dupcheck_crc(ff_name,
+                                                                  p_file_name_buffer,
+                                                                  *p_file_size_buffer);
                                                   exit(MOVE_ERROR);
                                                }
                                             }
@@ -775,6 +816,9 @@ try_link_again:
                                                         "Failed to link file `%s' to `%s' : %s",
                                                         source_file, p_to_name,
                                                         strerror(errno));
+                                              rm_dupcheck_crc(ff_name,
+                                                              p_file_name_buffer,
+                                                              *p_file_size_buffer);
                                               exit(MOVE_ERROR);
                                            }
                                    }
@@ -824,6 +868,8 @@ try_link_again:
                                      }
                                 if (ret != CREATED_DIR)
                                 {
+                                   rm_dupcheck_crc(ff_name, p_file_name_buffer,
+                                                   *p_file_size_buffer);
                                    exit(ret);
                                 }
                              }
@@ -834,6 +880,8 @@ try_link_again:
                                           "Failed to link file `%s' to `%s' : %s",
                                           source_file, p_to_name,
                                           strerror(errno));
+                                rm_dupcheck_crc(ff_name, p_file_name_buffer,
+                                                *p_file_size_buffer);
                                 exit(MOVE_ERROR);
                              }
                           }
@@ -847,6 +895,8 @@ try_link_again:
                              trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                        "Failed to link file `%s' to `%s' : %s",
                                        source_file, p_to_name, strerror(errno));
+                             rm_dupcheck_crc(ff_name, p_file_name_buffer,
+                                             *p_file_size_buffer);
                              exit(MOVE_ERROR);
                           }
                   }
@@ -872,6 +922,8 @@ cross_link_error:
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                             "Failed to copy file `%s' to `%s'",
                             source_file, p_to_name);
+                  rm_dupcheck_crc(ff_name, p_file_name_buffer,
+                                  *p_file_size_buffer);
                   exit(ret);
                }
                else
@@ -1007,6 +1059,8 @@ cross_link_error:
                                  trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                            "Failed to rename() file `%s' to `%s' : %s",
                                            if_name, ff_name, strerror(errno));
+                                 rm_dupcheck_crc(ff_name, p_file_name_buffer,
+                                                 *p_file_size_buffer);
                                  exit(RENAME_ERROR);
                               }
                            }
@@ -1058,12 +1112,17 @@ cross_link_error:
                                                 "Failed to rename() file `%s' to `%s' : %s",
                                                 if_name, ff_name,
                                                 strerror(errno));
+                                      rm_dupcheck_crc(ff_name,
+                                                      p_file_name_buffer,
+                                                      *p_file_size_buffer);
                                       exit(RENAME_ERROR);
                                    }
                                 }
                            if ((ret != CREATED_DIR) && (ret != CHOWN_ERROR) &&
                                (ret != SUCCESS))
                            {
+                              rm_dupcheck_crc(ff_name, p_file_name_buffer,
+                                              *p_file_size_buffer);
                               exit(ret);
                            }
                         }
@@ -1073,6 +1132,8 @@ cross_link_error:
                            trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                      "Failed to rename() file `%s' to `%s' : %s",
                                      if_name, ff_name, strerror(errno));
+                           rm_dupcheck_crc(ff_name, p_file_name_buffer,
+                                           *p_file_size_buffer);
                            exit(RENAME_ERROR);
                         }
                      }
@@ -1122,6 +1183,8 @@ cross_link_error:
                                   "Failed to rename() file `%s' to `%s' %s: %s",
                                   if_name, ff_name, reason_str,
                                   strerror(errno));
+                        rm_dupcheck_crc(ff_name, p_file_name_buffer,
+                                        *p_file_size_buffer);
                         exit(ret);
                      }
                   }
@@ -1461,6 +1524,11 @@ try_again_unlink:
                                transfer_log_fd);
                }
             }
+#ifdef WITH_DUP_CHECK
+# ifndef FAST_SF_DUPCHECK
+            }
+# endif
+#endif
 
             p_file_name_buffer += MAX_FILENAME_LENGTH;
             p_file_size_buffer++;

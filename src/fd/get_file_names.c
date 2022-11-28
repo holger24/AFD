@@ -366,6 +366,7 @@ get_file_names(char *file_path, off_t *file_size_to_send)
                  ((fsa->host_status & DO_NOT_DELETE_DATA) == 0) &&
                  (diff_time > db.age_limit)) ||
                 ((db.dup_check_timeout > 0) &&
+# ifdef FAST_SF_DUPCHECK
                  ((db.special_flag & OLD_ERROR_JOB) == 0) &&
                  (((is_duplicate = isdup(fullname, p_dir->d_name,
                                          stat_buf.st_size,
@@ -373,12 +374,27 @@ get_file_names(char *file_path, off_t *file_size_to_send)
                                          db.dup_check_timeout,
                                          db.dup_check_flag,
                                          NO,
-# ifdef HAVE_HW_CRC32
+#  ifdef HAVE_HW_CRC32
                                          have_hw_crc32,
-# endif
+#  endif
                                          YES, YES)) == YES) &&
                   ((db.dup_check_flag & DC_DELETE) ||
-                   (db.dup_check_flag & DC_STORE)))))
+                   (db.dup_check_flag & DC_STORE)))
+# else
+                 (((is_duplicate = isdup(fullname, p_dir->d_name,
+                                         stat_buf.st_size,
+                                         db.crc_id,
+                                         0,
+                                         db.dup_check_flag,
+                                         YES,
+#  ifdef HAVE_HW_CRC32
+                                         have_hw_crc32,
+#  endif
+                                         YES, YES)) == YES) &&
+                  ((db.dup_check_flag & DC_DELETE) ||
+                   (db.dup_check_flag & DC_STORE)))
+# endif
+                ))
              {
                 remove_file = YES;
              }
@@ -466,7 +482,8 @@ get_file_names(char *file_path, off_t *file_size_to_send)
                if (db.dup_check_flag & DC_WARN)
                {
                   trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                            "File `%s' is duplicate. #%x", p_dir->d_name, db.id.job);
+                            "File `%s' is duplicate. #%x",
+                            p_dir->d_name, db.id.job);
                }
             }
             if ((is_duplicate == YES) && (db.dup_check_flag & DC_STORE))
@@ -479,12 +496,12 @@ get_file_names(char *file_path, off_t *file_size_to_send)
                                 p_work_dir, AFD_FILE_DIR, STORE_DIR, db.id.job);
                if ((mkdir(save_dir, DIR_MODE) == -1) && (errno != EEXIST))
                {
-                  system_log(ERROR_SIGN, __FILE__, __LINE__,
+                  system_log(WARN_SIGN, __FILE__, __LINE__,
                              "Failed to mkdir() `%s' : %s",
                              save_dir, strerror(errno));
                   if (unlink(fullname) == -1)
                   {
-                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                     system_log(WARN_SIGN, __FILE__, __LINE__,
                                 "Failed to unlink() file `%s' due to duplicate check : %s #%x",
                                 p_dir->d_name, strerror(errno), db.id.job);
                   }
@@ -504,12 +521,12 @@ get_file_names(char *file_path, off_t *file_size_to_send)
                   (void)strcpy(p_end, p_dir->d_name);
                   if (rename(fullname, save_dir) == -1)
                   {
-                     system_log(ERROR_SIGN, __FILE__, __LINE__,
+                     system_log(WARN_SIGN, __FILE__, __LINE__,
                                 "Failed to rename() `%s' to `%s' : %s #%x",
                                 fullname, save_dir, strerror(errno), db.id.job);
                      if (unlink(fullname) == -1)
                      {
-                        system_log(ERROR_SIGN, __FILE__, __LINE__,
+                        system_log(WARN_SIGN, __FILE__, __LINE__,
                                    "Failed to unlink() file `%s' due to duplicate check : %s #%x",
                                    p_dir->d_name, strerror(errno), db.id.job);
                      }

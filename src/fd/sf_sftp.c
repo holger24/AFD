@@ -884,6 +884,40 @@ main(int argc, char *argv[])
          (void)strcpy(p_final_filename, p_file_name_buffer);
          (void)strcpy(p_fullname, p_file_name_buffer);
 
+#ifdef WITH_DUP_CHECK
+# ifndef FAST_SF_DUPCHECK
+         if ((db.dup_check_timeout > 0) &&
+             (isdup(fullname, p_file_name_buffer, *p_file_size_buffer,
+                    db.crc_id, db.dup_check_timeout, db.dup_check_flag, NO,
+#  ifdef HAVE_HW_CRC32
+                    have_hw_crc32,
+#  endif
+                    YES, YES) == YES))
+         {
+            now = time(NULL);
+            handle_dupcheck_delete(SEND_FILE_SFTP, fsa->host_alias, fullname,
+                                   p_file_name_buffer, *p_file_size_buffer,
+                                   *p_file_mtime_buffer, now);
+            if (db.dup_check_flag & DC_DELETE)
+            {
+               local_file_size += *p_file_size_buffer;
+               local_file_counter += 1;
+               if (now >= (last_update_time + LOCK_INTERVAL_TIME))
+               {
+                  last_update_time = now;
+                  update_tfc(local_file_counter, local_file_size,
+                             p_file_size_buffer, files_to_send,
+                             files_send, now);
+                  local_file_size = 0;
+                  local_file_counter = 0;
+               }
+            }
+         }
+         else
+         {
+# endif
+#endif
+
          /* Send file in dot notation? */
          if ((db.lock == DOT) || (db.lock == DOT_VMS))
          {
@@ -1027,6 +1061,8 @@ main(int argc, char *argv[])
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          "Failed to open remote file `%s' (%d).",
                          initial_filename, status);
+               rm_dupcheck_crc(fullname, p_file_name_buffer,
+                               *p_file_size_buffer);
                sftp_quit();
                exit(eval_timeout(OPEN_REMOTE_ERROR));
             }
@@ -1049,6 +1085,8 @@ main(int argc, char *argv[])
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                          "Failed to open local file `%s' : %s",
                          fullname, strerror(errno));
+               rm_dupcheck_crc(fullname, p_file_name_buffer,
+                               *p_file_size_buffer);
                sftp_quit();
                exit(OPEN_LOCAL_ERROR);
             }
@@ -1123,6 +1161,8 @@ main(int argc, char *argv[])
                      {
                         sftp_quit();
                      }
+                     rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                     *p_file_size_buffer);
                      exit(eval_timeout(WRITE_REMOTE_ERROR));
                   }
                   if (gsf_check_fsa(p_db) != NEITHER)
@@ -1195,6 +1235,8 @@ main(int argc, char *argv[])
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                             "Failed to write WMO header to remote file `%s'",
                             initial_filename);
+                  rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                  *p_file_size_buffer);
                   sftp_quit();
                   exit(eval_timeout(WRITE_REMOTE_ERROR));
                }
@@ -1225,6 +1267,8 @@ main(int argc, char *argv[])
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                             "Could not read() local file `%s' [%d] : %s",
                             fullname, bytes_buffered, strerror(errno));
+                  rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                  *p_file_size_buffer);
                   sftp_quit();
                   exit(READ_LOCAL_ERROR);
                }
@@ -1241,6 +1285,8 @@ main(int argc, char *argv[])
                      trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                                "Failed to write %d bytes to remote file `%s'",
                                bytes_buffered, initial_filename);
+                     rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                     *p_file_size_buffer);
                      sftp_quit();
                      exit(eval_timeout(WRITE_REMOTE_ERROR));
                   }
@@ -1280,6 +1326,8 @@ main(int argc, char *argv[])
                                            (pri_time_t)(end_transfer_time_file - start_transfer_time_file));
                                  sftp_quit();
                                  exitflag = 0;
+                                 rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                                 *p_file_size_buffer);
                                  exit(STILL_FILES_TO_SEND);
                               }
                            }
@@ -1341,6 +1389,8 @@ main(int argc, char *argv[])
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          "Failed to flush remaining writes to remote file `%s'",
                          initial_filename);
+               rm_dupcheck_crc(fullname, p_file_name_buffer,
+                               *p_file_size_buffer);
                sftp_quit();
                exit(eval_timeout(WRITE_REMOTE_ERROR));
             }
@@ -1356,6 +1406,8 @@ main(int argc, char *argv[])
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, NULL,
                             "Failed to write <CR><CR><LF><ETX> to remote file `%s'",
                             initial_filename);
+                  rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                  *p_file_size_buffer);
                   sftp_quit();
                   exit(eval_timeout(WRITE_REMOTE_ERROR));
                }
@@ -1386,6 +1438,8 @@ main(int argc, char *argv[])
                   trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                             "Failed to close remote file `%s'",
                             initial_filename);
+                  rm_dupcheck_crc(fullname, p_file_name_buffer,
+                                  *p_file_size_buffer);
                   sftp_quit();
                   exit(eval_timeout(CLOSE_REMOTE_ERROR));
                }
@@ -1491,6 +1545,8 @@ main(int argc, char *argv[])
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
                          "Failed to stat() remote file `%s' (%d). Cannot validate remote size.",
                          initial_filename, status);
+               rm_dupcheck_crc(fullname, p_file_name_buffer,
+                               *p_file_size_buffer);
                sftp_quit();
                exit(eval_timeout(STAT_TARGET_ERROR));
             }
@@ -1501,38 +1557,6 @@ main(int argc, char *argv[])
 
             if (stat_buf.st_size != (no_of_bytes + append_offset + additional_length))
             {
-#ifdef WITH_DUP_CHECK
-               /*
-                * We have already stored the CRC value for
-                * this file but failed pick up the file.
-                * So we must remove the CRC value!
-                */
-               if (db.dup_check_timeout > 0)
-               {
-                  if (isdup_rm(fullname, p_final_filename,
-                               *p_file_size_buffer,
-                               db.crc_id,
-                               db.dup_check_flag,
-# ifdef HAVE_HW_CRC32
-                               have_hw_crc32,
-# endif
-                               NO, NO) != SUCCESS)
-                  {
-                     trans_log(WARN_SIGN, __FILE__, __LINE__, NULL, NULL,
-                               "Failed to remove CRC entry for %s",
-                               p_final_filename);
-                  }
-                  else
-                  {
-                     if (fsa->debug > NORMAL_MODE)
-                     {
-                        trans_db_log(INFO_SIGN, __FILE__, __LINE__, NULL,
-                                     "Removed dupcheck CRC entry for `%s'",
-                                     p_final_filename);
-                     }
-                  }
-               }
-#endif
                trans_log(ERROR_SIGN, __FILE__, __LINE__, NULL, msg_str,
 #if SIZEOF_OFF_T == 4
                          "Local file size %ld does not match remote size %ld for file `%s'",
@@ -1541,6 +1565,19 @@ main(int argc, char *argv[])
 #endif
                          (pri_off_t)(no_of_bytes + append_offset + additional_length),
                          (pri_off_t)stat_buf.st_size, initial_filename);
+#ifdef WITH_DUP_CHECK
+               if (db.dup_check_timeout > 0)
+               {
+                  /* Remove the dupcheck CRC value. */
+                  (void)isdup(fullname, p_file_name_buffer,
+                              *p_file_size_buffer, db.crc_id,
+                              db.dup_check_timeout, db.dup_check_flag, YES,
+# ifdef HAVE_HW_CRC32
+                              have_hw_crc32,
+# endif
+                              YES, NO);
+               }
+#endif
                sftp_quit();
                exit(FILE_SIZE_MATCH_ERROR);
             }
@@ -1617,6 +1654,8 @@ main(int argc, char *argv[])
                trans_log(sign, __FILE__, __LINE__, NULL, msg_str,
                          "Failed to move remote file `%s' to `%s' (%d)",
                          initial_filename, remote_filename, status);
+               rm_dupcheck_crc(fullname, p_file_name_buffer,
+                               *p_file_size_buffer);
                sftp_quit();
                exit(eval_timeout(ret));
             }
@@ -1938,6 +1977,11 @@ try_again_unlink:
                             transfer_log_fd);
             }
          }
+#ifdef WITH_DUP_CHECK
+# ifndef FAST_SF_DUPCHECK
+         }
+# endif
+#endif
 
          p_file_name_buffer += MAX_FILENAME_LENGTH;
          p_file_size_buffer++;
@@ -2180,7 +2224,7 @@ sf_sftp_exit(void)
       }
 
       if ((fsa->job_status[(int)db.job_no].file_name_in_use[0] != '\0') &&
-          (fsa->file_size_offset != -1) &&
+          (p_initial_filename != NULL) && (fsa->file_size_offset != -1) &&
           (append_offset == 0) &&
           (fsa->job_status[(int)db.job_no].file_size_done > MAX_SEND_BEFORE_APPEND))
       {

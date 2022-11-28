@@ -23,6 +23,7 @@
 /* #define DO_NOT_PARALLELIZE_ALL_FETCH 1 */
 /* #define DEBUG_ASSIGNMENT 1 */
 /* #define _RMQUEUE_ 1 */
+#define FAST_SF_DUPCHECK 1
 
 #include <time.h>                /* clock_t                              */
 
@@ -934,6 +935,8 @@ extern void  calc_trl_per_process(int),
              get_group_list(char *, struct job *),
              get_new_positions(void),
              handle_delete_fifo(int, size_t, char *),
+             handle_dupcheck_delete(char *, char *, char *, char *,
+                                    off_t, time_t, time_t),
              handle_proxy(void),
              init_fra_data(void),
              init_gf(int, char **, int),
@@ -970,6 +973,7 @@ extern void  calc_trl_per_process(int),
 #endif
              reset_fsa(struct job *, int, int, off_t),
              reset_values(int, off_t, int, off_t, struct job *),
+             rm_dupcheck_crc(char *, char *, off_t),
              send_proc_fin(int),
              system_log(char *, char *, int, char *, ...),
              trace_log(char *, int, int, char *, int, char *, ...),
