@@ -2118,7 +2118,7 @@ main(int argc, char *argv[])
    }
 #endif /* _WITH_BURST_2 */
 
-   if (db.fsa_pos != INCORRECT)
+   if ((fsa != NULL) && (db.fsa_pos >= 0) && (fsa_pos_save == YES))
    {
       fsa->job_status[(int)db.job_no].connect_status = CLOSING_CONNECTION;
    }
