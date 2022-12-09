@@ -954,6 +954,14 @@ do_scan(int          *files_to_retrieve,
 
       for (i = 0; i < (no_of_listed_files - files_removed); i++)
       {
+         if (i >= *current_no_of_listed_files)
+         {
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                      "no_of_listed_files has been reduced (%d -> %d)!",
+                      no_of_listed_files, *current_no_of_listed_files);
+            no_of_listed_files = *current_no_of_listed_files;
+            break;
+         }
          if (rl[i].in_list == NO)
          {
             int j = i;
@@ -1060,6 +1068,14 @@ check_list(char         *file,
    {
       for (i = 0; i < no_of_listed_files; i++)
       {
+         if (i >= *current_no_of_listed_files)
+         {
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                      "no_of_listed_files has been reduced (%d -> %d)!",
+                      no_of_listed_files, *current_no_of_listed_files);
+            no_of_listed_files = *current_no_of_listed_files;
+            break;
+         }
          if (CHECK_STRCMP(rl[i].file_name, file) == 0)
          {
             rl[i].in_list = YES;
@@ -1310,6 +1326,14 @@ check_list(char         *file,
    {
       for (i = 0; i < no_of_listed_files; i++)
       {
+         if (i >= *current_no_of_listed_files)
+         {
+            trans_log(DEBUG_SIGN, __FILE__, __LINE__, NULL, NULL,
+                      "no_of_listed_files has been reduced (%d -> %d)!",
+                      no_of_listed_files, *current_no_of_listed_files);
+            no_of_listed_files = *current_no_of_listed_files;
+            break;
+         }
          if (CHECK_STRCMP(rl[i].file_name, file) == 0)
          {
             rl[i].in_list = YES;
