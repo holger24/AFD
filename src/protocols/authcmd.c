@@ -1565,10 +1565,12 @@ str2hash(int hash_type, char *string, int strlength, char *hash_hex)
            {
               evp = EVP_md5();
            }
+#ifdef HAVE_EVP_SHA512_256
       else if (hash_type == AFD_SHA512_256)
            {
               evp = EVP_sha512_256();
            }
+#endif
            else
            {
               trans_log(ERROR_SIGN, __FILE__, __LINE__, "str2hash", NULL,
